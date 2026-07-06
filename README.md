@@ -7,7 +7,7 @@ This is a community-maintained example. If you experience a problem, please subm
 Run the following command:
 
 ```sh
-npx create-turbo@latest -e with-vite
+npx create-turbo@latest -e with-vite-react
 ```
 
 ## What's inside?
@@ -16,7 +16,7 @@ This Turborepo includes the following packages and apps:
 
 ### Apps and Packages
 
-- `web`: a vanilla [vite](https://vitejs.dev) ts app
+- `web`: a react [vite](https://vitejs.dev) ts app
 - `@repo/eslint-config`: shared `eslint` configurations
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
