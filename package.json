@@ -9,7 +9,7 @@
   "devDependencies": {
     "eslint": "^10.6.0",
     "prettier": "^3.9.4",
-    "turbo": "^2.10.3"
+    "turbo": "^2.10.4"
   },
   "packageManager": "pnpm@11.10.0",
   "name": "with-vite"
