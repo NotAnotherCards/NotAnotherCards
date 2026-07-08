@@ -14,15 +14,22 @@ It's not another flashcard app. AI-powered language learning through context, nu
 1. Install dependencies with `pnpm install`.
 2. Copy environment files:
 
+- root `.env.example` for Docker Compose
+
 ```bash
   cp .env.example .env
 ```
 
-- root `.env.example` for Docker Compose
 - `apps/api/.env.example` for the NestJS app
 
-3. Start the local database with `docker compose up -d`.
-4. Start the monorepo with `pnpm dev`.
+```bash
+  cd apps/api
+  cp .env.example .env
+```
+
+3. Replace the default values with your db credentials, and desired port for the backend
+4. Start the local database with `docker compose up -d`.
+5. Start the monorepo with `pnpm dev`.
 
 ## Common Commands
 
