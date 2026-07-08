@@ -7,6 +7,13 @@
       "outputs": ["dist/**"]
     },
     "lint": {},
+    "test": {
+      "dependsOn": ["^test"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
     "dev": {
       "cache": false,
       "persistent": true
