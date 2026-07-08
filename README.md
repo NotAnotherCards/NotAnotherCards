@@ -1,31 +1,34 @@
-# `Turborepo` Vite starter
+# NotAnotherCards
 
-This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+It's not another flashcard app. AI-powered language learning through context, nuance, and spaced repetition.
 
-## Using this example
+## Stack
 
-Run the following command:
+- `apps/web`: React, Vite, TypeScript, Tailwind CSS, shadcn/ui, Vitest, and React Testing Library
+- `apps/api`: NestJS, Drizzle ORM, PostgreSQL, Jest, and Supertest
+- `packages/*`: shared ESLint and TypeScript config packages
+- `docker-compose.yml`: local PostgreSQL service for development
 
-```sh
-npx create-turbo@latest -e with-vite-react
+## Setup
+
+1. Install dependencies with `pnpm install`.
+2. Copy environment files:
+
+```bash
+  cp .env.example .env
 ```
 
-## What's inside?
+- root `.env.example` for Docker Compose
+- `apps/api/.env.example` for the NestJS app
 
-This Turborepo includes the following packages and apps:
+3. Start the local database with `docker compose up -d`.
+4. Start the monorepo with `pnpm dev`.
 
-### Apps and Packages
+## Common Commands
 
-- `web`: a react [vite](https://vitejs.dev) ts app
-- `@repo/eslint-config`: shared `eslint` configurations
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package and app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+- `pnpm dev`: run the web and API dev tasks through Turbo
+- `pnpm build`: build all packages and apps
+- `pnpm lint`: lint the workspace
+- `pnpm test`: run the workspace test suites
+- `pnpm test:watch`: run tests in watch mode where supported
+- `pnpm format`: format Markdown and TypeScript files
