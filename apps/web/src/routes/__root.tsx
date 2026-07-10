@@ -17,6 +17,7 @@ function RootComponent() {
             <Link to="/">Home</Link>
             <Link to="/login">Login</Link>
             <Link to="/register">Register</Link>
+            <Link to="/app/dashboard">Dashboard</Link>
           </nav>
         </div>
       </header>
