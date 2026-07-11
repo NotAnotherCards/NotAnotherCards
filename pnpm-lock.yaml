@@ -32,6 +32,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.1
         version: 11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27)
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/pg@8.20.0)(pg@8.22.0)
@@ -126,6 +129,9 @@ importers:
       '@fontsource-variable/inter':
         specifier: ^5.2.8
         version: 5.2.8
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
