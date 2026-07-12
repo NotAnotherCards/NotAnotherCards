@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "db:push": "drizzle-kit push --config drizzle.config.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "pretest": "pnpm --filter @repo/schemas build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

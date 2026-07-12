@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "pretest": "pnpm --filter @repo/schemas build",
     "test": "vitest run",
     "test:watch": "vitest --watch"
   },
