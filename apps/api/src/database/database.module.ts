@@ -3,11 +3,7 @@ import { DATABASE_CONNECTION } from './database-connection';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { user, session, account, verification } from '@repo/db/schema';
-
-// don't collapse this into `import * as schema` - the esm/cjs interop
-// helper adds a `default` key that breaks drizzle's table detection
-const schema = { user, session, account, verification };
+import * as schema from './schema';
 
 @Module({
   imports: [ConfigModule],
