@@ -218,6 +218,9 @@ importers:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      dotenv:
+        specifier: ^16.6.1
+        version: 16.6.1
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
