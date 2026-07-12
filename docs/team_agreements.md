@@ -43,53 +43,29 @@ We use **Conventional Commits**.
 
 Format:
 
+```text
 type(optional-scope): short description
+```
 
 Examples:
 
-feat(auth): add login page
-fix(api): handle expired session
-docs: update README
-refactor(ui): simplify card component
-test(auth): add login tests
-chore: update dependencies
+- `feat(auth): add login page`
+- `fix(api): handle expired session`
+- `docs: update README`
+- `refactor(ui): simplify card component`
+- `test(auth): add login tests`
+- `chore: update dependencies`
 
-Common commit types:
+Allowed commit types:
 
-- feat — new feature
-- fix — bug fix
-- docs — documentation
-- refactor — code refactoring
-- test — tests
-- chore — maintenance
-
-Scope is optional.
-We follow the **Conventional Commits** specification.
-
-Format:
-
-type(scope): short description
+- `feat` — new feature
+- `fix` — bug fix
+- `docs` — documentation
+- `refactor` — code refactoring
+- `test` — tests
+- `chore` — maintenance
 
 Scope is optional.
-
-Common commit types:
-
-- feat — new feature
-- fix — bug fix
-- refactor — code refactoring
-- docs — documentation
-- test — tests
-- chore — maintenance
-
-Examples:
-
-feat(auth): add Google login
-
-fix(api): handle expired JWT
-
-docs: update README
-
-refactor(ui): simplify button component
 
 ---
 
@@ -99,3 +75,4 @@ refactor(ui): simplify button component
 - At least **1 approval** is required before merging.
 - All review comments must be resolved.
 - Do not push directly to `main`.
+- Pull Requests are merged into `main` using **Squash and merge**, so each Pull Request becomes one commit in `main`.
