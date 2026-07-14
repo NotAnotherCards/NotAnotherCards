@@ -26,6 +26,8 @@ function LoginComponent() {
     },
   });
 
+  const { isSubmitting } = form.formState;
+
   const onSubmit = (data: LoginFormData) => {
     console.log(data);
   };
@@ -80,7 +82,7 @@ function LoginComponent() {
             />
           </FieldGroup>
         </FieldSet>
-        <Button type="submit" className="mt-6">
+        <Button type="submit" className="mt-6" disabled={isSubmitting}>
           Login
         </Button>
       </form>

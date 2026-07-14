@@ -29,6 +29,9 @@ function RegisterComponent() {
     },
   });
 
+  const { isSubmitting } = form.formState;
+
+
   const onSubmit = (data: SignupFormData) => {
     console.log(data);
   };
@@ -157,7 +160,7 @@ function RegisterComponent() {
             />
           </FieldGroup>
         </FieldSet>
-        <Button type="submit" className="mt-6">
+        <Button type="submit" className="mt-6" disabled={isSubmitting}>
           Sign up
         </Button>
       </form>
