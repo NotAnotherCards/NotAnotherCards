@@ -29,7 +29,11 @@ export function AuthCard({
   return (
     <Card className="w-full max-w-md border border-border/40 bg-card/60 backdrop-blur-xl shadow-2xl transition-all duration-300">
       <CardHeader className="space-y-1 pb-6 text-center">
-        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+        <CardTitle
+          role="heading"
+          aria-level={2}
+          className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
+        >
           {title}
         </CardTitle>
         <CardDescription className="text-muted-foreground text-sm">

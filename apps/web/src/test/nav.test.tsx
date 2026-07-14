@@ -12,7 +12,7 @@ describe("App Navigation", () => {
     await user.click(loginLink);
     // Verify the Login page contents are shown
     expect(
-      await screen.findByRole("heading", { name: /LOGIN PAGE/i }),
+      await screen.findByRole("heading", { name: /Welcome Back/i }),
     ).toBeInTheDocument();
   });
   it("navigates to the register page when clicking the Register link", async () => {
@@ -25,7 +25,7 @@ describe("App Navigation", () => {
     await user.click(registerLink);
     // Verify the Registration page contents are shown
     expect(
-      await screen.findByRole("heading", { name: /REGISTRATION PAGE/i }),
+      await screen.findByRole("heading", { name: /Create Account/i }),
     ).toBeInTheDocument();
   });
 });
