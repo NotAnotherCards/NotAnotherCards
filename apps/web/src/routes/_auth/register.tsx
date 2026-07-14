@@ -4,7 +4,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, SignupFormData } from "@repo/schemas";
+import { AuthCard } from "@/components/auth-card";
 
 export const Route = createFileRoute("/_auth/register")({
   component: RegisterComponent,
@@ -31,7 +31,6 @@ function RegisterComponent() {
 
   const { isSubmitting } = form.formState;
 
-
   const onSubmit = async (data: SignupFormData) => {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -39,16 +38,21 @@ function RegisterComponent() {
   };
 
   return (
-    <div>
+    <AuthCard
+      title="Create Account"
+      description="Enter your details to create a new profile"
+      footerText="Already have an account?"
+      footerLinkText="Sign in"
+      footerLinkTo="/login"
+    >
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <FieldSet>
-          <FieldLegend>Create Account</FieldLegend>
           <FieldGroup>
             <Controller
               name="firstName"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field>
+                <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="firstName">First Name</FieldLabel>
                   <Input
                     {...field}
@@ -71,7 +75,7 @@ function RegisterComponent() {
               name="lastName"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field>
+                <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
                   <Input
                     {...field}
@@ -94,7 +98,7 @@ function RegisterComponent() {
               name="email"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field>
+                <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
                     {...field}
@@ -114,7 +118,7 @@ function RegisterComponent() {
               name="password"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field>
+                <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <Input
                     {...field}
@@ -138,7 +142,7 @@ function RegisterComponent() {
               name="confirmPassword"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field>
+                <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="confirmPassword">
                     Confirm Password
                   </FieldLabel>
@@ -165,9 +169,24 @@ function RegisterComponent() {
         <Button type="submit" className="mt-6 w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-4 w-4 text-current" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              <svg
+                className="animate-spin h-4 w-4 text-current"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               Creating account...
             </span>
@@ -176,6 +195,6 @@ function RegisterComponent() {
           )}
         </Button>
       </form>
-    </div>
+    </AuthCard>
   );
 }
