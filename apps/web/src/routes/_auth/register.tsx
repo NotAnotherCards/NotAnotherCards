@@ -11,17 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { registerSchema } from "@repo/schemas";
-import z from "zod";
+import { registerSchema, SignupFormData } from "@repo/schemas";
 
 export const Route = createFileRoute("/_auth/register")({
   component: RegisterComponent,
 });
 
-type RegisterValues = z.infer<typeof registerSchema>;
-
 function RegisterComponent() {
-  const form = useForm<RegisterValues>({
+  const form = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       firstName: "",
@@ -32,7 +29,7 @@ function RegisterComponent() {
     },
   });
 
-  const onSubmit = (data: RegisterValues) => {
+  const onSubmit = (data: RegisterFormData) => {
     console.log(data);
   };
 

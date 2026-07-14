@@ -10,18 +10,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { createFileRoute } from "@tanstack/react-router";
 import { Controller, useForm } from "react-hook-form";
-import z from "zod";
-import { loginSchema } from "@repo/schemas";
+import { LoginFormData, loginSchema } from "@repo/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 export const Route = createFileRoute("/_auth/login")({
   component: LoginComponent,
 });
 
-type LoginValues = z.infer<typeof loginSchema>;
-
 function LoginComponent() {
-  const form = useForm<LoginValues>({
+  const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
@@ -29,7 +26,7 @@ function LoginComponent() {
     },
   });
 
-  const onSubmit = (data: LoginValues) => {
+  const onSubmit = (data: LoginFormData) => {
     console.log(data);
   };
 
