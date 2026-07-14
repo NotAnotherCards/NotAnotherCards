@@ -53,10 +53,10 @@ function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="firstName">First Name</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
                   <Input
                     {...field}
-                    id="firstName"
+                    id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
                       fieldState.invalid ? "firstName-error" : undefined
@@ -76,10 +76,10 @@ function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
                   <Input
                     {...field}
-                    id="lastName"
+                    id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
                       fieldState.invalid ? "lastName-error" : undefined
@@ -99,10 +99,10 @@ function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
                   <Input
                     {...field}
-                    id="email"
+                    id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
                       fieldState.invalid ? "email-error" : undefined
@@ -119,10 +119,10 @@ function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                   <Input
                     {...field}
-                    id="password"
+                    id={field.name}
                     type="password"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
@@ -143,12 +143,10 @@ function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="confirmPassword">
-                    Confirm Password
-                  </FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
                   <Input
                     {...field}
-                    id="confirmPassword"
+                    id={field.name}
                     type="password"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
@@ -164,36 +162,36 @@ function RegisterComponent() {
                 </Field>
               )}
             />
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4 text-current"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Creating account...
+                </span>
+              ) : (
+                "Sign up"
+              )}
+            </Button>
           </FieldGroup>
         </FieldSet>
-        <Button type="submit" className="mt-6 w-full" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg
-                className="animate-spin h-4 w-4 text-current"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Creating account...
-            </span>
-          ) : (
-            "Sign up"
-          )}
-        </Button>
       </form>
     </AuthCard>
   );
