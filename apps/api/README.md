@@ -96,3 +96,26 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Database
+
+Drizzle schema and Postgres migrations for this app. The Better Auth tables
+(user, session, account, verification) live in `src/database/schema.ts` and
+are generated from `auth-config.ts`, don't edit them directly. To change them
+(e.g. after adding a better-auth plugin):
+
+```sh
+cd apps/api
+npx @better-auth/cli generate --config auth-config.ts --output src/database/schema.ts
+```
+
+Other tables (decks, cards, ...) can be added as `schema.ts` files in their
+module folder, drizzle picks up everything matching `src/**/schema.ts`.
+
+After any schema change, regenerate the migration and commit it together with
+the schema. Don't edit the SQL files in `drizzle/` by hand.
+
+```sh
+pnpm db:generate   # write migration sql from schema changes
+pnpm db:migrate    # apply them (needs DATABASE_URL in apps/api/.env)
+```
