@@ -45,9 +45,19 @@ function RegisterComponent() {
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel htmlFor="firstName">First Name</FieldLabel>
-                  <Input {...field} id="firstName" />
+                  <Input
+                    {...field}
+                    id="firstName"
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "firstName-error" : undefined
+                    }
+                  />
                   {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError
+                      id="firstName-error"
+                      errors={[fieldState.error]}
+                    />
                   )}
                 </Field>
               )}
@@ -58,9 +68,19 @@ function RegisterComponent() {
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
-                  <Input {...field} id="lastName" />
+                  <Input
+                    {...field}
+                    id="lastName"
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "lastName-error" : undefined
+                    }
+                  />
                   {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError
+                      id="lastName-error"
+                      errors={[fieldState.error]}
+                    />
                   )}
                 </Field>
               )}
@@ -71,9 +91,16 @@ function RegisterComponent() {
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
-                  <Input {...field} id="email" />
+                  <Input
+                    {...field}
+                    id="email"
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "email-error" : undefined
+                    }
+                  />
                   {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError id="email-error" errors={[fieldState.error]} />
                   )}
                 </Field>
               )}
@@ -84,9 +111,20 @@ function RegisterComponent() {
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input {...field} id="password" type="password" />
+                  <Input
+                    {...field}
+                    id="password"
+                    type="password"
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "password-error" : undefined
+                    }
+                  />
                   {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError
+                      id="password-error"
+                      errors={[fieldState.error]}
+                    />
                   )}
                 </Field>
               )}
@@ -99,9 +137,20 @@ function RegisterComponent() {
                   <FieldLabel htmlFor="confirmPassword">
                     Confirm Password
                   </FieldLabel>
-                  <Input {...field} id="confirmPassword" type="password" />
+                  <Input
+                    {...field}
+                    id="confirmPassword"
+                    type="password"
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "confirmPassword-error" : undefined
+                    }
+                  />
                   {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError
+                      id="confirmPassword-error"
+                      errors={[fieldState.error]}
+                    />
                   )}
                 </Field>
               )}

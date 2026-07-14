@@ -47,9 +47,12 @@ function LoginComponent() {
                     id="email"
                     type="email"
                     aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "email-error" : undefined
+                    }
                   />
                   {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError id="email-error" errors={[fieldState.error]} />
                   )}
                 </Field>
               )}
@@ -65,9 +68,12 @@ function LoginComponent() {
                     id="password"
                     type="password"
                     aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "password-error" : undefined
+                    }
                   />
                   {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError id="password-error" errors={[fieldState.error]} />
                   )}
                 </Field>
               )}
