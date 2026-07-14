@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_auth/register")({
 
 function RegisterComponent() {
   const form = useForm<SignupFormData>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema as any),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -29,7 +29,7 @@ function RegisterComponent() {
     },
   });
 
-  const onSubmit = (data: RegisterFormData) => {
+  const onSubmit = (data: SignupFormData) => {
     console.log(data);
   };
 

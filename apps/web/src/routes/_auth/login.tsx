@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_auth/login")({
 
 function LoginComponent() {
   const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema as any),
     defaultValues: {
       email: "",
       password: "",
