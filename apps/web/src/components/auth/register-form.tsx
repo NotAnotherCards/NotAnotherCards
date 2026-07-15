@@ -17,8 +17,7 @@ export function RegisterComponent() {
   const form = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema as any),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      name: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -45,45 +44,22 @@ export function RegisterComponent() {
         <FieldSet>
           <FieldGroup>
             <Controller
-              name="firstName"
+              name="name"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      fieldState.invalid ? "firstName-error" : undefined
+                      fieldState.invalid ? "name-error" : undefined
                     }
                   />
                   {fieldState.invalid && (
                     <FieldError
-                      id="firstName-error"
-                      errors={[fieldState.error]}
-                    />
-                  )}
-                </Field>
-              )}
-            />{" "}
-            <Controller
-              name="lastName"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
-                  <Input
-                    {...field}
-                    id={field.name}
-                    aria-invalid={fieldState.invalid}
-                    aria-describedby={
-                      fieldState.invalid ? "lastName-error" : undefined
-                    }
-                  />
-                  {fieldState.invalid && (
-                    <FieldError
-                      id="lastName-error"
+                      id="name-error"
                       errors={[fieldState.error]}
                     />
                   )}

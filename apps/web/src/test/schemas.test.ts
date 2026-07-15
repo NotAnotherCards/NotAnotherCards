@@ -13,8 +13,7 @@ describe("@repo/schemas wiring", () => {
 
     expect(
       registerSchema.safeParse({
-        firstName: "Test",
-        lastName: "User",
+        name: "Test User",
         email: "test@example.com",
         password: "Password123*",
         confirmPassword: "Password123*",

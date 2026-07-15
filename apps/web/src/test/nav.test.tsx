@@ -1,9 +1,17 @@
 import { render, screen } from "@testing-library/react";
-import { App } from "../App";
+import { App, router } from "../App";
 import userEvent from "@testing-library/user-event";
+import { beforeEach } from "vitest";
 
 // Verify that routing and page transitions work correctly
 describe("App Navigation", () => {
+  beforeEach(async () => {
+    window.history.pushState(null, "", "/");
+    await router.navigate({ to: "/" });
+    await router.preloadRoute({ to: "/login" });
+    await router.preloadRoute({ to: "/register" });
+  });
+
   it("navigates to the login page when clicking the Login link", async () => {
     const user = userEvent.setup();
     render(<App />);

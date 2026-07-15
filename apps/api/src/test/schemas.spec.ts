@@ -16,8 +16,7 @@ describe('@repo/schemas wiring', () => {
               password: 'secret',
             }).success,
             register: registerSchema.safeParse({
-              firstName: 'Test',
-              lastName: 'User',
+              name: 'Test User',
               email: 'test@example.com',
               password: 'Password123*',
               confirmPassword: 'Password123*',

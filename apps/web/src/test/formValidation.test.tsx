@@ -46,21 +46,18 @@ describe("Register Form Validation", () => {
     await user.click(submitButton);
 
     // Verify general required field validations
-    expect(await screen.findByText("First name must be at least 2 characters")).toBeInTheDocument();
-    expect(await screen.findByText("Last name must be at least 2 characters")).toBeInTheDocument();
+    expect(await screen.findByText("Name must be at least 2 characters")).toBeInTheDocument();
     expect(await screen.findByText("Please enter a valid email address")).toBeInTheDocument();
     expect(await screen.findByText("Password must be at least 8 characters")).toBeInTheDocument();
     expect(await screen.findByText("Please confirm your password")).toBeInTheDocument();
 
     // Type valid basic details but mismatching passwords
-    const firstNameInput = screen.getByLabelText(/First Name/i);
-    const lastNameInput = screen.getByLabelText(/Last Name/i);
+    const nameInput = screen.getByLabelText(/Name/i);
     const emailInput = screen.getByLabelText(/Email/i);
     const passwordInput = screen.getByLabelText(/^Password$/i);
     const confirmPasswordInput = screen.getByLabelText(/Confirm Password/i);
 
-    await user.type(firstNameInput, "John");
-    await user.type(lastNameInput, "Doe");
+    await user.type(nameInput, "John Doe");
     await user.type(emailInput, "john.doe@example.com");
     await user.type(passwordInput, "Password123!");
     await user.type(confirmPasswordInput, "Different123!");
