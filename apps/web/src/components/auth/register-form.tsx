@@ -6,6 +6,7 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Controller, useForm } from "react-hook-form";
@@ -92,10 +93,9 @@ export function RegisterComponent() {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                  <Input
+                  <PasswordInput
                     {...field}
                     id={field.name}
-                    type="password"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
                       fieldState.invalid ? "password-error" : undefined
@@ -116,10 +116,9 @@ export function RegisterComponent() {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
-                  <Input
+                  <PasswordInput
                     {...field}
                     id={field.name}
-                    type="password"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
                       fieldState.invalid ? "confirmPassword-error" : undefined

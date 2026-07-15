@@ -8,6 +8,7 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Controller, useForm } from "react-hook-form";
 import { LoginFormData, loginSchema } from "@repo/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,10 +69,9 @@ export function LoginComponent() {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                  <Input
+                  <PasswordInput
                     {...field}
                     id={field.name}
-                    type="password"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
                       fieldState.invalid ? "password-error" : undefined
