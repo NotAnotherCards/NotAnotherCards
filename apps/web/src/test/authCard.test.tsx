@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { AuthCard } from "../components/auth-card";
+import { AuthCard } from "../components/auth/auth-card";
 
 // Mock @tanstack/react-router Link since it requires a Router context
 vi.mock("@tanstack/react-router", () => ({
@@ -38,3 +38,11 @@ describe("AuthCard Component", () => {
     expect(screen.getByText("Child Element")).toBeInTheDocument();
   });
 });
+
+describe("Error message", () => {
+  it("displays proper error message", () => {
+    render(<AuthCard>
+
+    </AuthCard>);
+  })
+})
