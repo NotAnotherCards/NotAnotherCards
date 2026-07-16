@@ -49,7 +49,7 @@ export function RegisterComponent() {
       console.error(error.message);
     } else {
       navigate({ to: "/app/dashboard" });
-      // console.log("Registered:", res);
+      console.log("Registered:", res);
     }
   };
 

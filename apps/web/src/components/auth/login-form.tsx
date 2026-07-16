@@ -47,7 +47,7 @@ const onSubmit = async (data: LoginFormData) => {
     console.error(error.message);
   } else {
     navigate({ to: "/app/dashboard" });
-    // console.log("Logged in:", res);
+    console.log("Logged in:", res);
   }
 };
 
