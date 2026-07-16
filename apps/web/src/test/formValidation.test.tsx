@@ -12,6 +12,12 @@ vi.mock("@tanstack/react-router", () => ({
   }),
 }));
 
+const expectErrorToShow = async (text: string) => {
+  const elements = await screen.findAllByText(text);
+  expect(elements.length).toBeGreaterThan(0);
+  expect(elements[0]).toBeInTheDocument();
+};
+
 describe("Login Form Validation", () => {
   it("shows validation error messages when fields are invalid", async () => {
     const user = userEvent.setup();
@@ -23,15 +29,15 @@ describe("Login Form Validation", () => {
     await user.click(submitButton);
 
     // Verify error messages
-    expect(await screen.findByText("Please enter a valid email address")).toBeInTheDocument();
-    expect(await screen.findByText("Password is required")).toBeInTheDocument();
+    await expectErrorToShow("Please enter a valid email address");
+    await expectErrorToShow("Password is required");
 
     // Type invalid email and submit
     const emailInput = screen.getByLabelText(/Email/i);
     await user.type(emailInput, "not-an-email");
     await user.click(submitButton);
 
-    expect(await screen.findByText("Please enter a valid email address")).toBeInTheDocument();
+    await expectErrorToShow("Please enter a valid email address");
   });
 });
 
@@ -46,10 +52,10 @@ describe("Register Form Validation", () => {
     await user.click(submitButton);
 
     // Verify general required field validations
-    expect(await screen.findByText("Name must be at least 2 characters")).toBeInTheDocument();
-    expect(await screen.findByText("Please enter a valid email address")).toBeInTheDocument();
-    expect(await screen.findByText("Password must be at least 8 characters")).toBeInTheDocument();
-    expect(await screen.findByText("Please confirm your password")).toBeInTheDocument();
+    await expectErrorToShow("Name must be at least 2 characters");
+    await expectErrorToShow("Please enter a valid email address");
+    await expectErrorToShow("Password must be at least 8 characters");
+    await expectErrorToShow("Please confirm your password");
 
     // Type valid basic details but mismatching passwords
     const nameInput = screen.getByLabelText(/Name/i);
@@ -65,7 +71,7 @@ describe("Register Form Validation", () => {
     await user.click(submitButton);
 
     // Verify mismatching password error message
-    expect(await screen.findByText("Passwords do not match")).toBeInTheDocument();
+    await expectErrorToShow("Passwords do not match");
   });
 
   it("shows specific password constraint messages", async () => {
@@ -78,30 +84,30 @@ describe("Register Form Validation", () => {
     // 1. Password too short
     await user.type(passwordInput, "123");
     await user.click(submitButton);
-    expect(await screen.findByText("Password must be at least 8 characters")).toBeInTheDocument();
+    await expectErrorToShow("Password must be at least 8 characters");
 
     // 2. Missing uppercase
     await user.clear(passwordInput);
     await user.type(passwordInput, "abcdefg1!");
     await user.click(submitButton);
-    expect(await screen.findByText("Password must include an uppercase letter")).toBeInTheDocument();
+    await expectErrorToShow("Password must include an uppercase letter");
 
     // 3. Missing lowercase
     await user.clear(passwordInput);
     await user.type(passwordInput, "ABCDEFG1!");
     await user.click(submitButton);
-    expect(await screen.findByText("Password must include a lowercase letter")).toBeInTheDocument();
+    await expectErrorToShow("Password must include a lowercase letter");
 
     // 4. Missing number
     await user.clear(passwordInput);
     await user.type(passwordInput, "Abcdefgh!");
     await user.click(submitButton);
-    expect(await screen.findByText("Password must include a number")).toBeInTheDocument();
+    await expectErrorToShow("Password must include a number");
 
     // 5. Missing special character
     await user.clear(passwordInput);
     await user.type(passwordInput, "Abcdefg1");
     await user.click(submitButton);
-    expect(await screen.findByText("Password must include a special character")).toBeInTheDocument();
+    await expectErrorToShow("Password must include a special character");
   });
 });

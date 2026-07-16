@@ -1,6 +1,5 @@
 import {
   Field,
-  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
@@ -13,10 +12,16 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, SignupFormData } from "@repo/schemas";
 import { AuthCard } from "@/components/auth/auth-card";
+import { authClient } from "@/lib/auth-client";
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
 
 export function RegisterComponent() {
+  const navigate = useNavigate();
+  const [apiError, setApiError] = useState<string | null>(null);
   const form = useForm<SignupFormData>({
-    resolver: zodResolver(registerSchema as any),
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -25,12 +30,28 @@ export function RegisterComponent() {
     },
   });
 
-  const { isSubmitting } = form.formState;
+  const { isSubmitting, errors } = form.formState;
+
+  const allErrors = [
+    ...(apiError ? [apiError] : []),
+    ...Object.values(errors).map((err) => err?.message).filter(Boolean) as string[],
+  ];
 
   const onSubmit = async (data: SignupFormData) => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log(data);
+    setApiError(null);
+    const { data: res, error } = await authClient.signUp.email({
+      email: data.email,
+      password: data.password,
+      name: data.name,
+    });
+    if (error) {
+      setApiError(error.message || "An unexpected error occurred");
+      console.error(error.message);
+    } else {
+      // Successfully signed up! Redirect to login/dashboard
+      console.log("Registered:", res);
+      navigate({ to: "/app/dashboard" });
+    }
   };
 
   return (
@@ -58,12 +79,6 @@ export function RegisterComponent() {
                       fieldState.invalid ? "name-error" : undefined
                     }
                   />
-                  {fieldState.invalid && (
-                    <FieldError
-                      id="name-error"
-                      errors={[fieldState.error]}
-                    />
-                  )}
                 </Field>
               )}
             />{" "}
@@ -81,9 +96,6 @@ export function RegisterComponent() {
                       fieldState.invalid ? "email-error" : undefined
                     }
                   />
-                  {fieldState.invalid && (
-                    <FieldError id="email-error" errors={[fieldState.error]} />
-                  )}
                 </Field>
               )}
             />
@@ -101,12 +113,6 @@ export function RegisterComponent() {
                       fieldState.invalid ? "password-error" : undefined
                     }
                   />
-                  {fieldState.invalid && (
-                    <FieldError
-                      id="password-error"
-                      errors={[fieldState.error]}
-                    />
-                  )}
                 </Field>
               )}
             />{" "}
@@ -124,15 +130,10 @@ export function RegisterComponent() {
                       fieldState.invalid ? "confirmPassword-error" : undefined
                     }
                   />
-                  {fieldState.invalid && (
-                    <FieldError
-                      id="confirmPassword-error"
-                      errors={[fieldState.error]}
-                    />
-                  )}
                 </Field>
               )}
             />
+            <FormErrorMessage message={allErrors} />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">

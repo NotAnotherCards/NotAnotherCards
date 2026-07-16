@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Field,
-  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
@@ -13,23 +12,44 @@ import { Controller, useForm } from "react-hook-form";
 import { LoginFormData, loginSchema } from "@repo/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
+import { authClient } from "@/lib/auth-client";
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
 
 export function LoginComponent() {
+  const navigate = useNavigate();
+  const [apiError, setApiError] = useState<string | null>(null);
   const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema as any),
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const { isSubmitting } = form.formState;
+  const { isSubmitting, errors } = form.formState;
 
-  const onSubmit = async (data: LoginFormData) => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log(data);
-  };
+  const allErrors = [
+    ...(apiError ? [apiError] : []),
+    ...Object.values(errors).map((err) => err?.message).filter(Boolean) as string[],
+  ];
+
+const onSubmit = async (data: LoginFormData) => {
+  setApiError(null);
+  const { data: res, error } = await authClient.signIn.email({
+    email: data.email,
+    password: data.password,
+  });
+
+  if (error) {
+    setApiError(error.message || "An unexpected error occurred");
+    console.error(error.message);
+  } else {
+    navigate({ to: "/app/dashboard" });
+    console.log("Logged in:", res);
+  }
+};
 
   return (
     <AuthCard
@@ -57,9 +77,6 @@ export function LoginComponent() {
                       fieldState.invalid ? "email-error" : undefined
                     }
                   />
-                  {fieldState.invalid && (
-                    <FieldError id="email-error" errors={[fieldState.error]} />
-                  )}
                 </Field>
               )}
             />
@@ -77,15 +94,10 @@ export function LoginComponent() {
                       fieldState.invalid ? "password-error" : undefined
                     }
                   />
-                  {fieldState.invalid && (
-                    <FieldError
-                      id="password-error"
-                      errors={[fieldState.error]}
-                    />
-                  )}
                 </Field>
               )}
             />
+            <FormErrorMessage message={allErrors} />
             <Button
               type="submit"
               className="w-full"
