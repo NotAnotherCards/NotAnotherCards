@@ -2,13 +2,15 @@
 
 ## Team Roles
 
-| Member | GitHub | Role |
-|---------|---------|------|
-| Andrei | `@amoiseik` | Product Owner |
-| Tanmay | `@tpandya42` | Project Manager |
-| Daniel | `@dgomez-a` | Tech Lead |
-| Philipp | `@pschneid` | Developer |
-| Samuel | `@samcasti` | Developer |
+| GitHub | Role |
+|---------|------|
+| `@devriez` | Product Owner / developer |
+| `@tpandya42` | Project Manager support / developer |
+| `@Danielg1406` | Tech Lead / developer |
+| `@dustyway` | Developer |
+| `@samsnwn` | Developer |
+
+In project documents, we use GitHub nicknames instead of real names.
 
 ---
 
@@ -16,13 +18,55 @@
 
 Every Wednesday at **19:30 (Berlin time)**.
 
+- We try to attend meetings in person at the school whenever possible.
+- If someone cannot attend in person, they should join online instead.
+
 ---
 
 ## Task Management
 
+- GitHub is our single source of truth for project documentation and task tracking.
 - We use **GitHub Issues** for all tasks.
+- Non-programming tasks are also tracked as GitHub Issues.
 - Every feature or bug should have an Issue.
 - GitHub Projects is used to organize and track Issues.
+- For now, `@devriez` and `@tpandya42` share Project Manager responsibilities.
+- When someone starts a milestone task, they should post a short update in the team chat.
+
+---
+
+## GitHub Project Workflow
+
+Project statuses:
+
+- `Backlog` — task exists, but is not ready to start yet.
+- `Todo` — task is ready to be picked up.
+- `In Progress` — someone is actively working on it.
+- `Review` — implementation is done and waiting for review or Pull Request review.
+- `Blocked` — task cannot continue until something is resolved.
+- `Done` — task is completed.
+
+---
+
+## Labels and Issue Types
+
+Labels:
+
+- `frontend`
+- `backend`
+- `database`
+- `auth`
+- `docs`
+- `testing`
+- `product`
+- `management`
+- `setup`
+
+Issue types:
+
+- `Feature` — new user-facing or technical functionality.
+- `Task` — documentation, setup, planning, management, or internal work.
+- `Bug` — incorrect behavior that needs to be fixed.
 
 ---
 
