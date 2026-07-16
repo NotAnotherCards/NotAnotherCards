@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { App, router } from "../App";
 import userEvent from "@testing-library/user-event";
-import { beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 // Verify that routing and page transitions work correctly
 describe("App Navigation", () => {

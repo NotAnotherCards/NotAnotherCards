@@ -38,11 +38,3 @@ describe("AuthCard Component", () => {
     expect(screen.getByText("Child Element")).toBeInTheDocument();
   });
 });
-
-describe("Error message", () => {
-  it("displays proper error message", () => {
-    render(<AuthCard>
-
-    </AuthCard>);
-  })
-})

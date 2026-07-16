@@ -48,9 +48,8 @@ export function RegisterComponent() {
       setApiError(error.message || "An unexpected error occurred");
       console.error(error.message);
     } else {
-      // Successfully signed up! Redirect to login/dashboard
-      console.log("Registered:", res);
       navigate({ to: "/app/dashboard" });
+      // console.log("Registered:", res);
     }
   };
 

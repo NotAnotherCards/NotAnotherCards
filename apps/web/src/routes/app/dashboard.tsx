@@ -17,7 +17,7 @@ function DashboardComponent() {
 
   return (
     <div>
-      <h3>DASHBOARD PAGE</h3>
+      <h1>DASHBOARD PAGE</h1>
       {session?.user && (
         <div>
           <p>Welcome, <strong>{session.user.name}</strong>!</p>

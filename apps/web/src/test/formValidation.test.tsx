@@ -4,12 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { LoginComponent } from "../components/auth/login-form";
 import { RegisterComponent } from "../components/auth/register-form";
 
-// Mock @tanstack/react-router Link since it requires a Router context
+// Mock @tanstack/react-router Link and useNavigate since they require a Router context
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to }: any) => <a href={to}>{children}</a>,
   createFileRoute: () => () => ({
     component: () => null,
   }),
+  useNavigate: () => vi.fn(),
 }));
 
 const expectErrorToShow = async (text: string) => {

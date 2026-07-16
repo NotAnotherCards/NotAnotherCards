@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { App } from "../App";
+import { describe, expect, it } from "vitest";
 
 // Verify that the global RootComponent renders the header, title, and all expected navigation options correctly on load.
-
 describe("Root Layout", () => {
   it("renders the main brand name and navigation links in the header", async () => {
     render(<App />);
