@@ -4,7 +4,7 @@ import { AuthCard } from "../components/auth/auth-card";
 
 // Mock @tanstack/react-router Link since it requires a Router context
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 
 describe("AuthCard Component", () => {
