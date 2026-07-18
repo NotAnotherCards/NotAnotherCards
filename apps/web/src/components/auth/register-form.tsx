@@ -1,5 +1,6 @@
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
@@ -30,12 +31,7 @@ export function RegisterComponent() {
     },
   });
 
-  const { isSubmitting, errors } = form.formState;
-
-  const allErrors = [
-    ...(apiError ? [apiError] : []),
-    ...Object.values(errors).map((err) => err?.message).filter(Boolean) as string[],
-  ];
+  const { isSubmitting } = form.formState;
 
   const onSubmit = async (data: SignupFormData) => {
     setApiError(null);
@@ -78,6 +74,7 @@ export function RegisterComponent() {
                       fieldState.invalid ? "name-error" : undefined
                     }
                   />
+                  <FieldError id="name-error" errors={[fieldState.error]} />
                 </Field>
               )}
             />{" "}
@@ -95,6 +92,7 @@ export function RegisterComponent() {
                       fieldState.invalid ? "email-error" : undefined
                     }
                   />
+                  <FieldError id="email-error" errors={[fieldState.error]} />
                 </Field>
               )}
             />
@@ -112,6 +110,7 @@ export function RegisterComponent() {
                       fieldState.invalid ? "password-error" : undefined
                     }
                   />
+                  <FieldError id="password-error" errors={[fieldState.error]} />
                 </Field>
               )}
             />{" "}
@@ -129,14 +128,18 @@ export function RegisterComponent() {
                       fieldState.invalid ? "confirmPassword-error" : undefined
                     }
                   />
+                  <FieldError
+                    id="confirmPassword-error"
+                    errors={[fieldState.error]}
+                  />
                 </Field>
               )}
             />
-            <FormErrorMessage message={allErrors} />
+            <FormErrorMessage message={apiError} />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Spinner/>
+                  <Spinner />
                   Creating account...
                 </span>
               ) : (

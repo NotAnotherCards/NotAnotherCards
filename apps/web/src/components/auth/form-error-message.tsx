@@ -25,15 +25,21 @@ export const FormErrorMessage = React.forwardRef<
       aria-live="assertive"
       className={cn(
         "flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200",
-        className
+        className,
       )}
       {...props}
     >
       <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
-      <div className="flex flex-col gap-1 w-full">
-        {messages.map((msg, i) => (
-          <span key={i} className="font-medium text-left">{msg}</span>
-        ))}
+      <div className="text-left w-full">
+        {messages.length === 1 ? (
+          <p className="font-medium">{messages[0]}</p>
+        ) : (
+          <ul className="list-disc pl-4 font-medium space-y-1">
+            {messages.map((msg, i) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

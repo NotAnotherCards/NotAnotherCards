@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
@@ -28,14 +29,9 @@ export function LoginComponent() {
     },
   });
 
-  const { isSubmitting, errors } = form.formState;
+  const { isSubmitting } = form.formState;
 
-  const allErrors = [
-    ...(apiError ? [apiError] : []),
-    ...Object.values(errors).map((err) => err?.message).filter(Boolean) as string[],
-  ];
-
-const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
   setApiError(null);
   const { data: res, error } = await authClient.signIn.email({
     email: data.email,
@@ -77,6 +73,7 @@ const onSubmit = async (data: LoginFormData) => {
                       fieldState.invalid ? "email-error" : undefined
                     }
                   />
+                  <FieldError id="email-error" errors={[fieldState.error]} />
                 </Field>
               )}
             />
@@ -94,15 +91,12 @@ const onSubmit = async (data: LoginFormData) => {
                       fieldState.invalid ? "password-error" : undefined
                     }
                   />
+                  <FieldError id="password-error" errors={[fieldState.error]} />
                 </Field>
               )}
             />
-            <FormErrorMessage message={allErrors} />
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting}
-            >
+            <FormErrorMessage message={apiError} />
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
