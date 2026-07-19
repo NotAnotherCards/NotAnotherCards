@@ -99,20 +99,6 @@ Initial endpoint candidates:
 | `GET /api/public/dictionaries/:id/cards` | Get cards from one ready-made dictionary. |
 | `POST /api/public/cards/:id/report` | Report a problem with a public card. |
 
-### Planned GDPR compliance features
-
-The GDPR module should give users basic control over their personal data.
-
-Initial feature candidates:
-
-| Feature | Purpose |
-| --- | --- |
-| Export my data | Let the user download their account, cards, review history, dictionary progress, and social data in a readable format. |
-| Delete my account | Let the user permanently delete their account after confirmation. |
-| Delete or anonymize personal data | Remove or anonymize personal data connected to cards, reviews, sessions, and friend links where appropriate. |
-| Confirmation flow | Require clear confirmation before destructive data deletion. |
-| Privacy page link | Make the Privacy Policy easy to access from the application. |
-
 ## Reserve Transcendence modules
 
 These modules can increase the safety margin if the team has time or if one planned module becomes risky.
