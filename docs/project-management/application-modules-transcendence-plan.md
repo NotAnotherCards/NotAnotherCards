@@ -37,29 +37,29 @@ These are required by the subject, but they do not give module points by themsel
 
 ## Main application modules
 
-| ID | Module | Short description | Transcendence relevance |
-| --- | --- | --- | --- |
-| A01 | Project foundation | Monorepo, shared configs, scripts, Docker base, local development workflow | Mandatory |
-| A02 | Authentication and user accounts | Signup, login, logout, sessions, protected routes, basic user profile | Mandatory and scoring support |
-| A03 | Legal and static pages | Privacy Policy, Terms of Service, basic public pages | Mandatory |
-| A04 | Core card data model | Data model for word cards, comparison cards, phrase cards, languages, grammar fields | Product core |
-| A05 | Review session UI | Card review screen, remember/forgot actions, mobile swipe/buttons, next card flow | Product core |
-| A06 | Spaced repetition engine | Scheduling algorithm, review history, due cards, progress reset | Planned scoring module |
-| A07 | Personal dictionary | User dictionary, add/remove words, learned/in-progress/due states | Product core |
-| A08 | Ready-made dictionary library | Top word lists, thematic dictionaries, add words from public library | Product core |
-| A09 | Search and filtering | Search personal dictionary and global database with filters, sorting, pagination | Planned scoring module |
-| A10 | CSV import/export | Import word lists from CSV, validate rows, export user data or dictionaries | Planned scoring module |
-| A11 | Statistics dashboard | Learned words, due cards, streak, points by day, added words by day, reset progress | Planned scoring module |
-| A12 | Friends and social ranking | Find users, friend requests, friend profiles, public stats, global ranking | Product core and possible reserve scoring |
-| A13 | Gamification | XP, levels, achievements/badges, leaderboard feedback | Planned scoring module |
-| A14 | PWA and offline mode | Installable app, offline review for downloaded cards, sync after reconnect | Planned scoring module |
-| A15 | Design system | Reusable UI components, color palette, typography, icons, consistent auth/card layouts | Planned scoring module |
-| A16 | Accessibility and internationalization | Keyboard navigation, screen reader support, UI translations for at least 3 languages | Planned scoring module |
-| A17 | AI card generation | Generate missing word cards, examples, mnemonic hints, grammar metadata, error handling | Planned scoring module |
-| A18 | Content quality workflow | User edits, reports, frequently edited fields, regeneration/manual review queue | Product core and possible reserve scoring |
-| A19 | Public API | API key access, rate limiting, docs, at least 5 endpoints for database interaction | Planned scoring module |
-| A20 | Monitoring and backups | Health page/checks, backup procedure, basic recovery documentation | Reserve scoring module |
-| A21 | Deployment and production readiness | Production environment, HTTPS, env management, browser console clean-up | Mandatory |
+| ID | Application module | Short description | Related Transcendence module | Planned points |
+| --- | --- | --- | --- | ---: |
+| A01 | Project foundation | Monorepo, shared configs, scripts, Docker base, local development workflow | Web: frontend and backend frameworks | 2 |
+| A02 | Authentication and user accounts | Signup, login, logout, sessions, protected routes, basic user profile | Mandatory auth; supports Web frameworks and OAuth | 1 |
+| A03 | Legal and static pages | Privacy Policy, Terms of Service, basic public pages | Mandatory requirement | 0 |
+| A04 | Core card data model | Data model for word cards, comparison cards, phrase cards, languages, grammar fields | Supports ORM and custom adaptive card reserve module | 1 |
+| A05 | Review session UI | Card review screen, remember/forgot actions, mobile swipe/buttons, next card flow | Supports custom spaced repetition module | 0 |
+| A06 | Spaced repetition engine | Scheduling algorithm, review history, due cards, progress reset | Modules of choice: spaced repetition learning engine | 2 |
+| A07 | Personal dictionary | User dictionary, add/remove words, learned/in-progress/due states | Product core, no direct subject points | 0 |
+| A08 | Ready-made dictionary library | Top word lists, thematic dictionaries, add words from public library | Supports ORM and card database modules | 0 |
+| A09 | Search and filtering | Search personal dictionary and global database with filters, sorting, pagination | Web: advanced search | 1 |
+| A10 | CSV import/export | Import word lists from CSV, validate rows, export user data or dictionaries | Data and Analytics: data export/import; GDPR support | 2 |
+| A11 | Statistics dashboard | Learned words, due cards, streak, points by day, added words by day, reset progress | Data and Analytics: advanced analytics dashboard | 2 |
+| A12 | Friends and social ranking | Find users, friend requests, friend profiles, public stats, global ranking | Product core; possible real-time reserve support | 0 |
+| A13 | Gamification | XP, levels, achievements/badges, leaderboard feedback | Gaming and user experience: gamification system | 1 |
+| A14 | PWA and offline mode | Installable app, offline review for downloaded cards, sync after reconnect | Web: PWA with offline support | 1 |
+| A15 | Design system | Reusable UI components, color palette, typography, icons, consistent auth/card layouts | Web: custom-made design system | 1 |
+| A16 | Accessibility and internationalization | Keyboard navigation, screen reader support, UI translations for at least 3 languages | Accessibility and Internationalization: multiple languages | 1 |
+| A17 | AI card generation | Generate missing word cards, examples, mnemonic hints, grammar metadata, error handling | Artificial Intelligence: complete LLM system interface | 2 |
+| A18 | Content quality workflow | User edits, reports, frequently edited fields, regeneration/manual review queue | Product core; supports AI/content quality | 0 |
+| A19 | Public API | API key access, rate limiting, docs, at least 5 endpoints for database interaction | Web: Public API | 2 |
+| A20 | Monitoring and backups | Health page/checks, backup procedure, basic recovery documentation | DevOps reserve module | 0 |
+| A21 | Deployment and production readiness | Production environment, HTTPS, env management, browser console clean-up | Mandatory deployment and HTTPS requirement | 0 |
 
 ## Planned Transcendence scoring modules
 
@@ -137,79 +137,3 @@ The reserve total is not a commitment. It is a planning buffer.
 | Web: File upload and management system | The subject expects multiple file types, secure storage, preview, progress, and deletion. CSV import alone fits better under Data export/import. |
 | Game modules | Our product is not a game. Game-specific modules require a functional game first. |
 | Blockchain modules | Not relevant to the product and high risk for schedule. |
-
-## Suggested implementation phases
-
-### Phase 1 - Authentication foundation
-
-Related modules:
-
-- A01 Project foundation
-- A02 Authentication and user accounts
-- A03 Legal and static pages
-- A15 Design system start
-- A21 Deployment and production readiness start
-
-Goal:
-
-Users can register, log in, log out, and reach a protected dashboard.
-
-### Phase 2 - First learning loop
-
-Related modules:
-
-- A04 Core card data model
-- A05 Review session UI
-- A06 Spaced repetition engine
-- A07 Personal dictionary
-
-Goal:
-
-The user can open the app, review cards, answer remember/forgot, and see progress change.
-
-### Phase 3 - Content and dictionary growth
-
-Related modules:
-
-- A08 Ready-made dictionary library
-- A09 Search and filtering
-- A10 CSV import/export
-- A17 AI card generation
-- A18 Content quality workflow
-
-Goal:
-
-The user can find words, add words, import lists, and generate missing card content.
-
-### Phase 4 - Motivation and social features
-
-Related modules:
-
-- A11 Statistics dashboard
-- A12 Friends and social ranking
-- A13 Gamification
-
-Goal:
-
-The user can track learning progress, compare with friends, and see global rankings.
-
-### Phase 5 - Evaluation hardening
-
-Related modules:
-
-- A14 PWA and offline mode
-- A16 Accessibility and internationalization
-- A19 Public API
-- A20 Monitoring and backups if selected
-- A21 Deployment and production readiness
-
-Goal:
-
-The app is stable enough to demonstrate during evaluation and has enough validated Transcendence points.
-
-## Open questions for the team
-
-- Do we agree that the main scoring target should be 19 points?
-- Do we want to commit to three UI languages for the first evaluated version?
-- Do we want the AI module in the evaluated version or keep it as a later phase?
-- Which reserve module is the safest if one main module becomes too risky?
