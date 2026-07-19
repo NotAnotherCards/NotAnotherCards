@@ -13,11 +13,6 @@ The subject requires **14 points**.
 - Major module: **2 points**
 - Minor module: **1 point**
 
-Recommended target:
-
-- Claim at least **19 points** as the main plan.
-- Keep reserve modules in case one module is not validated during evaluation.
-
 ## Mandatory evaluation requirements
 
 These are required by the subject, but they do not give module points by themselves.
@@ -63,7 +58,7 @@ These are required by the subject, but they do not give module points by themsel
 
 ## Planned Transcendence scoring modules
 
-This is the current recommended scoring plan. It avoids modules that conflict with our product decisions, such as mandatory chat or online status.
+This is the current recommended scoring plan.
 
 | Subject category | Module | Type | Points | Related app modules | Confidence |
 | --- | --- | --- | ---: | --- | --- |
@@ -82,22 +77,7 @@ This is the current recommended scoring plan. It avoids modules that conflict wi
 | Web | Public API with API key, rate limiting, docs, and 5 endpoints | Major | 2 | A19 | Medium |
 | Modules of choice | Spaced repetition learning engine | Major | 2 | A06 | Medium |
 
-Main planned total: **19 points**
-
-### Planned Public API endpoints
-
-The Public API module should expose documented endpoints protected by an API key and rate limiting.
-
-Initial endpoint candidates:
-
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/public/cards` | Get public cards from the shared card database. |
-| `GET /api/public/cards/:id` | Get one public card by id. |
-| `GET /api/public/search` | Search public cards by query, language, card type, or other filters. |
-| `GET /api/public/dictionaries` | Get the list of ready-made dictionaries. |
-| `GET /api/public/dictionaries/:id/cards` | Get cards from one ready-made dictionary. |
-| `POST /api/public/cards/:id/report` | Report a problem with a public card. |
+Total: **19 points**
 
 ## Reserve Transcendence modules
 
@@ -111,8 +91,6 @@ These modules can increase the safety margin if the team has time or if one plan
 | Modules of choice | Adaptive language-card system | Major | 2 | A04, A05, A08 | Must be justified clearly as custom technical complexity. |
 
 Potential total with reserves: **26 points**
-
-The reserve total is not a commitment. It is a planning buffer.
 
 ## Modules we should not claim unless scope changes
 
