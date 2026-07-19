@@ -15,7 +15,7 @@ The subject requires **14 points**.
 
 Recommended target:
 
-- Claim at least **18 points** as the main plan.
+- Claim at least **19 points** as the main plan.
 - Keep reserve modules in case one module is not validated during evaluation.
 
 ## Mandatory evaluation requirements
@@ -77,11 +77,12 @@ This is the current recommended scoring plan. It avoids modules that conflict wi
 | Artificial Intelligence | Complete LLM system interface | Major | 2 | A17 | Medium |
 | Data and Analytics | Advanced analytics dashboard with data visualization | Major | 2 | A11 | Medium |
 | Data and Analytics | Data export and import functionality | Minor | 1 | A10 | High |
+| Data and Analytics | GDPR compliance features | Minor | 1 | A10, A21 | Medium |
 | Gaming and user experience | Gamification system | Minor | 1 | A13 | Medium |
 | Web | Public API with API key, rate limiting, docs, and 5 endpoints | Major | 2 | A19 | Medium |
 | Modules of choice | Spaced repetition learning engine | Major | 2 | A06 | Medium |
 
-Main planned total: **18 points**
+Main planned total: **19 points**
 
 ### Planned Public API endpoints
 
@@ -98,6 +99,20 @@ Initial endpoint candidates:
 | `GET /api/public/dictionaries/:id/cards` | Get cards from one ready-made dictionary. |
 | `POST /api/public/cards/:id/report` | Report a problem with a public card. |
 
+### Planned GDPR compliance features
+
+The GDPR module should give users basic control over their personal data.
+
+Initial feature candidates:
+
+| Feature | Purpose |
+| --- | --- |
+| Export my data | Let the user download their account, cards, review history, dictionary progress, and social data in a readable format. |
+| Delete my account | Let the user permanently delete their account after confirmation. |
+| Delete or anonymize personal data | Remove or anonymize personal data connected to cards, reviews, sessions, and friend links where appropriate. |
+| Confirmation flow | Require clear confirmation before destructive data deletion. |
+| Privacy page link | Make the Privacy Policy easy to access from the application. |
+
 ## Reserve Transcendence modules
 
 These modules can increase the safety margin if the team has time or if one planned module becomes risky.
@@ -106,7 +121,6 @@ These modules can increase the safety margin if the team has time or if one plan
 | --- | --- | --- | ---: | --- | --- |
 | Web | Real-time features using WebSockets or similar technology | Major | 2 | A11, A12 | Could be live leaderboard/friend progress updates. |
 | Accessibility and Internationalization | WCAG 2.1 AA accessibility compliance | Major | 2 | A16 | Valuable, but needs strict testing and documentation. |
-| Data and Analytics | GDPR compliance features | Minor | 1 | A10, A21 | Data export/delete account can support this. |
 | DevOps | Health check/status page with backups and disaster recovery | Minor | 1 | A20 | Realistic if kept simple and documented. |
 | Modules of choice | Adaptive language-card system | Major | 2 | A04, A05, A08 | Must be justified clearly as custom technical complexity. |
 
@@ -195,7 +209,7 @@ The app is stable enough to demonstrate during evaluation and has enough validat
 
 ## Open questions for the team
 
-- Do we agree that the main scoring target should be 18 points?
+- Do we agree that the main scoring target should be 19 points?
 - Do we want to commit to three UI languages for the first evaluated version?
 - Do we want the AI module in the evaluated version or keep it as a later phase?
 - Which reserve module is the safest if one main module becomes too risky?
