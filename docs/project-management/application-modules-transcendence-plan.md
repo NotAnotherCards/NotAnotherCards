@@ -15,7 +15,7 @@ The subject requires **14 points**.
 
 Recommended target:
 
-- Claim at least **16 points** as the main plan.
+- Claim at least **18 points** as the main plan.
 - Keep reserve modules in case one module is not validated during evaluation.
 
 ## Mandatory evaluation requirements
@@ -57,7 +57,7 @@ These are required by the subject, but they do not give module points by themsel
 | A16 | Accessibility and internationalization | Keyboard navigation, screen reader support, UI translations for at least 3 languages | Planned scoring module |
 | A17 | AI card generation | Generate missing word cards, examples, mnemonic hints, grammar metadata, error handling | Planned scoring module |
 | A18 | Content quality workflow | User edits, reports, frequently edited fields, regeneration/manual review queue | Product core and possible reserve scoring |
-| A19 | Public API | API key access, rate limiting, docs, at least 5 endpoints for database interaction | Reserve scoring module |
+| A19 | Public API | API key access, rate limiting, docs, at least 5 endpoints for database interaction | Planned scoring module |
 | A20 | Monitoring and backups | Health page/checks, backup procedure, basic recovery documentation | Reserve scoring module |
 | A21 | Deployment and production readiness | Production environment, HTTPS, env management, browser console clean-up | Mandatory |
 
@@ -78,9 +78,25 @@ This is the current recommended scoring plan. It avoids modules that conflict wi
 | Data and Analytics | Advanced analytics dashboard with data visualization | Major | 2 | A11 | Medium |
 | Data and Analytics | Data export and import functionality | Minor | 1 | A10 | High |
 | Gaming and user experience | Gamification system | Minor | 1 | A13 | Medium |
+| Web | Public API with API key, rate limiting, docs, and 5 endpoints | Major | 2 | A19 | Medium |
 | Modules of choice | Spaced repetition learning engine | Major | 2 | A06 | Medium |
 
-Main planned total: **16 points**
+Main planned total: **18 points**
+
+### Planned Public API endpoints
+
+The Public API module should expose documented endpoints protected by an API key and rate limiting.
+
+Initial endpoint candidates:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/public/cards` | Get public cards from the shared card database. |
+| `GET /api/public/cards/:id` | Get one public card by id. |
+| `GET /api/public/search` | Search public cards by query, language, card type, or other filters. |
+| `GET /api/public/dictionaries` | Get the list of ready-made dictionaries. |
+| `GET /api/public/dictionaries/:id/cards` | Get cards from one ready-made dictionary. |
+| `POST /api/public/cards/:id/report` | Report a problem with a public card. |
 
 ## Reserve Transcendence modules
 
@@ -89,7 +105,6 @@ These modules can increase the safety margin if the team has time or if one plan
 | Subject category | Module | Type | Points | Related app modules | Notes |
 | --- | --- | --- | ---: | --- | --- |
 | Web | Real-time features using WebSockets or similar technology | Major | 2 | A11, A12 | Could be live leaderboard/friend progress updates. |
-| Web | Public API with API key, rate limiting, docs, and 5 endpoints | Major | 2 | A19 | Useful but should be specified later. |
 | Accessibility and Internationalization | WCAG 2.1 AA accessibility compliance | Major | 2 | A16 | Valuable, but needs strict testing and documentation. |
 | Data and Analytics | GDPR compliance features | Minor | 1 | A10, A21 | Data export/delete account can support this. |
 | DevOps | Health check/status page with backups and disaster recovery | Minor | 1 | A20 | Realistic if kept simple and documented. |
@@ -170,7 +185,7 @@ Related modules:
 
 - A14 PWA and offline mode
 - A16 Accessibility and internationalization
-- A19 Public API if selected
+- A19 Public API
 - A20 Monitoring and backups if selected
 - A21 Deployment and production readiness
 
@@ -180,8 +195,7 @@ The app is stable enough to demonstrate during evaluation and has enough validat
 
 ## Open questions for the team
 
-- Do we agree that the main scoring target should be 16 points?
-- Do we want the Public API as a real reserve module or leave it out for now?
+- Do we agree that the main scoring target should be 18 points?
 - Do we want to commit to three UI languages for the first evaluated version?
 - Do we want the AI module in the evaluated version or keep it as a later phase?
 - Which reserve module is the safest if one main module becomes too risky?
