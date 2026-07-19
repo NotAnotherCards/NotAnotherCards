@@ -1,17 +1,10 @@
-# Application modules and story point estimates
+# Application modules and Transcendence plan
 
 ## Purpose
 
-This document breaks NotAnotherCards into high-level application modules and gives a first story point estimate for planning.
+This document breaks NotAnotherCards into high-level application modules and marks which modules are needed for the 42 Transcendence evaluation.
 
-It also marks which modules are needed for the 42 Transcendence evaluation.
-
-Story points are not the same as Transcendence points:
-
-- Story points estimate team effort and complexity.
-- Transcendence points are evaluation points from the subject.
-
-The estimates below are initial planning numbers. They should be updated after the team finalizes the technical milestones.
+It is a planning document, not a final commitment. The team should update it after technical milestones and module choices are finalized.
 
 ## Transcendence scoring summary
 
@@ -23,50 +16,50 @@ The subject requires **14 points**.
 Recommended target:
 
 - Claim at least **16 points** as the main plan.
-- Keep several reserve modules in case one module is not validated during evaluation.
+- Keep reserve modules in case one module is not validated during evaluation.
 
 ## Mandatory evaluation requirements
 
 These are required by the subject, but they do not give module points by themselves.
 
-| Requirement | How we cover it | Story points | Evaluation status |
-| --- | --- | ---: | --- |
-| Web application | React frontend, NestJS backend, PostgreSQL database | 8 | Mandatory |
-| Frontend, backend, database | `apps/web`, `apps/api`, PostgreSQL | 8 | Mandatory |
-| Containerized deployment | Docker Compose with one command startup | 8 | Mandatory |
-| Multiple users | User accounts, sessions, isolated user data | 8 | Mandatory |
-| Email/password authentication | Better Auth with secure password handling | 8 | Mandatory |
-| Frontend and backend validation | Zod schemas, backend validation, form validation | 5 | Mandatory |
-| Responsive accessible UI | Mobile-first layout, keyboard-friendly forms | 8 | Mandatory |
-| Privacy Policy and Terms of Service | Real pages accessible from the app | 3 | Mandatory |
-| HTTPS for browser-to-backend traffic | Production deployment with HTTPS | 5 | Mandatory |
-| Clear README and documentation | README, database docs, modules, contributions | 8 | Mandatory |
+| Requirement | How we cover it | Evaluation status |
+| --- | --- | --- |
+| Web application | React frontend, NestJS backend, PostgreSQL database | Mandatory |
+| Frontend, backend, database | `apps/web`, `apps/api`, PostgreSQL | Mandatory |
+| Containerized deployment | Docker Compose with one command startup | Mandatory |
+| Multiple users | User accounts, sessions, isolated user data | Mandatory |
+| Email/password authentication | Better Auth with secure password handling | Mandatory |
+| Frontend and backend validation | Zod schemas, backend validation, form validation | Mandatory |
+| Responsive accessible UI | Mobile-first layout, keyboard-friendly forms | Mandatory |
+| Privacy Policy and Terms of Service | Real pages accessible from the app | Mandatory |
+| HTTPS for browser-to-backend traffic | Production deployment with HTTPS | Mandatory |
+| Clear README and documentation | README, database docs, modules, contributions | Mandatory |
 
 ## Main application modules
 
-| ID | Module | Short description | Story points | Required for Transcendence evaluation |
-| --- | --- | --- | ---: | --- |
-| A01 | Project foundation | Monorepo, shared configs, scripts, Docker base, local development workflow | 13 | Yes, mandatory |
-| A02 | Authentication and user accounts | Signup, login, logout, sessions, protected routes, basic user profile | 21 | Yes, mandatory + scoring support |
-| A03 | Legal and static pages | Privacy Policy, Terms of Service, basic public pages | 5 | Yes, mandatory |
-| A04 | Core card data model | Data model for word cards, comparison cards, phrase cards, languages, grammar fields | 21 | Yes, product core |
-| A05 | Review session UI | Card review screen, remember/forgot actions, mobile swipe/buttons, next card flow | 21 | Yes, product core |
-| A06 | Spaced repetition engine | Scheduling algorithm, review history, due cards, progress reset | 21 | Yes, planned scoring module |
-| A07 | Personal dictionary | User dictionary, add/remove words, learned/in-progress/due states | 13 | Yes, product core |
-| A08 | Ready-made dictionary library | Top word lists, thematic dictionaries, add words from public library | 21 | Yes, product core |
-| A09 | Search and filtering | Search personal dictionary and global database with filters, sorting, pagination | 13 | Yes, planned scoring module |
-| A10 | CSV import/export | Import word lists from CSV, validate rows, export user data or dictionaries | 13 | Yes, planned scoring module |
-| A11 | Statistics dashboard | Learned words, due cards, streak, points by day, added words by day, reset progress | 21 | Yes, planned scoring module |
-| A12 | Friends and social ranking | Find users, friend requests, friend profiles, public stats, global ranking | 21 | Yes, product core and possible reserve scoring |
-| A13 | Gamification | XP, levels, achievements/badges, leaderboard feedback | 13 | Yes, planned scoring module |
-| A14 | PWA and offline mode | Installable app, offline review for downloaded cards, sync after reconnect | 21 | Yes, planned scoring module |
-| A15 | Design system | Reusable UI components, color palette, typography, icons, consistent auth/card layouts | 13 | Yes, planned scoring module |
-| A16 | Accessibility and internationalization | Keyboard navigation, screen reader support, UI translations for at least 3 languages | 21 | Yes, planned scoring module |
-| A17 | AI card generation | Generate missing word cards, examples, mnemonic hints, grammar metadata, error handling | 21 | Yes, planned scoring module |
-| A18 | Content quality workflow | User edits, reports, frequently edited fields, regeneration/manual review queue | 13 | Product core, possible reserve scoring |
-| A19 | Public API | API key access, rate limiting, docs, at least 5 endpoints for database interaction | 13 | Reserve scoring module |
-| A20 | Monitoring and backups | Health page/checks, backup procedure, basic recovery documentation | 8 | Reserve scoring module |
-| A21 | Deployment and production readiness | Production environment, HTTPS, env management, browser console clean-up | 13 | Yes, mandatory |
+| ID | Module | Short description | Transcendence relevance |
+| --- | --- | --- | --- |
+| A01 | Project foundation | Monorepo, shared configs, scripts, Docker base, local development workflow | Mandatory |
+| A02 | Authentication and user accounts | Signup, login, logout, sessions, protected routes, basic user profile | Mandatory and scoring support |
+| A03 | Legal and static pages | Privacy Policy, Terms of Service, basic public pages | Mandatory |
+| A04 | Core card data model | Data model for word cards, comparison cards, phrase cards, languages, grammar fields | Product core |
+| A05 | Review session UI | Card review screen, remember/forgot actions, mobile swipe/buttons, next card flow | Product core |
+| A06 | Spaced repetition engine | Scheduling algorithm, review history, due cards, progress reset | Planned scoring module |
+| A07 | Personal dictionary | User dictionary, add/remove words, learned/in-progress/due states | Product core |
+| A08 | Ready-made dictionary library | Top word lists, thematic dictionaries, add words from public library | Product core |
+| A09 | Search and filtering | Search personal dictionary and global database with filters, sorting, pagination | Planned scoring module |
+| A10 | CSV import/export | Import word lists from CSV, validate rows, export user data or dictionaries | Planned scoring module |
+| A11 | Statistics dashboard | Learned words, due cards, streak, points by day, added words by day, reset progress | Planned scoring module |
+| A12 | Friends and social ranking | Find users, friend requests, friend profiles, public stats, global ranking | Product core and possible reserve scoring |
+| A13 | Gamification | XP, levels, achievements/badges, leaderboard feedback | Planned scoring module |
+| A14 | PWA and offline mode | Installable app, offline review for downloaded cards, sync after reconnect | Planned scoring module |
+| A15 | Design system | Reusable UI components, color palette, typography, icons, consistent auth/card layouts | Planned scoring module |
+| A16 | Accessibility and internationalization | Keyboard navigation, screen reader support, UI translations for at least 3 languages | Planned scoring module |
+| A17 | AI card generation | Generate missing word cards, examples, mnemonic hints, grammar metadata, error handling | Planned scoring module |
+| A18 | Content quality workflow | User edits, reports, frequently edited fields, regeneration/manual review queue | Product core and possible reserve scoring |
+| A19 | Public API | API key access, rate limiting, docs, at least 5 endpoints for database interaction | Reserve scoring module |
+| A20 | Monitoring and backups | Health page/checks, backup procedure, basic recovery documentation | Reserve scoring module |
+| A21 | Deployment and production readiness | Production environment, HTTPS, env management, browser console clean-up | Mandatory |
 
 ## Planned Transcendence scoring modules
 
