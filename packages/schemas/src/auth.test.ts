@@ -5,8 +5,7 @@ import { loginSchema, registerSchema } from "./auth";
 describe("registerSchema", () => {
   it("passes with valid register input", () => {
     const result = registerSchema.safeParse({
-      firstName: "test",
-      lastName: "one",
+      name: "test",
       email: "test@example.com",
       password: "Password123*",
       confirmPassword: "Password123*",
@@ -17,8 +16,7 @@ describe("registerSchema", () => {
 
   it("fails with an invalid email", () => {
     const result = registerSchema.safeParse({
-      firstName: "Test",
-      lastName: "Two",
+      name: "Two",
       email: "not-an-email",
       password: "Password123*",
       confirmPassword: "Password123*",
@@ -29,8 +27,7 @@ describe("registerSchema", () => {
 
   it("fails with a too-short password", () => {
     const result = registerSchema.safeParse({
-      firstName: "Test",
-      lastName: "Three",
+      name: "Three",
       email: "test@example.com",
       password: "Pass12*",
       confirmPassword: "Pass12*",
@@ -41,8 +38,7 @@ describe("registerSchema", () => {
 
   it("fails with an invalid password", () => {
     const result = registerSchema.safeParse({
-      firstName: "Test",
-      lastName: "Four",
+      name: "Four",
       email: "test@example.com",
       password: "thisisinvalid",
       confirmPassword: "thisisinvalid",

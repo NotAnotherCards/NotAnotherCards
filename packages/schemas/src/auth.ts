@@ -16,14 +16,10 @@ export const loginSchema = z.object({
 
 export const registerSchema = z
   .object({
-    firstName: z
+    name: z
       .string()
       .trim()
-      .min(2, "First name must be at least 2 characters"),
-    lastName: z
-      .string()
-      .trim()
-      .min(2, "Last name must be at least 2 characters"),
+      .min(2, "Name must be at least 2 characters"),
     email: z.email("Please enter a valid email address"),
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Please confirm your password"),
