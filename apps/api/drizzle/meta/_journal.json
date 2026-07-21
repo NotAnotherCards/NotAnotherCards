@@ -8,6 +8,13 @@
       "when": 1783763810728,
       "tag": "0000_init-auth-tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784666144923,
+      "tag": "0001_harsh_captain_flint",
+      "breakpoints": true
     }
   ]
 }
