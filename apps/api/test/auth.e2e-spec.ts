@@ -2,10 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
+
+// Better Auth skips its origin check when NODE_ENV is 'test' (Jest's
+// default), so this suite boots the app in production mode and sends the
+// frontend's Origin header on every request to exercise the real
+// browser-facing path. The env override has to happen before the app
+// module is loaded, hence the deferred require in beforeAll.
+const frontendOrigin = 'http://localhost:5173';
 
 describe('Authentication (e2e)', () => {
   let app: INestApplication<App>;
+  const previousNodeEnv = process.env.NODE_ENV;
 
   // Generating unique email per test.
   const testUser = {
@@ -16,6 +23,11 @@ describe('Authentication (e2e)', () => {
   };
 
   beforeAll(async () => {
+    process.env.NODE_ENV = 'production';
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { AppModule } =
+      require('../src/app.module') as typeof import('../src/app.module');
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -25,6 +37,7 @@ describe('Authentication (e2e)', () => {
   });
 
   afterAll(async () => {
+    process.env.NODE_ENV = previousNodeEnv;
     await app.close();
   });
 
@@ -32,6 +45,7 @@ describe('Authentication (e2e)', () => {
     it('should successfully register a new user and set a session cookie', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
+        .set('Origin', frontendOrigin)
         .send({
           email: testUser.email,
           password: testUser.password,
@@ -67,6 +81,7 @@ describe('Authentication (e2e)', () => {
     it('should return an error when attempting to register a duplicate email', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
+        .set('Origin', frontendOrigin)
         .send({
           email: testUser.email, // using the same email
           password: testUser.password,
@@ -86,6 +101,7 @@ describe('Authentication (e2e)', () => {
     it('should successfully login with correct credentials and set session cookie', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-in/email')
+        .set('Origin', frontendOrigin)
         .send({
           email: testUser.email,
           password: testUser.password,
@@ -109,6 +125,7 @@ describe('Authentication (e2e)', () => {
     it('should reject login with an incorrect password', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-in/email')
+        .set('Origin', frontendOrigin)
         .send({
           email: testUser.email,
           password: 'WrongPassword123!',
