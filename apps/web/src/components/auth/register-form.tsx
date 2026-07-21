@@ -39,6 +39,7 @@ export function RegisterComponent() {
       email: data.email,
       password: data.password,
       name: data.name,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (error) {
       setApiError(error.message || "An unexpected error occurred");

@@ -12,6 +12,7 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  timezone: text("timezone").default("UTC"),
 });
 
 export const session = pgTable(
