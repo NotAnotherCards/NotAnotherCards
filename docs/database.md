@@ -14,8 +14,11 @@ first, the library expects this exact shape.
 
 ### `user`
 
-One row per registered user: `name`, unique `email`, `email_verified` flag and
-optional avatar `image`. Credentials don't live here, see `account`.
+One row per registered user: `name`, unique `email`, `email_verified` flag,
+optional avatar `image`, and optional IANA `timezone`. The `timezone` column
+defaults to `'UTC'` so existing rows migrate cleanly and new signups have a
+stable fallback if the client does not send one. Credentials don't live here,
+see `account`.
 
 ### `session`
 
