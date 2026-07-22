@@ -2,13 +2,13 @@
 
 ## Team Roles
 
-| GitHub | Role |
-|---------|------|
-| `@devriez` | Product Owner / developer |
-| `@tpandya42` | Project Manager support / developer |
-| `@Danielg1406` | Tech Lead / developer |
-| `@dustyway` | Developer |
-| `@samsnwn` | Developer |
+| GitHub         | Role                                |
+| -------------- | ----------------------------------- |
+| `@devriez`     | Product Owner / developer           |
+| `@tpandya42`   | Project Manager support / developer |
+| `@Danielg1406` | Tech Lead / developer               |
+| `@dustyway`    | Developer                           |
+| `@samsnwn`     | Developer                           |
 
 In project documents, we use GitHub nicknames instead of real names.
 

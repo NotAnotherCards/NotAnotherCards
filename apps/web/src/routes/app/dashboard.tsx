@@ -12,15 +12,17 @@ function DashboardComponent() {
 
   const handleLogout = async () => {
     await authClient.signOut();
-    navigate({ to: '/login' })
-  }
+    navigate({ to: "/login" });
+  };
 
   return (
     <div>
       <h1>DASHBOARD PAGE</h1>
       {session?.user && (
         <div>
-          <p>Welcome, <strong>{session.user.name}</strong>!</p>
+          <p>
+            Welcome, <strong>{session.user.name}</strong>!
+          </p>
           <p>Logged in as: {session.user.email}</p>
           <Button onClick={handleLogout}>Logout</Button>
         </div>

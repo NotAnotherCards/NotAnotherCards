@@ -8,7 +8,9 @@ import { act } from "react";
 
 // Mock @tanstack/react-router Link and useNavigate since they require a Router context
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
   createFileRoute: () => () => ({
     component: () => null,
   }),
@@ -20,8 +22,12 @@ describe("Submit Button Loading States", () => {
     const user = userEvent.setup();
 
     // Create a deferred promise to simulate a pending request
-    let resolveRequest: (value: ReturnType<typeof authClient.signIn.email>) => void;
-    const pendingPromise = new Promise<ReturnType<typeof authClient.signIn.email>>((resolve) => {
+    let resolveRequest: (
+      value: ReturnType<typeof authClient.signIn.email>,
+    ) => void;
+    const pendingPromise = new Promise<
+      ReturnType<typeof authClient.signIn.email>
+    >((resolve) => {
       resolveRequest = resolve;
     });
 
@@ -63,8 +69,12 @@ describe("Submit Button Loading States", () => {
     const user = userEvent.setup();
 
     // Create a deferred promise to simulate a pending request
-    let resolveRequest: (value: ReturnType<typeof authClient.signUp.email>) => void;
-    const pendingPromise = new Promise<ReturnType<typeof authClient.signUp.email>>((resolve) => {
+    let resolveRequest: (
+      value: ReturnType<typeof authClient.signUp.email>,
+    ) => void;
+    const pendingPromise = new Promise<
+      ReturnType<typeof authClient.signUp.email>
+    >((resolve) => {
       resolveRequest = resolve;
     });
 

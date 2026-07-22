@@ -6,7 +6,13 @@ vi.mock("@/lib/auth-client", () => {
   return {
     authClient: {
       getSession: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      useSession: vi.fn(() => ({ data: null, isPending: false, isRefetching: false, error: null, refetch: vi.fn() })),
+      useSession: vi.fn(() => ({
+        data: null,
+        isPending: false,
+        isRefetching: false,
+        error: null,
+        refetch: vi.fn(),
+      })),
       signIn: {
         email: vi.fn(() => Promise.resolve({ data: null, error: null })),
       },

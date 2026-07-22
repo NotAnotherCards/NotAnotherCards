@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { AppModule } from '../src/app.module';
 
 // Better Auth skips its origin check when NODE_ENV is 'test' (Jest's
 // default), so this suite boots the app in production mode and sends the
@@ -24,9 +25,6 @@ describe('Authentication (e2e)', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'production';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { AppModule } =
-      require('../src/app.module') as typeof import('../src/app.module');
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -56,7 +54,7 @@ describe('Authentication (e2e)', () => {
       const body = response.body as {
         user: {
           email: string;
-		  name: string;
+          name: string;
         };
       };
 
