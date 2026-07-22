@@ -69,4 +69,44 @@ describe("Dashboard Page Component Specs", () => {
     expect(screen.getByText("Win Rate")).toBeInTheDocument();
     expect(screen.getByText("Cards Collected")).toBeInTheDocument();
   });
+
+  it("calls signOut and redirects the user to the login page on logout click", async () => {
+    // Mock signOut implementation to clear logged-in mocks on call
+    vi.mocked(authClient.signOut).mockImplementation(async () => {
+      vi.mocked(authClient.getSession).mockResolvedValue({ data: null, error: null });
+      vi.mocked(authClient.useSession).mockReturnValue({
+        data: null,
+        isPending: false,
+        isRefetching: false,
+        error: null,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof authClient.useSession>);
+      return { data: null, error: null };
+    });
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    // Navigate to dashboard
+    const dashboardLink = await screen.findByRole("link", {
+      name: /dashboard/i,
+    });
+    await user.click(dashboardLink);
+
+    // Find the logout button
+    const logoutButton = await screen.findByRole("button", {
+      name: /logout/i,
+    });
+
+    // Click the logout button
+    await user.click(logoutButton);
+
+    // Verify signOut was called
+    expect(authClient.signOut).toHaveBeenCalled();
+
+    // Verify user is redirected to the login page
+    expect(
+      await screen.findByRole("heading", { name: /Welcome Back/i }),
+    ).toBeInTheDocument();
+  });
 });
