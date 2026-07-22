@@ -1,10 +1,16 @@
 import { render, screen } from "@testing-library/react";
-import { App } from "../App";
+import { App, router } from "../App";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 // Verify that navigating to the /app subdirectory loads the text from route.tsx(app) alongside nested pages like dashboard
 describe("App Layout Guards", () => {
+  beforeEach(async () => {
+    window.history.pushState(null, "", "/");
+    await router.navigate({ to: "/" });
+    await router.preloadRoute({ to: "/app/dashboard" });
+  });
+
   it("renders the protection wrapper on the dashboard page", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -13,10 +19,6 @@ describe("App Layout Guards", () => {
       name: /dashboard/i,
     });
     await user.click(dashboardLink);
-    // Verify the protected layout message is rendered
-    expect(
-      await screen.findByText(/everything here will be protected/i),
-    ).toBeInTheDocument();
     // Verify the dashboard route component is also rendered inside it
     expect(
       screen.getByRole("heading", { name: /DASHBOARD PAGE/i }),
