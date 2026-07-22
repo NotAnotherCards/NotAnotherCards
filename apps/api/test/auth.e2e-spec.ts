@@ -50,24 +50,20 @@ describe('Authentication (e2e)', () => {
           email: testUser.email,
           password: testUser.password,
           name: `${testUser.firstName} ${testUser.lastName}`,
-          firstName: testUser.firstName,
-          lastName: testUser.lastName,
         })
         .expect(200);
 
       const body = response.body as {
         user: {
           email: string;
-          firstName: string;
-          lastName: string;
+		  name: string;
         };
       };
 
       expect(body).toBeDefined();
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe(testUser.email);
-      expect(body.user.firstName).toBe(testUser.firstName);
-      expect(body.user.lastName).toBe(testUser.lastName);
+      expect(body.user.name).toBe(`${testUser.firstName} ${testUser.lastName}`);
 
       const cookies = (response.headers['set-cookie'] || []) as string[];
       expect(cookies).toBeDefined();
@@ -86,8 +82,6 @@ describe('Authentication (e2e)', () => {
           email: testUser.email, // using the same email
           password: testUser.password,
           name: 'Duplicate User',
-          firstName: 'Duplicate',
-          lastName: 'User',
         })
         .expect(422); // Better Auth returns a 422 Unprocessable Entity on duplicate signups
 
