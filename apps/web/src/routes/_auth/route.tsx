@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_auth")({
 function AuthLayout() {
   return (
     <div className="flex items-center justify-center min-h-screen">
-        <Outlet />
+      <Outlet />
     </div>
   );
 }
