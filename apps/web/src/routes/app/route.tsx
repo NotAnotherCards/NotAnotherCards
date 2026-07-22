@@ -17,6 +17,7 @@ export const Route = createFileRoute("/app")({
 function AppLayout() {
   return (
     <div>
+      <p>Everything here will be protected</p>
       <Outlet />
     </div>
   );

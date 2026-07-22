@@ -6,7 +6,9 @@ import { RegisterComponent } from "../components/auth/register-form";
 
 // Mock @tanstack/react-router Link and useNavigate since they require a Router context
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
   createFileRoute: () => () => ({
     component: () => null,
   }),

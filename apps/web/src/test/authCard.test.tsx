@@ -4,7 +4,9 @@ import { AuthCard } from "../components/auth/auth-card";
 
 // Mock @tanstack/react-router Link since it requires a Router context
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 
 describe("AuthCard Component", () => {
@@ -18,11 +20,13 @@ describe("AuthCard Component", () => {
         footerLinkTo="/test-route"
       >
         <div data-testid="test-child">Child Element</div>
-      </AuthCard>
+      </AuthCard>,
     );
 
     // Verify Title
-    expect(screen.getByRole("heading", { name: /Test Title/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Test Title/i }),
+    ).toBeInTheDocument();
 
     // Verify Description
     expect(screen.getByText("Test Description")).toBeInTheDocument();

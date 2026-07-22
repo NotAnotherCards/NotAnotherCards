@@ -1,10 +1,13 @@
-import * as React from "react"
-import { Eye, EyeOff } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Input } from "./input"
+import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Input } from "./input";
 
-function PasswordInput({ className, ...props }: Omit<React.ComponentProps<typeof Input>, "type">) {
-  const [showPassword, setShowPassword] = React.useState(false)
+function PasswordInput({
+  className,
+  ...props
+}: Omit<React.ComponentProps<typeof Input>, "type">) {
+  const [showPassword, setShowPassword] = React.useState(false);
 
   return (
     <div className="relative w-full" data-slot="password-input">
@@ -26,7 +29,7 @@ function PasswordInput({ className, ...props }: Omit<React.ComponentProps<typeof
         )}
       </button>
     </div>
-  )
+  );
 }
 
-export { PasswordInput }
+export { PasswordInput };
