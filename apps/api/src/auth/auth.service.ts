@@ -8,7 +8,9 @@ import * as schema from '../database/schema';
 
 @Injectable()
 export class AuthService {
-  public readonly auth: any;
+  public readonly auth: {
+    handler: (request: globalThis.Request) => Promise<globalThis.Response>;
+  };
 
   constructor(
     @Inject(DATABASE_CONNECTION)
