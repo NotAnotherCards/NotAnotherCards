@@ -59,15 +59,14 @@ export function RegisterComponent() {
     >
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <FieldSet>
-          <FieldGroup>
+          <FieldGroup className="gap-3.5">
             <Controller
               name="name"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
+                <Field data-invalid={fieldState.invalid} className="gap-1.5">
                   <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                   <Input
-                    autoComplete="name"
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
@@ -83,10 +82,9 @@ export function RegisterComponent() {
               name="email"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
+                <Field data-invalid={fieldState.invalid} className="gap-1.5">
                   <FieldLabel htmlFor={field.name}>Email</FieldLabel>
                   <Input
-                    autoComplete="email"
                     {...field}
                     id={field.name}
                     type="email"
@@ -103,10 +101,9 @@ export function RegisterComponent() {
               name="password"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
+                <Field data-invalid={fieldState.invalid} className="gap-1.5">
                   <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                   <PasswordInput
-                    autoComplete="new-password"
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
@@ -122,10 +119,9 @@ export function RegisterComponent() {
               name="confirmPassword"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
+                <Field data-invalid={fieldState.invalid} className="gap-1.5">
                   <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
                   <PasswordInput
-                    autoComplete="new-password"
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
