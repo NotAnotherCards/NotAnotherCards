@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @All('*')
+  @All('{*path}')
   async handleAuth(@Req() req: Request, @Res() res: Response) {
     const handler = toNodeHandler(this.authService.auth);
     return handler(req, res);
