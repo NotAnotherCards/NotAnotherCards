@@ -10,16 +10,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Trophy,
-  Gamepad2,
-  TrendingUp,
-  Layers,
-  LogOut,
+  Clock,
+  BookMarked,
+  Flame,
+  GraduationCap,
+  BookOpen,
   Sparkles,
-  Play,
   Plus,
+  Play,
+  LogOut,
   Mail,
-  Sword,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/dashboard")({
@@ -36,94 +36,75 @@ function DashboardComponent() {
   };
 
   const user = session?.user || {
-    name: "Legendary Duelist",
-    email: "duelist@notanothercards.com",
+    name: "Legendary Learner",
+    email: "learner@notanothercards.com",
   };
 
-  // Mock statistics for the card game app
+  // Mock statistics for the language learning card app
   const stats = [
     {
-      title: "Win Rate",
-      value: "64.5%",
-      description: "Last 30 matches",
-      icon: TrendingUp,
+      title: "Today's Reviews",
+      value: "42 words",
+      description: "Due for review",
+      icon: Clock,
       color: "text-emerald-500 bg-emerald-500/10",
     },
     {
-      title: "Matches Played",
-      value: "142",
-      description: "Ranked & casual games",
-      icon: Gamepad2,
+      title: "Personal Dictionary",
+      value: "248 words",
+      description: "Added to your collection",
+      icon: BookMarked,
       color: "text-blue-500 bg-blue-500/10",
     },
     {
-      title: "Cards Collected",
-      value: "248 / 500",
-      description: "49.6% complete set",
-      icon: Layers,
-      color: "text-amber-500 bg-amber-500/10",
+      title: "Learning Streak",
+      value: "7 Days",
+      description: "Daily learning-day streak",
+      icon: Flame,
+      color: "text-orange-500 bg-orange-500/10",
     },
     {
-      title: "Rank & Rating",
-      value: "Platinum III",
-      description: "1,840 Rating Points",
-      icon: Trophy,
+      title: "Words Learned",
+      value: "1,240 / 10,000",
+      description: "12.4% total progress",
+      icon: GraduationCap,
       color: "text-purple-500 bg-purple-500/10",
     },
   ];
 
-  // Mock recent match history
-  const recentMatches = [
-    {
-      id: 1,
-      opponent: "Kaiba_99",
-      result: "Victory",
-      deck: "Dragon's Fury",
-      date: "2 hours ago",
-      xp: "+120 XP",
-    },
-    {
-      id: 2,
-      opponent: "CardMasterX",
-      result: "Defeat",
-      deck: "Spellweaver Control",
-      date: "5 hours ago",
-      xp: "+35 XP",
-    },
-    {
-      id: 3,
-      opponent: "Muto_Y",
-      result: "Victory",
-      deck: "Dragon's Fury",
-      date: "Yesterday",
-      xp: "+150 XP",
-    },
+  // Mock dictionaries from concept.md
+  const readyMadeDictionaries = [
+    { id: 1, name: "Top-100 words", description: "Most common foundational words", progress: "100%", percent: 100, status: "Completed" },
+    { id: 2, name: "Top-300 words", description: "Essential everyday vocabulary", progress: "85%", percent: 85, status: "In Progress" },
+    { id: 3, name: "Top-500 words", description: "Intermediate conversational phrases", progress: "20%", percent: 20, status: "In Progress" },
+    { id: 4, name: "Top-1000 words", description: "Broad everyday comprehension", progress: "0%", percent: 0, status: "Not Started" },
+    { id: 5, name: "Thematic: Business English", description: "Professional terms and jargon", progress: "0%", percent: 0, status: "Not Started" },
   ];
 
-  // Mock active quests
-  const activeQuests = [
+  // Mock daily goals
+  const dailyGoals = [
     {
       id: 1,
-      title: "Dragon Tamer",
-      description: "Win 3 matches using a deck with 5+ dragons",
-      progress: "2 / 3",
-      percent: 66,
-      reward: "150 Gold",
+      title: "Daily Review",
+      description: "Review at least 20 words due today",
+      progress: "20 / 20",
+      percent: 100,
+      reward: "Completed",
     },
     {
       id: 2,
-      title: "Daily Challenger",
-      description: "Play 5 matches in Ranked mode",
-      progress: "4 / 5",
-      percent: 80,
-      reward: "100 Gold",
+      title: "New Vocabulary",
+      description: "Add 10 new words to your personal dictionary",
+      progress: "6 / 10",
+      percent: 60,
+      reward: "4 remaining",
     },
   ];
 
   return (
     <PageContainer
       title="Dashboard Page"
-      description="Welcome to your cards gaming portal. Track your stats, active decks, and play matches."
+      description="Welcome to your language learning portal. Track your vocabulary review progress, explore dictionaries, and build your learning streak."
       action={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleLogout} className="cursor-pointer gap-1.5 text-destructive border-destructive/20 hover:bg-destructive/10">
@@ -139,7 +120,7 @@ function DashboardComponent() {
         {/* Profile Card */}
         <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
           <CardHeader className="flex flex-row items-center gap-4 pb-4">
-            <div className="size-14 rounded-full bg-liner-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xl shadow-inner border border-primary/20">
+            <div className="size-14 rounded-full bg-linear-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xl shadow-inner border border-primary/20">
               {user.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
             </div>
             <div>
@@ -156,18 +137,18 @@ function DashboardComponent() {
             <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
               <span className="text-muted-foreground">Account Status</span>
               <span className="font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                PRO DUELIST
+                DUELIST LEARNER
               </span>
             </div>
             
             <div className="flex gap-2">
               <Button className="flex-1 cursor-pointer gap-1.5" size="sm">
                 <Play className="size-3.5 fill-current" />
-                Find Match
+                Start Review
               </Button>
               <Button variant="outline" className="flex-1 cursor-pointer gap-1.5" size="sm">
                 <Plus className="size-3.5" />
-                New Deck
+                Add Word
               </Button>
             </div>
           </CardContent>
@@ -198,48 +179,58 @@ function DashboardComponent() {
       {/* Tables and List sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Recent Matches */}
+        {/* Explore Dictionaries */}
         <Card className="lg:col-span-2 border border-border/60 hover:shadow-md transition-all duration-300">
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-md font-bold flex items-center gap-2">
-              <Sword className="size-4 text-primary" />
-              Recent Battles
+              <BookOpen className="size-4 text-primary" />
+              Explore Dictionaries
             </CardTitle>
-            <CardDescription>Your latest match history and battle reports.</CardDescription>
+            <CardDescription>Browse and study ready-made vocabulary sets based on word frequency.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
-                    <th className="px-6 py-3">Opponent</th>
-                    <th className="px-6 py-3">Deck</th>
-                    <th className="px-6 py-3">Result</th>
-                    <th className="px-6 py-3">Date</th>
-                    <th className="px-6 py-3 text-right">Rewards</th>
+                    <th className="px-6 py-3">Dictionary Name</th>
+                    <th className="px-6 py-3">Description</th>
+                    <th className="px-6 py-3">Progress</th>
+                    <th className="px-6 py-3 text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
-                  {recentMatches.map((match) => (
-                    <tr key={match.id} className="hover:bg-muted/10 transition-colors">
+                  {readyMadeDictionaries.map((dict) => (
+                    <tr key={dict.id} className="hover:bg-muted/10 transition-colors">
                       <td className="px-6 py-3.5 font-medium flex items-center gap-2">
-                        <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
-                          {match.opponent.slice(0, 2).toUpperCase()}
+                        <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                          {dict.id}
                         </div>
-                        {match.opponent}
+                        {dict.name}
                       </td>
-                      <td className="px-6 py-3.5 text-muted-foreground">{match.deck}</td>
+                      <td className="px-6 py-3.5 text-muted-foreground">{dict.description}</td>
                       <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full"
+                              style={{ width: `${dict.percent}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground">{dict.progress}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3.5 text-right">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          match.result === "Victory" 
+                          dict.status === "Completed" 
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
-                            : "bg-destructive/10 text-destructive"
+                            : dict.status === "In Progress"
+                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            : "bg-muted text-muted-foreground"
                         }`}>
-                          {match.result}
+                          {dict.status}
                         </span>
                       </td>
-                      <td className="px-6 py-3.5 text-muted-foreground text-xs">{match.date}</td>
-                      <td className="px-6 py-3.5 text-right font-medium text-primary text-xs">{match.xp}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -248,17 +239,17 @@ function DashboardComponent() {
           </CardContent>
         </Card>
 
-        {/* Active Quests & Challenges */}
+        {/* Daily Learning Goals */}
         <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-md font-bold flex items-center gap-2">
               <Sparkles className="size-4 text-amber-500" />
-              Active Quests
+              Daily Learning Goals
             </CardTitle>
-            <CardDescription>Complete challenges to unlock gold and card packs.</CardDescription>
+            <CardDescription>Complete daily tasks to unlock achievements and progress your fluency.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-4">
-            {activeQuests.map((quest) => (
+            {dailyGoals.map((quest) => (
               <div key={quest.id} className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-foreground">{quest.title}</span>
@@ -272,7 +263,11 @@ function DashboardComponent() {
                   />
                 </div>
                 <div className="flex justify-end">
-                  <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-full">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    quest.percent === 100 
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  }`}>
                     {quest.reward}
                   </span>
                 </div>

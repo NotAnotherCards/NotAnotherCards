@@ -56,7 +56,7 @@ describe("Dashboard Page Component Specs", () => {
 
     // 1. Dashboard renders welcome text
     expect(
-      await screen.findByText(/Welcome to your cards gaming portal/i)
+      await screen.findByText(/Welcome to your language learning portal/i)
     ).toBeInTheDocument();
 
     // 2. Dashboard shows user email/name
@@ -64,10 +64,10 @@ describe("Dashboard Page Component Specs", () => {
     expect(screen.getByText("john.doe@example.com")).toBeInTheDocument();
 
     // 3. Dashboard has placeholder sections for future features
-    expect(screen.getByText("Recent Battles")).toBeInTheDocument();
-    expect(screen.getByText("Active Quests")).toBeInTheDocument();
-    expect(screen.getByText("Win Rate")).toBeInTheDocument();
-    expect(screen.getByText("Cards Collected")).toBeInTheDocument();
+    expect(screen.getByText("Explore Dictionaries")).toBeInTheDocument();
+    expect(screen.getByText("Daily Learning Goals")).toBeInTheDocument();
+    expect(screen.getByText("Today's Reviews")).toBeInTheDocument();
+    expect(screen.getByText("Personal Dictionary")).toBeInTheDocument();
   });
 
   it("calls signOut and redirects the user to the login page on logout click", async () => {
