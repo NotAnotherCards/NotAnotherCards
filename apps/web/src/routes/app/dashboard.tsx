@@ -139,14 +139,14 @@ function DashboardComponent() {
         {/* Profile Card */}
         <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
           <CardHeader className="flex flex-row items-center gap-4 pb-4">
-            <div className="size-14 rounded-full bg-gradient-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xl shadow-inner border border-primary/20">
+            <div className="size-14 rounded-full bg-liner-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xl shadow-inner border border-primary/20">
               {user.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
             </div>
             <div>
-              <CardTitle className="text-lg font-bold truncate max-w-[200px]" title={user.name}>
+              <CardTitle className="text-lg font-bold truncate max-w-50" title={user.name}>
                 {user.name}
               </CardTitle>
-              <CardDescription className="flex items-center gap-1 text-xs truncate max-w-[200px]" title={user.email}>
+              <CardDescription className="flex items-center gap-1 text-xs truncate max-w-50" title={user.email}>
                 <Mail className="size-3" />
                 {user.email}
               </CardDescription>
@@ -267,7 +267,7 @@ function DashboardComponent() {
                 <p className="text-xs text-muted-foreground">{quest.description}</p>
                 <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
+                    className="h-full bg-linear-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
                     style={{ width: `${quest.percent}%` }}
                   />
                 </div>
