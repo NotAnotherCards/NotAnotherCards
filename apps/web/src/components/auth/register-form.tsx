@@ -67,6 +67,7 @@ export function RegisterComponent() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                   <Input
+                    autoComplete="name"
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
@@ -85,8 +86,10 @@ export function RegisterComponent() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Email</FieldLabel>
                   <Input
+                    autoComplete="email"
                     {...field}
                     id={field.name}
+                    type="email"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
                       fieldState.invalid ? "email-error" : undefined
@@ -103,6 +106,7 @@ export function RegisterComponent() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                   <PasswordInput
+                    autoComplete="new-password"
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
@@ -121,6 +125,7 @@ export function RegisterComponent() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
                   <PasswordInput
+                    autoComplete="new-password"
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}

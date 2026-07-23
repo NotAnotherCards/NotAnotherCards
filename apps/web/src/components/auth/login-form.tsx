@@ -65,6 +65,7 @@ export function LoginComponent() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Email</FieldLabel>
                   <Input
+                    autoComplete="email"
                     {...field}
                     id={field.name}
                     type="email"
@@ -84,6 +85,7 @@ export function LoginComponent() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                   <PasswordInput
+                    autoComplete="current-password"
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
