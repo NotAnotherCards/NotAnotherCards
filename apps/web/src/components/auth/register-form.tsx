@@ -25,6 +25,7 @@ export function RegisterComponent() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
+      username: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -39,6 +40,8 @@ export function RegisterComponent() {
       email: data.email,
       password: data.password,
       name: data.name,
+      username: data.username,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
@@ -78,6 +81,28 @@ export function RegisterComponent() {
                 </Field>
               )}
             />{" "}
+            <Controller
+              name="username"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Username</FieldLabel>
+                  <Input
+                    {...field}
+                    id={field.name}
+                    autoComplete="username"
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.invalid ? "username-error" : undefined
+                    }
+                  />
+                  <FieldError
+                    id="username-error"
+                    errors={[fieldState.error]}
+                  />
+                </Field>
+              )}
+            />
             <Controller
               name="email"
               control={form.control}
