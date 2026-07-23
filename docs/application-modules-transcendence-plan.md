@@ -80,15 +80,15 @@ Total: **15 points**
 
 These modules can increase the safety margin if the team has time or if one planned module becomes risky.
 
-| Subject category                       | Module                                                      | Type  | Points | Related app modules | Notes                                                     |
-| -------------------------------------- | ----------------------------------------------------------- | ----- | -----: | ------------------- | --------------------------------------------------------- |
-| Blockchain                             | Smart contracts as learning motivation                      | Major |      2 |                     | Could be live leaderboard/friend progress updates.        |
-| Accessibility and Internationalization | Multiple languages, at least 3 UI languages                 | Minor |      1 | A16                 | There are already libraries that are easy to implement    |
-| Data and Analytics                     | GDPR compliance features                                    | Minor |      1 | A10, A21            | Boring, but relatively easy to implement                  |
-| Web                                    | Real-time features using WebSockets or similar technology   | Major |      2 | A11, A12            | Could be live leaderboard/friend progress updates.        |
-| Accessibility and Internationalization | WCAG 2.1 AA accessibility compliance                        | Major |      2 | A16                 | Valuable, but needs strict testing and documentation.     |
-| DevOps                                 | Health check/status page with backups and disaster recovery | Minor |      1 | A20                 | Realistic if kept simple and documented.                  |
-| Modules of choice                      | Adaptive language-card system                               | Major |      2 | A04, A05, A08       | Must be justified clearly as custom technical complexity. |
+| Subject category                       | Module                                                      | Type  | Points | Related app modules | Notes                                                                                        |
+| -------------------------------------- | ----------------------------------------------------------- | ----- | -----: | ------------------- | -------------------------------------------------------------------------------------------- |
+| Blockchain                             | Smart contracts as learning motivation                      | Major |      2 |                     | Could be interesting especially because Solidity is based on JS but it could be challenging. |
+| Accessibility and Internationalization | Multiple languages, at least 3 UI languages                 | Minor |      1 | A16                 | There are already libraries that are easy to implement                                       |
+| Data and Analytics                     | GDPR compliance features                                    | Minor |      1 | A10, A21            | Boring, but relatively easy to implement                                                     |
+| Web                                    | Real-time features using WebSockets or similar technology   | Major |      2 | A11, A12            | Could be live leaderboard/friend progress updates.                                           |
+| Accessibility and Internationalization | WCAG 2.1 AA accessibility compliance                        | Major |      2 | A16                 | Valuable, but needs strict testing and documentation.                                        |
+| DevOps                                 | Health check/status page with backups and disaster recovery | Minor |      1 | A20                 | Realistic if kept simple and documented.                                                     |
+| Modules of choice                      | Adaptive language-card system                               | Major |      2 | A04, A05, A08       | Must be justified clearly as custom technical complexity.                                    |
 
 Potential total with reserves: **26 points**
 
