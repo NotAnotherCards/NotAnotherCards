@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { App, router } from "../App";
 import { authClient } from "@/lib/auth-client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -26,7 +26,9 @@ describe("Auth Guards", () => {
   beforeEach(async () => {
     // Reset router history and path
     window.history.pushState(null, "", "/");
-    await router.navigate({ to: "/" });
+    await act(async () => {
+      await router.navigate({ to: "/" });
+    });
   });
 
   it("redirects logged-out users from dashboard to login", async () => {
@@ -40,12 +42,16 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await router.invalidate();
+    await act(async () => {
+      await router.invalidate();
+    });
 
     render(<App />);
 
     // Try to navigate to dashboard
-    await router.navigate({ to: "/app/dashboard" });
+    await act(async () => {
+      await router.navigate({ to: "/app/dashboard" });
+    });
 
     // Verify user is redirected to the login page
     expect(
@@ -67,12 +73,16 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await router.invalidate();
+    await act(async () => {
+      await router.invalidate();
+    });
 
     render(<App />);
 
     // Navigate to dashboard
-    await router.navigate({ to: "/app/dashboard" });
+    await act(async () => {
+      await router.navigate({ to: "/app/dashboard" });
+    });
 
     // Verify the dashboard route component is rendered
     expect(
@@ -98,12 +108,16 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await router.invalidate();
+    await act(async () => {
+      await router.invalidate();
+    });
 
     render(<App />);
 
     // Try to navigate to login page
-    await router.navigate({ to: "/login" });
+    await act(async () => {
+      await router.navigate({ to: "/login" });
+    });
 
     // Verify user is redirected to dashboard
     expect(
