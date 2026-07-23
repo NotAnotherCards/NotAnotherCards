@@ -22,6 +22,19 @@ export class AuthService {
       emailAndPassword: {
         enabled: true,
       },
+      user: {
+        additionalFields: {
+          username: {
+            type: 'string',
+            required: true,
+          },
+          timezone: {
+            type: 'string',
+            required: false,
+            defaultValue: 'UTC',
+          },
+        },
+      },
       trustedOrigins: [this.configService.getOrThrow<string>('FRONTEND_URL')],
       secret: this.configService.getOrThrow<string>('BETTER_AUTH_SECRET'),
       baseURL: this.configService.getOrThrow<string>('BETTER_AUTH_URL'),
