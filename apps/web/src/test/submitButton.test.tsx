@@ -83,7 +83,8 @@ describe("Submit Button Loading States", () => {
 
     render(<RegisterComponent />);
 
-    const nameInput = screen.getByLabelText(/Name/i);
+    const nameInput = screen.getByLabelText(/^Name$/i);
+    const usernameInput = screen.getByLabelText(/Username/i);
     const emailInput = screen.getByLabelText(/Email/i);
     const passwordInput = screen.getByLabelText(/^Password$/i);
     const confirmPasswordInput = screen.getByLabelText(/Confirm Password/i);
@@ -91,6 +92,7 @@ describe("Submit Button Loading States", () => {
 
     // Fill in the form so it is valid
     await user.type(nameInput, "John Doe");
+    await user.type(usernameInput, "john_doe");
     await user.type(emailInput, "john@example.com");
     await user.type(passwordInput, "Password123!");
     await user.type(confirmPasswordInput, "Password123!");

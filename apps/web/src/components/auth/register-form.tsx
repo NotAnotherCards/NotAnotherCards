@@ -45,7 +45,7 @@ export function RegisterComponent() {
     });
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
-      console.error(error.message);
+      // console.error(error.message);
     } else {
       navigate({ to: "/app/dashboard" });
       console.log("Registered:", res);
@@ -96,10 +96,7 @@ export function RegisterComponent() {
                       fieldState.invalid ? "username-error" : undefined
                     }
                   />
-                  <FieldError
-                    id="username-error"
-                    errors={[fieldState.error]}
-                  />
+                  <FieldError id="username-error" errors={[fieldState.error]} />
                 </Field>
               )}
             />
