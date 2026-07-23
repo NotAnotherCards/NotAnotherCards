@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "NotAnotherCards",
+    "slug": "not-another-cards",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "scheme": "notanothercards",
+    "ios": {
+      "bundleIdentifier": "com.notanothercards.app"
+    },
+    "android": {
+      "package": "com.notanothercards.app"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
