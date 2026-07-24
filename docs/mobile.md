@@ -48,6 +48,40 @@ hot-reload, only native dependency changes need another `run:android`.
 Metro defaults to port 8081. If that's already in use, add `--port 8082` (or any
 free port) to the commands above.
 
+### On a real phone
+
+Android only from Linux/Windows (an iOS device needs a Mac with Xcode). Enable
+developer options and USB debugging on the phone, plug it in, and check
+`adb devices` lists it. The same `expo run:android` then builds and installs on
+the phone; Metro is reached over USB automatically.
+
+The default API URL (`10.0.2.2`) only works on the emulator. For a phone either
+tunnel the API over USB:
+
+```sh
+adb reverse tcp:3000 tcp:3000
+```
+
+and set `EXPO_PUBLIC_API_URL=http://localhost:3000` in `.env.local`, or set it
+to your machine's LAN IP with phone and machine on the same Wi-Fi. Restart
+Metro after changing `.env.local` (values are inlined at bundle time).
+
+### On an iPhone
+
+There is no Linux path to a native iOS build; `expo run:ios` needs a Mac with
+Xcode. Without a Mac:
+
+- **EAS Build**: `eas build --profile development --platform ios` builds the
+  dev client in Expo's cloud. Installing it on a phone requires an Apple
+  Developer membership (ad-hoc provisioning, device registered by UDID).
+- **Expo Go** from the App Store can run the app without any Apple account —
+  every native module we use ships in the Expo SDK — but only once Expo Go's
+  SDK 57 update is released there. Then: `npx expo start --go` and scan the
+  QR code from the phone.
+
+iPhones can't use `adb reverse`, so the API is reached over shared Wi-Fi: set
+`EXPO_PUBLIC_API_URL` to your machine's LAN IP.
+
 ## Testing
 
 Uses `jest-expo` with `@testing-library/react-native`. Run from `apps/mobile`:
