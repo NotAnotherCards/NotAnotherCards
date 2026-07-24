@@ -9,6 +9,16 @@ import { Button } from '../components/ui/button'
 import { FormField } from '../components/ui/form-field'
 import { Text } from '../components/ui/text'
 
+// Hermes' Intl support is partial; if timezone detection fails the field
+// stays unset and the server defaults to UTC.
+function getTimezone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+  } catch {
+    return undefined
+  }
+}
+
 export default function Register() {
   const router = useRouter()
   const [apiError, setApiError] = useState<string | null>(null)
@@ -31,7 +41,7 @@ export default function Register() {
       username: data.username,
       email: data.email,
       password: data.password,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: getTimezone(),
     })
     if (error) {
       setApiError(error.message ?? 'An unexpected error occurred')
