@@ -3,15 +3,23 @@ import { Card } from "@/hooks/useMockStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card as UICard, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Search, Edit, Trash2, Library, HelpCircle } from "lucide-react";
+import { Search, Edit, Trash2, Library, HelpCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface CardListProps {
   cards: Card[];
   onEditCard: (card: Card) => void;
   onDeleteCard: (cardId: string) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-export function CardList({ cards, onEditCard, onDeleteCard }: CardListProps) {
+export function CardList({
+  cards,
+  onEditCard,
+  onDeleteCard,
+  isLoading,
+  error,
+}: CardListProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredCards = cards.filter(
@@ -20,6 +28,33 @@ export function CardList({ cards, onEditCard, onDeleteCard }: CardListProps) {
       c.back.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.notes && c.notes.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  if (isLoading) {
+    return (
+      <UICard className="border border-border/60">
+        <CardContent className="flex flex-col items-center justify-center min-h-60 space-y-4 animate-in fade-in duration-300">
+          <Loader2 className="animate-spin size-8 text-primary" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading cards...</p>
+        </CardContent>
+      </UICard>
+    );
+  }
+
+  if (error) {
+    return (
+      <UICard className="border border-border/60 p-6 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-200">
+        <div className="p-3 rounded-2xl bg-destructive/10 text-destructive">
+          <AlertCircle className="size-8" />
+        </div>
+        <div>
+          <h3 className="text-md font-bold text-destructive">Failed to Load Cards</h3>
+          <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+            {error || "An error occurred while loading deck contents."}
+          </p>
+        </div>
+      </UICard>
+    );
+  }
 
   return (
     <UICard className="border border-border/60">

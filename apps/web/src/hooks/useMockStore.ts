@@ -155,6 +155,8 @@ function saveToStorage() {
 // React Hook
 export function useMockStore() {
   const [, setTick] = useState(0);
+  const isLoading = false;
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
     return subscribe(() => {
@@ -240,5 +242,7 @@ export function useMockStore() {
     updateCard,
     deleteCard,
     getCardsCount,
+    isLoading,
+    error,
   };
 }
