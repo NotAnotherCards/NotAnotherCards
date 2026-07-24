@@ -2,8 +2,8 @@
 
 Expo (SDK 57) React Native app in `apps/mobile`, using expo-router. Mirrors the
 web frontend: login, register and a protected dashboard, sharing the API and the
-`@repo/schemas` validation. Screens are built; auth works end to end once the
-API enables Better Auth's Expo plugin (see Auth below).
+`@repo/schemas` validation. Screens are built and auth works end to end (see
+Auth below).
 
 Layout:
 
@@ -15,9 +15,11 @@ Layout:
 ## Prerequisites
 
 - Node and pnpm (`pnpm install` at the root).
-- Android SDK with an emulator (AVD) and `adb` on your PATH.
-- **Java 21** for the Android build; it fails on newer JDKs (Java 26). Set
+- For Android: the Android SDK with an emulator (AVD) and `adb` on your PATH,
+  plus **Java 21** for the build; it fails on newer JDKs (Java 26). Set
   `JAVA_HOME`, e.g. `/usr/lib/jvm/java-21-openjdk`.
+- For iOS: a Mac with full Xcode installed. CocoaPods is installed
+  automatically by `expo run:ios` on first build if missing.
 
 Runs as a native dev build (`expo-dev-client`), not Expo Go.
 
@@ -35,7 +37,24 @@ Android value if unset.
 
 ## Running on Android
 
-Start an emulator, then from `apps/mobile`:
+### Setting up the emulator
+
+The easiest path is Android Studio: **Tools → Device Manager → Create Virtual
+Device**, pick a phone (e.g. Pixel 8) and a recent system image (API 35+),
+then start it from the Device Manager. Without Android Studio, the SDK
+command-line tools work too:
+
+```sh
+sdkmanager "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64"
+avdmanager create avd -n pixel8 -d pixel_8 -k "system-images;android-35;google_apis;x86_64"
+emulator -avd pixel8
+```
+
+Either way, `adb devices` should list the running emulator before you continue.
+
+### Building and starting
+
+Start the emulator, then from `apps/mobile`:
 
 ```sh
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk npx expo run:android
@@ -48,9 +67,9 @@ hot-reload, only native dependency changes need another `run:android`.
 Metro defaults to port 8081. If that's already in use, add `--port 8082` (or any
 free port) to the commands above.
 
-### On a real phone
+### On a real Android phone
 
-Android only from Linux/Windows (an iOS device needs a Mac with Xcode). Enable
+The only device path from Linux/Windows (an iOS device needs a Mac). Enable
 developer options and USB debugging on the phone, plug it in, and check
 `adb devices` lists it. The same `expo run:android` then builds and installs on
 the phone; Metro is reached over USB automatically.
@@ -66,11 +85,46 @@ and set `EXPO_PUBLIC_API_URL=http://localhost:3000` in `.env.local`, or set it
 to your machine's LAN IP with phone and machine on the same Wi-Fi. Restart
 Metro after changing `.env.local` (values are inlined at bundle time).
 
-### On an iPhone
+## Running on iOS
 
-Testing on an iPhone needs a Mac with Xcode: `npx expo run:ios` builds and
-installs the dev build, and a free Apple ID is enough to sign it onto your own
-phone. There is no Linux path to a native iOS build.
+Needs a Mac with Xcode; there is no Linux path to a native iOS build.
+
+### Setting up the simulator
+
+Install full Xcode (App Store or developer.apple.com), then let it finish its
+first-run setup and fetch an iOS simulator runtime:
+
+```sh
+xcode-select --install                          # command line tools, if missing
+sudo xcodebuild -license accept
+xcodebuild -runFirstLaunch
+xcodebuild -downloadPlatform iOS                # simulator runtime (large download)
+```
+
+The runtime can also be installed from **Xcode → Settings → Components**.
+`xcrun simctl list devices available` should then list simulators (iPhone 17
+Pro etc.); `expo run:ios` boots one automatically, no need to start it by hand.
+
+### Building and starting
+
+Set
+`EXPO_PUBLIC_API_URL=http://localhost:3000` in `.env.local` (the simulator
+shares the host's loopback), then from `apps/mobile`:
+
+```sh
+npx expo run:ios
+```
+
+This picks a default simulator; add `--device "iPhone 17 Pro"` to choose one.
+First build takes a few minutes (installs CocoaPods if missing, compiles the
+pods, installs on the simulator). After that, `npx expo start` and press `i`;
+JS changes hot-reload, only native dependency changes need another `run:ios`.
+Verified working with Xcode 26.6 and the iOS 26.5 simulator runtime.
+
+### On a real iPhone
+
+The same `npx expo run:ios` builds and installs the dev build on a plugged-in
+iPhone, and a free Apple ID is enough to sign it onto your own phone.
 
 Without a Mac there is currently no iPhone test path for this project. Expo Go
 on the App Store hasn't been updated to SDK 57 yet; once it is, the app runs in
@@ -128,10 +182,6 @@ Follows https://better-auth.com/docs/integrations/expo.
 Client is done: `lib/auth-client.ts` uses the `expoClient` plugin with the
 session in `expo-secure-store` (no browser cookie on a device) and base URL from
 `EXPO_PUBLIC_API_URL`. Packages pinned to `better-auth` 1.6.23 to match the API.
-
-Server side is still open (tracked separately): the API needs the `expo()`
-plugin in `apps/api/src/auth/auth.service.ts` and the app scheme
-(`notanothercards://`, plus `exp://` / `exp://**` in dev) in `trustedOrigins`.
 
 ### Why we patch @better-auth/expo
 
