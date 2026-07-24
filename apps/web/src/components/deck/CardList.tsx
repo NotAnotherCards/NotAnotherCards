@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card as UICard, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Search, Library, HelpCircle, AlertCircle, Loader2 } from "lucide-react";
 import { CardItem } from "./CardItem";
+import { FlashcardModal } from "./FlashcardModal";
 
 interface CardListProps {
   cards: Card[];
@@ -21,6 +22,7 @@ export function CardList({
   error,
 }: CardListProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewingCard, setViewingCard] = useState<Card | null>(null);
 
   const filteredCards = cards.filter(
     (c) =>
@@ -105,6 +107,7 @@ export function CardList({
                     card={card}
                     onEditCard={onEditCard}
                     onDeleteCard={onDeleteCard}
+                    onViewCard={(c) => setViewingCard(c)}
                   />
                 ))}
               </tbody>
@@ -112,6 +115,13 @@ export function CardList({
           </div>
         )}
       </CardContent>
+
+      {viewingCard && (
+        <FlashcardModal
+          card={viewingCard}
+          onClose={() => setViewingCard(null)}
+        />
+      )}
     </UICard>
   );
 }

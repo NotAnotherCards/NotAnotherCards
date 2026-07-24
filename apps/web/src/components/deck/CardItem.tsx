@@ -1,14 +1,15 @@
 import { Card } from "@/hooks/useMockStore";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Eye } from "lucide-react";
 
 interface CardItemProps {
   card: Card;
   onEditCard: (card: Card) => void;
   onDeleteCard: (cardId: string) => void;
+  onViewCard: (card: Card) => void;
 }
 
-export function CardItem({ card, onEditCard, onDeleteCard }: CardItemProps) {
+export function CardItem({ card, onEditCard, onDeleteCard, onViewCard }: CardItemProps) {
   return (
     <tr className="hover:bg-muted/10 transition-colors">
       <td className="px-6 py-4 font-medium max-w-62.5 truncate" title={card.front}>
@@ -22,6 +23,16 @@ export function CardItem({ card, onEditCard, onDeleteCard }: CardItemProps) {
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs rounded-lg cursor-pointer text-muted-foreground hover:text-foreground gap-1"
+            onClick={() => onViewCard(card)}
+            title="View Card"
+          >
+            <Eye className="size-3.5" />
+            View
+          </Button>
           <Button
             variant="ghost"
             size="icon"
