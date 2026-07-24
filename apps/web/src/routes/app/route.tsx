@@ -15,9 +15,10 @@ export const Route = createFileRoute("/app")({
 
 function AppLayout() {
   return (
-    <div>
-      <p>Everything here will be protected</p>
-      <Outlet />
+    <div className="flex-1 flex flex-col bg-background">
+      <div className="flex-1 flex flex-col">
+        <Outlet />
+      </div>
     </div>
   );
 }

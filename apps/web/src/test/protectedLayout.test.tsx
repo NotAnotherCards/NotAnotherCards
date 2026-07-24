@@ -53,10 +53,6 @@ describe("App Layout Guards", () => {
       name: /dashboard/i,
     });
     await user.click(dashboardLink);
-    // Verify the protected layout message is rendered
-    expect(
-      await screen.findByText(/everything here will be protected/i),
-    ).toBeInTheDocument();
     // Verify the dashboard route component is also rendered inside it
     expect(
       screen.getByRole("heading", { name: /DASHBOARD PAGE/i }),
