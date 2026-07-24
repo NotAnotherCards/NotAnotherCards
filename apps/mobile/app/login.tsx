@@ -1,18 +1,15 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native'
+import { View } from 'react-native'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginFormData } from '@repo/schemas'
 import { authClient } from '../lib/auth-client'
 import { AuthCard } from '../components/auth/auth-card'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import { Text } from '../components/ui/text'
 
 export default function Login() {
   const router = useRouter()
@@ -48,20 +45,22 @@ export default function Login() {
         control={control}
         name="email"
         render={({ field: { onChange, onBlur, value }, fieldState }) => (
-          <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={[styles.input, fieldState.invalid && styles.inputInvalid]}
+          <View className="gap-1">
+            <Label>Email</Label>
+            <Input
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
+              invalid={fieldState.invalid}
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
               placeholder="you@example.com"
             />
             {fieldState.error && (
-              <Text style={styles.error}>{fieldState.error.message}</Text>
+              <Text className="text-sm text-red-600">
+                {fieldState.error.message}
+              </Text>
             )}
           </View>
         )}
@@ -71,62 +70,36 @@ export default function Login() {
         control={control}
         name="password"
         render={({ field: { onChange, onBlur, value }, fieldState }) => (
-          <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={[styles.input, fieldState.invalid && styles.inputInvalid]}
+          <View className="gap-1">
+            <Label>Password</Label>
+            <Input
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
+              invalid={fieldState.invalid}
               secureTextEntry
               autoCapitalize="none"
               placeholder="Your password"
             />
             {fieldState.error && (
-              <Text style={styles.error}>{fieldState.error.message}</Text>
+              <Text className="text-sm text-red-600">
+                {fieldState.error.message}
+              </Text>
             )}
           </View>
         )}
       />
 
-      {apiError && <Text style={styles.apiError}>{apiError}</Text>}
+      {apiError && (
+        <Text className="text-center text-red-600">{apiError}</Text>
+      )}
 
-      <Pressable
-        style={[styles.button, isSubmitting && styles.buttonDisabled]}
+      <Button
+        label="Log in"
+        loading={isSubmitting}
         onPress={handleSubmit(onSubmit)}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Log in</Text>
-        )}
-      </Pressable>
+        className="mt-1"
+      />
     </AuthCard>
   )
 }
-
-const styles = StyleSheet.create({
-  field: { gap: 4 },
-  label: { fontSize: 14, fontWeight: '500' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-  },
-  inputInvalid: { borderColor: '#dc2626' },
-  error: { color: '#dc2626', fontSize: 13 },
-  apiError: { color: '#dc2626', fontSize: 14, textAlign: 'center' },
-  button: {
-    backgroundColor: '#18181b',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-})

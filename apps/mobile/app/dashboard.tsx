@@ -1,12 +1,8 @@
 import { Redirect, useRouter } from 'expo-router'
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { authClient } from '../lib/auth-client'
+import { Button } from '../components/ui/button'
+import { Text } from '../components/ui/text'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -19,7 +15,7 @@ export default function Dashboard() {
 
   if (isPending) {
     return (
-      <View style={styles.center}>
+      <View className="flex-1 items-center justify-center">
         <ActivityIndicator />
       </View>
     )
@@ -31,31 +27,15 @@ export default function Dashboard() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Dashboard</Text>
-      <Text style={styles.welcome}>
-        Welcome, <Text style={styles.name}>{session.user.name}</Text>!
+    <View className="flex-1 justify-center gap-2 p-6">
+      <Text className="text-2xl font-semibold">Dashboard</Text>
+      <Text className="mt-2 text-base">
+        Welcome, <Text className="font-semibold">{session.user.name}</Text>!
       </Text>
-      <Text style={styles.email}>Logged in as {session.user.email}</Text>
-      <Pressable style={styles.button} onPress={onLogout}>
-        <Text style={styles.buttonText}>Log out</Text>
-      </Pressable>
+      <Text className="mb-4 text-zinc-500">
+        Logged in as {session.user.email}
+      </Text>
+      <Button label="Log out" onPress={onLogout} />
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  container: { flex: 1, padding: 24, gap: 8, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: '600' },
-  welcome: { fontSize: 16, marginTop: 8 },
-  name: { fontWeight: '600' },
-  email: { color: '#71717a', marginBottom: 16 },
-  button: {
-    backgroundColor: '#18181b',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-})

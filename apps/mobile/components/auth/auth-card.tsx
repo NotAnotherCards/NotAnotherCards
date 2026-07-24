@@ -1,6 +1,8 @@
 import { Link, type Href } from 'expo-router'
 import type { ReactNode } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { View } from 'react-native'
+import { Card } from '../ui/card'
+import { Text } from '../ui/text'
 
 interface AuthCardProps {
   title: string
@@ -20,40 +22,18 @@ export function AuthCard({
   footerLinkTo,
 }: AuthCardProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+    <View className="flex-1 justify-center bg-zinc-100 p-6">
+      <Card className="gap-3">
+        <Text className="text-2xl font-semibold">{title}</Text>
+        <Text className="mb-2 text-zinc-500">{description}</Text>
         {children}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>{footerText} </Text>
-          <Link href={footerLinkTo} style={styles.footerLink}>
-            {footerLinkText}
+        <View className="mt-1 flex-row justify-center">
+          <Text className="text-zinc-500">{footerText} </Text>
+          <Link href={footerLinkTo} asChild>
+            <Text className="font-semibold">{footerLinkText}</Text>
           </Link>
         </View>
-      </View>
+      </Card>
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#f4f4f5',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: '#e4e4e7',
-  },
-  title: { fontSize: 24, fontWeight: '600' },
-  description: { color: '#71717a', marginBottom: 8 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 4 },
-  footerText: { color: '#71717a' },
-  footerLink: { color: '#18181b', fontWeight: '600' },
-})

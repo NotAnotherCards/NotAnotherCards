@@ -2,6 +2,7 @@
 // resolve from both the app's and the root's node_modules, so
 // workspace-linked packages (@repo/schemas, ...) load.
 const { getDefaultConfig } = require('expo/metro-config')
+const { withNativeWind } = require('nativewind/metro')
 const path = require('path')
 
 const projectRoot = __dirname
@@ -14,4 +15,4 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
-module.exports = config
+module.exports = withNativeWind(config, { input: './global.css' })
