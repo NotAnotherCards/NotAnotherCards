@@ -11,11 +11,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.6.23",
+    "better-auth": "^1.6.23",
     "expo": "~57.0.7",
     "expo-constants": "~57.0.7",
     "expo-dev-client": "~57.0.7",
     "expo-linking": "~57.0.4",
+    "expo-network": "~57.0.1",
     "expo-router": "~57.0.8",
+    "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-native": "0.86.0",
