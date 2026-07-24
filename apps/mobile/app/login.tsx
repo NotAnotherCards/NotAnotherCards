@@ -1,14 +1,12 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { View } from 'react-native'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginFormData } from '@repo/schemas'
 import { authClient } from '../lib/auth-client'
 import { AuthCard } from '../components/auth/auth-card'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
+import { FormField } from '../components/ui/form-field'
 import { Text } from '../components/ui/text'
 
 export default function Login() {
@@ -41,53 +39,22 @@ export default function Login() {
       footerLinkText="Sign up"
       footerLinkTo="/register"
     >
-      <Controller
+      <FormField
         control={control}
         name="email"
-        render={({ field: { onChange, onBlur, value }, fieldState }) => (
-          <View className="gap-1">
-            <Label>Email</Label>
-            <Input
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              invalid={fieldState.invalid}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              placeholder="you@example.com"
-            />
-            {fieldState.error && (
-              <Text className="text-sm text-red-600">
-                {fieldState.error.message}
-              </Text>
-            )}
-          </View>
-        )}
+        label="Email"
+        placeholder="you@example.com"
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
       />
-
-      <Controller
+      <FormField
         control={control}
         name="password"
-        render={({ field: { onChange, onBlur, value }, fieldState }) => (
-          <View className="gap-1">
-            <Label>Password</Label>
-            <Input
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              invalid={fieldState.invalid}
-              secureTextEntry
-              autoCapitalize="none"
-              placeholder="Your password"
-            />
-            {fieldState.error && (
-              <Text className="text-sm text-red-600">
-                {fieldState.error.message}
-              </Text>
-            )}
-          </View>
-        )}
+        label="Password"
+        placeholder="Your password"
+        secureTextEntry
+        autoCapitalize="none"
       />
 
       {apiError && (

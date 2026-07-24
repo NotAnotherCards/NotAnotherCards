@@ -1,14 +1,12 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { View } from 'react-native'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type SignupFormData } from '@repo/schemas'
 import { authClient } from '../lib/auth-client'
 import { AuthCard } from '../components/auth/auth-card'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
+import { FormField } from '../components/ui/form-field'
 import { Text } from '../components/ui/text'
 
 export default function Register() {
@@ -34,37 +32,6 @@ export default function Register() {
     router.replace('/dashboard')
   }
 
-  const fields = [
-    {
-      name: 'name' as const,
-      label: 'Name',
-      placeholder: 'Jane Doe',
-      props: { autoCapitalize: 'words' as const },
-    },
-    {
-      name: 'email' as const,
-      label: 'Email',
-      placeholder: 'you@example.com',
-      props: {
-        autoCapitalize: 'none' as const,
-        autoComplete: 'email' as const,
-        keyboardType: 'email-address' as const,
-      },
-    },
-    {
-      name: 'password' as const,
-      label: 'Password',
-      placeholder: 'Create a password',
-      props: { secureTextEntry: true, autoCapitalize: 'none' as const },
-    },
-    {
-      name: 'confirmPassword' as const,
-      label: 'Confirm password',
-      placeholder: 'Repeat your password',
-      props: { secureTextEntry: true, autoCapitalize: 'none' as const },
-    },
-  ]
-
   return (
     <AuthCard
       title="Create account"
@@ -73,31 +40,38 @@ export default function Register() {
       footerLinkText="Log in"
       footerLinkTo="/login"
     >
-      {fields.map((f) => (
-        <Controller
-          key={f.name}
-          control={control}
-          name={f.name}
-          render={({ field: { onChange, onBlur, value }, fieldState }) => (
-            <View className="gap-1">
-              <Label>{f.label}</Label>
-              <Input
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                invalid={fieldState.invalid}
-                placeholder={f.placeholder}
-                {...f.props}
-              />
-              {fieldState.error && (
-                <Text className="text-sm text-red-600">
-                  {fieldState.error.message}
-                </Text>
-              )}
-            </View>
-          )}
-        />
-      ))}
+      <FormField
+        control={control}
+        name="name"
+        label="Name"
+        placeholder="Jane Doe"
+        autoCapitalize="words"
+      />
+      <FormField
+        control={control}
+        name="email"
+        label="Email"
+        placeholder="you@example.com"
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
+      />
+      <FormField
+        control={control}
+        name="password"
+        label="Password"
+        placeholder="Create a password"
+        secureTextEntry
+        autoCapitalize="none"
+      />
+      <FormField
+        control={control}
+        name="confirmPassword"
+        label="Confirm password"
+        placeholder="Repeat your password"
+        secureTextEntry
+        autoCapitalize="none"
+      />
 
       {apiError && (
         <Text className="text-center text-red-600">{apiError}</Text>
