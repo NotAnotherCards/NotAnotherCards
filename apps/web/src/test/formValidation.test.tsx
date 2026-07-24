@@ -61,12 +61,14 @@ describe("Register Form Validation", () => {
     await expectErrorToShow("Please confirm your password");
 
     // Type valid basic details but mismatching passwords
-    const nameInput = screen.getByLabelText(/Name/i);
+    const nameInput = screen.getByLabelText(/^Name$/i);
+    const usernameInput = screen.getByLabelText(/^Username$/i);
     const emailInput = screen.getByLabelText(/Email/i);
     const passwordInput = screen.getByLabelText(/^Password$/i);
     const confirmPasswordInput = screen.getByLabelText(/Confirm Password/i);
 
     await user.type(nameInput, "John Doe");
+    await user.type(usernameInput, "john_doe");
     await user.type(emailInput, "john.doe@example.com");
     await user.type(passwordInput, "Password123!");
     await user.type(confirmPasswordInput, "Different123!");

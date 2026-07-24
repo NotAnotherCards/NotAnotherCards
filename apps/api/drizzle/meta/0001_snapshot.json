@@ -1,5 +1,5 @@
 {
-  "id": "262530ad-b397-4f33-9ca6-d0ec0e6077e5",
+  "id": "639dfa82-5844-4e19-b7b8-034ecab12c98",
   "prevId": "417e48a9-e798-4fdd-8745-09fbfdddb2fe",
   "version": "7",
   "dialect": "postgresql",
@@ -240,19 +240,20 @@
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "first_name": {
-          "name": "first_name",
+        "username": {
+          "name": "username",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "last_name": {
-          "name": "last_name",
+        "timezone": {
+          "name": "timezone",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "'UTC'"
         },
         "email": {
           "name": "email",
@@ -288,7 +289,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "user_username_idx": {
+          "name": "user_username_idx",
+          "columns": [
+            {
+              "expression": "username",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {

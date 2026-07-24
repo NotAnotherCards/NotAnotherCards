@@ -10,4 +10,17 @@ const db = drizzle(process.env.DATABASE_URL!);
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
+  user: {
+    additionalFields: {
+      username: {
+        type: 'string',
+        required: true,
+      },
+      timezone: {
+        type: 'string',
+        required: false,
+        defaultValue: 'UTC',
+      },
+    },
+  },
 });
