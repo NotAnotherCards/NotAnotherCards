@@ -1,8 +1,21 @@
 import { useState } from "react";
 import { useMockStore, Deck } from "@/hooks/useMockStore";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Plus, FolderOpen, Edit, Trash2, Library, BookOpen } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Plus,
+  FolderOpen,
+  Edit,
+  Trash2,
+  Library,
+  BookOpen,
+} from "lucide-react";
 import { DeckForm } from "./DeckForm";
 
 interface DeckListProps {
@@ -43,7 +56,9 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             <Library className="size-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground font-heading">My Library</h2>
+            <h2 className="text-xl font-bold text-foreground font-heading">
+              My Library
+            </h2>
             <p className="text-xs text-muted-foreground">
               Manage your custom card decks.
             </p>
@@ -64,9 +79,13 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
           <BookOpen className="size-12 text-muted-foreground/60 mb-4 stroke-1 animate-bounce" />
           <h3 className="text-lg font-semibold mb-1">No Decks Yet</h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-6">
-            Create your first deck to start adding learning materials and studying.
+            Create your first deck to start adding learning materials and
+            studying.
           </p>
-          <Button onClick={() => setShowCreateForm(true)} className="cursor-pointer">
+          <Button
+            onClick={() => setShowCreateForm(true)}
+            className="cursor-pointer"
+          >
             Create First Deck
           </Button>
         </div>
@@ -119,8 +138,12 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
                   {/* Card count tags */}
                   <div className="grid grid-cols-2 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
                     <div>
-                      <div className="text-xs text-muted-foreground font-medium">Total Cards</div>
-                      <div className="text-sm font-bold text-foreground">{totalCards}</div>
+                      <div className="text-xs text-muted-foreground font-medium">
+                        Total Cards
+                      </div>
+                      <div className="text-sm font-bold text-foreground">
+                        {totalCards}
+                      </div>
                     </div>
                   </div>
 
@@ -154,7 +177,10 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
       {editingDeck && (
         <DeckForm
           title="Edit Deck Details"
-          initialData={{ name: editingDeck.name, description: editingDeck.description }}
+          initialData={{
+            name: editingDeck.name,
+            description: editingDeck.description,
+          }}
           onSubmit={handleEditDeck}
           onCancel={() => setEditingDeck(null)}
         />
@@ -170,7 +196,8 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
                 Delete Deck?
               </CardTitle>
               <CardDescription>
-                This action is permanent. Deleting this deck will also permanently delete all cards inside it.
+                This action is permanent. Deleting this deck will also
+                permanently delete all cards inside it.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-end gap-2 pt-0">
