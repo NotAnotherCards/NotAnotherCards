@@ -6,6 +6,7 @@ It's not another flashcard app. AI-powered language learning through context, nu
 
 - `apps/web`: React, Vite, TypeScript, Tailwind CSS, shadcn/ui, Vitest, and React Testing Library
 - `apps/api`: NestJS, Drizzle ORM, PostgreSQL, Jest, and Supertest
+- `apps/mobile`: Expo (React Native), expo-router, NativeWind, and jest-expo — see [docs/mobile.md](docs/mobile.md) for setup and running on Android/iOS
 - `packages/*`: shared ESLint and TypeScript config packages
 - `docker-compose.yml`: local PostgreSQL service for development
 

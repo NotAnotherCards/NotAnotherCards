@@ -14,3 +14,13 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-64@2.10.4"
   - "@turbo/windows-arm64@2.10.4"
   - turbo@2.10.4
+  - '@expo/metro-runtime@57.0.7'
+  - expo-constants@57.0.7
+  - expo-linking@57.0.4
+  - expo-router@57.0.8
+patchedDependencies:
+  # @better-auth/expo does a runtime `import("expo-network")` at client init that
+  # crashes Hermes on Expo SDK 56+ dev builds (better-auth#10028, expo#46806).
+  # The patch makes that import static. Still unfixed upstream as of 1.6.25 / 1.7 rc.
+  # See docs/mobile.md (Auth) for the full story.
+  '@better-auth/expo@1.6.23': patches/@better-auth__expo@1.6.23.patch
