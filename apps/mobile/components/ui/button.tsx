@@ -34,6 +34,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <Pressable
+      accessibilityRole="button"
       className={cn(
         buttonVariants({ variant, size }),
         (disabled || loading) && 'opacity-60',
