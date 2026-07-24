@@ -161,8 +161,14 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
 
       {/* Delete Confirmation Dialog */}
       {deckToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-sm border border-destructive/20 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div
+          onClick={() => setDeckToDelete(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+        >
+          <Card
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm border border-destructive/20 shadow-2xl animate-in zoom-in-95 duration-200"
+          >
             <CardHeader>
               <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
                 <Trash2 className="size-5" />

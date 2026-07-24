@@ -54,8 +54,14 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <Card className="w-full max-w-md shadow-2xl border border-border/80 animate-in zoom-in-95 duration-200">
+    <div
+      onClick={onCancel}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+    >
+      <Card
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md shadow-2xl border border-border/80 animate-in zoom-in-95 duration-200"
+      >
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
