@@ -10,15 +10,14 @@ import {
 } from "@/components/ui/card";
 import {
   Plus,
-  FolderOpen,
-  Edit,
-  Trash2,
   Library,
   BookOpen,
   AlertCircle,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { DeckForm } from "./DeckForm";
+import { DeckCard } from "./DeckCard";
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -125,70 +124,14 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             const totalCards = store.getCardsCount(deck.id);
 
             return (
-              <Card
+              <DeckCard
                 key={deck.id}
-                className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-4">
-                    <CardTitle
-                      className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate max-w-[80%]"
-                      onClick={() => onSelectDeck(deck.id)}
-                      title={deck.name}
-                    >
-                      {deck.name}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 rounded-lg cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
-                        onClick={() => setEditingDeck(deck)}
-                        title="Edit Deck Details"
-                      >
-                        <Edit className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 rounded-lg cursor-pointer hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeckToDelete(deck.id)}
-                        title="Delete Deck"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardDescription className="text-xs line-clamp-2 min-h-8 mt-1">
-                    {deck.description || "No description provided."}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {/* Card count tags */}
-                  <div className="grid grid-cols-2 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
-                    <div>
-                      <div className="text-xs text-muted-foreground font-medium">
-                        Total Cards
-                      </div>
-                      <div className="text-sm font-bold text-foreground">
-                        {totalCards}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex pt-2">
-                    <Button
-                      onClick={() => onSelectDeck(deck.id)}
-                      className="w-full cursor-pointer gap-1.5"
-                      size="sm"
-                    >
-                      <FolderOpen className="size-3.5" />
-                      Manage Cards
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                deck={deck}
+                totalCards={totalCards}
+                onSelectDeck={onSelectDeck}
+                onEditDeck={(d) => setEditingDeck(d)}
+                onDeleteDeck={(id) => setDeckToDelete(id)}
+              />
             );
           })}
         </div>
