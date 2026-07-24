@@ -22,6 +22,7 @@ describe('Register screen', () => {
   it('shows an error when the passwords do not match', async () => {
     const { getByRole, getByPlaceholderText, findByText } = render(<Register />)
     fireEvent.changeText(getByPlaceholderText('Jane Doe'), 'Jane Doe')
+    fireEvent.changeText(getByPlaceholderText('jane_doe'), 'jane_doe')
     fireEvent.changeText(getByPlaceholderText('you@example.com'), 'jane@example.com')
     fireEvent.changeText(getByPlaceholderText('Create a password'), 'Abcdef1!')
     fireEvent.changeText(getByPlaceholderText('Repeat your password'), 'Abcdef2!')

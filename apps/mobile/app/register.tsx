@@ -14,7 +14,13 @@ export default function Register() {
   const [apiError, setApiError] = useState<string | null>(null)
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: {
+      name: '',
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
   })
   const { isSubmitting } = formState
 
@@ -22,8 +28,10 @@ export default function Register() {
     setApiError(null)
     const { error } = await authClient.signUp.email({
       name: data.name,
+      username: data.username,
       email: data.email,
       password: data.password,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     })
     if (error) {
       setApiError(error.message ?? 'An unexpected error occurred')
@@ -46,6 +54,14 @@ export default function Register() {
         label="Name"
         placeholder="Jane Doe"
         autoCapitalize="words"
+      />
+      <FormField
+        control={control}
+        name="username"
+        label="Username"
+        placeholder="jane_doe"
+        autoCapitalize="none"
+        autoComplete="username"
       />
       <FormField
         control={control}
