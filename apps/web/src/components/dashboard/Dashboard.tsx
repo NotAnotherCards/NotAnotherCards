@@ -139,10 +139,6 @@ export function DashboardComponent() {
     },
   ];
 
-  const handleGoToDecks = () => {
-    setActiveTab("decks");
-  };
-
   return (
     <PageContainer
       title="Dashboard Page"
@@ -232,7 +228,10 @@ export function DashboardComponent() {
                   <Button
                     className="flex-1 cursor-pointer gap-1.5"
                     size="sm"
-                    onClick={handleGoToDecks}
+                    onClick={() => {
+                      setActiveTab("decks");
+                      setSubView({ type: "list" });
+                    }}
                   >
                     <Library className="size-3.5" />
                     My Decks

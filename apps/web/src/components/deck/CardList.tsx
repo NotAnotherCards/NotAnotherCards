@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Card } from "@/hooks/useMockStore";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card as UICard, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Search, Edit, Trash2, Library, HelpCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Search, Library, HelpCircle, AlertCircle, Loader2 } from "lucide-react";
+import { CardItem } from "./CardItem";
 
 interface CardListProps {
   cards: Card[];
@@ -100,37 +100,12 @@ export function CardList({
               </thead>
               <tbody className="divide-y divide-border/30">
                 {filteredCards.map((card) => (
-                  <tr key={card.id} className="hover:bg-muted/10 transition-colors">
-                    <td className="px-6 py-4 font-medium max-w-62.5 truncate" title={card.front}>
-                      {card.front}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground max-w-62.5 truncate" title={card.back}>
-                      {card.back}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground text-xs max-w-50 truncate hidden md:table-cell" title={card.notes}>
-                      {card.notes || "-"}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
-                          onClick={() => onEditCard(card)}
-                        >
-                          <Edit className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => onDeleteCard(card.id)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <CardItem
+                    key={card.id}
+                    card={card}
+                    onEditCard={onEditCard}
+                    onDeleteCard={onDeleteCard}
+                  />
                 ))}
               </tbody>
             </table>
