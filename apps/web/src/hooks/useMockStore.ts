@@ -170,6 +170,7 @@ try {
   // SSR fallback / storage disabled
   globalDecks = initialDecks;
   globalCards = initialCards;
+  console.log(e)
 }
 
 const listeners = new Set<() => void>();
