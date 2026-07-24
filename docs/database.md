@@ -14,8 +14,12 @@ first, the library expects this exact shape.
 
 ### `user`
 
-One row per registered user: `name`, unique `email`, `email_verified` flag and
-optional avatar `image`. Credentials don't live here, see `account`.
+One row per registered user: display `name`, unique `username`, unique
+`email`, `email_verified` flag, optional avatar `image`, and the user's IANA
+`timezone`. The timezone defaults to `UTC` when a client does not supply one.
+The web signup records the browser's local timezone. Better Auth exposes
+both additional fields on the session user. Credentials don't live here, see
+`account`.
 
 ### `session`
 
