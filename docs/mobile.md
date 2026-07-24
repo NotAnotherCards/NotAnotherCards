@@ -68,16 +68,14 @@ Metro after changing `.env.local` (values are inlined at bundle time).
 
 ### On an iPhone
 
-There is no Linux path to a native iOS build; `expo run:ios` needs a Mac with
-Xcode. Without a Mac:
+Testing on an iPhone needs a Mac with Xcode: `npx expo run:ios` builds and
+installs the dev build, and a free Apple ID is enough to sign it onto your own
+phone. There is no Linux path to a native iOS build.
 
-- **EAS Build**: `eas build --profile development --platform ios` builds the
-  dev client in Expo's cloud. Installing it on a phone requires an Apple
-  Developer membership (ad-hoc provisioning, device registered by UDID).
-- **Expo Go** from the App Store can run the app without any Apple account —
-  every native module we use ships in the Expo SDK — but only once Expo Go's
-  SDK 57 update is released there. Then: `npx expo start --go` and scan the
-  QR code from the phone.
+Without a Mac there is currently no iPhone test path for this project. Expo Go
+on the App Store hasn't been updated to SDK 57 yet; once it is, the app runs in
+it without any Apple account (every native module we use ships in the Expo
+SDK): `npx expo start --go`, then scan the QR code from the phone.
 
 iPhones can't use `adb reverse`, so the API is reached over shared Wi-Fi: set
 `EXPO_PUBLIC_API_URL` to your machine's LAN IP.
