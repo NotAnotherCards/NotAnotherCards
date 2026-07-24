@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Card } from "@/hooks/useMockStore";
-import { Button } from "@/components/ui/button";
-import { X, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface FlashcardModalProps {
   card: Card;
@@ -12,28 +11,22 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/65 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      {/* Close button at top right of viewport */}
-      <div className="absolute top-4 right-4 z-50">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onClose}
-          className="rounded-full bg-background border border-border/80 cursor-pointer shadow-md hover:bg-muted"
-          title="Close Modal"
-        >
-          <X className="size-4" />
-        </Button>
-      </div>
-
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/65 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+    >
       {/* 3D Flip Card Outer Container */}
       <div
         className="w-full max-w-lg h-80 select-none"
         style={{ perspective: "1000px" }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Flip Card Inner Wrapper */}
         <div
-          onClick={() => setIsFlipped(!isFlipped)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFlipped(!isFlipped);
+          }}
           className="w-full h-full relative cursor-pointer rounded-3xl transition-transform duration-500 shadow-2xl"
           style={{
             transformStyle: "preserve-3d",

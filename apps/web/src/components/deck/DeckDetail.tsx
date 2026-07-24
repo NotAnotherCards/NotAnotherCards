@@ -125,8 +125,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
       {/* Delete Card Confirmation */}
       {cardToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <UICard className="w-full max-w-sm border border-destructive/20 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div
+          onClick={() => setCardToDelete(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+        >
+          <UICard
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm border border-destructive/20 shadow-2xl animate-in zoom-in-95 duration-200"
+          >
             <CardHeader>
               <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
                 <Trash2 className="size-5" />
