@@ -9,7 +9,7 @@ import {
   Search,
   Edit,
   Trash2,
-  Calendar,
+  Library,
   HelpCircle,
 } from "lucide-react";
 import { CardForm } from "./CardForm";
@@ -67,37 +67,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     }
   };
 
-  const formatDueDate = (isoString: string) => {
-    const due = new Date(isoString);
-    const now = new Date();
-    
-    if (due <= now) {
-      return (
-        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-          Due Now
-        </span>
-      );
-    }
 
-    // Format clean relative/absolute date
-    const diffMs = due.getTime() - now.getTime();
-    const diffHours = Math.round(diffMs / (1000 * 60 * 60));
-    
-    if (diffHours < 24) {
-      return <span className="text-muted-foreground">In {diffHours}h</span>;
-    }
-    
-    const diffDays = Math.round(diffHours / 24);
-    if (diffDays === 1) {
-      return <span className="text-muted-foreground">Tomorrow</span>;
-    }
-    
-    return (
-      <span className="text-muted-foreground">
-        {due.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -139,7 +109,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-md font-bold flex items-center gap-2">
-              <Calendar className="size-4 text-primary" />
+              <Library className="size-4 text-primary" />
               Card Catalog ({cards.length})
             </CardTitle>
           </div>
@@ -173,9 +143,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                     <th className="px-6 py-3 min-w-50">Front Side</th>
                     <th className="px-6 py-3 min-w-50">Back Side</th>
                     <th className="px-6 py-3 hidden md:table-cell">Notes</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3 text-center">Interval</th>
-                    <th className="px-6 py-3">Next Due</th>
                     <th className="px-6 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -190,23 +157,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                       </td>
                       <td className="px-6 py-4 text-muted-foreground text-xs max-w-50 truncate hidden md:table-cell" title={card.notes}>
                         {card.notes || "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          card.status === "new"
-                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                            : card.status === "learning"
-                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                            : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                        }`}>
-                          {card.status.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground">
-                        {card.interval === 0 ? "Same day" : `${card.interval}d`}
-                      </td>
-                      <td className="px-6 py-4 text-xs">
-                        {formatDueDate(card.dueAt)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
