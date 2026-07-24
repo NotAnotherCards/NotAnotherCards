@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
 import { DeckCard } from "../components/deck/DeckCard";
 import { CardItem } from "../components/deck/CardItem";
+import { FlashcardModal } from "../components/deck/FlashcardModal";
 import { Deck, Card } from "../hooks/useMockStore";
 
 describe("DeckCard Component", () => {
@@ -75,6 +76,7 @@ describe("CardItem Component", () => {
             card={mockCard}
             onEditCard={vi.fn()}
             onDeleteCard={vi.fn()}
+            onViewCard={vi.fn()}
           />
         </tbody>
       </table>
@@ -85,9 +87,10 @@ describe("CardItem Component", () => {
     expect(screen.getByText("Basic friendly greeting.")).toBeInTheDocument();
   });
 
-  it("triggers callbacks on edit and delete card actions", () => {
+  it("triggers callbacks on view, edit, and delete card actions", () => {
     const onEditCard = vi.fn();
     const onDeleteCard = vi.fn();
+    const onViewCard = vi.fn();
 
     render(
       <table>
@@ -96,10 +99,15 @@ describe("CardItem Component", () => {
             card={mockCard}
             onEditCard={onEditCard}
             onDeleteCard={onDeleteCard}
+            onViewCard={onViewCard}
           />
         </tbody>
       </table>
     );
+
+    // Click View button
+    fireEvent.click(screen.getByTitle("View Card"));
+    expect(onViewCard).toHaveBeenCalledWith(mockCard);
 
     // Click Edit button
     fireEvent.click(screen.getByTitle("Edit Card"));
@@ -108,5 +116,31 @@ describe("CardItem Component", () => {
     // Click Delete button
     fireEvent.click(screen.getByTitle("Delete Card"));
     expect(onDeleteCard).toHaveBeenCalledWith("card-test-1");
+  });
+});
+
+describe("FlashcardModal Component", () => {
+  const mockCard: Card = {
+    id: "card-test-1",
+    deckId: "deck-test-1",
+    front: "Hola",
+    back: "Hello",
+    notes: "Basic friendly greeting.",
+    createdAt: new Date().toISOString(),
+  };
+
+  it("renders front content by default and flips to back content on click", () => {
+    const onClose = vi.fn();
+    render(<FlashcardModal card={mockCard} onClose={onClose} />);
+
+    // Renders the Front text
+    expect(screen.getByText("Hola")).toBeInTheDocument();
+
+    // Click the card wrapper to flip it
+    fireEvent.click(screen.getByTestId("flashcard-inner"));
+
+    // Renders the Back text and notes
+    expect(screen.getByText("Hello")).toBeInTheDocument();
+    expect(screen.getByText("Basic friendly greeting.")).toBeInTheDocument();
   });
 });
