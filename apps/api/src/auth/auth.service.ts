@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import * as schema from '../database/schema';
-
+import { expo } from '@better-auth/expo';
 @Injectable()
 export class AuthService {
   public readonly auth: {
@@ -57,7 +57,13 @@ export class AuthService {
           },
         },
       },
-      trustedOrigins: [this.configService.getOrThrow<string>('FRONTEND_URL')],
+      plugins: [expo()],
+      trustedOrigins: [
+        this.configService.getOrThrow<string>('FRONTEND_URL'),
+        'notanothercards://',
+        'exp://',
+        'exp://**',
+      ],
       secret: this.configService.getOrThrow<string>('BETTER_AUTH_SECRET'),
       baseURL: this.configService.getOrThrow<string>('BETTER_AUTH_URL'),
     });
