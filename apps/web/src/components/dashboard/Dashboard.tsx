@@ -139,7 +139,7 @@ export function DashboardComponent() {
     },
   ];
 
-  const handleStartReview = () => {
+  const handleGoToDecks = () => {
     setActiveTab("decks");
   };
 
@@ -232,7 +232,7 @@ export function DashboardComponent() {
                   <Button
                     className="flex-1 cursor-pointer gap-1.5"
                     size="sm"
-                    onClick={handleStartReview}
+                    onClick={handleGoToDecks}
                   >
                     <Library className="size-3.5" />
                     My Decks

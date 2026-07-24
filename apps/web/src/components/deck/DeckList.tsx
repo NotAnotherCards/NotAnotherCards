@@ -43,9 +43,9 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             <Library className="size-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground font-heading">Flashcard Library</h2>
+            <h2 className="text-xl font-bold text-foreground font-heading">My Library</h2>
             <p className="text-xs text-muted-foreground">
-              Manage your custom card decks and review progress.
+              Manage your custom card decks.
             </p>
           </div>
         </div>
@@ -73,9 +73,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {store.decks.map((deck) => {
-            const counts = store.getCardsCountByStatus(deck.id);
-            const dueCount = store.getDueCardsCount(deck.id);
-            const totalCards = counts.newCount + counts.learningCount + counts.reviewCount;
+            const totalCards = store.getCardsCount(deck.id);
 
             return (
               <Card
@@ -123,10 +121,6 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
                     <div>
                       <div className="text-xs text-muted-foreground font-medium">Total Cards</div>
                       <div className="text-sm font-bold text-foreground">{totalCards}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground font-medium">Due Reviews</div>
-                      <div className="text-sm font-bold text-emerald-500">{dueCount}</div>
                     </div>
                   </div>
 
