@@ -2,15 +2,14 @@ import { useState } from "react";
 import { useMockStore, Deck } from "@/hooks/useMockStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Plus, Play, FolderOpen, Edit, Trash2, Library, BookOpen } from "lucide-react";
+import { Plus, FolderOpen, Edit, Trash2, Library, BookOpen } from "lucide-react";
 import { DeckForm } from "./DeckForm";
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
-  onStartStudy: (deckId: string) => void;
 }
 
-export function DeckList({ onSelectDeck, onStartStudy }: DeckListProps) {
+export function DeckList({ onSelectDeck }: DeckListProps) {
   const store = useMockStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
@@ -120,39 +119,25 @@ export function DeckList({ onSelectDeck, onStartStudy }: DeckListProps) {
 
                 <CardContent className="space-y-4">
                   {/* Card count tags */}
-                  <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
+                  <div className="grid grid-cols-2 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
                     <div>
-                      <div className="text-xs text-muted-foreground font-medium">New</div>
-                      <div className="text-sm font-bold text-blue-500">{counts.newCount}</div>
+                      <div className="text-xs text-muted-foreground font-medium">Total Cards</div>
+                      <div className="text-sm font-bold text-foreground">{totalCards}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-muted-foreground font-medium">Learn</div>
-                      <div className="text-sm font-bold text-amber-500">{counts.learningCount}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground font-medium">Due</div>
+                      <div className="text-xs text-muted-foreground font-medium">Due Reviews</div>
                       <div className="text-sm font-bold text-emerald-500">{dueCount}</div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      onClick={() => onStartStudy(deck.id)}
-                      disabled={dueCount === 0}
-                      className="flex-1 cursor-pointer gap-1.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white disabled:opacity-50"
-                      size="sm"
-                    >
-                      <Play className="size-3.5 fill-current" />
-                      Study ({dueCount})
-                    </Button>
+                  <div className="flex pt-2">
                     <Button
                       onClick={() => onSelectDeck(deck.id)}
-                      variant="outline"
-                      className="flex-1 cursor-pointer gap-1.5"
+                      className="w-full cursor-pointer gap-1.5"
                       size="sm"
                     >
                       <FolderOpen className="size-3.5" />
-                      Library ({totalCards})
+                      Manage Cards
                     </Button>
                   </div>
                 </CardContent>

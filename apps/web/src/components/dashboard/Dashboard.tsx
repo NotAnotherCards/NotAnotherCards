@@ -18,21 +18,19 @@ import {
   BookOpen,
   Sparkles,
   Plus,
-  Play,
   LogOut,
   Mail,
   Library,
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
-import { StudySession } from "@/components/deck/StudySession";
 
 export function DashboardComponent() {
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"overview" | "decks">("overview");
   const [subView, setSubView] = useState<{
-    type: "list" | "detail" | "study";
+    type: "list" | "detail";
     deckId?: string;
   }>({ type: "list" });
 
@@ -144,8 +142,7 @@ export function DashboardComponent() {
 
   const handleStartReview = () => {
     setActiveTab("decks");
-    // Start study on spanish deck by default or open list
-    setSubView({ type: "study", deckId: "deck-spanish" });
+    setSubView({ type: "detail", deckId: "deck-spanish" });
   };
 
   const handleAddWord = () => {
@@ -244,8 +241,8 @@ export function DashboardComponent() {
                     size="sm"
                     onClick={handleStartReview}
                   >
-                    <Play className="size-3.5 fill-current" />
-                    Start Review
+                    <Library className="size-3.5" />
+                    Go to Decks
                   </Button>
                   <Button
                     variant="outline"
@@ -416,24 +413,14 @@ export function DashboardComponent() {
         </div>
       ) : (
         <div className="space-y-6">
-          {subView.type === "list" && (
+          {subView.type === "list" ? (
             <DeckList
               onSelectDeck={(deckId) => setSubView({ type: "detail", deckId })}
-              onStartStudy={(deckId) => setSubView({ type: "study", deckId })}
             />
-          )}
-
-          {subView.type === "detail" && (
+          ) : (
             <DeckDetail
               deckId={subView.deckId!}
               onBack={() => setSubView({ type: "list" })}
-            />
-          )}
-
-          {subView.type === "study" && (
-            <StudySession
-              deckId={subView.deckId!}
-              onClose={() => setSubView({ type: "list" })}
             />
           )}
         </div>
