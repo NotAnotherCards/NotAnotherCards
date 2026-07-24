@@ -17,7 +17,6 @@ import {
   GraduationCap,
   BookOpen,
   Sparkles,
-  Plus,
   LogOut,
   Mail,
   Library,
@@ -142,12 +141,6 @@ export function DashboardComponent() {
 
   const handleStartReview = () => {
     setActiveTab("decks");
-    setSubView({ type: "detail", deckId: "deck-spanish" });
-  };
-
-  const handleAddWord = () => {
-    setActiveTab("decks");
-    setSubView({ type: "detail", deckId: "deck-spanish" });
   };
 
   return (
@@ -229,9 +222,9 @@ export function DashboardComponent() {
               </CardHeader>
               <CardContent className="space-y-4 pt-0">
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
-                  <span className="text-muted-foreground">Account Status</span>
+                  <span className="text-muted-foreground">Status</span>
                   <span className="font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                    DUELIST LEARNER
+                    Online
                   </span>
                 </div>
 
@@ -242,16 +235,7 @@ export function DashboardComponent() {
                     onClick={handleStartReview}
                   >
                     <Library className="size-3.5" />
-                    Go to Decks
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 cursor-pointer gap-1.5"
-                    size="sm"
-                    onClick={handleAddWord}
-                  >
-                    <Plus className="size-3.5" />
-                    Add Word
+                    My Decks
                   </Button>
                 </div>
               </CardContent>
