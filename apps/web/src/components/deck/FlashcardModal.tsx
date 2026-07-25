@@ -1,14 +1,71 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/hooks/useMockStore";
-import { RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface FlashcardModalProps {
-  card: Card;
+  card?: Card;
+  cards?: Card[];
+  initialCardId?: string;
   onClose: () => void;
 }
 
-export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
+export function FlashcardModal({
+  card: singleCard,
+  cards = [],
+  initialCardId,
+  onClose,
+}: FlashcardModalProps) {
+  const modalCards = cards.length > 0 ? cards : singleCard ? [singleCard] : [];
+  const [currentCardId, setCurrentCardId] = useState(
+    initialCardId || singleCard?.id || ""
+  );
   const [isFlipped, setIsFlipped] = useState(false);
+
+  const currentIndex = modalCards.findIndex((c) => c.id === currentCardId);
+  const activeCard = modalCards[currentIndex] || modalCards[0];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (modalCards.length <= 1) return;
+
+      if (e.key === "ArrowRight") {
+        setIsFlipped(false);
+        const nextIndex = (currentIndex + 1) % modalCards.length;
+        setCurrentCardId(modalCards[nextIndex].id);
+      } else if (e.key === "ArrowLeft") {
+        setIsFlipped(false);
+        const prevIndex = (currentIndex - 1 + modalCards.length) % modalCards.length;
+        setCurrentCardId(modalCards[prevIndex].id);
+      } else if (e.key === " ") {
+        e.preventDefault();
+        setIsFlipped((f) => !f);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentIndex, modalCards, onClose]);
+
+  if (!activeCard) return null;
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFlipped(false);
+    const nextIndex = (currentIndex + 1) % modalCards.length;
+    setCurrentCardId(modalCards[nextIndex].id);
+  };
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFlipped(false);
+    const prevIndex = (currentIndex - 1 + modalCards.length) % modalCards.length;
+    setCurrentCardId(modalCards[prevIndex].id);
+  };
 
   return (
     <div
@@ -49,7 +106,7 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
 
             {/* Front text */}
             <h3 className="text-3xl font-bold tracking-tight text-foreground text-center font-heading max-w-full overflow-y-auto max-h-48 wrap-break-word pr-1">
-              {card.lemma}
+              {activeCard.lemma}
             </h3>
 
             {/* Hint footer */}
@@ -75,13 +132,13 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
 
             {/* Back text */}
             <h3 className="text-3xl font-bold tracking-tight text-primary text-center font-heading max-w-full overflow-y-auto max-h-36 wrap-break-word pr-1">
-              {card.translation}
+              {activeCard.translation}
             </h3>
 
             {/* Optional Notes */}
-            {card.notes && (
+            {activeCard.notes && (
               <p className="text-sm text-muted-foreground text-center max-w-md mt-4 overflow-y-auto max-h-16 wrap-break-word border-t border-border/40 pt-2.5 w-full pr-1">
-                {card.notes}
+                {activeCard.notes}
               </p>
             )}
 
@@ -93,6 +150,36 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
           </div>
         </div>
       </div>
+
+      {/* Navigation controls */}
+      {modalCards.length > 1 && (
+        <div
+          className="flex items-center gap-4 mt-6 bg-zinc-900/85 dark:bg-zinc-950/85 border border-zinc-800/80 px-4 py-2 rounded-2xl shadow-xl backdrop-blur-md"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            className="cursor-pointer h-8 gap-1 text-zinc-300 hover:text-white hover:bg-zinc-800/50"
+            onClick={handlePrev}
+          >
+            <ChevronLeft className="size-4" />
+            Prev
+          </Button>
+          <span className="text-xs text-zinc-400 font-medium font-mono min-w-12 text-center select-none">
+            {currentIndex + 1} / {modalCards.length}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="cursor-pointer h-8 gap-1 text-zinc-300 hover:text-white hover:bg-zinc-800/50"
+            onClick={handleNext}
+          >
+            Next
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

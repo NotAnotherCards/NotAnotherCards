@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-// Use the database collection structure directly for Decks, defined locally for this branch
+// Use the database shared collection structure directly for Decks, defined locally for this branch
 export interface Deck {
   id: string;
   language_id: string;
@@ -118,7 +118,6 @@ const initialCards: Card[] = [
   },
 ];
 
-// Initialize global variables by reading localStorage
 const STORAGE_PREFIX = "notanothercards_";
 let globalDecks: Deck[] = [];
 let globalCards: Card[] = [];
@@ -141,7 +140,6 @@ try {
     localStorage.setItem(`${STORAGE_PREFIX}cards`, JSON.stringify(globalCards));
   }
 } catch (e) {
-  // SSR fallback / storage disabled
   globalDecks = initialDecks;
   globalCards = initialCards;
   console.log(e);
@@ -169,7 +167,6 @@ function saveToStorage() {
   }
 }
 
-// React Hook
 export function useMockStore() {
   const [, setTick] = useState(0);
   const isLoading = false;
@@ -181,7 +178,6 @@ export function useMockStore() {
     });
   }, []);
 
-  // CRUD helpers
   const createDeck = (name: string, description: string): Deck => {
     const newDeck: Deck = {
       id: `deck-${Date.now()}`,
@@ -217,7 +213,6 @@ export function useMockStore() {
 
   const deleteDeck = (id: string) => {
     globalDecks = globalDecks.filter((d) => d.id !== id);
-    // Cascade delete cards
     globalCards = globalCards.filter((c) => c.collection_id !== id);
     saveToStorage();
     notify();
