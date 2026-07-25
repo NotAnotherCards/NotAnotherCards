@@ -1,0 +1,112 @@
+import { appSchema } from "@remelondb/core";
+import { syncSchemas } from "@remelondb/core/zod";
+import {
+  users,
+  sessions,
+  accounts,
+  verifications,
+  userProfiles,
+  userSettings,
+  UserRow,
+  SessionRow,
+  AccountRow,
+  VerificationRow,
+  UserProfileRow,
+  UserSettingsRow,
+} from "./auth.js";
+import {
+  languages,
+  userLearningLanguages,
+  LanguageRow,
+  UserLearningLanguageRow,
+} from "./languages.js";
+import {
+  cards,
+  wordCards,
+  phraseCards,
+  comparisonCards,
+  cardExamples,
+  cardRelatedTerms,
+  cardTags,
+  cardTagAssignments,
+  dictionaryCollections,
+  dictionaryCollectionCards,
+  CardRow,
+  WordCardRow,
+  PhraseCardRow,
+  ComparisonCardRow,
+  CardExampleRow,
+  CardRelatedTermRow,
+  CardTagRow,
+  CardTagAssignmentRow,
+  DictionaryCollectionRow,
+  DictionaryCollectionCardRow,
+} from "./cards.js";
+import {
+  userCards,
+  userCardOverrides,
+  userCardNotes,
+  userCardResetEvents,
+  UserCardRow,
+  UserCardOverrideRow,
+  UserCardNoteRow,
+  UserCardResetEventRow,
+} from "./user-dictionary.js";
+
+export const schema = appSchema({
+  version: 1,
+  tables: [
+    users,
+    sessions,
+    accounts,
+    verifications,
+    userProfiles,
+    userSettings,
+    languages,
+    userLearningLanguages,
+    cards,
+    wordCards,
+    phraseCards,
+    comparisonCards,
+    cardExamples,
+    cardRelatedTerms,
+    cardTags,
+    cardTagAssignments,
+    dictionaryCollections,
+    dictionaryCollectionCards,
+    userCards,
+    userCardOverrides,
+    userCardNotes,
+    userCardResetEvents,
+  ],
+});
+
+export const syncWireSchemas = syncSchemas({
+  users: UserRow,
+  sessions: SessionRow,
+  accounts: AccountRow,
+  verifications: VerificationRow,
+  user_profiles: UserProfileRow,
+  user_settings: UserSettingsRow,
+  languages: LanguageRow,
+  user_learning_languages: UserLearningLanguageRow,
+  cards: CardRow,
+  word_cards: WordCardRow,
+  phrase_cards: PhraseCardRow,
+  comparison_cards: ComparisonCardRow,
+  card_examples: CardExampleRow,
+  card_related_terms: CardRelatedTermRow,
+  card_tags: CardTagRow,
+  card_tag_assignments: CardTagAssignmentRow,
+  dictionary_collections: DictionaryCollectionRow,
+  dictionary_collection_cards: DictionaryCollectionCardRow,
+  user_cards: UserCardRow,
+  user_card_overrides: UserCardOverrideRow,
+  user_card_notes: UserCardNoteRow,
+  user_card_reset_events: UserCardResetEventRow,
+});
+
+export * from "./auth.js";
+export * from "./languages.js";
+export * from "./cards.js";
+export * from "./user-dictionary.js";
