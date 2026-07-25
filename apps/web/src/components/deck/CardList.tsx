@@ -118,7 +118,8 @@ export function CardList({
 
       {viewingCard && (
         <FlashcardModal
-          card={viewingCard}
+          cards={filteredCards}
+          initialCardId={viewingCard.id}
           onClose={() => setViewingCard(null)}
         />
       )}
