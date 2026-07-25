@@ -3,8 +3,8 @@ import { ModelFor, type InferRecord } from "@remelondb/core";
 import { zodTable } from "@remelondb/core/zod";
 
 export const UserRow = z.object({
-  email: z.string().email(),
-  email_verified: z.boolean().default(false),
+  email: z.email(),
+  email_verified: z.boolean(),
   name: z.string().nullable(),
   username: z.string().nullable(),
   image: z.string().nullable(),
@@ -49,18 +49,18 @@ export const UserProfileRow = z.object({
   avatar_file_id: z.string().nullable(),
   native_language_id: z.string().nullable(),
   target_language_id: z.string().nullable(),
-  timezone: z.string().default("UTC"),
+  timezone: z.string(),
   created_at: z.number(),
   updated_at: z.number(),
 });
 
 export const UserSettingsRow = z.object({
   user_id: z.string(),
-  theme: z.string().default("system"),
-  ui_language: z.string().default("en"),
-  daily_review_goal: z.number().int().default(20),
-  notifications_enabled: z.boolean().default(true),
-  sound_enabled: z.boolean().default(true),
+  theme: z.string(),
+  ui_language: z.string(),
+  daily_review_goal: z.number().int(),
+  notifications_enabled: z.boolean(),
+  sound_enabled: z.boolean(),
   created_at: z.number(),
   updated_at: z.number(),
 });

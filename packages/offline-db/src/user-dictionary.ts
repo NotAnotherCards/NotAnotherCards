@@ -5,9 +5,9 @@ import { zodTable } from "@remelondb/core/zod";
 export const UserCardRow = z.object({
   user_id: z.string(),
   card_id: z.string(),
-  status: z.string().default("learning"), // new | learning | learned | suspended | archived
-  source: z.string().default("manual"), // manual | collection | ai | imported
-  offline_enabled: z.boolean().default(false),
+  status: z.string(), // new | learning | learned | suspended | archived
+  source: z.string(), // manual | collection | ai | imported
+  offline_enabled: z.boolean(),
   added_at: z.number(),
   updated_at: z.number(),
 });

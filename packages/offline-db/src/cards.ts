@@ -5,13 +5,13 @@ import { zodTable } from "@remelondb/core/zod";
 export const CardRow = z.object({
   type: z.string(), // word | comparison | phrase
   language_id: z.string(),
-  status: z.string().default("active"),
-  source: z.string().default("manual"),
+  status: z.string(),
+  source: z.string(),
   created_by_user_id: z.string().nullable(),
   created_at: z.number(),
   updated_at: z.number(),
   deleted_at: z.number().nullable(),
-  version: z.number().int().default(1),
+  version: z.number().int(),
 });
 
 export const WordCardRow = z.object({
@@ -37,7 +37,7 @@ export const PhraseCardRow = z.object({
   phrase: z.string(),
   translation: z.string(),
   meaning: z.string().nullable(),
-  is_fixed_expression: z.boolean().default(true),
+  is_fixed_expression: z.boolean(),
   frequency_label: z.string().nullable(),
   notes: z.string().nullable(),
 });
@@ -59,7 +59,7 @@ export const CardExampleRow = z.object({
   card_id: z.string(),
   example_text: z.string(),
   translation: z.string().nullable(),
-  source: z.string().default("manual"),
+  source: z.string(),
   created_at: z.number(),
 });
 
@@ -86,7 +86,7 @@ export const DictionaryCollectionRow = z.object({
   name: z.string(),
   description: z.string().nullable(),
   level: z.string().nullable(), // A1 | A2 | B1 | ...
-  is_public: z.boolean().default(true),
+  is_public: z.boolean(),
   created_by_user_id: z.string().nullable(),
   created_at: z.number(),
   updated_at: z.number(),

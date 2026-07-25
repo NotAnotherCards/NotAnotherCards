@@ -6,14 +6,14 @@ export const LanguageRow = z.object({
   code: z.string(), // e.g. "en", "de"
   name: z.string(), // e.g. "English"
   native_name: z.string().nullable(),
-  direction: z.string().default("ltr"),
+  direction: z.string(),
   created_at: z.number(),
 });
 
 export const UserLearningLanguageRow = z.object({
   user_id: z.string(),
   language_id: z.string(),
-  is_primary: z.boolean().default(false),
+  is_primary: z.boolean(),
   created_at: z.number(),
 });
 
