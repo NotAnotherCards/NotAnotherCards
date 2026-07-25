@@ -14,16 +14,16 @@ import {
 } from "@/components/ui/field";
 
 const cardSchema = z.object({
-  front: z.string().min(1, "Front side content is required").max(1000, "Front content cannot exceed 1000 characters"),
-  back: z.string().min(1, "Back side content is required").max(1000, "Back content cannot exceed 1000 characters"),
+  lemma: z.string().min(1, "Word/lemma content is required").max(1000, "Content cannot exceed 1000 characters"),
+  translation: z.string().min(1, "Translation content is required").max(1000, "Translation cannot exceed 1000 characters"),
   notes: z.string().max(1000, "Notes cannot exceed 1000 characters").optional().or(z.literal("")),
 });
 
 type CardFormData = z.infer<typeof cardSchema>;
 
 interface CardFormProps {
-  initialData?: { front: string; back: string; notes?: string };
-  onSubmit: (data: { front: string; back: string; notes?: string }) => void;
+  initialData?: { lemma: string; translation: string; notes?: string | null };
+  onSubmit: (data: { lemma: string; translation: string; notes?: string }) => void;
   onCancel: () => void;
   title: string;
 }
@@ -32,8 +32,8 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
   const form = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
-      front: "",
-      back: "",
+      lemma: "",
+      translation: "",
       notes: "",
     },
   });
@@ -41,8 +41,8 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
   useEffect(() => {
     if (initialData) {
       form.reset({
-        front: initialData.front,
-        back: initialData.back,
+        lemma: initialData.lemma,
+        translation: initialData.translation,
         notes: initialData.notes || "",
       });
     }
@@ -50,8 +50,8 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
 
   const handleFormSubmit = (data: CardFormData) => {
     onSubmit({
-      front: data.front.trim(),
-      back: data.back.trim(),
+      lemma: data.lemma.trim(),
+      translation: data.translation.trim(),
       notes: data.notes?.trim() || undefined,
     });
   };
@@ -80,12 +80,12 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
             <FieldSet>
               <FieldGroup>
                 <Controller
-                  name="front"
+                  name="lemma"
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Front Side (Question, term, or prompt)
+                        Word / Lemma (Question, term, or prompt)
                       </FieldLabel>
                       <textarea
                         {...field}
@@ -93,7 +93,7 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
                         placeholder="e.g. ¿Cómo estás?"
                         rows={3}
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={fieldState.invalid ? "front-error" : undefined}
+                        aria-describedby={fieldState.invalid ? "lemma-error" : undefined}
                         className={`w-full flex min-h-20 rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 ${
                           fieldState.invalid
                             ? "border-destructive focus-visible:ring-destructive/30"
@@ -101,18 +101,18 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
                         }`}
                         autoFocus
                       />
-                      <FieldError id="front-error" errors={[fieldState.error]} />
+                      <FieldError id="lemma-error" errors={[fieldState.error]} />
                     </Field>
                   )}
                 />
 
                 <Controller
-                  name="back"
+                  name="translation"
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Back Side (Answer, definition, or translation)
+                        Translation (Answer, definition, or translation)
                       </FieldLabel>
                       <textarea
                         {...field}
@@ -120,14 +120,14 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
                         placeholder="e.g. How are you? (Informal)"
                         rows={3}
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={fieldState.invalid ? "back-error" : undefined}
+                        aria-describedby={fieldState.invalid ? "translation-error" : undefined}
                         className={`w-full flex min-h-20 rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 ${
                           fieldState.invalid
                             ? "border-destructive focus-visible:ring-destructive/30"
                             : "border-input focus-visible:ring-ring"
                         }`}
                       />
-                      <FieldError id="back-error" errors={[fieldState.error]} />
+                      <FieldError id="translation-error" errors={[fieldState.error]} />
                     </Field>
                   )}
                 />

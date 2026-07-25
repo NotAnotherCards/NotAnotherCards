@@ -12,13 +12,13 @@ interface CardItemProps {
 export function CardItem({ card, onEditCard, onDeleteCard, onViewCard }: CardItemProps) {
   return (
     <tr className="hover:bg-muted/10 transition-colors">
-      <td className="px-6 py-4 font-medium max-w-62.5 truncate" title={card.front}>
-        {card.front}
+      <td className="px-6 py-4 font-medium max-w-62.5 truncate" title={card.lemma}>
+        {card.lemma}
       </td>
-      <td className="px-6 py-4 text-muted-foreground max-w-62.5 truncate" title={card.back}>
-        {card.back}
+      <td className="px-6 py-4 text-muted-foreground max-w-62.5 truncate" title={card.translation}>
+        {card.translation}
       </td>
-      <td className="px-6 py-4 text-muted-foreground text-xs max-w-50 truncate hidden md:table-cell" title={card.notes}>
+      <td className="px-6 py-4 text-muted-foreground text-xs max-w-50 truncate hidden md:table-cell" title={card.notes || ""}>
         {card.notes || "-"}
       </td>
       <td className="px-6 py-4 text-right">

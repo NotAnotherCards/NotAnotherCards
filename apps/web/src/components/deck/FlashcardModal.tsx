@@ -44,12 +44,12 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
           >
             {/* Tag Badge */}
             <span className="absolute top-4 left-4 text-[10px] tracking-wider uppercase font-bold text-muted-foreground/60 bg-muted/40 px-2 py-0.5 rounded-full">
-              Front Side
+              Word / Lemma
             </span>
 
             {/* Front text */}
             <h3 className="text-3xl font-bold tracking-tight text-foreground text-center font-heading max-w-full overflow-y-auto max-h-48 wrap-break-word pr-1">
-              {card.front}
+              {card.lemma}
             </h3>
 
             {/* Hint footer */}
@@ -70,12 +70,12 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
           >
             {/* Tag Badge */}
             <span className="absolute top-4 left-4 text-[10px] tracking-wider uppercase font-bold text-primary/60 bg-primary/10 px-2 py-0.5 rounded-full">
-              Back Side
+              Translation
             </span>
 
             {/* Back text */}
             <h3 className="text-3xl font-bold tracking-tight text-primary text-center font-heading max-w-full overflow-y-auto max-h-36 wrap-break-word pr-1">
-              {card.back}
+              {card.translation}
             </h3>
 
             {/* Optional Notes */}

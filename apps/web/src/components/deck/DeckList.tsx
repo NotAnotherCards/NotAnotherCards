@@ -152,7 +152,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
           title="Edit Deck Details"
           initialData={{
             name: editingDeck.name,
-            description: editingDeck.description,
+            description: editingDeck.description || "",
           }}
           onSubmit={handleEditDeck}
           onCancel={() => setEditingDeck(null)}

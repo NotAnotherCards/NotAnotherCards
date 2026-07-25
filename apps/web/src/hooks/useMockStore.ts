@@ -1,34 +1,51 @@
 import { useState, useEffect } from "react";
 
+// Use the database collection structure directly for Decks, defined locally for this branch
 export interface Deck {
   id: string;
+  language_id: string;
   name: string;
-  description: string;
-  createdAt: string;
+  description: string | null;
+  level: string | null;
+  is_public: boolean;
+  created_by_user_id: string | null;
+  created_at: number;
+  updated_at: number;
 }
 
+// A UI Card represents the combined view of cards, word_cards, and collection assignments
 export interface Card {
-  id: string;
-  deckId: string;
-  front: string;
-  back: string;
-  notes?: string;
-  createdAt: string;
+  id: string; // card_id / CardRecord.id
+  collection_id: string; // DictionaryCollectionCardRecord.collection_id
+  lemma: string; // WordCardRecord.lemma
+  translation: string; // WordCardRecord.translation
+  notes: string | null; // WordCardRecord.notes
+  created_at: number; // CardRecord.created_at
 }
 
 // Initial mock seed data
 const initialDecks: Deck[] = [
   {
     id: "deck-spanish",
+    language_id: "lang-spanish",
     name: "Spanish Essentials",
     description: "Most common Spanish vocabulary and essential phrases for beginners.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    level: "A1",
+    is_public: true,
+    created_by_user_id: "user-1",
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "deck-web-dev",
+    language_id: "lang-english",
     name: "Web Dev Core Concepts",
     description: "Fundamental concepts of modern web engineering: DOM, CSS, HTTP, React.",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    level: null,
+    is_public: true,
+    created_by_user_id: "user-1",
+    created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
 ];
 
@@ -36,68 +53,68 @@ const initialCards: Card[] = [
   // Spanish
   {
     id: "card-es-1",
-    deckId: "deck-spanish",
-    front: "Hola",
-    back: "Hello",
+    collection_id: "deck-spanish",
+    lemma: "Hola",
+    translation: "Hello",
     notes: "Basic friendly greeting.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-2",
-    deckId: "deck-spanish",
-    front: "¿Cómo estás?",
-    back: "How are you?",
+    collection_id: "deck-spanish",
+    lemma: "¿Cómo estás?",
+    translation: "How are you?",
     notes: "Used informally with friends/family.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-3",
-    deckId: "deck-spanish",
-    front: "Gracias",
-    back: "Thank you",
+    collection_id: "deck-spanish",
+    lemma: "Gracias",
+    translation: "Thank you",
     notes: "Crucial polite expression.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-4",
-    deckId: "deck-spanish",
-    front: "Por favor",
-    back: "Please",
+    collection_id: "deck-spanish",
+    lemma: "Por favor",
+    translation: "Please",
     notes: "Can be placed at the start or end of requests.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-5",
-    deckId: "deck-spanish",
-    front: "Adiós",
-    back: "Goodbye",
+    collection_id: "deck-spanish",
+    lemma: "Adiós",
+    translation: "Goodbye",
     notes: "Formal farewell. 'Chao' is more casual.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   // Web Dev
   {
     id: "card-wd-1",
-    deckId: "deck-web-dev",
-    front: "HTTP Status 404",
-    back: "Not Found",
+    collection_id: "deck-web-dev",
+    lemma: "HTTP Status 404",
+    translation: "Not Found",
     notes: "The origin server did not find a current representation for the target resource.",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-wd-2",
-    deckId: "deck-web-dev",
-    front: "React useEffect Cleanup",
-    back: "A function returned by the effect to clean up resources (e.g., subscriptions, intervals) before the component unmounts or before re-running the effect.",
+    collection_id: "deck-web-dev",
+    lemma: "React useEffect Cleanup",
+    translation: "A function returned by the effect to clean up resources (e.g., subscriptions, intervals) before the component unmounts or before re-running the effect.",
     notes: "Crucial for preventing memory leaks in single-page apps.",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-wd-3",
-    deckId: "deck-web-dev",
-    front: "CSS Box Model",
-    back: "The content, padding, border, and margin boxes that surround HTML elements.",
+    collection_id: "deck-web-dev",
+    lemma: "CSS Box Model",
+    translation: "The content, padding, border, and margin boxes that surround HTML elements.",
     notes: "box-sizing: border-box includes padding and border in the element's total width/height.",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
 ];
 
@@ -127,7 +144,7 @@ try {
   // SSR fallback / storage disabled
   globalDecks = initialDecks;
   globalCards = initialCards;
-  console.log(e)
+  console.log(e);
 }
 
 const listeners = new Set<() => void>();
@@ -168,9 +185,14 @@ export function useMockStore() {
   const createDeck = (name: string, description: string): Deck => {
     const newDeck: Deck = {
       id: `deck-${Date.now()}`,
+      language_id: "lang-learning",
       name,
-      description,
-      createdAt: new Date().toISOString(),
+      description: description || null,
+      level: null,
+      is_public: true,
+      created_by_user_id: null,
+      created_at: Date.now(),
+      updated_at: Date.now(),
     };
     globalDecks = [...globalDecks, newDeck];
     saveToStorage();
@@ -180,7 +202,14 @@ export function useMockStore() {
 
   const updateDeck = (id: string, name: string, description: string) => {
     globalDecks = globalDecks.map((d) =>
-      d.id === id ? { ...d, name, description } : d
+      d.id === id
+        ? {
+            ...d,
+            name,
+            description: description || null,
+            updated_at: Date.now(),
+          }
+        : d
     );
     saveToStorage();
     notify();
@@ -189,24 +218,24 @@ export function useMockStore() {
   const deleteDeck = (id: string) => {
     globalDecks = globalDecks.filter((d) => d.id !== id);
     // Cascade delete cards
-    globalCards = globalCards.filter((c) => c.deckId !== id);
+    globalCards = globalCards.filter((c) => c.collection_id !== id);
     saveToStorage();
     notify();
   };
 
   const createCard = (
-    deckId: string,
-    front: string,
-    back: string,
+    collection_id: string,
+    lemma: string,
+    translation: string,
     notes?: string
   ): Card => {
     const newCard: Card = {
       id: `card-${Date.now()}`,
-      deckId,
-      front,
-      back,
-      notes,
-      createdAt: new Date().toISOString(),
+      collection_id,
+      lemma,
+      translation,
+      notes: notes || null,
+      created_at: Date.now(),
     };
     globalCards = [...globalCards, newCard];
     saveToStorage();
@@ -214,9 +243,9 @@ export function useMockStore() {
     return newCard;
   };
 
-  const updateCard = (id: string, front: string, back: string, notes?: string) => {
+  const updateCard = (id: string, lemma: string, translation: string, notes?: string) => {
     globalCards = globalCards.map((c) =>
-      c.id === id ? { ...c, front, back, notes } : c
+      c.id === id ? { ...c, lemma, translation, notes: notes || null } : c
     );
     saveToStorage();
     notify();
@@ -228,8 +257,8 @@ export function useMockStore() {
     notify();
   };
 
-  const getCardsCount = (deckId: string): number => {
-    return globalCards.filter((c) => c.deckId === deckId).length;
+  const getCardsCount = (collection_id: string): number => {
+    return globalCards.filter((c) => c.collection_id === collection_id).length;
   };
 
   return {
