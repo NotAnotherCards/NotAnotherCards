@@ -35,16 +35,16 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   // Filter cards belonging to this deck
-  const cards = store.cards.filter((c) => c.deckId === deckId);
+  const cards = store.cards.filter((c) => c.collection_id === deckId);
 
-  const handleCreateCard = (data: { front: string; back: string; notes?: string }) => {
-    store.createCard(deckId, data.front, data.back, data.notes);
+  const handleCreateCard = (data: { lemma: string; translation: string; notes?: string }) => {
+    store.createCard(deckId, data.lemma, data.translation, data.notes);
     setShowCreateForm(false);
   };
 
-  const handleEditCard = (data: { front: string; back: string; notes?: string }) => {
+  const handleEditCard = (data: { lemma: string; translation: string; notes?: string }) => {
     if (editingCard) {
-      store.updateCard(editingCard.id, data.front, data.back, data.notes);
+      store.updateCard(editingCard.id, data.lemma, data.translation, data.notes);
       setEditingCard(null);
     }
   };
@@ -114,8 +114,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <CardForm
           title="Edit Card"
           initialData={{
-            front: editingCard.front,
-            back: editingCard.back,
+            lemma: editingCard.lemma,
+            translation: editingCard.translation,
             notes: editingCard.notes,
           }}
           onSubmit={handleEditCard}

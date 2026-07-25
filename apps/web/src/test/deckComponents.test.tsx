@@ -8,9 +8,14 @@ import { Deck, Card } from "../hooks/useMockStore";
 describe("DeckCard Component", () => {
   const mockDeck: Deck = {
     id: "deck-test-1",
+    language_id: "lang-spanish",
     name: "Spanish Verbs",
     description: "Learn essential conversational Spanish verbs.",
-    createdAt: new Date().toISOString(),
+    level: "A1",
+    is_public: true,
+    created_by_user_id: "user-1",
+    created_at: Date.now(),
+    updated_at: Date.now(),
   };
 
   it("renders the deck name, description, and total cards badge", () => {
@@ -61,11 +66,11 @@ describe("DeckCard Component", () => {
 describe("CardItem Component", () => {
   const mockCard: Card = {
     id: "card-test-1",
-    deckId: "deck-test-1",
-    front: "Hola",
-    back: "Hello",
+    collection_id: "deck-test-1",
+    lemma: "Hola",
+    translation: "Hello",
     notes: "Basic friendly greeting.",
-    createdAt: new Date().toISOString(),
+    created_at: Date.now(),
   };
 
   it("renders card front, back, and notes inside a table context", () => {
@@ -122,11 +127,11 @@ describe("CardItem Component", () => {
 describe("FlashcardModal Component", () => {
   const mockCard: Card = {
     id: "card-test-1",
-    deckId: "deck-test-1",
-    front: "Hola",
-    back: "Hello",
+    collection_id: "deck-test-1",
+    lemma: "Hola",
+    translation: "Hello",
     notes: "Basic friendly greeting.",
-    createdAt: new Date().toISOString(),
+    created_at: Date.now(),
   };
 
   it("renders front content by default and flips to back content on click", () => {
