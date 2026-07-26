@@ -1,7 +1,6 @@
 import { Link, type Href } from 'expo-router'
 import type { ReactNode } from 'react'
 import { View } from 'react-native'
-import { Card } from '../ui/card'
 import { Text } from '../ui/text'
 
 interface AuthCardProps {
@@ -23,7 +22,7 @@ export function AuthCard({
 }: AuthCardProps) {
   return (
     <View className="flex-1 justify-center bg-zinc-100 p-6">
-      <Card className="gap-3">
+      <View className="gap-3 rounded-xl border border-zinc-200 bg-white p-6">
         <Text className="text-2xl font-semibold">{title}</Text>
         <Text className="mb-2 text-zinc-500">{description}</Text>
         {children}
@@ -33,7 +32,7 @@ export function AuthCard({
             <Text className="font-semibold">{footerLinkText}</Text>
           </Link>
         </View>
-      </Card>
+      </View>
     </View>
   )
 }

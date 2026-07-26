@@ -1,32 +1,13 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native'
-import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../../lib/utils'
 
-const buttonVariants = cva(
-  'flex-row items-center justify-center rounded-lg',
-  {
-    variants: {
-      variant: {
-        default: 'bg-zinc-900',
-      },
-      size: {
-        default: 'px-4 py-3',
-      },
-    },
-    defaultVariants: { variant: 'default', size: 'default' },
-  },
-)
-
-type ButtonProps = React.ComponentProps<typeof Pressable> &
-  VariantProps<typeof buttonVariants> & {
-    label: string
-    loading?: boolean
-  }
+type ButtonProps = React.ComponentProps<typeof Pressable> & {
+  label: string
+  loading?: boolean
+}
 
 export function Button({
   className,
-  variant,
-  size,
   label,
   loading,
   disabled,
@@ -36,7 +17,7 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       className={cn(
-        buttonVariants({ variant, size }),
+        'flex-row items-center justify-center rounded-lg bg-zinc-900 px-4 py-3',
         (disabled || loading) && 'opacity-60',
         className,
       )}

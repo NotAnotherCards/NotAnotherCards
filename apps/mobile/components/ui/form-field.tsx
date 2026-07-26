@@ -6,7 +6,6 @@ import {
 } from 'react-hook-form'
 import { View, type TextInputProps } from 'react-native'
 import { Input } from './input'
-import { Label } from './label'
 import { Text } from './text'
 
 type FormFieldProps<T extends FieldValues> = {
@@ -27,7 +26,7 @@ export function FormField<T extends FieldValues>({
       name={name}
       render={({ field: { onChange, onBlur, value }, fieldState }) => (
         <View className="gap-1">
-          <Label>{label}</Label>
+          <Text className="text-sm font-medium">{label}</Text>
           <Input
             value={value}
             onChangeText={onChange}

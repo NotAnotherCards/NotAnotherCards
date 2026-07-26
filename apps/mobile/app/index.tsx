@@ -1,7 +1,6 @@
 import { Redirect } from 'expo-router'
 
-// Entry point. Session-aware redirect comes with the auth step; for now
-// the app opens on the login screen.
+// Dashboard bounces unauthenticated users back to /login.
 export default function Index() {
-  return <Redirect href="/login" />
+  return <Redirect href="/dashboard" />
 }
