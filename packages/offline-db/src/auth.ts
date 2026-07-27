@@ -3,7 +3,7 @@ import { ModelFor, type InferRecord } from "@remelondb/core";
 import { zodTable } from "@remelondb/core/zod";
 
 export const UserRow = z.object({
-  email: z.email(),
+  email: z.string().email(),
   email_verified: z.boolean(),
   name: z.string().nullable(),
   username: z.string().nullable(),
