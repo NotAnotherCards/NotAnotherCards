@@ -1,10 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema } from "@repo/offline-db";
+import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema, UserRow, SessionRow } from "@repo/offline-db";
 
 describe("@repo/offline-db wiring on web", () => {
   it("imports and validates offline db schemas", () => {
     expect(schema.version).toBe(1);
     expect(schema.tables.user_cards).toBeDefined();
+    expect(schema.tables.users).toBeDefined();
+    expect(schema.tables.sessions).toBeDefined();
+
+    expect(
+      UserRow.safeParse({
+        email: "test@example.com",
+        email_verified: true,
+        name: "Test User",
+        username: "testuser",
+        image: null,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        deleted_at: null,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      SessionRow.safeParse({
+        user_id: "user123",
+        token: "token123",
+        expires_at: Date.now() + 3600000,
+        ip_address: "127.0.0.1",
+        user_agent: "Mozilla",
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      }).success,
+    ).toBe(true);
 
     expect(
       UserCardRow.safeParse({
@@ -53,5 +80,7 @@ describe("@repo/offline-db wiring on web", () => {
     ).toBe(true);
 
     expect(syncWireSchemas.rows.user_cards).toBeDefined();
+    expect(syncWireSchemas.rows.users).toBeDefined();
   });
 });
+

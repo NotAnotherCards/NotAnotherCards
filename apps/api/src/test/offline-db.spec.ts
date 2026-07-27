@@ -8,11 +8,32 @@ describe('@repo/offline-db wiring on API', () => {
         '--input-type=module',
         '--eval',
         `
-          import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema } from '@repo/offline-db';
+          import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema, UserRow, SessionRow } from '@repo/offline-db';
 
           const result = {
             schemaVersion: schema.version,
             userCardsTableDefined: !!schema.tables.user_cards,
+            usersTableDefined: !!schema.tables.users,
+            sessionsTableDefined: !!schema.tables.sessions,
+            userValidate: UserRow.safeParse({
+              email: 'test@example.com',
+              email_verified: true,
+              name: 'Test User',
+              username: 'testuser',
+              image: null,
+              created_at: 0,
+              updated_at: 0,
+              deleted_at: null,
+            }).success,
+            sessionValidate: SessionRow.safeParse({
+              user_id: 'user123',
+              token: 'token123',
+              expires_at: 3600000,
+              ip_address: '127.0.0.1',
+              user_agent: 'Mozilla',
+              created_at: 0,
+              updated_at: 0,
+            }).success,
             cardValidate: UserCardRow.safeParse({
               user_id: 'user123',
               card_id: 'card123',
@@ -51,6 +72,7 @@ describe('@repo/offline-db wiring on API', () => {
               verb_forms: null,
             }).success,
             syncSchemaDefined: !!syncWireSchemas.rows.user_cards,
+            usersSyncSchemaDefined: !!syncWireSchemas.rows.users,
           };
 
           console.log(JSON.stringify(result));
@@ -65,10 +87,16 @@ describe('@repo/offline-db wiring on API', () => {
     expect(JSON.parse(output)).toEqual({
       schemaVersion: 1,
       userCardsTableDefined: true,
+      usersTableDefined: true,
+      sessionsTableDefined: true,
+      userValidate: true,
+      sessionValidate: true,
       cardValidate: true,
       globalCardValidate: true,
       wordCardValidate: true,
       syncSchemaDefined: true,
+      usersSyncSchemaDefined: true,
     });
   });
 });
+
