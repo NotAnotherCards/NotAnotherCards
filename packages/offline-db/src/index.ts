@@ -43,14 +43,18 @@ import {
   DictionaryCollectionCardRow,
 } from "./cards.js";
 import {
+  userDecks,
   userCards,
   userCardOverrides,
   userCardNotes,
   userCardResetEvents,
+  reviewEvents,
+  UserDeckRow,
   UserCardRow,
   UserCardOverrideRow,
   UserCardNoteRow,
   UserCardResetEventRow,
+  ReviewEventRow,
 } from "./user-dictionary.js";
 
 export const schema = appSchema({
@@ -74,10 +78,12 @@ export const schema = appSchema({
     cardTagAssignments,
     dictionaryCollections,
     dictionaryCollectionCards,
+    userDecks,
     userCards,
     userCardOverrides,
     userCardNotes,
     userCardResetEvents,
+    reviewEvents,
   ],
 });
 
@@ -100,10 +106,12 @@ export const syncWireSchemas = syncSchemas({
   card_tag_assignments: CardTagAssignmentRow,
   dictionary_collections: DictionaryCollectionRow,
   dictionary_collection_cards: DictionaryCollectionCardRow,
+  user_decks: UserDeckRow,
   user_cards: UserCardRow,
   user_card_overrides: UserCardOverrideRow,
   user_card_notes: UserCardNoteRow,
   user_card_reset_events: UserCardResetEventRow,
+  review_events: ReviewEventRow,
 });
 
 export * from "./auth.js";

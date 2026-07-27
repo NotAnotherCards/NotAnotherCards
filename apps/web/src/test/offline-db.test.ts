@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema, UserRow, SessionRow } from "@repo/offline-db";
+import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema, UserRow, SessionRow, UserDeckRow, ReviewEventRow } from "@repo/offline-db";
 
 describe("@repo/offline-db wiring on web", () => {
   it("imports and validates offline db schemas", () => {
     expect(schema.version).toBe(1);
     expect(schema.tables.user_cards).toBeDefined();
+    expect(schema.tables.user_decks).toBeDefined();
+    expect(schema.tables.review_events).toBeDefined();
     expect(schema.tables.users).toBeDefined();
     expect(schema.tables.sessions).toBeDefined();
 
@@ -37,9 +39,11 @@ describe("@repo/offline-db wiring on web", () => {
       UserCardRow.safeParse({
         user_id: "user123",
         card_id: "card123",
+        deck_id: null,
         status: "learning",
         source: "manual",
         offline_enabled: false,
+        due_at: null,
         added_at: 0,
         updated_at: 0,
       }).success,
@@ -79,7 +83,31 @@ describe("@repo/offline-db wiring on web", () => {
       }).success,
     ).toBe(true);
 
+    expect(
+      UserDeckRow.safeParse({
+        user_id: "user123",
+        name: "Test Deck",
+        description: "Deck description",
+        created_at: 0,
+        updated_at: 0,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      ReviewEventRow.safeParse({
+        user_id: "user123",
+        user_card_id: "usercard123",
+        rating: 3,
+        ease_factor: 2.5,
+        interval: 1,
+        reviewed_at: 0,
+        created_at: 0,
+      }).success,
+    ).toBe(true);
+
     expect(syncWireSchemas.rows.user_cards).toBeDefined();
+    expect(syncWireSchemas.rows.user_decks).toBeDefined();
+    expect(syncWireSchemas.rows.review_events).toBeDefined();
     expect(syncWireSchemas.rows.users).toBeDefined();
   });
 });

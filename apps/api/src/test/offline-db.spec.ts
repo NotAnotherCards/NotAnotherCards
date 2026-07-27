@@ -8,11 +8,13 @@ describe('@repo/offline-db wiring on API', () => {
         '--input-type=module',
         '--eval',
         `
-          import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema, UserRow, SessionRow } from '@repo/offline-db';
+          import { UserCardRow, CardRow, WordCardRow, syncWireSchemas, schema, UserRow, SessionRow, UserDeckRow, ReviewEventRow } from '@repo/offline-db';
 
           const result = {
             schemaVersion: schema.version,
             userCardsTableDefined: !!schema.tables.user_cards,
+            userDecksTableDefined: !!schema.tables.user_decks,
+            reviewEventsTableDefined: !!schema.tables.review_events,
             usersTableDefined: !!schema.tables.users,
             sessionsTableDefined: !!schema.tables.sessions,
             userValidate: UserRow.safeParse({
@@ -37,9 +39,11 @@ describe('@repo/offline-db wiring on API', () => {
             cardValidate: UserCardRow.safeParse({
               user_id: 'user123',
               card_id: 'card123',
+              deck_id: null,
               status: 'learning',
               source: 'manual',
               offline_enabled: false,
+              due_at: null,
               added_at: 0,
               updated_at: 0,
             }).success,
@@ -71,7 +75,25 @@ describe('@repo/offline-db wiring on API', () => {
               countability: null,
               verb_forms: null,
             }).success,
+            userDeckValidate: UserDeckRow.safeParse({
+              user_id: 'user123',
+              name: 'Test Deck',
+              description: 'Deck description',
+              created_at: 0,
+              updated_at: 0,
+            }).success,
+            reviewEventValidate: ReviewEventRow.safeParse({
+              user_id: 'user123',
+              user_card_id: 'usercard123',
+              rating: 3,
+              ease_factor: 2.5,
+              interval: 1,
+              reviewed_at: 0,
+              created_at: 0,
+            }).success,
             syncSchemaDefined: !!syncWireSchemas.rows.user_cards,
+            userDecksSyncSchemaDefined: !!syncWireSchemas.rows.user_decks,
+            reviewEventsSyncSchemaDefined: !!syncWireSchemas.rows.review_events,
             usersSyncSchemaDefined: !!syncWireSchemas.rows.users,
           };
 
@@ -87,6 +109,8 @@ describe('@repo/offline-db wiring on API', () => {
     expect(JSON.parse(output)).toEqual({
       schemaVersion: 1,
       userCardsTableDefined: true,
+      userDecksTableDefined: true,
+      reviewEventsTableDefined: true,
       usersTableDefined: true,
       sessionsTableDefined: true,
       userValidate: true,
@@ -94,9 +118,12 @@ describe('@repo/offline-db wiring on API', () => {
       cardValidate: true,
       globalCardValidate: true,
       wordCardValidate: true,
+      userDeckValidate: true,
+      reviewEventValidate: true,
       syncSchemaDefined: true,
+      userDecksSyncSchemaDefined: true,
+      reviewEventsSyncSchemaDefined: true,
       usersSyncSchemaDefined: true,
     });
   });
 });
-
