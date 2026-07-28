@@ -46,47 +46,53 @@ These tables support the core spaced repetition features and are designed to syn
 ### `user_decks`
 
 Represents a deck (collection of cards) owned by a user.
-* **`id`** (text/UUID, Primary Key): Client-generated unique identifier to prevent offline creation collisions.
-* **`user_id`** (text/UUID, Foreign Key): Links to `user.id`. Cascades on deletion.
-* **`title`** (text, NOT NULL): The deck's display name.
-* **`description`** (text, nullable): Optional description of the deck.
-* **`created_at` / `updated_at`** (timestamp with time zone): Tracks creation and the last modified time to resolve client sync conflicts.
-* **`deleted_at`** (timestamp with time zone, nullable): Used for **soft-deletes (tombstones)**. Instead of immediately hard-deleting a row, we populate this field so that other offline clients can pull the deletion state and update themselves.
+
+- **`id`** (text/UUID, Primary Key): Client-generated unique identifier to prevent offline creation collisions.
+- **`user_id`** (text/UUID, Foreign Key): Links to `user.id`. Cascades on deletion.
+- **`title`** (text, NOT NULL): The deck's display name.
+- **`description`** (text, nullable): Optional description of the deck.
+- **`created_at` / `updated_at`** (timestamp with time zone): Tracks creation and the last modified time to resolve client sync conflicts.
+- **`deleted_at`** (timestamp with time zone, nullable): Used for **soft-deletes (tombstones)**. Instead of immediately hard-deleting a row, we populate this field so that other offline clients can pull the deletion state and update themselves.
 
 **Indexes:**
-* **`idx_user_decks_user_updated`**: Composite index on `(user_id, updated_at)` for listing a user's decks by recency.
+
+- **`idx_user_decks_user_updated`**: Composite index on `(user_id, updated_at)` for listing a user's decks by recency.
 
 ---
 
 ### `user_cards`
 
 Represents individual vocabulary cards, comparison cards, or phrases.
-* **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
-* **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
-* **`deck_id`** (text/UUID, Foreign Key): Links to `user_decks.id` with `cascade` delete.
-* **`card_type`** (enum): Native PG enum (`WORD`, `COMPARISON`, `PHRASE`). Defaults to `WORD`.
-* **`front` / `back`** (text, NOT NULL): The card prompt/question and response/translation.
-* **`context_sentence`** (text, nullable): Optional context or example sentence.
-* **`due_at`** (timestamp with time zone, default now): The next scheduled review date-time determined by the spaced repetition algorithm.
-* **`created_at` / `updated_at` / `deleted_at`** (timestamp with time zone): Same sync and soft-delete semantics as `user_decks`.
+
+- **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
+- **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
+- **`deck_id`** (text/UUID, Foreign Key): Links to `user_decks.id` with `cascade` delete.
+- **`card_type`** (enum): Native PG enum (`WORD`, `COMPARISON`, `PHRASE`). Defaults to `WORD`.
+- **`front` / `back`** (text, NOT NULL): The card prompt/question and response/translation.
+- **`context_sentence`** (text, nullable): Optional context or example sentence.
+- **`due_at`** (timestamp with time zone, default now): The next scheduled review date-time determined by the spaced repetition algorithm.
+- **`created_at` / `updated_at` / `deleted_at`** (timestamp with time zone): Same sync and soft-delete semantics as `user_decks`.
 
 **Indexes:**
-* **`idx_user_cards_user_updated`**: Composite index on `(user_id, updated_at)` for listing a user's cards by recency.
-* **`idx_user_cards_due`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
+
+- **`idx_user_cards_user_updated`**: Composite index on `(user_id, updated_at)` for listing a user's cards by recency.
+- **`idx_user_cards_due`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
 
 ---
 
 ### `review_events`
 
 An **append-only** transaction log of all study card reviews.
-* **`id`** (text/UUID, Primary Key): Unique review identifier.
-* **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
-* **`user_card_id`** (text/UUID, Foreign Key): Links to `user_cards.id` with `cascade` delete.
-* **`rating`** (integer, NOT NULL): How well the user remembered the card (e.g., `1` for failed/forgot, `2` for remembered).
-* **`reviewed_at`** (timestamp with time zone, default now): The timestamp when the review session took place.
+
+- **`id`** (text/UUID, Primary Key): Unique review identifier.
+- **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
+- **`user_card_id`** (text/UUID, Foreign Key): Links to `user_cards.id` with `cascade` delete.
+- **`rating`** (integer, NOT NULL): How well the user remembered the card (e.g., `1` for failed/forgot, `2` for remembered).
+- **`reviewed_at`** (timestamp with time zone, default now): The timestamp when the review session took place.
 
 **Indexes:**
-* **`idx_review_events_user_card`**: Composite index on `(user_id, user_card_id)` to quickly pull up study/review history for a specific card.
+
+- **`idx_review_events_user_card`**: Composite index on `(user_id, user_card_id)` to quickly pull up study/review history for a specific card.
 
 ## Migrations
 
