@@ -15,6 +15,13 @@
       "when": 1784824984362,
       "tag": "0001_glamorous_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785222812211,
+      "tag": "0002_quick_boom_boom",
+      "breakpoints": true
     }
   ]
 }
