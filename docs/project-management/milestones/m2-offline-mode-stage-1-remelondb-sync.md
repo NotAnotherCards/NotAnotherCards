@@ -213,7 +213,7 @@ with local-first reads and writes.
 
 Type: Backend
 
-Depends on: M2-02
+Depends on: M2-02, M2-07
 
 ### Goal
 
@@ -221,79 +221,138 @@ Expose the canonical remelonDB HTTP sync binding from the NestJS API.
 
 ### Tasks
 
-- Create `apps/api/src/sync`.
-- Add `SyncModule`, controller, and service.
-- Add authenticated `POST /sync/pull`.
-- Add authenticated `POST /sync/push`.
-- Parse request payloads with shared wire schemas.
-- Scope handlers by authenticated `userId`.
-- Return protocol variants as JSON response bodies.
-- Ensure the sync engine is wired to PostgreSQL-backed storage, not a demo
-  memory store.
+- Add `@remelondb/nestjs` to `apps/api`.
+- Create `apps/api/src/sync` and register
+  `RemelonSyncModule.forRootAsync(...)`.
+- Inject the PostgreSQL-backed Drizzle store implemented in M2-07.
+- Pass the shared deck, card, and review Zod objects from
+  `packages/offline-db` as the module's table definitions.
+- Implement `scopeFrom(request)` using the existing authentication layer:
+  - return the authenticated `userId` as the remelonDB scope;
+  - return `null` when the request is unauthenticated.
+- Add `crossValidate` rules for relationships that cannot be validated from a
+  single row, including ensuring a card references a deck owned by the same
+  authenticated scope.
+- Confirm the module exposes the canonical endpoints:
+  - `POST /sync/pull`;
+  - `POST /sync/push`.
+- Preserve the canonical transport behavior:
+  - return protocol outcomes such as `conflict` and `resyncRequired` as HTTP
+    200 JSON response variants;
+  - return HTTP 400 for malformed requests;
+  - return HTTP 401 when `scopeFrom` cannot resolve an authenticated user.
+- Add endpoint integration tests for authentication, request validation,
+  scope isolation, and protocol response variants.
 
 ### Acceptance criteria
 
 - Authenticated users can call `/sync/pull` and `/sync/push`.
-- Invalid payloads are rejected.
-- Sync routes use the authenticated user scope.
-- Protocol variants such as `conflict` and `resyncRequired` are preserved.
-- No synced backend state relies on in-memory-only storage.
+- The endpoints are provided by `@remelondb/nestjs`
+- Malformed payloads are rejected with HTTP 400.
+- Unauthenticated requests are rejected with HTTP 401.
+- Sync operations use the authenticated `userId` as their scope, and tests
+  prove that one user cannot read or mutate another user's records.
+- Protocol variants such as `conflict` and `resyncRequired` are returned as
+  HTTP 200 JSON response bodies.
+- Cross-record validation rejects invalid and cross-scope relationships.
+- The module uses the M2-07 PostgreSQL-backed store; no synced backend state
+  relies on in-memory-only storage.
 
 ### Useful links
 
-- https://github.com/dustyway/remelonDB/blob/main/docs/tutorial.md#10-sync
-- https://github.com/dustyway/remelonDB/blob/main/docs/reference/sync.md
-- https://github.com/dustyway/remelonDB/blob/main/examples/todo-sync/backend/server.ts
+- https://github.com/dustyway/remelonDB/blob/main/packages/nestjs/README.md
+- https://github.com/dustyway/remelonDB/blob/main/docs/reference/backend.md
+- https://github.com/dustyway/remelonDB/blob/main/docs/backend-tutorial.md#mounting-it-in-a-server
 
 ## M2-07 - Implement a PostgreSQL-backed remelonDB sync store
 
 Type: Backend / Database
 
-Depends on: M2-01, M2-05
+Depends on: M2-01, M2-02
 
 ### Goal
 
-Implement the persistent storage seam required by remelonDB's server sync
-engine.
+Back the remelonDB server engine with the official PostgreSQL/Drizzle store and
+the stage-1 deck, card, and review tables.
 
 ### Why this ticket is important
 
 This phase must not ship with a service-worker-only or in-memory sync backend.
-The backend already has PostgreSQL access; this ticket makes the sync engine use
-that durable storage correctly.
+The backend already has PostgreSQL and Drizzle. remelonDB now provides
+`@remelondb/store-drizzle` for durable rows and revisions, while
+`@remelondb/server` owns protocol behavior such as cursors, conflicts, and
+resync. This ticket must integrate those packages.
 
 ### Tasks
 
-- Study the remelonDB sync design and backend storage seam.
-- Design the cursor strategy so it is commit-ordered.
-- Persist canonical sync state in PostgreSQL.
-- Add changelog and tombstone support needed for incremental pulls.
-- Implement atomic push application.
-- Implement conflict detection against the client's cursor.
-- Implement cursor expiry and `resyncRequired` behavior.
-- Add automated tests for the store.
+- Add the current compatible versions of `@remelondb/server`,
+  `@remelondb/store-drizzle`, `drizzle-orm`, `pg`, and `zod` to the API/shared
+  packages that use them.
+- Update the Drizzle schema and migration for every synced stage-1 table:
+  - use a client-minted `text` primary key with no server-side default;
+  - add a non-null `bigint` `rev`;
+  - add a nullable `timestamptz` `deleted_at` tombstone marker;
+  - add a non-null owner/scope column, or explicitly configure a derived scope;
+  - add an `(owner, rev)` index for incremental pulls.
+- Add the remelonDB bookkeeping objects in the same migration:
+  - the global revision sequence;
+  - the one-row sync metadata table.
+- Keep PostgreSQL column names aligned with the keys in the shared Zod row
+  schemas so rows do not need application-specific mapping.
+- Create a `createDrizzleStore(...)` configuration for decks, cards, and review
+  events, mapping each table's `id`, `rev`, `deletedAt`, and `scope` columns.
+- Prefer denormalized `user_id` scope columns on child tables. If a child is
+  scoped only through its parent, implement and test all required store
+  overrides (`changedSince`, `currentRevs`, `foreignIds`, and `maxRev`) using
+  the parent join.
+- Wire the configured store into `createSyncEngine(...)` and validate each
+  table with the row validators exported by `packages/offline-db`.
+- Ensure deletes use tombstones and a new revision rather than SQL `DELETE`.
+- Define the first tombstone-retention policy and a scheduled/manual entry
+  point for `store.gc(floor)`. Record revision floors used for time-based
+  retention so expired cursors can become `resyncRequired`.
+- Configure `scrub` for any sensitive fields that must be erased immediately
+  when a row is tombstoned.
+- Add integration tests against PostgreSQL for:
+  - create, update, and tombstone delete round trips;
+  - incremental pulls;
+  - isolation between two authenticated user scopes;
+  - conflict and `resyncRequired` results through the server engine;
+  - garbage collection and the persisted revision floor;
+  - transaction rollback when a push cannot be applied.
+- Run `registerServerConformance` from
+  `@remelondb/server/conformance` against the resulting pull/push handlers.
 
 ### Acceptance criteria
 
-- Pull reads from one consistent snapshot.
-- Cursors are not based on wall-clock timestamps alone.
-- Deletes remain syncable until the retention window expires.
-- Conflicting pushes are rejected with `conflict`.
-- Expired or unknown cursors return `resyncRequired`.
-- Store tests cover create, update, delete, conflict, and resync paths.
+- The API uses `@remelondb/store-drizzle`; no custom cursor, changelog, or
+  conflict engine duplicates behavior provided by remelonDB.
+- All synced tables satisfy remelonDB's table contract and have an
+  `(owner, rev)` index.
+- The revision sequence and sync metadata table are created by a checked-in
+  Drizzle migration.
+- The store is configured for every stage-1 synced table and uses the
+  authenticated user id as its scope without cross-user leakage.
+- A pushed delete is stored as a tombstone, remains pullable until garbage
+  collection, and does not expose scrubbed fields.
+- Conflict and expired-cursor behavior comes from `@remelondb/server` and is
+  verified through integration tests.
+- The remelonDB server conformance suite passes against the configured
+  PostgreSQL-backed handlers.
 - Synced deck/card/review state survives backend restarts.
 
 ### Useful links
 
-- https://github.com/dustyway/remelonDB/blob/main/docs/sync-design.md
+- https://github.com/dustyway/remelonDB/blob/main/docs/reference/backend.md
+- https://github.com/dustyway/remelonDB/blob/main/docs/backend-tutorial.md
+- https://github.com/dustyway/remelonDB/tree/main/packages/store-drizzle
 - https://github.com/dustyway/remelonDB/blob/main/docs/reference/sync.md
-- https://github.com/dustyway/remelonDB/blob/main/docs/tutorial.md#10-sync
 
 ## M2-08 - Wire browser sync orchestration
 
 Type: Frontend / Sync
 
-Depends on: M2-04A, M2-05, M2-06
+Depends on: M2-04, M2-05, M2-06
 
 ### Goal
 
@@ -304,7 +363,10 @@ Connect the web local database to the API sync endpoints through
 
 - Create `apps/web/src/offline/sync.ts`.
 - Implement `pullChanges` and `pushChanges`.
-- Validate responses with shared wire parsers.
+- Validate pull and push response bodies with the shared wire parsers,
+  including HTTP 200 `conflict` and `resyncRequired` protocol variants.
+- Treat HTTP 401, HTTP 5xx, and network failures as transport errors without
+  changing local state.
 - Expose sync status for the UI.
 - Trigger sync:
   - on startup;
@@ -320,12 +382,15 @@ Connect the web local database to the API sync endpoints through
 - Remote changes are pulled into the local DB.
 - Sync status is visible to the app.
 - A failed sync leaves local state intact.
+- `conflict` and `resyncRequired` response variants are passed to
+  `synchronize(...)` rather than treated as transport errors.
 - Deck and card CRUD are visibly synchronized across sessions.
 
 ### Useful links
 
 - https://github.com/dustyway/remelonDB/blob/main/docs/reference/sync.md
-- https://github.com/dustyway/remelonDB/blob/main/examples/todo-sync/bac
+- https://github.com/dustyway/remelonDB/blob/main/docs/sync-triggering.md
+- https://github.com/dustyway/remelonDB/tree/main/examples/todo-sync/frontend
 
 ## M2-09 - Add GitHub CI for lint, build, and test
 
