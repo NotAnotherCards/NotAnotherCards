@@ -25,9 +25,9 @@ const mockSession = {
 
 describe("Dashboard Page Component Specs", () => {
   beforeEach(async () => {
-    // Reset router history and path
-    window.history.pushState(null, "", "/");
-    await router.navigate({ to: "/" });
+    // Reset router history and path directly to the dashboard
+    window.history.pushState(null, "", "/app/dashboard");
+    await router.navigate({ to: "/app/dashboard" });
 
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({ data: mockSession, error: null });
@@ -41,18 +41,10 @@ describe("Dashboard Page Component Specs", () => {
 
     // Invalidate router cache to ensure loaders re-run with the new mock values
     await router.invalidate();
-    await router.preloadRoute({ to: "/app/dashboard" });
   });
 
   it("renders welcome text, user email/name, and placeholder feature sections", async () => {
-    const user = userEvent.setup();
     render(<App />);
-
-    // Navigate to dashboard
-    const dashboardLink = await screen.findByRole("link", {
-      name: /dashboard/i,
-    });
-    await user.click(dashboardLink);
 
     // 1. Dashboard renders welcome text
     expect(
@@ -86,12 +78,6 @@ describe("Dashboard Page Component Specs", () => {
 
     const user = userEvent.setup();
     render(<App />);
-
-    // Navigate to dashboard
-    const dashboardLink = await screen.findByRole("link", {
-      name: /dashboard/i,
-    });
-    await user.click(dashboardLink);
 
     // Find the logout button
     const logoutButton = await screen.findByRole("button", {
