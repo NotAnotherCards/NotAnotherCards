@@ -27,24 +27,24 @@ export function AuthCard({
   footerLinkTo,
 }: AuthCardProps) {
   return (
-    <Card className="w-full max-w-md border border-border/40 bg-card/60 backdrop-blur-xl shadow-2xl transition-all duration-300">
-      <CardHeader className="space-y-1 pb-6 text-center">
+    <Card className="w-full max-w-md border border-border/40 bg-card/60 backdrop-blur-xl shadow-2xl transition-all duration-300 gap-4">
+      <CardHeader className="space-y-1 pb-0 text-center">
         <CardTitle
           role="heading"
           aria-level={2}
-          className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
+          className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent transition-all duration-300"
         >
           {title}
         </CardTitle>
-        <CardDescription className="text-muted-foreground text-sm">
+        <CardDescription className="text-muted-foreground text-xs sm:text-sm transition-all duration-300">
           {description}
         </CardDescription>
       </CardHeader>
 
       <CardContent>{children}</CardContent>
 
-      <CardFooter className="flex justify-center border-t border-border/10 pt-4 pb-6">
-        <p className="text-sm text-muted-foreground">
+      <CardFooter className="flex justify-center border-t border-border/10 pt-3 pb-4">
+        <p className="text-xs text-muted-foreground">
           {footerText}{" "}
           <Link
             to={footerLinkTo}
