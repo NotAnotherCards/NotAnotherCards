@@ -15,9 +15,14 @@ Layout:
 ## Prerequisites
 
 - Node and pnpm (`pnpm install` at the root).
+- The API running locally: follow the Setup section in the root README (env
+  files, `docker compose up -d`, `pnpm --filter api db:migrate`), then start it
+  with `pnpm --filter api dev`. Without it, login and signup fail with
+  "Can't reach the server".
 - For Android: the Android SDK with an emulator (AVD) and `adb` on your PATH,
-  plus **Java 21** for the build; it fails on newer JDKs (Java 26). Set
-  `JAVA_HOME`, e.g. `/usr/lib/jvm/java-21-openjdk`.
+  plus **Java 17–21** for the build; it fails on newer JDKs (Java 26). Set
+  `JAVA_HOME`, e.g. `/usr/lib/jvm/java-21-openjdk` or
+  `/usr/lib/jvm/java-17-openjdk-amd64`.
 - For iOS: a Mac with full Xcode installed. CocoaPods is installed
   automatically by `expo run:ios` on first build if missing.
 
@@ -50,19 +55,71 @@ avdmanager create avd -n pixel8 -d pixel_8 -k "system-images;android-35;google_a
 emulator -avd pixel8
 ```
 
+AVDs created with `avdmanager` default to `hw.keyboard = no`, which makes the
+emulator ignore your physical keyboard. Flip it to `yes` in
+`~/.android/avd/<name>.avd/config.ini` and restart the emulator. (Android
+Studio's Device Manager and `scripts/android-emulator.sh` both set it for you.)
+
 Either way, `adb devices` should list the running emulator before you continue.
+
+### On a 42 school computer
+
+`scripts/android-emulator.sh` automates all of the above: it installs the SDK
+into `/goinfre` (fast local disk), creates a Pixel 8 AVD (API 35) and starts
+it. Because goinfre is wiped regularly, just re-run the script after a wipe —
+the big downloads are cached in `/sgoinfre`, so re-provisioning is quick.
+
+```sh
+./scripts/android-emulator.sh            # set up if needed, then start
+./scripts/android-emulator.sh --setup    # set up only, don't start
+./scripts/android-emulator.sh --headless # start without a window (CI/tests)
+```
+
+To use `adb` or `emulator` manually in your own shell, source the env file
+the script writes:
+
+```sh
+source /goinfre/$USER/android-sdk/env.sh
+```
+
+(The script exports `ANDROID_AVD_HOME` to keep AVDs on goinfre, but
+`avdmanager` ignores it and creates them in `~/.android/avd` anyway — keep
+`~/.android` symlinked into goinfre so they stay off the home quota.)
+
+The script also points pnpm's global package store at
+`/goinfre/$USER/pnpm-store` — it grows to ~1 GB and eats the home quota
+otherwise. After a goinfre wipe pnpm recreates it on the next `pnpm install`;
+nothing else to redo.
+
+Finally, keep the repo itself on goinfre: a native Android build needs a few
+GB of scratch space inside the repo (`node_modules`, `android/`), which does
+not fit next to everything else in the ~10 GB home quota. Clone it there
+directly, or move an existing checkout and symlink it back:
+
+```sh
+mv ~/Code/NotAnotherCards /goinfre/$USER/NotAnotherCards
+ln -s /goinfre/$USER/NotAnotherCards ~/Code/NotAnotherCards
+```
+
+goinfre is wiped regularly and never leaves the machine, so commit and push
+early and often — after a wipe, re-clone and re-run the script.
 
 ### Building and starting
 
 Start the emulator, then from `apps/mobile`:
 
 ```sh
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk npx expo run:android
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 pnpm android
 ```
 
-First build takes a few minutes (compiles native modules, generates `android/`,
-installs on the emulator). After that, `npx expo start` and press `a`; JS changes
-hot-reload, only native dependency changes need another `run:android`.
+Build times, so nobody is surprised:
+
+- First build: ~10 minutes. It generates `android/`, downloads the Gradle
+  toolchain and compiles every native module.
+- Later `pnpm android` runs: a minute or two (warm Gradle caches). Only needed
+  when a native dependency changes.
+- Day to day: no rebuild at all. `pnpm start` and press `a`; JS changes
+  hot-reload in about a second.
 
 Metro defaults to port 8081. If that's already in use, add `--port 8082` (or any
 free port) to the commands above.
@@ -112,24 +169,24 @@ Set
 shares the host's loopback), then from `apps/mobile`:
 
 ```sh
-npx expo run:ios
+pnpm ios
 ```
 
 This picks a default simulator; add `--device "iPhone 17 Pro"` to choose one.
 First build takes a few minutes (installs CocoaPods if missing, compiles the
-pods, installs on the simulator). After that, `npx expo start` and press `i`;
-JS changes hot-reload, only native dependency changes need another `run:ios`.
+pods, installs on the simulator). After that, `pnpm start` and press `i`;
+JS changes hot-reload, only native dependency changes need another `pnpm ios`.
 Verified working with Xcode 26.6 and the iOS 26.5 simulator runtime.
 
 ### On a real iPhone
 
-The same `npx expo run:ios` builds and installs the dev build on a plugged-in
+The same `pnpm ios` builds and installs the dev build on a plugged-in
 iPhone, and a free Apple ID is enough to sign it onto your own phone.
 
 Without a Mac there is currently no iPhone test path for this project. Expo Go
 on the App Store hasn't been updated to SDK 57 yet; once it is, the app runs in
 it without any Apple account (every native module we use ships in the Expo
-SDK): `npx expo start --go`, then scan the QR code from the phone.
+SDK): `pnpm start --go`, then scan the QR code from the phone.
 
 iPhones can't use `adb reverse`, so the API is reached over shared Wi-Fi: set
 `EXPO_PUBLIC_API_URL` to your machine's LAN IP.
