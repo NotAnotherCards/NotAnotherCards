@@ -108,8 +108,8 @@ export const userDecks = pgTable(
       .notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
