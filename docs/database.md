@@ -54,7 +54,7 @@ Represents a deck (collection of cards) owned by a user.
 * **`deleted_at`** (timestamp with time zone, nullable): Used for **soft-deletes (tombstones)**. Instead of immediately hard-deleting a row, we populate this field so that other offline clients can pull the deletion state and update themselves.
 
 **Indexes:**
-* **`idx_user_decks_user_updated`**: Composite index on `(user_id, updated_at)` to optimize incremental sync delta pulls.
+* **`idx_user_decks_user_updated`**: Composite index on `(user_id, updated_at)` for listing a user's decks by recency.
 
 ---
 
@@ -71,7 +71,7 @@ Represents individual vocabulary cards, comparison cards, or phrases.
 * **`created_at` / `updated_at` / `deleted_at`** (timestamp with time zone): Same sync and soft-delete semantics as `user_decks`.
 
 **Indexes:**
-* **`idx_user_cards_user_updated`**: Composite index on `(user_id, updated_at)` for sync delta lookups.
+* **`idx_user_cards_user_updated`**: Composite index on `(user_id, updated_at)` for listing a user's cards by recency.
 * **`idx_user_cards_due`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
 
 ---
