@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type SignupFormData } from '@repo/schemas'
 import { authClient } from '../lib/auth-client'
+import { apiErrorMessage } from '../lib/errors'
 import { AuthCard } from '../components/auth/auth-card'
 import { Button } from '../components/ui/button'
 import { FormField } from '../components/ui/form-field'
@@ -36,18 +37,22 @@ export default function Register() {
 
   const onSubmit = async (data: SignupFormData) => {
     setApiError(null)
-    const { error } = await authClient.signUp.email({
-      name: data.name,
-      username: data.username,
-      email: data.email,
-      password: data.password,
-      timezone: getTimezone(),
-    })
-    if (error) {
-      setApiError(error.message ?? 'An unexpected error occurred')
-      return
+    try {
+      const { error } = await authClient.signUp.email({
+        name: data.name,
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        timezone: getTimezone(),
+      })
+      if (error) {
+        setApiError(apiErrorMessage(error))
+        return
+      }
+      router.replace('/dashboard')
+    } catch (err) {
+      setApiError(apiErrorMessage(err))
     }
-    router.replace('/dashboard')
   }
 
   return (
@@ -99,9 +104,7 @@ export default function Register() {
         autoCapitalize="none"
       />
 
-      {apiError && (
-        <Text className="text-center text-red-600">{apiError}</Text>
-      )}
+      {apiError && <Text className="text-center text-red-600">{apiError}</Text>}
 
       <Button
         label="Create account"

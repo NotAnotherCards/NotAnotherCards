@@ -1,5 +1,5 @@
 import React from 'react'
-import { render } from '@testing-library/react-native'
+import { render, fireEvent } from '@testing-library/react-native'
 import Dashboard from '../app/dashboard'
 
 const mockUseSession = jest.fn()
@@ -36,5 +36,22 @@ describe('Dashboard screen', () => {
     const { getByText } = render(<Dashboard />)
     expect(getByText('Jane Doe')).toBeTruthy()
     expect(getByText(/jane@example.com/)).toBeTruthy()
+  })
+
+  it('offers a retry instead of redirecting when the session fetch fails', () => {
+    const mockRefetch = jest.fn()
+    mockUseSession.mockReturnValue({
+      data: null,
+      isPending: false,
+      error: new Error(
+        'fetch failed: java.net.ConnectException: Failed to connect to /10.0.2.2:3000',
+      ),
+      refetch: mockRefetch,
+    })
+    const { getByText, queryByText } = render(<Dashboard />)
+    expect(getByText(/Can't reach the server/)).toBeTruthy()
+    expect(queryByText('redirect:/login')).toBeNull()
+    fireEvent.press(getByText('Retry'))
+    expect(mockRefetch).toHaveBeenCalled()
   })
 })

@@ -1,15 +1,20 @@
 import { Redirect, useRouter } from 'expo-router'
 import { ActivityIndicator, View } from 'react-native'
 import { authClient } from '../lib/auth-client'
+import { apiErrorMessage } from '../lib/errors'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
 
 export default function Dashboard() {
   const router = useRouter()
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session, isPending, error, refetch } = authClient.useSession()
 
   const onLogout = async () => {
-    await authClient.signOut()
+    try {
+      await authClient.signOut()
+    } catch {
+      // Server unreachable - still drop back to the login screen.
+    }
     router.replace('/login')
   }
 
@@ -17,6 +22,19 @@ export default function Dashboard() {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator />
+      </View>
+    )
+  }
+
+  // A failed session fetch (server down) is not the same as "not logged in" -
+  // offer a retry instead of bouncing to /login.
+  if (error) {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 p-6">
+        <Text className="text-center text-red-600">
+          {apiErrorMessage(error)}
+        </Text>
+        <Button label="Retry" onPress={() => refetch()} />
       </View>
     )
   }

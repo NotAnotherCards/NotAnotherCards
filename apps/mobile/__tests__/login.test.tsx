@@ -14,9 +14,15 @@ jest.mock('expo-router', () => {
 })
 
 // The real auth client pulls in native modules; mock it like web does in setup.ts.
+const mockSignIn = jest.fn(
+  async (): Promise<{ error: { message?: string } | null }> => ({
+    error: null,
+  }),
+)
+
 jest.mock('../lib/auth-client', () => ({
   authClient: {
-    signIn: { email: jest.fn(async () => ({ error: null })) },
+    signIn: { email: () => mockSignIn() },
   },
 }))
 
@@ -30,10 +36,41 @@ describe('Login screen', () => {
 
   it('shows a validation error for an invalid email on submit', async () => {
     const { getByText, getByPlaceholderText, findByText } = render(<Login />)
-    fireEvent.changeText(getByPlaceholderText('you@example.com'), 'not-an-email')
+    fireEvent.changeText(
+      getByPlaceholderText('you@example.com'),
+      'not-an-email',
+    )
     fireEvent.press(getByText('Log in'))
-    expect(
-      await findByText('Please enter a valid email address'),
-    ).toBeTruthy()
+    expect(await findByText('Please enter a valid email address')).toBeTruthy()
+  })
+
+  it('shows a friendly message when the server is unreachable', async () => {
+    mockSignIn.mockRejectedValueOnce(
+      new Error(
+        'fetch failed: java.net.ConnectException: Failed to connect to /10.0.2.2:3000',
+      ),
+    )
+    const { getByText, getByPlaceholderText, findByText } = render(<Login />)
+    fireEvent.changeText(
+      getByPlaceholderText('you@example.com'),
+      'jane@example.com',
+    )
+    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*')
+    fireEvent.press(getByText('Log in'))
+    expect(await findByText(/Can't reach the server/)).toBeTruthy()
+  })
+
+  it('shows the server message on an API error', async () => {
+    mockSignIn.mockResolvedValueOnce({
+      error: { message: 'Invalid email or password' },
+    })
+    const { getByText, getByPlaceholderText, findByText } = render(<Login />)
+    fireEvent.changeText(
+      getByPlaceholderText('you@example.com'),
+      'jane@example.com',
+    )
+    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*')
+    fireEvent.press(getByText('Log in'))
+    expect(await findByText('Invalid email or password')).toBeTruthy()
   })
 })

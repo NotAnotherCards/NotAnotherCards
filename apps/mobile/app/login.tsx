@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginFormData } from '@repo/schemas'
 import { authClient } from '../lib/auth-client'
+import { apiErrorMessage } from '../lib/errors'
 import { AuthCard } from '../components/auth/auth-card'
 import { Button } from '../components/ui/button'
 import { FormField } from '../components/ui/form-field'
@@ -20,15 +21,19 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormData) => {
     setApiError(null)
-    const { error } = await authClient.signIn.email({
-      email: data.email,
-      password: data.password,
-    })
-    if (error) {
-      setApiError(error.message ?? 'An unexpected error occurred')
-      return
+    try {
+      const { error } = await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+      })
+      if (error) {
+        setApiError(apiErrorMessage(error))
+        return
+      }
+      router.replace('/dashboard')
+    } catch (err) {
+      setApiError(apiErrorMessage(err))
     }
-    router.replace('/dashboard')
   }
 
   return (
@@ -57,9 +62,7 @@ export default function Login() {
         autoCapitalize="none"
       />
 
-      {apiError && (
-        <Text className="text-center text-red-600">{apiError}</Text>
-      )}
+      {apiError && <Text className="text-center text-red-600">{apiError}</Text>}
 
       <Button
         label="Log in"
