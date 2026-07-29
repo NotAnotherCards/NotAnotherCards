@@ -19,7 +19,7 @@ export function PageContainer({
     <div
       className={cn(
         "flex-1 w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 sm:py-8 flex flex-col gap-6",
-        className
+        className,
       )}
       {...props}
     >
@@ -32,12 +32,12 @@ export function PageContainer({
               </h1>
             )}
             {description && (
-              <p className="text-sm text-muted-foreground">
-                {description}
-              </p>
+              <p className="text-sm text-muted-foreground">{description}</p>
             )}
           </div>
-          {action && <div className="flex items-center gap-2 mt-2 sm:mt-0">{action}</div>}
+          {action && (
+            <div className="flex items-center gap-2 mt-2 sm:mt-0">{action}</div>
+          )}
         </div>
       )}
       <div className="flex-1 flex flex-col gap-6">{children}</div>
