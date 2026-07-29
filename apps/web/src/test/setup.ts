@@ -26,4 +26,3 @@ vi.mock("@/lib/auth-client", () => {
 
 // Mock window.scrollTo since it is not implemented in JSDOM
 window.scrollTo = vi.fn();
-

@@ -33,7 +33,10 @@ describe("Auth Guards", () => {
 
   it("redirects logged-out users from dashboard to login", async () => {
     // Mock logged-out state
-    vi.mocked(authClient.getSession).mockResolvedValue({ data: null, error: null });
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: null,
+      error: null,
+    });
     vi.mocked(authClient.useSession).mockReturnValue({
       data: null,
       isPending: false,
@@ -57,14 +60,17 @@ describe("Auth Guards", () => {
     expect(
       await screen.findByRole("heading", { name: /Welcome Back/i }),
     ).toBeInTheDocument();
-    
+
     // Verify the URL is updated to /login
     expect(window.location.pathname).toBe("/login");
   });
 
   it("allows logged-in users to see the dashboard", async () => {
     // Mock logged-in state
-    vi.mocked(authClient.getSession).mockResolvedValue({ data: mockSession, error: null });
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
     vi.mocked(authClient.useSession).mockReturnValue({
       data: mockSession,
       isPending: false,
@@ -88,18 +94,21 @@ describe("Auth Guards", () => {
     expect(
       await screen.findByRole("heading", { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
-    
+
     // Verify welcome message with user name
     expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
     expect(screen.getByText(/John Doe/i)).toBeInTheDocument();
-    
+
     // Verify the URL is /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
   });
 
   it("redirects logged-in users away from the login page to the dashboard", async () => {
     // Mock logged-in state
-    vi.mocked(authClient.getSession).mockResolvedValue({ data: mockSession, error: null });
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
     vi.mocked(authClient.useSession).mockReturnValue({
       data: mockSession,
       isPending: false,
@@ -123,7 +132,7 @@ describe("Auth Guards", () => {
     expect(
       await screen.findByRole("heading", { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
-    
+
     // Verify the URL is updated to /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
   });

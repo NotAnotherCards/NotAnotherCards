@@ -32,7 +32,10 @@ describe("Dashboard Page Component Specs", () => {
     });
 
     // Mock logged-in state
-    vi.mocked(authClient.getSession).mockResolvedValue({ data: mockSession, error: null });
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
     vi.mocked(authClient.useSession).mockReturnValue({
       data: mockSession,
       isPending: false,
@@ -52,7 +55,7 @@ describe("Dashboard Page Component Specs", () => {
 
     // 1. Dashboard renders welcome text
     expect(
-      await screen.findByText(/Welcome to your language learning portal/i)
+      await screen.findByText(/Welcome to your language learning portal/i),
     ).toBeInTheDocument();
 
     // 2. Dashboard shows user email/name
@@ -69,7 +72,10 @@ describe("Dashboard Page Component Specs", () => {
   it("calls signOut and redirects the user to the login page on logout click", async () => {
     // Mock signOut implementation to clear logged-in mocks on call
     vi.mocked(authClient.signOut).mockImplementation(async () => {
-      vi.mocked(authClient.getSession).mockResolvedValue({ data: null, error: null });
+      vi.mocked(authClient.getSession).mockResolvedValue({
+        data: null,
+        error: null,
+      });
       vi.mocked(authClient.useSession).mockReturnValue({
         data: null,
         isPending: false,
