@@ -14,41 +14,18 @@ export const UserDeckRow = z.object({
 export const UserCardRow = z.object({
   user_id: z.string(),
   deck_id: z.string(),
-  card_type: z.string(),
   front: z.string(),
   back: z.string(),
-  context_sentence: z.string().nullable(),
   due_at: z.number(),
   created_at: z.number(),
   updated_at: z.number(),
   deleted_at: z.number().nullable(),
 });
 
-export const UserCardOverrideRow = z.object({
-  user_card_id: z.string(),
-  field_path: z.string(), // "translation", "mnemonic", "examples[0].text"
-  value: z.string(), // JSON string representing overridden value
-  created_at: z.number(),
-  updated_at: z.number(),
-});
-
-export const UserCardNoteRow = z.object({
-  user_card_id: z.string(),
-  note: z.string(),
-  created_at: z.number(),
-  updated_at: z.number(),
-});
-
-export const UserCardResetEventRow = z.object({
-  user_card_id: z.string(),
-  reason: z.string().nullable(),
-  created_at: z.number(),
-});
-
 export const ReviewEventRow = z.object({
   user_id: z.string(),
   user_card_id: z.string(),
-  rating: z.number().int(), // e.g. 1 = again, 2 = hard, 3 = good, 4 = easy
+  rating: z.number().int().min(1).max(4),
   reviewed_at: z.number(),
 });
 
@@ -58,18 +35,6 @@ export const userDecks = zodTable("user_decks", UserDeckRow, {
 
 export const userCards = zodTable("user_cards", UserCardRow, {
   indexed: ["user_id", "deck_id", "due_at", "updated_at"],
-});
-
-export const userCardOverrides = zodTable("user_card_overrides", UserCardOverrideRow, {
-  indexed: ["user_card_id"],
-});
-
-export const userCardNotes = zodTable("user_card_notes", UserCardNoteRow, {
-  indexed: ["user_card_id"],
-});
-
-export const userCardResetEvents = zodTable("user_card_reset_events", UserCardResetEventRow, {
-  indexed: ["user_card_id"],
 });
 
 export const reviewEvents = zodTable("review_events", ReviewEventRow, {
@@ -87,28 +52,7 @@ export class UserCard extends ModelFor(userCards) {
   static associations = {
     user: { type: "belongs_to" as const, key: "user_id" },
     deck: { type: "belongs_to" as const, key: "deck_id" },
-    overrides: { type: "has_many" as const, foreignKey: "user_card_id" },
-    notes: { type: "has_many" as const, foreignKey: "user_card_id" },
-    reset_events: { type: "has_many" as const, foreignKey: "user_card_id" },
     review_events: { type: "has_many" as const, foreignKey: "user_card_id" },
-  };
-}
-
-export class UserCardOverride extends ModelFor(userCardOverrides) {
-  static associations = {
-    user_card: { type: "belongs_to" as const, key: "user_card_id" },
-  };
-}
-
-export class UserCardNote extends ModelFor(userCardNotes) {
-  static associations = {
-    user_card: { type: "belongs_to" as const, key: "user_card_id" },
-  };
-}
-
-export class UserCardResetEvent extends ModelFor(userCardResetEvents) {
-  static associations = {
-    user_card: { type: "belongs_to" as const, key: "user_card_id" },
   };
 }
 
@@ -121,14 +65,8 @@ export class ReviewEvent extends ModelFor(reviewEvents) {
 
 export type UserDeckRowType = z.infer<typeof UserDeckRow>;
 export type UserCardRowType = z.infer<typeof UserCardRow>;
-export type UserCardOverrideRowType = z.infer<typeof UserCardOverrideRow>;
-export type UserCardNoteRowType = z.infer<typeof UserCardNoteRow>;
-export type UserCardResetEventRowType = z.infer<typeof UserCardResetEventRow>;
 export type ReviewEventRowType = z.infer<typeof ReviewEventRow>;
 
 export type UserDeckRecord = InferRecord<typeof userDecks>;
 export type UserCardRecord = InferRecord<typeof userCards>;
-export type UserCardOverrideRecord = InferRecord<typeof userCardOverrides>;
-export type UserCardNoteRecord = InferRecord<typeof userCardNotes>;
-export type UserCardResetEventRecord = InferRecord<typeof userCardResetEvents>;
 export type ReviewEventRecord = InferRecord<typeof reviewEvents>;
