@@ -23,7 +23,7 @@ const mockDriverConstructor = vi.fn();
 vi.mock("@remelondb/driver-web", () => {
   return {
     WebSqliteDriver: class {
-      constructor(options?: any) {
+      constructor(options?: unknown) {
         mockDriverConstructor(options);
       }
       open = vi.fn();
