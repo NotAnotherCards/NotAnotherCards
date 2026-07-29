@@ -189,7 +189,7 @@ export function useMockStore() {
 
   const createDeck = (title: string, description: string): Deck => {
     const newDeck: Deck = {
-      id: `deck-${Date.now()}`,
+      id: crypto.randomUUID(),
       user_id: "user-1",
       title,
       description: description || null,
@@ -230,7 +230,7 @@ export function useMockStore() {
     back: string
   ): Card => {
     const newCard: Card = {
-      id: `card-${Date.now()}`,
+      id: crypto.randomUUID(),
       user_id: "user-1",
       deck_id,
       front,
