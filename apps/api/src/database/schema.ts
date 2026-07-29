@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   text,
@@ -6,6 +6,8 @@ import {
   boolean,
   index,
   uniqueIndex,
+  integer,
+  check,
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable(
@@ -86,9 +88,84 @@ export const verification = pgTable(
   (table) => [index('verification_identifier_idx').on(table.identifier)],
 );
 
+export const userDecks = pgTable(
+  'user_decks',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('idx_user_decks_user_updated').on(table.userId, table.updatedAt),
+  ],
+);
+
+export const userCards = pgTable(
+  'user_cards',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    deckId: text('deck_id')
+      .notNull()
+      .references(() => userDecks.id, { onDelete: 'cascade' }),
+    front: text('front').notNull(),
+    back: text('back').notNull(),
+    dueAt: timestamp('due_at', { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('idx_user_cards_user_updated').on(table.userId, table.updatedAt),
+    index('idx_user_cards_due').on(table.userId, table.dueAt),
+  ],
+);
+
+export const reviewEvents = pgTable(
+  'review_events',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    userCardId: text('user_card_id')
+      .notNull()
+      .references(() => userCards.id, { onDelete: 'cascade' }),
+    rating: integer('rating').notNull(),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index('idx_review_events_user_card').on(table.userId, table.userCardId),
+    check('rating_check', sql`${table.rating} >= 1 AND ${table.rating} <= 4`),
+  ],
+);
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  decks: many(userDecks),
+  cards: many(userCards),
+  reviewEvents: many(reviewEvents),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -102,5 +179,36 @@ export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
     references: [user.id],
+  }),
+}));
+
+export const userDecksRelations = relations(userDecks, ({ one, many }) => ({
+  user: one(user, {
+    fields: [userDecks.userId],
+    references: [user.id],
+  }),
+  cards: many(userCards),
+}));
+
+export const userCardsRelations = relations(userCards, ({ one, many }) => ({
+  user: one(user, {
+    fields: [userCards.userId],
+    references: [user.id],
+  }),
+  deck: one(userDecks, {
+    fields: [userCards.deckId],
+    references: [userDecks.id],
+  }),
+  reviews: many(reviewEvents),
+}));
+
+export const reviewEventsRelations = relations(reviewEvents, ({ one }) => ({
+  user: one(user, {
+    fields: [reviewEvents.userId],
+    references: [user.id],
+  }),
+  card: one(userCards, {
+    fields: [reviewEvents.userCardId],
+    references: [userCards.id],
   }),
 }));
