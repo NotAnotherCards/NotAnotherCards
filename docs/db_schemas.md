@@ -1,5 +1,7 @@
 # Database schema overview
 
+> WARNING: This file is meant to be a reference, not the single source of thruth of our DB Schemas
+
 I would divide the DB into these domains:
 
 ```txt
