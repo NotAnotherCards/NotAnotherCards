@@ -156,7 +156,7 @@ export const reviewEvents = pgTable(
   },
   (table) => [
     index('idx_review_events_user_card').on(table.userId, table.userCardId),
-	check('rating_check', sql`${table.rating} >= 1 AND ${table.rating} <= 4`)
+    check('rating_check', sql`${table.rating} >= 1 AND ${table.rating} <= 4`),
   ],
 );
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { UserCardRow, syncWireSchemas, schema, UserDeckRow, ReviewEventRow } from "@repo/offline-db";
+import {
+  UserCardRow,
+  syncWireSchemas,
+  schema,
+  UserDeckRow,
+  ReviewEventRow,
+} from "@repo/offline-db";
 
 describe("@repo/offline-db wiring on web", () => {
   it("imports and validates offline db schemas", () => {
