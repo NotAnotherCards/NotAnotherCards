@@ -250,6 +250,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.81.0(react@19.2.7))
+      '@remelondb/core':
+        specifier: ^0.0.8
+        version: 0.0.8(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)
+      '@remelondb/driver-web':
+        specifier: ^0.0.9
+        version: 0.0.9(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)
       '@repo/offline-db':
         specifier: workspace:*
         version: link:../../packages/offline-db
@@ -3101,6 +3107,20 @@ packages:
       zod:
         optional: true
 
+  '@remelondb/core@0.0.9':
+    resolution: {integrity: sha512-UWu7dNFLrZG1t0w9NQxiLe/j2O8ko4Bb+KvCaV+FVXgfJQzRuTSoXCzdHGhl/mwTTaG7DwZhtgFfK2lDd6Ws2g==}
+    peerDependencies:
+      vitest: '>=3'
+      zod: ^4.0.0
+    peerDependenciesMeta:
+      vitest:
+        optional: true
+      zod:
+        optional: true
+
+  '@remelondb/driver-web@0.0.9':
+    resolution: {integrity: sha512-jSMFOsIFndvyW9BwIwjVGX4p7QpTdUq/jxfoijUKliOrKDcb31Lb6hb7QUSFUeDSuFX6c8UPOoJwWey2zeHh6Q==}
+
   '@rolldown/binding-android-arm64@1.1.4':
     resolution: {integrity: sha512-EZLpf/8y7GXkkra90ML47kzik/GMP3EMcE9bPyHmRfxLC6z9+aW5A8poCsoxjrT5GfEcNAAvWwUHjvP1pUQkfw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -3220,6 +3240,10 @@ packages:
 
   '@sinonjs/fake-timers@15.4.0':
     resolution: {integrity: sha512-DsG+8/LscQIQg68J6Ef3dv10u6nVyetYn923s3/sus5eaGfTo1of5WMZSLf0UJc9KDuKPilPH0UDJCjvNbDNCA==}
+
+  '@sqlite.org/sqlite-wasm@3.53.0-build1':
+    resolution: {integrity: sha512-PfWPWN2n+/37doa8oh2/oUXk4OOsRYZsxc1W1sDXIGb/Pu5Yrb+f2eyYpgQMGITVX7HVgxhs9P18Rc6I97ym/g==}
+    engines: {node: '>=22'}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -12257,6 +12281,19 @@ snapshots:
       vitest: 4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0))
       zod: 4.4.3
 
+  '@remelondb/core@0.0.9(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)':
+    optionalDependencies:
+      vitest: 4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0))
+      zod: 4.4.3
+
+  '@remelondb/driver-web@0.0.9(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)':
+    dependencies:
+      '@remelondb/core': 0.0.9(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)
+      '@sqlite.org/sqlite-wasm': 3.53.0-build1
+    transitivePeerDependencies:
+      - vitest
+      - zod
+
   '@rolldown/binding-android-arm64@1.1.4':
     optional: true
 
@@ -12327,6 +12364,8 @@ snapshots:
   '@sinonjs/fake-timers@15.4.0':
     dependencies:
       '@sinonjs/commons': 3.0.1
+
+  '@sqlite.org/sqlite-wasm@3.53.0-build1': {}
 
   '@standard-schema/spec@1.1.0': {}
 
