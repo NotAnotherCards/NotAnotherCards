@@ -191,6 +191,42 @@ SDK): `pnpm start --go`, then scan the QR code from the phone.
 iPhones can't use `adb reverse`, so the API is reached over shared Wi-Fi: set
 `EXPO_PUBLIC_API_URL` to your machine's LAN IP.
 
+## Simulator/emulator log noise
+
+Both the iOS Simulator and the Android emulator spam harmless errors that are
+**not** coming from our app. They only appear on the virtual devices and vanish
+on a real phone; you can safely ignore them.
+
+On the iOS Simulator you'll see, repeated once per keystroke in a text field:
+
+```
+[CoreHaptics] CHHapticPattern.mm:487 … Failed to read pattern library data:
+The file "hapticpatternlibrary.plist" couldn't be opened because there is no
+such file.
+```
+
+Haptics hardware is the phone's Taptic Engine — the component that produces the
+physical tap you feel when typing or on a notification. The Simulator has no
+such hardware and doesn't ship the haptic pattern file, so when iOS tries to
+play keyboard feedback it logs this miss and moves on. It's a known Apple issue
+([forum thread](https://developer.apple.com/forums/thread/812392),
+[Expo #40310](https://github.com/expo/expo/issues/40310), labeled "Upstream:
+iOS"), our code never touches CoreHaptics.
+
+The Android emulator has its own equivalents — `EGL_emulation: eglMakeCurrent`
+firing constantly (a graphics-driver quirk) and `Choreographer: Skipped N
+frames!` (the emulator being slower than hardware). Also harmless.
+
+To silence the iOS noise, either filter it:
+
+```sh
+pnpm ios 2>&1 | grep -v -E 'CHHapticPattern|hapticpatternlibrary|_UIKBFeedbackGenerator'
+```
+
+or set `OS_ACTIVITY_MODE=disable` in the Xcode scheme's run arguments (mutes
+system logs, keeps the app's). If the app itself fails to launch, that's a
+separate problem — these log lines are not the cause.
+
 ## Testing
 
 Uses `jest-expo` with `@testing-library/react-native`. Run from `apps/mobile`:
