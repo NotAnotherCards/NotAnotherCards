@@ -11,11 +11,7 @@ import {
 
 export const schema = appSchema({
   version: 1,
-  tables: [
-    userDecks,
-    userCards,
-    reviewEvents,
-  ],
+  tables: [userDecks, userCards, reviewEvents],
 });
 
 export const syncWireSchemas = syncSchemas({
