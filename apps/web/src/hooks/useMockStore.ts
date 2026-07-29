@@ -3,47 +3,40 @@ import { useState, useEffect } from "react";
 // Use the database shared collection structure directly for Decks, defined locally for this branch
 export interface Deck {
   id: string;
-  language_id: string;
-  name: string;
+  user_id: string;
+  title: string;
   description: string | null;
-  level: string | null;
-  is_public: boolean;
-  created_by_user_id: string | null;
   created_at: number;
   updated_at: number;
 }
 
 // A UI Card represents the combined view of cards, word_cards, and collection assignments
 export interface Card {
-  id: string; // card_id / CardRecord.id
-  collection_id: string; // DictionaryCollectionCardRecord.collection_id
-  lemma: string; // WordCardRecord.lemma
-  translation: string; // WordCardRecord.translation
-  notes: string | null; // WordCardRecord.notes
-  created_at: number; // CardRecord.created_at
+  id: string;
+  user_id: string;
+  deck_id: string;
+  front: string;
+  back: string;
+  due_at: number;
+  created_at: number;
+  updated_at: number;
 }
 
 // Initial mock seed data
 const initialDecks: Deck[] = [
   {
     id: "deck-spanish",
-    language_id: "lang-spanish",
-    name: "Spanish Essentials",
+    user_id: "user-1",
+    title: "Spanish Essentials",
     description: "Most common Spanish vocabulary and essential phrases for beginners.",
-    level: "A1",
-    is_public: true,
-    created_by_user_id: "user-1",
     created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
     updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "deck-web-dev",
-    language_id: "lang-english",
-    name: "Web Dev Core Concepts",
+    user_id: "user-1",
+    title: "Web Dev Core Concepts",
     description: "Fundamental concepts of modern web engineering: DOM, CSS, HTTP, React.",
-    level: null,
-    is_public: true,
-    created_by_user_id: "user-1",
     created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
     updated_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
@@ -53,68 +46,84 @@ const initialCards: Card[] = [
   // Spanish
   {
     id: "card-es-1",
-    collection_id: "deck-spanish",
-    lemma: "Hola",
-    translation: "Hello",
-    notes: "Basic friendly greeting.",
+    user_id: "user-1",
+    deck_id: "deck-spanish",
+    front: "Hola",
+    back: "Hello",
+    due_at: Date.now(),
     created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-2",
-    collection_id: "deck-spanish",
-    lemma: "¿Cómo estás?",
-    translation: "How are you?",
-    notes: "Used informally with friends/family.",
+    user_id: "user-1",
+    deck_id: "deck-spanish",
+    front: "¿Cómo estás?",
+    back: "How are you?",
+    due_at: Date.now(),
     created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-3",
-    collection_id: "deck-spanish",
-    lemma: "Gracias",
-    translation: "Thank you",
-    notes: "Crucial polite expression.",
+    user_id: "user-1",
+    deck_id: "deck-spanish",
+    front: "Gracias",
+    back: "Thank you",
+    due_at: Date.now(),
     created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-4",
-    collection_id: "deck-spanish",
-    lemma: "Por favor",
-    translation: "Please",
-    notes: "Can be placed at the start or end of requests.",
+    user_id: "user-1",
+    deck_id: "deck-spanish",
+    front: "Por favor",
+    back: "Please",
+    due_at: Date.now(),
     created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-es-5",
-    collection_id: "deck-spanish",
-    lemma: "Adiós",
-    translation: "Goodbye",
-    notes: "Formal farewell. 'Chao' is more casual.",
+    user_id: "user-1",
+    deck_id: "deck-spanish",
+    front: "Adiós",
+    back: "Goodbye",
+    due_at: Date.now(),
     created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
   // Web Dev
   {
     id: "card-wd-1",
-    collection_id: "deck-web-dev",
-    lemma: "HTTP Status 404",
-    translation: "Not Found",
-    notes: "The origin server did not find a current representation for the target resource.",
+    user_id: "user-1",
+    deck_id: "deck-web-dev",
+    front: "HTTP Status 404",
+    back: "Not Found",
+    due_at: Date.now(),
     created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-wd-2",
-    collection_id: "deck-web-dev",
-    lemma: "React useEffect Cleanup",
-    translation: "A function returned by the effect to clean up resources (e.g., subscriptions, intervals) before the component unmounts or before re-running the effect.",
-    notes: "Crucial for preventing memory leaks in single-page apps.",
+    user_id: "user-1",
+    deck_id: "deck-web-dev",
+    front: "React useEffect Cleanup",
+    back: "A function returned by the effect to clean up resources (e.g., subscriptions, intervals) before the component unmounts or before re-running the effect.",
+    due_at: Date.now(),
     created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
   {
     id: "card-wd-3",
-    collection_id: "deck-web-dev",
-    lemma: "CSS Box Model",
-    translation: "The content, padding, border, and margin boxes that surround HTML elements.",
-    notes: "box-sizing: border-box includes padding and border in the element's total width/height.",
+    user_id: "user-1",
+    deck_id: "deck-web-dev",
+    front: "CSS Box Model",
+    back: "The content, padding, border, and margin boxes that surround HTML elements.",
+    due_at: Date.now(),
     created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    updated_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
 ];
 
@@ -178,15 +187,12 @@ export function useMockStore() {
     });
   }, []);
 
-  const createDeck = (name: string, description: string): Deck => {
+  const createDeck = (title: string, description: string): Deck => {
     const newDeck: Deck = {
       id: `deck-${Date.now()}`,
-      language_id: "lang-learning",
-      name,
+      user_id: "user-1",
+      title,
       description: description || null,
-      level: null,
-      is_public: true,
-      created_by_user_id: null,
       created_at: Date.now(),
       updated_at: Date.now(),
     };
@@ -196,12 +202,12 @@ export function useMockStore() {
     return newDeck;
   };
 
-  const updateDeck = (id: string, name: string, description: string) => {
+  const updateDeck = (id: string, title: string, description: string) => {
     globalDecks = globalDecks.map((d) =>
       d.id === id
         ? {
             ...d,
-            name,
+            title,
             description: description || null,
             updated_at: Date.now(),
           }
@@ -213,24 +219,25 @@ export function useMockStore() {
 
   const deleteDeck = (id: string) => {
     globalDecks = globalDecks.filter((d) => d.id !== id);
-    globalCards = globalCards.filter((c) => c.collection_id !== id);
+    globalCards = globalCards.filter((c) => c.deck_id !== id);
     saveToStorage();
     notify();
   };
 
   const createCard = (
-    collection_id: string,
-    lemma: string,
-    translation: string,
-    notes?: string
+    deck_id: string,
+    front: string,
+    back: string
   ): Card => {
     const newCard: Card = {
       id: `card-${Date.now()}`,
-      collection_id,
-      lemma,
-      translation,
-      notes: notes || null,
+      user_id: "user-1",
+      deck_id,
+      front,
+      back,
+      due_at: Date.now(),
       created_at: Date.now(),
+      updated_at: Date.now(),
     };
     globalCards = [...globalCards, newCard];
     saveToStorage();
@@ -238,9 +245,9 @@ export function useMockStore() {
     return newCard;
   };
 
-  const updateCard = (id: string, lemma: string, translation: string, notes?: string) => {
+  const updateCard = (id: string, front: string, back: string) => {
     globalCards = globalCards.map((c) =>
-      c.id === id ? { ...c, lemma, translation, notes: notes || null } : c
+      c.id === id ? { ...c, front, back, updated_at: Date.now() } : c
     );
     saveToStorage();
     notify();
@@ -252,8 +259,8 @@ export function useMockStore() {
     notify();
   };
 
-  const getCardsCount = (collection_id: string): number => {
-    return globalCards.filter((c) => c.collection_id === collection_id).length;
+  const getCardsCount = (deck_id: string): number => {
+    return globalCards.filter((c) => c.deck_id === deck_id).length;
   };
 
   return {

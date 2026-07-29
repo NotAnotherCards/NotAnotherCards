@@ -29,14 +29,14 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
 
-  const handleCreateDeck = (data: { name: string; description: string }) => {
-    store.createDeck(data.name, data.description);
+  const handleCreateDeck = (data: { title: string; description: string }) => {
+    store.createDeck(data.title, data.description);
     setShowCreateForm(false);
   };
 
-  const handleEditDeck = (data: { name: string; description: string }) => {
+  const handleEditDeck = (data: { title: string; description: string }) => {
     if (editingDeck) {
-      store.updateDeck(editingDeck.id, data.name, data.description);
+      store.updateDeck(editingDeck.id, data.title, data.description);
       setEditingDeck(null);
     }
   };
@@ -151,7 +151,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
         <DeckForm
           title="Edit Deck Details"
           initialData={{
-            name: editingDeck.name,
+            title: editingDeck.title,
             description: editingDeck.description || "",
           }}
           onSubmit={handleEditDeck}
