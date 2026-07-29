@@ -35,16 +35,16 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   // Filter cards belonging to this deck
-  const cards = store.cards.filter((c) => c.collection_id === deckId);
+  const cards = store.cards.filter((c) => c.deck_id === deckId);
 
-  const handleCreateCard = (data: { lemma: string; translation: string; notes?: string }) => {
-    store.createCard(deckId, data.lemma, data.translation, data.notes);
+  const handleCreateCard = (data: { front: string; back: string }) => {
+    store.createCard(deckId, data.front, data.back);
     setShowCreateForm(false);
   };
 
-  const handleEditCard = (data: { lemma: string; translation: string; notes?: string }) => {
+  const handleEditCard = (data: { front: string; back: string }) => {
     if (editingCard) {
-      store.updateCard(editingCard.id, data.lemma, data.translation, data.notes);
+      store.updateCard(editingCard.id, data.front, data.back);
       setEditingCard(null);
     }
   };
@@ -75,7 +75,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground font-heading">
-              {deck.name}
+              {deck.title}
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               {deck.description || "Manage your library cards below."}
@@ -114,9 +114,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <CardForm
           title="Edit Card"
           initialData={{
-            lemma: editingCard.lemma,
-            translation: editingCard.translation,
-            notes: editingCard.notes,
+            front: editingCard.front,
+            back: editingCard.back,
           }}
           onSubmit={handleEditCard}
           onCancel={() => setEditingCard(null)}

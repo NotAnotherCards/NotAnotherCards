@@ -14,16 +14,15 @@ import {
 } from "@/components/ui/field";
 
 const cardSchema = z.object({
-  lemma: z.string().min(1, "Word/lemma content is required").max(1000, "Content cannot exceed 1000 characters"),
-  translation: z.string().min(1, "Translation content is required").max(1000, "Translation cannot exceed 1000 characters"),
-  notes: z.string().max(1000, "Notes cannot exceed 1000 characters").optional().or(z.literal("")),
+  front: z.string().min(1, "Front content is required").max(1000, "Content cannot exceed 1000 characters"),
+  back: z.string().min(1, "Back content is required").max(1000, "Content cannot exceed 1000 characters"),
 });
 
 type CardFormData = z.infer<typeof cardSchema>;
 
 interface CardFormProps {
-  initialData?: { lemma: string; translation: string; notes?: string | null };
-  onSubmit: (data: { lemma: string; translation: string; notes?: string }) => void;
+  initialData?: { front: string; back: string };
+  onSubmit: (data: { front: string; back: string }) => void;
   onCancel: () => void;
   title: string;
 }
@@ -32,27 +31,24 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
   const form = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
-      lemma: "",
-      translation: "",
-      notes: "",
+      front: "",
+      back: "",
     },
   });
 
   useEffect(() => {
     if (initialData) {
       form.reset({
-        lemma: initialData.lemma,
-        translation: initialData.translation,
-        notes: initialData.notes || "",
+        front: initialData.front,
+        back: initialData.back,
       });
     }
   }, [initialData, form]);
 
   const handleFormSubmit = (data: CardFormData) => {
     onSubmit({
-      lemma: data.lemma.trim(),
-      translation: data.translation.trim(),
-      notes: data.notes?.trim() || undefined,
+      front: data.front.trim(),
+      back: data.back.trim(),
     });
   };
 
@@ -80,20 +76,20 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
             <FieldSet>
               <FieldGroup>
                 <Controller
-                  name="lemma"
+                  name="front"
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Word / Lemma (Question, term, or prompt)
+                        Front (Question, term, or prompt)
                       </FieldLabel>
                       <textarea
                         {...field}
                         id={field.name}
-                        placeholder="e.g. ¿Cómo estás?"
+                        placeholder="e.g. What is the capital of Spain? or ¿Cómo estás?"
                         rows={3}
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={fieldState.invalid ? "lemma-error" : undefined}
+                        aria-describedby={fieldState.invalid ? "front-error" : undefined}
                         className={`w-full flex min-h-20 rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 ${
                           fieldState.invalid
                             ? "border-destructive focus-visible:ring-destructive/30"
@@ -101,54 +97,33 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
                         }`}
                         autoFocus
                       />
-                      <FieldError id="lemma-error" errors={[fieldState.error]} />
+                      <FieldError id="front-error" errors={[fieldState.error]} />
                     </Field>
                   )}
                 />
 
                 <Controller
-                  name="translation"
+                  name="back"
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Translation (Answer, definition, or translation)
+                        Back (Answer, definition, or translation)
                       </FieldLabel>
                       <textarea
                         {...field}
                         id={field.name}
-                        placeholder="e.g. How are you? (Informal)"
+                        placeholder="e.g. Madrid or How are you? (Informal)"
                         rows={3}
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={fieldState.invalid ? "translation-error" : undefined}
+                        aria-describedby={fieldState.invalid ? "back-error" : undefined}
                         className={`w-full flex min-h-20 rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 ${
                           fieldState.invalid
                             ? "border-destructive focus-visible:ring-destructive/30"
                             : "border-input focus-visible:ring-ring"
                         }`}
                       />
-                      <FieldError id="translation-error" errors={[fieldState.error]} />
-                    </Field>
-                  )}
-                />
-
-                <Controller
-                  name="notes"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={field.name}>
-                        Explanation & Notes (Optional)
-                      </FieldLabel>
-                      <textarea
-                        {...field}
-                        id={field.name}
-                        placeholder="Add secondary explanations, context, grammar tips, or hints..."
-                        rows={2}
-                        aria-invalid={fieldState.invalid}
-                        className="w-full flex min-h-15 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
-                      />
-                      <FieldError errors={[fieldState.error]} />
+                      <FieldError id="back-error" errors={[fieldState.error]} />
                     </Field>
                   )}
                 />

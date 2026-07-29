@@ -15,15 +15,15 @@ import {
 } from "@/components/ui/field";
 
 const deckSchema = z.object({
-  name: z.string().min(1, "Deck name is required").max(100, "Deck name cannot exceed 100 characters"),
+  title: z.string().min(1, "Deck title is required").max(100, "Deck title cannot exceed 100 characters"),
   description: z.string().max(500, "Description cannot exceed 500 characters").optional().or(z.literal("")),
 });
 
 type DeckFormData = z.infer<typeof deckSchema>;
 
 interface DeckFormProps {
-  initialData?: { name: string; description: string };
-  onSubmit: (data: { name: string; description: string }) => void;
+  initialData?: { title: string; description: string };
+  onSubmit: (data: { title: string; description: string }) => void;
   onCancel: () => void;
   title: string;
 }
@@ -32,7 +32,7 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
   const form = useForm<DeckFormData>({
     resolver: zodResolver(deckSchema),
     defaultValues: {
-      name: "",
+      title: "",
       description: "",
     },
   });
@@ -40,7 +40,7 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
   useEffect(() => {
     if (initialData) {
       form.reset({
-        name: initialData.name,
+        title: initialData.title,
         description: initialData.description,
       });
     }
@@ -48,7 +48,7 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
 
   const handleFormSubmit = (data: DeckFormData) => {
     onSubmit({
-      name: data.name.trim(),
+      title: data.title.trim(),
       description: data.description?.trim() || "",
     });
   };
@@ -77,23 +77,23 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
             <FieldSet>
               <FieldGroup>
                 <Controller
-                  name="name"
+                  name="title"
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Deck Name
+                        Deck Title
                       </FieldLabel>
                       <Input
                         {...field}
                         id={field.name}
                         placeholder="e.g. Spanish Vocabulary, AWS Cloud Practitioner"
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={fieldState.invalid ? "name-error" : undefined}
+                        aria-describedby={fieldState.invalid ? "title-error" : undefined}
                         className={fieldState.invalid ? "border-destructive focus-visible:ring-destructive/30" : ""}
                         autoFocus
                       />
-                      <FieldError id="name-error" errors={[fieldState.error]} />
+                      <FieldError id="title-error" errors={[fieldState.error]} />
                     </Field>
                   )}
                 />

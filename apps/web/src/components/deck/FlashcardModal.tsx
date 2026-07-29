@@ -101,12 +101,12 @@ export function FlashcardModal({
           >
             {/* Tag Badge */}
             <span className="absolute top-4 left-4 text-[10px] tracking-wider uppercase font-bold text-muted-foreground/60 bg-muted/40 px-2 py-0.5 rounded-full">
-              Word / Lemma
+              Question / Front
             </span>
 
             {/* Front text */}
             <h3 className="text-3xl font-bold tracking-tight text-foreground text-center font-heading max-w-full overflow-y-auto max-h-48 wrap-break-word pr-1">
-              {activeCard.lemma}
+              {activeCard.front}
             </h3>
 
             {/* Hint footer */}
@@ -127,20 +127,13 @@ export function FlashcardModal({
           >
             {/* Tag Badge */}
             <span className="absolute top-4 left-4 text-[10px] tracking-wider uppercase font-bold text-primary/60 bg-primary/10 px-2 py-0.5 rounded-full">
-              Translation
+              Answer / Back
             </span>
 
             {/* Back text */}
             <h3 className="text-3xl font-bold tracking-tight text-primary text-center font-heading max-w-full overflow-y-auto max-h-36 wrap-break-word pr-1">
-              {activeCard.translation}
+              {activeCard.back}
             </h3>
-
-            {/* Optional Notes */}
-            {activeCard.notes && (
-              <p className="text-sm text-muted-foreground text-center max-w-md mt-4 overflow-y-auto max-h-16 wrap-break-word border-t border-border/40 pt-2.5 w-full pr-1">
-                {activeCard.notes}
-              </p>
-            )}
 
             {/* Hint footer */}
             <div className="absolute bottom-4 flex items-center gap-1.5 text-xs text-muted-foreground/60 font-medium">

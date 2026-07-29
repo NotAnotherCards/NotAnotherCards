@@ -26,9 +26,8 @@ export function CardList({
 
   const filteredCards = cards.filter(
     (c) =>
-      c.lemma.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.translation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.notes && c.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+      c.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.back.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -71,7 +70,7 @@ export function CardList({
         <div className="relative w-full md:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
-            placeholder="Search word, translation, notes..."
+            placeholder="Search front, back..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9 h-9 text-xs"
@@ -94,9 +93,8 @@ export function CardList({
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
-                  <th className="px-6 py-3 min-w-50">Word / Lemma</th>
-                  <th className="px-6 py-3 min-w-50">Translation</th>
-                  <th className="px-6 py-3 hidden md:table-cell">Notes</th>
+                  <th className="px-6 py-3 min-w-50">Front / Question</th>
+                  <th className="px-6 py-3 min-w-50">Back / Answer</th>
                   <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>

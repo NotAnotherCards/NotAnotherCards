@@ -25,9 +25,9 @@ export function DeckCard({
           <CardTitle
             className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate max-w-[80%]"
             onClick={() => onSelectDeck(deck.id)}
-            title={deck.name}
+            title={deck.title}
           >
-            {deck.name}
+            {deck.title}
           </CardTitle>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
