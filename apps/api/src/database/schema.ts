@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   text,
@@ -7,14 +7,8 @@ import {
   index,
   uniqueIndex,
   integer,
-  pgEnum,
+  check,
 } from 'drizzle-orm/pg-core';
-
-export const cardTypeEnum = pgEnum('card_type', [
-  'WORD',
-  'COMPARISON',
-  'PHRASE',
-]);
 
 export const user = pgTable(
   'user',
@@ -127,10 +121,8 @@ export const userCards = pgTable(
     deckId: text('deck_id')
       .notNull()
       .references(() => userDecks.id, { onDelete: 'cascade' }),
-    cardType: cardTypeEnum('card_type').default('WORD').notNull(),
     front: text('front').notNull(),
     back: text('back').notNull(),
-    contextSentence: text('context_sentence'),
     dueAt: timestamp('due_at', { withTimezone: true }).defaultNow().notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
@@ -164,6 +156,7 @@ export const reviewEvents = pgTable(
   },
   (table) => [
     index('idx_review_events_user_card').on(table.userId, table.userCardId),
+	check('rating_check', sql`${table.rating} >= 1 AND ${table.rating} <= 4`)
   ],
 );
 
