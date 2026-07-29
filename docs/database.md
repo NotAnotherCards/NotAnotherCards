@@ -75,35 +75,17 @@ Represents a deck (collection of cards) owned by a user.
 ### `user_cards`
 
 Represents individual vocabulary cards, comparison cards, or phrases.
-<<<<<<< HEAD
-
-- **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
-- **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
-- **`deck_id`** (text/UUID, Foreign Key): Links to `user_decks.id` with `cascade` delete.
-- **`card_type`** (enum): Native PG enum (`WORD`, `COMPARISON`, `PHRASE`). Defaults to `WORD`.
-- **`front` / `back`** (text, NOT NULL): The card prompt/question and response/translation.
-- **`context_sentence`** (text, nullable): Optional context or example sentence.
-- **`due_at`** (timestamp with time zone, default now): The next scheduled review date-time determined by the spaced repetition algorithm.
-- **`created_at` / `updated_at` / `deleted_at`** (timestamp with time zone): Same sync and soft-delete semantics as `user_decks`.
 
 **Indexes:**
 
 - **`idx_user_cards_user_updated`**: Composite index on `(user_id, updated_at)` for listing a user's cards by recency.
 - **`idx_user_cards_due`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
-=======
 * **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
 * **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
 * **`deck_id`** (text/UUID, Foreign Key): Links to `user_decks.id` with `cascade` delete.
-* **`card_type`** (enum): Native PG enum (`WORD`, `COMPARISON`, `PHRASE`). Defaults to `WORD`.
 * **`front` / `back`** (text, NOT NULL): The card prompt/question and response/translation.
-* **`context_sentence`** (text, nullable): Optional context or example sentence.
 * **`due_at`** (timestamp with time zone, default now): The next scheduled review date-time determined by the spaced repetition algorithm.
 * **`created_at` / `updated_at` / `deleted_at`** (timestamp with time zone): Same sync and soft-delete semantics as `user_decks`.
-
-**Indexes:**
-* **`idx_user_cards_user_updated`**: Composite index on `(user_id, updated_at)` for sync delta lookups.
-* **`idx_user_cards_due`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
->>>>>>> 60d2357 (add schema and migrations for user decks, cards, and review events)
 
 ---
 
@@ -113,7 +95,7 @@ An **append-only** transaction log of all study card reviews.
 * **`id`** (text/UUID, Primary Key): Unique review identifier.
 * **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
 * **`user_card_id`** (text/UUID, Foreign Key): Links to `user_cards.id` with `cascade` delete.
-* **`rating`** (integer, NOT NULL): How well the user remembered the card (e.g., `1` for failed/forgot, `2` for remembered).
+* **`rating`** (integer, NOT NULL): How well the user remembered the card.
 * **`reviewed_at`** (timestamp with time zone, default now): The timestamp when the review session took place.
 
 **Indexes:**
