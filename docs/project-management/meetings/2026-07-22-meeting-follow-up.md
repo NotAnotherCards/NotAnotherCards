@@ -1,6 +1,5 @@
 # Meeting Follow-up - 2026-07-22
 
-
 Please remember to move your issue from **Backlog** to **In Progress** when you start working on it.
 
 @Danielg1406 and @dustyway defined **Milestone 2** and the tasks for it. The remaining milestones were also roughly outlined.
@@ -34,4 +33,3 @@ We discussed the Transcendence evaluation blocks.
 Before the next meeting, everyone should think about which categories / modules are interesting for them.
 
 After that, people should think about possible solutions and how they could fit into our architecture.
-

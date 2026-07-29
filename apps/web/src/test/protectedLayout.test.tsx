@@ -32,7 +32,10 @@ describe("App Layout Guards", () => {
     });
 
     // Mock logged-in state
-    vi.mocked(authClient.getSession).mockResolvedValue({ data: mockSession, error: null });
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
     vi.mocked(authClient.useSession).mockReturnValue({
       data: mockSession,
       isPending: false,
