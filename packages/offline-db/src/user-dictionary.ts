@@ -4,22 +4,24 @@ import { zodTable } from "@remelondb/core/zod";
 
 export const UserDeckRow = z.object({
   user_id: z.string(),
-  name: z.string().min(1),
+  title: z.string().min(1),
   description: z.string().nullable(),
   created_at: z.number(),
   updated_at: z.number(),
+  deleted_at: z.number().nullable(),
 });
 
 export const UserCardRow = z.object({
   user_id: z.string(),
-  card_id: z.string(),
-  deck_id: z.string().nullable(),
-  status: z.string(), // new | learning | learned | suspended | archived
-  source: z.string(), // manual | collection | ai | imported
-  offline_enabled: z.boolean(),
-  due_at: z.number().nullable(),
-  added_at: z.number(),
+  deck_id: z.string(),
+  card_type: z.string(),
+  front: z.string(),
+  back: z.string(),
+  context_sentence: z.string().nullable(),
+  due_at: z.number(),
+  created_at: z.number(),
   updated_at: z.number(),
+  deleted_at: z.number().nullable(),
 });
 
 export const UserCardOverrideRow = z.object({
@@ -47,10 +49,7 @@ export const ReviewEventRow = z.object({
   user_id: z.string(),
   user_card_id: z.string(),
   rating: z.number().int(), // e.g. 1 = again, 2 = hard, 3 = good, 4 = easy
-  ease_factor: z.number(),
-  interval: z.number().int(),
   reviewed_at: z.number(),
-  created_at: z.number(),
 });
 
 export const userDecks = zodTable("user_decks", UserDeckRow, {
@@ -58,7 +57,7 @@ export const userDecks = zodTable("user_decks", UserDeckRow, {
 });
 
 export const userCards = zodTable("user_cards", UserCardRow, {
-  indexed: ["user_id", "card_id", "deck_id", "due_at", "updated_at"],
+  indexed: ["user_id", "deck_id", "due_at", "updated_at"],
 });
 
 export const userCardOverrides = zodTable("user_card_overrides", UserCardOverrideRow, {
@@ -87,7 +86,6 @@ export class UserDeck extends ModelFor(userDecks) {
 export class UserCard extends ModelFor(userCards) {
   static associations = {
     user: { type: "belongs_to" as const, key: "user_id" },
-    card: { type: "belongs_to" as const, key: "card_id" },
     deck: { type: "belongs_to" as const, key: "deck_id" },
     overrides: { type: "has_many" as const, foreignKey: "user_card_id" },
     notes: { type: "has_many" as const, foreignKey: "user_card_id" },

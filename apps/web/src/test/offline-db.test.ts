@@ -16,6 +16,7 @@ describe("@repo/offline-db wiring on web", () => {
         email_verified: true,
         name: "Test User",
         username: "testuser",
+        timezone: "UTC",
         image: null,
         created_at: Date.now(),
         updated_at: Date.now(),
@@ -38,14 +39,15 @@ describe("@repo/offline-db wiring on web", () => {
     expect(
       UserCardRow.safeParse({
         user_id: "user123",
-        card_id: "card123",
-        deck_id: null,
-        status: "learning",
-        source: "manual",
-        offline_enabled: false,
-        due_at: null,
-        added_at: 0,
+        deck_id: "deck123",
+        card_type: "WORD",
+        front: "front side",
+        back: "back side",
+        context_sentence: null,
+        due_at: 0,
+        created_at: 0,
         updated_at: 0,
+        deleted_at: null,
       }).success,
     ).toBe(true);
 
@@ -86,10 +88,11 @@ describe("@repo/offline-db wiring on web", () => {
     expect(
       UserDeckRow.safeParse({
         user_id: "user123",
-        name: "Test Deck",
+        title: "Test Deck",
         description: "Deck description",
         created_at: 0,
         updated_at: 0,
+        deleted_at: null,
       }).success,
     ).toBe(true);
 
@@ -98,10 +101,7 @@ describe("@repo/offline-db wiring on web", () => {
         user_id: "user123",
         user_card_id: "usercard123",
         rating: 3,
-        ease_factor: 2.5,
-        interval: 1,
         reviewed_at: 0,
-        created_at: 0,
       }).success,
     ).toBe(true);
 

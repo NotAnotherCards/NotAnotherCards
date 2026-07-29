@@ -5,8 +5,9 @@ import { zodTable } from "@remelondb/core/zod";
 export const UserRow = z.object({
   email: z.string().email(),
   email_verified: z.boolean(),
-  name: z.string().nullable(),
-  username: z.string().nullable(),
+  name: z.string(),
+  username: z.string(),
+  timezone: z.string(),
   image: z.string().nullable(),
   created_at: z.number(),
   updated_at: z.number(),
@@ -29,7 +30,11 @@ export const AccountRow = z.object({
   account_id: z.string(),
   access_token: z.string().nullable(),
   refresh_token: z.string().nullable(),
+  id_token: z.string().nullable(),
   access_token_expires_at: z.number().nullable(),
+  refresh_token_expires_at: z.number().nullable(),
+  scope: z.string().nullable(),
+  password: z.string().nullable(),
   created_at: z.number(),
   updated_at: z.number(),
 });
