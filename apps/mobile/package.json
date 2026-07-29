@@ -9,7 +9,8 @@
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "dev:mobile": "expo start"
   },
   "dependencies": {
     "@better-auth/expo": "^1.6.23",

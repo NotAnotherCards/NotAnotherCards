@@ -16,9 +16,11 @@ Layout:
 
 - Node and pnpm (`pnpm install` at the root).
 - The API running locally: follow the Setup section in the root README (env
-  files, `docker compose up -d`, `pnpm --filter api db:migrate`), then start it
-  with `pnpm --filter api dev`. Without it, login and signup fail with
-  "Can't reach the server".
+  files, `docker compose up -d`, `pnpm --filter api db:migrate`). Without it,
+  login and signup fail with "Can't reach the server". You don't need to start
+  it by hand: `pnpm turbo dev:mobile` (from `apps/mobile`) starts the API
+  together with Metro. `pnpm --filter api dev` still works if you want it in
+  its own terminal.
 - For Android: the Android SDK with an emulator (AVD) and `adb` on your PATH,
   plus **Java 17–21** for the build; it fails on newer JDKs (Java 26). Set
   `JAVA_HOME`, e.g. `/usr/lib/jvm/java-21-openjdk` or
@@ -118,8 +120,8 @@ Build times, so nobody is surprised:
   toolchain and compiles every native module.
 - Later `pnpm android` runs: a minute or two (warm Gradle caches). Only needed
   when a native dependency changes.
-- Day to day: no rebuild at all. `pnpm start` and press `a`; JS changes
-  hot-reload in about a second.
+- Day to day: no rebuild at all. `pnpm turbo dev:mobile` (starts Metro and the
+  API together) and press `a`; JS changes hot-reload in about a second.
 
 Metro defaults to port 8081. If that's already in use, add `--port 8082` (or any
 free port) to the commands above.
@@ -174,8 +176,9 @@ pnpm ios
 
 This picks a default simulator; add `--device "iPhone 17 Pro"` to choose one.
 First build takes a few minutes (installs CocoaPods if missing, compiles the
-pods, installs on the simulator). After that, `pnpm start` and press `i`;
-JS changes hot-reload, only native dependency changes need another `pnpm ios`.
+pods, installs on the simulator). After that, `pnpm turbo dev:mobile` and press
+`i`; JS changes hot-reload, only native dependency changes need another
+`pnpm ios`.
 Verified working with Xcode 26.6 and the iOS 26.5 simulator runtime.
 
 ### On a real iPhone
