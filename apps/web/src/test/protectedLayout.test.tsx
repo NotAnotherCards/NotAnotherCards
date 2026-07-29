@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { App, router } from "../App";
 import { authClient } from "@/lib/auth-client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,7 +27,9 @@ describe("App Layout Guards", () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, "", "/app/dashboard");
-    await router.navigate({ to: "/app/dashboard" });
+    await act(async () => {
+      await router.navigate({ to: "/app/dashboard" });
+    });
 
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({ data: mockSession, error: null });
@@ -40,14 +42,16 @@ describe("App Layout Guards", () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
 
     // Invalidate router cache to ensure loaders re-run with the new mock values
-    await router.invalidate();
+    await act(async () => {
+      await router.invalidate();
+    });
   });
 
   it("renders the protection wrapper on the dashboard page", async () => {
     render(<App />);
     // Verify the dashboard route component is rendered inside it
     expect(
-      screen.getByRole("heading", { name: /DASHBOARD PAGE/i }),
+      await screen.findByRole("heading", { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
   });
 });

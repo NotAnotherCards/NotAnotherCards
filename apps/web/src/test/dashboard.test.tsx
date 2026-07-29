@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { App, router } from "../App";
 import userEvent from "@testing-library/user-event";
 import { authClient } from "@/lib/auth-client";
@@ -27,7 +27,9 @@ describe("Dashboard Page Component Specs", () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, "", "/app/dashboard");
-    await router.navigate({ to: "/app/dashboard" });
+    await act(async () => {
+      await router.navigate({ to: "/app/dashboard" });
+    });
 
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({ data: mockSession, error: null });
@@ -40,7 +42,9 @@ describe("Dashboard Page Component Specs", () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
 
     // Invalidate router cache to ensure loaders re-run with the new mock values
-    await router.invalidate();
+    await act(async () => {
+      await router.invalidate();
+    });
   });
 
   it("renders welcome text, user email/name, and placeholder feature sections", async () => {
