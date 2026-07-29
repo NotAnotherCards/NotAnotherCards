@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type SignupFormData } from '@repo/schemas'
@@ -22,7 +22,15 @@ function getTimezone(): string | undefined {
 
 export default function Register() {
   const router = useRouter()
+  const { data: session } = authClient.useSession()
   const [apiError, setApiError] = useState<string | null>(null)
+
+  // Navigate from session state, not from the signUp response: the session
+  // store updates a moment after the request resolves, and the dashboard
+  // bounces to /login if it mounts before then.
+  useEffect(() => {
+    if (session) router.replace('/dashboard')
+  }, [session, router])
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -47,9 +55,7 @@ export default function Register() {
       })
       if (error) {
         setApiError(apiErrorMessage(error))
-        return
       }
-      router.replace('/dashboard')
     } catch (err) {
       setApiError(apiErrorMessage(err))
     }
