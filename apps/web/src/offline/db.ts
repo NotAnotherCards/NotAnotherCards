@@ -100,7 +100,9 @@ class DatabaseManager {
       return openedDb;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      console.error("Failed to bootstrap local database:", error);
+      if (typeof process === "undefined" || process.env.NODE_ENV !== "test") {
+        console.error("Failed to bootstrap local database:", error);
+      }
 
       // Customize error message for lock conflicts if takeover was disabled
       let statusError = error;
