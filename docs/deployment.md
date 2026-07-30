@@ -101,7 +101,7 @@ just the GX10 into each teammate's own free tailnet. Two levels of access:
 
 The GPU and its memory are shared with production inference. No technical
 enforcement at team scale: the production model stays loaded, bigger
-experiments get announced in Discord first, and the GPU dashboard keeps
+experiments get announced in Slack first, and the GPU dashboard keeps
 usage visible to everyone.
 
 ## AI request flow
@@ -138,7 +138,7 @@ Prometheus and Grafana run in the compose:
   eval machine these targets show as down while everything else works, which
   is the monitoring doing its job.
 - Alerting rules that mean something: queue depth threshold, api down, disk
-  filling. Alerts go to the team Discord via webhook.
+  filling. Alerts go to the team Slack via webhook.
 - Grafana access is secured (built-in auth, admin password from env), which is
   an explicit module requirement.
 
