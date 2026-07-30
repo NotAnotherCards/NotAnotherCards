@@ -99,15 +99,10 @@ just the GX10 into each teammate's own free tailnet. Two levels of access:
   box, over sshd bound to the tailscale interface, for experiments that need
   more than the API (own scripts, model tinkering).
 
-Two rules make the shell accounts safe and livable:
-
-- A firewall rule on the GX10 drops traffic to the home LAN (gateway and DNS
-  excepted), so an account on the box is not a foothold in a private network.
-  This is set up before the first account exists.
-- The GPU and its memory are shared with production inference. No technical
-  enforcement at team scale: the production model stays loaded, bigger
-  experiments get announced in Discord first, and the GPU dashboard keeps
-  usage visible to everyone.
+The GPU and its memory are shared with production inference. No technical
+enforcement at team scale: the production model stays loaded, bigger
+experiments get announced in Discord first, and the GPU dashboard keeps
+usage visible to everyone.
 
 ## AI request flow
 
