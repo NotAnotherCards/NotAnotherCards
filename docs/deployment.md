@@ -90,8 +90,8 @@ is back.
 
 ### Access for experimentation
 
-Tailscale node sharing shares the GX10 into each teammate's own free
-tailnet. Two levels of access:
+Teammates do not join the box owner's tailnet. Tailscale node sharing shares
+just the GX10 into each teammate's own free tailnet. Two levels of access:
 
 - **API access**: with their personal LiteLLM key, experiments run from their
   laptop against the same interface production uses.
