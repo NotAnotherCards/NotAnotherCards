@@ -14,6 +14,7 @@ type Listener = (state: DatabaseState) => void;
 
 class DatabaseManager {
   private db: Database | null = null;
+  private initPromise: Promise<Database> | null = null;
   private state: DatabaseState = {
     status: "idle",
     error: null,
@@ -51,76 +52,86 @@ class DatabaseManager {
       return this.db;
     }
 
-    this.updateState("loading");
+    if (this.initPromise) {
+      return this.initPromise;
+    }
 
-    const takeover = options.takeover ?? true;
-    const storage = options.storage ?? "opfs";
+    this.initPromise = (async () => {
+      this.updateState("loading");
 
-    try {
-      // 1. Check browser support for OPFS if we are using it
-      if (storage === "opfs") {
+      const takeover = options.takeover ?? true;
+      const storage = options.storage ?? "opfs";
+
+      try {
+        // 1. Check browser support for OPFS if we are using it
+        if (storage === "opfs") {
+          if (
+            typeof navigator === "undefined" ||
+            !navigator.storage ||
+            !navigator.storage.getDirectory
+          ) {
+            throw new Error(
+              "Origin Private File System (OPFS) is not supported in this browser. " +
+              "Please use a modern browser that supports OPFS for persistent local storage."
+            );
+          }
+        }
+
+        // 2. Instantiate the WebSqliteDriver
+        const driver = new WebSqliteDriver({
+          storage,
+          takeover,
+          onTakenOver: () => {
+            console.warn("remelonDB database was taken over by another tab.");
+            this.db = null;
+            this.updateState(
+              "taken-over",
+              new Error("Database taken over by another tab. Please close other tabs of this application.")
+            );
+          },
+        });
+
+        const databaseName = "ft_transcendence_offline.db";
+
+        // 3. Open the database with remelonDB
+        const openedDb = await Database.open({
+          driver,
+          schema,
+          modelClasses: [UserDeck, UserCard, ReviewEvent],
+          name: databaseName,
+        });
+
+        this.db = openedDb;
+        this.updateState("ready");
+        return openedDb;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        if (typeof process === "undefined" || process.env.NODE_ENV !== "test") {
+          console.error("Failed to bootstrap local database:", error);
+        }
+
+        // Customize error message for lock conflicts if takeover was disabled
+        let statusError = error;
         if (
-          typeof navigator === "undefined" ||
-          !navigator.storage ||
-          !navigator.storage.getDirectory
+          error.message.includes("lock") ||
+          error.message.includes("exclusive") ||
+          error.message.includes("another tab") ||
+          error.message.includes("unavailable")
         ) {
-          throw new Error(
-            "Origin Private File System (OPFS) is not supported in this browser. " +
-            "Please use a modern browser that supports OPFS for persistent local storage."
+          statusError = new Error(
+            "Database is currently locked by another tab. " +
+            "Close other tabs of this application to use offline mode."
           );
         }
+
+        this.updateState("error", statusError);
+        throw statusError;
+      } finally {
+        this.initPromise = null;
       }
+    })();
 
-      // 2. Instantiate the WebSqliteDriver
-      const driver = new WebSqliteDriver({
-        storage,
-        takeover,
-        onTakenOver: () => {
-          console.warn("remelonDB database was taken over by another tab.");
-          this.db = null;
-          this.updateState(
-            "taken-over",
-            new Error("Database taken over by another tab. Please close other tabs of this application.")
-          );
-        },
-      });
-
-      const databaseName = "ft_transcendence_offline.db";
-
-      // 3. Open the database with remelonDB
-      const openedDb = await Database.open({
-        driver,
-        schema,
-        modelClasses: [UserDeck, UserCard, ReviewEvent],
-        name: databaseName,
-      });
-
-      this.db = openedDb;
-      this.updateState("ready");
-      return openedDb;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      if (typeof process === "undefined" || process.env.NODE_ENV !== "test") {
-        console.error("Failed to bootstrap local database:", error);
-      }
-
-      // Customize error message for lock conflicts if takeover was disabled
-      let statusError = error;
-      if (
-        error.message.includes("lock") ||
-        error.message.includes("exclusive") ||
-        error.message.includes("another tab") ||
-        error.message.includes("unavailable")
-      ) {
-        statusError = new Error(
-          "Database is currently locked by another tab. " +
-          "Close other tabs of this application to use offline mode."
-        );
-      }
-
-      this.updateState("error", statusError);
-      throw statusError;
-    }
+    return this.initPromise;
   }
 
   async close(): Promise<void> {
