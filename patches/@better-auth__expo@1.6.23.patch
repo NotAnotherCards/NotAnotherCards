@@ -1,0 +1,31 @@
+diff --git a/dist/client.js b/dist/client.js
+index 78aef7bf1e5953bf762234ca1c6052893d8f51d7..21f4b4ee723872d1a7875f7cea4fdc8fafed6a70 100644
+--- a/dist/client.js
++++ b/dist/client.js
+@@ -3,6 +3,7 @@ import { safeJSONParse } from "@better-auth/core/utils/json";
+ import { SECURE_COOKIE_PREFIX, parseSetCookieHeader, parseSetCookieHeader as parseSetCookieHeader$1, stripSecureCookiePrefix } from "better-auth/cookies";
+ import Constants from "expo-constants";
+ import * as Linking from "expo-linking";
++import * as ExpoNetwork from "expo-network";
+ import { AppState, Platform } from "react-native";
+ import { kFocusManager, kOnlineManager } from "better-auth/client";
+ //#region \0rolldown/runtime.js
+@@ -58,14 +59,14 @@ var ExpoOnlineManager = class {
+ 		this.listeners.forEach((listener) => listener(online));
+ 	}
+ 	setup() {
+-		import("expo-network").then(({ addNetworkStateListener }) => {
+-			const subscription = addNetworkStateListener((state) => {
++		try {
++			const subscription = ExpoNetwork.addNetworkStateListener((state) => {
+ 				this.setOnline(!!state.isInternetReachable);
+ 			});
+ 			this.unsubscribe = () => subscription.remove();
+-		}).catch(() => {
++		} catch {
+ 			this.setOnline(true);
+-		});
++		}
+ 		return () => {
+ 			this.unsubscribe?.();
+ 		};
