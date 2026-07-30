@@ -7,14 +7,14 @@ Closes #
 
 ## Changes
 
-<!-- List all changes and in which part/file of the application got implemented -->
+<!-- List all changes, and in which part/file of the application got implemented -->
 
-- [ ] Feature in Web
-- [ ] Bug fix in api file
-- [ ] Refactor share package
-- [ ] Documentation
-- [ ] Tests for new UI component
-- [ ] Chore or dependency update
+- Feature in Web
+- Bug fix in api file
+- Refactor share package
+- Documentation
+- Tests for new UI component
+- Chore or dependency update
 
 ### Screenshots
 
