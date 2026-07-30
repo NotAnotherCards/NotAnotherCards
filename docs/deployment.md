@@ -41,9 +41,12 @@ The same `docker-compose.yml` runs in three places:
    For the live AI demo during evaluation, the plan is Tailscale on the eval
    machine (userspace mode, no root needed; falls back to relaying over 443,
    so campus firewalls are not a problem) with `AI_API_BASE` pointing at the
-   GX10. That also puts the GPU dashboard live during the defense. Plan B for
-   the box being unreachable on eval day: an optional compose profile that
-   runs a small model locally via Ollama.
+   GX10. That also puts the GPU dashboard live during the defense. Running a
+   model on the eval machine itself is not an option, so plan B for the box
+   being unreachable on eval day is pointing `AI_API_BASE` at a hosted
+   OpenAI-compatible provider instead; costs cents for a demo and needs no
+   code change. Without any endpoint the app still runs and shows jobs as
+   queued, which is compliant but not much of a demo.
 2. **The VPS**: same compose, plus nginx/certbot, `AI_API_BASE` pointing at the
    GX10 through the tailnet.
 3. **A teammate's machine during AI work**: same compose, `AI_API_BASE`
@@ -151,8 +154,9 @@ same box, needs its own design).
 2. First generation feature: examples/hints for existing cards, or full deck
    generation? Decides the first job type and prompt work.
 3. Evaluation demo for AI: primary plan is Tailscale on the eval machine with
-   the live GX10; plan B is the local small-model compose profile. Decide how
-   much of plan B to build near the end.
+   the live GX10; plan B is a hosted OpenAI-compatible provider behind the
+   same env var. Decide which provider and who pays the few cents near the
+   end.
 4. Do we claim the monitoring Major? It adds 2 points and the ops we want
    anyway; it also adds dashboard/alerting work someone must own.
 5. Backup SSH person for the VPS: who?
