@@ -95,9 +95,10 @@ just the GX10 into each teammate's own free tailnet. Two levels of access:
 
 - **API access**: with their personal LiteLLM key, experiments run from their
   laptop against the same interface production uses.
-- **Shell accounts**: teammates get ordinary non-sudo Linux accounts on the
-  box, over sshd bound to the tailscale interface, for experiments that need
-  more than the API (own scripts, model tinkering).
+- **Shell login**: team members can log into the GX10 via their Tailscale
+  access, with ordinary non-sudo Linux accounts (sshd is bound to the
+  tailscale interface), for experiments that need more than the API (own
+  scripts, model tinkering).
 
 The GPU and its memory are shared with production inference. No technical
 enforcement at team scale: the production model stays loaded, bigger
@@ -155,17 +156,3 @@ Not claimed from this plan: ELK (second observability Major; heavy on a school
 machine and adds little over metrics at our scale), RAG (possible later on the
 same box, needs its own design).
 
-## Open questions for the team
-
-1. Who owns the monitoring module? Infra is maybe a third of it; dashboards
-   and alerting are the substance, and evaluation asks each member to defend
-   their contribution.
-2. First generation feature: examples/hints for existing cards, or full deck
-   generation? Decides the first job type and prompt work.
-3. Evaluation demo for AI: primary plan is Tailscale on the eval machine with
-   the live GX10; plan B is a hosted OpenAI-compatible provider behind the
-   same env var. Decide which provider and who pays the few cents near the
-   end.
-4. Do we claim the monitoring Major? It adds 2 points and the ops we want
-   anyway; it also adds dashboard/alerting work someone must own.
-5. Backup SSH person for the VPS: who?
