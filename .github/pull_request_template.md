@@ -1,57 +1,31 @@
-## Summary
+## Description
 
-<!-- What changed, and why? Keep this focused on the problem and the solution. -->
-
-## Related issue
-
-<!-- Use "Closes #123" when merging this PR should close an issue. -->
+<!-- What changed, and why? Keep this short -->
+<!-- Use "Closes #123" when merging this PR should close an issue -->
 
 Closes #
 
-## Type of change
+## Changes
 
-- [ ] Feature
-- [ ] Bug fix
-- [ ] Refactor
+<!-- List all changes and in which part/file of the application got implemented -->
+
+- [ ] Feature in Web
+- [ ] Bug fix in api file
+- [ ] Refactor share package
 - [ ] Documentation
-- [ ] Tests
+- [ ] Tests for new UI component
 - [ ] Chore or dependency update
 
-## Affected areas
+### Screenshots
 
-- [ ] Web
-- [ ] API
-- [ ] Mobile
-- [ ] Shared packages
-- [ ] Database
-- [ ] CI or developer tooling
+<!-- Add before/after evidence for visual changes, or write "Not applicable" -->
 
-## How was this tested?
+## How to test?
 
-<!-- List the commands and manual checks you ran. -->
+<!-- List the commands and manual checks you ran to make sure everything works -->
+<!-- Take into account the others do not know in detail what you did, make sure anyone can understand how to test -->
 
 - [ ] `pnpm lint`
 - [ ] `pnpm test`
 - [ ] `pnpm build`
 - [ ] Other:
-
-## Screenshots or recordings
-
-<!-- Add before/after evidence for visual changes, or write "Not applicable". -->
-
-## Additional notes
-
-<!-- Call out anything reviewers should pay particular attention to. -->
-
-- Database migrations:
-- Environment or configuration changes:
-- Follow-up work:
-
-## Checklist
-
-- [ ] I reviewed my own changes.
-- [ ] I added or updated tests where appropriate.
-- [ ] I updated documentation where appropriate.
-- [ ] I did not commit secrets or sensitive data.
-- [ ] I considered accessibility for user-facing changes.
-- [ ] This PR is focused and ready for review.
