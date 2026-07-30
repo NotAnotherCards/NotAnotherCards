@@ -29,6 +29,7 @@
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
     "better-auth": "^1.6.23",
     "drizzle-orm": "^0.45.2",

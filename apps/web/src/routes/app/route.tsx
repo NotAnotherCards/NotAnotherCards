@@ -6,8 +6,8 @@ export const Route = createFileRoute("/app")({
     const { data: session } = await authClient.getSession();
     if (!session) {
       throw redirect({
-        to: '/login'
-      })
+        to: "/login",
+      });
     }
   },
   component: AppLayout,

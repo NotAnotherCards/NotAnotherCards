@@ -15,6 +15,27 @@
       "when": 1784824984362,
       "tag": "0001_glamorous_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785222812211,
+      "tag": "0002_quick_boom_boom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785244993402,
+      "tag": "0003_glamorous_abomination",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785338194913,
+      "tag": "0004_bumpy_magus",
+      "breakpoints": true
     }
   ]
 }
