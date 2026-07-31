@@ -98,7 +98,7 @@ export function CardList({
       </CardHeader>
       <CardContent className="p-0">
         {filteredCards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground min-h-50 gap-3">
+          <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground min-h-50 gap-4">
             <HelpCircle className="size-10 mb-2 stroke-1 opacity-60" />
             <p className="text-sm font-semibold">No Cards Found</p>
             <p className="text-xs max-w-xs mt-1">
