@@ -9,7 +9,7 @@ export function DatabaseBanner() {
   }
 
   const handleReconnect = () => {
-    manager.init({ takeover: true }).catch(() => {});
+    manager.init().catch(() => {});
   };
 
   return (
