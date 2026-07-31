@@ -1,15 +1,29 @@
 import { useState } from "react";
 import { Card } from "@/hooks/useMockStore";
 import { Input } from "@/components/ui/input";
-import { Card as UICard, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Search, Library, HelpCircle, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Card as UICard,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Search,
+  Library,
+  HelpCircle,
+  AlertCircle,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import { CardItem } from "./CardItem";
 import { FlashcardModal } from "./FlashcardModal";
+import { Button } from "../ui/button";
 
 interface CardListProps {
   cards: Card[];
   onEditCard: (card: Card) => void;
   onDeleteCard: (cardId: string) => void;
+  onAddCard: () => void;
   isLoading?: boolean;
   error?: string | null;
 }
@@ -18,6 +32,7 @@ export function CardList({
   cards,
   onEditCard,
   onDeleteCard,
+  onAddCard,
   isLoading,
   error,
 }: CardListProps) {
@@ -27,7 +42,7 @@ export function CardList({
   const filteredCards = cards.filter(
     (c) =>
       c.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.back.toLowerCase().includes(searchTerm.toLowerCase())
+      c.back.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (isLoading) {
@@ -35,7 +50,9 @@ export function CardList({
       <UICard className="border border-border/60">
         <CardContent className="flex flex-col items-center justify-center min-h-60 space-y-4 animate-in fade-in duration-300">
           <Loader2 className="animate-spin size-8 text-primary" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading cards...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Loading cards...
+          </p>
         </CardContent>
       </UICard>
     );
@@ -48,7 +65,9 @@ export function CardList({
           <AlertCircle className="size-8" />
         </div>
         <div>
-          <h3 className="text-md font-bold text-destructive">Failed to Load Cards</h3>
+          <h3 className="text-md font-bold text-destructive">
+            Failed to Load Cards
+          </h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
             {error || "An error occurred while loading deck contents."}
           </p>
@@ -79,7 +98,7 @@ export function CardList({
       </CardHeader>
       <CardContent className="p-0">
         {filteredCards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground min-h-50">
+          <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground min-h-50 gap-3">
             <HelpCircle className="size-10 mb-2 stroke-1 opacity-60" />
             <p className="text-sm font-semibold">No Cards Found</p>
             <p className="text-xs max-w-xs mt-1">
@@ -87,6 +106,15 @@ export function CardList({
                 ? "Try refining your search term to find cards in this deck."
                 : "This deck is empty. Click 'Add Card' above to start building your collection."}
             </p>
+            {!searchTerm && cards.length === 0 ? (
+              <Button
+                onClick={onAddCard}
+                className="cursor-pointer gap-1.5 self-start sm:self-center"
+              >
+                <Plus className="size-4" />
+                Add Card
+              </Button>
+            ) : null}
           </div>
         ) : (
           <div className="overflow-x-auto">
