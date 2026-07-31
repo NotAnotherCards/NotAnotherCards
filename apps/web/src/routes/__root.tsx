@@ -10,7 +10,9 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   useEffect(() => {
-    manager.init().catch(() => {});
+    if (manager.state.status === "idle" || manager.state.status === "error") {
+      manager.init().catch(() => {});
+    }
   }, []);
 
   return (
