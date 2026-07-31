@@ -13,11 +13,12 @@ and the AI box is an external backend behind a config value.
 ```
 users ── HTTPS ──> VPS (public)                     GX10 (home box, tailnet only)
                    ├─ nginx + certbot               ├─ LiteLLM proxy :4000
-                   ├─ web (static build)            │    keys, rate limits, logging
-                   ├─ api (NestJS)                  ├─ inference server (Ollama or vLLM)
-                   ├─ postgres ── tailscale ───────>│    bound to tailscale interface
-                   ├─ prometheus                    ├─ node_exporter + DCGM exporter
-                   └─ grafana                       └─ tailscaled
+                   ├─ web (static build)            ├─ inference server (Ollama or vLLM)
+                   ├─ api (NestJS)                  │    bound to tailscale interface
+                   ├─ postgres ── tailscale ───────>├─ node_exporter + DCGM exporter
+                   ├─ monitoring compose:           └─ tailscaled
+                   │    prometheus + grafana
+                   └─ node_exporter
 ```
 
 - The VPS is reachable from the internet over HTTPS only.
@@ -36,7 +37,7 @@ users ── HTTPS ──> VPS (public)                     GX10 (home box, tail
 The same `docker-compose.yml` runs in three places:
 
 1. **Evaluation / any dev machine**: `docker compose up` starts web, api,
-   postgres, prometheus, grafana. The AI endpoint is whatever
+   and postgres. The AI endpoint is whatever
    `AI_API_BASE` points to. If it points nowhere, generation jobs queue and the
    UI shows them as waiting; nothing errors. The compose must pass this test
    with no tailnet at all, since "runs with a single command" is
@@ -45,8 +46,9 @@ The same `docker-compose.yml` runs in three places:
    For the live AI demo during evaluation, the plan is Tailscale on the eval
    machine (userspace mode, no root needed; falls back to relaying over 443,
    so campus firewalls are not a problem) with `AI_API_BASE` pointing at the
-   GX10. That also puts the GPU dashboard live during the defense. Running a
-   model on the eval machine itself is not an option, so plan B for the box
+   GX10. (The GPU dashboard is visible either way — Grafana is a public
+   URL.) Running a model on the eval machine itself is not an option, so
+   plan B for the box
    being unreachable on eval day is pointing `AI_API_BASE` at a hosted
    OpenAI-compatible provider instead; costs cents for a demo and needs no
    code change. Without any endpoint the app still runs and shows jobs as
@@ -127,22 +129,31 @@ never streams.
 
 ## Observability
 
-Prometheus and Grafana run in the compose:
+Prometheus and Grafana run on the VPS as their own compose file, next to
+but separate from the app bundle — the single-command eval run stays
+lean, and monitoring lives on the reliable machine. That placement is
+deliberate: monitoring must not share fate with the least reliable
+thing it watches. Hosted on the GX10 it could never alert on the GX10
+being down; on the VPS, that is the alert that works best.
 
 - api exposes `/metrics` (prom-client): request rates, latencies, and the
   queue gauges (jobs pending / running / failed, job duration). Queue depth is
   the main operational signal in this design: it answers "is the AI box down
   or drowning" at a glance.
-- postgres-exporter for the database.
-- On the GX10: LiteLLM's built-in prometheus metrics (requests, latency,
-  tokens per key) plus node_exporter and NVIDIA DCGM exporter (GPU
-  utilization). Prometheus on the VPS scrapes them over the tailnet. On an
-  eval machine these targets show as down while everything else works, which
-  is the monitoring doing its job.
-- Alerting rules that mean something: queue depth threshold, api down, disk
-  filling. Alerts go to the team Slack via webhook.
+- postgres-exporter and node_exporter on the VPS (host metrics: disk,
+  memory, CPU — the "disk filling" alert needs them).
+- On the GX10, scraped over the tailnet: LiteLLM's built-in prometheus
+  metrics (requests, latency, tokens per key) plus node_exporter and the
+  NVIDIA DCGM exporter (GPU utilization). When the box is offline these
+  targets go dark and the alert fires — which is the point.
+- Alerting rules that mean something: queue depth threshold, api down,
+  GX10 unreachable, disk filling. Alerts go to the team Slack via webhook.
 - Grafana access is secured (built-in auth, admin password from env), which is
-  an explicit module requirement.
+  an explicit module requirement. Served through nginx, so the team can
+  check dashboards from anywhere without joining any tailnet.
+
+For the evaluation demo the dashboards are simply a URL — no Tailscale
+needed for the monitoring module, independent of the AI demo path.
 
 ## Module claims
 
@@ -151,7 +162,7 @@ Prometheus and Grafana run in the compose:
 | AI: Complete LLM system interface (Major) | 2 | already planned (A17) |
 | DevOps: Monitoring with Prometheus and Grafana (Major) | 2 | claimed in the modules plan |
 | DevOps: Health check / status page, backups (Minor) | 1 | under consideration (A20) |
-| Cybersecurity: WAF/ModSecurity + Vault (Major) | 2 | stretch option |
+| Cybersecurity: WAF/ModSecurity + Vault (Major) | 2 | skipped for now |
 
 ### AI: Complete LLM system interface (Major)
 
@@ -175,13 +186,15 @@ tested once.
 
 ### Cybersecurity: WAF/ModSecurity + Vault (Major)
 
-The nginx we deploy anyway can carry ModSecurity, and Vault would replace
-env-file secrets. Real extra work, only worth claiming if someone wants to
-own it.
+Skipped for now (per review on the plan PR). The nginx we deploy anyway
+could carry ModSecurity and Vault could replace env-file secrets, so the
+option stays cheap to revisit if the module points are ever needed.
 
 ### Not claimed
 
-ELK (second observability Major): heavy on a school machine and adds little
-over metrics at our scale. RAG: possible later on the same box, needs its own
+ELK (second observability Major): Elasticsearch alone wants more memory
+than the rest of the stack combined — a poor fit for a small VPS — and at
+our scale structured log search adds little over metrics plus
+`docker compose logs`. RAG: possible later on the same box, needs its own
 design.
 
