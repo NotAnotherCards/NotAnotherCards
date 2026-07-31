@@ -14,8 +14,8 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-64@2.10.4"
   - "@turbo/windows-arm64@2.10.4"
   - turbo@2.10.4
-  - '@remelondb/core@0.1.0'
-  - '@remelondb/driver-web@0.1.0'
+  - '@remelondb/core@0.1.0 || 0.1.1'
+  - '@remelondb/driver-web@0.1.0 || 0.1.1'
   - '@expo/metro-runtime@57.0.7'
   - expo-constants@57.0.7
   - expo-linking@57.0.4
