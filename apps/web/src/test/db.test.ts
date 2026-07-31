@@ -57,7 +57,7 @@ describe("dbManager bootstrap", () => {
       expect.objectContaining({
         schema: schema,
         modelClasses: [UserDeck, UserCard, ReviewEvent],
-        name: "ft_transcendence_offline.db",
+        name: "notanothercards.db",
       })
     );
 
