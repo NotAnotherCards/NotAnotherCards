@@ -149,7 +149,7 @@ Prometheus and Grafana run in the compose:
 | Module | Points | Status |
 |---|---|---|
 | AI: Complete LLM system interface (Major) | 2 | already planned (A17) |
-| DevOps: Monitoring with Prometheus and Grafana (Major) | 2 | proposed here |
+| DevOps: Monitoring with Prometheus and Grafana (Major) | 2 | claimed in the modules plan |
 | DevOps: Health check / status page, backups (Minor) | 1 | under consideration (A20) |
 | Cybersecurity: WAF/ModSecurity + Vault (Major) | 2 | stretch option |
 
