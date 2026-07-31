@@ -1,7 +1,7 @@
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useEffect } from "react";
-import { dbManager } from "@/offline/db";
+import { manager } from "@/offline/db";
 import { DatabaseBanner } from "@/components/DatabaseBanner";
 
 export const Route = createRootRoute({
@@ -10,7 +10,7 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   useEffect(() => {
-    dbManager.init().catch(() => {});
+    manager.init().catch(() => {});
   }, []);
 
   return (

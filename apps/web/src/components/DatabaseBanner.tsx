@@ -1,4 +1,4 @@
-import { dbManager, useDatabaseState } from "@/offline/db";
+import { manager, useDatabaseState } from "@/offline/db";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 export function DatabaseBanner() {
@@ -9,7 +9,7 @@ export function DatabaseBanner() {
   }
 
   const handleReconnect = () => {
-    dbManager.init({ takeover: true }).catch(() => {});
+    manager.init({ takeover: true }).catch(() => {});
   };
 
   return (
@@ -41,7 +41,7 @@ export function DatabaseBanner() {
             </span>
           </div>
           <button
-            onClick={() => dbManager.init().catch(() => {})}
+            onClick={() => manager.init().catch(() => {})}
             className="flex items-center gap-1.5 px-3 py-1 rounded bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 active:bg-destructive transition-colors text-xs cursor-pointer shadow-sm"
           >
             <RefreshCw className="size-3" />
