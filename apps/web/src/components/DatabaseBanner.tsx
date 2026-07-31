@@ -1,5 +1,6 @@
-import { manager, useDatabaseState } from "@/offline/db";
+import { manager } from "@/offline/db";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { useDatabaseState } from "@remelondb/core/react";
 
 export function DatabaseBanner() {
   const { status, error } = useDatabaseState(manager);

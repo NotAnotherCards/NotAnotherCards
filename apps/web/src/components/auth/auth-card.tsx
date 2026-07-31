@@ -32,7 +32,7 @@ export function AuthCard({
         <CardTitle
           role="heading"
           aria-level={2}
-          className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent transition-all duration-300"
+          className="text-xl sm:text-2xl font-bold bg-linear-to-r from-foreground to-foreground/80 bg-clip-text text-transparent transition-all duration-300"
         >
           {title}
         </CardTitle>

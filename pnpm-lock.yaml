@@ -250,11 +250,11 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.81.0(react@19.2.7))
       "@remelondb/core":
-        specifier: ^0.1.0
-        version: 0.1.0(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)
+        specifier: ^0.1.1
+        version: 0.1.1(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0)))(zod@4.4.3)
       "@remelondb/driver-web":
-        specifier: ^0.1.0
-        version: 0.1.0(@remelondb/core@0.1.0(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3))
+        specifier: ^0.1.1
+        version: 0.1.1(@remelondb/core@0.1.1(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0)))(zod@4.4.3))
       "@repo/offline-db":
         specifier: workspace:*
         version: link:../../packages/offline-db
@@ -371,8 +371,8 @@ importers:
   packages/offline-db:
     dependencies:
       "@remelondb/core":
-        specifier: ^0.1.0
-        version: 0.1.0(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)
+        specifier: ^0.1.1
+        version: 0.1.1(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0)))(zod@4.4.3)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -4252,6 +4252,185 @@ packages:
         integrity: sha512-HB+O+a/HcR3jsxx6MFTdyFX3S9BDHYLSOPuRIKHwJHQRamK7cLkHSddrOopFUUKrscvPGrkfwREOvhW6ViDdoQ==,
       }
     peerDependencies:
+      react: ">=16"
+      react-native: ">=0.57"
+
+  "@react-native/assets-registry@0.86.0":
+    resolution:
+      {
+        integrity: sha512-nIaXbm2jX1OTYp0qbviJ3O6KZivoE8z3BnhUQ2LsqfZSWRoOK/n1qsiAr6oALiNKWnXY3j2KPwtYORnZzp8xew==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/babel-plugin-codegen@0.86.2":
+    resolution:
+      {
+        integrity: sha512-NNDZqOlNbH5SzgPks1jFDYH3234Rpa5e/nhZymxhIiBH3NcE3uD+rGj/HWXhH7nHF2ToGK6XbUpqy7nmJPeh+g==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/babel-preset@0.86.2":
+    resolution:
+      {
+        integrity: sha512-4XKEJ6jKW9lXMB1O5o47gBoGgolde1fbX13gLW/erlcn+1ky+MHHo5UjuM3RWGdPJHIvIzekDDumSUHhB9x5iQ==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+    peerDependencies:
+      "@babel/core": "*"
+
+  "@react-native/codegen@0.86.0":
+    resolution:
+      {
+        integrity: sha512-uTs9DBo3+/lUqinsGZK0FKJRBVClrwMXoZToaDxE1Q2SL2e55vs2GwyZfIKzPl5uJnbu4PfFMIp0/mLXLWUMuA==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+    peerDependencies:
+      "@babel/core": "*"
+
+  "@react-native/codegen@0.86.2":
+    resolution:
+      {
+        integrity: sha512-xKkudsahUJ1n//55g4fXk5BStVqqmZlz8HQveL45ZxcfDnwvhuYe2GymksQANFsSN+slvrarjrfq8kIxJzbceA==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+    peerDependencies:
+      "@babel/core": "*"
+
+  "@react-native/community-cli-plugin@0.86.0":
+    resolution:
+      {
+        integrity: sha512-Jv8p1ebEPfTzs8gmrjsdT2XMXFfeAg45Pman+XPLFGaSeGAZkutRFRyX9Cs9aGTSOyIA9YPJ6vDNb1ayTf1FKQ==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+    peerDependencies:
+      "@react-native-community/cli": "*"
+      "@react-native/metro-config": 0.86.0
+    peerDependenciesMeta:
+      "@react-native-community/cli":
+        optional: true
+      "@react-native/metro-config":
+        optional: true
+
+  "@react-native/debugger-frontend@0.86.0":
+    resolution:
+      {
+        integrity: sha512-7Mb3nDfyJeys+ELF75Ageu7VKERlnIMoO+aNPoXqTXvz+b41L6l2CqMyLpDHxkBSlenij6gEepPNgaIyWHbJZw==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/debugger-frontend@0.86.2":
+    resolution:
+      {
+        integrity: sha512-KGS1aV5F6cIqpnoIUhLBXyVzy1oAj8jBFGau6vX4Vy0HXRJN7p+68RU7x6NuyraHvQcR14ccMGT5TkFuNjQ4gA==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/debugger-shell@0.86.0":
+    resolution:
+      {
+        integrity: sha512-Y0zEkZzLz8ou6o/VLml1A31X/rMgc6DRjwxwzPMa94qRTMY070WeBCNTITQo4kKTBAUgbxh07oXPQqp0Tpja8w==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/debugger-shell@0.86.2":
+    resolution:
+      {
+        integrity: sha512-/TaVJ2+gGajZPJGrFaObUQmHmlaxAlfmOPZicl6pNKDUjzSgFMpcLkdTOExvb+USYTVdGX1XwxXyvjQdUO2bvg==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/dev-middleware@0.86.0":
+    resolution:
+      {
+        integrity: sha512-20pTO6yTybmvXvro520H6C7jydIQnLKOl5qFtVEcHSdFrY63r3OGei+Rx9bILgSRmH6jgnfEcijcMx7pwWuQtw==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/dev-middleware@0.86.2":
+    resolution:
+      {
+        integrity: sha512-B7L0vKvg+IcEElT7Vpqh1xj5yJAqWUegjbP+bQRaorJMAYnv11GkliTnZV2AdTDfZQJWgOEx8i8LGkHkUg7bnA==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/gradle-plugin@0.86.0":
+    resolution:
+      {
+        integrity: sha512-a1RcfaEDqWExCGfCwadIxt4l8FvKYgFqeMf2uzeKyAOnb+vTGNIeCvifFL2MqvgaeYxlER437HbMIajGcuJ1pQ==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/jest-preset@0.86.0":
+    resolution:
+      {
+        integrity: sha512-KA+xpIP3DvJy7PQJ9c6ZdEKkOPChl+Rk/rV2MhQACEAzfhWU84407KZQv4ccyO3B4caD0gPrFjE96a4P993nsQ==,
+      }
+    engines: { node: ">= 20.19.4" }
+    peerDependencies:
+      react: ^19.2.3
+
+  "@react-native/js-polyfills@0.86.0":
+    resolution:
+      {
+        integrity: sha512-zYy/Cjd1VTnZ2iCNaG9bDF9C3l2ntESiPRscjIlI5FKugu6aeTwsDSv1aI8Bc4Kp3vEdoVg+UQhLAhE4svREaQ==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/js-polyfills@0.86.2":
+    resolution:
+      {
+        integrity: sha512-bIwNcGBaQ74shB5z1mRkxOpjikimuwsnOCEkZSzL67Z1FTyK1ObpENfyd2QvcvVW9Cjl+tHuw9ynpBnb2jPoJQ==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/metro-babel-transformer@0.86.2":
+    resolution:
+      {
+        integrity: sha512-mX1wgLErdb2hDgXJr9zM9SWLe+ZteZTFTwRWGOQ53yEJwc9DVSnxdTlAtVdMeOj2ntycKh0R8jYdat2Am43cwQ==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+    peerDependencies:
+      "@babel/core": "*"
+
+  "@react-native/metro-config@0.86.2":
+    resolution:
+      {
+        integrity: sha512-hJno256j+MS0b3JD1aD3ouTGZVacKNVBuXL2atMQQ8BZ060vl1ptnZ83y569aDW+/rgFSOcqn6ydKeSz4uUKQQ==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+
+  "@react-native/normalize-colors@0.86.0":
+    resolution:
+      {
+        integrity: sha512-kG0wfCGghUKlfxkJyyHCDVutWVYWK7/DG58ojA/4v9EfulgF+osuSQmlbNb3rcKX58qutm7JcldSeVLgGFha9g==,
+      }
+
+  "@react-native/normalize-colors@0.86.2":
+    resolution:
+      {
+        integrity: sha512-EzPFc9Y6lzYOWeso2almwXI7f8+qReHxWvT+algsOczb2UhWXIWXDoSvkdwoSfiwwmGt/ijJgKJoeHlzPkLwRg==,
+      }
+
+  "@react-native/virtualized-lists@0.86.0":
+    resolution:
+      {
+        integrity: sha512-4/ZLXdf/OSpPDVO0AsQ1SJdRIzt5t9BNQ46QwGgxvX7/cirYR5k8KXctNGGgW8lQo2gZChEfY2zFCZg9nM/jiw==,
+      }
+    engines: { node: ^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0 }
+    peerDependencies:
+      "@types/react": ^19.2.0
+      react: "*"
+      react-native: 0.86.0
+    peerDependenciesMeta:
+      "@types/react":
+        optional: true
+
+  "@remelondb/core@0.1.1":
+    resolution:
+      {
+        integrity: sha512-o98w4R3QNO3KN2Jz9LZUSzl85XkMjS6RFLzIuHahrs18Nzw2Ar1684i8EJTI3lP0vJ+7FsPHWDZSJf1eC6+28A==,
+      }
+    peerDependencies:
       react: ">=18"
       vitest: ">=3"
       zod: ^4.0.0
@@ -4263,13 +4442,13 @@ packages:
       zod:
         optional: true
 
-  "@remelondb/driver-web@0.1.0":
+  "@remelondb/driver-web@0.1.1":
     resolution:
       {
-        integrity: sha512-BjFGK2UL+IHf+DGwM6cdwTJCpjj6Uok0vfp2UwIjduAhEOayg9pZb0RYp6JW+ZCt0d5scsP1NZtlXXiRhKA51w==,
+        integrity: sha512-zEv/MsJPRh6l5KnA9BIAio28CtquQlh9/RhcwmPd2N3/A3wt+pkRmQJN/zsCf8GJDd48bqGoHnJCcyewV+/lpA==,
       }
     peerDependencies:
-      "@remelondb/core": 0.1.0
+      "@remelondb/core": 0.1.1
 
   "@rolldown/binding-android-arm64@1.1.4":
     resolution:
@@ -16906,15 +17085,243 @@ snapshots:
 
   "@radix-ui/rect@1.1.2": {}
 
-  "@remelondb/core@0.1.0(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)":
+  "@react-native-masked-view/masked-view@0.3.2(react-native@0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)":
+    dependencies:
+      react: 19.2.3
+      react-native: 0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3)
+
+  "@react-native-masked-view/masked-view@0.3.2(react-native@0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.7))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.7))(react@19.2.7)":
+    dependencies:
+      react: 19.2.7
+      react-native: 0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.7))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.7)
+    optional: true
+
+  "@react-native/assets-registry@0.86.0": {}
+
+  "@react-native/babel-plugin-codegen@0.86.2(@babel/core@7.29.7)":
+    dependencies:
+      "@babel/traverse": 7.29.7
+      "@react-native/codegen": 0.86.2(@babel/core@7.29.7)
+    transitivePeerDependencies:
+      - "@babel/core"
+      - supports-color
+
+  "@react-native/babel-preset@0.86.2(@babel/core@7.29.7)":
+    dependencies:
+      "@babel/core": 7.29.7
+      "@babel/plugin-proposal-export-default-from": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-syntax-dynamic-import": 7.8.3(@babel/core@7.29.7)
+      "@babel/plugin-syntax-export-default-from": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-syntax-nullish-coalescing-operator": 7.8.3(@babel/core@7.29.7)
+      "@babel/plugin-syntax-optional-chaining": 7.8.3(@babel/core@7.29.7)
+      "@babel/plugin-transform-async-generator-functions": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-async-to-generator": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-block-scoping": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-class-properties": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-classes": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-destructuring": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-flow-strip-types": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-for-of": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-modules-commonjs": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-named-capturing-groups-regex": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-nullish-coalescing-operator": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-optional-catch-binding": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-optional-chaining": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-private-methods": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-private-property-in-object": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-react-display-name": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-react-jsx": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-react-jsx-self": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-react-jsx-source": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-regenerator": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-runtime": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-typescript": 7.29.7(@babel/core@7.29.7)
+      "@babel/plugin-transform-unicode-regex": 7.29.7(@babel/core@7.29.7)
+      "@react-native/babel-plugin-codegen": 0.86.2(@babel/core@7.29.7)
+      babel-plugin-syntax-hermes-parser: 0.36.0
+      babel-plugin-transform-flow-enums: 0.0.2(@babel/core@7.29.7)
+      react-refresh: 0.14.2
+    transitivePeerDependencies:
+      - supports-color
+
+  "@react-native/codegen@0.86.0(@babel/core@7.29.7)":
+    dependencies:
+      "@babel/core": 7.29.7
+      "@babel/parser": 7.29.7
+      hermes-parser: 0.36.0
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      tinyglobby: 0.2.17
+      yargs: 17.7.3
+
+  "@react-native/codegen@0.86.2(@babel/core@7.29.7)":
+    dependencies:
+      "@babel/core": 7.29.7
+      "@babel/parser": 7.29.7
+      hermes-parser: 0.36.0
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      tinyglobby: 0.2.17
+      yargs: 17.7.3
+
+  "@react-native/community-cli-plugin@0.86.0(@react-native/metro-config@0.86.2(@babel/core@7.29.7))":
+    dependencies:
+      "@react-native/dev-middleware": 0.86.0
+      debug: 4.4.3
+      invariant: 2.2.4
+      metro: 0.84.4
+      metro-config: 0.84.4
+      metro-core: 0.84.4
+      semver: 7.8.5
+    optionalDependencies:
+      "@react-native/metro-config": 0.86.2(@babel/core@7.29.7)
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  "@react-native/debugger-frontend@0.86.0": {}
+
+  "@react-native/debugger-frontend@0.86.2": {}
+
+  "@react-native/debugger-shell@0.86.0":
+    dependencies:
+      cross-spawn: 7.0.6
+      debug: 4.4.3
+      fb-dotslash: 0.5.8
+    transitivePeerDependencies:
+      - supports-color
+
+  "@react-native/debugger-shell@0.86.2":
+    dependencies:
+      cross-spawn: 7.0.6
+      debug: 4.4.3
+      fb-dotslash: 0.5.8
+    transitivePeerDependencies:
+      - supports-color
+
+  "@react-native/dev-middleware@0.86.0":
+    dependencies:
+      "@isaacs/ttlcache": 1.4.1
+      "@react-native/debugger-frontend": 0.86.0
+      "@react-native/debugger-shell": 0.86.0
+      chrome-launcher: 0.15.2
+      chromium-edge-launcher: 0.3.0
+      connect: 3.7.0
+      debug: 4.4.3
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      open: 7.4.2
+      serve-static: 1.16.3
+      ws: 7.5.13
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  "@react-native/dev-middleware@0.86.2":
+    dependencies:
+      "@isaacs/ttlcache": 1.4.1
+      "@react-native/debugger-frontend": 0.86.2
+      "@react-native/debugger-shell": 0.86.2
+      chrome-launcher: 0.15.2
+      chromium-edge-launcher: 0.3.0
+      connect: 3.7.0
+      debug: 4.4.3
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      open: 7.4.2
+      serve-static: 1.16.3
+      ws: 7.5.13
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  "@react-native/gradle-plugin@0.86.0": {}
+
+  "@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.3)":
+    dependencies:
+      "@jest/create-cache-key-function": 29.7.0
+      "@react-native/js-polyfills": 0.86.0
+      babel-jest: 29.7.0(@babel/core@7.29.7)
+      jest-environment-node: 29.7.0
+      react: 19.2.3
+      regenerator-runtime: 0.13.11
+    transitivePeerDependencies:
+      - "@babel/core"
+      - supports-color
+
+  "@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.7)":
+    dependencies:
+      "@jest/create-cache-key-function": 29.7.0
+      "@react-native/js-polyfills": 0.86.0
+      babel-jest: 29.7.0(@babel/core@7.29.7)
+      jest-environment-node: 29.7.0
+      react: 19.2.7
+      regenerator-runtime: 0.13.11
+    transitivePeerDependencies:
+      - "@babel/core"
+      - supports-color
+    optional: true
+
+  "@react-native/js-polyfills@0.86.0": {}
+
+  "@react-native/js-polyfills@0.86.2": {}
+
+  "@react-native/metro-babel-transformer@0.86.2(@babel/core@7.29.7)":
+    dependencies:
+      "@babel/core": 7.29.7
+      "@react-native/babel-preset": 0.86.2(@babel/core@7.29.7)
+      hermes-parser: 0.36.0
+      nullthrows: 1.1.1
+    transitivePeerDependencies:
+      - supports-color
+
+  "@react-native/metro-config@0.86.2(@babel/core@7.29.7)":
+    dependencies:
+      "@react-native/js-polyfills": 0.86.2
+      "@react-native/metro-babel-transformer": 0.86.2(@babel/core@7.29.7)
+      metro-config: 0.84.4
+      metro-runtime: 0.84.4
+    transitivePeerDependencies:
+      - "@babel/core"
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  "@react-native/normalize-colors@0.86.0": {}
+
+  "@react-native/normalize-colors@0.86.2": {}
+
+  "@react-native/virtualized-lists@0.86.0(@types/react@19.2.17)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)":
+    dependencies:
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      react: 19.2.3
+      react-native: 0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3)
+    optionalDependencies:
+      "@types/react": 19.2.17
+
+  "@react-native/virtualized-lists@0.86.0(@types/react@19.2.17)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.7))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.7))(react@19.2.7)":
+    dependencies:
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      react: 19.2.7
+      react-native: 0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.0(@babel/core@7.29.7)(react@19.2.7))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.7)
+    optionalDependencies:
+      "@types/react": 19.2.17
+    optional: true
+
+  "@remelondb/core@0.1.1(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0)))(zod@4.4.3)":
     optionalDependencies:
       react: 19.2.7
       vitest: 4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0))
       zod: 4.4.3
 
-  "@remelondb/driver-web@0.1.0(@remelondb/core@0.1.0(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3))":
+  "@remelondb/driver-web@0.1.1(@remelondb/core@0.1.1(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0)))(zod@4.4.3))":
     dependencies:
-      "@remelondb/core": 0.1.0(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)))(zod@4.4.3)
+      "@remelondb/core": 0.1.1(react@19.2.7)(vitest@4.1.10(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.0)(yaml@2.9.0)))(zod@4.4.3)
       "@sqlite.org/sqlite-wasm": 3.53.0-build1
 
   "@rolldown/binding-android-arm64@1.1.4":
