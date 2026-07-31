@@ -1,0 +1,8 @@
+# native projects are generated (expo prebuild), never committed
+/android
+/ios
+
+.expo/
+dist/
+expo-env.d.ts
+.kotlin/

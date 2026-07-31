@@ -6,6 +6,7 @@ It's not another flashcard app. AI-powered language learning through context, nu
 
 - `apps/web`: React, Vite, TypeScript, Tailwind CSS, shadcn/ui, Vitest, and React Testing Library
 - `apps/api`: NestJS, Drizzle ORM, PostgreSQL, Jest, and Supertest
+- `apps/mobile`: Expo (React Native), expo-router, NativeWind, and jest-expo — see [docs/mobile.md](docs/mobile.md) for setup and running on Android/iOS
 - `packages/*`: shared ESLint and TypeScript config packages
 - `docker-compose.yml`: local PostgreSQL service for development
 
@@ -29,7 +30,8 @@ It's not another flashcard app. AI-powered language learning through context, nu
 
 3. Replace the default values with your db credentials, and desired port for the backend
 4. Start the local database with `docker compose up -d`.
-5. Start the monorepo with `pnpm dev`.
+5. Apply the database migrations with `pnpm --filter api db:migrate` (see [docs/database.md](docs/database.md)). Without this the database is empty and every auth request fails with a 500.
+6. Start the monorepo with `pnpm dev`.
 
 ## Common Commands
 
