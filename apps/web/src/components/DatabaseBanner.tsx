@@ -2,7 +2,7 @@ import { manager, useDatabaseState } from "@/offline/db";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 export function DatabaseBanner() {
-  const { status, error } = useDatabaseState();
+  const { status, error } = useDatabaseState(manager);
 
   if (status === "ready" || status === "idle" || status === "loading") {
     return null;
@@ -19,7 +19,8 @@ export function DatabaseBanner() {
           <div className="flex items-center gap-2">
             <AlertCircle className="size-4 text-amber-500 shrink-0" />
             <span>
-              <strong>Offline Database Inactive:</strong> This application is open in another tab. Offline features are disabled here.
+              <strong>Offline Database Inactive:</strong> This application is
+              open in another tab. Offline features are disabled here.
             </span>
           </div>
           <button
@@ -37,7 +38,8 @@ export function DatabaseBanner() {
           <div className="flex items-center gap-2">
             <AlertCircle className="size-4 text-destructive shrink-0" />
             <span>
-              <strong>Offline Database Error:</strong> {error?.message || "Failed to load database."}
+              <strong>Offline Database Error:</strong>{" "}
+              {error?.message || "Failed to load database."}
             </span>
           </div>
           <button
