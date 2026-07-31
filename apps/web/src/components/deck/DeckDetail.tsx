@@ -96,6 +96,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         cards={cards}
         onEditCard={(card) => setEditingCard(card)}
         onDeleteCard={(cardId) => setCardToDelete(cardId)}
+        onAddCard={() => setShowCreateForm(true)}
         isLoading={store.isLoading}
         error={store.error}
       />
