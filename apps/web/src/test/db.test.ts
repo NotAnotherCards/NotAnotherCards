@@ -31,7 +31,9 @@ vi.mock("@remelondb/core", async (importOriginal) => {
 });
 
 vi.mock("@remelondb/driver-web", () => ({
-  WebSqliteDriver: vi.fn().mockImplementation(() => ({})),
+  WebSqliteDriver: class {
+    constructor() {}
+  },
 }));
 
 describe("database manager configuration", () => {
