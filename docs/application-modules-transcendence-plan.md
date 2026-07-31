@@ -73,6 +73,7 @@ This is the current recommended scoring plan.
 | Gaming and user experience | Gamification system                                            | Minor |      1 | A13                 | Medium     |
 | Web                        | Public API with API key, rate limiting, docs, and 5 endpoints  | Major |      2 | A19                 | Medium     |
 | Modules of choice          | Mobile                                                         | Major |      2 | A06                 | Medium     |
+| DevOps                     | Monitoring system with Prometheus and Grafana                  | Major |      2 | A20                 | High       |
 
 Total: **15 points**
 
