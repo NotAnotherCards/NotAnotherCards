@@ -16,49 +16,8 @@ import {
   recordReviewEvent as dbRecordReview,
 } from "../offline/queries";
 
-// Default seed data for first time app load when DB is empty
-const defaultSeedDecks = [
-  {
-    title: "Spanish Essentials",
-    description: "Most common Spanish vocabulary and essential phrases for beginners.",
-    cards: [
-      { front: "Hola", back: "Hello" },
-      { front: "¿Cómo estás?", back: "How are you?" },
-      { front: "Gracias", back: "Thank you" },
-      { front: "Por favor", back: "Please" },
-      { front: "Adiós", back: "Goodbye" },
-    ],
-  },
-  {
-    title: "Web Dev Core Concepts",
-    description: "Fundamental concepts of modern web engineering: DOM, CSS, HTTP, React.",
-    cards: [
-      { front: "HTTP Status 404", back: "Not Found" },
-      {
-        front: "React useEffect Cleanup",
-        back: "A function returned by the effect to clean up resources before unmounting.",
-      },
-      {
-        front: "CSS Box Model",
-        back: "Content, padding, border, and margin boxes surrounding HTML elements.",
-      },
-    ],
-  },
-];
-
-async function seedDatabaseIfEmpty(db: Database) {
-  const existingDecks = await getDecksQuery(db).fetch();
-  if (existingDecks.length > 0) {
-    return;
-  }
-
-  for (const seedDeck of defaultSeedDecks) {
-    const deck = await dbCreateDeck(db, seedDeck.title, seedDeck.description);
-    for (const card of seedDeck.cards) {
-      await dbCreateCard(db, deck.id, card.front, card.back);
-    }
-  }
-}
+export type Deck = UserDeckRecord;
+export type Card = UserCardRecord;
 
 export function useStore() {
   const [db, setDb] = useState<Database | null>(null);
@@ -72,7 +31,6 @@ export function useStore() {
       try {
         const database = await manager.init();
         if (mounted) {
-          await seedDatabaseIfEmpty(database);
           setDb(database);
           setIsInitializing(false);
         }
