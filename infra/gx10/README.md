@@ -31,7 +31,13 @@ over the tailnet (issue #85); on the tailnet,
 
 ### After you have your key
 
-TypeScript, generating cards the way the app will:
+Quickest way to see it work (no setup, from the repo):
+
+```sh
+node infra/gx10/model-test.ts qwen --nothink --topic programming --key <your key>
+```
+
+For app code, TypeScript, generating cards the way the app will:
 
 ```ts
 import OpenAI from "openai";
@@ -160,9 +166,13 @@ Conventions:
   stops a runaway script after a minute instead of never. The production
   worker gets `"key_alias": "production-worker",
   "max_parallel_requests": 2` to protect the single GPU.
+- Keys do not expire; they are valid until revoked. For a deliberately
+  short-lived key (demo day), mint it with `"duration": "30d"`.
 - List keys: `curl -s http://100.64.0.1:4000/key/list -H "Authorization:
   Bearer $KEY"`. Revoke one: POST its key to `/key/delete`. Losing a key
   file is no incident, revoke and re-mint.
+- When handing a key over, point the person at "After you have your key"
+  above.
 - The master key is admin-only; never hand it out or put it in an app.
 
 ### Ops notes
