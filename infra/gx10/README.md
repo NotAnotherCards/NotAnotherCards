@@ -172,8 +172,16 @@ Conventions:
 - Keys do not expire; they are valid until revoked. For a deliberately
   short-lived key (demo day), mint it with `"duration": "30d"`.
 - List keys: `curl -s http://100.64.0.1:4000/key/list -H "Authorization:
-  Bearer $KEY"`. Revoke one: POST its key to `/key/delete`. Losing a key
-  file is no incident, revoke and re-mint.
+  Bearer $KEY"`. Revoking needs the master key (teammates report a leak,
+  they cannot revoke themselves):
+
+  ```sh
+  curl -s http://100.64.0.1:4000/key/delete \
+    -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+    -d '{"keys": ["sk-the-leaked-key"]}'
+  ```
+
+  Losing a key file is no incident, revoke and re-mint.
 - When handing a key over, point the person at "After you have your key"
   above.
 - The master key is admin-only; never hand it out or put it in an app.
