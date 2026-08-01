@@ -44,6 +44,15 @@ const PROMPTS: Record<string, string> = {
     'Text: "Der Bäcker öffnet seine Backstube jeden Morgen um vier Uhr. Er ' +
     "knetet den Teig, während die Stadt noch schläft. Um sieben Uhr duftet " +
     'die ganze Straße nach frischem Brot." ' + FORMAT,
+  history:
+    "You generate flashcards for a spaced-repetition app. Create 5 flashcards " +
+    'for the topic "key events of the French Revolution with dates". ' + FORMAT,
+  programming:
+    "You generate flashcards for a spaced-repetition app. Create 5 flashcards " +
+    'for the topic "JavaScript array methods (map, filter, reduce)". ' + FORMAT,
+  music:
+    "You generate flashcards for a spaced-repetition app. Create 5 flashcards " +
+    'for the topic "music intervals for beginners (thirds, fifths, octaves)". ' + FORMAT,
 };
 
 async function ask(prompt: string): Promise<{ content: string; tokens: number; seconds: number }> {
