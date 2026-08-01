@@ -11,7 +11,7 @@ import { Query, Model } from "@remelondb/core";
 export function useQuery<M>(
   queryOrFactory:
     Query<M> | (() => Query<M> | null | undefined) | null | undefined,
-  deps: unknown[] = [],
+  deps: unknown[] = []
 ): {
   data: M[];
   isLoading: boolean;
@@ -21,15 +21,15 @@ export function useQuery<M>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const query = useMemo(() => {
-    if (typeof queryOrFactory === "function") {
-      return queryOrFactory();
-    }
-    return queryOrFactory;
-  }, [
-    typeof queryOrFactory === "function" ? undefined : queryOrFactory,
-    ...deps,
-  ]);
+  const query = useMemo(
+    () => {
+      if (typeof queryOrFactory === "function") {
+        return queryOrFactory();
+      }
+      return queryOrFactory;
+    },
+    typeof queryOrFactory === "function" ? deps : [queryOrFactory]
+  );
 
   useEffect(() => {
     if (!query) {
@@ -67,19 +67,19 @@ export function useQuery<M>(
 export function useQueryCount<M>(
   queryOrFactory:
     Query<M> | (() => Query<M> | null | undefined) | null | undefined,
-  deps: unknown[] = [],
+  deps: unknown[] = []
 ): number {
   const [count, setCount] = useState<number>(0);
 
-  const query = useMemo(() => {
-    if (typeof queryOrFactory === "function") {
-      return queryOrFactory();
-    }
-    return queryOrFactory;
-  }, [
-    typeof queryOrFactory === "function" ? undefined : queryOrFactory,
-    ...deps,
-  ]);
+  const query = useMemo(
+    () => {
+      if (typeof queryOrFactory === "function") {
+        return queryOrFactory();
+      }
+      return queryOrFactory;
+    },
+    typeof queryOrFactory === "function" ? deps : [queryOrFactory]
+  );
 
   useEffect(() => {
     if (!query) {
@@ -112,7 +112,7 @@ export function useQueryCount<M>(
  * Updates whenever the model is updated in the database or becomes null on deletion.
  */
 export function useRecord<M extends Model>(
-  record: M | null | undefined,
+  record: M | null | undefined
 ): M | null {
   const [currentRecord, setCurrentRecord] = useState<M | null>(record ?? null);
 
