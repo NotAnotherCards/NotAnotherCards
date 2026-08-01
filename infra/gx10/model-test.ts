@@ -1,6 +1,9 @@
 // Card-generation smoke test for models behind the gateway.
 //
-//   node model-test.ts <model> [--nothink] [--base <url>] [--key <key>]
+//   node model-test.ts <model> [--nothink] [--topic <name>] [--base <url>] [--key <key>]
+//
+// --topic runs a single topic (e.g. --topic programming for the
+// JavaScript cards) instead of all six.
 //
 // Runs directly with node >= 23.6 (native type stripping), no build step.
 // Defaults to the gateway URL; use --base http://127.0.0.1:11434/v1 on the
@@ -79,9 +82,16 @@ async function ask(prompt: string): Promise<{ content: string; tokens: number; s
   };
 }
 
-await ask(PROMPTS.spanish); // warm-up / model load, discarded
+const topic = flag("--topic");
+if (topic && !(topic in PROMPTS)) {
+  console.error(`unknown topic "${topic}"; available: ${Object.keys(PROMPTS).join(", ")}`);
+  process.exit(1);
+}
+const selected = topic ? { [topic]: PROMPTS[topic] } : PROMPTS;
 
-for (const [name, prompt] of Object.entries(PROMPTS)) {
+await ask(Object.values(selected)[0]); // warm-up / model load, discarded
+
+for (const [name, prompt] of Object.entries(selected)) {
   const { content, tokens, seconds } = await ask(prompt);
   let cards: Card[] | null = null;
   let verdict: string;
