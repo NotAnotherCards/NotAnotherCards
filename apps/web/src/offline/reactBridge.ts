@@ -26,7 +26,6 @@ export function useQuery<M>(
       return queryOrFactory();
     }
     return queryOrFactory;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     typeof queryOrFactory === "function" ? undefined : queryOrFactory,
     ...deps,
@@ -77,7 +76,6 @@ export function useQueryCount<M>(
       return queryOrFactory();
     }
     return queryOrFactory;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     typeof queryOrFactory === "function" ? undefined : queryOrFactory,
     ...deps,
