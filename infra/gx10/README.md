@@ -29,6 +29,80 @@ you hit them, ask. The public URL is the VPS's nginx proxying to the box
 over the tailnet (issue #85); on the tailnet,
 `http://<gx10-tailnet-ip>:4000` works directly.
 
+### After you have your key
+
+TypeScript, generating cards the way the app will:
+
+```ts
+import OpenAI from "openai";
+import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
+
+// gateway extension: qwen models accept think to toggle reasoning mode
+type GatewayChatParams = ChatCompletionCreateParamsNonStreaming & {
+  think?: boolean;
+};
+
+interface Card {
+  front: string;
+  back: string;
+}
+
+const client = new OpenAI({
+  baseURL: "https://ai.dustyway.org",
+  apiKey: "sk-...",
+});
+
+const params: GatewayChatParams = {
+  model: "qwen",
+  think: false, // ~3 s; leave thinking on for fewer factual errors at ~30 s
+  messages: [{
+    role: "user",
+    content:
+      'You generate flashcards for a spaced-repetition app. Create 5 flashcards ' +
+      'for the topic "JavaScript array methods (map, filter, reduce)". ' +
+      'Reply with only a JSON array, each element {"front": string, "back": string}. ' +
+      "Front is a question or prompt, back is the answer. Keep each side under 20 words.",
+  }],
+};
+
+const r = await client.chat.completions.create(params);
+const content = r.choices[0].message.content!;
+const cards: Card[] = JSON.parse(
+  content.slice(content.indexOf("["), content.lastIndexOf("]") + 1),
+);
+console.log(cards);
+```
+
+The prompt and the slice-parse are the benchmarked ones from
+[model-test.ts](model-test.ts); they held a 106/108 valid-JSON rate
+across models.
+
+Which model for what (measured, see
+[docs/model-report.md](../../docs/model-report.md)):
+
+| model | use it for | notes |
+|---|---|---|
+| `qwen` | default chat and generation | fast with `think: false`; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `qwen-next-80b` | best accuracy, no hurry | ~45 s per answer |
+| `mistral-small` | second opinion, dense-model style | |
+| `fact-check` | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no |
+| `moderation` | content screening | granite guardian risk prompts |
+| `embeddings` | vectors (bge-m3) | embeddings API, not chat |
+
+Good to know:
+
+- Running the snippet standalone needs an ESM context: `"type": "module"`
+  in package.json (or name the file `.mts`), plus `pnpm add openai`.
+- `think: false` matters: qwen without it reasons for ~30 s before
+  answering.
+- Streaming works (`stream: true`), the proxy passes tokens through.
+- 429 means your rate limit (60/min). A slow response usually means the
+  GPU is busy, and the first request after idle loads the model, which
+  can take a minute.
+- The box lives in a flat: no SLA. If it is down, it comes back.
+- Benchmark a model yourself:
+  `node infra/gx10/model-test.ts <model> --key <your key>`.
+
 Available models are the `model_name` entries in
 [litellm-config.yaml](litellm-config.yaml).
 
