@@ -55,7 +55,7 @@ interface Card {
 
 const client = new OpenAI({
   baseURL: "https://ai.dustyway.org",
-  apiKey: "sk-...",
+  apiKey: process.env.AI_API_KEY!, // from .env, never hardcoded
 });
 
 const params: GatewayChatParams = {
@@ -99,6 +99,9 @@ Good to know:
 
 - Running the snippet standalone needs an ESM context: `"type": "module"`
   in package.json (or name the file `.mts`), plus `pnpm add openai`.
+- Key handling: put `AI_API_KEY=sk-...` in a gitignored `.env` and run
+  with `node --env-file=.env yourscript.ts` (built into node, no dotenv
+  package). The harness reads `AI_API_KEY` too, so `--key` is optional.
 - `think: false` matters: qwen without it reasons for ~30 s before
   answering.
 - Streaming works (`stream: true`), the proxy passes tokens through.
