@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMockStore, Deck } from "@/hooks/useMockStore";
+import { useStore, Deck } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,7 +24,7 @@ interface DeckListProps {
 }
 
 export function DeckList({ onSelectDeck }: DeckListProps) {
-  const store = useMockStore();
+  const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);

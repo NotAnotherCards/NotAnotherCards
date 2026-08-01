@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "@/hooks/useMockStore";
+import { Card } from "@/hooks/useStore";
 import { Input } from "@/components/ui/input";
 import {
   Card as UICard,

@@ -3,7 +3,7 @@ import { render, fireEvent, screen } from "@testing-library/react";
 import { DeckCard } from "../components/deck/DeckCard";
 import { CardItem } from "../components/deck/CardItem";
 import { FlashcardModal } from "../components/deck/FlashcardModal";
-import { Deck, Card } from "../hooks/useMockStore";
+import { Deck, Card } from "../hooks/useStore";
 
 describe("DeckCard Component", () => {
   const mockDeck: Deck = {
@@ -13,6 +13,7 @@ describe("DeckCard Component", () => {
     description: "Learn essential conversational Spanish verbs.",
     created_at: Date.now(),
     updated_at: Date.now(),
+    deleted_at: null,
   };
 
   it("renders the deck title, description, and total cards badge", () => {
@@ -70,6 +71,7 @@ describe("CardItem Component", () => {
     due_at: Date.now(),
     created_at: Date.now(),
     updated_at: Date.now(),
+    deleted_at: null,
   };
 
   it("renders card front and back inside a table context", () => {
@@ -132,6 +134,7 @@ describe("FlashcardModal Component", () => {
     due_at: Date.now(),
     created_at: Date.now(),
     updated_at: Date.now(),
+    deleted_at: null,
   };
 
   it("renders front content by default and flips to back content on click", () => {
