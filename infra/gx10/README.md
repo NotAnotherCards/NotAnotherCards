@@ -62,16 +62,32 @@ ollama: /usr/share/ollama/.ollama` first.
 ### Keys
 
 LiteLLM stores virtual keys in its postgres. Mint one per teammate plus
-one for the production worker:
+one for the production worker. On the box, from `~/gx10-stack`:
 
 ```sh
-curl http://<gx10-tailnet-ip>:4000/key/generate \
-  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"key_alias": "philipp", "rpm_limit": 30, "max_budget": 0}'
+NAME=daniel   # first name of the key holder
+KEY=$(grep MASTER .env | cut -d= -f2)
+curl -s http://100.64.0.1:4000/key/generate \
+  -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+  -d "{\"key_alias\": \"$NAME\", \"rpm_limit\": 60}" \
+  | jq -r .key > "key-$NAME.txt"
+chmod 600 "key-$NAME.txt"
 ```
 
-The master key is admin-only; never hand it out or put it in an app.
+Conventions:
+
+- One key per person, `key_alias` = first name, saved to
+  `~/gx10-stack/key-<name>.txt` and handed over via DM, never committed
+  or pasted into issues.
+- Teammates get `rpm_limit: 60`. That is more than the GPU can serve
+  anyway; the limit is not a throughput budget, it is a backstop that
+  stops a runaway script after a minute instead of never. The production
+  worker gets `"key_alias": "production-worker",
+  "max_parallel_requests": 2` to protect the single GPU.
+- List keys: `curl -s http://100.64.0.1:4000/key/list -H "Authorization:
+  Bearer $KEY"`. Revoke one: POST its key to `/key/delete`. Losing a key
+  file is no incident, revoke and re-mint.
+- The master key is admin-only; never hand it out or put it in an app.
 
 ### Ops notes
 
