@@ -192,8 +192,9 @@ Conventions:
   tailscale IP only. Ollama (:11434) binds to localhost only — clients
   must go through LiteLLM, never around it.
 - Docker must start after tailscaled, or the tailscale-IP port bindings
-  fail. If containers are down after a reboot, `docker compose up -d`
-  again.
+  fail. After a reboot, recover with `docker compose down && docker
+  compose up -d` (volumes survive; a plain `up -d` can leave containers
+  split across two networks).
 - Daemon logs: `docker compose logs ollama` (not journalctl — the native
   service is disabled).
 - `OLLAMA_NUM_PARALLEL=2` in the compose: raise it if LiteLLM metrics
