@@ -5,8 +5,21 @@ const preset = require('jest-expo/jest-preset')
 // and the mismatch breaks hooks in tests ("Cannot read properties of null
 // (reading 'useRef')"). Pin every react import in the test env to this package's
 // single copy. Do not remove: a lockfile change silently reintroduces the split.
+// @remelondb packages ship ESM-only .mjs. Two things keep jest from parsing
+// them: the preset ignores the inner node_modules/@remelondb path segment,
+// and its transform only matches .js/.ts. Whitelist the scope and send .mjs
+// through the same babel transformer.
+const transformIgnorePatterns = preset.transformIgnorePatterns.map((pattern) =>
+  pattern.replace('(?!(.pnpm|', '(?!(.pnpm|@remelondb|'),
+)
+
 module.exports = {
   ...preset,
+  transformIgnorePatterns,
+  transform: {
+    ...preset.transform,
+    '\\.mjs$': preset.transform['\\.[jt]sx?$'],
+  },
   moduleNameMapper: {
     ...(preset.moduleNameMapper || {}),
     '^react$': '<rootDir>/node_modules/react',
