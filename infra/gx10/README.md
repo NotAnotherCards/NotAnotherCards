@@ -14,18 +14,20 @@ does get Dockerfiles.
 
 ## Using it (teammates)
 
-You need the gateway URL and a personal key (ask dustyway). Then it is an
-ordinary OpenAI-compatible API:
+The gateway is public at `https://ai.dustyway.org`. You need a personal
+key (ask dustyway), then it is an ordinary OpenAI-compatible API:
 
 ```sh
-curl http://<gx10-tailnet-ip>:4000/v1/chat/completions \
+curl https://ai.dustyway.org/v1/chat/completions \
   -H "Authorization: Bearer $YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model": "mistral-small", "messages": [{"role": "user", "content": "hi"}]}'
 ```
 
-Any OpenAI client works: set base URL and key. Keys have rate and budget
-limits; if you hit them, ask.
+Any OpenAI client works: set base URL and key. Keys have rate limits; if
+you hit them, ask. The public URL is the VPS's nginx proxying to the box
+over the tailnet (issue #85); on the tailnet,
+`http://<gx10-tailnet-ip>:4000` works directly.
 
 Available models are the `model_name` entries in
 [litellm-config.yaml](litellm-config.yaml).
