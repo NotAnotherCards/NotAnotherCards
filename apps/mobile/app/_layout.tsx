@@ -8,7 +8,11 @@ import { DatabaseBanner } from '../components/database-banner'
 export default function RootLayout() {
   useEffect(() => {
     if (manager.state.status === 'idle' || manager.state.status === 'error') {
-      manager.init().catch(() => {})
+      // The banner shows the failure to the user; log it too, otherwise the
+      // reason is invisible when debugging on a device.
+      manager.init().catch((error: unknown) => {
+        console.error('opening the offline database failed', error)
+      })
     }
   }, [])
 
