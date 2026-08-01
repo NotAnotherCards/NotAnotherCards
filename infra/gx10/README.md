@@ -130,14 +130,14 @@ Slack first.
 
 Rebuild from scratch:
 
-1. Install Ollama natively is NOT needed — only the CLI is useful
-   (`curl -fsSL https://ollama.com/install.sh | sh` installs both; the
-   native service gets disabled in step 3).
-2. `git clone` the repo, `cd infra/gx10`, copy `.env.example` to `.env`
+1. `git clone` the repo, `cd infra/gx10`, copy `.env.example` to `.env`
    and fill it in.
-3. Free the port and the supervision: `sudo systemctl disable --now ollama`.
-4. `docker compose up -d`.
-5. Mint keys (see below), share the tailscale node with teammates.
+2. `docker compose up -d`.
+3. Mint keys (see below).
+
+If a native ollama service is running (it ships with some setups), stop it
+first: `sudo systemctl disable --now ollama`. Installing ollama natively
+is not needed; the CLI alone is handy and talks to the container.
 
 Model files live in `/usr/share/ollama/.ollama` on the host (bind-mounted
 into the container), so models survive rebuilds. The container writes new
