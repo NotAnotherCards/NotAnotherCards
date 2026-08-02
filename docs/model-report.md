@@ -1,7 +1,7 @@
 # Model report: card generation on the GX10
 
 Status: measured 2026-07-31 to 2026-08-01 on the GX10 (ollama 0.32.5). Rerun
-any row with `infra/gx10/model-test.ts`. Model choices in
+any row with `infra/gx10/model-test.mts`. Model choices in
 `infra/gx10/litellm-config.yaml` follow the recommendations at the end.
 
 ## What was measured
@@ -22,7 +22,7 @@ The prompt, identical for every model and run except for the topic sentence:
 The German topic replaces the middle sentence with "From the German text
 below, create 4 comprehension flashcards in German for an A2 learner" plus
 a three-sentence text about a baker (the full text is in the German samples
-below and in `infra/gx10/model-test.ts`, which also carries all six topic
+below and in `infra/gx10/model-test.mts`, which also carries all six topic
 prompts for reruns).
 
 Error counting: every set went through a two-stage review. mistral-small3.2
@@ -392,7 +392,7 @@ either way.
   quality in less common languages becomes a complaint.
 - **medgemma**: domain specialist, only relevant for medical decks.
 - Newer models land continuously; adding one is `ollama pull` plus a line in
-  litellm-config.yaml plus a `model-test.ts` run. Keep this report honest by
+  litellm-config.yaml plus a `model-test.mts` run. Keep this report honest by
   appending rows, not by trusting vibes.
 
 ## Appendix: every confirmed error, reviewed

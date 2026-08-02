@@ -34,7 +34,7 @@ over the tailnet (issue #85); on the tailnet,
 Quickest way to see it work (no setup, from the repo):
 
 ```sh
-node infra/gx10/model-test.ts qwen --nothink --topic programming --key <your key>
+node infra/gx10/model-test.mts qwen --nothink --topic programming --key <your key>
 ```
 
 For app code, TypeScript, generating cards the way the app will:
@@ -80,7 +80,7 @@ console.log(cards);
 ```
 
 The prompt and the slice-parse are the benchmarked ones from
-[model-test.ts](model-test.ts); they held a 106/108 valid-JSON rate
+[model-test.mts](model-test.mts); they held a 106/108 valid-JSON rate
 across models.
 
 Which model for what (measured, see
@@ -110,7 +110,7 @@ Good to know:
   can take a minute.
 - The box lives in a flat: no SLA. If it is down, it comes back.
 - Benchmark a model yourself:
-  `node infra/gx10/model-test.ts <model> --key <your key>`.
+  `node infra/gx10/model-test.mts <model> --key <your key>`.
 
 Available models are the `model_name` entries in
 [litellm-config.yaml](litellm-config.yaml).

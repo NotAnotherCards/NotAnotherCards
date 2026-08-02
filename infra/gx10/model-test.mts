@@ -1,13 +1,13 @@
 // Card-generation smoke test for models behind the gateway.
 //
-//   node model-test.ts <model> [--nothink] [--topic <name>] [--base <url>] [--key <key>]
+//   node model-test.mts <model> [--nothink] [--topic <name>] [--base <url>] [--key <key>]
 //
 // --topic runs a single topic (e.g. --topic programming for the
 // JavaScript cards) instead of all six.
 //
 // Runs directly with node >= 23.6 (native type stripping), no build step.
-// Defaults to the gateway URL; use --base http://127.0.0.1:11434/v1 on the
-// box to talk to ollama directly. Prints per-prompt speed, whether the
+// Talks to the public gateway by default; --base http://127.0.0.1:11434/v1
+// on the box talks to ollama directly. Prints per-prompt speed, whether the
 // reply parsed as valid cards, and the cards themselves. Results feed
 // docs/model-report.md — rerun this before adding a model to the config.
 
@@ -19,14 +19,14 @@ interface Card {
 const args = process.argv.slice(2);
 const model = args[0];
 if (!model || model.startsWith("--")) {
-  console.error("usage: node model-test.ts <model> [--nothink] [--base <url>] [--key <key>]");
+  console.error("usage: node model-test.mts <model> [--nothink] [--base <url>] [--key <key>]");
   process.exit(1);
 }
 const flag = (name: string): string | undefined => {
   const i = args.indexOf(name);
   return i === -1 ? undefined : args[i + 1];
 };
-const base = flag("--base") ?? "http://gx10:4000/v1";
+const base = flag("--base") ?? "https://ai.dustyway.org/v1";
 const key = flag("--key") ?? process.env.AI_API_KEY ?? "";
 const nothink = args.includes("--nothink");
 
