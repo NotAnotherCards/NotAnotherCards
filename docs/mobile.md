@@ -279,19 +279,17 @@ Client is done: `lib/auth-client.ts` uses the `expoClient` plugin with the
 session in `expo-secure-store` (no browser cookie on a device) and base URL from
 `EXPO_PUBLIC_API_URL`. Packages pinned to `better-auth` 1.6.23 to match the API.
 
-### Why we patch @better-auth/expo
+### The @better-auth/expo startup crash (fixed upstream)
 
 `@better-auth/expo`'s client does a runtime `import("expo-network")` when it
-initialises (in `ExpoOnlineManager.setup`). On an Expo SDK 56+ Hermes dev build
-that dynamic import trips a broken lazy-module path and crashes the app at
-startup with a native SIGSEGV, before any screen renders. It's a known upstream
-bug (better-auth#10028, expo#46806) and is still unfixed as of 1.6.25 and the
-1.7 release candidates, so bumping the version doesn't help.
+initialises (in `ExpoOnlineManager.setup`). On Expo SDK 56 that dynamic import
+tripped a broken lazy-module path and crashed the app at startup with a native
+SIGSEGV, before any screen rendered (better-auth#10028). We carried a pnpm patch
+making the import static.
 
-The fix is `patches/@better-auth__expo@1.6.23.patch` (pinned via
-`patchedDependencies` in `pnpm-workspace.yaml`, applied automatically on
-install). It changes that one dynamic import to a static
-`import * as ExpoNetwork from "expo-network"`, which Hermes handles fine. The
-patch is intentionally minimal: it leaves the separate `import("expo-web-browser")`
-call alone, since that only runs during OAuth social sign-in, which we don't use.
-Revisit and drop the patch once upstream ships a fix.
+Expo fixed it in `expo@56.0.12` (expo/expo#46870), and we have been on SDK 57
+since. Verified on the Android emulator without the patch: the bundle boots and
+the app runs, so the patch is gone. better-auth itself never shipped a fix
+(their PR #10069 was closed unmerged), so if the crash ever returns on a new
+SDK, the workaround is that same one-line change from dynamic to
+`import * as ExpoNetwork from "expo-network"`.
