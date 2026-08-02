@@ -119,3 +119,11 @@ the schema. Don't edit the SQL files in `drizzle/` by hand.
 pnpm db:generate   # write migration sql from schema changes
 pnpm db:migrate    # apply them (needs DATABASE_URL in apps/api/.env)
 ```
+
+The remelonDB tables and durable store are under `src/sync`. Tombstone garbage
+collection defaults to a 90-day retention window and can be run manually (or
+scheduled daily) with:
+
+```sh
+pnpm sync:gc
+```
