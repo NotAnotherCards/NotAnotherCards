@@ -8,6 +8,7 @@ import {
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import { reviewEvents, userCards, userDecks } from './schema';
+import { crossValidateSyncRelationships } from './sync-validation';
 
 export type AppSyncStore = DrizzleStore<string>;
 
@@ -51,6 +52,7 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
 export function createAppSyncEngine(store: AppSyncStore) {
   return createSyncEngine({
     store,
+    crossValidate: crossValidateSyncRelationships,
     tables: {
       user_decks: {
         validate: (row) =>
