@@ -91,12 +91,12 @@ if (hasPostgres) {
   });
 }
 
-const allTablesCreated = (now: number): SyncChanges => ({
+const allTablesCreated = (now: number, suffix = '1'): SyncChanges => ({
   user_decks: {
     created: [
       {
-        id: 'deck-1',
-        title: 'Private deck',
+        id: `deck-${suffix}`,
+        title: `Private deck ${suffix}`,
         description: 'Sensitive description',
         created_at: now,
         updated_at: now,
@@ -108,8 +108,8 @@ const allTablesCreated = (now: number): SyncChanges => ({
   user_cards: {
     created: [
       {
-        id: 'card-1',
-        deck_id: 'deck-1',
+        id: `card-${suffix}`,
+        deck_id: `deck-${suffix}`,
         front: 'secret front',
         back: 'secret back',
         due_at: now,
@@ -123,8 +123,8 @@ const allTablesCreated = (now: number): SyncChanges => ({
   review_events: {
     created: [
       {
-        id: 'review-1',
-        user_card_id: 'card-1',
+        id: `review-${suffix}`,
+        user_card_id: `card-${suffix}`,
         rating: 3,
         reviewed_at: now,
       },
@@ -176,6 +176,209 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     }
   });
 
+  it('round-trips card updates while preserving insert-only creation time', async () => {
+    const now = Date.now();
+    const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(now),
+      }),
+    );
+    const seeded = pulled(await handlers.pull(pullArgs(null)));
+
+    accepted(
+      await handlers.push({
+        cursor: seeded.cursor,
+        changes: {
+          user_cards: {
+            created: [],
+            updated: [
+              {
+                id: 'card-1',
+                deck_id: 'deck-1',
+                front: 'updated front',
+                back: 'updated back',
+                due_at: now + 10_000,
+                created_at: now + 20_000,
+                updated_at: now + 30_000,
+              },
+            ],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    const incremental = pulled(await handlers.pull(pullArgs(seeded.cursor)));
+    expect(incremental.changes.user_cards?.updated).toEqual([
+      expect.objectContaining({
+        id: 'card-1',
+        front: 'updated front',
+        back: 'updated back',
+        due_at: now + 10_000,
+        created_at: now,
+        updated_at: now + 30_000,
+      }),
+    ]);
+  });
+
+  it('isolates every configured table between two user scopes', async () => {
+    const now = Date.now();
+    const engine = createAppSyncEngine(createAppSyncStore(db));
+    const userA = engine.as('user-a');
+    const userB = engine.as('user-b');
+    const startA = pulled(await userA.pull(pullArgs(null)));
+    const startB = pulled(await userB.pull(pullArgs(null)));
+
+    accepted(
+      await userA.push({
+        cursor: startA.cursor,
+        changes: allTablesCreated(now, 'a'),
+      }),
+    );
+    accepted(
+      await userB.push({
+        cursor: startB.cursor,
+        changes: allTablesCreated(now + 1, 'b'),
+      }),
+    );
+
+    const stateA = pulled(await userA.pull(pullArgs(null)));
+    const stateB = pulled(await userB.pull(pullArgs(null)));
+    expect(stateA.changes.user_decks?.updated.map((row) => row.id)).toEqual([
+      'deck-a',
+    ]);
+    expect(stateA.changes.user_cards?.updated.map((row) => row.id)).toEqual([
+      'card-a',
+    ]);
+    expect(stateA.changes.review_events?.updated.map((row) => row.id)).toEqual([
+      'review-a',
+    ]);
+    expect(stateB.changes.user_decks?.updated.map((row) => row.id)).toEqual([
+      'deck-b',
+    ]);
+    expect(stateB.changes.user_cards?.updated.map((row) => row.id)).toEqual([
+      'card-b',
+    ]);
+    expect(stateB.changes.review_events?.updated.map((row) => row.id)).toEqual([
+      'review-b',
+    ]);
+
+    const rejected = accepted(
+      await userB.push({
+        cursor: stateB.cursor,
+        changes: {
+          user_decks: {
+            created: [],
+            updated: [
+              {
+                id: 'deck-a',
+                title: 'stolen deck',
+                description: null,
+                created_at: now,
+                updated_at: now + 2,
+              },
+            ],
+            deleted: [],
+          },
+          user_cards: {
+            created: [],
+            updated: [
+              {
+                id: 'card-a',
+                deck_id: 'deck-a',
+                front: 'stolen front',
+                back: 'stolen back',
+                due_at: now,
+                created_at: now,
+                updated_at: now + 2,
+              },
+            ],
+            deleted: [],
+          },
+          review_events: {
+            created: [],
+            updated: [
+              {
+                id: 'review-a',
+                user_card_id: 'card-a',
+                rating: 1,
+                reviewed_at: now,
+              },
+            ],
+            deleted: [],
+          },
+        },
+      }),
+    );
+    expect(rejected.rejected).toEqual({
+      user_decks: ['deck-a'],
+      user_cards: ['card-a'],
+      review_events: ['review-a'],
+    });
+
+    const unchangedA = pulled(await userA.pull(pullArgs(null)));
+    expect(unchangedA.changes.user_decks?.updated[0]).toEqual(
+      expect.objectContaining({ id: 'deck-a', title: 'Private deck a' }),
+    );
+    expect(unchangedA.changes.user_cards?.updated[0]).toEqual(
+      expect.objectContaining({ id: 'card-a', front: 'secret front' }),
+    );
+    expect(unchangedA.changes.review_events?.updated[0]).toEqual(
+      expect.objectContaining({ id: 'review-a', rating: 3 }),
+    );
+  });
+
+  it('keeps append-only review fields immutable on an update push', async () => {
+    const now = Date.now();
+    const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(now),
+      }),
+    );
+    const seeded = pulled(await handlers.pull(pullArgs(null)));
+
+    accepted(
+      await handlers.push({
+        cursor: seeded.cursor,
+        changes: {
+          review_events: {
+            created: [],
+            updated: [
+              {
+                id: 'review-1',
+                user_card_id: 'different-card',
+                rating: 1,
+                reviewed_at: now + 1,
+              },
+            ],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    const row = await db.execute<{
+      user_card_id: string;
+      rating: number;
+      reviewed_at: number;
+    }>(`
+      select user_card_id, rating, reviewed_at
+      from review_events
+      where id = 'review-1'
+    `);
+    expect(row.rows[0]).toEqual({
+      user_card_id: 'card-1',
+      rating: 3,
+      reviewed_at: now,
+    });
+  });
+
   it('stores deletes as scrubbed tombstones and serves them incrementally', async () => {
     const store = createAppSyncStore(db);
     const handlers = createAppSyncEngine(store).as('user-a');
@@ -187,6 +390,16 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       }),
     );
     const seeded = pulled(await handlers.pull(pullArgs(null)));
+    const revisionsBeforeDelete = await db.execute<{
+      table_name: string;
+      rev: string;
+    }>(`
+      select 'user_decks' as table_name, rev::text from user_decks where id = 'deck-1'
+      union all
+      select 'user_cards', rev::text from user_cards where id = 'card-1'
+      union all
+      select 'review_events', rev::text from review_events where id = 'review-1'
+    `);
 
     accepted(
       await handlers.push({
@@ -209,18 +422,54 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     expect(incremental.changes.review_events?.deleted).toEqual(['review-1']);
 
     const rows = await db.execute<{
-      title: string;
+      table_name: string;
+      rev: string;
+      deleted_at: Date | null;
+      title: string | null;
       description: string | null;
-      front: string;
-      back: string;
+      front: string | null;
+      back: string | null;
     }>(`
-      select d.title, d.description, c.front, c.back
-      from user_decks d cross join user_cards c
-      where d.id = 'deck-1' and c.id = 'card-1'
+      select
+        'user_decks' as table_name,
+        rev::text,
+        deleted_at,
+        title,
+        description,
+        null::text as front,
+        null::text as back
+      from user_decks where id = 'deck-1'
+      union all
+      select
+        'user_cards', rev::text, deleted_at, null, null, front, back
+      from user_cards where id = 'card-1'
+      union all
+      select
+        'review_events', rev::text, deleted_at, null, null, null, null
+      from review_events where id = 'review-1'
     `);
-    expect(rows.rows[0]).toMatchObject({
+    expect(rows.rows).toHaveLength(3);
+    expect(rows.rows.every((row) => row.deleted_at !== null)).toBe(true);
+    const previousRevs = new Map(
+      revisionsBeforeDelete.rows.map((row) => [
+        row.table_name,
+        Number(row.rev),
+      ]),
+    );
+    for (const row of rows.rows) {
+      expect(Number(row.rev)).toBeGreaterThan(
+        previousRevs.get(row.table_name) ?? 0,
+      );
+    }
+    expect(
+      rows.rows.find((row) => row.table_name === 'user_decks'),
+    ).toMatchObject({
       title: '',
       description: null,
+    });
+    expect(
+      rows.rows.find((row) => row.table_name === 'user_cards'),
+    ).toMatchObject({
       front: '',
       back: '',
     });
@@ -273,6 +522,18 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       `select value from remelon_sync_meta where key = 'gc_floor'`,
     );
     expect(Number(meta.rows[0]?.value)).toBe(secondRun.floor);
+
+    const remainingRows = await db.execute<{ count: string }>(`
+      select sum(count)::text as count
+      from (
+        select count(*) from user_decks
+        union all
+        select count(*) from user_cards
+        union all
+        select count(*) from review_events
+      ) synced_rows
+    `);
+    expect(Number(remainingRows.rows[0]?.count)).toBe(0);
   });
 
   it('rolls back every row when a push cannot be committed', async () => {
