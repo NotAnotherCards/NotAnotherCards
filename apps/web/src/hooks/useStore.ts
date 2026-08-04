@@ -115,13 +115,25 @@ export function useStore() {
     [cards]
   );
 
+  const reconnect = useCallback(async () => {
+    try {
+      return await manager.init();
+    } catch (err) {
+      console.error("Database reconnect failed:", err);
+      throw err;
+    }
+  }, []);
+
   return {
     db,
     decks,
     cards,
     dueCards,
+    status,
+    isTakenOver: status === "taken-over",
     isLoading: isInitializing || decksLoading || cardsLoading || dueLoading,
     error: initError,
+    reconnect,
     createDeck,
     updateDeck,
     deleteDeck,
