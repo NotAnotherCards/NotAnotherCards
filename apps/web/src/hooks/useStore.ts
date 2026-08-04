@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Database } from "@remelondb/core";
+import { useEffect, useCallback } from "react";
+import { useDatabaseState } from "@remelondb/core/react";
 import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
 import { manager } from "../offline/db";
 import { useQuery } from "../offline/reactBridge";
@@ -20,36 +20,20 @@ export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
 
 export function useStore() {
-  const [db, setDb] = useState<Database | null>(null);
-  const [isInitializing, setIsInitializing] = useState<boolean>(true);
-  const [initError, setInitError] = useState<string | null>(null);
+  const { status, error: managerError } = useDatabaseState(manager);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function initDb() {
-      try {
-        const database = await manager.init();
-        if (mounted) {
-          setDb(database);
-          setIsInitializing(false);
-        }
-      } catch (err) {
-        if (mounted) {
-          setInitError(
-            err instanceof Error ? err.message : "Failed to open local database"
-          );
-          setIsInitializing(false);
-        }
-      }
+    if (status === "idle") {
+      manager.init().catch(() => {});
     }
+  }, [status]);
 
-    initDb();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const db = status === "ready" ? manager.database : null;
+  const isInitializing = status === "loading" || status === "idle";
+  const initError =
+    status === "error"
+      ? managerError?.message || "Failed to open local database"
+      : null;
 
   // Observed reactive queries using remelonDB React bridge
   const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(
