@@ -121,6 +121,13 @@ older than it receive `resyncRequired`. Deck titles/descriptions and card fronts
 and backs are scrubbed in the same update that creates their tombstones, before
 the retention window elapses.
 
+Parent deletion uses a transactional tombstone cascade: deleting a deck also
+tombstones its active cards and their review events, and deleting a card also
+tombstones its review events. If one push deletes a parent while creating or
+updating one of its descendants, the parent deletion is rejected and remains
+dirty; the descendant write can commit, and retrying the parent deletion then
+cascades from the resulting consistent state.
+
 ## Migrations
 
 Run from `apps/api`:
