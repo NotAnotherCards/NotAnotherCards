@@ -379,6 +379,168 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     });
   });
 
+  it('cascades a deck tombstone to its active cards and reviews', async () => {
+    const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(Date.now()),
+      }),
+    );
+    const seeded = pulled(await handlers.pull(pullArgs(null)));
+
+    const result = accepted(
+      await handlers.push({
+        cursor: seeded.cursor,
+        changes: {
+          user_decks: { created: [], updated: [], deleted: ['deck-1'] },
+        },
+      }),
+    );
+
+    expect(result.changes?.user_cards?.deleted).toEqual(['card-1']);
+    expect(result.changes?.review_events?.deleted).toEqual(['review-1']);
+    const rows = await db.execute<{ table_name: string; deleted: boolean }>(`
+      select 'user_decks' as table_name, deleted_at is not null as deleted
+      from user_decks where id = 'deck-1'
+      union all
+      select 'user_cards', deleted_at is not null
+      from user_cards where id = 'card-1'
+      union all
+      select 'review_events', deleted_at is not null
+      from review_events where id = 'review-1'
+    `);
+    expect(rows.rows).toEqual([
+      { table_name: 'user_decks', deleted: true },
+      { table_name: 'user_cards', deleted: true },
+      { table_name: 'review_events', deleted: true },
+    ]);
+  });
+
+  it('cascades a card tombstone to its review events', async () => {
+    const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(Date.now()),
+      }),
+    );
+    const seeded = pulled(await handlers.pull(pullArgs(null)));
+
+    const result = accepted(
+      await handlers.push({
+        cursor: seeded.cursor,
+        changes: {
+          user_cards: { created: [], updated: [], deleted: ['card-1'] },
+        },
+      }),
+    );
+
+    expect(result.changes?.review_events?.deleted).toEqual(['review-1']);
+    const rows = await db.execute<{
+      deck_active: boolean;
+      card_deleted: boolean;
+      review_deleted: boolean;
+    }>(`
+      select
+        d.deleted_at is null as deck_active,
+        c.deleted_at is not null as card_deleted,
+        r.deleted_at is not null as review_deleted
+      from user_decks d
+      join user_cards c on c.deck_id = d.id
+      join review_events r on r.user_card_id = c.id
+      where d.id = 'deck-1'
+    `);
+    expect(rows.rows[0]).toEqual({
+      deck_active: true,
+      card_deleted: true,
+      review_deleted: true,
+    });
+  });
+
+  it('rejects a parent delete combined with child creates or updates', async () => {
+    const now = Date.now();
+    const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(now),
+      }),
+    );
+    const seeded = pulled(await handlers.pull(pullArgs(null)));
+
+    const contradictory = accepted(
+      await handlers.push({
+        cursor: seeded.cursor,
+        changes: {
+          user_decks: { created: [], updated: [], deleted: ['deck-1'] },
+          user_cards: {
+            created: [
+              {
+                id: 'card-2',
+                deck_id: 'deck-1',
+                front: 'new front',
+                back: 'new back',
+                due_at: now,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [
+              {
+                id: 'card-1',
+                deck_id: 'deck-1',
+                front: 'updated front',
+                back: 'updated back',
+                due_at: now,
+                created_at: now,
+                updated_at: now + 1,
+              },
+            ],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(contradictory.rejected).toEqual({ user_decks: ['deck-1'] });
+    const active = await db.execute<{
+      deck_active: boolean;
+      active_cards: string;
+      updated_front: string;
+    }>(`
+      select
+        d.deleted_at is null as deck_active,
+        count(c.id) filter (where c.deleted_at is null)::text as active_cards,
+        max(c.front) filter (where c.id = 'card-1') as updated_front
+      from user_decks d
+      left join user_cards c on c.deck_id = d.id
+      where d.id = 'deck-1'
+      group by d.id
+    `);
+    expect(active.rows[0]).toEqual({
+      deck_active: true,
+      active_cards: '2',
+      updated_front: 'updated front',
+    });
+
+    const retry = accepted(
+      await handlers.push({
+        cursor: contradictory.cursor!,
+        changes: {
+          user_decks: { created: [], updated: [], deleted: ['deck-1'] },
+        },
+      }),
+    );
+    expect(new Set(retry.changes?.user_cards?.deleted)).toEqual(
+      new Set(['card-1', 'card-2']),
+    );
+    expect(retry.changes?.review_events?.deleted).toEqual(['review-1']);
+  });
+
   it('stores deletes as scrubbed tombstones and serves them incrementally', async () => {
     const store = createAppSyncStore(db);
     const handlers = createAppSyncEngine(store).as('user-a');
