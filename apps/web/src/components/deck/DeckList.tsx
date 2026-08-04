@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Loader2,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { DeckForm } from "./DeckForm";
 import { DeckCard } from "./DeckCard";
@@ -48,11 +49,37 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
     }
   };
 
+  if (store.isTakenOver) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 rounded-3xl border border-amber-500/30 bg-amber-500/10 text-center min-h-65 space-y-4 animate-in fade-in duration-200">
+        <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+          <AlertCircle className="size-8" />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
+            Database Inactive (Taken Over)
+          </h3>
+          <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
+            This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
+          </p>
+        </div>
+        <Button
+          onClick={() => window.location.reload()}
+          className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium border-none shadow-sm"
+        >
+          <RefreshCw className="size-4" />
+          Use here instead
+        </Button>
+      </div>
+    );
+  }
+
   if (store.isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
         <Loader2 className="animate-spin size-8 text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse">Loading library...</p>
+        <p className="text-sm font-semibold text-foreground animate-pulse">Connecting Local Database...</p>
+        <p className="text-xs text-muted-foreground">Initializing offline storage handles and loading library.</p>
       </div>
     );
   }
@@ -69,8 +96,9 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             {store.error || "An error occurred while loading your library. Please try reloading."}
           </p>
         </div>
-        <Button variant="outline" className="cursor-pointer" onClick={() => window.location.reload()}>
-          Reload Page
+        <Button variant="outline" className="cursor-pointer gap-1.5" onClick={() => window.location.reload()}>
+          <RefreshCw className="size-4" />
+          Retry
         </Button>
       </div>
     );

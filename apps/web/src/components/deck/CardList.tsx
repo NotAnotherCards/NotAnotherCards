@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "@/hooks/useStore";
+import { Card, useStore } from "@/hooks/useStore";
 import { Input } from "@/components/ui/input";
 import {
   Card as UICard,
@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Loader2,
   Plus,
+  RefreshCw,
 } from "lucide-react";
 import { CardItem } from "./CardItem";
 import { FlashcardModal } from "./FlashcardModal";
@@ -36,6 +37,7 @@ export function CardList({
   isLoading,
   error,
 }: CardListProps) {
+  const store = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
 
@@ -44,6 +46,31 @@ export function CardList({
       c.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.back.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  if (store.isTakenOver) {
+    return (
+      <UICard className="border border-amber-500/30 bg-amber-500/10 p-8 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-200">
+        <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+          <AlertCircle className="size-8" />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
+            Database Inactive (Taken Over)
+          </h3>
+          <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
+            This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
+          </p>
+        </div>
+        <Button
+          onClick={() => window.location.reload()}
+          className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium border-none shadow-sm"
+        >
+          <RefreshCw className="size-4" />
+          Use here instead
+        </Button>
+      </UICard>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -72,6 +99,14 @@ export function CardList({
             {error || "An error occurred while loading deck contents."}
           </p>
         </div>
+        <Button
+          variant="outline"
+          className="cursor-pointer gap-1.5"
+          onClick={() => window.location.reload()}
+        >
+          <RefreshCw className="size-4" />
+          Retry
+        </Button>
       </UICard>
     );
   }
