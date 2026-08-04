@@ -8,7 +8,10 @@ import {
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import { reviewEvents, userCards, userDecks } from './schema';
-import { crossValidateSyncRelationships } from './sync-validation';
+import {
+  crossValidateSyncRelationships,
+  withSyncRelationshipDeletionPolicy,
+} from './sync-validation';
 
 export type AppSyncStore = DrizzleStore<string>;
 
@@ -43,10 +46,12 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
     },
   } as unknown as DrizzleStoreOptions<string>['tables'];
 
-  return createDrizzleStore<string>({
-    db: db as unknown as DrizzleDb,
-    tables,
-  });
+  return withSyncRelationshipDeletionPolicy(
+    createDrizzleStore<string>({
+      db: db as unknown as DrizzleDb,
+      tables,
+    }),
+  );
 }
 
 export function createAppSyncEngine(store: AppSyncStore) {
