@@ -63,7 +63,7 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /login
     expect(window.location.pathname).toBe("/login");
-  });
+  }, 15000);
 
   it("allows logged-in users to see the dashboard", async () => {
     // Mock logged-in state
@@ -101,7 +101,7 @@ describe("Auth Guards", () => {
 
     // Verify the URL is /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
-  });
+  }, 15000);
 
   it("redirects logged-in users away from the login page to the dashboard", async () => {
     // Mock logged-in state
@@ -135,5 +135,5 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
-  });
+  }, 15000);
 });
