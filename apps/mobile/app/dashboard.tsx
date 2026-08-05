@@ -4,6 +4,7 @@ import { authClient } from '../lib/auth-client'
 import { apiErrorMessage } from '../lib/errors'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
+import { ThemeToggle } from '../components/theme-toggle'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -31,7 +32,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <View className="flex-1 items-center justify-center gap-4 p-6">
-        <Text className="text-center text-red-600">
+        <Text className="text-center text-destructive">
           {apiErrorMessage(error)}
         </Text>
         <Button label="Retry" onPress={() => refetch()} />
@@ -50,9 +51,10 @@ export default function Dashboard() {
       <Text className="mt-2 text-base">
         Welcome, <Text className="font-semibold">{session.user.name}</Text>!
       </Text>
-      <Text className="mb-4 text-zinc-500">
+      <Text className="mb-4 text-muted-foreground">
         Logged in as {session.user.email}
       </Text>
+      <ThemeToggle />
       <Button label="Log out" onPress={onLogout} />
     </View>
   )

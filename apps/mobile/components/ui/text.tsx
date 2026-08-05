@@ -5,6 +5,6 @@ type TextProps = React.ComponentProps<typeof RNText>
 
 export function Text({ className, ...props }: TextProps) {
   return (
-    <RNText className={cn('text-base text-zinc-900', className)} {...props} />
+    <RNText className={cn('text-base text-foreground', className)} {...props} />
   )
 }

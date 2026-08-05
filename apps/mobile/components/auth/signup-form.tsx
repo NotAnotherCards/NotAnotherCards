@@ -93,7 +93,9 @@ export function SignupForm() {
         autoCapitalize="none"
       />
 
-      {apiError && <Text className="text-center text-red-600">{apiError}</Text>}
+      {apiError && (
+        <Text className="text-center text-destructive">{apiError}</Text>
+      )}
 
       <Button
         label="Create account"
