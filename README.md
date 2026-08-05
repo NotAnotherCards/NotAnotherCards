@@ -8,9 +8,33 @@ It's not another flashcard app. AI-powered language learning through context, nu
 - `apps/api`: NestJS, Drizzle ORM, PostgreSQL, Jest, and Supertest
 - `apps/mobile`: Expo (React Native), expo-router, NativeWind, and jest-expo — see [docs/mobile.md](docs/mobile.md) for setup and running on Android/iOS
 - `packages/*`: shared ESLint and TypeScript config packages
-- `docker-compose.yml`: local PostgreSQL service for development
+- `docker-compose.yml`: complete web, API, and PostgreSQL deployment
 
-## Setup
+## Run the complete app with Docker
+
+From a fresh clone, start every required service with one command:
+
+1. Copy environment file
+
+   root `.env.example` for Docker Compose:
+
+```bash
+  cp .env.example .env
+```
+
+2. Start all services with one command
+
+```bash
+docker compose up
+```
+
+3. Open http://localhost:5173
+
+The first run builds the web and API images and applies database migrations automatically.
+
+> The AI gateway is optional, so leaving `AI_API_BASE` empty does not prevent the app from starting.
+
+## Local development without app containers
 
 1. Install dependencies with `pnpm install`.
 2. Copy environment files:
@@ -29,7 +53,7 @@ It's not another flashcard app. AI-powered language learning through context, nu
 ```
 
 3. Replace the default values with your db credentials, and desired port for the backend
-4. Start the local database with `docker compose up -d`.
+4. Start only the local database with `docker compose up -d postgres`.
 5. Apply the database migrations with `pnpm --filter api db:migrate` (see [docs/database.md](docs/database.md)). Without this the database is empty and every auth request fails with a 500.
 6. Start the monorepo with `pnpm dev`.
 
