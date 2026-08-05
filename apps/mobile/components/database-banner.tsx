@@ -12,8 +12,8 @@ export function DatabaseBanner() {
   if (status !== 'error') return null
 
   return (
-    <View className="flex-row items-center justify-between gap-3 bg-red-50 px-4 py-3">
-      <Text className="flex-1 text-sm text-red-800">
+    <View className="flex-row items-center justify-between gap-3 bg-destructive px-4 py-3">
+      <Text className="flex-1 text-sm text-destructive-foreground">
         Offline database unavailable. Your cards are not saved on this device.
       </Text>
       <Button
