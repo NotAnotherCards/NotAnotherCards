@@ -1,4 +1,4 @@
-import { apiErrorMessage } from '../lib/errors'
+import { apiErrorMessage } from '@/lib/errors'
 
 describe('apiErrorMessage', () => {
   it('maps Android connection failures to a friendly message', () => {

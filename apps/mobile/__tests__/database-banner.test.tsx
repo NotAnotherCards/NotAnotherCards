@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, fireEvent } from '@testing-library/react-native'
-import { DatabaseBanner } from '../components/database-banner'
-import { manager } from '../lib/db'
+import { DatabaseBanner } from '@/components/database-banner'
+import { manager } from '@/lib/db'
 
 const mockUseDatabaseState = jest.fn()
 

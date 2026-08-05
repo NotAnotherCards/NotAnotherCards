@@ -1,5 +1,5 @@
 import { TextInput } from 'react-native'
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/utils'
 
 type InputProps = React.ComponentProps<typeof TextInput> & {
   invalid?: boolean

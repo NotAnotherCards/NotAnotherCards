@@ -26,5 +26,6 @@ module.exports = {
     '^react/(.*)$': '<rootDir>/node_modules/react/$1',
     // The theme preference reads it synchronously at render time.
     '^expo-sqlite/kv-store$': '<rootDir>/__mocks__/kv-store.ts',
+    '^@/(.*)$': '<rootDir>/$1',
   },
 }
