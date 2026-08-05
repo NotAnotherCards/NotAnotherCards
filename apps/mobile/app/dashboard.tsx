@@ -45,7 +45,7 @@ export default function Dashboard() {
   }
 
   return (
-    <View className="flex-1 justify-center gap-2 p-6">
+    <View className="flex-1 justify-center gap-2 bg-background p-6">
       <Text className="text-2xl font-semibold">Dashboard</Text>
       <Text className="mt-2 text-base">
         Welcome, <Text className="font-semibold">{session.user.name}</Text>!
