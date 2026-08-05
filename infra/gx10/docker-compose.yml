@@ -22,8 +22,10 @@ services:
     image: ghcr.io/berriai/litellm:main-v1.82.3-stable
     restart: unless-stopped
     depends_on:
-      - ollama
-      - litellm-db
+      litellm-db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
     # the only service exposed to the tailnet
     ports:
       - "${TAILSCALE_IP}:4000:4000"
@@ -42,6 +44,11 @@ services:
       POSTGRES_USER: litellm
       POSTGRES_PASSWORD: ${LITELLM_DB_PASSWORD}
       POSTGRES_DB: litellm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     volumes:
       # pg 18 image keeps data under /var/lib/postgresql/<major>/...,
       # mount the parent, not the pre-18 /var/lib/postgresql/data
