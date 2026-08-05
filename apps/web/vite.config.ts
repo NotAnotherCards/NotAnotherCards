@@ -16,11 +16,10 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: "@", replacement: path.resolve(__dirname, "./src") },
-      {
-        find: /@remelondb\/driver-web\/dist\/shared-worker\.ts$/,
-        replacement: "@remelondb/driver-web/src/shared-worker.ts",
-      },
     ],
+  },
+  optimizeDeps: {
+    exclude: ["@remelondb/driver-web", "@remelondb/core", "@sqlite.org/sqlite-wasm"]
   },
   build: {
     chunkSizeWarningLimit: 1000,
