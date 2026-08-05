@@ -1,10 +1,10 @@
 import { Redirect, useRouter } from 'expo-router'
 import { ActivityIndicator, View } from 'react-native'
-import { authClient } from '../lib/auth-client'
-import { apiErrorMessage } from '../lib/errors'
-import { Button } from '../components/ui/button'
-import { Text } from '../components/ui/text'
-import { ThemeToggle } from '../components/theme-toggle'
+import { authClient } from '@/lib/auth-client'
+import { apiErrorMessage } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { Text } from '@/components/ui/text'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export default function Dashboard() {
   const router = useRouter()

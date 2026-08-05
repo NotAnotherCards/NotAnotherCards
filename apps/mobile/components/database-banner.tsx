@@ -1,6 +1,6 @@
 import { View } from 'react-native'
 import { useDatabaseState } from '@remelondb/core/react'
-import { manager } from '../lib/db'
+import { manager } from '@/lib/db'
 import { Button } from './ui/button'
 import { Text } from './ui/text'
 

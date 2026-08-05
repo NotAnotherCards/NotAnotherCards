@@ -1,7 +1,7 @@
 import { Link, type Href } from 'expo-router'
 import type { ReactNode } from 'react'
 import { View } from 'react-native'
-import { Text } from '../ui/text'
+import { Text } from '@/components/ui/text'
 
 interface AuthCardProps {
   title: string

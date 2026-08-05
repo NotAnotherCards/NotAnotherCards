@@ -5,7 +5,7 @@ import {
   loadThemePreference,
   setThemePreference,
   type ThemePreference,
-} from '../lib/theme'
+} from '@/lib/theme'
 
 const OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },

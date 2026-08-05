@@ -3,10 +3,10 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { StyleSheet } from 'react-native'
 import { useEffect } from 'react'
-import { manager } from '../lib/db'
-import { DatabaseBanner } from '../components/database-banner'
+import { manager } from '@/lib/db'
+import { DatabaseBanner } from '@/components/database-banner'
 import { useColorScheme } from 'nativewind'
-import { applySavedThemePreference, navigationColors } from '../lib/theme'
+import { applySavedThemePreference, navigationColors } from '@/lib/theme'
 
 // Before first render so the saved theme never flashes the wrong scheme.
 applySavedThemePreference()

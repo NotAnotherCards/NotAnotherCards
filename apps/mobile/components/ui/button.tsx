@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native'
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/utils'
 
 type ButtonProps = React.ComponentProps<typeof Pressable> & {
   label: string
