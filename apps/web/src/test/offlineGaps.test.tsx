@@ -107,8 +107,9 @@ describe("deck deletion on the wire", () => {
 
     // Simulate a completed push so the deck is in synced state - deletions
     // of never-synced records don't need a tombstone.
+    const localChanges = await fetchLocalChanges(db);
     await db.write(async () => {
-      await markLocalChangesAsSynced(db, await fetchLocalChanges(db));
+      await markLocalChangesAsSynced(db, localChanges);
     });
 
     await deleteDeck(db, deck.id);
