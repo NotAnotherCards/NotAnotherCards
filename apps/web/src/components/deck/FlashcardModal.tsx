@@ -22,6 +22,7 @@ export function FlashcardModal({
     initialCardId || singleCard?.id || ""
   );
   const [isFlipped, setIsFlipped] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const currentIndex = modalCards.findIndex((c) => c.id === currentCardId);
   const activeCard = modalCards[currentIndex] || modalCards[0];
@@ -70,13 +71,18 @@ export function FlashcardModal({
 
   const handleReview = async (rating: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    await store.recordReview(activeCard.id, rating);
-    setIsFlipped(false);
-    if (modalCards.length > 1) {
-      const nextIndex = (currentIndex + 1) % modalCards.length;
-      setCurrentCardId(modalCards[nextIndex].id);
-    } else {
-      onClose();
+    setError(null);
+    try {
+      await store.recordReview(activeCard.id, rating);
+      setIsFlipped(false);
+      if (modalCards.length > 1) {
+        const nextIndex = (currentIndex + 1) % modalCards.length;
+        setCurrentCardId(modalCards[nextIndex].id);
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to record review");
     }
   };
 
@@ -187,6 +193,15 @@ export function FlashcardModal({
           </div>
         </div>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="mt-4 max-w-lg w-full text-center text-xs text-red-500 bg-red-500/10 border border-red-500/20 py-2 px-4 rounded-xl font-medium"
+        >
+          {error}
+        </div>
+      )}
 
       {/* Navigation controls */}
       {modalCards.length > 1 && (
