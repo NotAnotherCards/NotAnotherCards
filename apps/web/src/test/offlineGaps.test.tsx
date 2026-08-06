@@ -107,7 +107,9 @@ describe("deck deletion on the wire", () => {
 
     // Simulate a completed push so the deck is in synced state - deletions
     // of never-synced records don't need a tombstone.
-    await markLocalChangesAsSynced(db, await fetchLocalChanges(db));
+    await db.write(async () => {
+      await markLocalChangesAsSynced(db, await fetchLocalChanges(db));
+    });
 
     await deleteDeck(db, deck.id);
 
@@ -120,7 +122,7 @@ describe("deck deletion on the wire", () => {
     expect(changes.user_decks.deleted).toContain(deck.id);
     expect(changes.user_decks.updated.map((r) => r.id)).not.toContain(deck.id);
 
-    await db.close();
+
   });
 });
 
@@ -145,6 +147,6 @@ describe("deck deletion cascade", () => {
     const orphaned = await getReviewHistoryQuery(db).fetch();
     expect(orphaned).toHaveLength(0);
 
-    await db.close();
+
   });
 });
