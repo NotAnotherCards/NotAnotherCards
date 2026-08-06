@@ -35,7 +35,7 @@ export function useStore() {
       ? managerError?.message || "Failed to open local database"
       : null;
 
-  const [timeTrigger, setTimeTrigger] = useState(0);
+  const [, setTimeTrigger] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
