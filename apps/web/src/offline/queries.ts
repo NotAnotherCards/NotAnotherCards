@@ -133,23 +133,21 @@ export async function updateDeck(
 
 export async function deleteDeck(db: Database, deckId: string) {
   return await db.write(async () => {
-    const now = Date.now();
     const deck = await db.get(UserDeck).find(deckId);
-    await deck.update((record) => {
-      record.deleted_at = now;
-      record.updated_at = now;
-    });
-
+    await deck.markAsDeleted();
     const cards = await db
       .get(UserCard)
       .query(Q.where("deck_id", deckId), Q.where("deleted_at", null))
       .fetch();
-
     for (const card of cards) {
-      await card.update((record) => {
-        record.deleted_at = now;
-        record.updated_at = now;
-      });
+      await card.markAsDeleted()
+      const reviews = await db
+        .get(ReviewEvent)
+        .query(Q.where("user_card_id", card.id))
+        .fetch();
+      for (const review of reviews) {
+        await review.markAsDeleted();
+      }
     }
   });
 }
@@ -196,12 +194,12 @@ export async function updateCard(
 
 export async function deleteCard(db: Database, cardId: string) {
   return await db.write(async () => {
-    const now = Date.now();
     const card = await db.get(UserCard).find(cardId);
-    return await card.update((record) => {
-      record.deleted_at = now;
-      record.updated_at = now;
-    });
+    await card.markAsDeleted()
+    const reviews = await db.get(ReviewEvent).query(Q.where("user_card_id", cardId)).fetch()
+    for (const review of reviews) {
+      await review.markAsDeleted()
+    }
   });
 }
 
