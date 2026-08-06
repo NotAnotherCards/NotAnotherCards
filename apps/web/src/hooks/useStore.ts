@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useDatabaseState } from "@remelondb/core/react";
 import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
 import { manager } from "../offline/db";
@@ -35,6 +35,17 @@ export function useStore() {
       ? managerError?.message || "Failed to open local database"
       : null;
 
+  const [timeTrigger, setTimeTrigger] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeTrigger((prev) => prev + 1);
+    }, 10000); // trigger re-renders every 10 seconds
+    return () => clearInterval(timer);
+  }, []);
+
+  const now = Math.floor(Date.now() / 10000) * 10000;
+
   // Observed reactive queries using remelonDB React bridge
   const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(
     () => (db ? getDecksQuery(db) : null),
@@ -47,8 +58,8 @@ export function useStore() {
   );
 
   const { data: dueCards, isLoading: dueLoading } = useQuery<UserCardRecord>(
-    () => (db ? getDueCardsQuery(db) : null),
-    [db]
+    () => (db ? getDueCardsQuery(db, "user-1", now) : null),
+    [db, now]
   );
 
   // Local Writes
