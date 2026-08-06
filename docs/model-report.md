@@ -96,6 +96,22 @@ safety alignment deliberately removed, which sits oddly next to a moderation
 module claim. Neither displaces an incumbent, qwythos-27b earns a config
 line only if we want a second dense-quality option.
 
+**deepseek-v4-flash at 2-bit** (added 2026-08-06). An 81 GB IQ2XXS GGUF
+of DeepSeek-V4-Flash-0731 fits the box after all and got the six topics
+plus harder probes: long German source texts with invented details,
+reign and treaty dates over repeated runs, a worked Bayes example, all
+against both qwens. Quality is a near-tie. Comprehension and derivation
+survive the heavy quantization; what remains is occasional imprecision
+on memorized specifics (one bad date run in five, one treaty date off by
+a day) and small German case slips, where qwen3.6:35b made zero errors
+throughout. Speed decides it: 18.5 tok/s, a quarter of the qwen MoE
+rate, and loading the 81 GB evicts every other model on the box. The
+optimized serving stacks don't rescue it. The EXL3/vLLM recipe (claims
+34 to 39 tok/s) cannot initialize here: it demands 115 GiB free and the
+GX10 exposes at most 109.5 GiB to CUDA even freshly rebooted with
+everything stopped. DwarfStar 4's claimed 26 tok/s would still trail
+the qwens. Recommendation unchanged.
+
 ## Sample cards
 
 Spanish (topic prompt) and German (generate-from-text) sets per model, taken
@@ -384,8 +400,9 @@ either way.
 
 ## Not tested, and why
 
-- **Frontier-scale open models** (glm-5.2, kimi-k3, deepseek-v4): don't fit
-  128 GB unified memory, or would monopolize it.
+- **Frontier-scale open models** (glm-5.2, kimi-k3): don't fit 128 GB
+  unified memory, or would monopolize it. deepseek-v4-flash no longer
+  belongs on this list; see its entry above.
 - **qwen3.5:122b** (81 GB): would fit alone; skipped because 80b already
   hits ceiling accuracy and the box stays multi-model.
 - **EuroLLM / Teuken** (EU multilingual): candidates if language-deck
