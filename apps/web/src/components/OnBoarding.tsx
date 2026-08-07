@@ -17,7 +17,7 @@ import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import z from "zod";
 
-export const onBoardingSchema = z.object({
+export const userSettingsSchema = z.object({
   username: z
     .string()
     .trim()
@@ -30,7 +30,7 @@ export const onBoardingSchema = z.object({
   nativeLanguage: z.string().min(1, "Native language is required"),
   preferedLanguage: z.string().min(1, "Preferred language is required"),
 });
-export type OnBoardingFormData = z.infer<typeof onBoardingSchema>;
+export type UserSettingsFormData = z.infer<typeof userSettingsSchema>;
 
 const LANGUAGES = [
   { value: "en", label: "English" },
@@ -42,8 +42,8 @@ const LANGUAGES = [
 export function OnBoardingComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const form = useForm<OnBoardingFormData>({
-    resolver: zodResolver(onBoardingSchema),
+  const form = useForm<UserSettingsFormData>({
+    resolver: zodResolver(userSettingsSchema),
     defaultValues: {
       username: "",
       nativeLanguage: "",
@@ -53,7 +53,7 @@ export function OnBoardingComponent() {
 
   const { isSubmitting } = form.formState;
 
-  const onSubmit = async (data: OnBoardingFormData) => {
+  const onSubmit = async (data: UserSettingsFormData) => {
     setApiError(null);
     const { data: res, error } = await authClient.updateUser({
       username: data.username,
@@ -156,7 +156,7 @@ export function OnBoardingComponent() {
                   Saving...
                 </span>
               ) : (
-                "Complete Onboarding"
+                "Complete userSettings"
               )}
             </Button>
           </FieldGroup>
