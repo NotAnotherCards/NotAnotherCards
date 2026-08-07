@@ -40,8 +40,6 @@ export function DashboardComponent() {
 
   const handleLogout = async () => {
     await authClient.signOut();
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
     navigate({ to: "/login" });
   };
 
