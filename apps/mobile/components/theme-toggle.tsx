@@ -7,10 +7,11 @@ import {
   type ThemePreference,
 } from '@/lib/theme'
 
+// Same order as the web's theme switcher (#95): light, dark, system.
 const OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
 ]
 
 export function ThemeToggle() {
