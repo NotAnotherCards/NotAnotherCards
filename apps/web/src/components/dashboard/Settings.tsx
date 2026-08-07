@@ -105,7 +105,7 @@ export function Settings() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl py-4 animate-in fade-in duration-300">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full py-4 animate-in fade-in duration-300">
       {/* Side info panel */}
       <div className="md:col-span-1">
         <div className="p-6 rounded-3xl bg-muted/30 border border-border/40 backdrop-blur-xs h-full flex flex-col">
