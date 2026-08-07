@@ -34,8 +34,8 @@
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@hookform/resolvers": "^5.4.0",
-    "@remelondb/core": "^0.1.1",
-    "@remelondb/driver-web": "^0.1.1",
+    "@remelondb/core": "0.1.3",
+    "@remelondb/driver-web": "0.1.3",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
     "@tanstack/react-router": "^1.170.17",
@@ -44,6 +44,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.23.0",
+    "next-themes": "^0.4.6",
     "radix-ui": "^1.6.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
