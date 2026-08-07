@@ -18,32 +18,32 @@ export function HomeComponent() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2 shadow-inner">
             <Layers className="h-10 w-10 stroke-[2.2]" />
           </div>
-          <CardTitle className="text-3xl font-extrabold tracking-tight">
+          <CardTitle className="text-xl xs:text-2xl sm:text-3xl font-extrabold tracking-tight">
             NotAnotherCards
           </CardTitle>
-          <CardDescription className="text-base text-muted-foreground font-medium max-w-xs leading-relaxed">
-            Master any languaage with smart flashcards.
+          <CardDescription className="text-sm text-muted-foreground font-medium max-w-xs leading-relaxed">
+            Master any language with smart flashcards.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6 space-y-3">
           <Button
             asChild
-            size="lg"
-            className="w-full text-base font-semibold shadow"
+            size="default"
+            className="w-full text-sm font-semibold shadow"
           >
             <Link to="/login">Sign In</Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            size="lg"
-            className="w-full text-base font-semibold"
+            size="default"
+            className="w-full text-sm font-semibold"
           >
             <Link to="/register">Get Started</Link>
           </Button>
         </CardContent>
         <CardFooter className="justify-center pt-2 pb-6">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Start learning offline or sync seamlessly across your devices.
           </p>
         </CardFooter>
