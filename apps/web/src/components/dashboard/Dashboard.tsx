@@ -24,11 +24,15 @@ import {
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
 import { Settings } from "./Settings";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 export function DashboardComponent() {
   const { data: session } = authClient.useSession();
+  const isOnline = useOnlineStatus();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"overview" | "decks" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "decks" | "settings">(
+    "overview",
+  );
   const [subView, setSubView] = useState<{
     type: "list" | "detail";
     deckId?: string;
@@ -233,8 +237,14 @@ export function DashboardComponent() {
               <CardContent className="space-y-4 pt-0">
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
                   <span className="text-muted-foreground">Status</span>
-                  <span className="font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                    Online
+                  <span
+                    className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
+                      isOnline
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-destructive/10 text-destructive animate-pulse"
+                    }`}
+                  >
+                    {isOnline ? "Online" : "Offline"}
                   </span>
                 </div>
 
@@ -425,9 +435,7 @@ export function DashboardComponent() {
         </div>
       )}
 
-      {activeTab === "settings" && (
-        <Settings />
-      )}
+      {activeTab === "settings" && <Settings />}
     </PageContainer>
   );
 }
