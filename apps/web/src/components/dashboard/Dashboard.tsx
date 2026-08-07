@@ -23,11 +23,12 @@ import {
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
+import { Settings } from "../Settings";
 
 export function DashboardComponent() {
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"overview" | "decks">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "decks" | "settings">("overview");
   const [subView, setSubView] = useState<{
     type: "list" | "detail";
     deckId?: string;
@@ -184,10 +185,21 @@ export function DashboardComponent() {
           <Library className="size-3.5 mr-1.5" />
           Decks & Library
         </Button>
+        <Button
+          variant={activeTab === "settings" ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => {
+            setActiveTab("settings");
+          }}
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4"
+        >
+          <Library className="size-3.5 mr-1.5" />
+          Account settings
+        </Button>
       </div>
 
       {/* Tab Contents */}
-      {activeTab === "overview" ? (
+      {activeTab === "overview" && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Overview Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -396,7 +408,9 @@ export function DashboardComponent() {
             </Card>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === "decks" && (
         <div className="space-y-6">
           {subView.type === "list" ? (
             <DeckList
@@ -409,6 +423,10 @@ export function DashboardComponent() {
             />
           )}
         </div>
+      )}
+
+      {activeTab === "settings" && (
+        <Settings />
       )}
     </PageContainer>
   );
