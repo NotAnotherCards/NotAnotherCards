@@ -2,7 +2,7 @@ import { render, screen, act } from "@testing-library/react";
 import { App, router } from "../App";
 import userEvent from "@testing-library/user-event";
 import { authClient } from "@/lib/auth-client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
 const mockSession = {
   session: {
@@ -25,6 +25,9 @@ const mockSession = {
 
 describe("Dashboard Page Component Specs", () => {
   beforeEach(async () => {
+    localStorage.setItem("nativeLanguage", "en");
+    localStorage.setItem("preferedLanguage", "es");
+
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, "", "/app/dashboard");
     await act(async () => {
@@ -48,6 +51,11 @@ describe("Dashboard Page Component Specs", () => {
     await act(async () => {
       await router.invalidate();
     });
+  });
+
+  afterEach(() => {
+    localStorage.removeItem("nativeLanguage");
+    localStorage.removeItem("preferedLanguage");
   });
 
   it("renders welcome text, user email/name, and placeholder feature sections", async () => {

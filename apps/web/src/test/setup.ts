@@ -42,3 +42,13 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+
+// Mock useDatabaseState to avoid Worker errors in tests
+vi.mock("@remelondb/core/react", () => {
+  return {
+    useDatabaseState: vi.fn(() => ({
+      status: "ready",
+      error: null,
+    })),
+  };
+});

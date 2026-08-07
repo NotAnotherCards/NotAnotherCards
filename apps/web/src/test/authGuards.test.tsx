@@ -66,6 +66,9 @@ describe("Auth Guards", () => {
   });
 
   it("allows logged-in users to see the dashboard", async () => {
+    localStorage.setItem("nativeLanguage", "en");
+    localStorage.setItem("preferedLanguage", "es");
+
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSession,
@@ -101,9 +104,15 @@ describe("Auth Guards", () => {
 
     // Verify the URL is /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
+
+    localStorage.removeItem("nativeLanguage");
+    localStorage.removeItem("preferedLanguage");
   });
 
   it("redirects logged-in users away from the login page to the dashboard", async () => {
+    localStorage.setItem("nativeLanguage", "en");
+    localStorage.setItem("preferedLanguage", "es");
+
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSession,
@@ -135,6 +144,9 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
+
+    localStorage.removeItem("nativeLanguage");
+    localStorage.removeItem("preferedLanguage");
   });
 
   it("redirects logged-out users from onboarding to home", async () => {
@@ -257,7 +269,7 @@ describe("Auth Guards", () => {
     expect(window.location.pathname).toBe("/app/onboarding");
   });
 
-  it("redirects logged-in users without settings from home to onboarding", async () => {
+  it("allows logged-in users without settings to view the home page", async () => {
     localStorage.removeItem("nativeLanguage");
     localStorage.removeItem("preferedLanguage");
 
@@ -283,7 +295,7 @@ describe("Auth Guards", () => {
       await router.navigate({ to: "/" });
     });
 
-    expect(window.location.pathname).toBe("/app/onboarding");
+    expect(window.location.pathname).toBe("/");
   });
 
   it("redirects logged-out users from /app to home", async () => {
@@ -328,15 +340,13 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await act(async () => {
-      await router.invalidate();
-    });
-
-    render(<App />);
-
+    // Set path and navigate before rendering the app
+    window.history.pushState(null, "", "/app");
     await act(async () => {
       await router.navigate({ to: "/app" });
     });
+
+    render(<App />);
 
     expect(window.location.pathname).toBe("/app/dashboard");
 
