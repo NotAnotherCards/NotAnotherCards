@@ -136,4 +136,153 @@ describe("Auth Guards", () => {
     // Verify the URL is updated to /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
   });
+
+  it("redirects logged-out users from onboarding to home", async () => {
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    await act(async () => {
+      await router.invalidate();
+    });
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/app/onboarding" });
+    });
+
+    expect(window.location.pathname).toBe("/");
+  });
+
+  it("redirects logged-in users with setup settings from onboarding to dashboard", async () => {
+    localStorage.setItem("nativeLanguage", "en");
+    localStorage.setItem("preferedLanguage", "es");
+
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    await act(async () => {
+      await router.invalidate();
+    });
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/app/onboarding" });
+    });
+
+    expect(window.location.pathname).toBe("/app/dashboard");
+
+    localStorage.removeItem("nativeLanguage");
+    localStorage.removeItem("preferedLanguage");
+  });
+
+  it("allows logged-in users without settings to see the onboarding page", async () => {
+    localStorage.removeItem("nativeLanguage");
+    localStorage.removeItem("preferedLanguage");
+
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    await act(async () => {
+      await router.invalidate();
+    });
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/app/onboarding" });
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: /Welcome!/i }),
+    ).toBeInTheDocument();
+
+    expect(window.location.pathname).toBe("/app/onboarding");
+  });
+
+  it("redirects logged-in users without settings from dashboard to onboarding", async () => {
+    localStorage.removeItem("nativeLanguage");
+    localStorage.removeItem("preferedLanguage");
+
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    await act(async () => {
+      await router.invalidate();
+    });
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/app/dashboard" });
+    });
+
+    expect(window.location.pathname).toBe("/app/onboarding");
+  });
+
+  it("redirects logged-in users without settings from home to onboarding", async () => {
+    localStorage.removeItem("nativeLanguage");
+    localStorage.removeItem("preferedLanguage");
+
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    await act(async () => {
+      await router.invalidate();
+    });
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/" });
+    });
+
+    expect(window.location.pathname).toBe("/app/onboarding");
+  });
 });

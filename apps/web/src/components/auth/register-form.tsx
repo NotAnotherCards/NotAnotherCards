@@ -27,7 +27,7 @@ export function RegisterComponent() {
       name: "",
       email: "",
       password: "",
-      username: "",
+      username: `user_${Math.random().toString(36).substring(2, 10)}`,
       confirmPassword: "",
     },
   });

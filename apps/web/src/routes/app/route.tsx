@@ -2,11 +2,26 @@ import { authClient } from "@/lib/auth-client";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/app")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data: session } = await authClient.getSession();
     if (!session) {
+      if (location.pathname === "/app/onboarding") {
+        throw redirect({
+          to: "/",
+        });
+      }
       throw redirect({
         to: "/login",
+      });
+    }
+
+    const nativeLanguage = localStorage.getItem("nativeLanguage");
+    const preferedLanguage = localStorage.getItem("preferedLanguage");
+    const hasSettings = !!(nativeLanguage && preferedLanguage);
+
+    if (!hasSettings && location.pathname !== "/app/onboarding") {
+      throw redirect({
+        to: "/app/onboarding",
       });
     }
   },
