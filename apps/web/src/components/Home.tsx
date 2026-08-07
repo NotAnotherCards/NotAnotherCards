@@ -22,8 +22,7 @@ export function HomeComponent() {
             NotAnotherCards
           </CardTitle>
           <CardDescription className="text-base text-muted-foreground font-medium max-w-xs leading-relaxed">
-            Master anything with smart flashcards designed for effortless
-            learning.
+            Master any languaage with smart flashcards.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6 space-y-3">
@@ -32,7 +31,7 @@ export function HomeComponent() {
             size="lg"
             className="w-full text-base font-semibold shadow"
           >
-            <Link to="/login">I have an account</Link>
+            <Link to="/login">Sign In</Link>
           </Button>
           <Button
             asChild
@@ -40,7 +39,7 @@ export function HomeComponent() {
             size="lg"
             className="w-full text-base font-semibold"
           >
-            <Link to="/register">I don't have an account</Link>
+            <Link to="/register">Get Started</Link>
           </Button>
         </CardContent>
         <CardFooter className="justify-center pt-2 pb-6">
