@@ -398,11 +398,70 @@ content only its author sees is a weak story. Whether the point is worth
 claiming is a team decision; nothing in the current plan depends on it
 either way.
 
-## Not tested, and why
+## Hosted reference models (2026-08-07)
 
-- **Frontier-scale open models** (glm-5.2, kimi-k3): don't fit 128 GB
-  unified memory, or would monopolize it. deepseek-v4-flash no longer
-  belongs on this list; see its entry above.
+To place the local models, the same suite (six standard topics plus the
+hard set: reign dates five runs, treaty dates, oxidation states, two
+German source texts, the base-rate derivation) ran against hosted models
+through the nano-gpt aggregator. These are reference points and
+fallback candidates, not servable options; the point was a quality
+ceiling, a check on our quantizations, and real per-task prices.
+
+| model | suite | errors | tokens in+out | cost |
+| --- | --- | --- | --- | --- |
+| Qwen3.6-35B-A3B (hosted twin) | 16/16 | 0 | 2.3k + 4.3k | $0.004 |
+| deepseek-v4-flash-0731 (full) | 16/16 | 1 | 2.2k + 3.8k | $0.001 |
+| qwen3.8-max-preview | 16/16 | 0 | 3.1k + 19.7k | $0.103 |
+| claude-sonnet-5 | 16/16 | 0 | 3.7k + 6.9k | $0.076 |
+| gpt-5.6-sol | 16/16 | 0 | 2.1k + 5.2k | $0.168 |
+| gemini-3.1-pro-preview | 16/16 | 0 | 2.1k + 19.3k | $0.236 |
+| kimi-k3 | 16/16 | 0 | 3.8k + 14.6k | $0.207 |
+| glm-5-turbo | 16/16 | 0 | 2.2k + 19.8k | $0.082 |
+
+Whole campaign: about 115k tokens, $0.88. Prices are nano-gpt's listed
+per-million rates at run time.
+
+What it says:
+
+**The suite has a ceiling and the frontier is at it.** Every hosted
+model passed everything; the only failure anywhere is deepseek's Campo
+Formio date, wrong by one day at full precision exactly as in our 2-bit
+copy, which settles that error as the model's, not the quantization's.
+The 2-bit emperors outlier from the addendum above did not recur at
+full precision, consistent with sampling variance.
+
+**Our local quantizations cost nothing measurable.** Hosted
+full-precision Qwen3.6-35B and our ollama quant produced the same
+result: zero errors. The gateway's champion is at frontier level on
+this workload, at local prices.
+
+**Frontier dollars buy garnish, not correctness.** qwen3.8-max and
+gpt-5.6 volunteered day-exact reign dates (19 August AD 14, 9 June
+AD 68, all verified correct) where every other model answered in
+years. Real, visible, and irrelevant for card generation.
+
+**Thinking is the cost driver.** The always-thinking models (gemini,
+qwen3.8-max, kimi, glm) burned 3 to 5 times the completion tokens of
+the direct answerers for identical accuracy. For this workload,
+reasoning mode is a tax.
+
+**Reliability footnote.** One glm request stalled long enough to trip
+the client's header timeout and succeeded on retry; hosted fallback
+plumbing should stream or carry generous timeouts.
+
+Operationally: card generation on the hosted Qwen3.6 twin costs about
+$0.0002 per five-card set (thousands of generations per dollar), which
+makes it the designated gateway fallback; the frontier models stay
+un-wired until a task can name what their premium buys. qwen3.8's
+hosted preview suggests next week's open-weights row will be worth
+adding.
+
+## Not tested locally, and why
+
+- **Frontier-scale open models** (glm, kimi-k3): don't fit 128 GB
+  unified memory, or would monopolize it. Not *served* locally, but no
+  longer untested: hosted results for kimi-k3, glm-5-turbo, and
+  deepseek-v4-flash are in the hosted reference section above.
 - **qwen3.5:122b** (81 GB): would fit alone; skipped because 80b already
   hits ceiling accuracy and the box stays multi-model.
 - **EuroLLM / Teuken** (EU multilingual): candidates if language-deck
