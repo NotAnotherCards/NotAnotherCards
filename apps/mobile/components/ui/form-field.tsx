@@ -35,7 +35,7 @@ export function FormField<T extends FieldValues>({
             {...inputProps}
           />
           {fieldState.error && (
-            <Text className="text-sm text-red-600">
+            <Text className="text-sm text-destructive">
               {fieldState.error.message}
             </Text>
           )}

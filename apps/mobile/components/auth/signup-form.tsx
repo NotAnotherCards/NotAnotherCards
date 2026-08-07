@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type SignupFormData } from '@repo/schemas'
-import { authClient } from '../../lib/auth-client'
-import { apiErrorMessage } from '../../lib/errors'
-import { Button } from '../ui/button'
-import { FormField } from '../ui/form-field'
-import { Text } from '../ui/text'
+import { authClient } from '@/lib/auth-client'
+import { apiErrorMessage } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { FormField } from '@/components/ui/form-field'
+import { Text } from '@/components/ui/text'
 
 // Hermes' Intl support is partial; if timezone detection fails the field
 // stays unset and the server defaults to UTC.
@@ -93,7 +93,9 @@ export function SignupForm() {
         autoCapitalize="none"
       />
 
-      {apiError && <Text className="text-center text-red-600">{apiError}</Text>}
+      {apiError && (
+        <Text className="text-center text-destructive">{apiError}</Text>
+      )}
 
       <Button
         label="Create account"
