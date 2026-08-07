@@ -456,6 +456,44 @@ un-wired until a task can name what their premium buys. qwen3.8's
 hosted preview suggests next week's open-weights row will be worth
 adding.
 
+## DFlash speculative decoding (2026-08-07)
+
+The AEON-7 org publishes prebuilt vLLM containers for the DGX Spark
+(sm_121a) pairing an NVFP4 quant of Qwen3.6-35B-A3B with DFlash, a
+small drafter model whose proposed tokens the main model verifies in
+batches. Speculative decoding trades a little extra memory for wall
+clock: same weights, same outputs in expectation, faster sampling.
+
+Measured beside the live ollama gateway (`--gpu-memory-utilization
+0.40`, 32k context, the gateway stayed responsive throughout):
+
+| serving | gen tok/s | suite + hard set | content errors |
+| --- | --- | --- | --- |
+| vLLM + DFlash (NVFP4) | 101–148 | 16/16 parse | 0 |
+| ollama gateway (our q4) | 74–76 | 30/30 parse | 5 (see appendix) |
+
+The two rows are different task counts and quants, so the error
+column is not a like-for-like comparison; the speed column is the
+finding. Every hard-set answer was checked by hand: the five
+Napoleonic treaty dates to the day (including Campo Formio as 17
+October 1797, which deepseek got wrong at full precision), the
+Julio-Claudian reign dates, both German source texts, the ion colors,
+and the base-rate derivation with exact arithmetic (0.009/0.0981 ≈
+9.2%).
+
+Caveats. The published build is a community "heretic" (abliterated)
+variant, the only DFlash pairing available; on this workload the
+surgery cost nothing measurable, but it is not an artifact we would
+serve. It also needs `--reasoning-parser qwen3`: without the flag the
+model's thinking floods the content channel and every parse fails,
+which our first run reproduced.
+
+What this changes: nothing today (the gateway stays ollama, and 74
+tok/s is not our bottleneck), but it establishes that a vLLM lane
+would roughly double generation speed on the same box while
+coexisting with production. Worth revisiting when qwen3.8 lands, if
+AEON-7 ships a build for it.
+
 ## Not tested locally, and why
 
 - **Frontier-scale open models** (glm, kimi-k3): don't fit 128 GB
