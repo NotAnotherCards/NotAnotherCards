@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { ChevronDown } from "lucide-react";
 import {
   Field,
   FieldError,
@@ -12,7 +13,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
 import { authClient } from "@/lib/auth-client";
-import { useNavigate, Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import z from "zod";
@@ -33,10 +34,10 @@ export const userSettingsSchema = z.object({
 export type UserSettingsFormData = z.infer<typeof userSettingsSchema>;
 
 const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "de", label: "German" },
-  { value: "ru", label: "Russian" },
+  { value: "en", label: "🇺🇸 English" },
+  { value: "es", label: "🇪🇸 Spanish" },
+  { value: "de", label: "🇩🇪 German" },
+  { value: "ru", label: "🇷🇺 Russian" },
 ];
 
 export function OnBoardingComponent() {
@@ -70,114 +71,156 @@ export function OnBoardingComponent() {
   };
 
   return (
-    <AuthCard
-      title="Welcome!"
-      description="Choose your username and language preferences to get started"
-      footerText=""
-      footerLinkText=""
-      footerLinkTo=""
-    >
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FieldSet>
-          <FieldGroup className="gap-4">
-            <Controller
-              name="username"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Username</FieldLabel>
-                  <Input
-                    {...field}
-                    id={field.name}
-                    autoComplete="username"
-                    aria-invalid={fieldState.invalid}
-                    aria-describedby={
-                      fieldState.invalid ? "username-error" : undefined
-                    }
-                  />
-                  <FieldError id="username-error" errors={[fieldState.error]} />
-                </Field>
-              )}
-            />
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 flex-1">
+      <AuthCard
+        title="Welcome!"
+        description="Choose your username and language preferences to get started"
+        footerText=""
+        footerLinkText=""
+        footerLinkTo=""
+      >
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <FieldSet>
+            <FieldGroup className="gap-4">
+              <Controller
+                name="username"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Username</FieldLabel>
+                    <Input
+                      {...field}
+                      id={field.name}
+                      autoComplete="username"
+                      autoFocus
+                      aria-invalid={fieldState.invalid}
+                      aria-describedby={
+                        fieldState.invalid ? "username-error" : undefined
+                      }
+                    />
+                    <FieldError
+                      id="username-error"
+                      errors={[fieldState.error]}
+                    />
+                  </Field>
+                )}
+              />
 
-            <Controller
-              name="nativeLanguage"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Native Language</FieldLabel>
-                  <select
-                    {...field}
-                    id={field.name}
-                    aria-invalid={fieldState.invalid}
-                    className="h-9 w-full min-w-0 rounded-3xl border border-transparent px-3 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground bg-neutral-900 dark:bg-neutral-800"
-                  >
-                    <option value="" disabled>Select language</option>
-                    {LANGUAGES.map((lang) => (
-                      <option key={lang.value} value={lang.value}>
-                        {lang.label}
-                      </option>
-                    ))}
-                  </select>
-                  <FieldError id="nativeLanguage-error" errors={[fieldState.error]} />
-                </Field>
-              )}
-            />
+              <Controller
+                name="nativeLanguage"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>
+                      Native Language
+                    </FieldLabel>
+                    <div className="relative w-full">
+                      <select
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                        aria-describedby={
+                          fieldState.invalid
+                            ? "nativeLanguage-error"
+                            : undefined
+                        }
+                        className="h-9 w-full min-w-0 rounded-3xl border border-transparent bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
+                      >
+                        <option
+                          value=""
+                          disabled
+                          className="bg-background text-foreground"
+                        >
+                          Select language
+                        </option>
+                        {LANGUAGES.map((lang) => (
+                          <option
+                            key={lang.value}
+                            value={lang.value}
+                            className="bg-background text-foreground"
+                          >
+                            {lang.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none text-muted-foreground opacity-60"
+                      />
+                    </div>
+                    <FieldError
+                      id="nativeLanguage-error"
+                      errors={[fieldState.error]}
+                    />
+                  </Field>
+                )}
+              />
 
-            <Controller
-              name="preferedLanguage"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Preferred Language</FieldLabel>
-                  <select
-                    {...field}
-                    id={field.name}
-                    aria-invalid={fieldState.invalid}
-                    className="h-9 w-full min-w-0 rounded-3xl border border-transparent px-3 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground bg-neutral-900 dark:bg-neutral-800"
-                  >
-                    <option value="" disabled>Select language</option>
-                    {LANGUAGES.map((lang) => (
-                      <option key={lang.value} value={lang.value}>
-                        {lang.label}
-                      </option>
-                    ))}
-                  </select>
-                  <FieldError id="preferedLanguage-error" errors={[fieldState.error]} />
-                </Field>
-              )}
-            />
+              <Controller
+                name="preferedLanguage"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>
+                      Preferred Language
+                    </FieldLabel>
+                    <div className="relative w-full">
+                      <select
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                        aria-describedby={
+                          fieldState.invalid
+                            ? "preferedLanguage-error"
+                            : undefined
+                        }
+                        className="h-9 w-full min-w-0 rounded-3xl border border-transparent bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
+                      >
+                        <option
+                          value=""
+                          disabled
+                          className="bg-background text-foreground"
+                        >
+                          Select language
+                        </option>
+                        {LANGUAGES.map((lang) => (
+                          <option
+                            key={lang.value}
+                            value={lang.value}
+                            className="bg-background text-foreground"
+                          >
+                            {lang.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 pointer-events-none text-muted-foreground opacity-60"
+                      />
+                    </div>
+                    <FieldError
+                      id="preferedLanguage-error"
+                      errors={[fieldState.error]}
+                    />
+                  </Field>
+                )}
+              />
 
-            <FormErrorMessage message={apiError} />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Spinner />
-                  Saving...
-                </span>
-              ) : (
-                "Complete userSettings"
-              )}
-            </Button>
-            
-            <div className="flex flex-col items-center gap-2 mt-4 text-xs text-muted-foreground">
-              <div className="flex gap-4">
-                <Link to="/login" className="hover:text-foreground hover:underline">
-                  Back to Login
-                </Link>
-                <span>|</span>
-                <Link to="/register" className="hover:text-foreground hover:underline">
-                  Back to Sign Up
-                </Link>
-                <span>|</span>
-                <Link to="/" className="hover:text-foreground hover:underline">
-                  Go to Home
-                </Link>
-              </div>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-      </form>
-    </AuthCard>
+              <FormErrorMessage message={apiError} />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner />
+                    Saving...
+                  </span>
+                ) : (
+                  "Complete registration"
+                )}
+              </Button>
+            </FieldGroup>
+          </FieldSet>
+        </form>
+      </AuthCard>
+    </div>
   );
 }
