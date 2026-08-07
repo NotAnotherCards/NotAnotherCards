@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
-import { Settings } from "../Settings";
+import { Settings } from "./Settings";
 
 export function DashboardComponent() {
   const { data: session } = authClient.useSession();
