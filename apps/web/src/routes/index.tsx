@@ -12,10 +12,6 @@ export const Route = createFileRoute("/")({
         throw redirect({
           to: "/app/dashboard"
         })
-      } else {
-        throw redirect({
-          to: "/app/onboarding"
-        })
       }
     }
   },

@@ -5,7 +5,7 @@ export const Route = createFileRoute("/app")({
   beforeLoad: async ({ location }) => {
     const { data: session } = await authClient.getSession();
     if (!session) {
-      if (location.pathname === "/app/onboarding") {
+      if (location.pathname === "/app/onboarding" || location.pathname === "/app") {
         throw redirect({
           to: "/",
         });
@@ -19,10 +19,18 @@ export const Route = createFileRoute("/app")({
     const preferedLanguage = localStorage.getItem("preferedLanguage");
     const hasSettings = !!(nativeLanguage && preferedLanguage);
 
-    if (!hasSettings && location.pathname !== "/app/onboarding") {
-      throw redirect({
-        to: "/app/onboarding",
-      });
+    if (!hasSettings) {
+      if (location.pathname !== "/app/onboarding") {
+        throw redirect({
+          to: "/app/onboarding",
+        });
+      }
+    } else {
+      if (location.pathname === "/app") {
+        throw redirect({
+          to: "/app/dashboard",
+        });
+      }
     }
   },
   component: AppLayout,

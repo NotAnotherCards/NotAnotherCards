@@ -12,7 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
 import { authClient } from "@/lib/auth-client";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import z from "zod";
@@ -159,6 +159,22 @@ export function OnBoardingComponent() {
                 "Complete userSettings"
               )}
             </Button>
+            
+            <div className="flex flex-col items-center gap-2 mt-4 text-xs text-muted-foreground">
+              <div className="flex gap-4">
+                <Link to="/login" className="hover:text-foreground hover:underline">
+                  Back to Login
+                </Link>
+                <span>|</span>
+                <Link to="/register" className="hover:text-foreground hover:underline">
+                  Back to Sign Up
+                </Link>
+                <span>|</span>
+                <Link to="/" className="hover:text-foreground hover:underline">
+                  Go to Home
+                </Link>
+              </div>
+            </div>
           </FieldGroup>
         </FieldSet>
       </form>

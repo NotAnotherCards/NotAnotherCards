@@ -46,6 +46,8 @@ export function RegisterComponent() {
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
     } else {
+      localStorage.removeItem("nativeLanguage");
+      localStorage.removeItem("preferedLanguage");
       navigate({ to: "/app/onboarding" });
       console.log("Registered:", res);
     }
