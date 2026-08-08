@@ -23,8 +23,10 @@ import {
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
+import { useStore } from "@/hooks/useStore";
 
 export function DashboardComponent() {
+  const store = useStore();
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"overview" | "decks">("overview");
@@ -43,18 +45,18 @@ export function DashboardComponent() {
     email: "learner@notanothercards.com",
   };
 
-  // Mock statistics for the language learning card app
+  // Dynamic statistics from local remelonDB store
   const stats = [
     {
       title: "Today's Reviews",
-      value: "42 words",
+      value: `${store.dueCards.length} cards`,
       description: "Due for review",
       icon: Clock,
       color: "text-emerald-500 bg-emerald-500/10",
     },
     {
       title: "Personal Dictionary",
-      value: "248 words",
+      value: `${store.cards.length} cards`,
       description: "Added to your collection",
       icon: BookMarked,
       color: "text-blue-500 bg-blue-500/10",
