@@ -58,7 +58,7 @@ export function useStore() {
   );
 
   const { data: dueCards, isLoading: dueLoading } = useQuery<UserCardRecord>(
-    () => (db ? getDueCardsQuery(db, "user-1", now) : null),
+    () => (db ? getDueCardsQuery(db, now) : null),
     [db, now]
   );
 
