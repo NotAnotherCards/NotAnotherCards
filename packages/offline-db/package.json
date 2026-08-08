@@ -16,7 +16,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@remelondb/core": "0.1.4",
+    "@remelondb/core": "0.1.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
