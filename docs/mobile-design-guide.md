@@ -11,6 +11,12 @@ original wording in parentheses.
 Source: `NotAnotherCards.png` export of the Figma canvas, state of
 2026-08-08. If the Figma changes, re-export and update this doc.
 
+This is one of two guides. The other is the web app itself: #68 targets
+parity with web, so where the web already implements a feature (auth,
+deck and card CRUD, settings), mobile mirrors its behavior, naming and
+semantics. This doc governs flow, navigation and screen structure; the
+web governs what features do.
+
 ## Navigation skeleton
 
 Bottom tab bar with three tabs: Learning (home), Library, Account. The
