@@ -60,6 +60,10 @@ The first run builds the web and API images and applies database migrations auto
 ## Common Commands
 
 - `pnpm dev`: run the web and API dev tasks through Turbo
+- `pnpm turbo dev:mobile`: API + Metro in one terminal. Turbo swallows
+  Expo's keyboard shortcuts, so when you need `a`/`r`, run
+  `pnpm --filter api dev` and `pnpm --filter mobile start` in two
+  terminals instead (see [docs/mobile.md](docs/mobile.md))
 - `pnpm build`: build all packages and apps
 - `pnpm lint`: lint the workspace
 - `pnpm test`: run the workspace test suites
