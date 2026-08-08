@@ -15,6 +15,7 @@ export const auth = betterAuth({
       username: {
         type: 'string',
         required: true,
+        unique: true,
       },
       timezone: {
         type: 'string',

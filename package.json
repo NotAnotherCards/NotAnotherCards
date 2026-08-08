@@ -9,8 +9,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "@remelondb/core": "0.1.2",
-    "@remelondb/driver-web": "0.1.2",
+    "@remelondb/core": "0.1.5",
+    "@remelondb/driver-web": "0.1.5",
     "eslint": "^10.6.0",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4"
