@@ -1,5 +1,9 @@
 import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
+import { vi, afterEach } from "vitest";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // Mock authClient globally for all tests
 vi.mock("@/lib/auth-client", () => {
