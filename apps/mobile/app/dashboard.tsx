@@ -4,6 +4,7 @@ import { authClient } from '@/lib/auth-client'
 import { apiErrorMessage } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
+import { DeckList } from '@/components/deck-list'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export default function Dashboard() {
@@ -54,6 +55,8 @@ export default function Dashboard() {
       <Text className="mb-4 text-muted-foreground">
         Logged in as {session.user.email}
       </Text>
+      <Text className="text-lg font-semibold">Your decks</Text>
+      <DeckList />
       <ThemeToggle />
       <Button label="Log out" onPress={onLogout} />
     </View>
