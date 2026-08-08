@@ -8,12 +8,10 @@ import { Deck, Card } from "../hooks/useStore";
 describe("DeckCard Component", () => {
   const mockDeck: Deck = {
     id: "deck-test-1",
-    user_id: "user-1",
     title: "Spanish Verbs",
     description: "Learn essential conversational Spanish verbs.",
     created_at: Date.now(),
     updated_at: Date.now(),
-    deleted_at: null,
   };
 
   it("renders the deck title, description, and total cards badge", () => {
@@ -64,14 +62,12 @@ describe("DeckCard Component", () => {
 describe("CardItem Component", () => {
   const mockCard: Card = {
     id: "card-test-1",
-    user_id: "user-1",
     deck_id: "deck-test-1",
     front: "Hola",
     back: "Hello",
     due_at: Date.now(),
     created_at: Date.now(),
     updated_at: Date.now(),
-    deleted_at: null,
   };
 
   it("renders card front and back inside a table context", () => {
@@ -127,14 +123,12 @@ describe("CardItem Component", () => {
 describe("FlashcardModal Component", () => {
   const mockCard: Card = {
     id: "card-test-1",
-    user_id: "user-1",
     deck_id: "deck-test-1",
     front: "Hola",
     back: "Hello",
     due_at: Date.now(),
     created_at: Date.now(),
     updated_at: Date.now(),
-    deleted_at: null,
   };
 
   it("renders front content by default and flips to back content on click", async () => {

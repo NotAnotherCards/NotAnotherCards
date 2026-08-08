@@ -1,19 +1,14 @@
 import { Database, Q } from "@remelondb/core";
 import { UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
 
-// TODO: Fallback userId "user-1" is temporary for Stage 1 offline mode until full session auth integration.
-
 // ==========================================
 // QUERIES
 // ==========================================
 
-// TODO: Replace "user-1" fallback with authenticated session user ID when auth is integrated
-export function getDecksQuery(db: Database, userId: string = "user-1") {
+export function getDecksQuery(db: Database) {
   return db
     .get(UserDeck)
     .query(
-      Q.where("user_id", userId),
-      Q.where("deleted_at", null),
       Q.sortBy("created_at", Q.desc),
     );
 }
@@ -21,19 +16,15 @@ export function getDecksQuery(db: Database, userId: string = "user-1") {
 export function getDeckDetailQuery(db: Database, deckId: string) {
   return db
     .get(UserDeck)
-    .query(Q.where("id", deckId), Q.where("deleted_at", null));
+    .query(Q.where("id", deckId));
 }
 
-// TODO: Replace "user-1" fallback with authenticated session user ID when auth is integrated
 export function getPersonalDictionaryQuery(
   db: Database,
-  userId: string = "user-1",
 ) {
   return db
     .get(UserCard)
     .query(
-      Q.where("user_id", userId),
-      Q.where("deleted_at", null),
       Q.sortBy("created_at", Q.desc),
     );
 }
@@ -43,22 +34,17 @@ export function getDeckCardsQuery(db: Database, deckId: string) {
     .get(UserCard)
     .query(
       Q.where("deck_id", deckId),
-      Q.where("deleted_at", null),
       Q.sortBy("created_at", Q.desc),
     );
 }
 
-// TODO: Replace "user-1" fallback with authenticated session user ID when auth is integrated
 export function getDueCardsQuery(
   db: Database,
-  userId: string = "user-1",
   now: number = Date.now(),
 ) {
   return db
     .get(UserCard)
     .query(
-      Q.where("user_id", userId),
-      Q.where("deleted_at", null),
       Q.where("due_at", Q.lte(now)),
       Q.sortBy("due_at", Q.asc),
     );
@@ -67,27 +53,24 @@ export function getDueCardsQuery(
 export function getCardDetailQuery(db: Database, cardId: string) {
   return db
     .get(UserCard)
-    .query(Q.where("id", cardId), Q.where("deleted_at", null));
+    .query(Q.where("id", cardId));
 }
 
-// TODO: Replace "user-1" fallback with authenticated session user ID when auth is integrated
 export function getReviewHistoryQuery(
   db: Database,
-  userId: string = "user-1",
   userCardId?: string,
 ) {
   if (userCardId) {
     return db
       .get(ReviewEvent)
       .query(
-        Q.where("user_id", userId),
         Q.where("user_card_id", userCardId),
         Q.sortBy("reviewed_at", Q.desc),
       );
   }
   return db
     .get(ReviewEvent)
-    .query(Q.where("user_id", userId), Q.sortBy("reviewed_at", Q.desc));
+    .query(Q.sortBy("reviewed_at", Q.desc));
 }
 
 // ==========================================
@@ -137,7 +120,7 @@ export async function deleteDeck(db: Database, deckId: string) {
     await deck.markAsDeleted();
     const cards = await db
       .get(UserCard)
-      .query(Q.where("deck_id", deckId), Q.where("deleted_at", null))
+      .query(Q.where("deck_id", deckId))
       .fetch();
     for (const card of cards) {
       await card.markAsDeleted()
