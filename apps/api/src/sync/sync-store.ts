@@ -68,6 +68,7 @@ export function createAppSyncEngine(store: AppSyncStore) {
           syncWireSchemas.rows.user_cards.safeParse(row).success,
       },
       review_events: {
+        appendOnly: true,
         validate: (row) =>
           syncWireSchemas.rows.review_events.safeParse(row).success,
       },
