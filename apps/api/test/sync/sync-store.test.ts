@@ -331,7 +331,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     );
   });
 
-  it('keeps append-only review fields immutable on an update push', async () => {
+  it('rejects review updates instead of silently ignoring them', async () => {
     const now = Date.now();
     const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
@@ -343,7 +343,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     );
     const seeded = pulled(await handlers.pull(pullArgs(null)));
 
-    accepted(
+    const result = accepted(
       await handlers.push({
         cursor: seeded.cursor,
         changes: {
@@ -352,9 +352,9 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
             updated: [
               {
                 id: 'review-1',
-                user_card_id: 'different-card',
+                user_card_id: 'card-1',
                 rating: 1,
-                reviewed_at: now + 1,
+                reviewed_at: now,
               },
             ],
             deleted: [],
@@ -363,20 +363,11 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       }),
     );
 
-    const row = await db.execute<{
-      user_card_id: string;
-      rating: number;
-      reviewed_at: number;
-    }>(`
-      select user_card_id, rating, reviewed_at
-      from review_events
-      where id = 'review-1'
-    `);
-    expect(row.rows[0]).toEqual({
-      user_card_id: 'card-1',
-      rating: 3,
-      reviewed_at: now,
-    });
+    expect(result.rejected?.review_events).toEqual(['review-1']);
+    const state = pulled(await handlers.pull(pullArgs(null)));
+    expect(state.changes.review_events?.updated).toEqual([
+      expect.objectContaining({ id: 'review-1', rating: 3 }),
+    ]);
   });
 
   it('cascades a deck tombstone to its active cards and reviews', async () => {
