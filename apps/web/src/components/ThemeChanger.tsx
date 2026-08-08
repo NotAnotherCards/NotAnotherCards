@@ -32,7 +32,7 @@ export const ThemeChanger = () => {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(value)}
-            className={`h-8 w-8 rounded-full p-0 transition-all duration-200 ${
+            className={`h-6 w-6 rounded-full p-0 transition-all duration-200 ${
               isActive
                 ? "bg-background text-foreground shadow-xs scale-100"
                 : "text-muted-foreground hover:text-foreground hover:bg-transparent"

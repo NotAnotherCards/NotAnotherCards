@@ -20,8 +20,10 @@ function RootComponent() {
   return (
     <ThemeProvider attribute="class">
       <DatabaseBanner />
-      <main>
-        <ThemeChanger />
+      <main className="relative min-h-screen">
+        <div className="absolute top-1 left-1 z-50">
+          <ThemeChanger />
+        </div>
         <Outlet />
       </main>
       <TanStackRouterDevtools />
