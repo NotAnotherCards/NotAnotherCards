@@ -15,8 +15,8 @@
   "dependencies": {
     "@better-auth/expo": "^1.6.23",
     "@hookform/resolvers": "^5.4.0",
-    "@remelondb/core": "^0.1.1",
-    "@remelondb/driver-rn": "^0.1.1",
+    "@remelondb/core": "^0.1.4",
+    "@remelondb/driver-rn": "^0.1.4",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
     "better-auth": "^1.6.23",
@@ -42,7 +42,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@remelondb/driver-node": "0.1.1",
+    "@remelondb/driver-node": "0.1.4",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.2",
