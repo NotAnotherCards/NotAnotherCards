@@ -7,7 +7,12 @@ import { AuthModule } from './auth/auth.module';
 import { SyncModule } from './sync/sync.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), DatabaseModule, AuthModule, SyncModule],
+  imports: [
+    ConfigModule.forRoot(),
+    DatabaseModule,
+    AuthModule,
+    SyncModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
