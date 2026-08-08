@@ -77,22 +77,18 @@ export function getReviewHistoryQuery(
 // LOCAL WRITES
 // ==========================================
 
-// TODO: Replace "user-1" fallback with authenticated session user ID when auth is integrated
 export async function createDeck(
   db: Database,
   title: string,
   description?: string | null,
-  userId: string = "user-1",
 ) {
   return await db.write(async () => {
     const now = Date.now();
     return await db.get(UserDeck).create({
-      user_id: userId,
       title,
       description: description || null,
       created_at: now,
       updated_at: now,
-      deleted_at: null,
     });
   });
 }
@@ -135,25 +131,21 @@ export async function deleteDeck(db: Database, deckId: string) {
   });
 }
 
-// TODO: Replace "user-1" fallback with authenticated session user ID when auth is integrated
 export async function createCard(
   db: Database,
   deckId: string,
   front: string,
   back: string,
-  userId: string = "user-1",
 ) {
   return await db.write(async () => {
     const now = Date.now();
     return await db.get(UserCard).create({
-      user_id: userId,
       deck_id: deckId,
       front,
       back,
       due_at: now,
       created_at: now,
       updated_at: now,
-      deleted_at: null,
     });
   });
 }
@@ -186,12 +178,10 @@ export async function deleteCard(db: Database, cardId: string) {
   });
 }
 
-// TODO: Replace "user-1" fallback with authenticated session user ID when auth is integrated
 export async function recordReviewEvent(
   db: Database,
   cardId: string,
   rating: number,
-  userId: string = "user-1",
 ) {
   return await db.write(async () => {
     const now = Date.now();
@@ -213,7 +203,6 @@ export async function recordReviewEvent(
     });
 
     return await db.get(ReviewEvent).create({
-      user_id: userId,
       user_card_id: cardId,
       rating,
       reviewed_at: now,
