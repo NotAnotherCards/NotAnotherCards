@@ -20,6 +20,7 @@ import {
   LogOut,
   Mail,
   Library,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
@@ -163,14 +164,14 @@ export function DashboardComponent() {
       }
     >
       {/* Navigation Tabs */}
-      <div className="flex border-b border-border/50 gap-2 p-1 bg-muted/30 rounded-2xl w-fit">
+      <div className="flex flex-col sm:flex-row border border-border/50 sm:border-0 sm:border-b gap-2 p-1.5 bg-muted/30 rounded-2xl w-full sm:w-fit">
         <Button
           variant={activeTab === "overview" ? "secondary" : "ghost"}
           size="sm"
           onClick={() => {
             setActiveTab("overview");
           }}
-          className="cursor-pointer font-semibold rounded-xl text-xs px-4"
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <BookOpen className="size-3.5 mr-1.5" />
           Overview
@@ -182,7 +183,7 @@ export function DashboardComponent() {
             setActiveTab("decks");
             setSubView({ type: "list" });
           }}
-          className="cursor-pointer font-semibold rounded-xl text-xs px-4"
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <Library className="size-3.5 mr-1.5" />
           Decks & Library
@@ -193,9 +194,9 @@ export function DashboardComponent() {
           onClick={() => {
             setActiveTab("settings");
           }}
-          className="cursor-pointer font-semibold rounded-xl text-xs px-4"
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
-          <Library className="size-3.5 mr-1.5" />
+          <SettingsIcon className="size-3.5 mr-1.5" />
           Account settings
         </Button>
       </div>
