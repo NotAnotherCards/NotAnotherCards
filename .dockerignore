@@ -1,0 +1,12 @@
+.git
+.github
+.turbo
+**/.turbo
+node_modules
+**/node_modules
+**/dist
+**/.env
+**/.env.local
+*.log
+.DS_Store
+

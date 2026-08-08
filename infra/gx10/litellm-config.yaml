@@ -1,0 +1,43 @@
+# Models offered by the gateway. Adding a model here (plus `ollama pull`
+# on the box) is how a new model becomes available — one line, one PR.
+model_list:
+  # interactive default; also the reviewer when called with thinking enabled
+  # (model choices: docs/model-report.md)
+  - model_name: qwen
+    litellm_params:
+      model: ollama_chat/qwen3.6:35b
+      api_base: http://ollama:11434
+
+  # accuracy pick for queued generation, slow
+  - model_name: qwen-next-80b
+    litellm_params:
+      model: ollama_chat/qwen3-next:80b
+      api_base: http://ollama:11434
+
+  - model_name: mistral-small
+    litellm_params:
+      model: ollama_chat/mistral-small3.2
+      api_base: http://ollama:11434
+
+  # grounding check: "Document: ...\nClaim: ..." -> yes/no
+  - model_name: fact-check
+    litellm_params:
+      model: ollama_chat/bespoke-minicheck:7b
+      api_base: http://ollama:11434
+
+  # content moderation screen (granite guardian risk prompts)
+  - model_name: moderation
+    litellm_params:
+      model: ollama_chat/granite4.1-guardian:8b
+      api_base: http://ollama:11434
+
+  - model_name: embeddings
+    litellm_params:
+      model: ollama/bge-m3
+      api_base: http://ollama:11434
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  drop_params: true

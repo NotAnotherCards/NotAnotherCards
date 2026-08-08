@@ -1,0 +1,81 @@
+services:
+  ollama:
+    image: ollama/ollama:0.32.5
+    restart: unless-stopped
+    # reachable from the host for the ollama CLI, never from the tailnet
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - /usr/share/ollama/.ollama:/root/.ollama
+    environment:
+      OLLAMA_NUM_PARALLEL: "2" # raise if litellm metrics show queueing
+      OLLAMA_CONTEXT_LENGTH: "8192"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-v1.82.3-stable
+    restart: unless-stopped
+    depends_on:
+      litellm-db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    # the only service exposed to the tailnet
+    ports:
+      - "${TAILSCALE_IP}:4000:4000"
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml"]
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      DATABASE_URL: postgresql://litellm:${LITELLM_DB_PASSWORD}@litellm-db:5432/litellm
+
+  # stores litellm's virtual keys and their budgets
+  litellm-db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: ${LITELLM_DB_PASSWORD}
+      POSTGRES_DB: litellm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      # pg 18 image keeps data under /var/lib/postgresql/<major>/...,
+      # mount the parent, not the pre-18 /var/lib/postgresql/data
+      - litellm-db-data:/var/lib/postgresql
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    restart: unless-stopped
+    pid: host
+    ports:
+      - "${TAILSCALE_IP}:9100:9100"
+    volumes:
+      - /:/host:ro,rslave
+    command: ["--path.rootfs=/host"]
+
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:4.8.3
+    restart: unless-stopped
+    ports:
+      - "${TAILSCALE_IP}:9400:9400"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  litellm-db-data:
