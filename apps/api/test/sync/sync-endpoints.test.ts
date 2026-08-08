@@ -295,6 +295,95 @@ describePostgres('authenticated remelonDB endpoints', () => {
     expect(deck.rows[0]?.title).toBe('User A deck');
   });
 
+  it('rejects review updates through the authenticated push endpoint', async () => {
+    const now = Date.now();
+    const initial = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userA.cookie)
+      .send(pullBody(null))
+      .expect(200);
+
+    const seeded = await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userA.cookie)
+      .send({
+        cursor: (initial.body as { cursor: string }).cursor,
+        changes: {
+          user_decks: {
+            created: [
+              {
+                id: 'deck-a',
+                title: 'A deck',
+                description: null,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+          user_cards: {
+            created: [
+              {
+                id: 'card-a',
+                deck_id: 'deck-a',
+                front: 'front',
+                back: 'back',
+                due_at: now,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+          review_events: {
+            created: [
+              {
+                id: 'review-a',
+                user_card_id: 'card-a',
+                rating: 3,
+                reviewed_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+        },
+      })
+      .expect(200);
+
+    const result = await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userA.cookie)
+      .send({
+        cursor: (seeded.body as { cursor: string }).cursor,
+        changes: {
+          review_events: {
+            created: [],
+            updated: [
+              {
+                id: 'review-a',
+                user_card_id: 'card-a',
+                rating: 1,
+                reviewed_at: now,
+              },
+            ],
+            deleted: [],
+          },
+        },
+      })
+      .expect(200);
+
+    expect(result.body).toMatchObject({
+      rejected: { review_events: ['review-a'] },
+    });
+    const review = await db.execute<{ rating: number }>(
+      `select rating from review_events where id = 'review-a'`,
+    );
+    expect(review.rows[0]?.rating).toBe(3);
+  });
+
   it('rejects missing and cross-scope card and review relationships', async () => {
     const now = Date.now();
     const initialA = await request(app.getHttpServer())

@@ -27,6 +27,7 @@ import { crossValidateSyncRelationships } from './sync-validation';
           user_cards: UserCardRow,
           review_events: ReviewEventRow,
         },
+        tableOptions: { review_events: { appendOnly: true } },
         scopeFrom: (request) =>
           authService.userIdFromHeaders((request as Request).headers),
         crossValidate: crossValidateSyncRelationships,
