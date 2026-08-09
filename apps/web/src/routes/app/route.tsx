@@ -5,7 +5,10 @@ export const Route = createFileRoute("/app")({
   beforeLoad: async ({ location }) => {
     const { data: session } = await authClient.getSession();
     if (!session) {
-      if (location.pathname === "/app/onboarding" || location.pathname === "/app") {
+      if (
+        location.pathname === "/app/onboarding" ||
+        location.pathname === "/app"
+      ) {
         throw redirect({
           to: "/",
         });
@@ -27,11 +30,5 @@ export const Route = createFileRoute("/app")({
 });
 
 function AppLayout() {
-  return (
-    <div className="flex-1 flex flex-col bg-background">
-      <div className="flex-1 flex flex-col">
-        <Outlet />
-      </div>
-    </div>
-  );
+  return <Outlet />;
 }
