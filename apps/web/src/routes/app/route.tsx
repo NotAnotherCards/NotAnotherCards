@@ -4,6 +4,8 @@ import { useEffect, useMemo } from "react";
 import { DatabaseBanner } from "@/components/DatabaseBanner";
 import { createUserDatabaseManager, closeUserDatabase } from "@/offline/db";
 
+import { DatabaseProvider } from "@remelondb/core/react";
+
 export const Route = createFileRoute("/app")({
   beforeLoad: async () => {
     const { data: session } = await authClient.getSession();
@@ -41,11 +43,13 @@ function AppLayout() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
-      <DatabaseBanner />
-      <div className="flex-1 flex flex-col">
-        <Outlet />
+    <DatabaseProvider manager={userManager}>
+      <div className="flex-1 flex flex-col bg-background">
+        <DatabaseBanner />
+        <div className="flex-1 flex flex-col">
+          <Outlet />
+        </div>
       </div>
-    </div>
+    </DatabaseProvider>
   );
 }
