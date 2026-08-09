@@ -19,16 +19,17 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import { ChevronDown, User, Globe, Save, Check } from "lucide-react";
+import { ChevronDown, User, Globe, Save, Check, Settings as SettingsIcon } from "lucide-react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { LANGUAGES, SupportedLanguage, UserSettingsFormData, userSettingsSchema } from "../OnBoarding";
+import { ThemeChanger } from "../ThemeChanger";
 
 // TODO: schemas will be imported from @repo/schemas
 export function Settings() {
   const { data: session, refetch } = authClient.useSession();
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [activeSubTab, setActiveSubTab] = useState<"profile" | "account" | "notifications">("profile");
+  const [activeSubTab, setActiveSubTab] = useState<"profile" | "settings">("profile");
 
   const form = useForm<UserSettingsFormData>({
     resolver: zodResolver(userSettingsSchema),
@@ -114,7 +115,18 @@ export function Settings() {
                 <User className="size-4" />
                 Profile & Languages
               </Button>
-              {/* Other tabs could be security to change password, delete account etc. notifications... */}
+              <Button
+                type="button"
+                onClick={() => setActiveSubTab("settings")}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  activeSubTab === "settings"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                }`}
+              >
+                <SettingsIcon className="size-4" />
+                Settings
+              </Button>
             </div>
           </div>
         </div>
@@ -313,6 +325,32 @@ export function Settings() {
               </Button>
             </div>
           </form>
+        )}
+        {activeSubTab === "settings" && (
+          <div className="space-y-6">
+            <Card className="border border-border/60 shadow-xs rounded-3xl">
+              <CardHeader className="flex flex-row items-center gap-3 pb-4">
+                <div className="p-2 bg-primary/10 rounded-2xl text-primary">
+                  <SettingsIcon className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-md font-bold">Preferences</CardTitle>
+                  <CardDescription className="text-xs">
+                    Customize your application settings and appearance
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-foreground">Theme</span>
+                  <span className="text-xs text-muted-foreground">Select how the application looks to you</span>
+                  <div className="mt-1">
+                    <ThemeChanger />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

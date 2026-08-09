@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { manager } from "@/offline/db";
 import { DatabaseBanner } from "@/components/DatabaseBanner";
 import { ThemeProvider } from "next-themes";
-import { ThemeChanger } from "@/components/ThemeChanger";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -21,9 +20,6 @@ function RootComponent() {
     <ThemeProvider attribute="class">
       <DatabaseBanner />
       <main className="relative min-h-screen">
-        <div className="absolute top-1 left-1 z-50">
-          <ThemeChanger />
-        </div>
         <Outlet />
       </main>
       <TanStackRouterDevtools />
