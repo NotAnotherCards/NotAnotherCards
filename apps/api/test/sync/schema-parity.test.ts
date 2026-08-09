@@ -30,7 +30,10 @@ describe.each(CASES)('parity: $name', ({ name, row, table }) => {
   it('every wire field is a column with matching nullability', () => {
     for (const [key, field] of Object.entries(row.shape)) {
       const column = byDbName.get(key);
-      expect(column, `${name}.${key} is on the wire but not in Postgres`).toBeDefined();
+      expect(
+        column,
+        `${name}.${key} is on the wire but not in Postgres`,
+      ).toBeDefined();
       const wireNullable = (field as z.ZodType).safeParse(null).success;
       const pgNullable = !column!.notNull;
       expect(
