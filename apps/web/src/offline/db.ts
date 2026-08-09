@@ -5,7 +5,7 @@ import { schema, UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
 
 export type { DatabaseManagerState as DatabaseState };
 
-let activeManager: ReturnType<typeof createDatabaseManager> | null = null;
+export let manager: ReturnType<typeof createDatabaseManager> | null = null;
 
 export function createUserDatabaseManager(userId: string) {
   const hex = Array.from(userId)
@@ -13,7 +13,7 @@ export function createUserDatabaseManager(userId: string) {
     .join("");
   const dbName = `user_${hex}.db`;
 
-  const manager = createDatabaseManager({
+  const newManager = createDatabaseManager({
     open: (onTakenOver) =>
       Database.open({
         driver: new WebSqliteDriver({
@@ -27,19 +27,15 @@ export function createUserDatabaseManager(userId: string) {
       }),
   });
 
-  activeManager = manager;
-  return manager;
+  manager = newManager;
+  return newManager;
 }
 
 export async function closeUserDatabase() {
-  if (activeManager) {
-    if (activeManager.state.status === "ready") {
-      try {
-        await activeManager.database.driver.close();
-      } catch (e) {
-        // ignore if already closed
-      }
+  if (manager) {
+    if (manager.state.status === "ready") {
+      await manager.database.driver.close();
     }
-    activeManager = null;
+    manager = null;
   }
 }

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Database } from "@remelondb/core";
-import { schema, UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
 
 type ManagerOptions = {
   open: (onTakenOver: () => void) => Promise<unknown>;
@@ -104,7 +103,7 @@ describe("authenticated user database configuration", () => {
 
     const call = vi.mocked(Database.open).mock.calls[0][0];
     expect(call.schema).toBeDefined();
-    expect(call.modelClasses.map((c: any) => c.name)).toEqual([
+    expect(call.modelClasses!.map((c: { name: string }) => c.name)).toEqual([
       "UserDeck",
       "UserCard",
       "ReviewEvent",
