@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useDatabaseState } from "@remelondb/core/react";
 import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
 import { manager } from "../offline/db";
-import { useQuery } from "../offline/reactBridge";
+import { useQuery } from "@remelondb/core/react";
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
@@ -47,20 +47,12 @@ export function useStore() {
   const now = Math.floor(Date.now() / 10000) * 10000;
 
   // Observed reactive queries using remelonDB React bridge
-  const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(
-    () => (db ? getDecksQuery(db) : null),
-    [db]
-  );
+  const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(db && getDecksQuery(db))
 
-  const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>(
-    () => (db ? getPersonalDictionaryQuery(db) : null),
-    [db]
-  );
+  const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>
+  (db && getPersonalDictionaryQuery(db))
 
-  const { data: dueCards, isLoading: dueLoading } = useQuery<UserCardRecord>(
-    () => (db ? getDueCardsQuery(db, now) : null),
-    [db, now]
-  );
+  const { data: dueCards, isLoading: dueLoading} = useQuery(db && getDueCardsQuery(db, now));
 
   // Local Writes
   const createDeck = useCallback(
