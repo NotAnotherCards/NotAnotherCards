@@ -46,6 +46,29 @@ Short-lived tokens for flows like email verification and password reset:
 
 These tables support the core spaced repetition features and are designed to sync with the local client-side `remelonDB` sqlite database.
 
+### Why each synced table is declared twice
+
+Every synced table exists in two hand-written forms: a Zod row in
+`@repo/offline-db` and a Drizzle table in `apps/api/src/sync/schema.ts`.
+They describe different things. The Zod row is the wire contract, the
+fields clients exchange and validate. The Drizzle table is that plus the
+sync store's machinery: `rev`, `deleted_at`, the `user_id` scope column,
+foreign keys, check constraints and indexes, none of which belong on the
+wire.
+
+Deriving one from the other (for example with `drizzle-zod`) would make
+drift impossible instead of just detected, and stays on the table for
+later. It means moving the Drizzle schema into a shared package and
+pulling `drizzle-orm` into the web and mobile dependency graphs, which
+at three small tables costs more than it saves. For now,
+`apps/api/test/sync/schema-parity.test.ts` pins
+the two declarations together: every wire field must be a column with
+matching nullability, and every column must be a wire field or known
+machinery. Drift fails CI with the table and column named.
+
+If the synced model grows well past this size, the derivation approach
+is the natural next step (see the discussion in #63).
+
 ### `user_decks`
 
 Represents a deck (collection of cards) owned by a user.
