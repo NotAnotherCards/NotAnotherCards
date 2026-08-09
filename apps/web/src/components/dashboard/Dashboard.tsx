@@ -26,8 +26,10 @@ import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
 import { Settings } from "./Settings";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useStore } from "@/hooks/useStore";
 
 export function DashboardComponent() {
+  const store = useStore();
   const { data: session } = authClient.useSession();
   const isOnline = useOnlineStatus();
   const navigate = useNavigate();
@@ -49,18 +51,18 @@ export function DashboardComponent() {
     email: "learner@notanothercards.com",
   };
 
-  // Mock statistics for the language learning card app
+  // Dynamic statistics from local remelonDB store
   const stats = [
     {
       title: "Today's Reviews",
-      value: "42 words",
+      value: `${store.dueCards.length} cards`,
       description: "Due for review",
       icon: Clock,
       color: "text-emerald-500 bg-emerald-500/10",
     },
     {
       title: "Personal Dictionary",
-      value: "248 words",
+      value: `${store.cards.length} cards`,
       description: "Added to your collection",
       icon: BookMarked,
       color: "text-blue-500 bg-blue-500/10",
@@ -239,7 +241,7 @@ export function DashboardComponent() {
                   <span
                     className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
                       isOnline
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        ? "bg-emerald-500/10 dark:text-emerald-400"
                         : "bg-destructive/10 text-destructive animate-pulse"
                     }`}
                   >
@@ -351,9 +353,9 @@ export function DashboardComponent() {
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                                 dict.status === "Completed"
-                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  ? "bg-emerald-500/10 dark:text-emerald-400"
                                   : dict.status === "In Progress"
-                                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                    ? "bg-blue-500/10 dark:text-blue-400"
                                     : "bg-muted text-muted-foreground"
                               }`}
                             >
@@ -404,8 +406,8 @@ export function DashboardComponent() {
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                           quest.percent === 100
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            ? "bg-emerald-500/10 dark:text-emerald-400"
+                            : "bg-amber-500/10 dark:text-amber-400"
                         }`}
                       >
                         {quest.reward}

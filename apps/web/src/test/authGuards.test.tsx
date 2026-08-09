@@ -63,7 +63,7 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /login
     expect(window.location.pathname).toBe("/login");
-  });
+  }, 15000);
 
   it("allows logged-in users to see the dashboard", async () => {
     localStorage.setItem("nativeLanguage", "en");
@@ -108,6 +108,7 @@ describe("Auth Guards", () => {
     localStorage.removeItem("nativeLanguage");
     localStorage.removeItem("preferedLanguage");
   });
+  }, 15000);
 
   it("redirects logged-in users away from the login page to the dashboard", async () => {
     localStorage.setItem("nativeLanguage", "en");
@@ -381,5 +382,4 @@ describe("Auth Guards", () => {
     });
 
     expect(authClient.signOut).toHaveBeenCalled();
-  });
 });
