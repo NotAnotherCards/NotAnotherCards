@@ -4,8 +4,22 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)sx?$": "ts-jest",
+    "^.+\\.(t|j)sx?$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "module": "commonjs",
+          "moduleResolution": "node",
+          "allowJs": true,
+          "resolvePackageJsonExports": false
+        }
+      }
+    ],
     "^.+\\.mjs$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@repo/offline-db$": "<rootDir>/../../../packages/offline-db/src/index.ts",
+    "^(\\.{1,2}/.*)\\.js$": "$1"
   },
   "transformIgnorePatterns": []
 }

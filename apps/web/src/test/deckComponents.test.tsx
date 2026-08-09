@@ -1,14 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, fireEvent, screen } from "@testing-library/react";
+import { render, fireEvent, screen, act } from "@testing-library/react";
 import { DeckCard } from "../components/deck/DeckCard";
 import { CardItem } from "../components/deck/CardItem";
 import { FlashcardModal } from "../components/deck/FlashcardModal";
-import { Deck, Card } from "../hooks/useMockStore";
+import { Deck, Card } from "../hooks/useStore";
 
 describe("DeckCard Component", () => {
   const mockDeck: Deck = {
     id: "deck-test-1",
-    user_id: "user-1",
     title: "Spanish Verbs",
     description: "Learn essential conversational Spanish verbs.",
     created_at: Date.now(),
@@ -65,7 +64,6 @@ describe("DeckCard Component", () => {
 describe("CardItem Component", () => {
   const mockCard: Card = {
     id: "card-test-1",
-    user_id: "user-1",
     deck_id: "deck-test-1",
     front: "Hola",
     back: "Hello",
@@ -127,7 +125,6 @@ describe("CardItem Component", () => {
 describe("FlashcardModal Component", () => {
   const mockCard: Card = {
     id: "card-test-1",
-    user_id: "user-1",
     deck_id: "deck-test-1",
     front: "Hola",
     back: "Hello",
@@ -136,7 +133,7 @@ describe("FlashcardModal Component", () => {
     updated_at: Date.now(),
   };
 
-  it("renders front content by default and flips to back content on click", () => {
+  it("renders front content by default and flips to back content on click", async () => {
     const onClose = vi.fn();
     render(<FlashcardModal card={mockCard} onClose={onClose} />);
 
@@ -144,7 +141,9 @@ describe("FlashcardModal Component", () => {
     expect(screen.getByText("Hola")).toBeInTheDocument();
 
     // Click the card wrapper to flip it
-    fireEvent.click(screen.getByTestId("flashcard-inner"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("flashcard-inner"));
+    });
 
     // Renders the Back text
     expect(screen.getByText("Hello")).toBeInTheDocument();

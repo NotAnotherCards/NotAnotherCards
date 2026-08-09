@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/hooks/useMockStore";
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Card, useStore } from "@/hooks/useStore";
+import { ChevronLeft, ChevronRight, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface FlashcardModalProps {
@@ -16,11 +16,13 @@ export function FlashcardModal({
   initialCardId,
   onClose,
 }: FlashcardModalProps) {
+  const store = useStore();
   const modalCards = cards.length > 0 ? cards : singleCard ? [singleCard] : [];
   const [currentCardId, setCurrentCardId] = useState(
     initialCardId || singleCard?.id || "",
   );
   const [isFlipped, setIsFlipped] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const currentIndex = modalCards.findIndex((c) => c.id === currentCardId);
   const activeCard = modalCards[currentIndex] || modalCards[0];
@@ -67,6 +69,23 @@ export function FlashcardModal({
     const prevIndex =
       (currentIndex - 1 + modalCards.length) % modalCards.length;
     setCurrentCardId(modalCards[prevIndex].id);
+  };
+
+  const handleReview = async (rating: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setError(null);
+    try {
+      await store.recordReview(activeCard.id, rating);
+      setIsFlipped(false);
+      if (modalCards.length > 1) {
+        const nextIndex = (currentIndex + 1) % modalCards.length;
+        setCurrentCardId(modalCards[nextIndex].id);
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to record review");
+    }
   };
 
   return (
@@ -133,18 +152,58 @@ export function FlashcardModal({
             </span>
 
             {/* Back text */}
-            <h3 className="text-3xl font-bold tracking-tight text-primary text-center font-heading max-w-full overflow-y-auto max-h-36 wrap-break-word pr-1">
+            <h3 className="text-3xl font-bold tracking-tight text-primary text-center font-heading max-w-full overflow-y-auto max-h-32 wrap-break-word pr-1">
               {activeCard.back}
             </h3>
 
-            {/* Hint footer */}
-            <div className="absolute bottom-4 flex items-center gap-1.5 text-xs text-muted-foreground/60 font-medium">
-              <RefreshCw className="size-3.5" />
-              Click card to flip
+            {/* Review Action Rating Buttons */}
+            <div className="absolute bottom-4 flex items-center gap-1.5 z-20">
+              <Button
+                size="sm"
+                variant="outline"
+                className="cursor-pointer text-[11px] h-7 px-2 border-destructive/30 hover:bg-destructive/10 text-destructive"
+                onClick={(e) => handleReview(1, e)}
+              >
+                Again (5m)
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="cursor-pointer text-[11px] h-7 px-2 border-orange-500/30 hover:bg-orange-500/10 text-orange-600 dark:text-orange-400"
+                onClick={(e) => handleReview(2, e)}
+              >
+                Hard (1d)
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="cursor-pointer text-[11px] h-7 px-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                onClick={(e) => handleReview(3, e)}
+              >
+                Good (3d)
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="cursor-pointer text-[11px] h-7 px-2 border-blue-500/30 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                onClick={(e) => handleReview(4, e)}
+              >
+                <CheckCircle2 className="size-3 mr-1" />
+                Easy (7d)
+              </Button>
             </div>
           </div>
         </div>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="mt-4 max-w-lg w-full text-center text-xs text-red-500 bg-red-500/10 border border-red-500/20 py-2 px-4 rounded-xl font-medium"
+        >
+          {error}
+        </div>
+      )}
 
       {/* Navigation controls */}
       {modalCards.length > 1 && (

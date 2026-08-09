@@ -1,4 +1,4 @@
-import { Deck } from "@/hooks/useMockStore";
+import { Deck } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
