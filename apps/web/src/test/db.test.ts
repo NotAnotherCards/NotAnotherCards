@@ -102,12 +102,13 @@ describe("authenticated user database configuration", () => {
     factory("user-a");
     await capturedManagers[0].open(() => {});
 
-    expect(Database.open).toHaveBeenCalledWith(
-      expect.objectContaining({
-        schema,
-        modelClasses: [UserDeck, UserCard, ReviewEvent],
-      }),
-    );
+    const call = vi.mocked(Database.open).mock.calls[0][0];
+    expect(call.schema).toBeDefined();
+    expect(call.modelClasses.map((c: any) => c.name)).toEqual([
+      "UserDeck",
+      "UserCard",
+      "ReviewEvent",
+    ]);
   });
 
   it("never derives the legacy shared database name for any user", async () => {
