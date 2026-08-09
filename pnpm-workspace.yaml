@@ -9,7 +9,7 @@ overrides:
   typescript: 5.9.3
   # staging runs the dev driver; offline-db's caret range excludes
   # prereleases, so force one core instance workspace-wide
-  "@remelondb/core": 0.1.7-dev.3
+  "@remelondb/core": 0.1.7-dev.4
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.10.4"
   - "@turbo/darwin-arm64@2.10.4"
@@ -19,9 +19,9 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-arm64@2.10.4"
   - turbo@2.10.4
   - "@remelondb/core@0.1.6"
-  - "@remelondb/core@0.1.7-dev.3"
-  - "@remelondb/driver-web@0.1.7-dev.3"
-  - "@remelondb/driver-node@0.1.7-dev.3"
+  - "@remelondb/core@0.1.7-dev.4"
+  - "@remelondb/driver-web@0.1.7-dev.4"
+  - "@remelondb/driver-node@0.1.7-dev.4"
   - "@remelondb/driver-web@0.1.6"
   - "@remelondb/nestjs@0.1.6"
   - "@remelondb/server@0.1.6"
