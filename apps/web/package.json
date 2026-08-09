@@ -13,7 +13,7 @@
     "test:watch": "vitest --watch"
   },
   "devDependencies": {
-    "@remelondb/driver-node": "0.1.5",
+    "@remelondb/driver-node": "0.1.6",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/vite": "^4.3.2",
@@ -35,8 +35,8 @@
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@hookform/resolvers": "^5.4.0",
-    "@remelondb/core": "0.1.5",
-    "@remelondb/driver-web": "0.1.5",
+    "@remelondb/core": "0.1.6",
+    "@remelondb/driver-web": "0.1.6",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
     "@tanstack/react-router": "^1.170.17",
