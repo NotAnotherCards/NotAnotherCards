@@ -18,6 +18,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 
+// TODO: decide what to do with username based on backend handling
 export function RegisterComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function RegisterComponent() {
 
   const onSubmit = async (data: SignupFormData) => {
     setApiError(null);
-    const { data: res, error } = await authClient.signUp.email({
+    const { error } = await authClient.signUp.email({
       email: data.email,
       password: data.password,
       name: data.name,
@@ -46,10 +47,7 @@ export function RegisterComponent() {
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
     } else {
-      localStorage.removeItem("nativeLanguage");
-      localStorage.removeItem("preferedLanguage");
       navigate({ to: "/app/onboarding" });
-      console.log("Registered:", res);
     }
   };
 

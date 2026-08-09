@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import z from "zod";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
@@ -22,67 +21,44 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { ChevronDown, User, Globe, Save, Check } from "lucide-react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
+import { LANGUAGES, SupportedLanguage, UserSettingsFormData, userSettingsSchema } from "../OnBoarding";
 
-const LANGUAGES = [
-  { value: "en", label: "🇺🇸 English" },
-  { value: "es", label: "🇪🇸 Spanish" },
-  { value: "de", label: "🇩🇪 German" },
-  { value: "ru", label: "🇷🇺 Russian" },
-];
-
-const settingsSchema = z.object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters"),
-  username: z
-    .string()
-    .trim()
-    .min(3, "Username must be at least 3 characters")
-    .max(30, "Username must be at most 30 characters")
-    .regex(
-      /^[A-Za-z0-9_]+$/,
-      "Username can only contain letters, numbers, and underscores",
-    ),
-  nativeLanguage: z.string().min(1, "Native language is required"),
-  preferedLanguage: z.string().min(1, "Preferred language is required"),
-});
-
-type SettingsFormData = z.infer<typeof settingsSchema>;
-
+// TODO: schemas will be imported from @repo/schemas
 export function Settings() {
   const { data: session, refetch } = authClient.useSession();
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const form = useForm<SettingsFormData>({
-    resolver: zodResolver(settingsSchema),
+  const form = useForm<UserSettingsFormData>({
+    resolver: zodResolver(userSettingsSchema),
     defaultValues: {
-      name: "",
       username: "",
-      nativeLanguage: "",
-      preferedLanguage: "",
+      nativeLanguage: "" as unknown as SupportedLanguage,
+      preferedLanguage: "" as unknown as SupportedLanguage,
     },
   });
 
   const { isSubmitting } = form.formState;
 
+  // TODO: handle laguage updates and sync properly
+
   // Sync form values once session is loaded
   useEffect(() => {
     if (session?.user) {
       form.reset({
-        name: session.user.name || "",
         username: session.user.username || "",
-        nativeLanguage: localStorage.getItem("nativeLanguage") || "",
-        preferedLanguage: localStorage.getItem("preferedLanguage") || "",
+        nativeLanguage: (localStorage.getItem("nativeLanguage") || "") as SupportedLanguage,
+        preferedLanguage: (localStorage.getItem("preferedLanguage") || "") as SupportedLanguage,
       });
     }
   }, [session, form]);
 
-  const onSubmit = async (data: SettingsFormData) => {
+  const onSubmit = async (data: UserSettingsFormData) => {
     setApiError(null);
     setSuccessMessage(null);
 
     // Update user profile info on backend
     const { error } = await authClient.updateUser({
-      name: data.name,
       username: data.username,
     });
 
@@ -151,26 +127,6 @@ export function Settings() {
               <FieldSet>
                 <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Controller
-                    name="name"
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor={field.name}>Display Name</FieldLabel>
-                        <Input
-                          {...field}
-                          id={field.name}
-                          placeholder="Your name"
-                          aria-invalid={fieldState.invalid}
-                          aria-describedby={
-                            fieldState.invalid ? "name-error" : undefined
-                          }
-                        />
-                        <FieldError id="name-error" errors={[fieldState.error]} />
-                      </Field>
-                    )}
-                  />
-
-                  <Controller
                     name="username"
                     control={form.control}
                     render={({ field, fieldState }) => (
@@ -229,7 +185,7 @@ export function Settings() {
                                 ? "nativeLanguage-error"
                                 : undefined
                             }
-                            className="h-9 w-full min-w-0 rounded-3xl border border-transparent bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
+                            className="h-9 w-full min-w-0 rounded-3xl border bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
                           >
                             <option
                               value=""
@@ -277,7 +233,7 @@ export function Settings() {
                                 ? "preferedLanguage-error"
                                 : undefined
                             }
-                            className="h-9 w-full min-w-0 rounded-3xl border border-transparent bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
+                            className="h-9 w-full min-w-0 rounded-3xl border  bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
                           >
                             <option
                               value=""
@@ -318,7 +274,7 @@ export function Settings() {
             <div className="flex-1">
               <FormErrorMessage message={apiError} />
               {successMessage && (
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 py-2 px-3 rounded-2xl w-fit animate-in fade-in duration-300">
+                <div className="flex items-center gap-1.5 text-xs font-semibold dark:text-emerald-400 bg-emerald-500/10 py-2 px-3 rounded-2xl w-fit animate-in fade-in duration-300">
                   <Check className="size-3.5" />
                   {successMessage}
                 </div>

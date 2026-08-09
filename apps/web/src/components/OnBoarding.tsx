@@ -18,22 +18,35 @@ import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import z from "zod";
 
-export const userSettingsSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(3, "Username must be at least 3 characters")
-    .max(30, "Username must be at most 30 characters")
-    .regex(
-      /^[A-Za-z0-9_]+$/,
-      "Username can only contain letters, numbers, and underscores",
-    ),
-  nativeLanguage: z.string().min(1, "Native language is required"),
-  preferedLanguage: z.string().min(1, "Preferred language is required"),
-});
+// TODO: user setting schema will be imported from @repo/schemas
+export const userSettingsSchema = z
+  .object({
+    username: z
+      .string()
+      .trim()
+      .min(3, "Username must be at least 3 characters")
+      .max(30, "Username must be at most 30 characters")
+      .regex(
+        /^[A-Za-z0-9_]+$/,
+        "Username can only contain letters, numbers, and underscores",
+      ),
+    nativeLanguage: z.enum(["en", "es", "de", "ru"], {
+      message: "Native language is required",
+    }),
+    preferedLanguage: z.enum(["en", "es", "de", "ru"], {
+      message: "Preferred language is required",
+    }),
+  })
+  .refine((data) => data.nativeLanguage !== data.preferedLanguage, {
+    message: "Preferred language cannot be the same as native language",
+    path: ["preferedLanguage"],
+  });
+
 export type UserSettingsFormData = z.infer<typeof userSettingsSchema>;
 
-const LANGUAGES = [
+export type SupportedLanguage = "en" | "es" | "de" | "ru";
+
+export const LANGUAGES = [
   { value: "en", label: "🇺🇸 English" },
   { value: "es", label: "🇪🇸 Spanish" },
   { value: "de", label: "🇩🇪 German" },
@@ -47,26 +60,28 @@ export function OnBoardingComponent() {
     resolver: zodResolver(userSettingsSchema),
     defaultValues: {
       username: "",
-      nativeLanguage: "",
-      preferedLanguage: "",
+      nativeLanguage: "" as unknown as SupportedLanguage,
+      preferedLanguage: "" as unknown as SupportedLanguage,
     },
   });
 
+  const nativeLanguage = form.watch("nativeLanguage");
+
   const { isSubmitting } = form.formState;
 
+  // TODO: save langauges properly in db after backend is handled
   const onSubmit = async (data: UserSettingsFormData) => {
     setApiError(null);
-    const { data: res, error } = await authClient.updateUser({
+    const { error } = await authClient.updateUser({
       username: data.username,
     });
 
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
     } else {
-      localStorage.setItem("nativeLanguage", data.nativeLanguage);
-      localStorage.setItem("preferedLanguage", data.preferedLanguage);
+      localStorage.setItem("nativeLanguage", data.nativeLanguage || ""),
+      localStorage.setItem("preferedLanguage", data.preferedLanguage || ""),
       navigate({ to: "/app/dashboard" });
-      console.log("Onboarded successfully:", res);
     }
   };
 
@@ -183,7 +198,9 @@ export function OnBoardingComponent() {
                         >
                           Select language
                         </option>
-                        {LANGUAGES.map((lang) => (
+                        {LANGUAGES.filter(
+                          (lang) => lang.value !== nativeLanguage,
+                        ).map((lang) => (
                           <option
                             key={lang.value}
                             value={lang.value}
