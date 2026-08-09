@@ -22,13 +22,22 @@ const mockSession = {
   },
 };
 
+vi.mock("@/offline/db", () => ({
+  manager: {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+  },
+}));
+
+vi.mock("@remelondb/core/react", () => ({
+  useDatabaseState: () => ({ status: "ready", error: null }),
+  useQuery: () => ({ data: [], isLoading: false, error: null }),
+}));
+
 describe("Auth Guards", () => {
   beforeEach(async () => {
     // Reset router history and path
     window.history.pushState(null, "", "/");
-    await act(async () => {
-      await router.navigate({ to: "/" });
-    });
   });
 
   it("redirects logged-out users from dashboard to login", async () => {
@@ -44,10 +53,6 @@ describe("Auth Guards", () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
 
     render(<App />);
 
@@ -81,10 +86,6 @@ describe("Auth Guards", () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
 
     render(<App />);
 
@@ -126,10 +127,6 @@ describe("Auth Guards", () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
 
     render(<App />);
 

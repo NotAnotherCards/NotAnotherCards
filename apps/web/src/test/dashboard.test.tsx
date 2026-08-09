@@ -23,6 +23,18 @@ const mockSession = {
   },
 };
 
+vi.mock("@/offline/db", () => ({
+  manager: {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+  },
+}));
+
+vi.mock("@remelondb/core/react", () => ({
+  useDatabaseState: () => ({ status: "ready", error: null }),
+  useQuery: () => ({ data: [], isLoading: false, error: null }),
+}));
+
 describe("Dashboard Page Component Specs", () => {
   beforeEach(async () => {
     localStorage.setItem("nativeLanguage", "en");
@@ -30,9 +42,6 @@ describe("Dashboard Page Component Specs", () => {
 
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, "", "/app/dashboard");
-    await act(async () => {
-      await router.navigate({ to: "/app/dashboard" });
-    });
 
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
@@ -46,11 +55,6 @@ describe("Dashboard Page Component Specs", () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
-
-    // Invalidate router cache to ensure loaders re-run with the new mock values
-    await act(async () => {
-      await router.invalidate();
-    });
   });
 
   afterEach(() => {
@@ -60,6 +64,9 @@ describe("Dashboard Page Component Specs", () => {
 
   it("renders welcome text, user email/name, and placeholder feature sections", async () => {
     render(<App />);
+    await act(async () => {
+      await router.navigate({ to: "/app/dashboard" });
+    });
 
     // 1. Dashboard renders welcome text
     expect(
@@ -96,6 +103,9 @@ describe("Dashboard Page Component Specs", () => {
 
     const user = userEvent.setup();
     render(<App />);
+    await act(async () => {
+      await router.navigate({ to: "/app/dashboard" });
+    });
 
     // Find the logout button
     const logoutButton = await screen.findByRole("button", {
