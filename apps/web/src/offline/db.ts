@@ -5,7 +5,13 @@ import { schema, UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
 
 export type { DatabaseManagerState as DatabaseState };
 
+interface TrackedManager {
+  manager: ReturnType<typeof createDatabaseManager>;
+  close: () => Promise<void>;
+}
+
 export let manager: ReturnType<typeof createDatabaseManager> | null = null;
+let activeTrackedManager: TrackedManager | null = null;
 
 export function createUserDatabaseManager(userId: string) {
   const hex = Array.from(userId)
@@ -13,9 +19,12 @@ export function createUserDatabaseManager(userId: string) {
     .join("");
   const dbName = `user_${hex}.db`;
 
+  let isClosed = false;
+  let openedDb: Database | null = null;
+
   const newManager = createDatabaseManager({
-    open: (onTakenOver) =>
-      Database.open({
+    open: async (onTakenOver) => {
+      const db = await Database.open({
         driver: new WebSqliteDriver({
           shared: true,
           takeover: true,
@@ -24,18 +33,37 @@ export function createUserDatabaseManager(userId: string) {
         schema,
         modelClasses: [UserDeck, UserCard, ReviewEvent],
         name: dbName,
-      }),
+      });
+      if (isClosed) {
+        await db.driver.close();
+        throw new Error("Manager closed during initialization");
+      }
+      openedDb = db;
+      return db;
+    },
   });
+
+  const closeFn = async () => {
+    isClosed = true;
+    if (openedDb) {
+      await openedDb.driver.close();
+      openedDb = null;
+    }
+  };
+
+  activeTrackedManager = {
+    manager: newManager,
+    close: closeFn,
+  };
 
   manager = newManager;
   return newManager;
 }
 
 export async function closeUserDatabase() {
-  if (manager) {
-    if (manager.state.status === "ready") {
-      await manager.database.driver.close();
-    }
-    manager = null;
+  if (activeTrackedManager) {
+    await activeTrackedManager.close();
+    activeTrackedManager = null;
   }
+  manager = null;
 }
