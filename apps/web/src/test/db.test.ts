@@ -8,6 +8,7 @@ type ManagerOptions = {
 
 type ProposedDatabaseModule = {
   createUserDatabaseManager?: (userId: string) => unknown;
+  closeUserDatabase?: () => Promise<void>;
 };
 
 // `var` is intentional: Vitest hoists mock factories before lexical variable
@@ -107,5 +108,34 @@ describe("authenticated user database configuration", () => {
         modelClasses: [UserDeck, UserCard, ReviewEvent],
       }),
     );
+  });
+
+  it("never derives the legacy shared database name for any user", async () => {
+    const factory = requireFactory(await loadSubject());
+
+    for (const userId of ["user-a", "notanothercards", "local", ""]) {
+      factory(userId);
+    }
+
+    for (const name of await openedNames()) {
+      expect(name).not.toBe("notanothercards.db");
+    }
+  });
+
+  it("forgets the active manager on close: the next login starts fresh", async () => {
+    const module = await loadSubject();
+    const factory = requireFactory(module);
+    expect(
+      module.closeUserDatabase,
+      "db.ts should export closeUserDatabase()",
+    ).toBeTypeOf("function");
+
+    factory("user-a");
+    await module.closeUserDatabase!();
+
+    // same account logging back in must get a new manager, not a stale
+    // reference kept across the logout
+    factory("user-a");
+    expect(capturedManagers).toHaveLength(2);
   });
 });
