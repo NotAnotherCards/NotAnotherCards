@@ -1,9 +1,8 @@
-import { manager } from "@/offline/db";
 import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 import { useDatabaseState } from "@remelondb/core/react";
 
 export function DatabaseBanner() {
-  const { status, error } = useDatabaseState(manager);
+  const { status, error } = useDatabaseState();
 
   if (status === "ready" || status === "idle") {
     return null;

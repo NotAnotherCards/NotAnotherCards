@@ -37,6 +37,8 @@ vi.mock("@/offline/db", () => {
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
+  useDatabase: () => null,
+  DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 describe("Auth Guards", () => {

@@ -18,6 +18,12 @@ vi.mock("@/offline/db", () => {
   };
 });
 
+vi.mock("@/hooks/useStore", () => ({
+  useStore: () => ({
+    recordReview: vi.fn(),
+  }),
+}));
+
 describe("DeckCard Component", () => {
   const mockDeck: Deck = {
     id: "deck-test-1",
