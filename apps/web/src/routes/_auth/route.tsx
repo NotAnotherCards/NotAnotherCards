@@ -5,17 +5,11 @@ export const Route = createFileRoute("/_auth")({
   beforeLoad: async () => {
     const { data: session } = await authClient.getSession();
     if (session) {
-      const nativeLanguage = localStorage.getItem("nativeLanguage");
-      const preferedLanguage = localStorage.getItem("preferedLanguage");
-      const hasSettings = !!(nativeLanguage && preferedLanguage);
-
-      if (hasSettings) {
-        throw redirect({
-          to: "/app/dashboard",
-        });
-      } else {
-        await authClient.signOut();
-      }
+      // TODO: When backend is ready, check if the user has set up their onboarding settings.
+      // If not, redirect them to "/app/onboarding" instead of going directly to dashboard.
+      throw redirect({
+        to: "/app/dashboard",
+      });
     }
   },
   component: AuthLayout,

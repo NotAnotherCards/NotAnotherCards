@@ -48,8 +48,8 @@ export function Settings() {
     if (session?.user) {
       form.reset({
         username: session.user.username || "",
-        nativeLanguage: (localStorage.getItem("nativeLanguage") || "") as SupportedLanguage,
-        preferedLanguage: (localStorage.getItem("preferedLanguage") || "") as SupportedLanguage,
+        nativeLanguage: "" as unknown as SupportedLanguage,
+        preferedLanguage: "" as unknown as SupportedLanguage,
       });
     }
   }, [session, form]);
@@ -67,10 +67,6 @@ export function Settings() {
       setApiError(error.message || "Failed to update profile info");
       return;
     }
-
-    // Save language preferences locally
-    localStorage.setItem("nativeLanguage", data.nativeLanguage);
-    localStorage.setItem("preferedLanguage", data.preferedLanguage);
 
     setSuccessMessage("Settings saved successfully!");
     refetch();

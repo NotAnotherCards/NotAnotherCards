@@ -79,8 +79,6 @@ export function OnBoardingComponent() {
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
     } else {
-      localStorage.setItem("nativeLanguage", data.nativeLanguage || ""),
-      localStorage.setItem("preferedLanguage", data.preferedLanguage || ""),
       navigate({ to: "/app/dashboard" });
     }
   };

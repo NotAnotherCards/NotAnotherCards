@@ -15,22 +15,12 @@ export const Route = createFileRoute("/app")({
       });
     }
 
-    const nativeLanguage = localStorage.getItem("nativeLanguage");
-    const preferedLanguage = localStorage.getItem("preferedLanguage");
-    const hasSettings = !!(nativeLanguage && preferedLanguage);
-
-    if (!hasSettings) {
-      if (location.pathname !== "/app/onboarding") {
-        throw redirect({
-          to: "/app/onboarding",
-        });
-      }
-    } else {
-      if (location.pathname === "/app") {
-        throw redirect({
-          to: "/app/dashboard",
-        });
-      }
+    // TODO: When backend is ready, check if user settings exist (e.g. native and preferred languages).
+    // If settings are missing and they are not already on "/app/onboarding", redirect to "/app/onboarding".
+    if (location.pathname === "/app") {
+      throw redirect({
+        to: "/app/dashboard",
+      });
     }
   },
   component: AppLayout,

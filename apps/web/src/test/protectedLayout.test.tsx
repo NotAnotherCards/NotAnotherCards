@@ -3,6 +3,18 @@ import { App, router } from "../App";
 import { authClient } from "@/lib/auth-client";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/offline/db", () => ({
+  manager: {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+  },
+}));
+
+vi.mock("@remelondb/core/react", () => ({
+  useDatabaseState: () => ({ status: "ready", error: null }),
+  useQuery: () => ({ data: [], isLoading: false, error: null }),
+}));
+
 const mockSession = {
   session: {
     id: "session-123",
@@ -25,9 +37,6 @@ const mockSession = {
 // Verify that navigating to the /app subdirectory loads the text from route.tsx(app) alongside nested pages like dashboard
 describe("App Layout Guards", () => {
   beforeEach(async () => {
-    localStorage.setItem("nativeLanguage", "en");
-    localStorage.setItem("preferedLanguage", "es");
-
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, "", "/app/dashboard");
     await act(async () => {
@@ -54,8 +63,6 @@ describe("App Layout Guards", () => {
   });
 
   afterEach(() => {
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
   });
 
   it("renders the protection wrapper on the dashboard page", async () => {

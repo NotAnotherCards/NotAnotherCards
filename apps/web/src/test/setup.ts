@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { vi, afterEach } from "vitest";
+import { useEffect, useState } from "react";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -48,11 +49,34 @@ Object.defineProperty(window, "matchMedia", {
 
 
 // Mock useDatabaseState to avoid Worker errors in tests
-vi.mock("@remelondb/core/react", () => {
+vi.mock("@remelondb/core/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@remelondb/core/react")>();
   return {
-    useDatabaseState: vi.fn(() => ({
-      status: "ready",
-      error: null,
-    })),
+    ...actual,
+    useDatabaseState: vi.fn((mgr) => {
+      if (!mgr) {
+        return actual.useDatabaseState();
+      }
+
+      // We need local React hooks since this is inside a factory function
+      const [localState, setLocalState] = useState(() => ({
+        status: mgr?.state?.status || "idle",
+        error: mgr?.state?.error || null,
+      }));
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          const status = mgr.state?.status || "idle";
+          const error = mgr.state?.error || null;
+          setLocalState((prev: { status: string; error: unknown }) => {
+            if (prev.status === status && prev.error === error) return prev;
+            return { status, error };
+          });
+        }, 10);
+        return () => clearInterval(interval);
+      }, [mgr]);
+
+      return localState;
+    }),
   };
 });

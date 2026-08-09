@@ -37,9 +37,6 @@ vi.mock("@remelondb/core/react", () => ({
 
 describe("Dashboard Page Component Specs", () => {
   beforeEach(async () => {
-    localStorage.setItem("nativeLanguage", "en");
-    localStorage.setItem("preferedLanguage", "es");
-
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, "", "/app/dashboard");
 
@@ -58,8 +55,6 @@ describe("Dashboard Page Component Specs", () => {
   });
 
   afterEach(() => {
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
   });
 
   it("renders welcome text, user email/name, and placeholder feature sections", async () => {

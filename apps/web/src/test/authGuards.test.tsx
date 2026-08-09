@@ -71,9 +71,6 @@ describe("Auth Guards", () => {
   }, 15000);
 
   it("allows logged-in users to see the dashboard", async () => {
-    localStorage.setItem("nativeLanguage", "en");
-    localStorage.setItem("preferedLanguage", "es");
-
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSession,
@@ -105,16 +102,9 @@ describe("Auth Guards", () => {
 
     // Verify the URL is /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
-
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
-  });
   }, 15000);
 
   it("redirects logged-in users away from the login page to the dashboard", async () => {
-    localStorage.setItem("nativeLanguage", "en");
-    localStorage.setItem("preferedLanguage", "es");
-
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSession,
@@ -142,9 +132,6 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
-
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
   });
 
   it("redirects logged-out users from onboarding to home", async () => {
@@ -168,129 +155,6 @@ describe("Auth Guards", () => {
 
     await act(async () => {
       await router.navigate({ to: "/app/onboarding" });
-    });
-
-    expect(window.location.pathname).toBe("/");
-  });
-
-  it("redirects logged-in users with setup settings from onboarding to dashboard", async () => {
-    localStorage.setItem("nativeLanguage", "en");
-    localStorage.setItem("preferedLanguage", "es");
-
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSession,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSession,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
-
-    render(<App />);
-
-    await act(async () => {
-      await router.navigate({ to: "/app/onboarding" });
-    });
-
-    expect(window.location.pathname).toBe("/app/dashboard");
-
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
-  });
-
-  it("allows logged-in users without settings to see the onboarding page", async () => {
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
-
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSession,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSession,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
-
-    render(<App />);
-
-    await act(async () => {
-      await router.navigate({ to: "/app/onboarding" });
-    });
-
-    expect(
-      await screen.findByRole("heading", { name: /Welcome!/i }),
-    ).toBeInTheDocument();
-
-    expect(window.location.pathname).toBe("/app/onboarding");
-  });
-
-  it("redirects logged-in users without settings from dashboard to onboarding", async () => {
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
-
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSession,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSession,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
-
-    render(<App />);
-
-    await act(async () => {
-      await router.navigate({ to: "/app/dashboard" });
-    });
-
-    expect(window.location.pathname).toBe("/app/onboarding");
-  });
-
-  it("allows logged-in users without settings to view the home page", async () => {
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
-
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSession,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSession,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
-
-    render(<App />);
-
-    await act(async () => {
-      await router.navigate({ to: "/" });
     });
 
     expect(window.location.pathname).toBe("/");
@@ -322,10 +186,7 @@ describe("Auth Guards", () => {
     expect(window.location.pathname).toBe("/");
   });
 
-  it("redirects logged-in users with setup settings from /app to dashboard", async () => {
-    localStorage.setItem("nativeLanguage", "en");
-    localStorage.setItem("preferedLanguage", "es");
-
+  it("redirects logged-in users from /app to dashboard", async () => {
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSession,
       error: null,
@@ -347,36 +208,5 @@ describe("Auth Guards", () => {
     render(<App />);
 
     expect(window.location.pathname).toBe("/app/dashboard");
-
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
   });
-
-  it("signs out and allows access to login page for logged-in users without settings", async () => {
-    localStorage.removeItem("nativeLanguage");
-    localStorage.removeItem("preferedLanguage");
-
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSession,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSession,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
-
-    render(<App />);
-
-    await act(async () => {
-      await router.navigate({ to: "/login" });
-    });
-
-    expect(authClient.signOut).toHaveBeenCalled();
 });

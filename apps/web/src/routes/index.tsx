@@ -6,13 +6,11 @@ export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     const { data: session } = await authClient.getSession()
     if (session) {
-      const nativeLanguage = localStorage.getItem("nativeLanguage");
-      const preferedLanguage = localStorage.getItem("preferedLanguage");
-      if (nativeLanguage && preferedLanguage) {
-        throw redirect({
-          to: "/app/dashboard"
-        })
-      }
+      // TODO: When backend is ready, check if user has onboarding settings.
+      // If they do, redirect to "/app/dashboard". If not, they can either stay or redirect to onboarding.
+      throw redirect({
+        to: "/app/dashboard"
+      })
     }
   },
   component: HomeComponent,
