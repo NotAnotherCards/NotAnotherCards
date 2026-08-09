@@ -1,4 +1,4 @@
-import { Card } from "@/hooks/useMockStore";
+import { Card } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Eye } from "lucide-react";
 

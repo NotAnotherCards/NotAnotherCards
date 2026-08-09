@@ -13,6 +13,7 @@
     "test:watch": "vitest --watch"
   },
   "devDependencies": {
+    "@remelondb/driver-node": "0.1.5",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/vite": "^4.3.2",

@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  better-sqlite3: true
   esbuild: true
   unrs-resolver: true
 overrides:
@@ -23,3 +24,4 @@ minimumReleaseAgeExclude:
   - expo-constants@57.0.7
   - expo-linking@57.0.4
   - expo-router@57.0.8
+  - '@remelondb/driver-node@0.1.5'
