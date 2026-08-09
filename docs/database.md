@@ -67,7 +67,8 @@ matching nullability, and every column must be a wire field or known
 machinery. Drift fails CI with the table and column named.
 
 If the synced model grows well past this size, the derivation approach
-is the natural next step (see the discussion in #63).
+is the natural next step (the trade-off is laid out in
+[issue #63](https://github.com/NotAnotherCards/NotAnotherCards/issues/63)).
 
 ### `user_decks`
 
@@ -181,3 +182,14 @@ tables in the database named by `TEST_DATABASE_URL` or `DATABASE_URL`. They use
 that URL as an administrative connection to the PostgreSQL server, create a
 uniquely named temporary database, apply all checked-in migrations there, and
 drop it during normal suite cleanup.
+
+Without `TEST_DATABASE_URL` (or `DATABASE_URL`) these suites skip. To run
+them locally against a throwaway server:
+
+```sh
+docker run -d --name nac-test-pg -p 54329:5432 \
+  -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test postgres:18-alpine
+TEST_DATABASE_URL=postgresql://test:test@localhost:54329/postgres pnpm --filter api test
+```
+
+CI runs them the same way against its postgres service.
