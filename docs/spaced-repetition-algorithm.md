@@ -315,7 +315,7 @@ Possible sorting rules:
 oldest due first
 lowest level first
 mix of due reviews and new cards
-randomized within priority groups
+randomized within queue groups
 ```
 
 ### 3.3 New Words
@@ -414,13 +414,13 @@ how often users reset words
 which words are often forgotten after being considered learned
 ```
 
-Queue behavior for reset words should follow the priority pool rules.
+Queue behavior for reset words should follow the session queue rules.
 
 Recommended simple behavior:
 
 ```text
 reset words become priority cards
-they are selected after cards forgotten in the previous session
+they are ordered before other learning/relearn cards
 ```
 
 ## 4. Proposed First Version for NotAnotherCards
@@ -439,9 +439,6 @@ level
 due_at
 previous_level
 relearn_successes
-last_result
-last_session_id
-reset_at
 ```
 
 Recommended database fields for `user_cards`:
@@ -450,12 +447,9 @@ Recommended database fields for `user_cards`:
 | ----- | ---- | -------- | ------------- | ------- |
 | `status` | text | not null | `new` | Current learning mode: `new`, `learning`, `review`, or `relearn`. |
 | `level` | integer | not null | `0` | Current learning level from `0` to `9`. |
-| `due_at` | timestamp with time zone | not null | `now()` | When the card can be selected again. `new` cards still wait for the `new` priority group. |
+| `due_at` | timestamp with time zone | not null | `now()` | When the card can be selected again. `new` cards still wait for the `new` queue group. |
 | `previous_level` | integer | nullable | `null` | Used only for `relearn`. Stores the old review level before the user forgot the card. |
 | `relearn_successes` | integer | not null | `0` | Number of successful `relearn` answers in a row. |
-| `last_result` | text | nullable | `null` | Last answer result: `remembered`, `forgot`, or `manual_reset`. |
-| `last_session_id` | text / uuid | nullable | `null` | The session where the card was last answered. |
-| `reset_at` | timestamp with time zone | nullable | `null` | When the user manually reset the card. |
 
 Suggested levels:
 
@@ -599,21 +593,17 @@ Default session size:
 Strict queue priority:
 
 ```text
-1. Add cards forgotten in the previous session.
-2. Fill remaining slots with manually reset cards.
-3. Fill remaining slots with other due learning/relearn cards.
-4. Fill remaining slots with due/overdue review cards.
-5. Fill remaining slots with new cards.
+1. Fill slots with due learning/relearn cards.
+2. Fill remaining slots with due/overdue review cards.
+3. Fill remaining slots with new cards.
 ```
 
 This means:
 
 ```text
-forgotten cards from the previous session go first
-manual reset cards go after forgotten cards
 learning/relearn is more important than normal review
 review is more important than new cards
-new cards appear only when there is space
+new cards appear only when there is space and the daily new-card limit is not reached
 ```
 
 The session size always stays fixed:
@@ -622,21 +612,58 @@ The session size always stays fixed:
 10 cards
 ```
 
-If one priority group has more cards than available slots, we do not increase the session size. The remaining cards stay in the same priority group and will be picked for following sessions.
+The queue is built per selected deck.
+
+This means:
+
+```text
+due pool = due cards from the selected deck
+session queue = selected cards from the selected deck
+```
+
+If the user opens a German deck, the review session should not include cards from another deck.
+
+New cards have a daily introduction limit.
+
+This is not a limit on adding cards to a deck.
+
+The user can add or import as many cards as needed.
+
+The limit only controls how many `new` cards can be shown for the first time in one day.
+
+Recommended default:
+
+```text
+daily new cards limit = 20
+```
+
+If one queue group has more cards than available slots, we do not increase the session size. The remaining cards stay in the same queue group and will be picked for following sessions.
+
+Within-group ordering:
+
+```text
+due learning/relearn:
+1. cards whose latest review event is forgot
+2. cards whose latest review event is manual_reset
+3. oldest due_at first
+
+due review:
+1. most overdue first
+
+new:
+1. oldest created first
+```
 
 Example:
 
 ```text
-Forgotten from previous session: 3
-Manual reset: 1
-Due learning/relearn: 2
+Due learning/relearn: 6
 Due review: 20
 New: 100
+Daily new cards limit reached: no
 
 Session:
-3 forgotten
-1 manual reset
-2 due learning/relearn
+6 due learning/relearn
 4 due review
 0 new
 ```
@@ -644,11 +671,10 @@ Session:
 Another example:
 
 ```text
-Forgotten from previous session: 0
-Manual reset: 0
 Due learning/relearn: 1
 Due review: 4
 New: 100
+Daily new cards limit remaining: 20
 
 Session:
 1 due learning/relearn
@@ -656,31 +682,33 @@ Session:
 5 new
 ```
 
-If the user forgot all 10 cards in the previous session:
+If there are many due learning/relearn cards:
 
 ```text
-Next session:
-the same 10 forgotten cards
+Due learning/relearn: 14
+Due review: 20
+New: 100
+
+Session:
+10 due learning/relearn
 ```
 
-This is intentional. If the user forgot many cards, the first priority is to learn them again.
+This is intentional. If the user has many active learning/relearn cards, the first priority is to finish learning them before adding more review or new cards.
 
-If the user forgot 10 cards and also manually reset 3 cards:
+### 4.6 Source of Truth and Queue Data Model
+
+`review_events` is the source of truth.
+
+`user_cards` scheduling fields are a projection/cache for fast queries.
+
+This means:
 
 ```text
-Next session:
-10 forgotten cards
-
-Session after that:
-3 manual reset cards
-+ 7 cards from other priority groups
+review_events = what really happened
+user_cards = current calculated state for fast queue building
 ```
 
-### 4.6 Priority Pool Data Model
-
-The priority pool is not a separate card status.
-
-It is the result of queue-building logic.
+If devices disagree after offline sync, the scheduling fields in `user_cards` can be rebuilt from `review_events`.
 
 For the first version, keep fast queue-building fields in `user_cards`:
 
@@ -688,9 +716,6 @@ For the first version, keep fast queue-building fields in `user_cards`:
 status
 level
 due_at
-last_result
-last_session_id
-reset_at
 previous_level
 relearn_successes
 ```
@@ -702,9 +727,6 @@ Field meanings:
 | `status` | Current learning mode: `new`, `learning`, `review`, or `relearn`. |
 | `level` | Current learning level from `0` to `9`. |
 | `due_at` | When the card should be shown again. |
-| `last_result` | Last answer result: `remembered`, `forgot`, or `manual_reset`. |
-| `last_session_id` | The session where the card was last answered. This lets us find cards forgotten in the previous session. |
-| `reset_at` | When the card was manually reset. If it is not `null`, the card can be treated as a manual reset priority card. Clear it after the card is selected and answered after reset. |
 | `previous_level` | Used only for `relearn`. It stores the review level the card had before the user forgot it. |
 | `relearn_successes` | How many successful answers in a row the card has in `relearn`. |
 
@@ -712,7 +734,6 @@ For history and analytics, also write events to `review_events`:
 
 ```text
 card_id
-session_id
 result
 level_before
 level_after
@@ -725,25 +746,23 @@ The queue can then be built like this:
 
 ```text
 1. Take cards where:
-   last_result = forgot
-   last_session_id = previous_session_id
-
-2. Then take cards where:
-   reset_at is not null
-   status = learning
-   level = 0
-   due_at <= now
-
-3. Then take cards where:
    status in learning/relearn
    due_at <= now
 
-4. Then take cards where:
+   Order them by latest review event:
+   - latest event = forgot first
+   - latest event = manual_reset second
+   - then oldest due_at first
+
+2. Then take cards where:
    status = review
    due_at <= now
+   Order by most overdue first
 
-5. Then take cards where:
+3. Then take cards where:
    status = new
+   Order by oldest created first
+   Respect the daily new-card limit
 ```
 
 Important rule:
@@ -752,20 +771,20 @@ Important rule:
 One card can appear only once in one session.
 ```
 
-When we add cards from each priority group, we must exclude cards that are already selected.
+When we add cards from each queue group, we must exclude cards that are already selected.
 
 Example:
 
 ```text
 selected_card_ids = []
 
-take forgotten cards
+take due learning/relearn cards
 add their ids to selected_card_ids
 
-take manual reset cards
+take due review cards
 exclude ids already in selected_card_ids
 
-take due learning/relearn cards
+take new cards
 exclude ids already in selected_card_ids
 
 continue until the session has 10 unique cards
@@ -846,8 +865,8 @@ Separate rule:
 Manual reset:
 from any status -> learning level 0
 due_at = now
-add to priority pool
-show as soon as possible by priority
+place in due learning/relearn
+order before other learning/relearn cards
 ```
 
 After `RETURN_TO_REVIEW`, the card follows the normal review progression from its returned level.
@@ -945,3 +964,26 @@ Ich wohne in einem Haus.
 ```
 
 This makes the app more language-oriented than a basic flashcard app.
+
+### 4.9 Future Idea: Difficult Cards / Leech Detection
+
+Cards with many `forgot` events can be detected later as difficult cards.
+
+Possible criteria:
+
+```text
+card has many forgot events
+card repeatedly returns from review to relearn
+card keeps failing after several review attempts
+```
+
+Possible user-facing actions:
+
+```text
+suggest editing the card
+suggest adding more context
+suggest adding a mnemonic rule
+suggest AI regeneration or AI improvement
+```
+
+It can be calculated from `review_events`.
