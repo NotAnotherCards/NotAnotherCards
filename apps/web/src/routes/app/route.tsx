@@ -1,6 +1,6 @@
 import { authClient } from "@/lib/auth-client";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { DatabaseBanner } from "@/components/DatabaseBanner";
 import { createUserDatabaseManager, closeUserDatabase } from "@/offline/db";
 
@@ -22,21 +22,23 @@ function AppLayout() {
   const { data: session } = authClient.useSession();
   const userId = session?.user?.id;
 
-  const userManager = useMemo(() => {
-    if (!userId) return null;
-    return createUserDatabaseManager(userId);
-  }, [userId]);
+  const [userManager, setUserManager] = useState<ReturnType<typeof createUserDatabaseManager> | null>(null);
 
   useEffect(() => {
-    if (userManager) {
-      userManager.init().catch((err) => {
-        console.error("Database initialization failed", err);
-      });
+    if (!userId) {
+      setUserManager(null);
+      return;
     }
+    const manager = createUserDatabaseManager(userId);
+    setUserManager(manager);
+    manager.init().catch((err) => {
+      console.error("Database initialization failed", err);
+    });
     return () => {
       closeUserDatabase();
+      setUserManager(null);
     };
-  }, [userManager]);
+  }, [userId]);
 
   if (!userManager) {
     return null;
