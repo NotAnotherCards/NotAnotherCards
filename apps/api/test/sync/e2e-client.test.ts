@@ -47,13 +47,16 @@ describePostgres('client-server sync, end to end', () => {
     process.env.BETTER_AUTH_URL ??= 'http://localhost:3000';
     process.env.FRONTEND_URL ??= 'http://localhost:5173';
     // import after the env is in place: the app reads it at module init
-    const { AppModule } = await import('../../src/app.module');
+    const { AppModule } = (await import('../../src/app.module')) as {
+      AppModule: new () => unknown;
+    };
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
     app = moduleRef.createNestApplication({ logger: false });
     await app.listen(0);
-    const { port } = app.getHttpServer().address() as AddressInfo;
+    const server = app.getHttpServer() as import('node:http').Server;
+    const { port } = server.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
   }, 60_000);
 

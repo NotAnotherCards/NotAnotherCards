@@ -8,7 +8,6 @@
  */
 import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import type { z } from 'zod';
 import { ReviewEventRow, UserCardRow, UserDeckRow } from '@repo/offline-db';
 import { reviewEvents, userCards, userDecks } from '../../src/sync/schema';
 
@@ -23,8 +22,12 @@ const CASES = [
 // store's bookkeeping.
 const MACHINERY = new Set(['id', 'rev', 'deleted_at', 'user_id']);
 
+type ColumnFacts = { name: string; notNull: boolean };
+
 describe.each(CASES)('parity: $name', ({ name, row, table }) => {
-  const columns = Object.values(getTableColumns(table));
+  const columns = Object.values(
+    getTableColumns(table),
+  ) as unknown as ColumnFacts[];
   const byDbName = new Map(columns.map((column) => [column.name, column]));
 
   it('every wire field is a column with matching nullability', () => {
@@ -34,7 +37,10 @@ describe.each(CASES)('parity: $name', ({ name, row, table }) => {
         column,
         `${name}.${key} is on the wire but not in Postgres`,
       ).toBeDefined();
-      const wireNullable = (field as z.ZodType).safeParse(null).success;
+      const parser = field as {
+        safeParse: (value: unknown) => { success: boolean };
+      };
+      const wireNullable = parser.safeParse(null).success;
       const pgNullable = !column!.notNull;
       expect(
         pgNullable,
