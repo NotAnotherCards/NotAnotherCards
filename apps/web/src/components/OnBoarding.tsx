@@ -124,7 +124,7 @@ export function OnBoardingComponent() {
                             ? "nativeLanguage-error"
                             : undefined
                         }
-                        className="h-9 w-full min-w-0 rounded-3xl border border-transparent bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
+                        className="h-9 w-full min-w-0 rounded-3xl border focus-visible:border-ring bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
                       >
                         <option
                           value=""
@@ -174,7 +174,7 @@ export function OnBoardingComponent() {
                             ? "preferedLanguage-error"
                             : undefined
                         }
-                        className="h-9 w-full min-w-0 rounded-3xl border border-transparent bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
+                        className="h-9 w-full min-w-0 rounded-3xl border bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
                       >
                         <option
                           value=""
