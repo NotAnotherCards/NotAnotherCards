@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from "react";
-import { useDatabaseState } from "@remelondb/core/react";
+import { Database } from "@remelondb/core";
+import { useDatabase, useDatabaseState } from "@remelondb/core/react";
 import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
-import { manager } from "../offline/db";
 import { useQuery } from "@remelondb/core/react";
 import {
   getDecksQuery,
@@ -20,15 +20,9 @@ export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
 
 export function useStore() {
-  const { status, error: managerError } = useDatabaseState(manager);
+  const { status, error: managerError } = useDatabaseState();
 
-  useEffect(() => {
-    if (status === "idle") {
-      manager.init().catch(() => {});
-    }
-  }, [status]);
-
-  const db = status === "ready" ? manager.database : null;
+  const db = useDatabase() as Database | null;
   const isInitializing = status === "loading" || status === "idle";
   const initError =
     status === "error"
@@ -119,12 +113,7 @@ export function useStore() {
   );
 
   const reconnect = useCallback(async () => {
-    try {
-      return await manager.init();
-    } catch (err) {
-      console.error("Database reconnect failed:", err);
-      throw err;
-    }
+    window.location.reload();
   }, []);
 
   return {
