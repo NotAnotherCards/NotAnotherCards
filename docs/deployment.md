@@ -53,6 +53,7 @@ The same `docker-compose.yml` runs in three places:
    OpenAI-compatible provider instead; costs cents for a demo and needs no
    code change. Without any endpoint the app still runs and shows jobs as
    queued, which is compliant but not much of a demo.
+
 2. **The VPS**: same compose, plus nginx/certbot, `AI_API_BASE` pointing at the
    GX10 through the tailnet.
 3. **A teammate's machine during AI work**: same compose, `AI_API_BASE`
@@ -60,13 +61,9 @@ The same `docker-compose.yml` runs in three places:
 
 ## Deploys
 
-- GitHub Actions deploys on merge to main: SSH with a deploy key to a
-  restricted deploy user on the VPS, `docker compose pull && up -d`. Merging a
-  PR is deploying; reverting a PR is rolling back.
-- Compose file, nginx config, and this document live in the repo. The setup
-  must be reproducible on a fresh VPS from the repo alone.
-- Production env vars are documented in `.env.example` files, values stay on
-  the server (subject III.3).
+- GitHub Actions deploys on merge to main (`.github/workflows/deploy.yml`): SSH with a deploy key to a restricted `deploy` user on the VPS, executing `docker compose up -d --build`. Merging a PR is deploying; reverting a PR is rolling back.
+- Compose file, Nginx config (`infra/vps/app.dustyway.org.conf`), and reproducible setup guide (`infra/vps/README.md`) live in the repo. The setup is fully reproducible on a fresh VPS from the repo alone.
+- Production env vars are documented in `.env.example` files, values stay on the server (subject III.3).
 
 ## The AI backend
 
@@ -157,12 +154,12 @@ needed for the monitoring module, independent of the AI demo path.
 
 ## Module claims
 
-| Module | Points | Status |
-|---|---|---|
-| AI: Complete LLM system interface (Major) | 2 | already planned (A17) |
-| DevOps: Monitoring with Prometheus and Grafana (Major) | 2 | claimed in the modules plan |
-| DevOps: Health check / status page, backups (Minor) | 1 | under consideration (A20) |
-| Cybersecurity: WAF/ModSecurity + Vault (Major) | 2 | skipped for now |
+| Module                                                 | Points | Status                      |
+| ------------------------------------------------------ | ------ | --------------------------- |
+| AI: Complete LLM system interface (Major)              | 2      | already planned (A17)       |
+| DevOps: Monitoring with Prometheus and Grafana (Major) | 2      | claimed in the modules plan |
+| DevOps: Health check / status page, backups (Minor)    | 1      | under consideration (A20)   |
+| Cybersecurity: WAF/ModSecurity + Vault (Major)         | 2      | skipped for now             |
 
 ### AI: Complete LLM system interface (Major)
 
@@ -197,4 +194,3 @@ than the rest of the stack combined — a poor fit for a small VPS — and at
 our scale structured log search adds little over metrics plus
 `docker compose logs`. RAG: possible later on the same box, needs its own
 design.
-

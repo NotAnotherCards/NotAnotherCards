@@ -28,7 +28,8 @@ const initialDecks: Deck[] = [
     id: "deck-spanish",
     user_id: "user-1",
     title: "Spanish Essentials",
-    description: "Most common Spanish vocabulary and essential phrases for beginners.",
+    description:
+      "Most common Spanish vocabulary and essential phrases for beginners.",
     created_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
     updated_at: Date.now() - 7 * 24 * 60 * 60 * 1000,
   },
@@ -36,7 +37,8 @@ const initialDecks: Deck[] = [
     id: "deck-web-dev",
     user_id: "user-1",
     title: "Web Dev Core Concepts",
-    description: "Fundamental concepts of modern web engineering: DOM, CSS, HTTP, React.",
+    description:
+      "Fundamental concepts of modern web engineering: DOM, CSS, HTTP, React.",
     created_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
     updated_at: Date.now() - 3 * 24 * 60 * 60 * 1000,
   },
@@ -211,7 +213,7 @@ export function useMockStore() {
             description: description || null,
             updated_at: Date.now(),
           }
-        : d
+        : d,
     );
     saveToStorage();
     notify();
@@ -224,11 +226,7 @@ export function useMockStore() {
     notify();
   };
 
-  const createCard = (
-    deck_id: string,
-    front: string,
-    back: string
-  ): Card => {
+  const createCard = (deck_id: string, front: string, back: string): Card => {
     const newCard: Card = {
       id: crypto.randomUUID(),
       user_id: "user-1",
@@ -247,7 +245,7 @@ export function useMockStore() {
 
   const updateCard = (id: string, front: string, back: string) => {
     globalCards = globalCards.map((c) =>
-      c.id === id ? { ...c, front, back, updated_at: Date.now() } : c
+      c.id === id ? { ...c, front, back, updated_at: Date.now() } : c,
     );
     saveToStorage();
     notify();

@@ -9,13 +9,24 @@ interface CardItemProps {
   onViewCard: (card: Card) => void;
 }
 
-export function CardItem({ card, onEditCard, onDeleteCard, onViewCard }: CardItemProps) {
+export function CardItem({
+  card,
+  onEditCard,
+  onDeleteCard,
+  onViewCard,
+}: CardItemProps) {
   return (
     <tr className="hover:bg-muted/10 transition-colors">
-      <td className="px-6 py-4 font-medium max-w-62.5 truncate" title={card.front}>
+      <td
+        className="px-6 py-4 font-medium max-w-62.5 truncate"
+        title={card.front}
+      >
         {card.front}
       </td>
-      <td className="px-6 py-4 text-muted-foreground max-w-62.5 truncate" title={card.back}>
+      <td
+        className="px-6 py-4 text-muted-foreground max-w-62.5 truncate"
+        title={card.back}
+      >
         {card.back}
       </td>
       <td className="px-6 py-4 text-right">

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useMockStore, Card } from "@/hooks/useMockStore";
 import { Button } from "@/components/ui/button";
-import { Card as UICard, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-} from "lucide-react";
+  Card as UICard,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { CardForm } from "./CardForm";
 import { CardList } from "./CardList";
 
@@ -22,7 +24,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
 
   const deck = store.decks.find((d) => d.id === deckId);
-  
+
   if (!deck) {
     return (
       <div className="text-center p-8">
@@ -139,7 +141,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 Delete Card?
               </CardTitle>
               <CardDescription>
-                Are you sure you want to permanently delete this study card from your deck?
+                Are you sure you want to permanently delete this study card from
+                your deck?
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-end gap-2 pt-0">

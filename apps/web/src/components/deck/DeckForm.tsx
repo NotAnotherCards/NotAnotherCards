@@ -1,7 +1,14 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,8 +22,15 @@ import {
 } from "@/components/ui/field";
 
 const deckSchema = z.object({
-  title: z.string().min(1, "Deck title is required").max(100, "Deck title cannot exceed 100 characters"),
-  description: z.string().max(500, "Description cannot exceed 500 characters").optional().or(z.literal("")),
+  title: z
+    .string()
+    .min(1, "Deck title is required")
+    .max(100, "Deck title cannot exceed 100 characters"),
+  description: z
+    .string()
+    .max(500, "Description cannot exceed 500 characters")
+    .optional()
+    .or(z.literal("")),
 });
 
 type DeckFormData = z.infer<typeof deckSchema>;
@@ -28,7 +42,12 @@ interface DeckFormProps {
   title: string;
 }
 
-export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormProps) {
+export function DeckForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  title,
+}: DeckFormProps) {
   const form = useForm<DeckFormData>({
     resolver: zodResolver(deckSchema),
     defaultValues: {
@@ -72,7 +91,7 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
               Organize your study cards under a custom category.
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="pt-4">
             <FieldSet>
               <FieldGroup>
@@ -81,19 +100,26 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={field.name}>
-                        Deck Title
-                      </FieldLabel>
+                      <FieldLabel htmlFor={field.name}>Deck Title</FieldLabel>
                       <Input
                         {...field}
                         id={field.name}
                         placeholder="e.g. Spanish Vocabulary, AWS Cloud Practitioner"
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={fieldState.invalid ? "title-error" : undefined}
-                        className={fieldState.invalid ? "border-destructive focus-visible:ring-destructive/30" : ""}
+                        aria-describedby={
+                          fieldState.invalid ? "title-error" : undefined
+                        }
+                        className={
+                          fieldState.invalid
+                            ? "border-destructive focus-visible:ring-destructive/30"
+                            : ""
+                        }
                         autoFocus
                       />
-                      <FieldError id="title-error" errors={[fieldState.error]} />
+                      <FieldError
+                        id="title-error"
+                        errors={[fieldState.error]}
+                      />
                     </Field>
                   )}
                 />

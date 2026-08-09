@@ -23,11 +23,13 @@ describe("DeckCard Component", () => {
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Spanish Verbs")).toBeInTheDocument();
-    expect(screen.getByText("Learn essential conversational Spanish verbs.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Learn essential conversational Spanish verbs."),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("total-cards-badge")).toHaveTextContent("12");
   });
 
@@ -43,7 +45,7 @@ describe("DeckCard Component", () => {
         onSelectDeck={onSelectDeck}
         onEditDeck={onEditDeck}
         onDeleteDeck={onDeleteDeck}
-      />
+      />,
     );
 
     // Click deck title
@@ -83,7 +85,7 @@ describe("CardItem Component", () => {
             onViewCard={vi.fn()}
           />
         </tbody>
-      </table>
+      </table>,
     );
 
     expect(screen.getByText("Hola")).toBeInTheDocument();
@@ -105,7 +107,7 @@ describe("CardItem Component", () => {
             onViewCard={onViewCard}
           />
         </tbody>
-      </table>
+      </table>,
     );
 
     // Click View button

@@ -52,7 +52,9 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
         <Loader2 className="animate-spin size-8 text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse">Loading library...</p>
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Loading library...
+        </p>
       </div>
     );
   }
@@ -64,12 +66,19 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
           <AlertCircle className="size-8" />
         </div>
         <div>
-          <h3 className="text-md font-bold text-destructive">Failed to Load Decks</h3>
+          <h3 className="text-md font-bold text-destructive">
+            Failed to Load Decks
+          </h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {store.error || "An error occurred while loading your library. Please try reloading."}
+            {store.error ||
+              "An error occurred while loading your library. Please try reloading."}
           </p>
         </div>
-        <Button variant="outline" className="cursor-pointer" onClick={() => window.location.reload()}>
+        <Button
+          variant="outline"
+          className="cursor-pointer"
+          onClick={() => window.location.reload()}
+        >
           Reload Page
         </Button>
       </div>
