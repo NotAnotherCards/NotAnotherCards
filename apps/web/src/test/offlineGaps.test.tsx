@@ -42,7 +42,11 @@ vi.mock("../offline/db", async () => {
         name: ":memory:",
       }),
   });
-  return { manager };
+  return {
+    manager,
+    createUserDatabaseManager: () => manager,
+    closeUserDatabase: () => manager.database.driver.close(),
+  };
 });
 
 describe("due-cards reactivity", () => {
