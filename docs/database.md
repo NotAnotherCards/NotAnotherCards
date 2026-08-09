@@ -192,4 +192,11 @@ docker run -d --name nac-test-pg -p 54329:5432 \
 TEST_DATABASE_URL=postgresql://test:test@localhost:54329/postgres pnpm --filter api test
 ```
 
-CI runs them the same way against its postgres service.
+CI runs the root `pnpm test` command through Turbo against its postgres
+service. Turbo only forwards environment variables declared on the `test` task
+in `turbo.json`; keep that list in sync when a test starts depending on another
+environment variable. Without the declaration, the PostgreSQL suites see no
+connection URL and skip even when CI provides one. `turbo.json` contains only
+the variable names. The workflow supplies disposable localhost database
+credentials and an intentionally non-production auth secret; no production
+credentials or GitHub secrets are required for these tests.
