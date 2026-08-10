@@ -1,9 +1,8 @@
 /**
- * createRunSync against the real remelonDB synchronize (#52). The
- * resync detection works by regexing core's log output — a
- * cross-package string coupling. If a remelondb release rewords its
- * resync log line, the second test goes red instead of the resync
- * banner silently disappearing in production.
+ * createRunSync against the real remelonDB synchronize (#52). Since
+ * remelondb 0.1.9 a run reports its own outcome, so these tests pin
+ * the mapping from synchronize's structured result to the state the
+ * sync controller shows — no log parsing involved.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Database } from "@remelondb/core";

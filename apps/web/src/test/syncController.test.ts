@@ -20,7 +20,9 @@ describe("sync controller", () => {
     vi.useRealTimers();
   });
 
-  const make = (runSync: () => Promise<{ resynced: boolean }>) => {
+  const make = (
+    runSync: (signal?: AbortSignal) => Promise<{ resynced: boolean }>,
+  ) => {
     const run = vi.fn(runSync);
     const controller = createSyncController({
       runSync: run,
@@ -173,6 +175,22 @@ describe("sync controller", () => {
     await flush();
     expect(controller.state.status).toBe("idle");
     controller.dispose();
+  });
+
+  it("dispose aborts a sync that is still in flight", async () => {
+    let seen: AbortSignal | undefined;
+    const { controller } = make(async (signal?: AbortSignal) => {
+      seen = signal;
+      await new Promise(() => {}); // never settles on its own
+      return { resynced: false };
+    });
+    controller.start();
+    await flush();
+    expect(seen?.aborted).toBe(false);
+
+    controller.dispose();
+    // the run's transport can stop instead of writing into a closing db
+    expect(seen?.aborted).toBe(true);
   });
 
   it("dispose stops every trigger", async () => {
