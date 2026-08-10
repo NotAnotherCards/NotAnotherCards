@@ -70,19 +70,17 @@ export async function pushChanges(args: SyncPushArgs): Promise<SyncPushResult> {
 /**
  * One synchronization run against the authenticated endpoints.
  * remelonDB handles `resyncRequired` internally with a replacement
- * pull; its log line is how we learn that recovery happened.
+ * pull and reports it in the run's result. The optional signal lets a
+ * logout abort a sync that is still in flight.
  */
 export function createRunSync(database: Database) {
-  return async (): Promise<{ resynced: boolean }> => {
-    let resynced = false;
-    await synchronize({
+  return async (signal?: AbortSignal): Promise<{ resynced: boolean }> => {
+    const result = await synchronize({
       database,
       pullChanges,
       pushChanges,
-      log: (message) => {
-        if (/resync/i.test(message)) resynced = true;
-      },
+      ...(signal ? { signal } : {}),
     });
-    return { resynced };
+    return { resynced: result.resynced };
   };
 }

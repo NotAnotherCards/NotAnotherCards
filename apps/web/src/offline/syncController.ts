@@ -26,8 +26,9 @@ export interface SyncControllerState {
 
 export interface SyncControllerOptions {
   /** Run one synchronization; reports whether a replacement resync
-   * happened. Throws SyncTransportError on transport failure. */
-  readonly runSync: () => Promise<{ resynced: boolean }>;
+   * happened. Throws SyncTransportError on transport failure. The
+   * signal aborts a run whose owner is gone (logout). */
+  readonly runSync: (signal?: AbortSignal) => Promise<{ resynced: boolean }>;
   readonly intervalMs?: number;
   readonly debounceMs?: number;
 }
@@ -63,6 +64,7 @@ export function createSyncController(
   let authBlocked = false;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let intervalTimer: ReturnType<typeof setInterval> | null = null;
+  let inFlight: AbortController | null = null;
 
   const setState = (next: Partial<SyncControllerState>): void => {
     state = { ...state, ...next };
@@ -78,8 +80,9 @@ export function createSyncController(
     }
     running = true;
     setState({ status: "syncing" });
+    inFlight = new AbortController();
     options
-      .runSync()
+      .runSync(inFlight.signal)
       .then(
         (result) => {
           if (disposed) return;
@@ -109,6 +112,7 @@ export function createSyncController(
       )
       .finally(() => {
         running = false;
+        inFlight = null;
         if (rerunQueued && !disposed) {
           rerunQueued = false;
           run();
@@ -157,6 +161,7 @@ export function createSyncController(
     },
     dispose() {
       disposed = true;
+      inFlight?.abort(); // the database is about to close under us
       if (debounceTimer) clearTimeout(debounceTimer);
       if (intervalTimer) clearInterval(intervalTimer);
       window.removeEventListener("online", onOnline);
