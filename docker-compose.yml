@@ -61,6 +61,7 @@ services:
       retries: 3
     restart: unless-stopped
 
+# mail service only for testing
   mail:
     image: axllent/mailpit:latest
     ports:
