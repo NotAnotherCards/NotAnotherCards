@@ -113,7 +113,7 @@ export function LoginComponent() {
         <p className="text-xs text-muted-foreground">
           Forgot your password?{" "}
           <Link
-            to="/reset-password"
+            to="/forgot-password"
             className="text-primary font-medium hover:underline transition-colors"
           >
             Reset here!
