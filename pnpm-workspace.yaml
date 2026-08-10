@@ -18,9 +18,9 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-arm64@2.10.4"
   - turbo@2.10.4
   - "@remelondb/core@0.1.6"
-  - "@remelondb/core@0.1.7"
-  - "@remelondb/driver-web@0.1.7"
-  - "@remelondb/driver-node@0.1.7"
+  - "@remelondb/core@0.1.8"
+  - "@remelondb/driver-web@0.1.8"
+  - "@remelondb/driver-node@0.1.8"
   - "@remelondb/driver-web@0.1.6"
   - "@remelondb/nestjs@0.1.6"
   - "@remelondb/server@0.1.6"
