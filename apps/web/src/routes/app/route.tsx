@@ -1,5 +1,10 @@
 import { authClient } from "@/lib/auth-client";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { DatabaseBanner } from "@/components/DatabaseBanner";
+import { createUserDatabaseManager, closeUserDatabase } from "@/offline/db";
+
+import { DatabaseProvider } from "@remelondb/core/react";
 
 export const Route = createFileRoute("/app")({
   beforeLoad: async () => {
@@ -14,11 +19,39 @@ export const Route = createFileRoute("/app")({
 });
 
 function AppLayout() {
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id;
+
+  const [userManager, setUserManager] = useState<ReturnType<typeof createUserDatabaseManager> | null>(null);
+
+  useEffect(() => {
+    if (!userId) {
+      setUserManager(null);
+      return;
+    }
+    const manager = createUserDatabaseManager(userId);
+    setUserManager(manager);
+    manager.init().catch((err) => {
+      console.error("Database initialization failed", err);
+    });
+    return () => {
+      closeUserDatabase();
+      setUserManager(null);
+    };
+  }, [userId]);
+
+  if (!userManager) {
+    return null;
+  }
+
   return (
-    <div className="flex-1 flex flex-col bg-background">
-      <div className="flex-1 flex flex-col">
-        <Outlet />
+    <DatabaseProvider manager={userManager}>
+      <div className="flex-1 flex flex-col bg-background">
+        <DatabaseBanner />
+        <div className="flex-1 flex flex-col">
+          <Outlet />
+        </div>
       </div>
-    </div>
+    </DatabaseProvider>
   );
 }
