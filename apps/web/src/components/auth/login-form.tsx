@@ -14,7 +14,7 @@ import { LoginFormData, loginSchema } from "@repo/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
 import { authClient } from "@/lib/auth-client";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 
@@ -109,6 +109,17 @@ export function LoginComponent() {
           </FieldGroup>
         </FieldSet>
       </form>
+      <div className="flex justify-center border-t border-border/10 pt-3 pb-4">
+        <p className="text-xs text-muted-foreground">
+          Forgot your password?{" "}
+          <Link
+            to="/reset-password"
+            className="text-primary font-medium hover:underline transition-colors"
+          >
+            Reset here!
+          </Link>
+        </p>
+      </div>
     </AuthCard>
   );
 }
