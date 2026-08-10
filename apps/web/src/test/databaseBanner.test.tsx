@@ -63,6 +63,38 @@ describe("DatabaseBanner Component", () => {
     expect(mockReload).toHaveBeenCalled();
   });
 
+  it("explains blocked storage instead of the raw error (typed OPFS_UNAVAILABLE)", () => {
+    vi.mocked(remelonReact.useDatabaseState).mockReturnValue({
+      status: "error",
+      error: Object.assign(
+        new Error("OPFS storage is unavailable here (SecurityError)"),
+        { code: "OPFS_UNAVAILABLE" },
+      ),
+    });
+
+    render(<DatabaseBanner />);
+    expect(
+      screen.getByText(/private browsing or blocked site data/i),
+    ).toBeInTheDocument();
+    // not the cryptic raw error, and no retry that can't help
+    expect(screen.queryByText(/Offline Database Error:/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Retry/i })).toBeNull();
+  });
+
+  it("recognizes blocked storage by message when the error carries no code", () => {
+    vi.mocked(remelonReact.useDatabaseState).mockReturnValue({
+      status: "error",
+      error: new Error(
+        "OPFS storage is unavailable here (NoModificationAllowedError)",
+      ),
+    });
+
+    render(<DatabaseBanner />);
+    expect(
+      screen.getByText(/private browsing or blocked site data/i),
+    ).toBeInTheDocument();
+  });
+
   it("renders red banner when status is error and reloads on retry click", () => {
     vi.mocked(remelonReact.useDatabaseState).mockReturnValue({
       status: "error",
