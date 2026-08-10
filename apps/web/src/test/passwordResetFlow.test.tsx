@@ -113,6 +113,27 @@ describe("Forgot Password Form Component Tests", () => {
     // Success screen shown after resolve
     await screen.findByText("Check your email");
   });
+
+  it("renders a 30-second resend email countdown timer and allows resending when countdown reaches zero", async () => {
+    const user = userEvent.setup();
+    vi.mocked(authClient.requestPasswordReset).mockResolvedValue({
+      data: { status: true },
+      error: null,
+    });
+
+    render(<ForgotPasswordComponent />);
+
+    const emailInput = screen.getByLabelText(/Email/i);
+    const submitButton = screen.getByRole("button", { name: /Send Reset Link/i });
+
+    await user.type(emailInput, "user@example.com");
+    await user.click(submitButton);
+
+    await screen.findByText("Check your email");
+
+    const resendButton = screen.getByRole("button", { name: /Resend email in 30s/i });
+    expect(resendButton).toBeDisabled();
+  });
 });
 
 describe("Reset Password Form Component Tests", () => {

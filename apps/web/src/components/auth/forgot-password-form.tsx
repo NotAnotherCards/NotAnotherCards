@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
@@ -25,6 +25,9 @@ export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export function ForgotPasswordComponent() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -34,6 +37,18 @@ export function ForgotPasswordComponent() {
   });
 
   const { isSubmitting } = form.formState;
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
+    if (success && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [success, countdown]);
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setApiError(null);
@@ -46,6 +61,28 @@ export function ForgotPasswordComponent() {
       setApiError(error.message || "An unexpected error occurred");
     } else {
       setSuccess(true);
+      setCountdown(30);
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0 || isResending) return;
+    setIsResending(true);
+    setResendMessage(null);
+
+    const email = form.getValues("email");
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    setIsResending(false);
+
+    if (error) {
+      setResendMessage(error.message || "Failed to resend email");
+    } else {
+      setResendMessage("Password reset email resent successfully!");
+      setCountdown(30);
     }
   };
 
@@ -58,13 +95,38 @@ export function ForgotPasswordComponent() {
         footerLinkText="Back to login"
         footerLinkTo="/login"
       >
-        <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center animate-in fade-in zoom-in duration-300">
+        <div className="flex flex-col items-center justify-center space-y-4 py-4 text-center animate-in fade-in zoom-in duration-300">
           <div className="rounded-full bg-emerald-500/10 p-3 text-emerald-500">
             <CheckCircle2 className="h-10 w-10" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Please check your inbox. If the email doesn't arrive in a few minutes, check your spam folder.
+            Please check your inbox for <span className="font-medium text-foreground">{form.getValues("email")}</span>. If the email doesn't arrive in a few minutes, check your spam folder.
           </p>
+
+          {resendMessage && (
+            <p className="text-xs text-emerald-500 font-medium">
+              {resendMessage}
+            </p>
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResend}
+            disabled={countdown > 0 || isResending}
+            className="w-full mt-2"
+          >
+            {isResending ? (
+              <span className="flex items-center justify-center gap-2">
+                <Spinner />
+                Resending...
+              </span>
+            ) : countdown > 0 ? (
+              `Resend email in ${countdown}s`
+            ) : (
+              "Resend email"
+            )}
+          </Button>
         </div>
       </AuthCard>
     );
