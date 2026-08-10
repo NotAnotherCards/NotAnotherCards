@@ -38,19 +38,22 @@ function AppLayout() {
     const manager = createUserDatabaseManager(userId);
     setUserManager(manager);
     let controller: SyncController | null = null;
-    manager
-      .init()
-      .then((database) => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const database = await manager.init();
+        if (cancelled || !database) return;
         // sync starts only once the user's database is open; it dies
         // with the session below
         controller = createSyncController({ runSync: createRunSync(database) });
         setSyncController(controller);
         controller.start();
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Database initialization failed", err);
-      });
+      }
+    })();
     return () => {
+      cancelled = true;
       controller?.dispose();
       setSyncController(null);
       closeUserDatabase();
