@@ -23,6 +23,8 @@ vi.mock("@/lib/auth-client", () => {
       signUp: {
         email: vi.fn(() => Promise.resolve({ data: null, error: null })),
       },
+      requestPasswordReset: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      resetPassword: vi.fn(() => Promise.resolve({ data: null, error: null })),
       signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
     },
   };
