@@ -1,3 +1,4 @@
+import { synchronize, type Database } from "@remelondb/core";
 import { syncWireSchemas } from "@repo/offline-db";
 import type {
   SyncPullArgs,
@@ -64,4 +65,24 @@ export async function pushChanges(args: SyncPushArgs): Promise<SyncPushResult> {
     throw new SyncTransportError(`sync push: invalid wire shape (${parsed.error.issues[0]?.message ?? "unknown"})`);
   }
   return parsed.data as SyncPushResult;
+}
+
+/**
+ * One synchronization run against the authenticated endpoints.
+ * remelonDB handles `resyncRequired` internally with a replacement
+ * pull; its log line is how we learn that recovery happened.
+ */
+export function createRunSync(database: Database) {
+  return async (): Promise<{ resynced: boolean }> => {
+    let resynced = false;
+    await synchronize({
+      database,
+      pullChanges,
+      pushChanges,
+      log: (message) => {
+        if (/resync/i.test(message)) resynced = true;
+      },
+    });
+    return { resynced };
+  };
 }
