@@ -61,5 +61,12 @@ services:
       retries: 3
     restart: unless-stopped
 
+  mail:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
+    restart: unless-stopped
+
 volumes:
   postgres_data:
