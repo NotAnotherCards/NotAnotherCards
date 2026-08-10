@@ -9,6 +9,7 @@ import * as schema from '../database/schema';
 import { expo } from '@better-auth/expo';
 import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingHttpHeaders } from 'node:http';
+import { sendResetPasswordEmail } from '../email/reset-password-email';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +31,14 @@ export class AuthService {
       }),
       emailAndPassword: {
         enabled: true,
+        revokeSessionsOnPasswordReset: true,
+        sendResetPassword: async ({ user, url, token }, request) => {
+          void sendResetPasswordEmail({
+            to: user.email,
+            subject: 'Reset your password',
+            text: `Click the link to reset your password: ${url}`,
+          });
+        },
       },
       user: {
         additionalFields: {
