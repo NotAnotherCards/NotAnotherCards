@@ -30,8 +30,21 @@ export class AuthService {
       }),
       socialProviders: {
         google: {
-          clientId: process.env.GOOGLE_CLIENT_ID as string,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+          clientId: configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+          clientSecret: configService.getOrThrow<string>(
+            'GOOGLE_CLIENT_SECRET',
+          ),
+        },
+        apple: {
+          clientId: configService.getOrThrow<string>('APPLE_CLIENT_ID'),
+          clientSecret: configService.getOrThrow<string>('APPLE_CLIENT_SECRET'),
+          // Apple might require private key, keyId, teamId for Web OAuth
+        },
+        facebook: {
+          clientId: configService.getOrThrow<string>('FACEBOOK_CLIENT_ID'),
+          clientSecret: configService.getOrThrow<string>(
+            'FACEBOOK_CLIENT_SECRET',
+          ),
         },
       },
       emailAndPassword: {
