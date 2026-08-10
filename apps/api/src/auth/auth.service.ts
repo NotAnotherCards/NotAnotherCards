@@ -33,10 +33,12 @@ export class AuthService {
         enabled: true,
         revokeSessionsOnPasswordReset: true,
         sendResetPassword: async ({ user, url, token }, request) => {
+          const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+          const resetLink = `${frontendUrl}/reset-password?token=${token}`;
           void sendResetPasswordEmail({
             to: user.email,
             subject: 'Reset your password',
-            text: `Click the link to reset your password: ${url}`,
+            text: `Click the link to reset your password: ${resetLink}`,
           });
         },
       },
