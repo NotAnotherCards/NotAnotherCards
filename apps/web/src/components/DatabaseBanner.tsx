@@ -75,7 +75,7 @@ export function DatabaseBanner() {
           </div>
           <button
             onClick={handleReconnect}
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 active:bg-destructive transition-colors text-xs cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1 rounded bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors text-xs cursor-pointer shadow-sm"
           >
             <RefreshCw className="size-3" />
             Retry
