@@ -17,11 +17,14 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-64@2.10.4"
   - "@turbo/windows-arm64@2.10.4"
   - turbo@2.10.4
-  - "@remelondb/core@0.1.8"
-  - "@remelondb/driver-web@0.1.8"
-  - "@remelondb/nestjs@0.1.8"
-  - "@remelondb/server@0.1.8"
-  - "@remelondb/store-drizzle@0.1.8"
+  - "@remelondb/core@0.1.6"
+  - "@remelondb/core@0.1.7"
+  - "@remelondb/driver-web@0.1.7"
+  - "@remelondb/driver-node@0.1.7"
+  - "@remelondb/driver-web@0.1.6"
+  - "@remelondb/nestjs@0.1.6"
+  - "@remelondb/server@0.1.6"
+  - "@remelondb/store-drizzle@0.1.6"
   - "@expo/metro-runtime@57.0.7"
   - expo-constants@57.0.7
   - expo-linking@57.0.4
