@@ -14,7 +14,7 @@ import { LoginFormData, loginSchema } from "@repo/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
 import { authClient } from "@/lib/auth-client";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 
@@ -51,9 +51,9 @@ export function LoginComponent() {
     <AuthCard
       title="Welcome Back"
       description="Enter your email below to log in to your account"
-      footerText="Don't have an account?"
-      footerLinkText="Sign up"
-      footerLinkTo="/register"
+      footerText=""
+      footerLinkText=""
+      footerLinkTo=""
     >
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <FieldSet>
@@ -109,6 +109,26 @@ export function LoginComponent() {
           </FieldGroup>
         </FieldSet>
       </form>
+      <div className="flex flex-col items-center justify-center gap-2 border-t border-border/10 pt-3.5 pb-2 text-center">
+        <p className="text-xs text-muted-foreground">
+          Forgot your password?{" "}
+          <Link
+            to="/forgot-password"
+            className="text-primary font-medium hover:underline transition-colors"
+          >
+            Reset here!
+          </Link>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="text-primary font-medium hover:underline transition-colors"
+          >
+            Sign up
+          </Link>
+        </p>
+      </div>
     </AuthCard>
   );
 }

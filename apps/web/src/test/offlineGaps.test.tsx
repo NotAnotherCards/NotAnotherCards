@@ -19,6 +19,7 @@ import {
 import { NodeSqliteDriver } from "@remelondb/driver-node";
 import { schema, UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
 import { useStore } from "@/hooks/useStore";
+import { DatabaseProvider } from "@remelondb/core/react";
 import {
   createDeck,
   createCard,
@@ -42,7 +43,11 @@ vi.mock("../offline/db", async () => {
         name: ":memory:",
       }),
   });
-  return { manager };
+  return {
+    manager,
+    createUserDatabaseManager: () => manager,
+    closeUserDatabase: () => manager.database.driver.close(),
+  };
 });
 
 describe("due-cards reactivity", () => {
@@ -57,7 +62,13 @@ describe("due-cards reactivity", () => {
   });
 
   it("shows a card again once its 'Again' interval has elapsed", async () => {
-    const { result, rerender } = renderHook(() => useStore());
+    const { manager } = await import("../offline/db");
+    await manager!.init();
+    const { result, rerender } = renderHook(() => useStore(), {
+      wrapper: ({ children }) => (
+        <DatabaseProvider manager={manager!}>{children}</DatabaseProvider>
+      ),
+    });
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
     let deckId = "";

@@ -3,6 +3,19 @@ import { App, router } from "../App";
 import { authClient } from "@/lib/auth-client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/offline/db", () => {
+  const manager = {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+    subscribe: vi.fn(() => () => {}),
+  };
+  return {
+    manager,
+    createUserDatabaseManager: vi.fn(() => manager),
+    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
 const mockSession = {
   session: {
     id: "session-123",

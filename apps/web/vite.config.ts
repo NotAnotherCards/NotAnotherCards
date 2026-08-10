@@ -36,6 +36,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://localhost:3000",
+      "/sync": "http://localhost:3000",
     },
   },
 });

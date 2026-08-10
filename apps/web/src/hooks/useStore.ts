@@ -1,8 +1,9 @@
 import { useEffect, useCallback, useState } from "react";
-import { useDatabaseState } from "@remelondb/core/react";
+import { Database } from "@remelondb/core";
+import { useDatabase, useDatabaseState } from "@remelondb/core/react";
 import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
-import { manager } from "../offline/db";
 import { useQuery } from "@remelondb/core/react";
+import { useSyncController } from "@/offline/syncProvider";
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
@@ -20,15 +21,10 @@ export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
 
 export function useStore() {
-  const { status, error: managerError } = useDatabaseState(manager);
+  const { status, error: managerError } = useDatabaseState();
+  const sync = useSyncController();
 
-  useEffect(() => {
-    if (status === "idle") {
-      manager.init().catch(() => {});
-    }
-  }, [status]);
-
-  const db = status === "ready" ? manager.database : null;
+  const db = useDatabase() as Database | null;
   const isInitializing = status === "loading" || status === "idle";
   const initError =
     status === "error"
@@ -58,57 +54,71 @@ export function useStore() {
   const createDeck = useCallback(
     async (title: string, description: string) => {
       if (!db) throw new Error("Database not initialized");
-      return await dbCreateDeck(db, title, description);
+      const result = await dbCreateDeck(db, title, description);
+      sync?.notifyLocalWrite();
+      return result;
     },
-    [db]
+    [db, sync]
   );
 
   const updateDeck = useCallback(
     async (id: string, title: string, description: string) => {
       if (!db) throw new Error("Database not initialized");
-      return await dbUpdateDeck(db, id, title, description);
+      const result = await dbUpdateDeck(db, id, title, description);
+      sync?.notifyLocalWrite();
+      return result;
     },
-    [db]
+    [db, sync]
   );
 
   const deleteDeck = useCallback(
     async (id: string) => {
       if (!db) throw new Error("Database not initialized");
-      return await dbDeleteDeck(db, id);
+      const result = await dbDeleteDeck(db, id);
+      sync?.notifyLocalWrite();
+      return result;
     },
-    [db]
+    [db, sync]
   );
 
   const createCard = useCallback(
     async (deckId: string, front: string, back: string) => {
       if (!db) throw new Error("Database not initialized");
-      return await dbCreateCard(db, deckId, front, back);
+      const result = await dbCreateCard(db, deckId, front, back);
+      sync?.notifyLocalWrite();
+      return result;
     },
-    [db]
+    [db, sync]
   );
 
   const updateCard = useCallback(
     async (id: string, front: string, back: string) => {
       if (!db) throw new Error("Database not initialized");
-      return await dbUpdateCard(db, id, front, back);
+      const result = await dbUpdateCard(db, id, front, back);
+      sync?.notifyLocalWrite();
+      return result;
     },
-    [db]
+    [db, sync]
   );
 
   const deleteCard = useCallback(
     async (id: string) => {
       if (!db) throw new Error("Database not initialized");
-      return await dbDeleteCard(db, id);
+      const result = await dbDeleteCard(db, id);
+      sync?.notifyLocalWrite();
+      return result;
     },
-    [db]
+    [db, sync]
   );
 
   const recordReview = useCallback(
     async (cardId: string, rating: number) => {
       if (!db) throw new Error("Database not initialized");
-      return await dbRecordReview(db, cardId, rating);
+      const result = await dbRecordReview(db, cardId, rating);
+      sync?.notifyLocalWrite();
+      return result;
     },
-    [db]
+    [db, sync]
   );
 
   const getCardsCount = useCallback(
@@ -119,12 +129,7 @@ export function useStore() {
   );
 
   const reconnect = useCallback(async () => {
-    try {
-      return await manager.init();
-    } catch (err) {
-      console.error("Database reconnect failed:", err);
-      throw err;
-    }
+    window.location.reload();
   }, []);
 
   return {
