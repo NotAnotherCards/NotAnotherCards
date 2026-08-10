@@ -16,31 +16,26 @@ describe("@repo/offline-db wiring on web", () => {
 
     expect(
       UserCardRow.safeParse({
-        user_id: "user123",
         deck_id: "deck123",
         front: "front side",
         back: "back side",
         due_at: 0,
         created_at: 0,
         updated_at: 0,
-        deleted_at: null,
       }).success,
     ).toBe(true);
 
     expect(
       UserDeckRow.safeParse({
-        user_id: "user123",
         title: "Test Deck",
         description: "Deck description",
         created_at: 0,
         updated_at: 0,
-        deleted_at: null,
       }).success,
     ).toBe(true);
 
     expect(
       ReviewEventRow.safeParse({
-        user_id: "user123",
         user_card_id: "usercard123",
         rating: 3,
         reviewed_at: 0,

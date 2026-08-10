@@ -2,12 +2,16 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  better-sqlite3: true
   esbuild: true
   unrs-resolver: true
 overrides:
   typescript: 5.9.3
   react: 19.2.3
   react-dom: 19.2.3
+  # one core instance workspace-wide; differing @types/node peers
+  # otherwise split it into two and break shared Model types
+  "@remelondb/core": 0.1.8
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.10.4"
   - "@turbo/darwin-arm64@2.10.4"
@@ -16,10 +20,15 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-64@2.10.4"
   - "@turbo/windows-arm64@2.10.4"
   - turbo@2.10.4
-  - '@remelondb/core@0.1.0 || 0.1.1'
-  - '@remelondb/driver-web@0.1.0 || 0.1.1'
-  - '@expo/metro-runtime@57.0.7'
+  - "@remelondb/core@0.1.8"
+  - "@remelondb/driver-web@0.1.8"
+  - "@remelondb/nestjs@0.1.8"
+  - "@remelondb/server@0.1.8"
+  - "@remelondb/store-drizzle@0.1.8"
+  - "@expo/metro-runtime@57.0.7"
   - expo-constants@57.0.7
   - expo-linking@57.0.4
   - expo-router@57.0.8
   - '@remelondb/driver-rn@0.1.1'
+  - '@remelondb/driver-rn@0.1.8'
+  - '@remelondb/driver-node@0.1.8'

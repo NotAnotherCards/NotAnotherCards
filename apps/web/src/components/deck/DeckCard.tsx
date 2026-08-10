@@ -1,4 +1,4 @@
-import { Deck } from "@/hooks/useMockStore";
+import { Deck } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, FolderOpen } from "lucide-react";
