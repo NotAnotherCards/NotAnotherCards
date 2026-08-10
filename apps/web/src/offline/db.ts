@@ -10,7 +10,6 @@ export const manager = createDatabaseManager({
     Database.open({
       driver: new WebSqliteDriver({
         shared: true,
-        takeover: true,
         onTakenOver,
       }),
       schema,
