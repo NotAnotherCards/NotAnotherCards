@@ -7,6 +7,9 @@ const preset = require('jest-expo/jest-preset')
 // single copy. Do not remove: a lockfile change silently reintroduces the split.
 module.exports = {
   ...preset,
+  // The first render in a file pays the full babel transform of the RN
+  // component graph; on CI runners that alone brushes the 5s default.
+  testTimeout: 15000,
   moduleNameMapper: {
     ...(preset.moduleNameMapper || {}),
     '^react$': '<rootDir>/node_modules/react',
