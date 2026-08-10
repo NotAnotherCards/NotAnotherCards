@@ -28,6 +28,12 @@ export class AuthService {
       database: drizzleAdapter(this.db, {
         provider: 'pg',
       }),
+      socialProviders: {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID as string,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+        },
+      },
       emailAndPassword: {
         enabled: true,
       },
@@ -84,7 +90,9 @@ export class AuthService {
     };
   }
 
-  async userIdFromHeaders(headers: IncomingHttpHeaders): Promise<string | null> {
+  async userIdFromHeaders(
+    headers: IncomingHttpHeaders,
+  ): Promise<string | null> {
     return this.resolveUserId(headers);
   }
 }
