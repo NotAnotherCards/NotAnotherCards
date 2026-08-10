@@ -32,19 +32,13 @@ export class AuthService {
         google: {
           clientId: configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
           clientSecret: configService.getOrThrow<string>(
-            'GOOGLE_CLIENT_SECRET',
-          ),
-        },
-        apple: {
-          clientId: configService.getOrThrow<string>('APPLE_CLIENT_ID'),
-          clientSecret: configService.getOrThrow<string>('APPLE_CLIENT_SECRET'),
-          // Apple might require private key, keyId, teamId for Web OAuth
-        },
-        facebook: {
-          clientId: configService.getOrThrow<string>('FACEBOOK_CLIENT_ID'),
-          clientSecret: configService.getOrThrow<string>(
-            'FACEBOOK_CLIENT_SECRET',
-          ),
+            'GOOGLE_CLIENT_SECRET')
+          }
+      },
+      account: {
+        accountLinking: {
+          enabled: true,
+          trustedProviders: ['google'],
         },
       },
       emailAndPassword: {
@@ -78,6 +72,13 @@ export class AuthService {
                   message: 'Username is already taken',
                 });
               }
+
+              return {
+                data: {
+                  ...newUser,
+                  emailVerified: true,
+                },
+              };
             },
           },
         },
