@@ -25,6 +25,7 @@ vi.mock("@remelondb/core", async (importOriginal) => {
         state: { status: "idle", error: null },
         init: vi.fn(),
         subscribe: vi.fn(() => () => {}),
+        close: vi.fn(async () => {}),
       };
     }),
     Database: {
