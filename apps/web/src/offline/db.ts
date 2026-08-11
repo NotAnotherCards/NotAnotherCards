@@ -8,8 +8,8 @@ export type { DatabaseManagerState as DatabaseState };
 export let manager: ReturnType<typeof createDatabaseManager> | null = null;
 
 export function createUserDatabaseManager(userId: string) {
-  const hex = Array.from(userId)
-    .map((c) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+  const hex = Array.from(new TextEncoder().encode(userId))
+    .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
   const dbName = `user_${hex}.db`;
 
