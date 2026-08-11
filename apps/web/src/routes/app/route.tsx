@@ -35,7 +35,9 @@ function AppLayout() {
       console.error("Database initialization failed", err);
     });
     return () => {
-      closeUserDatabase();
+      void closeUserDatabase().catch((err) => {
+        console.error("Database close failed", err);
+      });
       setUserManager(null);
     };
   }, [userId]);
