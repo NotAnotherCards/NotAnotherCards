@@ -141,6 +141,47 @@ describe("User Database Isolation integration tests", () => {
     await testCloseUserDatabase();
   });
 
+  it("keeps two non-BMP ids that share a UTF-16 surrogate isolated (db-name collision regression)", async () => {
+    // 😀 (U+1F600) and 😁 (U+1F601) share the high surrogate D83D. A
+    // charCodeAt(0)-based db name collapses both to one file and silently
+    // merges the two accounts; full UTF-8 byte encoding keeps them apart.
+    const managerA = testCreateUserDatabaseManager("😀");
+    await managerA.init();
+
+    const { result: storeA } = renderHook(() => useStore(), {
+      wrapper: ({ children }) => (
+        <DatabaseProvider manager={managerA}>{children}</DatabaseProvider>
+      ),
+    });
+    await waitFor(() => expect(storeA.current.status).toBe("ready"));
+
+    let deckId = "";
+    await act(async () => {
+      const deck = await storeA.current.createDeck("Astral Deck", "shared-surrogate user");
+      deckId = deck.id;
+    });
+    await waitFor(() => expect(storeA.current.decks.map((d) => d.id)).toContain(deckId));
+
+    await testCloseUserDatabase();
+
+    // A different id that would collide under the old encoding.
+    const managerB = testCreateUserDatabaseManager("😁");
+    await managerB.init();
+
+    const { result: storeB } = renderHook(() => useStore(), {
+      wrapper: ({ children }) => (
+        <DatabaseProvider manager={managerB}>{children}</DatabaseProvider>
+      ),
+    });
+    await waitFor(() => expect(storeB.current.status).toBe("ready"));
+
+    // Distinct db files ⇒ account B never sees account A's deck.
+    expect(storeB.current.decks.map((d) => d.id)).not.toContain(deckId);
+    expect(storeB.current.decks).toHaveLength(0);
+
+    await testCloseUserDatabase();
+  });
+
   it("prevents further queries/writes through the old manager after logout", async () => {
     const manager = testCreateUserDatabaseManager("user-a");
     await manager.init();
