@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState } from "react";
-import { Database } from "@remelondb/core";
+import type { Database } from "@remelondb/core";
 import { useDatabase, useDatabaseState } from "@remelondb/core/react";
 import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
 import { useQuery } from "@remelondb/core/react";
