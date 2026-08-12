@@ -10,7 +10,14 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build", "^test"]
+      "dependsOn": ["^build", "^test"],
+      "env": [
+        "TEST_DATABASE_URL",
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "FRONTEND_URL"
+      ]
     },
     "test:watch": {
       "cache": false,
