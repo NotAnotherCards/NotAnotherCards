@@ -1,6 +1,6 @@
 import React from 'react'
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native'
-import Register from '../app/register'
+import Register from '@/app/register'
 
 const mockReplace = jest.fn()
 

@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, fireEvent } from '@testing-library/react-native'
-import Dashboard from '../app/dashboard'
+import Dashboard from '@/app/dashboard'
 
 const mockUseSession = jest.fn()
 

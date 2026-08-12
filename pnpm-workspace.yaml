@@ -7,6 +7,8 @@ allowBuilds:
   unrs-resolver: true
 overrides:
   typescript: 5.9.3
+  react: 19.2.3
+  react-dom: 19.2.3
   # one core instance workspace-wide; differing @types/node peers
   # otherwise split it into two and break shared Model types
   "@remelondb/core": 0.1.8
@@ -27,4 +29,6 @@ minimumReleaseAgeExclude:
   - expo-constants@57.0.7
   - expo-linking@57.0.4
   - expo-router@57.0.8
+  - '@remelondb/driver-rn@0.1.1'
+  - '@remelondb/driver-rn@0.1.8'
   - '@remelondb/driver-node@0.1.8'
