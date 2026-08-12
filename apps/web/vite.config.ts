@@ -15,11 +15,15 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
     ],
   },
   optimizeDeps: {
-    exclude: ["@remelondb/driver-web", "@remelondb/core", "@sqlite.org/sqlite-wasm"]
+    exclude: [
+      "@remelondb/driver-web",
+      "@remelondb/core",
+      "@sqlite.org/sqlite-wasm",
+    ],
   },
   build: {
     chunkSizeWarningLimit: 1000,

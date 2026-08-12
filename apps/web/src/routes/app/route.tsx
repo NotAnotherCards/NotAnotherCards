@@ -56,7 +56,9 @@ function AppLayout() {
       cancelled = true;
       controller?.dispose();
       setSyncController(null);
-      closeUserDatabase();
+      void closeUserDatabase().catch((err) => {
+        console.error("Database close failed", err);
+      });
       setUserManager(null);
     };
   }, [userId]);
