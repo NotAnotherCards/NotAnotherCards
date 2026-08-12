@@ -30,6 +30,4 @@ minimumReleaseAgeExclude:
   - expo-constants@57.0.7
   - expo-linking@57.0.4
   - expo-router@57.0.8
-  - '@remelondb/driver-rn@0.1.1'
-  - '@remelondb/driver-rn@0.1.8'
-  - '@remelondb/driver-node@0.1.8'
+  - "@remelondb/driver-rn@0.1.9"
