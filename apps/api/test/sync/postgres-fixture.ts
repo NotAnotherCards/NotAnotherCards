@@ -17,11 +17,27 @@ let adminPool: Pool | undefined;
 let testPool: Pool | undefined;
 let testDatabaseName: string | undefined;
 let testConnectionString: string | undefined;
+let tearingDown = false;
 
 export let db: AppDatabase;
 
+// `end()` resolves once the pool has asked its clients to close, which is not
+// the same as the server having reaped them. The forced drop in teardown then
+// terminates whatever is still registered, and that FATAL (57P01) lands on a
+// client the pool has already discarded. pg re-emits it on the pool, and with
+// no listener it surfaces as an unhandled error that fails the entire run.
+// Expected while tearing down, a genuine fault at any other time.
+function absorbTeardownErrors(pool: Pool): Pool {
+  pool.on('error', (error) => {
+    if (!tearingDown) throw error;
+  });
+  return pool;
+}
+
 export async function setUpPostgres(): Promise<void> {
   if (!baseConnectionString) return;
+
+  tearingDown = false;
 
   const adminUrl = new URL(baseConnectionString);
   testDatabaseName = `notanothercards_sync_${process.pid}_${Date.now()}`;
@@ -29,10 +45,14 @@ export async function setUpPostgres(): Promise<void> {
   targetUrl.pathname = `/${testDatabaseName}`;
   testConnectionString = targetUrl.toString();
 
-  adminPool = new Pool({ connectionString: adminUrl.toString() });
+  adminPool = absorbTeardownErrors(
+    new Pool({ connectionString: adminUrl.toString() }),
+  );
   await adminPool.query(`CREATE DATABASE "${testDatabaseName}"`);
 
-  testPool = new Pool({ connectionString: testConnectionString });
+  testPool = absorbTeardownErrors(
+    new Pool({ connectionString: testConnectionString }),
+  );
   db = drizzle(testPool, { schema: databaseSchema });
   await migrate(db, { migrationsFolder: resolve(process.cwd(), 'drizzle') });
 }
@@ -60,6 +80,8 @@ export function getTestConnectionString(): string {
 }
 
 export async function tearDownPostgres(): Promise<void> {
+  tearingDown = true;
+
   await testPool?.end();
   testPool = undefined;
 
