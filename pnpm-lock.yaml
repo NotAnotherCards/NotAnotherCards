@@ -96,6 +96,9 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.1
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-express@11.1.28)
+      '@remelondb/driver-node':
+        specifier: 0.1.6
+        version: 0.1.6(@remelondb/core@0.1.8(react@19.2.3)(vitest@4.1.10(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.6
@@ -3219,6 +3222,11 @@ packages:
         optional: true
       zod:
         optional: true
+
+  '@remelondb/driver-node@0.1.6':
+    resolution: {integrity: sha512-oFBrb8EaykzWrNThtQ2suuSrB6fa/rbPjVrd4mkB5jDhVCJ6hq/zqnGUUgPlGLSAdMW8wWGmCNDsnujuPY5QPw==}
+    peerDependencies:
+      '@remelondb/core': 0.1.8
 
   '@remelondb/driver-node@0.1.8':
     resolution: {integrity: sha512-Drd03KoDZX+db5wmoB9xg9qD2cTzcxqpRtZAzgaK8tGokGGoESGu7qyp2sxsrWZaFVVJ9/ecdf8DjC5wA51stA==}
@@ -12231,6 +12239,11 @@ snapshots:
       react: 19.2.3
       vitest: 4.1.10(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
       zod: 4.4.3
+
+  '@remelondb/driver-node@0.1.6(@remelondb/core@0.1.8(react@19.2.3)(vitest@4.1.10(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
+    dependencies:
+      '@remelondb/core': 0.1.8(react@19.2.3)(vitest@4.1.10(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      better-sqlite3: 12.11.1
 
   '@remelondb/driver-node@0.1.8(@remelondb/core@0.1.8(react@19.2.3)(vitest@4.1.10(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
     dependencies:
