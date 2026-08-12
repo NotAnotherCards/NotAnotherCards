@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native'
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/utils'
 
 type ButtonProps = React.ComponentProps<typeof Pressable> & {
   label: string
@@ -17,7 +17,7 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       className={cn(
-        'flex-row items-center justify-center rounded-lg bg-zinc-900 px-4 py-3',
+        'flex-row items-center justify-center rounded-lg bg-primary px-4 py-3',
         (disabled || loading) && 'opacity-60',
         className,
       )}
@@ -25,9 +25,11 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator color="#fff" />
+        <ActivityIndicator className="text-primary-foreground" />
       ) : (
-        <Text className="text-base font-semibold text-white">{label}</Text>
+        <Text className="text-base font-semibold text-primary-foreground">
+          {label}
+        </Text>
       )}
     </Pressable>
   )
