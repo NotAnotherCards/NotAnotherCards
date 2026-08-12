@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router'
 import { useEffect } from 'react'
-import { authClient } from '../lib/auth-client'
-import { AuthCard } from '../components/auth/auth-card'
-import { LoginForm } from '../components/auth/login-form'
+import { authClient } from '@/lib/auth-client'
+import { AuthCard } from '@/components/auth/auth-card'
+import { LoginForm } from '@/components/auth/login-form'
 
 export default function Login() {
   const router = useRouter()
