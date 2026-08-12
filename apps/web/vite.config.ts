@@ -19,7 +19,11 @@ export default defineConfig({
     ],
   },
   optimizeDeps: {
-    exclude: ["@remelondb/driver-web", "@remelondb/core", "@sqlite.org/sqlite-wasm"]
+    exclude: [
+      "@remelondb/driver-web",
+      "@remelondb/core",
+      "@sqlite.org/sqlite-wasm",
+    ],
   },
   build: {
     chunkSizeWarningLimit: 1000,
