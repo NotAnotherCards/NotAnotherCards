@@ -58,8 +58,8 @@ A full sync is pull-then-push, and `synchronize()` in the client drives
 that loop. There is no third request type, and the transport is
 pluggable: our API binds the two operations as `POST /sync/pull` and
 `POST /sync/push`, every protocol outcome carried in a 200 body, while
-transport-level failures (401, 5xx) surface as a failed sync with local
-state untouched.
+transport-level failures (401, 5xx) surface as a failed sync with your
+unsynced local writes untouched.
 
 The wire shapes are small enough to quote in full. A pull request and
 its two possible answers:
@@ -169,10 +169,15 @@ deletion commits, which matters for data protection.
 The protocol has no opinion: `synchronize()` is a function, and calling
 it is app policy. Everything about the design makes calling it safe at
 any moment: apply is idempotent, a conflicted push retries in a bounded
-loop, and a failed transport leaves local state untouched. The usual
-triggers are app start, regaining connectivity, returning to the
-foreground, and a debounce after a burst of local writes, with a
-periodic timer as backstop.
+loop, and a failed transport leaves your unsynced local writes
+untouched. The usual triggers are app start, regaining connectivity,
+returning to the foreground, and a debounce after a burst of local
+writes, with a periodic timer as backstop.
+
+One client detail worth knowing: `synchronize()` returns a structured
+`SynchronizeResult` saying what it pulled, pushed, rejected, and whether
+it had to resync, so the app can react to a run's outcome without reading
+logs.
 
 This is something we still have to decide and implement, for web and
 mobile. Until then, everything in this document still holds, the local
@@ -453,7 +458,7 @@ invariants are checked when the model changes. This is design-level
 verification: it explores interleavings of pulls, pushes, GC, and
 crashes that are impractical to enumerate by hand.
 
-Second, the spec ends with a ten-item conformance checklist that ships
+Second, the spec ends with a thirteen-item conformance checklist that ships
 as a runnable vitest suite (`@remelondb/server/conformance`), and our
 NestJS/Postgres backend runs it in CI against a real database on every
 relevant push. The items are concrete scenarios, from "full pull is
@@ -509,7 +514,7 @@ performed before suspecting the server.
 **A device shows stale data but no errors.** First question: is it
 actually pulling? A stored sync error, a dead adapter, or an
 authentication failure surfaces as thrown transport errors, and those
-leave local state untouched by design. If pulls succeed and data is
+leave your local data intact by design. If pulls succeed and data is
 still missing, that would be a snapshot-rule violation, which is
 conformance-suite territory; check whether the backend passed the
 concurrency scenario before assuming one.
