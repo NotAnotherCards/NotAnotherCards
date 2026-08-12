@@ -23,16 +23,23 @@ const mockSession = {
   },
 };
 
-vi.mock("@/offline/db", () => ({
-  manager: {
+vi.mock("@/offline/db", () => {
+  const manager = {
     init: vi.fn().mockResolvedValue(undefined),
     state: { status: "ready" },
-  },
-}));
+  };
+  return {
+    manager,
+    createUserDatabaseManager: vi.fn(() => manager),
+    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
+  useDatabase: () => null,
+  DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 describe("Dashboard Page Component Specs", () => {
