@@ -53,7 +53,6 @@ export function RegisterComponent() {
     }
   };
 
-
   return (
     <AuthCard
       title="Create Account"
@@ -182,6 +181,7 @@ export function RegisterComponent() {
               </div>
             </div>
             <SocialLoginButton provider="google" />
+            <SocialLoginButton provider="facebook" />
           </FieldGroup>
         </FieldSet>
       </form>

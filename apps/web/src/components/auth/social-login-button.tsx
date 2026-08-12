@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
 interface SocialLoginButtonProps {
-  provider: "google";
+  provider: "google" | "facebook";
   children?: React.ReactNode;
 }
 
@@ -41,7 +41,11 @@ export function SocialLoginButton({ provider, children }: SocialLoginButtonProps
           />
         </svg>
       )}
-      {children || `Sign in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}`}
+      {provider === "facebook" && (
+        <></>
+      )}
+      {children ||
+        `Sign in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}`}
     </Button>
   );
 }

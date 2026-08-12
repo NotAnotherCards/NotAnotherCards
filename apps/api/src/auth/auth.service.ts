@@ -32,13 +32,20 @@ export class AuthService {
         google: {
           clientId: configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
           clientSecret: configService.getOrThrow<string>(
-            'GOOGLE_CLIENT_SECRET')
-          }
+            'GOOGLE_CLIENT_SECRET',
+          ),
+        },
+        facebook: {
+          clientId: configService.getOrThrow<string>('FACEBOOK_CLIENT_ID'),
+          clientSecret: configService.getOrThrow<string>(
+            'FACEBOOK_CLIENT_SECRET',
+          ),
+        },
       },
       account: {
         accountLinking: {
           enabled: true,
-          trustedProviders: ['google'],
+          trustedProviders: ['google', 'facebook'],
         },
       },
       emailAndPassword: {

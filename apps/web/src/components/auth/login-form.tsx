@@ -119,6 +119,7 @@ export function LoginComponent() {
               </div>
             </div>
             <SocialLoginButton provider="google" />
+            <SocialLoginButton provider="facebook" />
           </FieldGroup>
         </FieldSet>
       </form>
