@@ -15,13 +15,49 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
 import { authClient } from "@/lib/auth-client";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { SocialLoginButton } from "@/components/auth/social-login-button";
 
 export function LoginComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
+  const [oauthProvider, setOauthProvider] = useState<"google" | "facebook" | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get("error");
+    if (errorParam) {
+      if (errorParam === "OAuthCallbackError") {
+        setApiError("Social login failed. Please try again or use another provider.");
+      } else {
+        setApiError(errorParam.replace(/_/g, " "));
+      }
+    }
+
+    const handlePageShow = () => {
+      setOauthProvider(null);
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
+
+  const handleSocialLogin = async (provider: "google" | "facebook") => {
+    setOauthProvider(provider);
+    try {
+      await authClient.signIn.social({
+        provider,
+        callbackURL: `${window.location.origin}/app/dashboard`,
+        errorCallbackURL: `${window.location.origin}/login`,
+      });
+    } catch (err) {
+      setOauthProvider(null);
+      console.error(err);
+    }
+  };
+
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -98,7 +134,7 @@ export function LoginComponent() {
               )}
             />
             <FormErrorMessage message={apiError} />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || oauthProvider !== null}>
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
@@ -118,8 +154,18 @@ export function LoginComponent() {
                 </span>
               </div>
             </div>
-            <SocialLoginButton provider="google" />
-            <SocialLoginButton provider="facebook" />
+            <SocialLoginButton
+              provider="google"
+              isLoading={oauthProvider === "google"}
+              disabled={oauthProvider !== null || isSubmitting}
+              onClick={() => handleSocialLogin("google")}
+            />
+            <SocialLoginButton
+              provider="facebook"
+              isLoading={oauthProvider === "facebook"}
+              disabled={oauthProvider !== null || isSubmitting}
+              onClick={() => handleSocialLogin("facebook")}
+            />
           </FieldGroup>
         </FieldSet>
       </form>
