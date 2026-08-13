@@ -68,6 +68,8 @@ services:
       - "1025:1025" # SMTP server
       - "8025:8025" # Web UI
     restart: unless-stopped
+    profiles:
+      - dev
 
 volumes:
   postgres_data:
