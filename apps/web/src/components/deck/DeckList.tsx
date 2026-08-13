@@ -29,23 +29,39 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleCreateDeck = (data: { title: string; description: string }) => {
-    store.createDeck(data.title, data.description);
-    setShowCreateForm(false);
-  };
-
-  const handleEditDeck = (data: { title: string; description: string }) => {
-    if (editingDeck) {
-      store.updateDeck(editingDeck.id, data.title, data.description);
-      setEditingDeck(null);
+  // the dialog is dismissed only once the write lands, so a failed write is
+  // never reported to the user as a success
+  const handleCreateDeck = async (data: { title: string; description: string }) => {
+    try {
+      await store.createDeck(data.title, data.description);
+      setShowCreateForm(false);
+    } catch (err) {
+      console.error("Failed to create deck", err);
     }
   };
 
-  const handleDeleteDeck = () => {
-    if (deckToDelete) {
-      store.deleteDeck(deckToDelete);
+  const handleEditDeck = async (data: { title: string; description: string }) => {
+    if (!editingDeck) return;
+    try {
+      await store.updateDeck(editingDeck.id, data.title, data.description);
+      setEditingDeck(null);
+    } catch (err) {
+      console.error("Failed to update deck", err);
+    }
+  };
+
+  const handleDeleteDeck = async () => {
+    if (!deckToDelete) return;
+    setIsDeleting(true);
+    try {
+      await store.deleteDeck(deckToDelete);
       setDeckToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete deck", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -218,6 +234,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
               <Button
                 variant="destructive"
                 onClick={handleDeleteDeck}
+                disabled={isDeleting}
                 className="cursor-pointer"
               >
                 Delete Permanently

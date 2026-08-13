@@ -16,6 +16,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (store.isTakenOver) {
     return (
@@ -78,22 +79,37 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   // Filter cards belonging to this deck
   const cards = store.cards.filter((c) => c.deck_id === deckId);
 
-  const handleCreateCard = (data: { front: string; back: string }) => {
-    store.createCard(deckId, data.front, data.back);
-    setShowCreateForm(false);
-  };
-
-  const handleEditCard = (data: { front: string; back: string }) => {
-    if (editingCard) {
-      store.updateCard(editingCard.id, data.front, data.back);
-      setEditingCard(null);
+  // the dialog is dismissed only once the write lands, so a failed write is
+  // never reported to the user as a success
+  const handleCreateCard = async (data: { front: string; back: string }) => {
+    try {
+      await store.createCard(deckId, data.front, data.back);
+      setShowCreateForm(false);
+    } catch (err) {
+      console.error("Failed to create card", err);
     }
   };
 
-  const handleDeleteCard = () => {
-    if (cardToDelete) {
-      store.deleteCard(cardToDelete);
+  const handleEditCard = async (data: { front: string; back: string }) => {
+    if (!editingCard) return;
+    try {
+      await store.updateCard(editingCard.id, data.front, data.back);
+      setEditingCard(null);
+    } catch (err) {
+      console.error("Failed to update card", err);
+    }
+  };
+
+  const handleDeleteCard = async () => {
+    if (!cardToDelete) return;
+    setIsDeleting(true);
+    try {
+      await store.deleteCard(cardToDelete);
       setCardToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete card", err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -194,6 +210,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               <Button
                 variant="destructive"
                 onClick={handleDeleteCard}
+                disabled={isDeleting}
                 className="cursor-pointer"
               >
                 Delete
