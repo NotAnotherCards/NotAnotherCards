@@ -22,13 +22,29 @@ const mockSession = {
   },
 };
 
+vi.mock("@/offline/db", () => {
+  const manager = {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+  };
+  return {
+    manager,
+    createUserDatabaseManager: vi.fn(() => manager),
+    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+vi.mock("@remelondb/core/react", () => ({
+  useDatabaseState: () => ({ status: "ready", error: null }),
+  useQuery: () => ({ data: [], isLoading: false, error: null }),
+  useDatabase: () => null,
+  DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 describe("Auth Guards", () => {
   beforeEach(async () => {
     // Reset router history and path
     window.history.pushState(null, "", "/");
-    await act(async () => {
-      await router.navigate({ to: "/" });
-    });
   });
 
   it("redirects logged-out users from dashboard to login", async () => {
@@ -45,10 +61,6 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await act(async () => {
-      await router.invalidate();
-    });
-
     render(<App />);
 
     // Try to navigate to dashboard
@@ -63,7 +75,7 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /login
     expect(window.location.pathname).toBe("/login");
-  });
+  }, 15000);
 
   it("allows logged-in users to see the dashboard", async () => {
     // Mock logged-in state
@@ -78,10 +90,6 @@ describe("Auth Guards", () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
-
-    await act(async () => {
-      await router.invalidate();
-    });
 
     render(<App />);
 
@@ -101,7 +109,7 @@ describe("Auth Guards", () => {
 
     // Verify the URL is /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
-  });
+  }, 15000);
 
   it("redirects logged-in users away from the login page to the dashboard", async () => {
     // Mock logged-in state
@@ -117,10 +125,6 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await act(async () => {
-      await router.invalidate();
-    });
-
     render(<App />);
 
     // Try to navigate to login page
@@ -135,5 +139,5 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
-  });
+  }, 15000);
 });

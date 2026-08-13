@@ -15,11 +15,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      { find: "@", replacement: path.resolve(__dirname, "./src") },
-      {
-        find: /@remelondb\/driver-web\/dist\/shared-worker\.ts$/,
-        replacement: "@remelondb/driver-web/src/shared-worker.ts",
-      },
+      { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
+    ],
+  },
+  optimizeDeps: {
+    exclude: [
+      "@remelondb/driver-web",
+      "@remelondb/core",
+      "@sqlite.org/sqlite-wasm",
     ],
   },
   build: {
@@ -37,6 +40,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://localhost:3000",
+      "/sync": "http://localhost:3000",
     },
   },
 });
