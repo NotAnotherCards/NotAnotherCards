@@ -81,10 +81,7 @@ export class AuthService {
               }
 
               return {
-                data: {
-                  ...newUser,
-                  emailVerified: true,
-                },
+                data: newUser,
               };
             },
           },
