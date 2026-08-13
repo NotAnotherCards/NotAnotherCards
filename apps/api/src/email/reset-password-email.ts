@@ -12,9 +12,12 @@ export const sendResetPasswordEmail = async ({
   text,
 }: SendPasswordResetEmailArgs) => {
   const from = process.env.SMTP_FROM || 'no-reply@notanothercards.com';
+  const errors: Error[] = [];
+  let attempted = false;
 
   // 1. Resend API
   if (process.env.RESEND_API_KEY) {
+    attempted = true;
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -35,13 +38,15 @@ export const sendResetPasswordEmail = async ({
       }
       console.log(`📧 Email sent to ${to} via Resend.`);
       return;
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to send email via Resend, falling back...', err);
+      errors.push(err instanceof Error ? err : new Error(String(err)));
     }
   }
 
   // 2. SMTP Transport
   if (process.env.SMTP_HOST) {
+    attempted = true;
     try {
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
@@ -64,8 +69,15 @@ export const sendResetPasswordEmail = async ({
       });
       console.log(`📧 Email sent to ${to} via SMTP.`);
       return;
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to send email via SMTP, falling back...', err);
+      errors.push(err instanceof Error ? err : new Error(String(err)));
     }
   }
+
+  if (!attempted) {
+    throw new Error('No email transport configured (RESEND_API_KEY or SMTP_HOST is required).');
+  }
+
+  throw new Error(`All email transports failed: ${errors.map(e => e.message).join(', ')}`);
 };
