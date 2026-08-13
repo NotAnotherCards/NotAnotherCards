@@ -21,7 +21,8 @@ describe.each([
   it('has the incremental-pull (user_id, rev) index', () => {
     const indexes = getTableConfig(table).indexes;
     const names: string[] = [];
-    for (const tableIndex of indexes) names.push(tableIndex.config.name);
+    for (const tableIndex of indexes)
+      if (tableIndex.config.name) names.push(tableIndex.config.name);
     expect(names).toContain(`${_name}_user_rev_idx`);
   });
 });

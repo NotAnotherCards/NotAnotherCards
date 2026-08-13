@@ -84,7 +84,9 @@ export class AuthService {
     };
   }
 
-  async userIdFromHeaders(headers: IncomingHttpHeaders): Promise<string | null> {
+  async userIdFromHeaders(
+    headers: IncomingHttpHeaders,
+  ): Promise<string | null> {
     return this.resolveUserId(headers);
   }
 }

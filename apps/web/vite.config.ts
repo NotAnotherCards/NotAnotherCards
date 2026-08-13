@@ -15,11 +15,15 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
     ],
   },
   optimizeDeps: {
-    exclude: ["@remelondb/driver-web", "@remelondb/core", "@sqlite.org/sqlite-wasm"]
+    exclude: [
+      "@remelondb/driver-web",
+      "@remelondb/core",
+      "@sqlite.org/sqlite-wasm",
+    ],
   },
   build: {
     chunkSizeWarningLimit: 1000,
@@ -36,6 +40,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://localhost:3000",
+      "/sync": "http://localhost:3000",
     },
   },
 });

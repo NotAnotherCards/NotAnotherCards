@@ -15,6 +15,19 @@ vi.mock("@remelondb/core/react", () => ({
   useQuery: () => ({ data: [], isLoading: false, error: null }),
 }));
 
+vi.mock("@/offline/db", () => {
+  const manager = {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+    subscribe: vi.fn(() => () => {}),
+  };
+  return {
+    manager,
+    createUserDatabaseManager: vi.fn(() => manager),
+    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
 const mockSession = {
   session: {
     id: "session-123",

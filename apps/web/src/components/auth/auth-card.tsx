@@ -43,17 +43,19 @@ export function AuthCard({
 
       <CardContent>{children}</CardContent>
 
-      <CardFooter className="flex justify-center border-t border-border/10 pt-3 pb-4">
-        <p className="text-xs text-muted-foreground">
-          {footerText}{" "}
-          <Link
-            to={footerLinkTo}
-            className="text-primary font-medium hover:underline transition-colors"
-          >
-            {footerLinkText}
-          </Link>
-        </p>
-      </CardFooter>
+      {footerLinkText && (
+        <CardFooter className="flex justify-center border-t border-border/10 pt-3 pb-4">
+          <p className="text-xs text-muted-foreground">
+            {footerText}{" "}
+            <Link
+              to={footerLinkTo}
+              className="text-primary font-medium hover:underline transition-colors"
+            >
+              {footerLinkText}
+            </Link>
+          </p>
+        </CardFooter>
+      )}
     </Card>
   );
 }
