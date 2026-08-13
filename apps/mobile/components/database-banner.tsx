@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { View } from 'react-native'
 import { useDatabaseState } from '@remelondb/core/react'
 import { manager } from '@/lib/db'
@@ -8,8 +9,23 @@ import { Text } from './ui/text'
 // taken-over state is unreachable, and idle/loading/ready need no banner.
 export function DatabaseBanner() {
   const { status } = useDatabaseState(manager)
+  const [isRetrying, setIsRetrying] = useState(false)
 
   if (status !== 'error') return null
+
+  // the banner stays up when a retry fails, which tells the user something is
+  // still wrong but nothing about why, so keep the reason in the log
+  const retry = () => {
+    setIsRetrying(true)
+    manager
+      .init()
+      .catch((error: unknown) => {
+        console.error('retrying the offline database failed', error)
+      })
+      .finally(() => {
+        setIsRetrying(false)
+      })
+  }
 
   return (
     <View className="flex-row items-center justify-between gap-3 bg-destructive px-4 py-3">
@@ -19,9 +35,8 @@ export function DatabaseBanner() {
       <Button
         label="Retry"
         className="px-3 py-2"
-        onPress={() => {
-          manager.init().catch(() => {})
-        }}
+        loading={isRetrying}
+        onPress={retry}
       />
     </View>
   )

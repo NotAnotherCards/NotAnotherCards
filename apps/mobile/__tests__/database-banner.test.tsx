@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, fireEvent } from '@testing-library/react-native'
+import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import { DatabaseBanner } from '@/components/database-banner'
 import { manager } from '@/lib/db'
 
@@ -32,5 +32,20 @@ describe('DatabaseBanner', () => {
 
     fireEvent.press(getByText('Retry'))
     expect(manager.init).toHaveBeenCalled()
+  })
+
+  it('reports a failed retry instead of discarding it', async () => {
+    // the banner stays up either way, so a swallowed rejection leaves no
+    // record of why reopening the database keeps failing
+    const failure = new Error('still broken')
+    ;(manager.init as jest.Mock).mockRejectedValueOnce(failure)
+    const logged = jest.spyOn(console, 'error').mockImplementation(() => {})
+    mockUseDatabaseState.mockReturnValue({ status: 'error', error: new Error('nope') })
+
+    const { getByText } = render(<DatabaseBanner />)
+    fireEvent.press(getByText('Retry'))
+
+    await waitFor(() => expect(logged).toHaveBeenCalledWith(expect.any(String), failure))
+    logged.mockRestore()
   })
 })
