@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { DeckForm } from "./DeckForm";
 import { DeckCard } from "./DeckCard";
+import { writeErrorMessage } from "@/lib/write-error";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -30,36 +32,40 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [writeError, setWriteError] = useState<string | null>(null);
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
   const handleCreateDeck = async (data: { title: string; description: string }) => {
+    setWriteError(null);
     try {
       await store.createDeck(data.title, data.description);
       setShowCreateForm(false);
     } catch (err) {
-      console.error("Failed to create deck", err);
+      setWriteError(writeErrorMessage(err, "Failed to create deck"));
     }
   };
 
   const handleEditDeck = async (data: { title: string; description: string }) => {
     if (!editingDeck) return;
+    setWriteError(null);
     try {
       await store.updateDeck(editingDeck.id, data.title, data.description);
       setEditingDeck(null);
     } catch (err) {
-      console.error("Failed to update deck", err);
+      setWriteError(writeErrorMessage(err, "Failed to update deck"));
     }
   };
 
   const handleDeleteDeck = async () => {
     if (!deckToDelete) return;
     setIsDeleting(true);
+    setWriteError(null);
     try {
       await store.deleteDeck(deckToDelete);
       setDeckToDelete(null);
     } catch (err) {
-      console.error("Failed to delete deck", err);
+      setWriteError(writeErrorMessage(err, "Failed to delete deck"));
     } finally {
       setIsDeleting(false);
     }
@@ -186,6 +192,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
         <DeckForm
           title="Create New Deck"
           onSubmit={handleCreateDeck}
+          error={writeError}
           onCancel={() => setShowCreateForm(false)}
         />
       )}
@@ -199,6 +206,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             description: editingDeck.description || "",
           }}
           onSubmit={handleEditDeck}
+          error={writeError}
           onCancel={() => setEditingDeck(null)}
         />
       )}
@@ -223,7 +231,9 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
                 permanently delete all cards inside it.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-end gap-2 pt-0">
+            <CardContent className="pt-0">
+              <FormErrorMessage message={writeError} className="mb-4" />
+              <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setDeckToDelete(null)}
@@ -239,6 +249,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
               >
                 Delete Permanently
               </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

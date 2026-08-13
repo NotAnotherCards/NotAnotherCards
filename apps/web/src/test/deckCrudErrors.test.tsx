@@ -96,6 +96,9 @@ describe("deck CRUD error handling", () => {
       await flush();
 
       expect(saveButton()).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "database not initialized"
+      );
     });
   });
 
