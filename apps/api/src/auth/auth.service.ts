@@ -79,10 +79,6 @@ export class AuthService {
                   message: 'Username is already taken',
                 });
               }
-
-              return {
-                data: newUser,
-              };
             },
           },
         },
