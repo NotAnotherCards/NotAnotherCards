@@ -14,12 +14,10 @@ import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
-import { Route as AppDashboardRouteImport } from './routes/app/dashboard'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as AppDashboardRouteImport } from './routes/app/dashboard'
+import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,11 +32,6 @@ const AppRouteRoute = AppRouteRouteImport.update({
   id: '/app',
   path: '/app',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppOnboardingRoute = AppOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => AppRouteRoute,
 } as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/forgot-password',
@@ -63,6 +56,11 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AppRouteRoute,
 } as any)
 
@@ -101,25 +99,23 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-   
     | '/'
     | '/app'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/app/dashboard' 
+    | '/app/dashboard'
     | '/app/onboarding'
   fileRoutesByTo: FileRoutesByTo
   to:
-    |
-    '/'
+    | '/'
     | '/app'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/app/dashboard' 
+    | '/app/dashboard'
     | '/app/onboarding'
   id:
     | '__root__'
@@ -163,13 +159,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/onboarding': {
-      id: '/app/onboarding'
-      path: '/onboarding'
-      fullPath: '/app/onboarding'
-      preLoaderRoute: typeof AppOnboardingRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/_auth/forgot-password': {
       id: '/_auth/forgot-password'
       path: '/forgot-password'
@@ -203,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/app/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRouteRoute
     }
   }
