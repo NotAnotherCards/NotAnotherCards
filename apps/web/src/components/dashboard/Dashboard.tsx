@@ -21,12 +21,54 @@ import {
   Mail,
   Library,
   Settings as SettingsIcon,
+  RefreshCw,
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
 import { Settings } from "./Settings";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useStore } from "@/hooks/useStore";
+import { useSyncController, useSyncState } from "@/offline/syncProvider";
+
+function DashboardSyncStatus() {
+  const controller = useSyncController();
+  const state = useSyncState();
+  if (!controller) {
+    return <span className="text-muted-foreground font-semibold">Offline</span>;
+  }
+
+  const LABELS: Record<string, string> = {
+    idle: "Synced",
+    syncing: "Syncing…",
+    offline: "Offline",
+    error: "Sync failed",
+    "resync-required": "Reset required",
+  };
+
+  const statusColor =
+    state.status === "idle" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+    state.status === "syncing" ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse" :
+    state.status === "error" ? "bg-destructive/10 text-destructive" :
+    "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+
+  return (
+    <div className="flex items-center gap-1.5 font-semibold">
+      <span className={`px-2 py-0.5 rounded-full ${statusColor}`}>
+        {LABELS[state.status] ?? state.status}
+      </span>
+      {(state.status === "error" || state.status === "offline") && (
+        <button
+          type="button"
+          onClick={() => controller.syncNow()}
+          className="flex items-center gap-1 underline text-[10px] text-muted-foreground hover:text-foreground cursor-pointer font-normal"
+        >
+          <RefreshCw className="size-3" />
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function DashboardComponent() {
   const store = useStore();
@@ -247,6 +289,11 @@ export function DashboardComponent() {
                   >
                     {isOnline ? "Online" : "Offline"}
                   </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
+                  <span className="text-muted-foreground">Sync</span>
+                  <DashboardSyncStatus />
                 </div>
 
                 <div className="flex gap-2">
