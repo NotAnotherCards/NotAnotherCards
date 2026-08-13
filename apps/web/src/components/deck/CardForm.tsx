@@ -22,7 +22,7 @@ type CardFormData = z.infer<typeof cardSchema>;
 
 interface CardFormProps {
   initialData?: { front: string; back: string };
-  onSubmit: (data: { front: string; back: string }) => void;
+  onSubmit: (data: { front: string; back: string }) => void | Promise<void>;
   onCancel: () => void;
   title: string;
 }
@@ -45,8 +45,9 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
     }
   }, [initialData, form]);
 
-  const handleFormSubmit = (data: CardFormData) => {
-    onSubmit({
+  const handleFormSubmit = async (data: CardFormData) => {
+    // awaited so react-hook-form tracks isSubmitting for the write's duration
+    await onSubmit({
       front: data.front.trim(),
       back: data.back.trim(),
     });
@@ -140,7 +141,11 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
             >
               Cancel
             </Button>
-            <Button type="submit" className="cursor-pointer">
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+              className="cursor-pointer"
+            >
               Save Card
             </Button>
           </CardFooter>

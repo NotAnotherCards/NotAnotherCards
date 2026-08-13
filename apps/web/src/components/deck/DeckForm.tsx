@@ -23,7 +23,7 @@ type DeckFormData = z.infer<typeof deckSchema>;
 
 interface DeckFormProps {
   initialData?: { title: string; description: string };
-  onSubmit: (data: { title: string; description: string }) => void;
+  onSubmit: (data: { title: string; description: string }) => void | Promise<void>;
   onCancel: () => void;
   title: string;
 }
@@ -46,8 +46,9 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
     }
   }, [initialData, form]);
 
-  const handleFormSubmit = (data: DeckFormData) => {
-    onSubmit({
+  const handleFormSubmit = async (data: DeckFormData) => {
+    // awaited so react-hook-form tracks isSubmitting for the write's duration
+    await onSubmit({
       title: data.title.trim(),
       description: data.description?.trim() || "",
     });
@@ -131,7 +132,11 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
             >
               Cancel
             </Button>
-            <Button type="submit" className="cursor-pointer">
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+              className="cursor-pointer"
+            >
               Save Deck
             </Button>
           </CardFooter>
