@@ -38,6 +38,10 @@ describePostgres('Better Auth Password Reset Endpoints Integration', () => {
     frontendUrl: process.env.FRONTEND_URL,
     authSecret: process.env.BETTER_AUTH_SECRET,
     authUrl: process.env.BETTER_AUTH_URL,
+    googleId: process.env.GOOGLE_CLIENT_ID,
+    googleSecret: process.env.GOOGLE_CLIENT_SECRET,
+    facebookId: process.env.GOOGLE_FACEBOOK_ID,
+    facebookSecret: process.env.GOOGLE_FACEBOOK_SECRET,
   };
 
   beforeAll(async () => {
@@ -46,6 +50,12 @@ describePostgres('Better Auth Password Reset Endpoints Integration', () => {
     process.env.FRONTEND_URL = 'http://localhost:5173';
     process.env.BETTER_AUTH_SECRET = 'test-secret-at-least-32-characters';
     process.env.BETTER_AUTH_URL = 'http://localhost:3000';
+    process.env.GOOGLE_CLIENT_ID = 'google-test-id-at-least-32-characters';
+    process.env.GOOGLE_CLIENT_SECRET =
+      'google-test-secret-at-least-32-characters';
+    process.env.GOOGLE_FACEBOOK_ID = 'facebook-test-id-at-least-32-characters';
+    process.env.GOOGLE_FACEBOOK_SECRET =
+      'facebook-test-secret-at-least-32-characters';
 
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
@@ -70,6 +80,10 @@ describePostgres('Better Auth Password Reset Endpoints Integration', () => {
     process.env.FRONTEND_URL = previousEnvironment.frontendUrl;
     process.env.BETTER_AUTH_SECRET = previousEnvironment.authSecret;
     process.env.BETTER_AUTH_URL = previousEnvironment.authUrl;
+    process.env.GOOGLE_CLIENT_ID = previousEnvironment.googleId;
+    process.env.GOOGLE_CLIENT_SECRET = previousEnvironment.googleSecret;
+    process.env.GOOGLE_FACEBOOK_ID = previousEnvironment.facebookId;
+    process.env.GOOGLE_FACEBOOK_SECRET = previousEnvironment.facebookSecret;
   }, 30_000);
 
   it('handles the complete forgot-password and reset-password flow against PostgreSQL', async () => {
