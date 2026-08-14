@@ -30,14 +30,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           Back to Decks
         </Button>
         <UICard className="border border-amber-500/30 bg-amber-500/10 p-8 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+          <div className="p-3 rounded-2xl bg-amber-500/20 dark:text-amber-400">
             <AlertCircle className="size-8" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
+            <h3 className="text-lg font-bold dark:text-amber-200">
               Database Inactive (Taken Over)
             </h3>
-            <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
+            <p className="text-sm dark:text-amber-300/80 mt-1 max-w-md">
               This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
             </p>
           </div>
