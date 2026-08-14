@@ -20,10 +20,10 @@ export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
 
 export function useDelayedLoading(
-  loading: boolean,
+  isLoading: boolean,
   { delay = 200, minDuration = 400 } = {}
 ) {
-  const [ready, setReady] = useState(!loading);
+  const [ready, setReady] = useState(!isLoading);
   const [showSpinner, setShowSpinner] = useState(false);
   const spinnerShownAtRef = useRef<number | null>(null);
 
@@ -31,7 +31,7 @@ export function useDelayedLoading(
     let delayTimer: ReturnType<typeof setTimeout> | null = null;
     let minDurationTimer: ReturnType<typeof setTimeout> | null = null;
 
-    if (loading) {
+    if (isLoading) {
       setReady(false);
       delayTimer = setTimeout(() => {
         setShowSpinner(true);
@@ -63,7 +63,7 @@ export function useDelayedLoading(
       if (delayTimer) clearTimeout(delayTimer);
       if (minDurationTimer) clearTimeout(minDurationTimer);
     };
-  }, [loading, delay, minDuration]);
+  }, [isLoading, delay, minDuration]);
 
   return { ready, showSpinner };
 }
