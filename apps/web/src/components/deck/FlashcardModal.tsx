@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { Card, useStore } from "@/hooks/useStore";
-import { ChevronLeft, ChevronRight, RefreshCw, CheckCircle2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface FlashcardModalProps {

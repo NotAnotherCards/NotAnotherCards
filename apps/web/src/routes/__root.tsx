@@ -28,4 +28,3 @@ function RootComponent() {
     </ThemeProvider>
   );
 }
-

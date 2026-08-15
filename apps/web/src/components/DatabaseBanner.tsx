@@ -19,7 +19,8 @@ export function DatabaseBanner() {
         <div className="bg-blue-500/10 border-blue-500/20 text-blue-800 dark:text-blue-300 px-4 py-2.5 flex items-center gap-2.5 text-xs animate-in fade-in duration-200">
           <Loader2 className="size-4 animate-spin text-blue-500 shrink-0" />
           <span>
-            <strong>Connecting Database:</strong> Reclaiming and initializing local offline storage...
+            <strong>Connecting Database:</strong> Reclaiming and initializing
+            local offline storage...
           </span>
         </div>
       )}

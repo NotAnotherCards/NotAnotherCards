@@ -6,60 +6,34 @@ import { UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
 // ==========================================
 
 export function getDecksQuery(db: Database) {
-  return db
-    .get(UserDeck)
-    .query(
-      Q.sortBy("created_at", Q.desc),
-    );
+  return db.get(UserDeck).query(Q.sortBy("created_at", Q.desc));
 }
 
 export function getDeckDetailQuery(db: Database, deckId: string) {
-  return db
-    .get(UserDeck)
-    .query(Q.where("id", deckId));
+  return db.get(UserDeck).query(Q.where("id", deckId));
 }
 
-export function getPersonalDictionaryQuery(
-  db: Database,
-) {
-  return db
-    .get(UserCard)
-    .query(
-      Q.sortBy("created_at", Q.desc),
-    );
+export function getPersonalDictionaryQuery(db: Database) {
+  return db.get(UserCard).query(Q.sortBy("created_at", Q.desc));
 }
 
 export function getDeckCardsQuery(db: Database, deckId: string) {
   return db
     .get(UserCard)
-    .query(
-      Q.where("deck_id", deckId),
-      Q.sortBy("created_at", Q.desc),
-    );
+    .query(Q.where("deck_id", deckId), Q.sortBy("created_at", Q.desc));
 }
 
-export function getDueCardsQuery(
-  db: Database,
-  now: number = Date.now(),
-) {
+export function getDueCardsQuery(db: Database, now: number = Date.now()) {
   return db
     .get(UserCard)
-    .query(
-      Q.where("due_at", Q.lte(now)),
-      Q.sortBy("due_at", Q.asc),
-    );
+    .query(Q.where("due_at", Q.lte(now)), Q.sortBy("due_at", Q.asc));
 }
 
 export function getCardDetailQuery(db: Database, cardId: string) {
-  return db
-    .get(UserCard)
-    .query(Q.where("id", cardId));
+  return db.get(UserCard).query(Q.where("id", cardId));
 }
 
-export function getReviewHistoryQuery(
-  db: Database,
-  userCardId?: string,
-) {
+export function getReviewHistoryQuery(db: Database, userCardId?: string) {
   if (userCardId) {
     return db
       .get(ReviewEvent)
@@ -68,9 +42,7 @@ export function getReviewHistoryQuery(
         Q.sortBy("reviewed_at", Q.desc),
       );
   }
-  return db
-    .get(ReviewEvent)
-    .query(Q.sortBy("reviewed_at", Q.desc));
+  return db.get(ReviewEvent).query(Q.sortBy("reviewed_at", Q.desc));
 }
 
 // ==========================================
@@ -119,7 +91,7 @@ export async function deleteDeck(db: Database, deckId: string) {
       .query(Q.where("deck_id", deckId))
       .fetch();
     for (const card of cards) {
-      await card.markAsDeleted()
+      await card.markAsDeleted();
       const reviews = await db
         .get(ReviewEvent)
         .query(Q.where("user_card_id", card.id))
@@ -170,10 +142,13 @@ export async function updateCard(
 export async function deleteCard(db: Database, cardId: string) {
   return await db.write(async () => {
     const card = await db.get(UserCard).find(cardId);
-    await card.markAsDeleted()
-    const reviews = await db.get(ReviewEvent).query(Q.where("user_card_id", cardId)).fetch()
+    await card.markAsDeleted();
+    const reviews = await db
+      .get(ReviewEvent)
+      .query(Q.where("user_card_id", cardId))
+      .fetch();
     for (const review of reviews) {
-      await review.markAsDeleted()
+      await review.markAsDeleted();
     }
   });
 }

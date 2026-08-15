@@ -60,7 +60,8 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             Database Inactive (Taken Over)
           </h3>
           <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-            This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
+            This tab is currently inactive because the offline database is open
+            in another tab. Click below to use the database in this window.
           </p>
         </div>
         <Button
@@ -78,8 +79,12 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
         <Loader2 className="animate-spin size-8 text-primary" />
-        <p className="text-sm font-semibold text-foreground animate-pulse">Connecting Local Database...</p>
-        <p className="text-xs text-muted-foreground">Initializing offline storage handles and loading library.</p>
+        <p className="text-sm font-semibold text-foreground animate-pulse">
+          Connecting Local Database...
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Initializing offline storage handles and loading library.
+        </p>
       </div>
     );
   }
@@ -99,7 +104,11 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
               "An error occurred while loading your library. Please try reloading."}
           </p>
         </div>
-        <Button variant="outline" className="cursor-pointer gap-1.5" onClick={() => window.location.reload()}>
+        <Button
+          variant="outline"
+          className="cursor-pointer gap-1.5"
+          onClick={() => window.location.reload()}
+        >
           <RefreshCw className="size-4" />
           Retry
         </Button>

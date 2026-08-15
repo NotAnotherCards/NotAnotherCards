@@ -47,12 +47,17 @@ export function useStore() {
   const now = Math.floor(Date.now() / 10000) * 10000;
 
   // Observed reactive queries using remelonDB React bridge
-  const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(db && getDecksQuery(db))
+  const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(
+    db && getDecksQuery(db),
+  );
 
-  const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>
-  (db && getPersonalDictionaryQuery(db))
+  const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>(
+    db && getPersonalDictionaryQuery(db),
+  );
 
-  const { data: dueCards, isLoading: dueLoading} = useQuery(db && getDueCardsQuery(db, now));
+  const { data: dueCards, isLoading: dueLoading } = useQuery(
+    db && getDueCardsQuery(db, now),
+  );
 
   // Local Writes
   const createDeck = useCallback(
@@ -60,7 +65,7 @@ export function useStore() {
       if (!db) throw new Error("Database not initialized");
       return await dbCreateDeck(db, title, description);
     },
-    [db]
+    [db],
   );
 
   const updateDeck = useCallback(
@@ -68,7 +73,7 @@ export function useStore() {
       if (!db) throw new Error("Database not initialized");
       return await dbUpdateDeck(db, id, title, description);
     },
-    [db]
+    [db],
   );
 
   const deleteDeck = useCallback(
@@ -76,7 +81,7 @@ export function useStore() {
       if (!db) throw new Error("Database not initialized");
       return await dbDeleteDeck(db, id);
     },
-    [db]
+    [db],
   );
 
   const createCard = useCallback(
@@ -84,7 +89,7 @@ export function useStore() {
       if (!db) throw new Error("Database not initialized");
       return await dbCreateCard(db, deckId, front, back);
     },
-    [db]
+    [db],
   );
 
   const updateCard = useCallback(
@@ -92,7 +97,7 @@ export function useStore() {
       if (!db) throw new Error("Database not initialized");
       return await dbUpdateCard(db, id, front, back);
     },
-    [db]
+    [db],
   );
 
   const deleteCard = useCallback(
@@ -100,7 +105,7 @@ export function useStore() {
       if (!db) throw new Error("Database not initialized");
       return await dbDeleteCard(db, id);
     },
-    [db]
+    [db],
   );
 
   const recordReview = useCallback(
@@ -108,14 +113,14 @@ export function useStore() {
       if (!db) throw new Error("Database not initialized");
       return await dbRecordReview(db, cardId, rating);
     },
-    [db]
+    [db],
   );
 
   const getCardsCount = useCallback(
     (deckId: string): number => {
       return cards.filter((c) => c.deck_id === deckId).length;
     },
-    [cards]
+    [cards],
   );
 
   const reconnect = useCallback(async () => {

@@ -58,4 +58,3 @@ pnpm db:migrate    # apply pending migrations
 ## CORS & Security
 
 To support local cross-origin credentials exchange between the Vite server (`http://localhost:5173`) and the API server (`http://localhost:3000`), CORS is enabled with `credentials: true` in `main.ts`.
-

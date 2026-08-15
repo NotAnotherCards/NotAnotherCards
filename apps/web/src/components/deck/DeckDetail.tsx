@@ -1,8 +1,21 @@
 import { useState } from "react";
 import { useStore, Card } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
-import { Card as UICard, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { AlertCircle, ArrowLeft, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Card as UICard,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { CardForm } from "./CardForm";
 import { CardList } from "./CardList";
 
@@ -38,7 +51,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               Database Inactive (Taken Over)
             </h3>
             <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-              This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
+              This tab is currently inactive because the offline database is
+              open in another tab. Click below to use the database in this
+              window.
             </p>
           </div>
           <Button
@@ -57,7 +72,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
         <Loader2 className="animate-spin size-8 text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse">Loading deck details...</p>
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Loading deck details...
+        </p>
       </div>
     );
   }

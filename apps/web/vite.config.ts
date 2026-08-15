@@ -14,12 +14,14 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
-    alias: [
-      { find: "@", replacement: path.resolve(__dirname, "./src") },
-    ],
+    alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
   },
   optimizeDeps: {
-    exclude: ["@remelondb/driver-web", "@remelondb/core", "@sqlite.org/sqlite-wasm"]
+    exclude: [
+      "@remelondb/driver-web",
+      "@remelondb/core",
+      "@sqlite.org/sqlite-wasm",
+    ],
   },
   build: {
     chunkSizeWarningLimit: 1000,

@@ -82,11 +82,11 @@ Copy or symlink the Nginx site configuration template:
 
 ```bash
 # Copy site config to Nginx conf.d or sites-available
-sudo cp /opt/notanothercards/infra/vps/app.dustyway.org.conf /etc/nginx/sites-available/app.dustyway.org.conf
-sudo ln -sf /etc/nginx/sites-available/app.dustyway.org.conf /etc/nginx/sites-enabled/
+sudo cp /opt/notanothercards/infra/vps/cards.dustyway.org.conf /etc/nginx/sites-available/cards.dustyway.org.conf
+sudo ln -sf /etc/nginx/sites-available/cards.dustyway.org.conf /etc/nginx/sites-enabled/
 
 # Request SSL Certificate using Certbot
-sudo certbot --nginx -d app.dustyway.org
+sudo certbot --nginx -d cards.dustyway.org
 
 # Test and reload Nginx
 sudo nginx -t && sudo systemctl reload nginx
@@ -98,11 +98,11 @@ sudo nginx -t && sudo systemctl reload nginx
 
 In your GitHub repository under **Settings -> Secrets and variables -> Actions**, add the following Repository Secrets:
 
-| Secret Name       | Value Description                                                           |
-| ----------------- | --------------------------------------------------------------------------- |
-| `SSH_HOST`        | IP address or domain of the VPS (e.g. `123.45.67.89` or `app.dustyway.org`) |
-| `SSH_USER`        | `deploy`                                                                    |
-| `SSH_PRIVATE_KEY` | Contents of the `id_ed25519_deploy` private key file                        |
+| Secret Name       | Value Description                                                             |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `SSH_HOST`        | IP address or domain of the VPS (e.g. `123.45.67.89` or `cards.dustyway.org`) |
+| `SSH_USER`        | `deploy`                                                                      |
+| `SSH_PRIVATE_KEY` | Contents of the `id_ed25519_deploy` private key file                          |
 
 ---
 

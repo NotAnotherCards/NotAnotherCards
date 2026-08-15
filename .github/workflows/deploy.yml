@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to Hetzner VPS
+    name: Deploy to VPS
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -32,5 +32,10 @@ jobs:
             cd /opt/notanothercards
             git fetch origin main
             git reset --hard origin/main
-            docker compose up -d --build
+            docker compose up -d --build --wait
             docker compose ps
+            if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
+              sudo systemctl reload nginx
+            elif docker ps --format '{{.Names}}' | grep -q '^nginx$'; then
+              docker exec nginx nginx -s reload
+            fi
