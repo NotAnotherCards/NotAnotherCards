@@ -74,7 +74,7 @@ is the natural next step (the trade-off is laid out in
 
 The optional, one-to-one synchronized profile for a user. `user_id` is both
 the primary key and authenticated sync scope, with cascading deletion from
-`user.id`. It stores nullable `username`, `bio`, `avatar_file_id`,
+`user.id`. It stores a nullable, globally unique `username`, plus nullable `bio`, `avatar_file_id`,
 `native_language_id`, and `target_language_id`, plus client-visible creation
 and update times. The three referenced-resource IDs are UUID columns; foreign
 key constraints will be added when the `files` and `languages` domain tables

@@ -33,11 +33,11 @@ BETTER_AUTH_URL=http://localhost:3000
 
 Better Auth registers these standard endpoints automatically at `/api/auth/`:
 
-| Method | Endpoint Path             | Payload                                    | Description                               |
-| :----- | :------------------------ | :----------------------------------------- | :---------------------------------------- |
-| `POST` | `/api/auth/sign-up/email` | `{ email, password, firstName, lastName }` | Registers a new user                      |
-| `POST` | `/api/auth/sign-in/email` | `{ email, password }`                      | Authenticates user & sets session cookies |
-| `POST` | `/api/auth/sign-out`      | _None_                                     | Clears the session                        |
+| Method | Endpoint Path             | Payload                               | Description                               |
+| :----- | :------------------------ | :------------------------------------ | :---------------------------------------- |
+| `POST` | `/api/auth/sign-up/email` | `{ email, password, name, timezone }` | Registers a new user                      |
+| `POST` | `/api/auth/sign-in/email` | `{ email, password }`                 | Authenticates user & sets session cookies |
+| `POST` | `/api/auth/sign-out`      | _None_                                | Clears the session                        |
 
 ## Database Schema
 
