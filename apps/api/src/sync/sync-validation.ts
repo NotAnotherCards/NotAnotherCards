@@ -9,6 +9,7 @@ import type { DrizzleStore } from '@remelondb/store-drizzle';
 const USER_DECKS = 'user_decks';
 const USER_CARDS = 'user_cards';
 const REVIEW_EVENTS = 'review_events';
+const USER_PROFILES = 'user_profiles';
 
 interface PushRelationshipState {
   readonly submittedOwnedIds: Map<string, Set<string>>;
@@ -161,6 +162,7 @@ export const crossValidateSyncRelationships: NonNullable<
   const deckRows = rows[USER_DECKS] ?? [];
   const cardRows = rows[USER_CARDS] ?? [];
   const reviewRows = rows[REVIEW_EVENTS] ?? [];
+  const profileRows = rows[USER_PROFILES] ?? [];
 
   const deckChanges = await tx.changedSince(USER_DECKS, scope, 0);
   const ownedDeckIds = activeIds(deckChanges);
@@ -240,5 +242,8 @@ export const crossValidateSyncRelationships: NonNullable<
       ...blockedCardDeletes,
     ],
     [REVIEW_EVENTS]: rejectedReviews.map((review) => review.id),
+    [USER_PROFILES]: profileRows
+      .filter((profile) => profile.id !== scope)
+      .map((profile) => profile.id),
   };
 };
