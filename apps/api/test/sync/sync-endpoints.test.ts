@@ -46,7 +46,6 @@ describePostgres('authenticated remelonDB endpoints', () => {
         email: `${label}@example.test`,
         password: 'SyncEndpointPassword123!',
         name: `Sync ${label}`,
-        username: label,
         timezone: 'UTC',
       })
       .expect(200);
