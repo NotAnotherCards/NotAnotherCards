@@ -1,5 +1,5 @@
 import { getTableConfig } from 'drizzle-orm/pg-core';
-import { reviewEvents, userCards, userDecks } from '../sync/schema';
+import { reviewEvents, userCards, userDecks, userProfiles } from '../sync/schema';
 
 // Syncable tables must all follow the same timestamp convention:
 // created_at is set once and never touched again, updated_at always
@@ -8,10 +8,12 @@ describe.each([
   ['user_decks', userDecks],
   ['user_cards', userCards],
   ['review_events', reviewEvents],
+  ['user_profiles', userProfiles],
 ])('%s remelonDB contract', (_name, table) => {
   it('uses client ids, server revisions, tombstones, and user scope', () => {
-    expect(table.id.primary).toBe(true);
-    expect(table.id.hasDefault).toBe(false);
+    const id = 'id' in table ? table.id : table.userId;
+    expect(id.primary).toBe(true);
+    expect(id.hasDefault).toBe(false);
     expect(table.rev.notNull).toBe(true);
     expect(table.rev.hasDefault).toBe(false);
     expect(table.deletedAt.notNull).toBe(false);
@@ -46,5 +48,11 @@ it('enforces nonnegative safe-integer sync timestamps', () => {
   ).toEqual([
     'review_events_rating_check',
     'review_events_reviewed_at_safe_integer_check',
+  ]);
+  expect(
+    getTableConfig(userProfiles).checks.map((constraint) => constraint.name),
+  ).toEqual([
+    'user_profiles_created_at_safe_integer_check',
+    'user_profiles_updated_at_safe_integer_check',
   ]);
 });

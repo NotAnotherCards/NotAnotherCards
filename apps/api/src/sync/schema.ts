@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { user } from '../database/schema';
 
@@ -117,12 +118,49 @@ export const reviewEvents = pgTable(
   ],
 );
 
+export const userProfiles = pgTable(
+  'user_profiles',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    rev: bigint('rev', { mode: 'number' }).notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    username: text('username'),
+    bio: text('bio'),
+    avatarFileId: uuid('avatar_file_id'),
+    nativeLanguageId: uuid('native_language_id'),
+    targetLanguageId: uuid('target_language_id'),
+    createdAt: doublePrecision('created_at').notNull(),
+    updatedAt: doublePrecision('updated_at').notNull(),
+  },
+  (table) => [
+    index('user_profiles_user_rev_idx').on(table.userId, table.rev),
+    index('user_profiles_user_updated_idx').on(table.userId, table.updatedAt),
+    check(
+      'user_profiles_created_at_safe_integer_check',
+      sql`${table.createdAt} >= 0 and ${table.createdAt} <= 9007199254740991 and ${table.createdAt} = trunc(${table.createdAt})`,
+    ),
+    check(
+      'user_profiles_updated_at_safe_integer_check',
+      sql`${table.updatedAt} >= 0 and ${table.updatedAt} <= 9007199254740991 and ${table.updatedAt} = trunc(${table.updatedAt})`,
+    ),
+  ],
+);
+
 export const userDecksRelations = relations(userDecks, ({ one, many }) => ({
   user: one(user, {
     fields: [userDecks.userId],
     references: [user.id],
   }),
   cards: many(userCards),
+}));
+
+export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
+  user: one(user, {
+    fields: [userProfiles.userId],
+    references: [user.id],
+  }),
 }));
 
 export const userCardsRelations = relations(userCards, ({ one, many }) => ({
