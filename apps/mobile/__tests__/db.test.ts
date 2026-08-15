@@ -9,14 +9,16 @@ jest.mock('@remelondb/core', () => {
   const actual = jest.requireActual('@remelondb/core')
   return {
     ...actual,
-    createDatabaseManager: jest.fn((options: { open: () => Promise<unknown> }) => {
-      capturedOpen = options.open
-      return {
-        state: { status: 'idle', error: null },
-        init: jest.fn(),
-        subscribe: jest.fn(() => () => {}),
-      }
-    }),
+    createDatabaseManager: jest.fn(
+      (options: { open: () => Promise<unknown> }) => {
+        capturedOpen = options.open
+        return {
+          state: { status: 'idle', error: null },
+          init: jest.fn(),
+          subscribe: jest.fn(() => () => {}),
+        }
+      },
+    ),
     Database: { ...actual.Database, open: jest.fn().mockResolvedValue({}) },
   }
 })

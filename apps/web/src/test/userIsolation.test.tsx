@@ -94,12 +94,17 @@ describe("User Database Isolation integration tests", () => {
     // Account A creates a deck
     let deckId = "";
     await act(async () => {
-      const deck = await storeA.current.createDeck("Spanish Verbs", "Learn Spanish");
+      const deck = await storeA.current.createDeck(
+        "Spanish Verbs",
+        "Learn Spanish",
+      );
       deckId = deck.id;
     });
 
     // Verify Spanish Verbs deck exists in Account A
-    await waitFor(() => expect(storeA.current.decks.map((d) => d.id)).toContain(deckId));
+    await waitFor(() =>
+      expect(storeA.current.decks.map((d) => d.id)).toContain(deckId),
+    );
 
     // Close Database for User A (simulating logout)
     await testCloseUserDatabase();
@@ -116,7 +121,9 @@ describe("User Database Isolation integration tests", () => {
     await waitFor(() => expect(storeB.current.status).toBe("ready"));
 
     // Account B cannot query Account A's deck
-    await waitFor(() => expect(storeB.current.decks.map((d) => d.id)).not.toContain(deckId));
+    await waitFor(() =>
+      expect(storeB.current.decks.map((d) => d.id)).not.toContain(deckId),
+    );
     expect(storeB.current.decks).toHaveLength(0);
 
     // Close Database for User B
@@ -134,7 +141,9 @@ describe("User Database Isolation integration tests", () => {
     await waitFor(() => expect(storeA2.current.status).toBe("ready"));
 
     // Account A sees the deck again
-    await waitFor(() => expect(storeA2.current.decks.map((d) => d.id)).toContain(deckId));
+    await waitFor(() =>
+      expect(storeA2.current.decks.map((d) => d.id)).toContain(deckId),
+    );
     expect(storeA2.current.decks[0].title).toBe("Spanish Verbs");
 
     // Clean up
@@ -157,10 +166,15 @@ describe("User Database Isolation integration tests", () => {
 
     let deckId = "";
     await act(async () => {
-      const deck = await storeA.current.createDeck("Astral Deck", "shared-surrogate user");
+      const deck = await storeA.current.createDeck(
+        "Astral Deck",
+        "shared-surrogate user",
+      );
       deckId = deck.id;
     });
-    await waitFor(() => expect(storeA.current.decks.map((d) => d.id)).toContain(deckId));
+    await waitFor(() =>
+      expect(storeA.current.decks.map((d) => d.id)).toContain(deckId),
+    );
 
     await testCloseUserDatabase();
 
@@ -246,7 +260,10 @@ describe("User Database Isolation integration tests", () => {
     // Write a deck under user-a
     let deckId = "";
     await act(async () => {
-      const deck = await storeA.current.createDeck("Tab Deck A", "user-a tab deck");
+      const deck = await storeA.current.createDeck(
+        "Tab Deck A",
+        "user-a tab deck",
+      );
       deckId = deck.id;
     });
 

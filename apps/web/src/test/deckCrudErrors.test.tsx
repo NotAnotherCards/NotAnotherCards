@@ -73,7 +73,9 @@ describe("deck CRUD error handling", () => {
 
   describe("create", () => {
     const openForm = () =>
-      fireEvent.click(screen.getByRole("button", { name: /create first deck/i }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /create first deck/i }),
+      );
 
     it("closes the dialog once the write succeeds", async () => {
       createDeck.mockResolvedValue({ id: "deck-1" });
@@ -97,7 +99,7 @@ describe("deck CRUD error handling", () => {
 
       expect(saveButton()).toBeInTheDocument();
       expect(screen.getByRole("alert")).toHaveTextContent(
-        "database not initialized"
+        "database not initialized",
       );
     });
   });

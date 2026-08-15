@@ -36,7 +36,10 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
-  const handleCreateDeck = async (data: { title: string; description: string }) => {
+  const handleCreateDeck = async (data: {
+    title: string;
+    description: string;
+  }) => {
     setWriteError(null);
     try {
       await store.createDeck(data.title, data.description);
@@ -46,7 +49,10 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
     }
   };
 
-  const handleEditDeck = async (data: { title: string; description: string }) => {
+  const handleEditDeck = async (data: {
+    title: string;
+    description: string;
+  }) => {
     if (!editingDeck) return;
     setWriteError(null);
     try {
@@ -246,21 +252,21 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             <CardContent className="pt-0">
               <FormErrorMessage message={writeError} className="mb-4" />
               <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeckToDelete(null)}
-                className="cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteDeck}
-                disabled={isDeleting}
-                className="cursor-pointer"
-              >
-                Delete Permanently
-              </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeckToDelete(null)}
+                  className="cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteDeck}
+                  disabled={isDeleting}
+                  className="cursor-pointer"
+                >
+                  Delete Permanently
+                </Button>
               </div>
             </CardContent>
           </Card>

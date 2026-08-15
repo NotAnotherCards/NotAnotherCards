@@ -38,7 +38,10 @@ type DeckFormData = z.infer<typeof deckSchema>;
 
 interface DeckFormProps {
   initialData?: { title: string; description: string };
-  onSubmit: (data: { title: string; description: string }) => void | Promise<void>;
+  onSubmit: (data: {
+    title: string;
+    description: string;
+  }) => void | Promise<void>;
   error?: string | null;
   onCancel: () => void;
   title: string;

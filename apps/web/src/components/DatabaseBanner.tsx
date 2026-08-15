@@ -57,10 +57,9 @@ export function DatabaseBanner() {
         <div className="bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300 px-4 py-3 flex items-center gap-2 text-sm">
           <AlertCircle className="size-4 text-amber-500 shrink-0" />
           <span>
-            <strong>Storage blocked:</strong> this browser blocks site
-            storage (private browsing or blocked site data), so your decks
-            cannot be loaded. Allow site data for this site or use a normal
-            window.
+            <strong>Storage blocked:</strong> this browser blocks site storage
+            (private browsing or blocked site data), so your decks cannot be
+            loaded. Allow site data for this site or use a normal window.
           </span>
         </div>
       )}

@@ -228,21 +228,21 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             <CardContent className="pt-0">
               <FormErrorMessage message={writeError} className="mb-4" />
               <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCardToDelete(null)}
-                className="cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteCard}
-                disabled={isDeleting}
-                className="cursor-pointer"
-              >
-                Delete
-              </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setCardToDelete(null)}
+                  className="cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteCard}
+                  disabled={isDeleting}
+                  className="cursor-pointer"
+                >
+                  Delete
+                </Button>
               </div>
             </CardContent>
           </UICard>

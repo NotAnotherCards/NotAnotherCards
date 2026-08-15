@@ -28,10 +28,14 @@ const resetPasswordConfirmSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
-export type ResetPasswordConfirmFormData = z.infer<typeof resetPasswordConfirmSchema>;
+export type ResetPasswordConfirmFormData = z.infer<
+  typeof resetPasswordConfirmSchema
+>;
 
 export function ResetPasswordComponent() {
-  const search = useSearch({ from: "/_auth/reset-password" }) as { token?: string };
+  const search = useSearch({ from: "/_auth/reset-password" }) as {
+    token?: string;
+  };
   const token = search.token;
 
   const [apiError, setApiError] = useState<string | null>(null);
@@ -111,7 +115,9 @@ export function ResetPasswordComponent() {
                     id={field.name}
                     autoComplete="new-password"
                     aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.invalid ? "password-error" : undefined}
+                    aria-describedby={
+                      fieldState.invalid ? "password-error" : undefined
+                    }
                   />
                   <FieldError id="password-error" errors={[fieldState.error]} />
                 </Field>
@@ -122,15 +128,22 @@ export function ResetPasswordComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Confirm New Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    Confirm New Password
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}
                     autoComplete="new-password"
                     aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.invalid ? "confirmPassword-error" : undefined}
+                    aria-describedby={
+                      fieldState.invalid ? "confirmPassword-error" : undefined
+                    }
                   />
-                  <FieldError id="confirmPassword-error" errors={[fieldState.error]} />
+                  <FieldError
+                    id="confirmPassword-error"
+                    errors={[fieldState.error]}
+                  />
                 </Field>
               )}
             />

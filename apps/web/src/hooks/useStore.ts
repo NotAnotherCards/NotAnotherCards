@@ -63,7 +63,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const updateDeck = useCallback(
@@ -73,7 +73,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const deleteDeck = useCallback(
@@ -83,7 +83,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const createCard = useCallback(
@@ -93,7 +93,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const updateCard = useCallback(
@@ -103,7 +103,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const deleteCard = useCallback(
@@ -113,7 +113,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const recordReview = useCallback(
@@ -123,7 +123,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const getCardsCount = useCallback(
