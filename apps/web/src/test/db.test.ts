@@ -108,6 +108,7 @@ describe("authenticated user database configuration", () => {
       "UserDeck",
       "UserCard",
       "ReviewEvent",
+      "UserProfile",
     ]);
   });
 
