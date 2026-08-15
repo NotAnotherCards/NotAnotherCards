@@ -56,3 +56,11 @@ it('enforces nonnegative safe-integer sync timestamps', () => {
     'user_profiles_updated_at_safe_integer_check',
   ]);
 });
+
+it('keeps profile usernames globally unique while allowing them to be unset', () => {
+  expect(userProfiles.username.isUnique).toBe(true);
+  expect(userProfiles.username.uniqueName).toBe(
+    'user_profiles_username_unique',
+  );
+  expect(userProfiles.username.notNull).toBe(false);
+});

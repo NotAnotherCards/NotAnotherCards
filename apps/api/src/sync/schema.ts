@@ -126,7 +126,7 @@ export const userProfiles = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     rev: bigint('rev', { mode: 'number' }).notNull(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
-    username: text('username'),
+    username: text('username').unique(),
     bio: text('bio'),
     avatarFileId: uuid('avatar_file_id'),
     nativeLanguageId: uuid('native_language_id'),

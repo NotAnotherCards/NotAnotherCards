@@ -9,6 +9,7 @@ CREATE TABLE "user_profiles" (
 	"target_language_id" uuid,
 	"created_at" double precision NOT NULL,
 	"updated_at" double precision NOT NULL,
+	CONSTRAINT "user_profiles_username_unique" UNIQUE("username"),
 	CONSTRAINT "user_profiles_created_at_safe_integer_check" CHECK ("user_profiles"."created_at" >= 0 and "user_profiles"."created_at" <= 9007199254740991 and "user_profiles"."created_at" = trunc("user_profiles"."created_at")),
 	CONSTRAINT "user_profiles_updated_at_safe_integer_check" CHECK ("user_profiles"."updated_at" >= 0 and "user_profiles"."updated_at" <= 9007199254740991 and "user_profiles"."updated_at" = trunc("user_profiles"."updated_at"))
 );
