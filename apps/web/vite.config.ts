@@ -14,7 +14,9 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
-    alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
+    alias: [
+      { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
+    ],
   },
   optimizeDeps: {
     exclude: [
@@ -38,6 +40,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://localhost:3000",
+      "/sync": "http://localhost:3000",
     },
   },
 });

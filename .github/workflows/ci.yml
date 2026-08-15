@@ -17,6 +17,21 @@ jobs:
     name: run CI pipeline
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -48,6 +63,12 @@ jobs:
 
       - name: Run Unit Tests
         run: pnpm test
+        env:
+          # the sync suites create and drop their own database per run
+          TEST_DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
+          BETTER_AUTH_SECRET: ci-only-secret
+          BETTER_AUTH_URL: http://localhost:3000
+          FRONTEND_URL: http://localhost:5173
 
       - name: Validate Infrastructure Configs
         run: pnpm test:infra

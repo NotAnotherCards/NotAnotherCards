@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
 import {
   Card,
   CardHeader,
@@ -35,7 +36,8 @@ type CardFormData = z.infer<typeof cardSchema>;
 
 interface CardFormProps {
   initialData?: { front: string; back: string };
-  onSubmit: (data: { front: string; back: string }) => void;
+  onSubmit: (data: { front: string; back: string }) => void | Promise<void>;
+  error?: string | null;
   onCancel: () => void;
   title: string;
 }
@@ -45,6 +47,7 @@ export function CardForm({
   onSubmit,
   onCancel,
   title,
+  error,
 }: CardFormProps) {
   const form = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
@@ -63,8 +66,9 @@ export function CardForm({
     }
   }, [initialData, form]);
 
-  const handleFormSubmit = (data: CardFormData) => {
-    onSubmit({
+  const handleFormSubmit = async (data: CardFormData) => {
+    // awaited so react-hook-form tracks isSubmitting for the write's duration
+    await onSubmit({
       front: data.front.trim(),
       back: data.back.trim(),
     });
@@ -156,6 +160,7 @@ export function CardForm({
             </FieldSet>
           </CardContent>
 
+          <FormErrorMessage message={error} className="mx-6 mb-4" />
           <CardFooter className="flex justify-end gap-2 border-t border-border/40 pt-4">
             <Button
               type="button"
@@ -165,7 +170,11 @@ export function CardForm({
             >
               Cancel
             </Button>
-            <Button type="submit" className="cursor-pointer">
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+              className="cursor-pointer"
+            >
               Save Card
             </Button>
           </CardFooter>

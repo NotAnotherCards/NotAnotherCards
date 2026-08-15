@@ -5,6 +5,25 @@ import { CardItem } from "../components/deck/CardItem";
 import { FlashcardModal } from "../components/deck/FlashcardModal";
 import { Deck, Card } from "../hooks/useStore";
 
+vi.mock("@/offline/db", () => {
+  const manager = {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+    subscribe: vi.fn(() => () => {}),
+  };
+  return {
+    manager,
+    createUserDatabaseManager: vi.fn(() => manager),
+    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+vi.mock("@/hooks/useStore", () => ({
+  useStore: () => ({
+    recordReview: vi.fn(),
+  }),
+}));
+
 describe("DeckCard Component", () => {
   const mockDeck: Deck = {
     id: "deck-test-1",
