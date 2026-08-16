@@ -92,7 +92,7 @@ export function CardList({
           <AlertCircle className="size-8" />
         </div>
         <div>
-          <h3 className="text-md font-bold text-destructive">
+          <h3 className="text-base font-bold text-destructive">
             Failed to Load Cards
           </h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
@@ -115,7 +115,7 @@ export function CardList({
     <UICard className="border border-border/60">
       <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div>
-          <CardTitle className="text-md font-bold flex items-center gap-2">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
             <Library className="size-4 text-primary" />
             Card Catalog ({filteredCards.length})
           </CardTitle>

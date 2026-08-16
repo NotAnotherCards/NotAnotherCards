@@ -36,7 +36,7 @@ export function RegisterComponent() {
 
   const onSubmit = async (data: SignupFormData) => {
     setApiError(null);
-    const { data: res, error } = await authClient.signUp.email({
+    const { error } = await authClient.signUp.email({
       email: data.email,
       password: data.password,
       name: data.name,
@@ -45,10 +45,8 @@ export function RegisterComponent() {
     });
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
-      // console.error(error.message);
     } else {
-      navigate({ to: "/app/dashboard" });
-      console.log("Registered:", res);
+      void navigate({ to: "/app/dashboard" });
     }
   };
 
