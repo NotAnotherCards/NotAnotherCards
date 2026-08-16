@@ -1,5 +1,10 @@
 import { getTableConfig } from 'drizzle-orm/pg-core';
-import { reviewEvents, userCards, userDecks, userProfiles } from '../sync/schema';
+import {
+  reviewEvents,
+  userCards,
+  userDecks,
+  userProfiles,
+} from '../sync/schema';
 
 // Syncable tables must all follow the same timestamp convention:
 // created_at is set once and never touched again, updated_at always
