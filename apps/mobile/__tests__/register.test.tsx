@@ -39,7 +39,6 @@ describe('Register screen', () => {
   it('navigates to the dashboard only once the session exists', async () => {
     const { getByRole, getByPlaceholderText, rerender } = render(<Register />)
     fireEvent.changeText(getByPlaceholderText('Jane Doe'), 'Jane Doe')
-    fireEvent.changeText(getByPlaceholderText('jane_doe'), 'jane_doe')
     fireEvent.changeText(
       getByPlaceholderText('you@example.com'),
       'jane@example.com',
@@ -65,7 +64,6 @@ describe('Register screen', () => {
   it('shows an error when the passwords do not match', async () => {
     const { getByRole, getByPlaceholderText, findByText } = render(<Register />)
     fireEvent.changeText(getByPlaceholderText('Jane Doe'), 'Jane Doe')
-    fireEvent.changeText(getByPlaceholderText('jane_doe'), 'jane_doe')
     fireEvent.changeText(
       getByPlaceholderText('you@example.com'),
       'jane@example.com',
@@ -87,7 +85,6 @@ describe('Register screen', () => {
     )
     const { getByRole, getByPlaceholderText, findByText } = render(<Register />)
     fireEvent.changeText(getByPlaceholderText('Jane Doe'), 'Jane Doe')
-    fireEvent.changeText(getByPlaceholderText('jane_doe'), 'jane_doe')
     fireEvent.changeText(
       getByPlaceholderText('you@example.com'),
       'jane@example.com',

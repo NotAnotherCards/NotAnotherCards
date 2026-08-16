@@ -1,7 +1,14 @@
 import { createDatabaseManager, Database } from "@remelondb/core";
 import type { DatabaseManagerState } from "@remelondb/core";
 import { WebSqliteDriver } from "@remelondb/driver-web";
-import { schema, UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
+import {
+  schema,
+  migrations,
+  UserDeck,
+  UserCard,
+  ReviewEvent,
+  UserProfile,
+} from "@repo/offline-db";
 
 export type { DatabaseManagerState as DatabaseState };
 
@@ -31,7 +38,8 @@ export function createUserDatabaseManager(userId: string) {
           onTakenOver,
         }),
         schema,
-        modelClasses: [UserDeck, UserCard, ReviewEvent],
+        migrations,
+        modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
         name: dbName,
       }),
   });
