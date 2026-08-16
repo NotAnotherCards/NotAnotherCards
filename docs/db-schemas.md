@@ -4,7 +4,7 @@
 
 ### Better Auth tables (server only)
 
-These tables are generated and managed by Better Auth. Changes to authentication fields should be made through the Better Auth configuration and generation workflow, not by editing `apps/api/src/database/schema.ts`
+These tables are generated and managed by Better Auth. Changes to authentication fields should be made through the Better Auth configuration and generation workflow, not by editing [`apps/api/src/database/schema.ts`](../apps/api/src/database/schema.ts)
 
 #### `user`
 
@@ -69,9 +69,9 @@ INDEX(identifier)
 
 ### Synchronized application tables
 
-The following four logical tables exist on both sides of the offline boundary. The api schema adds `user_id`, `rev`, and `deleted_at` for ownership, revision tracking, and tombstones. RemelonDB supplies its own local record metadata, so those server columns are not declared as application fields in the local Zod tables.
+The following four logical tables exist on both sides of the offline boundary. The api schema adds `user_id`, `rev`, and `deleted_at` for ownership, revision tracking, and tombstones. RemelonDB supplies its own local record metadata, so those server columns are not declared as application fields in the local Zod tables defined in [`packages/offline-db/src/user-dictionary.ts`](../packages/offline-db/src/user-dictionary.ts).
 
-All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `reviewed_at`) are non-negative integer Unix milliseconds and must remain within JavaScript's safe-integer range. PostgreSQL stores them as `double precision`; the wire and local schemas validate them as integers found in `apps/api/src/sync/schema.ts`
+All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `reviewed_at`) are non-negative integer Unix milliseconds and must remain within JavaScript's safe-integer range. PostgreSQL stores them as `double precision`; the wire and local schemas validate them as integers found in [`apps/api/src/sync/schema.ts`](../apps/api/src/sync/schema.ts).
 
 #### `user_decks`
 
@@ -121,7 +121,7 @@ Review events are append-only in the sync configuration.
 
 #### `user_profiles`
 
-contains app-specific profile data and is separate from Better Auth's `user` table.
+Contains app-specific profile data and is separate from Better Auth's `user` table.
 
 ```text
 user_id             text PK FK -> user.id ON DELETE CASCADE
@@ -151,7 +151,7 @@ Future proposals should state their migration and offline-sync impact and remain
 
 ## AI Suggestion
 
-> WARNING: This section is meant to be a reference, not the single source of thruth of our future DB Schemas. I kept the suggestions for the areas we have not implemented yet.
+> WARNING: This section is meant to be a reference, not the single source of truth of our future DB Schemas. I kept the suggestions for the areas we have not implemented yet.
 
 ### 1. User Related
 
