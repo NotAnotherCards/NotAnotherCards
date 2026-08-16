@@ -1,119 +1,161 @@
-# Database schema overview
+# Database schemas
 
-> WARNING: This file is meant to be a reference, not the single source of thruth of our DB Schemas
+## Current architecture
 
-I would divide the DB into these domains:
+### Better Auth tables (server only)
 
-```txt
-1. Auth and users
-2. Languages and learning preferences
-3. Global card database
-4. User dictionary and custom edits
-5. Spaced repetition and reviews
-6. Offline sync support
-7. Statistics and gamification
-8. Social features
-9. Notifications and realtime
-10. AI generation and quality control
-11. Files/uploads
-12. Public API and audit/legal
-```
+These tables are generated and managed by Better Auth. Changes to authentication fields should be made through the Better Auth configuration and generation workflow, not by editing `apps/api/src/database/schema.ts`
 
----
+#### `user`
 
-# 1. Auth and users
-
-## `users`
-
-Main user table. Better Auth may provide this.
-
-```txt
-id                  uuid PK
+```text
+id                  text PK
+name                text NOT NULL
 email               text UNIQUE NOT NULL
-email_verified      boolean DEFAULT false
-name                text
-username            text UNIQUE
-image               text
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-deleted_at          timestamptz NULL
+email_verified      boolean NOT NULL DEFAULT false
+image               text NULL
+created_at          timestamp NOT NULL DEFAULT now()
+updated_at          timestamp NOT NULL
+timezone            text NULL DEFAULT 'UTC'
 ```
 
-Use `deleted_at` for soft deletion/GDPR flows.
+#### `session`
 
----
-
-## `sessions`
-
-User login sessions. Better Auth may provide this.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
+```text
+id                  text PK
+expires_at          timestamp NOT NULL
 token               text UNIQUE NOT NULL
-expires_at          timestamptz NOT NULL
-ip_address          text
-user_agent          text
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
+created_at          timestamp NOT NULL DEFAULT now()
+updated_at          timestamp NOT NULL
+ip_address          text NULL
+user_agent          text NULL
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+
+INDEX(user_id)
 ```
 
----
+#### `account`
 
-## `accounts`
+```text
+id                        text PK
+account_id                text NOT NULL
+provider_id               text NOT NULL
+user_id                   text NOT NULL FK -> user.id ON DELETE CASCADE
+access_token              text NULL
+refresh_token             text NULL
+id_token                  text NULL
+access_token_expires_at   timestamp NULL
+refresh_token_expires_at  timestamp NULL
+scope                     text NULL
+password                  text NULL
+created_at                timestamp NOT NULL DEFAULT now()
+updated_at                timestamp NOT NULL
 
-OAuth/provider accounts if we later add GitHub/Google/42 login. Better Auth may provide this.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-provider_id         text NOT NULL
-account_id          text NOT NULL
-access_token        text NULL
-refresh_token       text NULL
-access_token_expires_at timestamptz NULL
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-
-UNIQUE(provider_id, account_id)
+INDEX(user_id)
 ```
 
----
+#### `verification`
 
-## `verifications`
-
-Email verification, password reset, etc. Better Auth may provide this.
-
-```txt
-id                  uuid PK
+```text
+id                  text PK
 identifier          text NOT NULL
 value               text NOT NULL
-expires_at          timestamptz NOT NULL
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
+expires_at          timestamp NOT NULL
+created_at          timestamp NOT NULL DEFAULT now()
+updated_at          timestamp NOT NULL DEFAULT now()
+
+INDEX(identifier)
 ```
 
----
+### Synchronized application tables
 
-## `user_profiles`
+The following four logical tables exist on both sides of the offline boundary. The api schema adds `user_id`, `rev`, and `deleted_at` for ownership, revision tracking, and tombstones. RemelonDB supplies its own local record metadata, so those server columns are not declared as application fields in the local Zod tables.
 
-App-specific profile data.
+All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `reviewed_at`) are non-negative integer Unix milliseconds and must remain within JavaScript's safe-integer range. PostgreSQL stores them as `double precision`; the wire and local schemas validate them as integers found in `apps/api/src/sync/schema.ts`
 
-```txt
-user_id             uuid PK FK -> users.id ON DELETE CASCADE
-display_name        text
-bio                 text
-avatar_file_id      uuid FK -> files.id NULL
-native_language_id  uuid FK -> languages.id NULL
-target_language_id  uuid FK -> languages.id NULL
-timezone            text DEFAULT 'UTC'
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
+#### `user_decks`
+
+```text
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+rev                 bigint NOT NULL                                [server]
+deleted_at          timestamptz NULL                               [server]
+title               text NOT NULL
+description         text NULL
+created_at          number (integer Unix ms) NOT NULL
+updated_at          number (integer Unix ms) NOT NULL
 ```
 
----
+#### `user_cards`
 
-## `user_settings`
+Cards deliberately use generic `front` and `back` content.
+
+```text
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+rev                 bigint NOT NULL                                [server]
+deleted_at          timestamptz NULL                               [server]
+deck_id             text NOT NULL relation -> user_decks.id
+front               text NOT NULL
+back                text NOT NULL
+due_at              number (integer Unix ms) NOT NULL
+created_at          number (integer Unix ms) NOT NULL
+updated_at          number (integer Unix ms) NOT NULL
+```
+
+The relation to `user_decks` is declared in Drizzle and RemelonDB. Database-level ownership and parent checks are enforced by the sync layer.
+
+#### `review_events`
+
+```text
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+rev                 bigint NOT NULL                                [server]
+deleted_at          timestamptz NULL                               [server]
+user_card_id        text NOT NULL relation -> user_cards.id
+rating              integer NOT NULL CHECK (rating BETWEEN 1 AND 4)
+reviewed_at         number (integer Unix ms) NOT NULL
+```
+
+Review events are append-only in the sync configuration.
+
+#### `user_profiles`
+
+contains app-specific profile data and is separate from Better Auth's `user` table.
+
+```text
+user_id             text PK FK -> user.id ON DELETE CASCADE
+rev                 bigint NOT NULL                                [server]
+deleted_at          timestamptz NULL                               [server]
+username            text UNIQUE NULL
+bio                 text NULL
+avatar_file_id      uuid NULL
+native_language_id  uuid NULL
+target_language_id  uuid NULL
+created_at          number (integer Unix ms) NOT NULL
+updated_at          number (integer Unix ms) NOT NULL
+```
+
+The three UUID fields are currently values only; no `files` or `languages` tables or foreign-key constraints exist yet.
+
+## Future ideas
+
+Everything in this section is exploratory and is not part of the current database contract.
+
+- Treat `front` and `back` as Markdown so cards can include richer content and images without a schema change. Rendering and sanitization rules must be defined before adopting this.
+- If typed cards become necessary, add a `kind` column on top of the generic `front`/`back` model instead of prematurely splitting cards into word, phrase, and comparison tables.
+- Add language and file/upload tables before turning `native_language_id`, `target_language_id`, or `avatar_file_id` into foreign keys.
+- Evaluate user settings, statistics, gamification, social features, notifications, AI-generation metadata, public API keys, and audit/legal records only when product requirements justify their schemas.
+
+Future proposals should state their migration and offline-sync impact and remain in this section until added as ticket under the Task section in [this ticket](https://github.com/NotAnotherCards/NotAnotherCards/issues/131), and implemented in both the api and database where applicable.
+
+## AI Suggestion
+
+> WARNING: This section is meant to be a reference, not the single source of thruth of our future DB Schemas. I kept the suggestions for the areas we have not implemented yet.
+
+### 1. User Related
+
+#### `user_settings`
 
 User app preferences.
 
@@ -130,9 +172,9 @@ updated_at          timestamptz DEFAULT now()
 
 ---
 
-# 2. Languages and learning preferences
+### 2. Languages and learning preferences
 
-## `languages`
+#### `languages`
 
 Languages supported by the app.
 
@@ -147,7 +189,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `user_learning_languages`
+#### `user_learning_languages`
 
 Many-to-many table for users learning multiple languages.
 
@@ -163,11 +205,11 @@ UNIQUE(user_id, language_id)
 
 ---
 
-# 3. Global card database
+### 3. Global card database
 
 The project concept has word cards, comparison cards, and phrase cards, plus fields like translation, pronunciation, frequency, etymology, examples, mnemonics, related words, and language-specific grammar.
 
-## `cards`
+#### `cards`
 
 Base table for all card types.
 
@@ -188,7 +230,7 @@ Why `version`? Useful for conflict detection later.
 
 ---
 
-## `word_cards`
+#### `word_cards`
 
 Details for normal word cards.
 
@@ -220,7 +262,7 @@ This avoids creating separate grammar tables too early.
 
 ---
 
-## `phrase_cards`
+#### `phrase_cards`
 
 Details for fixed expressions or phrases.
 
@@ -236,7 +278,7 @@ notes               text
 
 ---
 
-## `comparison_cards`
+#### `comparison_cards`
 
 Details for cards comparing similar words.
 
@@ -255,7 +297,7 @@ notes               text
 
 ---
 
-## `card_examples`
+#### `card_examples`
 
 Usage examples for any card type.
 
@@ -270,7 +312,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `card_related_terms`
+#### `card_related_terms`
 
 Related words or phrases.
 
@@ -285,7 +327,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `card_tags`
+#### `card_tags`
 
 Reusable tags.
 
@@ -297,7 +339,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `card_tag_assignments`
+#### `card_tag_assignments`
 
 Many-to-many card/tag relation.
 
@@ -310,7 +352,7 @@ PRIMARY KEY(card_id, tag_id)
 
 ---
 
-## `dictionary_collections`
+#### `dictionary_collections`
 
 Ready-made dictionaries like Top-100, Top-300, Top-500.
 
@@ -328,7 +370,7 @@ updated_at          timestamptz DEFAULT now()
 
 ---
 
-## `dictionary_collection_cards`
+#### `dictionary_collection_cards`
 
 Cards inside ready-made dictionaries.
 
@@ -342,11 +384,11 @@ PRIMARY KEY(collection_id, card_id)
 
 ---
 
-# 4. User dictionary and personal card data
+### 4. User dictionary and personal card data
 
 The central card DB and a user’s personal dictionary should be separate. A global card can exist once, but each user has their own progress, edits, and learning status.
 
-## `user_cards`
+#### `user_cards`
 
 Cards added to a user’s personal dictionary.
 
@@ -365,7 +407,7 @@ UNIQUE(user_id, card_id)
 
 ---
 
-## `user_card_overrides`
+#### `user_card_overrides`
 
 User-specific edits to global card data.
 
@@ -384,7 +426,7 @@ This lets users edit any card without changing the global card for everyone.
 
 ---
 
-## `user_card_notes`
+#### `user_card_notes`
 
 Personal notes.
 
@@ -398,7 +440,7 @@ updated_at          timestamptz DEFAULT now()
 
 ---
 
-## `user_card_reset_events`
+#### `user_card_reset_events`
 
 When the user thought a word was learned but resets progress.
 
@@ -413,9 +455,9 @@ This supports “reset progress when encountering a forgotten word in real life�
 
 ---
 
-# 5. Spaced repetition and reviews
+### 5. Spaced repetition and reviews
 
-## `review_sessions`
+#### `review_sessions`
 
 One review session by a user.
 
@@ -430,7 +472,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `user_card_progress`
+#### `user_card_progress`
 
 Current spaced repetition state for a user card.
 
@@ -454,7 +496,7 @@ Even if our first SRS algorithm is simple, this table allows us to improve it la
 
 ---
 
-## `card_reviews`
+#### `card_reviews`
 
 Every review result.
 
@@ -479,59 +521,11 @@ UNIQUE(user_id, client_mutation_id)
 
 ---
 
-# 6. Offline sync support
-
-Dexie/IndexedDB will have local tables, but the backend should also track synced offline mutations so repeated syncs are safe.
-
-## `sync_actions`
-
-Server-side record of offline actions received from clients.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-client_action_id    text NOT NULL
-action_type         text NOT NULL              -- CARD_REVIEWED | CARD_EDITED | CARD_ADDED | CARD_RESET
-payload             jsonb NOT NULL
-status              text DEFAULT 'pending'     -- pending | applied | failed | conflict
-error_message       text NULL
-created_offline_at  timestamptz NULL
-received_at         timestamptz DEFAULT now()
-applied_at          timestamptz NULL
-
-UNIQUE(user_id, client_action_id)
-```
-
-This is our safety table for offline writes.
-
----
-
-## `sync_conflicts`
-
-Conflicts detected during sync.
-
-```txt
-id                  uuid PK
-sync_action_id      uuid FK -> sync_actions.id ON DELETE CASCADE
-user_id             uuid FK -> users.id ON DELETE CASCADE
-entity_type         text NOT NULL              -- user_card | card_review | user_card_override
-entity_id           uuid NULL
-server_value        jsonb
-client_value        jsonb
-resolution          text DEFAULT 'unresolved'  -- unresolved | client_wins | server_wins | manual
-resolved_at         timestamptz NULL
-created_at          timestamptz DEFAULT now()
-```
-
-For MVP, most review actions should be append-only and conflict-free. This table is mainly for card edits.
-
----
-
-# 7. Statistics and gamification
+### 6. Statistics and gamification
 
 Our concept includes learned words, due words, daily points, streaks, dictionary progress, resets, and added words per day.
 
-## `user_daily_stats`
+#### `user_daily_stats`
 
 Aggregated daily stats.
 
@@ -553,7 +547,7 @@ UNIQUE(user_id, date)
 
 ---
 
-## `user_streaks`
+#### `user_streaks`
 
 Current streak state.
 
@@ -567,7 +561,7 @@ updated_at          timestamptz DEFAULT now()
 
 ---
 
-## `achievements`
+#### `achievements`
 
 Achievement definitions.
 
@@ -582,7 +576,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `user_achievements`
+#### `user_achievements`
 
 Achievements unlocked by users.
 
@@ -596,11 +590,11 @@ PRIMARY KEY(user_id, achievement_id)
 
 ---
 
-# 8. Social features
+### 7. Social features
 
 The subject’s user interaction module includes profile, friends system, chat, online status, and real-time interaction.
 
-## `friend_requests`
+#### `friend_requests`
 
 Friend request flow.
 
@@ -617,7 +611,7 @@ UNIQUE(sender_id, receiver_id)
 
 ---
 
-## `friendships`
+#### `friendships`
 
 Accepted friendships.
 
@@ -634,7 +628,7 @@ Rule: store smaller UUID as `user_a_id` if we want to avoid duplicate inverse ro
 
 ---
 
-## `user_blocks`
+#### `user_blocks`
 
 Optional, useful if we implement chat.
 
@@ -648,7 +642,7 @@ PRIMARY KEY(blocker_id, blocked_id)
 
 ---
 
-## `conversations`
+#### `conversations`
 
 For chat.
 
@@ -661,7 +655,7 @@ updated_at          timestamptz DEFAULT now()
 
 ---
 
-## `conversation_participants`
+#### `conversation_participants`
 
 Users in a conversation.
 
@@ -676,7 +670,7 @@ PRIMARY KEY(conversation_id, user_id)
 
 ---
 
-## `messages`
+#### `messages`
 
 Chat messages.
 
@@ -692,9 +686,9 @@ deleted_at          timestamptz NULL
 
 ---
 
-# 9. Notifications and realtime
+### 8. Notifications and realtime
 
-## `notifications`
+#### `notifications`
 
 Persistent notifications.
 
@@ -711,7 +705,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `user_presence`
+#### `user_presence`
 
 Online status. Could also be in memory/Redis, but DB is fine for MVP.
 
@@ -724,11 +718,11 @@ updated_at          timestamptz DEFAULT now()
 
 ---
 
-# 10. AI generation and quality control
+### 9. AI generation and quality control
 
 The app concept says missing words can be generated with AI and saved to the shared database, with users able to report errors and the system tracking frequently edited fields.
 
-## `ai_generation_requests`
+#### `ai_generation_requests`
 
 Track AI usage.
 
@@ -750,7 +744,7 @@ completed_at        timestamptz NULL
 
 ---
 
-## `card_reports`
+#### `card_reports`
 
 User reports for wrong card data.
 
@@ -767,7 +761,7 @@ resolved_at         timestamptz NULL
 
 ---
 
-## `card_quality_signals`
+#### `card_quality_signals`
 
 Track fields that users often edit.
 
@@ -783,11 +777,11 @@ UNIQUE(card_id, field_path)
 
 ---
 
-# 11. Files/uploads
+### 10. Files/uploads
 
 Useful for avatars now, and later audio/pronunciation or imported files.
 
-## `files`
+#### `files`
 
 ```txt
 id                  uuid PK
@@ -804,11 +798,11 @@ deleted_at          timestamptz NULL
 
 ---
 
-# 12. Public API, audit, and legal
+### 11. Public API, audit, and legal
 
 The subject allows/mentions public API, rate limiting, documentation, privacy policy, terms, GDPR features, and README database documentation.
 
-## `api_keys`
+#### `api_keys`
 
 For public API module if we implement it.
 
@@ -824,7 +818,7 @@ revoked_at          timestamptz NULL
 
 ---
 
-## `api_usage_logs`
+#### `api_usage_logs`
 
 ```txt
 id                  uuid PK
@@ -839,7 +833,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `audit_logs`
+#### `audit_logs`
 
 Useful for debugging and evaluation.
 
@@ -855,7 +849,7 @@ created_at          timestamptz DEFAULT now()
 
 ---
 
-## `legal_documents`
+#### `legal_documents`
 
 Versions of Privacy Policy and Terms.
 
@@ -871,7 +865,7 @@ UNIQUE(type, version)
 
 ---
 
-## `user_legal_acceptances`
+#### `user_legal_acceptances`
 
 Track accepted Terms/Privacy versions.
 
@@ -886,7 +880,7 @@ UNIQUE(user_id, legal_document_id)
 
 ---
 
-## `data_export_requests`
+#### `data_export_requests`
 
 For GDPR/data export module.
 
@@ -897,50 +891,4 @@ status              text DEFAULT 'pending'     -- pending | processing | ready |
 file_id             uuid FK -> files.id NULL
 requested_at        timestamptz DEFAULT now()
 completed_at        timestamptz NULL
-```
-
----
-
-# Local Dexie / IndexedDB schema
-
-This is not PostgreSQL, but we should document it because offline is central to the project.
-
-```txt
-local_cards
-- id
-- server_card_id
-- type
-- language_id
-- data
-- server_version
-- downloaded_at
-- updated_at
-
-local_user_cards
-- id
-- server_user_card_id
-- server_card_id
-- status
-- offline_enabled
-- data
-- updated_at
-
-local_user_card_progress
-- server_user_card_id
-- stage
-- interval_days
-- due_at
-- last_reviewed_at
-- review_count
-- updated_at
-
-sync_queue
-- id
-- client_action_id
-- action_type
-- payload
-- status              -- pending | syncing | synced | failed | conflict
-- created_at
-- last_attempt_at
-- error_message
 ```
