@@ -6,7 +6,7 @@
 
 These tables are generated and managed by Better Auth. Changes to authentication fields should be made through the Better Auth configuration and generation workflow, not by editing [`apps/api/src/database/schema.ts`](../apps/api/src/database/schema.ts)
 
-#### `user`
+#### `user` ([API schema](../apps/api/src/database/schema.ts#L4))
 
 ```text
 id                  text PK
@@ -19,7 +19,7 @@ updated_at          timestamp NOT NULL
 timezone            text NULL DEFAULT 'UTC'
 ```
 
-#### `session`
+#### `session` ([API schema](../apps/api/src/database/schema.ts#L18))
 
 ```text
 id                  text PK
@@ -34,7 +34,7 @@ user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
 INDEX(user_id)
 ```
 
-#### `account`
+#### `account` ([API schema](../apps/api/src/database/schema.ts#L37))
 
 ```text
 id                        text PK
@@ -54,7 +54,7 @@ updated_at                timestamp NOT NULL
 INDEX(user_id)
 ```
 
-#### `verification`
+#### `verification` ([API schema](../apps/api/src/database/schema.ts#L61))
 
 ```text
 id                  text PK
@@ -73,7 +73,7 @@ The following four logical tables exist on both sides of the offline boundary. T
 
 All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `reviewed_at`) are non-negative integer Unix milliseconds and must remain within JavaScript's safe-integer range. PostgreSQL stores them as `double precision`; the wire and local schemas validate them as integers found in [`apps/api/src/sync/schema.ts`](../apps/api/src/sync/schema.ts).
 
-#### `user_decks`
+#### `user_decks` ([API schema](../apps/api/src/sync/schema.ts#L34), [local schema](../packages/offline-db/src/user-dictionary.ts#L37))
 
 ```text
 id                  text PK
@@ -86,7 +86,7 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 ```
 
-#### `user_cards`
+#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L62), [local schema](../packages/offline-db/src/user-dictionary.ts#L41))
 
 Cards deliberately use generic `front` and `back` content.
 
@@ -105,7 +105,7 @@ updated_at          number (integer Unix ms) NOT NULL
 
 The relation to `user_decks` is declared in Drizzle and RemelonDB. Database-level ownership and parent checks are enforced by the sync layer.
 
-#### `review_events`
+#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L97), [local schema](../packages/offline-db/src/user-dictionary.ts#L45))
 
 ```text
 id                  text PK
@@ -119,7 +119,7 @@ reviewed_at         number (integer Unix ms) NOT NULL
 
 Review events are append-only in the sync configuration.
 
-#### `user_profiles`
+#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L121), [local schema](../packages/offline-db/src/user-dictionary.ts#L49))
 
 Contains app-specific profile data and is separate from Better Auth's `user` table.
 
