@@ -124,7 +124,9 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
           <AlertCircle className="size-8" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-destructive">Failed to Load Decks</h3>
+          <h3 className="text-base font-bold text-destructive">
+            Failed to Load Decks
+          </h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
             {store.error ||
               "An error occurred while loading your library. Please try reloading."}

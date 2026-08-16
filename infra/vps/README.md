@@ -82,11 +82,11 @@ Copy or symlink the Nginx site configuration template:
 
 ```bash
 # Copy site config to Nginx conf.d or sites-available
-sudo cp /opt/notanothercards/infra/vps/cards.dustyway.org.conf /etc/nginx/sites-available/cards.dustyway.org.conf
-sudo ln -sf /etc/nginx/sites-available/cards.dustyway.org.conf /etc/nginx/sites-enabled/
+sudo cp /opt/notanothercards/infra/vps/app.notanothercards.com.conf /etc/nginx/sites-available/app.notanothercards.com.conf
+sudo ln -sf /etc/nginx/sites-available/app.notanothercards.com.conf /etc/nginx/sites-enabled/
 
 # Request SSL Certificate using Certbot
-sudo certbot --nginx -d cards.dustyway.org
+sudo certbot --nginx -d app.notanothercards.com
 
 # Test and reload Nginx
 sudo nginx -t && sudo systemctl reload nginx
@@ -94,15 +94,16 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
-## 5. GitHub Repository Secrets
+## 5. GitHub Repository Secrets & Environment
 
-In your GitHub repository under **Settings -> Secrets and variables -> Actions**, add the following Repository Secrets:
+In your GitHub repository under **Settings -> Secrets and variables -> Actions**, configure the `production` environment with the following secrets:
 
-| Secret Name       | Value Description                                                             |
-| ----------------- | ----------------------------------------------------------------------------- |
-| `SSH_HOST`        | IP address or domain of the VPS (e.g. `123.45.67.89` or `cards.dustyway.org`) |
-| `SSH_USER`        | `deploy`                                                                      |
-| `SSH_PRIVATE_KEY` | Contents of the `id_ed25519_deploy` private key file                          |
+| Secret Name       | Value Description                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| `SSH_HOST`        | IP address or domain of the VPS (e.g. `app.notanothercards.com`)                                 |
+| `SSH_USER`        | `deploy`                                                                                         |
+| `SSH_PRIVATE_KEY` | Contents of the `id_ed25519_deploy` private key file                                             |
+| `SSH_FINGERPRINT` | Host key fingerprint of the VPS (e.g., from `ssh-keyscan -t ed25519 <host> \| ssh-keygen -lf -`) |
 
 ---
 
@@ -110,7 +111,8 @@ In your GitHub repository under **Settings -> Secrets and variables -> Actions**
 
 Every merge to `main` triggers `.github/workflows/deploy.yml`:
 
-1. GitHub Actions connects to the VPS via SSH as the `deploy` user.
+1. GitHub Actions connects to the VPS via SSH as the `deploy` user with host fingerprint validation.
 2. Navigates to `/opt/notanothercards`.
 3. Runs `git fetch origin main && git reset --hard origin/main` to sync latest code.
-4. Executes `docker compose up -d --build` to pull/build and restart container services smoothly with minimal downtime.
+4. Executes `docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build --wait` to build and launch production-configured containers (with isolated internal DB ports and loopback-only service bindings).
+5. Reloads host Nginx if needed.

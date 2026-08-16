@@ -15,6 +15,9 @@ jobs:
     name: Deploy to VPS
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment:
+      name: production
+      url: https://app.notanothercards.com
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -25,6 +28,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
           port: 22
           command_timeout: 15m
           script: |
@@ -32,8 +36,14 @@ jobs:
             cd /opt/notanothercards
             git fetch origin main
             git reset --hard origin/main
-            docker compose up -d --build --wait
-            docker compose ps
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              up -d --build --wait
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              ps
             if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet nginx; then
               sudo systemctl reload nginx
             elif docker ps --format '{{.Names}}' | grep -q '^nginx$'; then

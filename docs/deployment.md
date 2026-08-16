@@ -61,8 +61,8 @@ The same `docker-compose.yml` runs in three places:
 
 ## Deploys
 
-- GitHub Actions deploys on merge to main (`.github/workflows/deploy.yml`): SSH with a deploy key to a restricted `deploy` user on the VPS, executing `docker compose up -d --build --wait`. Merging a PR is deploying; reverting a PR is rolling back.
-- Compose file, Nginx config (`infra/vps/cards.dustyway.org.conf`), and reproducible setup guide (`infra/vps/README.md`) live in the repo. The setup is fully reproducible on a fresh VPS from the repo alone.
+- GitHub Actions deploys on merge to main (`.github/workflows/deploy.yml`): SSH with a deploy key and fingerprint verification to a restricted `deploy` user on the VPS, executing `docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build --wait`. Merging a PR is deploying; reverting a PR is rolling back.
+- Compose files (`docker-compose.yml`, `docker-compose.production.yml`), Nginx config (`infra/vps/app.notanothercards.com.conf`), and reproducible setup guide (`infra/vps/README.md`) live in the repo. The setup is fully reproducible on a fresh VPS from the repo alone.
 - Production env vars are documented in `.env.example` files, values stay on the server (subject III.3).
 
 ## The AI backend
