@@ -23,8 +23,8 @@ SELECT
 	"id",
 	nextval('remelon_rev'),
 	"username",
-	extract(epoch from "created_at") * 1000,
-	extract(epoch from "updated_at") * 1000
+	floor(extract(epoch from "created_at") * 1000),
+	floor(extract(epoch from "updated_at") * 1000)
 FROM "user";--> statement-breakpoint
 CREATE INDEX "user_profiles_user_rev_idx" ON "user_profiles" USING btree ("user_id","rev");--> statement-breakpoint
 CREATE INDEX "user_profiles_user_updated_idx" ON "user_profiles" USING btree ("user_id","updated_at");--> statement-breakpoint
