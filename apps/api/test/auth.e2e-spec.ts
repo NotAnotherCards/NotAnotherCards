@@ -19,7 +19,6 @@ describe('Authentication (e2e)', () => {
   const testUser = {
     email: `developer-${Date.now()}@random.com`,
     password: 'randompassworD123!',
-    username: `developer_${Date.now()}`,
     firstName: 'Art',
     lastName: 'Emis',
   };
@@ -49,7 +48,6 @@ describe('Authentication (e2e)', () => {
           email: testUser.email,
           password: testUser.password,
           name: `${testUser.firstName} ${testUser.lastName}`,
-          username: testUser.username,
           timezone: 'Europe/Berlin',
         })
         .expect(200);
@@ -58,7 +56,6 @@ describe('Authentication (e2e)', () => {
         user: {
           email: string;
           name: string;
-          username: string;
           timezone: string;
         };
       };
@@ -67,7 +64,6 @@ describe('Authentication (e2e)', () => {
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe(testUser.email);
       expect(body.user.name).toBe(`${testUser.firstName} ${testUser.lastName}`);
-      expect(body.user.username).toBe(testUser.username);
       expect(body.user.timezone).toBe('Europe/Berlin');
 
       const cookies = (response.headers['set-cookie'] || []) as string[];
@@ -87,7 +83,6 @@ describe('Authentication (e2e)', () => {
           email: testUser.email, // using the same email
           password: testUser.password,
           name: 'Duplicate User',
-          username: `duplicate_${Date.now()}`,
         })
         .expect(422); // Better Auth returns a 422 Unprocessable Entity on duplicate signups
 
@@ -96,22 +91,6 @@ describe('Authentication (e2e)', () => {
       expect(body.message).toContain('User already exists');
     });
 
-    it('should reject a duplicate username cleanly', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/auth/sign-up/email')
-        .set('Origin', frontendOrigin)
-        .send({
-          email: `duplicate-${Date.now()}@random.com`,
-          password: testUser.password,
-          name: 'Duplicate Username',
-          username: testUser.username,
-          timezone: 'UTC',
-        })
-        .expect(422);
-
-      const body = response.body as { message?: string };
-      expect(body.message).toBe('Username is already taken');
-    });
   });
 
   describe('POST /api/auth/sign-in/email', () => {

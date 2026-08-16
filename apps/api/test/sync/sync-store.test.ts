@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
 import type {
   SyncChanges,
   SyncPullResult,
@@ -21,6 +22,7 @@ import {
   createAppSyncStore,
   type AppSyncStore,
 } from '../../src/sync/sync-store';
+import { userProfiles } from '../../src/sync/schema';
 import {
   db,
   getTestConnectionString,
@@ -137,6 +139,79 @@ const allTablesCreated = (now: number, suffix = '1'): SyncChanges => ({
 const describePostgres = hasPostgres ? describe : describe.skip;
 
 describePostgres('PostgreSQL-backed sync behavior', () => {
+  it('enforces unique profile usernames but permits multiple null usernames', async () => {
+    const now = Date.now();
+    await db.insert(userProfiles).values([
+      {
+        userId: 'user-a',
+        rev: 1,
+        username: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        userId: 'user-b',
+        rev: 2,
+        username: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+
+    await db
+      .update(userProfiles)
+      .set({ username: 'shared-name' })
+      .where(eq(userProfiles.userId, 'user-a'));
+    await expect(
+      db
+        .update(userProfiles)
+        .set({ username: 'shared-name' })
+        .where(eq(userProfiles.userId, 'user-b')),
+    ).rejects.toMatchObject({
+      cause: {
+        code: '23505',
+        constraint: 'user_profiles_username_unique',
+      },
+    });
+  });
+
+  it('round-trips a one-to-one profile and rejects a foreign profile id', async () => {
+    const now = Date.now();
+    const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    const profile = {
+      username: 'alice',
+      bio: 'Learning German',
+      avatar_file_id: null,
+      native_language_id: null,
+      target_language_id: null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const result = accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: {
+          user_profiles: {
+            created: [
+              { id: 'user-a', ...profile },
+              { id: 'user-b', ...profile, username: 'not-alice' },
+            ],
+            updated: [],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(result.rejected.user_profiles).toEqual(['user-b']);
+    const state = pulled(await handlers.pull(pullArgs(null)));
+    expect(state.changes.user_profiles?.updated).toEqual([
+      expect.objectContaining({ id: 'user-a', username: 'alice' }),
+    ]);
+  });
+
   it('round-trips all tables and persists through a fresh backend instance', async () => {
     const now = Date.now();
     const engine = createAppSyncEngine(createAppSyncStore(db));

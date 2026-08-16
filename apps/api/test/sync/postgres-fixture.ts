@@ -61,16 +61,16 @@ export async function resetPostgres(): Promise<void> {
   if (!testPool) return;
 
   await testPool.query(`
-    truncate table review_events, user_cards, user_decks cascade;
+    truncate table user_profiles, review_events, user_cards, user_decks cascade;
     delete from remelon_revision_checkpoints;
     delete from remelon_sync_meta;
     delete from "user";
     alter sequence remelon_rev restart with 1;
     insert into "user" (
-      id, name, username, timezone, email, email_verified, created_at, updated_at
+      id, name, timezone, email, email_verified, created_at, updated_at
     ) values
-      ('user-a', 'User A', 'user-a', 'UTC', 'a@example.test', true, now(), now()),
-      ('user-b', 'User B', 'user-b', 'UTC', 'b@example.test', true, now(), now());
+      ('user-a', 'User A', 'UTC', 'a@example.test', true, now(), now()),
+      ('user-b', 'User B', 'UTC', 'b@example.test', true, now(), now());
   `);
 }
 

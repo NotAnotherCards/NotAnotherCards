@@ -7,7 +7,7 @@ import {
 } from '@remelondb/store-drizzle';
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
-import { reviewEvents, userCards, userDecks } from './schema';
+import { reviewEvents, userCards, userDecks, userProfiles } from './schema';
 import {
   crossValidateSyncRelationships,
   withSyncRelationshipDeletionPolicy,
@@ -44,6 +44,21 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       insertOnly: ['user_card_id', 'rating', 'reviewed_at'],
       scrub: { rating: 1 },
     },
+    user_profiles: {
+      table: userProfiles,
+      id: userProfiles.userId,
+      rev: userProfiles.rev,
+      deletedAt: userProfiles.deletedAt,
+      scope: userProfiles.userId,
+      insertOnly: ['created_at'],
+      scrub: {
+        username: null,
+        bio: null,
+        avatar_file_id: null,
+        native_language_id: null,
+        target_language_id: null,
+      },
+    },
   } as unknown as DrizzleStoreOptions<string>['tables'];
 
   return withSyncRelationshipDeletionPolicy(
@@ -71,6 +86,10 @@ export function createAppSyncEngine(store: AppSyncStore) {
         appendOnly: true,
         validate: (row) =>
           syncWireSchemas.rows.review_events.safeParse(row).success,
+      },
+      user_profiles: {
+        validate: (row) =>
+          syncWireSchemas.rows.user_profiles.safeParse(row).success,
       },
     },
   });
