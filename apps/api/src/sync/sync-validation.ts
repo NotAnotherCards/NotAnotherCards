@@ -14,7 +14,12 @@ const USER_PROFILES = 'user_profiles';
 interface PushRelationshipState {
   readonly submittedOwnedIds: Map<string, Set<string>>;
   readonly blockedDeletes: Map<string, Set<string>>;
+  readonly findProfileUsernameOwners?: ProfileUsernameOwnerLookup;
 }
+
+export type ProfileUsernameOwnerLookup = (
+  usernames: readonly string[],
+) => Promise<ReadonlyMap<string, string>>;
 
 const relationshipState = new WeakMap<
   SyncStoreTx<string>,
@@ -107,6 +112,7 @@ async function cascadeCardTombstones(
  */
 export function withSyncRelationshipDeletionPolicy(
   store: DrizzleStore<string>,
+  findProfileUsernameOwners?: ProfileUsernameOwnerLookup,
 ): DrizzleStore<string> {
   return {
     gc: (floor) => store.gc(floor),
@@ -117,6 +123,7 @@ export function withSyncRelationshipDeletionPolicy(
         const state: PushRelationshipState = {
           submittedOwnedIds: new Map(),
           blockedDeletes: new Map(),
+          findProfileUsernameOwners,
         };
         const wrapped: SyncStoreTx<string> = {
           ...tx,
@@ -163,6 +170,18 @@ export const crossValidateSyncRelationships: NonNullable<
   const cardRows = rows[USER_CARDS] ?? [];
   const reviewRows = rows[REVIEW_EVENTS] ?? [];
   const profileRows = rows[USER_PROFILES] ?? [];
+
+  const submittedUsernames = profileRows.flatMap((profile) => {
+    const username = stringField(profile, 'username');
+    return username === null ? [] : [username];
+  });
+  const usernameOwners =
+    submittedUsernames.length === 0
+      ? new Map<string, string>()
+      : ((await relationshipState
+          .get(tx)
+          ?.findProfileUsernameOwners?.(submittedUsernames)) ??
+        new Map<string, string>());
 
   const deckChanges = await tx.changedSince(USER_DECKS, scope, 0);
   const ownedDeckIds = activeIds(deckChanges);
@@ -243,7 +262,13 @@ export const crossValidateSyncRelationships: NonNullable<
     ],
     [REVIEW_EVENTS]: rejectedReviews.map((review) => review.id),
     [USER_PROFILES]: profileRows
-      .filter((profile) => profile.id !== scope)
+      .filter((profile) => {
+        if (profile.id !== scope) return true;
+        const username = stringField(profile, 'username');
+        if (username === null) return false;
+        const owner = usernameOwners.get(username);
+        return owner !== undefined && owner !== profile.id;
+      })
       .map((profile) => profile.id),
   };
 };
