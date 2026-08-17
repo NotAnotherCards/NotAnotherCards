@@ -90,12 +90,12 @@ export function Settings() {
       });
 
       setSuccessMessage("Settings saved successfully!");
-      refetch();
+      void refetch();
       setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
-    } catch (err: any) {
-      setApiError(err.message || "An unexpected error occurred");
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "An unexpected error occurred");
     }
   };
 
@@ -158,7 +158,7 @@ export function Settings() {
                   <User className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-md font-bold">
+                  <CardTitle className="text-base font-bold">
                     Profile Details
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -204,7 +204,7 @@ export function Settings() {
                   <Globe className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-md font-bold">
+                  <CardTitle className="text-base font-bold">
                     Language Preferences
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -361,7 +361,7 @@ export function Settings() {
                   <SettingsIcon className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-md font-bold">
+                  <CardTitle className="text-base font-bold">
                     Preferences
                   </CardTitle>
                   <CardDescription className="text-xs">

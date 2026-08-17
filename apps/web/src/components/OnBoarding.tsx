@@ -70,9 +70,9 @@ export function OnBoardingComponent() {
           target_language_id: data.target_language_id,
         });
       }
-      navigate({ to: "/app/dashboard" });
-    } catch (err: any) {
-      setApiError(err.message || "An unexpected error occurred");
+      void navigate({ to: "/app/dashboard" });
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "An unexpected error occurred");
     }
   };
 

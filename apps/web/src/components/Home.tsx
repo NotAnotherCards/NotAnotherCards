@@ -18,7 +18,7 @@ export function HomeComponent() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2 shadow-inner">
             <Layers className="h-10 w-10 stroke-[2.2]" />
           </div>
-          <CardTitle className="text-xl xs:text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <CardTitle className="text-xl sm:text-3xl font-extrabold tracking-tight">
             NotAnotherCards
           </CardTitle>
           <CardDescription className="text-sm text-muted-foreground font-medium max-w-xs leading-relaxed">
