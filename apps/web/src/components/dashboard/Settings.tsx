@@ -35,7 +35,7 @@ import { useStore } from "@/hooks/useStore";
 
 export function Settings() {
   const { data: session, refetch } = authClient.useSession();
-  const { profile, userProfile } = useStore();
+  const { profile, updateUserProfile } = useStore();
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<"profile" | "settings">(
@@ -75,7 +75,7 @@ export function Settings() {
     setSuccessMessage(null);
     try {
       // Save language preferences and username to local RemelonDB
-      await userProfile({
+      await updateUserProfile({
         username: data.username || "",
         native_language_id: data.native_language_id || "",
         target_language_id: data.target_language_id || "",

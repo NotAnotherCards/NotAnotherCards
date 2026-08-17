@@ -16,7 +16,8 @@ import {
   updateCard as dbUpdateCard,
   deleteCard as dbDeleteCard,
   recordReviewEvent as dbRecordReview,
-  updateOrCreateUserProfile as dbUserProfile,
+  createUserProfile as dbCreateUserProfile,
+  updateUserProfile as dbUpdateUserProfile,
 } from "../offline/queries";
 
 export type Deck = UserDeckRecord;
@@ -143,19 +144,33 @@ export function useStore() {
     window.location.reload();
   }, []);
 
-  const userProfile = useCallback(
+  const creatUserProfile = useCallback(
     async (profile: {
       username: string;
       native_language_id: string;
       target_language_id: string;
     }) => {
       if (!db) throw new Error("Database not initialized");
-      const result = await dbUserProfile(db, profile);
+      const result = await dbCreateUserProfile(db, profile);
       sync?.notifyLocalWrite()
       return result
     },
     [db, sync],
   );
+
+    const updateUserProfile = useCallback(
+      async (profile: {
+        username: string;
+        native_language_id: string;
+        target_language_id: string;
+      }) => {
+        if (!db) throw new Error("Database not initialized");
+        const result = await dbUpdateUserProfile(db, profile);
+        sync?.notifyLocalWrite();
+        return result;
+      },
+      [db, sync],
+    );
 
   return {
     db,
@@ -164,7 +179,12 @@ export function useStore() {
     dueCards,
     status,
     isTakenOver: status === "taken-over",
-    isLoading: isInitializing || decksLoading || cardsLoading || dueLoading || profileLoading,
+    isLoading:
+      isInitializing ||
+      decksLoading ||
+      cardsLoading ||
+      dueLoading ||
+      profileLoading,
     error: initError,
     reconnect,
     createDeck,
@@ -175,7 +195,8 @@ export function useStore() {
     deleteCard,
     recordReview,
     getCardsCount,
-    userProfile,
+    creatUserProfile,
+    updateUserProfile,
     profile: profiles?.[0] || null,
   };
 }

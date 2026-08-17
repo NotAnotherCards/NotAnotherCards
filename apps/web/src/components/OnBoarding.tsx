@@ -28,7 +28,7 @@ export const LANGUAGES = [
 export function OnBoardingComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const { userProfile } = useStore();
+  const { creatUserProfile } = useStore();
   const form = useForm<UserProfileRowType>({
     resolver: zodResolver(UserProfileRow),
     defaultValues: {
@@ -45,8 +45,8 @@ export function OnBoardingComponent() {
   const onSubmit = async (data: UserProfileRowType) => {
     setApiError(null);
     try {
-      //Save language preferences and username to local RemelonDB
-      await userProfile({
+      // Save language preferences and username to local RemelonDB
+      await creatUserProfile({
         username: data.username || "",
         native_language_id: data.native_language_id || "",
         target_language_id: data.target_language_id || "",

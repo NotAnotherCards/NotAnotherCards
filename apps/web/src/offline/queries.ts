@@ -189,7 +189,7 @@ export async function recordReviewEvent(
   });
 }
 
-export async function updateOrCreateUserProfile(
+export async function createUserProfile(
   db: Database,
   profile: {
     username: string;
@@ -198,27 +198,34 @@ export async function updateOrCreateUserProfile(
   },
 ) {
   return await db.write(async () => {
-    const now = Date.now();
+    return await db.get(UserProfile).create({
+      username: profile.username,
+      bio: null,
+      avatar_file_id: null,
+      native_language_id: profile.native_language_id,
+      target_language_id: profile.target_language_id,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    });
+  });
+}
+
+export async function updateUserProfile(
+  db: Database,
+  profile: {
+    username: string;
+    native_language_id: string;
+    target_language_id: string;
+  },
+) {
+  return await db.write(async () => {
     const profiles = await db.get(UserProfile).query().fetch();
     const existing = profiles[0];
-
-    if (existing) {
-      return await existing.update((record) => {
-        record.username = profile.username;
-        record.native_language_id = profile.native_language_id;
-        record.target_language_id = profile.target_language_id;
-        record.updated_at = now;
-      });
-    } else {
-      return await db.get(UserProfile).create({
-        username: profile.username,
-        bio: null,
-        avatar_file_id: null,
-        native_language_id: profile.native_language_id,
-        target_language_id: profile.target_language_id,
-        created_at: now,
-        updated_at: now,
-      });
-    }
+    return await existing.update((record) => {
+      record.username = profile.username;
+      record.native_language_id = profile.native_language_id;
+      record.target_language_id = profile.target_language_id;
+      record.updated_at = Date.now();
+    });
   });
 }
