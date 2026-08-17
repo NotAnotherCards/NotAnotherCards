@@ -57,13 +57,16 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     );
   }
 
-  if (store.isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
-        <Loader2 className="animate-spin size-8 text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse">Loading deck details...</p>
-      </div>
-    );
+  if (!store.ready) {
+    if (store.showSpinner) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
+          <Loader2 className="animate-spin size-8 text-primary" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading deck details...</p>
+        </div>
+      );
+    }
+    return null;
   }
 
   const deck = store.decks.find((d) => d.id === deckId);
@@ -160,7 +163,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         onEditCard={(card) => setEditingCard(card)}
         onDeleteCard={(cardId) => setCardToDelete(cardId)}
         onAddCard={() => setShowCreateForm(true)}
-        isLoading={store.isLoading}
+        isLoading={!store.ready}
         error={store.error}
       />
 

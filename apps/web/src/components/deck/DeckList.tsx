@@ -96,14 +96,17 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
     );
   }
 
-  if (store.isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
-        <Loader2 className="animate-spin size-8 text-primary" />
-        <p className="text-sm font-semibold text-foreground animate-pulse">Connecting Local Database...</p>
-        <p className="text-xs text-muted-foreground">Initializing offline storage handles and loading library.</p>
-      </div>
-    );
+  if (!store.ready) {
+    if (store.showSpinner) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
+          <Loader2 className="animate-spin size-8 text-primary" />
+          <p className="text-sm font-semibold text-foreground animate-pulse">Connecting Local Database...</p>
+          <p className="text-xs text-muted-foreground">Initializing offline storage handles and loading library.</p>
+        </div>
+      );
+    }
+    return null;
   }
 
   if (store.error) {
