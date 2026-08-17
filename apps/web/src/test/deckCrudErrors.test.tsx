@@ -41,6 +41,7 @@ vi.mock("@/offline/db", () => {
 
 vi.mock("@/hooks/useStore", () => ({
   useStore: () => ({
+    ready: true,
     decks,
     getCardsCount: () => 0,
     isLoading: false,

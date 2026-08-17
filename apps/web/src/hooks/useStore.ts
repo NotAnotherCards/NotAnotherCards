@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import type { Database } from "@remelondb/core";
 import { useDatabase, useDatabaseState } from "@remelondb/core/react";
 import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
@@ -18,6 +18,55 @@ import {
 
 export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
+
+export function useDelayedLoading(
+  isLoading: boolean,
+  { delay = 200, minDuration = 400 } = {}
+) {
+  const [ready, setReady] = useState(!isLoading);
+  const [showSpinner, setShowSpinner] = useState(false);
+  const spinnerShownAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let delayTimer: ReturnType<typeof setTimeout> | null = null;
+    let minDurationTimer: ReturnType<typeof setTimeout> | null = null;
+
+    if (isLoading) {
+      setReady(false);
+      delayTimer = setTimeout(() => {
+        setShowSpinner(true);
+        spinnerShownAtRef.current = Date.now();
+      }, delay);
+    } else {
+      const spinnerShownAt = spinnerShownAtRef.current;
+      if (spinnerShownAt === null) {
+        setShowSpinner(false);
+        setReady(true);
+      } else {
+        const elapsed = Date.now() - spinnerShownAt;
+        const remaining = minDuration - elapsed;
+        if (remaining <= 0) {
+          setShowSpinner(false);
+          setReady(true);
+          spinnerShownAtRef.current = null;
+        } else {
+          minDurationTimer = setTimeout(() => {
+            setShowSpinner(false);
+            setReady(true);
+            spinnerShownAtRef.current = null;
+          }, remaining);
+        }
+      }
+    }
+
+    return () => {
+      if (delayTimer) clearTimeout(delayTimer);
+      if (minDurationTimer) clearTimeout(minDurationTimer);
+    };
+  }, [isLoading, delay, minDuration]);
+
+  return { ready, showSpinner };
+}
 
 export function useStore() {
   const { status, error: managerError } = useDatabaseState();
@@ -46,6 +95,9 @@ export function useStore() {
 
   const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>
   (db && getPersonalDictionaryQuery(db))
+
+  const isLoading = isInitializing || decksLoading || cardsLoading;
+  const { ready, showSpinner } = useDelayedLoading(isLoading);
 
   const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(
     db && getPersonalDictionaryQuery(db),
@@ -147,6 +199,8 @@ export function useStore() {
     dueCards,
     status,
     isTakenOver: status === "taken-over",
+    ready,
+    showSpinner,
     isLoading: isInitializing || decksLoading || cardsLoading,
     error: initError,
     reconnect,
