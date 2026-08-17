@@ -7,7 +7,7 @@ export const FacebookIcon = ({
 ) => {
     return (
       <svg
-        className={cn("size-4")}
+        className={cn(className, "size-4")}
         viewBox="0 0 24 24"
         fill="none"
         aria-hidden="true"
