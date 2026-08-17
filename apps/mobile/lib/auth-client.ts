@@ -12,11 +12,10 @@ export const authClient = createAuthClient({
       storagePrefix: 'notanothercards',
       storage: SecureStore,
     }),
-    // Mirror the API's user.additionalFields so username/timezone are typed on
+    // Mirror the API's user.additionalFields so timezone is typed on
     // signUp and the session (matches apps/web/src/lib/auth-client.ts).
     inferAdditionalFields({
       user: {
-        username: { type: 'string', required: true },
         timezone: { type: 'string', required: false, defaultValue: 'UTC' },
       },
     }),

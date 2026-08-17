@@ -33,17 +33,15 @@ export function LoginComponent() {
 
   const onSubmit = async (data: LoginFormData) => {
     setApiError(null);
-    const { data: res, error } = await authClient.signIn.email({
+    const { error } = await authClient.signIn.email({
       email: data.email,
       password: data.password,
     });
 
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
-      console.error(error.message);
     } else {
-      navigate({ to: "/app/dashboard" });
-      console.log("Logged in:", res);
+      void navigate({ to: "/app/dashboard" });
     }
   };
 

@@ -37,7 +37,7 @@ export function DashboardComponent() {
 
   const handleLogout = async () => {
     await authClient.signOut();
-    navigate({ to: "/login" });
+    void navigate({ to: "/login" });
   };
 
   const user = session?.user || {
@@ -278,7 +278,7 @@ export function DashboardComponent() {
             {/* Explore Dictionaries */}
             <Card className="lg:col-span-2 border border-border/60 hover:shadow-md transition-all duration-300">
               <CardHeader className="border-b border-border/40 pb-4">
-                <CardTitle className="text-md font-bold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
                   <BookOpen className="size-4 text-primary" />
                   Explore Dictionaries
                 </CardTitle>
@@ -350,7 +350,7 @@ export function DashboardComponent() {
             {/* Daily Learning Goals */}
             <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
               <CardHeader className="border-b border-border/40 pb-4">
-                <CardTitle className="text-md font-bold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
                   <Sparkles className="size-4 text-amber-500" />
                   Daily Learning Goals
                 </CardTitle>
