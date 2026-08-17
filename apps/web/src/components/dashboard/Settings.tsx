@@ -27,11 +27,19 @@ import {
   Check,
   Settings as SettingsIcon,
 } from "lucide-react";
+import { z } from "zod";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { LANGUAGES } from "../OnBoarding";
 import { ThemeChanger } from "../ThemeChanger";
-import { UserProfileRow, UserProfileRowType } from "@repo/offline-db";
 import { useStore } from "@/hooks/useStore";
+
+const settingsSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  native_language_id: z.string().min(1, "Native language is required"),
+  target_language_id: z.string().min(1, "Preferred language is required"),
+});
+
+type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 export function Settings() {
   const { data: session, refetch } = authClient.useSession();
@@ -42,8 +50,8 @@ export function Settings() {
     "profile",
   );
 
-  const form = useForm<UserProfileRowType>({
-    resolver: zodResolver(UserProfileRow),
+  const form = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
     defaultValues: {
       username: "",
       native_language_id: "",
@@ -70,7 +78,7 @@ export function Settings() {
     }
   }, [profile, session, form]);
 
-  const onSubmit = async (data: UserProfileRowType) => {
+  const onSubmit = async (data: SettingsFormValues) => {
     setApiError(null);
     setSuccessMessage(null);
     try {
