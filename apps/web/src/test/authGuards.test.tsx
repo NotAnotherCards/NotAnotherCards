@@ -155,9 +155,8 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await act(async () => {
-      await router.invalidate();
-    });
+    // Set initial route to /login before rendering so that redirect to / is a real route change
+    window.history.pushState(null, "", "/login");
 
     render(<App />);
 
@@ -181,9 +180,8 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    await act(async () => {
-      await router.invalidate();
-    });
+    // Set initial route to /login before rendering so that redirect to / is a real route change
+    window.history.pushState(null, "", "/login");
 
     render(<App />);
 
@@ -207,13 +205,14 @@ describe("Auth Guards", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    // Set path and navigate before rendering the app
-    window.history.pushState(null, "", "/app");
+    // Set initial route to /login before rendering so that redirect to /app/dashboard is a real route change
+    window.history.pushState(null, "", "/login");
+
+    render(<App />);
+
     await act(async () => {
       await router.navigate({ to: "/app" });
     });
-
-    render(<App />);
 
     expect(window.location.pathname).toBe("/app/dashboard");
   });
