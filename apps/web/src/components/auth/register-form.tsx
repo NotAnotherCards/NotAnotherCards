@@ -22,14 +22,18 @@ import { SocialLoginButton } from "@/components/auth/social-login-button";
 export function RegisterComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const [oauthProvider, setOauthProvider] = useState<"google" | "facebook" | null>(null);
+  const [oauthProvider, setOauthProvider] = useState<
+    "google" | "facebook" | null
+  >(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get("error");
     if (errorParam) {
       if (errorParam === "OAuthCallbackError") {
-        setApiError("Social signup failed. Please try again or use another provider.");
+        setApiError(
+          "Social signup failed. Please try again or use another provider.",
+        );
       } else {
         setApiError(errorParam.replace(/_/g, " "));
       }
@@ -45,16 +49,21 @@ export function RegisterComponent() {
   }, []);
 
   const handleSocialLogin = async (provider: "google" | "facebook") => {
+    setApiError(null);
     setOauthProvider(provider);
     try {
-      await authClient.signIn.social({
+      const { error } = await authClient.signIn.social({
         provider,
         callbackURL: `${window.location.origin}/app/dashboard`,
         errorCallbackURL: `${window.location.origin}/register`,
       });
-    } catch (err) {
+      if (error) {
+        setApiError(error.message || "Social login failed. Please try again.");
+        setOauthProvider(null);
+      }
+    } catch {
       setOauthProvider(null);
-      console.error(err);
+      setApiError("Social login failed. Please try again.");
     }
   };
   const form = useForm<SignupFormData>({
@@ -172,7 +181,11 @@ export function RegisterComponent() {
               )}
             />
             <FormErrorMessage message={apiError} />
-            <Button type="submit" className="w-full" disabled={isSubmitting || oauthProvider !== null}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || oauthProvider !== null}
+            >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />

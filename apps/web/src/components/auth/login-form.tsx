@@ -45,16 +45,22 @@ export function LoginComponent() {
   }, []);
 
   const handleSocialLogin = async (provider: "google" | "facebook") => {
+    setApiError(null)
     setOauthProvider(provider);
     try {
-      await authClient.signIn.social({
+      const { error }  = await authClient.signIn.social({
         provider,
         callbackURL: `${window.location.origin}/app/dashboard`,
         errorCallbackURL: `${window.location.origin}/login`,
       });
-    } catch (err) {
+
+      if (error) {
+        setApiError(error.message || "Social login failed. Please try again.");
+        setOauthProvider(null);
+      }
+    } catch {
       setOauthProvider(null);
-      console.error(err);
+      setApiError("Social login failed. Please try again.");
     }
   };
 
