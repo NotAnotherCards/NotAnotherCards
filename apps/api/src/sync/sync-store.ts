@@ -1,4 +1,5 @@
 import { createSyncEngine } from '@remelondb/server';
+import { and, inArray, isNull } from 'drizzle-orm';
 import {
   createDrizzleStore,
   type DrizzleDb,
@@ -66,6 +67,28 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       db: db as unknown as DrizzleDb,
       tables,
     }),
+    async (usernames) => {
+      if (usernames.length === 0) return new Map();
+      const profiles = await db
+        .select({
+          userId: userProfiles.userId,
+          username: userProfiles.username,
+        })
+        .from(userProfiles)
+        .where(
+          and(
+            inArray(userProfiles.username, [...new Set(usernames)]),
+            isNull(userProfiles.deletedAt),
+          ),
+        );
+      return new Map(
+        profiles.flatMap((profile) =>
+          profile.username === null
+            ? []
+            : [[profile.username, profile.userId] as const],
+        ),
+      );
+    },
   );
 }
 

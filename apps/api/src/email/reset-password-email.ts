@@ -76,8 +76,12 @@ export const sendResetPasswordEmail = async ({
   }
 
   if (!attempted) {
-    throw new Error('No email transport configured (RESEND_API_KEY or SMTP_HOST is required).');
+    throw new Error(
+      'No email transport configured (RESEND_API_KEY or SMTP_HOST is required).',
+    );
   }
 
-  throw new Error(`All email transports failed: ${errors.map(e => e.message).join(', ')}`);
+  throw new Error(
+    `All email transports failed: ${errors.map((e) => e.message).join(', ')}`,
+  );
 };
