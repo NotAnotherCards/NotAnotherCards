@@ -7,7 +7,6 @@ import { useSyncController } from "@/offline/syncProvider";
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
-  getDueCardsQuery,
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
   deleteDeck as dbDeleteDeck,
@@ -48,7 +47,16 @@ export function useStore() {
   const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>
   (db && getPersonalDictionaryQuery(db))
 
-  const { data: dueCards, isLoading: dueLoading} = useQuery(db && getDueCardsQuery(db, now));
+  const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(
+    db && getPersonalDictionaryQuery(db),
+    {
+      select: useCallback(
+        (rows: UserCardRecord[]) =>
+          rows.filter((c) => c.due_at <= now).sort((a, b) => a.due_at - b.due_at),
+        [now]
+      ),
+    }
+  );
 
   // Local Writes
   const createDeck = useCallback(
@@ -139,7 +147,7 @@ export function useStore() {
     dueCards,
     status,
     isTakenOver: status === "taken-over",
-    isLoading: isInitializing || decksLoading || cardsLoading || dueLoading,
+    isLoading: isInitializing || decksLoading || cardsLoading,
     error: initError,
     reconnect,
     createDeck,
