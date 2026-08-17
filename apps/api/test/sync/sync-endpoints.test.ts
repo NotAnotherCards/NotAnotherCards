@@ -110,10 +110,10 @@ describePostgres('authenticated remelonDB endpoints', () => {
     process.env.FRONTEND_URL = previousEnvironment.frontendUrl;
     process.env.BETTER_AUTH_SECRET = previousEnvironment.authSecret;
     process.env.BETTER_AUTH_URL = previousEnvironment.authUrl;
-    process.env.GOOGLE_SECRET = previousEnvironment.googleSecret;
-    process.env.GOOGLE_ID = previousEnvironment.googleId;
-    process.env.FACEBOOK_SECRET = previousEnvironment.facebookSecret;
-    process.env.FACEBOOK_ID = previousEnvironment.facebookId;
+    process.env.GOOGLE_CLIENT_SECRET = previousEnvironment.googleSecret;
+    process.env.GOOGLE_CLIENT_ID = previousEnvironment.googleId;
+    process.env.FACEBOOK_CLIENT_SECRET = previousEnvironment.facebookSecret;
+    process.env.FACEBOOK_CLIENT_ID = previousEnvironment.facebookId;
   }, 30_000);
 
   it('rejects unauthenticated and malformed requests with transport statuses', async () => {
