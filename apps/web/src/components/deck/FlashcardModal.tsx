@@ -112,7 +112,7 @@ export function FlashcardModal({
         >
           {/* FRONT Side */}
           <div
-            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br dark:from-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-8 transition-colors duration-300"
+            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-8 transition-colors duration-300"
             style={{
               backfaceVisibility: "hidden",
             }}
@@ -137,7 +137,7 @@ export function FlashcardModal({
 
           {/* BACK Side */}
           <div
-            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-brdark:from-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-8 transition-colors duration-300"
+            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-8 transition-colors duration-300"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
@@ -167,7 +167,7 @@ export function FlashcardModal({
               <Button
                 size="sm"
                 variant="outline"
-                className="cursor-pointer text-[11px] h-7 px-2 border-orange-500/30 hover:bg-orange-500/10dark:text-orange-400"
+                className="cursor-pointer text-[11px] h-7 px-2 border-orange-500/30 hover:bg-orange-500/10 text-orange-600 dark:text-orange-400"
                 onClick={(e) => handleReview(2, e)}
               >
                 Hard (1d)
@@ -175,7 +175,7 @@ export function FlashcardModal({
               <Button
                 size="sm"
                 variant="outline"
-                className="cursor-pointer text-[11px] h-7 px-2 border-emerald-500/30 hover:bg-emerald-500/10dark:text-emerald-400"
+                className="cursor-pointer text-[11px] h-7 px-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 onClick={(e) => handleReview(3, e)}
               >
                 Good (3d)
@@ -183,7 +183,7 @@ export function FlashcardModal({
               <Button
                 size="sm"
                 variant="outline"
-                className="cursor-pointer text-[11px] h-7 px-2 border-blue-500/30 hover:bg-blue-500/10 dark:text-blue-400"
+                className="cursor-pointer text-[11px] h-7 px-2 border-blue-500/30 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400"
                 onClick={(e) => handleReview(4, e)}
               >
                 <CheckCircle2 className="size-3 mr-1" />
@@ -206,7 +206,7 @@ export function FlashcardModal({
       {/* Navigation controls */}
       {modalCards.length > 1 && (
         <div
-          className="flex items-center gap-4 mt-6 dark:bg-zinc-950/85 border border-zinc-800/80 px-4 py-2 rounded-2xl shadow-xl backdrop-blur-md"
+          className="flex items-center gap-4 mt-6 bg-zinc-900/85 dark:bg-zinc-950/85 border border-zinc-800/80 px-4 py-2 rounded-2xl shadow-xl backdrop-blur-md"
           onClick={(e) => e.stopPropagation()}
         >
           <Button

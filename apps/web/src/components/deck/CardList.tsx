@@ -50,14 +50,14 @@ export function CardList({
   if (store.isTakenOver) {
     return (
       <UICard className="border border-amber-500/30 bg-amber-500/10 p-8 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-200">
-        <div className="p-3 rounded-2xl bg-amber-500/20 dark:text-amber-400">
+        <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
           <AlertCircle className="size-8" />
         </div>
         <div>
-          <h3 className="text-lg font-bold dark:text-amber-200">
+          <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
             Database Inactive (Taken Over)
           </h3>
-          <p className="text-sm dark:text-amber-300/80 mt-1 max-w-md">
+          <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
             This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
           </p>
         </div>
@@ -92,7 +92,7 @@ export function CardList({
           <AlertCircle className="size-8" />
         </div>
         <div>
-          <h3 className="text-md font-bold text-destructive">
+          <h3 className="text-base font-bold text-destructive">
             Failed to Load Cards
           </h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
@@ -115,7 +115,7 @@ export function CardList({
     <UICard className="border border-border/60">
       <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div>
-          <CardTitle className="text-md font-bold flex items-center gap-2">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
             <Library className="size-4 text-primary" />
             Card Catalog ({filteredCards.length})
           </CardTitle>

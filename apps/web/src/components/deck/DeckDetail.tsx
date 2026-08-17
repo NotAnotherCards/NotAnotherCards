@@ -5,6 +5,8 @@ import { Card as UICard, CardHeader, CardTitle, CardDescription, CardContent } f
 import { AlertCircle, ArrowLeft, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { CardForm } from "./CardForm";
 import { CardList } from "./CardList";
+import { writeErrorMessage } from "@/lib/write-error";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
 
 interface DeckDetailProps {
   deckId: string;
@@ -16,6 +18,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [writeError, setWriteError] = useState<string | null>(null);
 
   if (store.isTakenOver) {
     return (
@@ -30,14 +34,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           Back to Decks
         </Button>
         <UICard className="border border-amber-500/30 bg-amber-500/10 p-8 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="p-3 rounded-2xl bg-amber-500/20 dark:text-amber-400">
+          <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
             <AlertCircle className="size-8" />
           </div>
           <div>
-            <h3 className="text-lg font-bold dark:text-amber-200">
+            <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
               Database Inactive (Taken Over)
             </h3>
-            <p className="text-sm dark:text-amber-300/80 mt-1 max-w-md">
+            <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
               This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
             </p>
           </div>
@@ -81,22 +85,40 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   // Filter cards belonging to this deck
   const cards = store.cards.filter((c) => c.deck_id === deckId);
 
-  const handleCreateCard = (data: { front: string; back: string }) => {
-    store.createCard(deckId, data.front, data.back);
-    setShowCreateForm(false);
-  };
-
-  const handleEditCard = (data: { front: string; back: string }) => {
-    if (editingCard) {
-      store.updateCard(editingCard.id, data.front, data.back);
-      setEditingCard(null);
+  // the dialog is dismissed only once the write lands, so a failed write is
+  // never reported to the user as a success
+  const handleCreateCard = async (data: { front: string; back: string }) => {
+    setWriteError(null);
+    try {
+      await store.createCard(deckId, data.front, data.back);
+      setShowCreateForm(false);
+    } catch (err) {
+      setWriteError(writeErrorMessage(err, "Failed to create card"));
     }
   };
 
-  const handleDeleteCard = () => {
-    if (cardToDelete) {
-      store.deleteCard(cardToDelete);
+  const handleEditCard = async (data: { front: string; back: string }) => {
+    if (!editingCard) return;
+    setWriteError(null);
+    try {
+      await store.updateCard(editingCard.id, data.front, data.back);
+      setEditingCard(null);
+    } catch (err) {
+      setWriteError(writeErrorMessage(err, "Failed to update card"));
+    }
+  };
+
+  const handleDeleteCard = async () => {
+    if (!cardToDelete) return;
+    setIsDeleting(true);
+    setWriteError(null);
+    try {
+      await store.deleteCard(cardToDelete);
       setCardToDelete(null);
+    } catch (err) {
+      setWriteError(writeErrorMessage(err, "Failed to delete card"));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -150,6 +172,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <CardForm
           title="Add New Card"
           onSubmit={handleCreateCard}
+          error={writeError}
           onCancel={() => setShowCreateForm(false)}
         />
       )}
@@ -163,6 +186,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             back: editingCard.back,
           }}
           onSubmit={handleEditCard}
+          error={writeError}
           onCancel={() => setEditingCard(null)}
         />
       )}
@@ -186,7 +210,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 Are you sure you want to permanently delete this study card from your deck?
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-end gap-2 pt-0">
+            <CardContent className="pt-0">
+              <FormErrorMessage message={writeError} className="mb-4" />
+              <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setCardToDelete(null)}
@@ -197,10 +223,12 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               <Button
                 variant="destructive"
                 onClick={handleDeleteCard}
+                disabled={isDeleting}
                 className="cursor-pointer"
               >
                 Delete
               </Button>
+              </div>
             </CardContent>
           </UICard>
         </div>

@@ -37,7 +37,7 @@ export function DashboardComponent() {
 
   const handleLogout = async () => {
     await authClient.signOut();
-    navigate({ to: "/login" });
+    void navigate({ to: "/login" });
   };
 
   const user = session?.user || {
@@ -278,7 +278,7 @@ export function DashboardComponent() {
             {/* Explore Dictionaries */}
             <Card className="lg:col-span-2 border border-border/60 hover:shadow-md transition-all duration-300">
               <CardHeader className="border-b border-border/40 pb-4">
-                <CardTitle className="text-md font-bold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
                   <BookOpen className="size-4 text-primary" />
                   Explore Dictionaries
                 </CardTitle>
@@ -330,9 +330,9 @@ export function DashboardComponent() {
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                                 dict.status === "Completed"
-                                  ? "bg-emerald-500/10 dark:text-emerald-400"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                                   : dict.status === "In Progress"
-                                    ? "bg-blue-500/10 dark:text-blue-400"
+                                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                                     : "bg-muted text-muted-foreground"
                               }`}
                             >
@@ -350,7 +350,7 @@ export function DashboardComponent() {
             {/* Daily Learning Goals */}
             <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
               <CardHeader className="border-b border-border/40 pb-4">
-                <CardTitle className="text-md font-bold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
                   <Sparkles className="size-4 text-amber-500" />
                   Daily Learning Goals
                 </CardTitle>
@@ -383,8 +383,8 @@ export function DashboardComponent() {
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                           quest.percent === 100
-                            ? "bg-emerald-500/10 dark:text-emerald-400"
-                            : "bg-amber-500/10 dark:text-amber-400"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                         }`}
                       >
                         {quest.reward}

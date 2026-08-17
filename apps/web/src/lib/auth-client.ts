@@ -6,10 +6,6 @@ export const authClient = createAuthClient({
   plugins: [
     inferAdditionalFields({
       user: {
-        username: {
-          type: "string",
-          required: true,
-        },
         timezone: {
           type: "string",
           required: false,
