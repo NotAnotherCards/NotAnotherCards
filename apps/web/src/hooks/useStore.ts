@@ -1,13 +1,14 @@
 import { useEffect, useCallback, useState } from "react";
 import type { Database } from "@remelondb/core";
 import { useDatabase, useDatabaseState } from "@remelondb/core/react";
-import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
+import { UserDeckRecord, UserCardRecord, UserProfileRecord } from "@repo/offline-db";
 import { useQuery } from "@remelondb/core/react";
 import { useSyncController } from "@/offline/syncProvider";
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
   getDueCardsQuery,
+  getUserProfileQuery,
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
   deleteDeck as dbDeleteDeck,
@@ -15,6 +16,7 @@ import {
   updateCard as dbUpdateCard,
   deleteCard as dbDeleteCard,
   recordReviewEvent as dbRecordReview,
+  updateOrCreateUserProfile as dbUserProfile,
 } from "../offline/queries";
 
 export type Deck = UserDeckRecord;
@@ -43,12 +45,21 @@ export function useStore() {
   const now = Math.floor(Date.now() / 10000) * 10000;
 
   // Observed reactive queries using remelonDB React bridge
-  const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(db && getDecksQuery(db))
+  const { data: decks, isLoading: decksLoading } = useQuery<UserDeckRecord>(
+    db && getDecksQuery(db),
+  );
 
-  const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>
-  (db && getPersonalDictionaryQuery(db))
+  const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>(
+    db && getPersonalDictionaryQuery(db),
+  );
 
-  const { data: dueCards, isLoading: dueLoading} = useQuery(db && getDueCardsQuery(db, now));
+  const { data: dueCards, isLoading: dueLoading } = useQuery(
+    db && getDueCardsQuery(db, now),
+  );
+
+  const { data: profiles, isLoading: profileLoading } = useQuery<UserProfileRecord>(
+    db && getUserProfileQuery(db),
+  );
 
   // Local Writes
   const createDeck = useCallback(
@@ -58,7 +69,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const updateDeck = useCallback(
@@ -68,7 +79,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const deleteDeck = useCallback(
@@ -78,7 +89,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const createCard = useCallback(
@@ -88,7 +99,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const updateCard = useCallback(
@@ -98,7 +109,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const deleteCard = useCallback(
@@ -108,7 +119,7 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const recordReview = useCallback(
@@ -118,19 +129,33 @@ export function useStore() {
       sync?.notifyLocalWrite();
       return result;
     },
-    [db, sync]
+    [db, sync],
   );
 
   const getCardsCount = useCallback(
     (deckId: string): number => {
       return cards.filter((c) => c.deck_id === deckId).length;
     },
-    [cards]
+    [cards],
   );
 
   const reconnect = useCallback(async () => {
     window.location.reload();
   }, []);
+
+  const userProfile = useCallback(
+    async (profile: {
+      username: string;
+      native_language_id: string;
+      target_language_id: string;
+    }) => {
+      if (!db) throw new Error("Database not initialized");
+      const result = await dbUserProfile(db, profile);
+      sync?.notifyLocalWrite()
+      return result
+    },
+    [db, sync],
+  );
 
   return {
     db,
@@ -139,7 +164,7 @@ export function useStore() {
     dueCards,
     status,
     isTakenOver: status === "taken-over",
-    isLoading: isInitializing || decksLoading || cardsLoading || dueLoading,
+    isLoading: isInitializing || decksLoading || cardsLoading || dueLoading || profileLoading,
     error: initError,
     reconnect,
     createDeck,
@@ -150,5 +175,7 @@ export function useStore() {
     deleteCard,
     recordReview,
     getCardsCount,
+    userProfile,
+    profile: profiles?.[0] || null,
   };
 }

@@ -19,63 +19,76 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import { ChevronDown, User, Globe, Save, Check, Settings as SettingsIcon } from "lucide-react";
+import {
+  ChevronDown,
+  User,
+  Globe,
+  Save,
+  Check,
+  Settings as SettingsIcon,
+} from "lucide-react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { LANGUAGES, SupportedLanguage, UserSettingsFormData, userSettingsSchema } from "../OnBoarding";
+import { LANGUAGES } from "../OnBoarding";
 import { ThemeChanger } from "../ThemeChanger";
+import { UserProfileRow, UserProfileRowType } from "@repo/offline-db";
+import { useStore } from "@/hooks/useStore";
 
-// TODO: schemas will be imported from @repo/schemas
 export function Settings() {
   const { data: session, refetch } = authClient.useSession();
+  const { profile, userProfile } = useStore();
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [activeSubTab, setActiveSubTab] = useState<"profile" | "settings">("profile");
+  const [activeSubTab, setActiveSubTab] = useState<"profile" | "settings">(
+    "profile",
+  );
 
-  const form = useForm<UserSettingsFormData>({
-    resolver: zodResolver(userSettingsSchema),
+  const form = useForm<UserProfileRowType>({
+    resolver: zodResolver(UserProfileRow),
     defaultValues: {
       username: "",
-      nativeLanguage: "" as unknown as SupportedLanguage,
-      preferedLanguage: "" as unknown as SupportedLanguage,
+      native_language_id: "",
+      target_language_id: "",
     },
   });
 
   const { isSubmitting } = form.formState;
 
-  // TODO: handle laguage updates and sync properly
-
-  // Sync form values once session is loaded
+  // Sync form values once profile or session is loaded
   useEffect(() => {
-    if (session?.user) {
+    if (profile) {
       form.reset({
-        username: session.user.username || "",
-        nativeLanguage: "" as unknown as SupportedLanguage,
-        preferedLanguage: "" as unknown as SupportedLanguage,
+        username: profile.username || "",
+        native_language_id: profile.native_language_id || "",
+        target_language_id: profile.target_language_id || "",
+      });
+    } else if (session?.user) {
+      form.reset({
+        username: "",
+        native_language_id: "",
+        target_language_id: "",
       });
     }
-  }, [session, form]);
+  }, [profile, session, form]);
 
-  const onSubmit = async (data: UserSettingsFormData) => {
+  const onSubmit = async (data: UserProfileRowType) => {
     setApiError(null);
     setSuccessMessage(null);
+    try {
+      // Save language preferences and username to local RemelonDB
+      await userProfile({
+        username: data.username || "",
+        native_language_id: data.native_language_id || "",
+        target_language_id: data.target_language_id || "",
+      });
 
-    // Update user profile info on backend
-    const { error } = await authClient.updateUser({
-      username: data.username,
-    });
-
-    if (error) {
-      setApiError(error.message || "Failed to update profile info");
-      return;
+      setSuccessMessage("Settings saved successfully!");
+      refetch();
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (err: any) {
+      setApiError(err.message || "An unexpected error occurred");
     }
-
-    setSuccessMessage("Settings saved successfully!");
-    refetch();
-
-    // Clear success message after 3 seconds
-    setTimeout(() => {
-      setSuccessMessage(null);
-    }, 3000);
   };
 
   return (
@@ -98,7 +111,7 @@ export function Settings() {
               {session?.user?.name || "Legendary Learner"}
             </h3>
             <p className="text-xs text-muted-foreground truncate mb-6">
-              @{session?.user?.username || "username"}
+              @{profile?.username || "username"}
             </p>
 
             {/* Navigation subtabs */}
@@ -143,7 +156,9 @@ export function Settings() {
                   <User className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-md font-bold">Profile Details</CardTitle>
+                  <CardTitle className="text-md font-bold">
+                    Profile Details
+                  </CardTitle>
                   <CardDescription className="text-xs">
                     Your public display name and screen username
                   </CardDescription>
@@ -160,6 +175,7 @@ export function Settings() {
                           <FieldLabel htmlFor={field.name}>Username</FieldLabel>
                           <Input
                             {...field}
+                            value={field.value ?? ""}
                             id={field.name}
                             placeholder="Username"
                             aria-invalid={fieldState.invalid}
@@ -186,9 +202,12 @@ export function Settings() {
                   <Globe className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-md font-bold">Language Preferences</CardTitle>
+                  <CardTitle className="text-md font-bold">
+                    Language Preferences
+                  </CardTitle>
                   <CardDescription className="text-xs">
-                    Configure your native language and the language you want to study
+                    Configure your native language and the language you want to
+                    study
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -196,19 +215,22 @@ export function Settings() {
                 <FieldSet>
                   <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Controller
-                      name="nativeLanguage"
+                      name="native_language_id"
                       control={form.control}
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>Native Language</FieldLabel>
+                          <FieldLabel htmlFor={field.name}>
+                            Native Language
+                          </FieldLabel>
                           <div className="relative w-full">
                             <select
                               {...field}
+                              value={field.value ?? ""}
                               id={field.name}
                               aria-invalid={fieldState.invalid}
                               aria-describedby={
                                 fieldState.invalid
-                                  ? "nativeLanguage-error"
+                                  ? "native_language_id-error"
                                   : undefined
                               }
                               className="h-9 w-full min-w-0 rounded-3xl border bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
@@ -236,7 +258,7 @@ export function Settings() {
                             />
                           </div>
                           <FieldError
-                            id="nativeLanguage-error"
+                            id="native_language_id-error"
                             errors={[fieldState.error]}
                           />
                         </Field>
@@ -244,19 +266,22 @@ export function Settings() {
                     />
 
                     <Controller
-                      name="preferedLanguage"
+                      name="target_language_id"
                       control={form.control}
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>Preferred Language</FieldLabel>
+                          <FieldLabel htmlFor={field.name}>
+                            Preferred Language
+                          </FieldLabel>
                           <div className="relative w-full">
                             <select
                               {...field}
+                              value={field.value ?? ""}
                               id={field.name}
                               aria-invalid={fieldState.invalid}
                               aria-describedby={
                                 fieldState.invalid
-                                  ? "preferedLanguage-error"
+                                  ? "target_language_id-error"
                                   : undefined
                               }
                               className="h-9 w-full min-w-0 rounded-3xl border  bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
@@ -284,7 +309,7 @@ export function Settings() {
                             />
                           </div>
                           <FieldError
-                            id="preferedLanguage-error"
+                            id="target_language_id-error"
                             errors={[fieldState.error]}
                           />
                         </Field>
@@ -334,7 +359,9 @@ export function Settings() {
                   <SettingsIcon className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-md font-bold">Preferences</CardTitle>
+                  <CardTitle className="text-md font-bold">
+                    Preferences
+                  </CardTitle>
                   <CardDescription className="text-xs">
                     Customize your application settings and appearance
                   </CardDescription>
@@ -342,8 +369,12 @@ export function Settings() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium text-foreground">Theme</span>
-                  <span className="text-xs text-muted-foreground">Select how the application looks to you</span>
+                  <span className="text-sm font-medium text-foreground">
+                    Theme
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Select how the application looks to you
+                  </span>
                   <div className="mt-1">
                     <ThemeChanger />
                   </div>

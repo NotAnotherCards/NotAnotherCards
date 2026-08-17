@@ -12,39 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthCard } from "@/components/auth/auth-card";
-import { authClient } from "@/lib/auth-client";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
-import z from "zod";
-
-// TODO: user setting schema will be imported from @repo/schemas
-export const userSettingsSchema = z
-  .object({
-    username: z
-      .string()
-      .trim()
-      .min(3, "Username must be at least 3 characters")
-      .max(30, "Username must be at most 30 characters")
-      .regex(
-        /^[A-Za-z0-9_]+$/,
-        "Username can only contain letters, numbers, and underscores",
-      ),
-    nativeLanguage: z.enum(["en", "es", "de", "ru"], {
-      message: "Native language is required",
-    }),
-    preferedLanguage: z.enum(["en", "es", "de", "ru"], {
-      message: "Preferred language is required",
-    }),
-  })
-  .refine((data) => data.nativeLanguage !== data.preferedLanguage, {
-    message: "Preferred language cannot be the same as native language",
-    path: ["preferedLanguage"],
-  });
-
-export type UserSettingsFormData = z.infer<typeof userSettingsSchema>;
-
-export type SupportedLanguage = "en" | "es" | "de" | "ru";
+import { UserProfileRow, UserProfileRowType } from "@repo/offline-db";
+import { useStore } from "@/hooks/useStore";
 
 export const LANGUAGES = [
   { value: "en", label: "🇺🇸 English" },
@@ -56,30 +28,32 @@ export const LANGUAGES = [
 export function OnBoardingComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const form = useForm<UserSettingsFormData>({
-    resolver: zodResolver(userSettingsSchema),
+  const { userProfile } = useStore();
+  const form = useForm<UserProfileRowType>({
+    resolver: zodResolver(UserProfileRow),
     defaultValues: {
       username: "",
-      nativeLanguage: "" as unknown as SupportedLanguage,
-      preferedLanguage: "" as unknown as SupportedLanguage,
+      native_language_id: "",
+      target_language_id: "",
     },
   });
 
-  const nativeLanguage = form.watch("nativeLanguage");
+  const nativeLanguage = form.watch("native_language_id");
 
   const { isSubmitting } = form.formState;
 
-  // TODO: save langauges properly in db after backend is handled
-  const onSubmit = async (data: UserSettingsFormData) => {
+  const onSubmit = async (data: UserProfileRowType) => {
     setApiError(null);
-    const { error } = await authClient.updateUser({
-      username: data.username,
-    });
-
-    if (error) {
-      setApiError(error.message || "An unexpected error occurred");
-    } else {
+    try {
+      //Save language preferences and username to local RemelonDB
+      await userProfile({
+        username: data.username || "",
+        native_language_id: data.native_language_id || "",
+        target_language_id: data.target_language_id || "",
+      });
       navigate({ to: "/app/dashboard" });
+    } catch (err: any) {
+      setApiError(err.message || "An unexpected error occurred");
     }
   };
 
@@ -103,6 +77,7 @@ export function OnBoardingComponent() {
                     <FieldLabel htmlFor={field.name}>Username</FieldLabel>
                     <Input
                       {...field}
+                      value={field.value ?? ""}
                       id={field.name}
                       autoComplete="username"
                       autoFocus
@@ -120,7 +95,7 @@ export function OnBoardingComponent() {
               />
 
               <Controller
-                name="nativeLanguage"
+                name="native_language_id"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
@@ -130,6 +105,7 @@ export function OnBoardingComponent() {
                     <div className="relative w-full">
                       <select
                         {...field}
+                        value={field.value ?? ""}
                         id={field.name}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
@@ -170,7 +146,7 @@ export function OnBoardingComponent() {
               />
 
               <Controller
-                name="preferedLanguage"
+                name="target_language_id"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
@@ -180,6 +156,7 @@ export function OnBoardingComponent() {
                     <div className="relative w-full">
                       <select
                         {...field}
+                        value={field.value ?? ""}
                         id={field.name}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={

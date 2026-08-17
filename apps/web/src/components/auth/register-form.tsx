@@ -18,7 +18,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 
-// TODO: decide what to do with username based on backend handling
 export function RegisterComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
