@@ -7,7 +7,6 @@ import { useSyncController } from "@/offline/syncProvider";
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
-  getDueCardsQuery,
   getUserProfileQuery,
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
