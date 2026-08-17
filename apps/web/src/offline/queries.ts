@@ -192,6 +192,7 @@ export async function recordReviewEvent(
 export async function createUserProfile(
   db: Database,
   profile: {
+    id: string;
     username: string;
     native_language_id: string;
     target_language_id: string;
@@ -199,6 +200,7 @@ export async function createUserProfile(
 ) {
   return await db.write(async () => {
     return await db.get(UserProfile).create({
+      id: profile.id,
       username: profile.username,
       bio: null,
       avatar_file_id: null,

@@ -15,22 +15,31 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { UserProfileRow, UserProfileRowType } from "@repo/offline-db";
+import { z } from "zod";
 import { useStore } from "@/hooks/useStore";
+import { authClient } from "@/lib/auth-client";
 
 export const LANGUAGES = [
-  { value: "en", label: "🇺🇸 English" },
-  { value: "es", label: "🇪🇸 Spanish" },
-  { value: "de", label: "🇩🇪 German" },
-  { value: "ru", label: "🇷🇺 Russian" },
+  { value: "00000000-0000-0000-0000-000000000001", label: "🇺🇸 English" },
+  { value: "00000000-0000-0000-0000-000000000002", label: "🇪🇸 Spanish" },
+  { value: "00000000-0000-0000-0000-000000000003", label: "🇩🇪 German" },
+  { value: "00000000-0000-0000-0000-000000000004", label: "🇷🇺 Russian" },
 ];
+
+const onboardingSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  native_language_id: z.string().min(1, "Native language is required"),
+  target_language_id: z.string().min(1, "Preferred language is required"),
+});
+
+type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const { creatUserProfile } = useStore();
-  const form = useForm<UserProfileRowType>({
-    resolver: zodResolver(UserProfileRow),
+  const { creatUserProfile, updateUserProfile, profile } = useStore();
+  const form = useForm<OnboardingFormValues>({
+    resolver: zodResolver(onboardingSchema),
     defaultValues: {
       username: "",
       native_language_id: "",
@@ -42,15 +51,25 @@ export function OnBoardingComponent() {
 
   const { isSubmitting } = form.formState;
 
-  const onSubmit = async (data: UserProfileRowType) => {
+  const onSubmit = async (data: OnboardingFormValues) => {
     setApiError(null);
     try {
-      // Save language preferences and username to local RemelonDB
-      await creatUserProfile({
-        username: data.username || "",
-        native_language_id: data.native_language_id || "",
-        target_language_id: data.target_language_id || "",
-      });
+      if (profile) {
+        await updateUserProfile({
+          username: data.username,
+          native_language_id: data.native_language_id,
+          target_language_id: data.target_language_id,
+        });
+      } else {
+        const { data: session } = await authClient.getSession();
+        if (!session) throw new Error("No active session");
+        await creatUserProfile({
+          id: session.user.id,
+          username: data.username,
+          native_language_id: data.native_language_id,
+          target_language_id: data.target_language_id,
+        });
+      }
       navigate({ to: "/app/dashboard" });
     } catch (err: any) {
       setApiError(err.message || "An unexpected error occurred");

@@ -2,7 +2,7 @@ import { authClient } from "@/lib/auth-client";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { DatabaseBanner } from "@/components/DatabaseBanner";
-import { createUserDatabaseManager, closeUserDatabase } from "@/offline/db";
+import { createUserDatabaseManager, closeUserDatabase, checkOnboardingComplete } from "@/offline/db";
 import { createRunSync } from "@/offline/sync";
 import { createSyncController, type SyncController } from "@/offline/syncController";
 import { SyncProvider } from "@/offline/syncProvider";
@@ -27,8 +27,13 @@ export const Route = createFileRoute("/app")({
       });
     }
 
-    // TODO: When backend is ready, check if user settings exist (e.g. native and preferred languages).
-    // If settings are missing and they are not already on "/app/onboarding", redirect to "/app/onboarding".
+    const onboardingComplete = await checkOnboardingComplete(session.user.id);
+    if (!onboardingComplete && location.pathname !== "/app/onboarding") {
+      throw redirect({
+        to: "/app/onboarding",
+      });
+    }
+
     if (location.pathname === "/app") {
       throw redirect({
         to: "/app/dashboard",

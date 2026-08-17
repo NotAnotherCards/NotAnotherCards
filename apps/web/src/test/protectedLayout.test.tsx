@@ -3,16 +3,11 @@ import { App, router } from "../App";
 import { authClient } from "@/lib/auth-client";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/offline/db", () => ({
-  manager: {
-    init: vi.fn().mockResolvedValue(undefined),
-    state: { status: "ready" },
-  },
-}));
-
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
+  useDatabase: () => null,
+  DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock("@/offline/db", () => {
@@ -25,6 +20,7 @@ vi.mock("@/offline/db", () => {
     manager,
     createUserDatabaseManager: vi.fn(() => manager),
     closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+    checkOnboardingComplete: vi.fn().mockResolvedValue(true),
   };
 });
 

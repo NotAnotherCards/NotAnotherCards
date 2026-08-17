@@ -1,12 +1,17 @@
 import { authClient } from "@/lib/auth-client";
+import { checkOnboardingComplete } from "@/offline/db";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_auth")({
   beforeLoad: async () => {
     const { data: session } = await authClient.getSession();
     if (session) {
-      // TODO: When backend is ready, check if the user has set up their onboarding settings.
-      // If not, redirect them to "/app/onboarding" instead of going directly to dashboard.
+      const onboardingComplete = await checkOnboardingComplete(session.user.id)
+      if (!onboardingComplete) {
+        throw redirect({
+          to: "/app/onboarding",
+        });
+      }
       throw redirect({
         to: "/app/dashboard",
       });

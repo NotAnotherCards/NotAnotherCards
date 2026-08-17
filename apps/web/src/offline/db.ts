@@ -52,3 +52,36 @@ export async function closeUserDatabase() {
   await manager?.close();
   manager = null;
 }
+
+export async function checkOnboardingComplete(userId: string): Promise<boolean> {
+  let activeManager = manager;
+  let shouldClose = false;
+
+  if (!activeManager) {
+    activeManager = createUserDatabaseManager(userId);
+    shouldClose = true;
+  }
+
+  const db = await activeManager.init();
+  let complete = false;
+  if (db) {
+    const profiles = await db.get(UserProfile).query().fetch();
+    const profile = profiles[0];
+    console.log("DEBUG [checkOnboardingComplete]: profiles found:", profiles.length, "first profile:", profile);
+    if (
+      profile &&
+      profile.username &&
+      profile.native_language_id &&
+      profile.target_language_id
+    ) {
+      complete = true;
+    }
+  }
+
+  console.log("DEBUG [checkOnboardingComplete]: returning complete =", complete);
+  if (shouldClose) {
+    await closeUserDatabase();
+  }
+  return complete;
+}
+

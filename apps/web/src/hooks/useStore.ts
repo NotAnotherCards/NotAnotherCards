@@ -204,6 +204,7 @@ export function useStore() {
 
   const creatUserProfile = useCallback(
     async (profile: {
+      id: string;
       username: string;
       native_language_id: string;
       target_language_id: string;
