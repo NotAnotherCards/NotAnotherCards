@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, fireEvent, screen } from "@testing-library/react";
+import { render, fireEvent, screen, act } from "@testing-library/react";
 import { DatabaseBanner } from "../components/DatabaseBanner";
 import * as remelonReact from "@remelondb/core/react";
 
@@ -39,14 +39,22 @@ describe("DatabaseBanner Component", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders connecting banner when status is loading", () => {
+  it("holds the connecting banner back on a fast load, shows it on a slow one", () => {
+    vi.useFakeTimers();
     vi.mocked(remelonReact.useDatabaseState).mockReturnValue({
       status: "loading",
       error: null,
     });
 
-    render(<DatabaseBanner />);
+    const { container } = render(<DatabaseBanner />);
+    // a load under the delay never paints the banner, so the page doesn't jump
+    expect(container.firstChild).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
     expect(screen.getByText(/Connecting Database:/i)).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it("renders amber banner when status is taken-over and reloads on click", () => {

@@ -1,5 +1,6 @@
 import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 import { useDatabaseState } from "@remelondb/core/react";
+import { useDelayedLoading } from "@/hooks/useStore";
 
 // Storage denied by the browser (private browsing, "never remember
 // history", blocked site data): remelondb >=0.1.8 fails fast with a
@@ -14,8 +15,16 @@ function isOpfsBlocked(error: Error | null): boolean {
 
 export function DatabaseBanner() {
   const { status, error } = useDatabaseState();
+  // the ~50ms open on every load would mount the banner and shift the whole
+  // page down and back up; only a load that drags deserves the banner
+  const { showSpinner: showConnecting } = useDelayedLoading(
+    status === "loading",
+  );
 
   if (status === "ready" || status === "idle") {
+    return null;
+  }
+  if (status === "loading" && !showConnecting) {
     return null;
   }
 
