@@ -12,7 +12,13 @@ export function SyncStatus() {
   const controller = useSyncController();
   const state = useSyncState();
   if (!controller) {
-    return null;
+    // reserve the bar's height while the database opens so the page doesn't
+    // shift down when the controller arrives a moment later
+    return (
+      <div className="px-3 py-1 text-xs" aria-hidden="true">
+        &nbsp;
+      </div>
+    );
   }
 
   const retryable = state.status === "error" || state.status === "offline";
