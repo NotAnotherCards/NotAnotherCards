@@ -126,24 +126,18 @@ export function Settings() {
             <div className="flex flex-col gap-1 border-t border-border/30 pt-6">
               <Button
                 type="button"
+                variant={activeSubTab === "profile" ? "default" : "ghost"}
                 onClick={() => setActiveSubTab("profile")}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                  activeSubTab === "profile"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                }`}
+                className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
               >
                 <User className="size-4" />
                 Profile & Languages
               </Button>
               <Button
                 type="button"
+                variant={activeSubTab === "settings" ? "default" : "ghost"}
                 onClick={() => setActiveSubTab("settings")}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                  activeSubTab === "settings"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                }`}
+                className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
               >
                 <SettingsIcon className="size-4" />
                 Settings

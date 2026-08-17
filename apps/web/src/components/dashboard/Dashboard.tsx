@@ -230,7 +230,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <Library className="size-3.5 mr-1.5" />
-          Decks & Library
+          My Library
         </Button>
         <Button
           variant={activeTab === "settings" ? "secondary" : "ghost"}
@@ -241,7 +241,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <SettingsIcon className="size-3.5 mr-1.5" />
-          Account settings
+         Profile & Settings
         </Button>
       </div>
 
