@@ -38,7 +38,8 @@ export function DatabaseBanner() {
           <div className="bg-blue-500/10 border-blue-500/20 text-blue-800 px-4 py-3.5 flex items-center gap-2.5 text-xs">
             <Loader2 className="size-4 animate-spin text-blue-500 shrink-0" />
             <span>
-              <strong>Connecting Database:</strong> Reclaiming and initializing local offline storage...
+              <strong>Connecting Database:</strong> Reclaiming and initializing
+              local offline storage...
             </span>
           </div>
         )}
@@ -65,10 +66,9 @@ export function DatabaseBanner() {
           <div className="bg-amber-500/10 border-amber-500/20 dark:text-amber-300 px-4 py-3.5 flex items-center gap-2 text-xs">
             <AlertCircle className="size-4 text-amber-500 shrink-0" />
             <span>
-              <strong>Storage blocked:</strong> this browser blocks site
-              storage (private browsing or blocked site data), so your decks
-              cannot be loaded. Allow site data for this site or use a normal
-              window.
+              <strong>Storage blocked:</strong> this browser blocks site storage
+              (private browsing or blocked site data), so your decks cannot be
+              loaded. Allow site data for this site or use a normal window.
             </span>
           </div>
         )}

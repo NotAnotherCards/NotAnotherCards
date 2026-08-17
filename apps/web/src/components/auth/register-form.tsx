@@ -28,7 +28,6 @@ export function RegisterComponent() {
       name: "",
       email: "",
       password: "",
-      username: `user_${Math.random().toString(36).substring(2, 10)}`,
       confirmPassword: "",
     },
   });
@@ -41,13 +40,12 @@ export function RegisterComponent() {
       email: data.email,
       password: data.password,
       name: data.name,
-      username: `user_${Math.random().toString(36).substring(2, 10)}`,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
     } else {
-      navigate({ to: "/app/onboarding" });
+      void navigate({ to: "/app/dashboard" });
     }
   };
 

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Layers } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
@@ -22,12 +23,13 @@ type CardFormData = z.infer<typeof cardSchema>;
 
 interface CardFormProps {
   initialData?: { front: string; back: string };
-  onSubmit: (data: { front: string; back: string }) => void;
+  onSubmit: (data: { front: string; back: string }) => void | Promise<void>;
+  error?: string | null;
   onCancel: () => void;
   title: string;
 }
 
-export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormProps) {
+export function CardForm({ initialData, onSubmit, onCancel, title, error }: CardFormProps) {
   const form = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
@@ -45,8 +47,9 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
     }
   }, [initialData, form]);
 
-  const handleFormSubmit = (data: CardFormData) => {
-    onSubmit({
+  const handleFormSubmit = async (data: CardFormData) => {
+    // awaited so react-hook-form tracks isSubmitting for the write's duration
+    await onSubmit({
       front: data.front.trim(),
       back: data.back.trim(),
     });
@@ -131,6 +134,7 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
             </FieldSet>
           </CardContent>
 
+          <FormErrorMessage message={error} className="mx-6 mb-4" />
           <CardFooter className="flex justify-end gap-2 border-t border-border/40 pt-4">
             <Button
               type="button"
@@ -140,7 +144,11 @@ export function CardForm({ initialData, onSubmit, onCancel, title }: CardFormPro
             >
               Cancel
             </Button>
-            <Button type="submit" className="cursor-pointer">
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+              className="cursor-pointer"
+            >
               Save Card
             </Button>
           </CardFooter>
