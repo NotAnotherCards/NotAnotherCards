@@ -90,7 +90,6 @@ describe('Authentication (e2e)', () => {
       expect(body).toBeDefined();
       expect(body.message).toContain('User already exists');
     });
-
   });
 
   describe('POST /api/auth/sign-in/email', () => {
