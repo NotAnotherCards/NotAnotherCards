@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { RemelonSyncModule } from '@remelondb/nestjs';
-import { ReviewEventRow, UserCardRow, UserDeckRow } from '@repo/offline-db';
+import {
+  ReviewEventRow,
+  UserCardRow,
+  UserDeckRow,
+  UserProfileRow,
+} from '@repo/offline-db';
 import type { Request } from 'express';
 import { AuthModule } from '../auth/auth.module';
 import { AuthService } from '../auth/auth.service';
@@ -19,6 +24,7 @@ import { crossValidateSyncRelationships } from './sync-validation';
           user_decks: UserDeckRow,
           user_cards: UserCardRow,
           review_events: ReviewEventRow,
+          user_profiles: UserProfileRow,
         },
         tableOptions: { review_events: { appendOnly: true } },
         scopeFrom: (request) =>

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
@@ -23,12 +24,13 @@ type DeckFormData = z.infer<typeof deckSchema>;
 
 interface DeckFormProps {
   initialData?: { title: string; description: string };
-  onSubmit: (data: { title: string; description: string }) => void;
+  onSubmit: (data: { title: string; description: string }) => void | Promise<void>;
+  error?: string | null;
   onCancel: () => void;
   title: string;
 }
 
-export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormProps) {
+export function DeckForm({ initialData, onSubmit, onCancel, title, error }: DeckFormProps) {
   const form = useForm<DeckFormData>({
     resolver: zodResolver(deckSchema),
     defaultValues: {
@@ -46,8 +48,9 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
     }
   }, [initialData, form]);
 
-  const handleFormSubmit = (data: DeckFormData) => {
-    onSubmit({
+  const handleFormSubmit = async (data: DeckFormData) => {
+    // awaited so react-hook-form tracks isSubmitting for the write's duration
+    await onSubmit({
       title: data.title.trim(),
       description: data.description?.trim() || "",
     });
@@ -122,6 +125,7 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
             </FieldSet>
           </CardContent>
 
+          <FormErrorMessage message={error} className="mx-6 mb-4" />
           <CardFooter className="flex justify-end gap-2 border-t border-border/40 pt-4">
             <Button
               type="button"
@@ -131,7 +135,11 @@ export function DeckForm({ initialData, onSubmit, onCancel, title }: DeckFormPro
             >
               Cancel
             </Button>
-            <Button type="submit" className="cursor-pointer">
+            <Button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+              className="cursor-pointer"
+            >
               Save Deck
             </Button>
           </CardFooter>

@@ -4,7 +4,7 @@ PostgreSQL, managed with Drizzle. Better Auth owns
 `apps/api/src/database/schema.ts`; the syncable app tables live in
 `apps/api/src/sync/schema.ts`. Generated migrations are in `apps/api/drizzle`.
 
-Together the schemas contain the four tables Better Auth needs and the core offline-first deck, card, and review tables.
+Together the schemas contain the four tables Better Auth needs and the core offline-first profile, deck, card, and review tables.
 
 Server scope, revisions, and tombstones remain owned by PostgreSQL and the authenticated sync boundary.
 
@@ -16,11 +16,11 @@ first, the library expects this exact shape.
 
 ### `user`
 
-One row per registered user: display `name`, unique `username`, unique
-`email`, `email_verified` flag, optional avatar `image`, and the user's IANA
+One row per registered user: display `name`, unique `email`,
+`email_verified` flag, optional avatar `image`, and the user's IANA
 `timezone`. The timezone defaults to `UTC` when a client does not supply one.
-The web signup records the browser's local timezone. Better Auth exposes
-both additional fields on the session user. Credentials don't live here, see
+The web signup records the browser's local timezone. Profile settings are not
+required during registration. Credentials don't live here, see
 `account`.
 
 ### `session`
@@ -60,7 +60,7 @@ Deriving one from the other (for example with `drizzle-zod`) would make
 drift impossible instead of just detected, and stays on the table for
 later. It means moving the Drizzle schema into a shared package and
 pulling `drizzle-orm` into the web and mobile dependency graphs, which
-at three small tables costs more than it saves. For now,
+at four small tables costs more than it saves. For now,
 `apps/api/test/sync/schema-parity.test.ts` pins
 the two declarations together: every wire field must be a column with
 matching nullability, and every column must be a wire field or known
@@ -69,6 +69,20 @@ machinery. Drift fails CI with the table and column named.
 If the synced model grows well past this size, the derivation approach
 is the natural next step (the trade-off is laid out in
 [issue #63](https://github.com/NotAnotherCards/NotAnotherCards/issues/63)).
+
+### `user_profiles`
+
+The optional, one-to-one synchronized profile for a user. `user_id` is both
+the primary key and authenticated sync scope, with cascading deletion from
+`user.id`. It stores a nullable, globally unique `username`, plus nullable `bio`, `avatar_file_id`,
+`native_language_id`, and `target_language_id`, plus client-visible creation
+and update times. The three referenced-resource IDs are UUID columns; foreign
+key constraints will be added when the `files` and `languages` domain tables
+are introduced. Existing usernames are migrated into the profile's `username`.
+
+As with other synchronized tables, PostgreSQL additionally stores `rev` and
+`deleted_at`. Offline timestamps are Unix milliseconds, so the server uses
+safe-integer numeric columns rather than PostgreSQL timestamp values.
 
 ### `user_decks`
 

@@ -99,7 +99,6 @@ describePostgres('Better Auth Password Reset Endpoints Integration', () => {
         email: testEmail,
         password: initialPassword,
         name: 'Reset Test User',
-        username: `reset_user_${Date.now()}`,
         timezone: 'UTC',
       })
       .expect(200);

@@ -19,6 +19,9 @@ import {
   UserCardRow,
   UserDeck,
   UserDeckRow,
+  UserProfile,
+  UserProfileRow,
+  migrations,
   schema,
 } from '@repo/offline-db';
 import {
@@ -34,6 +37,7 @@ const wire = syncSchemas({
   user_decks: UserDeckRow,
   user_cards: UserCardRow,
   review_events: ReviewEventRow,
+  user_profiles: UserProfileRow,
 });
 
 describePostgres('client-server sync, end to end', () => {
@@ -73,7 +77,8 @@ describePostgres('client-server sync, end to end', () => {
     Database.open({
       driver: new NodeSqliteDriver(),
       schema,
-      modelClasses: [UserDeck, UserCard, ReviewEvent],
+      migrations,
+      modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
       name: ':memory:',
     });
 
@@ -83,7 +88,6 @@ describePostgres('client-server sync, end to end', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         name: `E2E ${tag}`,
-        username: `e2e${tag}${Date.now()}`,
         email: `e2e-${tag}-${Date.now()}@example.com`,
         password: 'e2e-password-1',
       }),
@@ -106,7 +110,7 @@ describePostgres('client-server sync, end to end', () => {
           headers: { 'content-type': 'application/json', cookie },
           body: JSON.stringify(args),
         });
-        expect(response.status).toBe(200);
+        expect(response.status, await response.clone().text()).toBe(200);
         return wire.pullResult.parse(await response.json());
       },
       pushChanges: async (args) => {
@@ -115,7 +119,7 @@ describePostgres('client-server sync, end to end', () => {
           headers: { 'content-type': 'application/json', cookie },
           body: JSON.stringify(args),
         });
-        expect(response.status).toBe(200);
+        expect(response.status, await response.clone().text()).toBe(200);
         return wire.pushResult.parse(await response.json());
       },
     });

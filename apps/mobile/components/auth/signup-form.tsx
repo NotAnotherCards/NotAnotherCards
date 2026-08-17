@@ -24,7 +24,6 @@ export function SignupForm() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
-      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -37,7 +36,6 @@ export function SignupForm() {
     try {
       const { error } = await authClient.signUp.email({
         name: data.name,
-        username: data.username,
         email: data.email,
         password: data.password,
         timezone: getTimezone(),
@@ -58,14 +56,6 @@ export function SignupForm() {
         label="Name"
         placeholder="Jane Doe"
         autoCapitalize="words"
-      />
-      <FormField
-        control={control}
-        name="username"
-        label="Username"
-        placeholder="jane_doe"
-        autoCapitalize="none"
-        autoComplete="username"
       />
       <FormField
         control={control}

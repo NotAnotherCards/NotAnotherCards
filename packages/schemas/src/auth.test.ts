@@ -6,7 +6,6 @@ describe("registerSchema", () => {
   it("passes with valid register input", () => {
     const result = registerSchema.safeParse({
       name: "test",
-      username: "test_user",
       email: "test@example.com",
       password: "Password123*",
       confirmPassword: "Password123*",
@@ -18,7 +17,6 @@ describe("registerSchema", () => {
   it("fails with an invalid email", () => {
     const result = registerSchema.safeParse({
       name: "Two",
-      username: "test_user",
       email: "not-an-email",
       password: "Password123*",
       confirmPassword: "Password123*",
@@ -30,7 +28,6 @@ describe("registerSchema", () => {
   it("fails with a too-short password", () => {
     const result = registerSchema.safeParse({
       name: "Three",
-      username: "test_user",
       email: "test@example.com",
       password: "Pass12*",
       confirmPassword: "Pass12*",
@@ -42,7 +39,6 @@ describe("registerSchema", () => {
   it("fails with an invalid password", () => {
     const result = registerSchema.safeParse({
       name: "Four",
-      username: "test_user",
       email: "test@example.com",
       password: "thisisinvalid",
       confirmPassword: "thisisinvalid",
@@ -51,16 +47,15 @@ describe("registerSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("fails without a valid username", () => {
+  it("passes without profile settings", () => {
     const result = registerSchema.safeParse({
       name: "Test User",
-      username: "not a public handle",
       email: "test@example.com",
       password: "Password123*",
       confirmPassword: "Password123*",
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });
 

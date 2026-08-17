@@ -1,8 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { APIError, betterAuth } from 'better-auth';
+import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import * as schema from '../database/schema';
@@ -65,33 +64,10 @@ export class AuthService {
       },
       user: {
         additionalFields: {
-          username: {
-            type: 'string',
-            required: true,
-          },
           timezone: {
             type: 'string',
             required: false,
             defaultValue: 'UTC',
-          },
-        },
-      },
-      databaseHooks: {
-        user: {
-          create: {
-            before: async (newUser) => {
-              const username = newUser.username as string;
-              const existingUser = await this.db.query.user.findFirst({
-                columns: { id: true },
-                where: eq(schema.user.username, username),
-              });
-
-              if (existingUser) {
-                throw new APIError('UNPROCESSABLE_ENTITY', {
-                  message: 'Username is already taken',
-                });
-              }
-            },
           },
         },
       },

@@ -43,6 +43,13 @@
       "when": 1785691172350,
       "tag": "0005_remelon-sync-store",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786823324295,
+      "tag": "0006_outstanding_synch",
+      "breakpoints": true
     }
   ]
 }
