@@ -28,7 +28,7 @@ import {
   Settings as SettingsIcon,
 } from "lucide-react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { LANGUAGES } from "../OnBoarding";
+import { LANGUAGES } from "@/lib/languages";
 import { ThemeChanger } from "../ThemeChanger";
 import { useStore } from "@/hooks/useStore";
 import { ProfileFormValues, userProfileFormSchema } from "@repo/schemas";
