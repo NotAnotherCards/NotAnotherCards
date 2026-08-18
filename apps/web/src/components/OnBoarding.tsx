@@ -15,9 +15,9 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { z } from "zod";
 import { useStore } from "@/hooks/useStore";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
+import { ProfileFormValues, userProfileFormSchema } from "@repo/schemas";
 
 export const LANGUAGES = [
   { value: "00000000-0000-0000-0000-000000000001", label: "🇺🇸 English" },
@@ -26,20 +26,12 @@ export const LANGUAGES = [
   { value: "00000000-0000-0000-0000-000000000004", label: "🇷🇺 Russian" },
 ];
 
-const onboardingSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  native_language_id: z.string().min(1, "Native language is required"),
-  target_language_id: z.string().min(1, "Preferred language is required"),
-});
-
-type OnboardingFormValues = z.infer<typeof onboardingSchema>;
-
 export function OnBoardingComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
   const { createUserProfile } = useStore();
-  const form = useForm<OnboardingFormValues>({
-    resolver: zodResolver(onboardingSchema),
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(userProfileFormSchema),
     defaultValues: {
       username: "",
       native_language_id: "",
@@ -51,7 +43,7 @@ export function OnBoardingComponent() {
 
   const { isSubmitting } = form.formState;
 
-  const onSubmit = async (data: OnboardingFormValues) => {
+  const onSubmit = async (data: ProfileFormValues) => {
     setApiError(null);
     try {
       const { data: session } = await authClient.getSession();

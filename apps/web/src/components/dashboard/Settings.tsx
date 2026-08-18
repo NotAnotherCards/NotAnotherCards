@@ -27,19 +27,11 @@ import {
   Check,
   Settings as SettingsIcon,
 } from "lucide-react";
-import { z } from "zod";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { LANGUAGES } from "../OnBoarding";
 import { ThemeChanger } from "../ThemeChanger";
 import { useStore } from "@/hooks/useStore";
-
-const settingsSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  native_language_id: z.string().min(1, "Native language is required"),
-  target_language_id: z.string().min(1, "Preferred language is required"),
-});
-
-type SettingsFormValues = z.infer<typeof settingsSchema>;
+import { ProfileFormValues, userProfileFormSchema } from "@repo/schemas";
 
 export function Settings() {
   const { data: session, refetch } = authClient.useSession();
@@ -50,8 +42,8 @@ export function Settings() {
     "profile",
   );
 
-  const form = useForm<SettingsFormValues>({
-    resolver: zodResolver(settingsSchema),
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(userProfileFormSchema),
     defaultValues: {
       username: "",
       native_language_id: "",
@@ -80,7 +72,7 @@ export function Settings() {
     }
   }, [profile, session, form]);
 
-  const onSubmit = async (data: SettingsFormValues) => {
+  const onSubmit = async (data: ProfileFormValues) => {
     setApiError(null);
     setSuccessMessage(null);
     try {
@@ -96,7 +88,9 @@ export function Settings() {
         setSuccessMessage(null);
       }, 3000);
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : "An unexpected error occurred");
+      setApiError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
     }
   };
 
