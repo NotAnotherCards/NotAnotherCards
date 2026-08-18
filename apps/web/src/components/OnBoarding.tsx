@@ -37,7 +37,7 @@ type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 export function OnBoardingComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const { creatUserProfile, updateUserProfile, profile } = useStore();
+  const { createUserProfile } = useStore();
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
@@ -54,25 +54,19 @@ export function OnBoardingComponent() {
   const onSubmit = async (data: OnboardingFormValues) => {
     setApiError(null);
     try {
-      if (profile) {
-        await updateUserProfile({
-          username: data.username,
-          native_language_id: data.native_language_id,
-          target_language_id: data.target_language_id,
-        });
-      } else {
-        const { data: session } = await authClient.getSession();
-        if (!session) throw new Error("No active session");
-        await creatUserProfile({
-          id: session.user.id,
-          username: data.username,
-          native_language_id: data.native_language_id,
-          target_language_id: data.target_language_id,
-        });
-      }
+      const { data: session } = await authClient.getSession();
+      if (!session) throw new Error("No active session");
+      await createUserProfile({
+        id: session.user.id,
+        username: data.username,
+        native_language_id: data.native_language_id,
+        target_language_id: data.target_language_id,
+      });
       void navigate({ to: "/app/dashboard" });
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : "An unexpected error occurred");
+      setApiError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
     }
   };
 
@@ -129,7 +123,7 @@ export function OnBoardingComponent() {
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid
-                            ? "nativeLanguage-error"
+                            ? "native_language_id-error"
                             : undefined
                         }
                         className="h-9 w-full min-w-0 rounded-3xl border focus-visible:border-ring bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
@@ -157,7 +151,7 @@ export function OnBoardingComponent() {
                       />
                     </div>
                     <FieldError
-                      id="nativeLanguage-error"
+                      id="native_language_id-error"
                       errors={[fieldState.error]}
                     />
                   </Field>
@@ -170,7 +164,7 @@ export function OnBoardingComponent() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>
-                      Preferred Language
+                      Target Language
                     </FieldLabel>
                     <div className="relative w-full">
                       <select
@@ -180,7 +174,7 @@ export function OnBoardingComponent() {
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid
-                            ? "preferedLanguage-error"
+                            ? "target_language_id-error"
                             : undefined
                         }
                         className="h-9 w-full min-w-0 rounded-3xl border bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
@@ -210,7 +204,7 @@ export function OnBoardingComponent() {
                       />
                     </div>
                     <FieldError
-                      id="preferedLanguage-error"
+                      id="target_language_id-error"
                       errors={[fieldState.error]}
                     />
                   </Field>

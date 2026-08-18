@@ -273,7 +273,7 @@ export function Settings() {
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                           <FieldLabel htmlFor={field.name}>
-                            Preferred Language
+                            Target Language
                           </FieldLabel>
                           <div className="relative w-full">
                             <select

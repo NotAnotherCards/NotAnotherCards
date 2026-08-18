@@ -198,6 +198,16 @@ export async function createUserProfile(
     target_language_id: string;
   },
 ) {
+  // Check if the profile already exists to prevent primary key constraint violations
+  const existing = await db
+    .get(UserProfile)
+    .query(Q.where("id", profile.id))
+    .fetch();
+
+  if (existing.length > 0) {
+    return await updateUserProfile(db, profile);
+  }
+
   return await db.write(async () => {
     return await db.get(UserProfile).create({
       id: profile.id,
