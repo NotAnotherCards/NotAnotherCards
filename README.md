@@ -55,7 +55,8 @@ The first run builds the web and API images and applies database migrations auto
 3. Replace the default values with your db credentials, and desired port for the backend
 4. Start only the local database with `docker compose up -d postgres`.
 5. Apply the database migrations with `pnpm --filter api db:migrate` (see [docs/database.md](docs/database.md)). Without this the database is empty and every auth request fails with a 500.
-6. Start the monorepo with `pnpm dev`.
+6. (Optional) Set up social login credentials for Google and Facebook by following the [OAuth Setup Guide](file:///Users/samuelcastilloglantz/dev/42/ft_transcendence/docs/oauth-setup.md).
+7. Start the monorepo with `pnpm dev`.
 
 ## Common Commands
 
