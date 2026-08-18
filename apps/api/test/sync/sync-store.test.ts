@@ -212,6 +212,117 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     ]);
   });
 
+  it('rejects duplicate profile usernames and accepts later valid profile syncs', async () => {
+    const now = Date.now();
+    const engine = createAppSyncEngine(createAppSyncStore(db));
+    const userA = engine.as('user-a');
+    const userB = engine.as('user-b');
+    const profile = (username: string | null, updatedAt: number) => ({
+      username,
+      bio: null,
+      avatar_file_id: null,
+      native_language_id: null,
+      target_language_id: null,
+      created_at: now,
+      updated_at: updatedAt,
+    });
+
+    const startA = pulled(await userA.pull(pullArgs(null)));
+    const startB = pulled(await userB.pull(pullArgs(null)));
+    const nullA = accepted(
+      await userA.push({
+        cursor: startA.cursor,
+        changes: {
+          user_profiles: {
+            created: [{ id: 'user-a', ...profile(null, now) }],
+            updated: [],
+            deleted: [],
+          },
+        },
+      }),
+    );
+    const nullB = accepted(
+      await userB.push({
+        cursor: startB.cursor,
+        changes: {
+          user_profiles: {
+            created: [{ id: 'user-b', ...profile(null, now) }],
+            updated: [],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(nullA.rejected?.user_profiles ?? []).toEqual([]);
+    expect(nullB.rejected?.user_profiles ?? []).toEqual([]);
+
+    const namedA = accepted(
+      await userA.push({
+        cursor: nullA.cursor!,
+        changes: {
+          user_profiles: {
+            created: [],
+            updated: [{ id: 'user-a', ...profile('alice', now + 1) }],
+            deleted: [],
+          },
+        },
+      }),
+    );
+    const unchangedA = accepted(
+      await userA.push({
+        cursor: namedA.cursor!,
+        changes: {
+          user_profiles: {
+            created: [],
+            updated: [{ id: 'user-a', ...profile('alice', now + 2) }],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(unchangedA.rejected?.user_profiles ?? []).toEqual([]);
+
+    const duplicateB = accepted(
+      await userB.push({
+        cursor: nullB.cursor!,
+        changes: {
+          user_profiles: {
+            created: [],
+            updated: [{ id: 'user-b', ...profile('alice', now + 3) }],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(duplicateB.rejected?.user_profiles).toEqual(['user-b']);
+    const afterRejection = accepted(
+      await userB.push({
+        cursor: duplicateB.cursor!,
+        changes: {
+          user_profiles: {
+            created: [],
+            updated: [{ id: 'user-b', ...profile('bob', now + 4) }],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(afterRejection.rejected?.user_profiles ?? []).toEqual([]);
+    const profiles = await db
+      .select({ userId: userProfiles.userId, username: userProfiles.username })
+      .from(userProfiles);
+    expect(profiles).toEqual(
+      expect.arrayContaining([
+        { userId: 'user-a', username: 'alice' },
+        { userId: 'user-b', username: 'bob' },
+      ]),
+    );
+  });
+
   it('round-trips all tables and persists through a fresh backend instance', async () => {
     const now = Date.now();
     const engine = createAppSyncEngine(createAppSyncStore(db));
