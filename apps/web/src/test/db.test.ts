@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.unmock("@/offline/db");
 import { Database } from "@remelondb/core";
 
 type ManagerOptions = {

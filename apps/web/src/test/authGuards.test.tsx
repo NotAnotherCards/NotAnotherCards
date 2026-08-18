@@ -22,18 +22,7 @@ const mockSession = {
   },
 };
 
-vi.mock("@/offline/db", () => {
-  const manager = {
-    init: vi.fn().mockResolvedValue(undefined),
-    state: { status: "ready" },
-  };
-  return {
-    manager,
-    createUserDatabaseManager: vi.fn(() => manager),
-    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
-    checkOnboardingComplete: vi.fn().mockResolvedValue(true),
-  };
-});
+
 
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),

@@ -82,3 +82,17 @@ vi.mock("@remelondb/core/react", async (importOriginal) => {
     }),
   };
 });
+
+// Mock @/offline/db globally to avoid cross-file mock pollution
+vi.mock("@/offline/db", () => {
+  const manager = {
+    init: vi.fn().mockResolvedValue(undefined),
+    state: { status: "ready" },
+  };
+  return {
+    manager,
+    createUserDatabaseManager: vi.fn(() => manager),
+    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+    checkOnboardingComplete: vi.fn().mockResolvedValue(true),
+  };
+});
