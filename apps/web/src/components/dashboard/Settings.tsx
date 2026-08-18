@@ -72,6 +72,13 @@ export function Settings() {
     }
   }, [profile, session, form]);
 
+  useEffect(() => {
+    if (isDirty) {
+      setSuccessMessage(null);
+      setApiError(null);
+    }
+  }, [isDirty]);
+
   const onSubmit = async (data: ProfileFormValues) => {
     setApiError(null);
     setSuccessMessage(null);
