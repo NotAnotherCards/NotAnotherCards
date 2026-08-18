@@ -59,7 +59,9 @@ export function Settings() {
     },
   });
 
-  const { isSubmitting } = form.formState;
+  const { isSubmitting, isDirty } = form.formState;
+
+  const nativeLanguage = form.watch("native_language_id");
 
   // Sync form values once profile or session is loaded
   useEffect(() => {
@@ -82,7 +84,6 @@ export function Settings() {
     setApiError(null);
     setSuccessMessage(null);
     try {
-      // Save language preferences and username to local RemelonDB
       await updateUserProfile({
         username: data.username || "",
         native_language_id: data.native_language_id || "",
@@ -295,7 +296,9 @@ export function Settings() {
                               >
                                 Select language
                               </option>
-                              {LANGUAGES.map((lang) => (
+                               {LANGUAGES.filter(
+                                (lang) => lang.value !== nativeLanguage,
+                              ).map((lang) => (
                                 <option
                                   key={lang.value}
                                   value={lang.value}
@@ -335,7 +338,7 @@ export function Settings() {
               </div>
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isDirty}
                 className="cursor-pointer gap-2 px-6 min-w-32 self-end sm:self-auto"
               >
                 {isSubmitting ? (
