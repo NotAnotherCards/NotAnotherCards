@@ -27,10 +27,12 @@ const mockSession = {
 const mockProfile = {
   id: "user-123",
   username: "john_doe",
+  bio: null,
+  avatar_file_id: null,
   native_language_id: "00000000-0000-0000-0000-000000000001", // English
   target_language_id: "00000000-0000-0000-0000-000000000002", // Spanish
-  created_at: new Date(),
-  updated_at: new Date(),
+  created_at: Date.now(),
+  updated_at: Date.now(),
 };
 
 vi.mock("@/hooks/useStore", () => ({
@@ -59,7 +61,7 @@ describe("Settings Tab Component Specs", () => {
       cards: [],
       dueCards: [],
       getCardsCount: () => 0,
-    });
+    } as unknown as ReturnType<typeof useStore>);
 
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSession,
@@ -198,7 +200,7 @@ describe("Settings Tab Component Specs", () => {
 
     vi.mocked(useStore).mockReturnValue({
       createUserProfile: vi.fn(),
-      updateUserProfile: async (data: {
+      updateUserProfile: (async (data: {
         username: string;
         native_language_id: string;
         target_language_id: string;
@@ -209,20 +211,20 @@ describe("Settings Tab Component Specs", () => {
         };
         vi.mocked(useStore).mockReturnValue({
           createUserProfile: vi.fn(),
-          updateUserProfile: vi.fn(),
+          updateUserProfile: vi.fn() as unknown as ReturnType<typeof useStore>["updateUserProfile"],
           profile: currentProfile,
           decks: [],
           cards: [],
           dueCards: [],
           getCardsCount: () => 0,
-        });
-      },
+        } as unknown as ReturnType<typeof useStore>);
+      }) as unknown as ReturnType<typeof useStore>["updateUserProfile"],
       profile: currentProfile,
       decks: [],
       cards: [],
       dueCards: [],
       getCardsCount: () => 0,
-    });
+    } as unknown as ReturnType<typeof useStore>);
 
     const user = userEvent.setup();
     const { rerender } = render(<Settings />);

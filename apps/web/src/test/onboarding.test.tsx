@@ -56,7 +56,7 @@ describe("Onboarding Flow and Guard Specs", () => {
       cards: [],
       dueCards: [],
       getCardsCount: () => 0,
-    });
+    } as unknown as ReturnType<typeof useStore>);
 
     // Default logged-in session mocks
     vi.mocked(authClient.getSession).mockResolvedValue({

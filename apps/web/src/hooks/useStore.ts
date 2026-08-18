@@ -259,6 +259,6 @@ export function useStore() {
     getCardsCount,
     createUserProfile,
     updateUserProfile,
-    profile: profiles?.[0] || null,
+    profile: (profiles?.[0] || null) as UserProfileRecord | null,
   };
 }
