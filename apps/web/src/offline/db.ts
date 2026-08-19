@@ -53,7 +53,9 @@ export async function closeUserDatabase() {
   manager = null;
 }
 
-export async function checkOnboardingComplete(userId: string): Promise<boolean> {
+export async function checkOnboardingComplete(
+  userId: string,
+): Promise<boolean> {
   let activeManager = manager;
   let shouldClose = false;
 
@@ -67,7 +69,6 @@ export async function checkOnboardingComplete(userId: string): Promise<boolean> 
   if (db) {
     const profiles = await db.get(UserProfile).query().fetch();
     const profile = profiles[0];
-    console.log("DEBUG [checkOnboardingComplete]: profiles found:", profiles.length, "first profile:", profile);
     if (
       profile &&
       profile.username &&
@@ -78,10 +79,8 @@ export async function checkOnboardingComplete(userId: string): Promise<boolean> 
     }
   }
 
-  console.log("DEBUG [checkOnboardingComplete]: returning complete =", complete);
   if (shouldClose) {
     await closeUserDatabase();
   }
   return complete;
 }
-
