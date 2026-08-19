@@ -23,17 +23,18 @@ Follow these steps to obtain a `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`:
 4. Give your project a name (e.g., `NotAnotherCards Dev`) and click **Create**.
 
 ### Step 2: Configure the OAuth Consent Screen
-1. In the left-hand sidebar, navigate to **APIs & Services** > **OAuth consent screen**.
-2. Select **External** as the User Type and click **Create**.
-3. Fill in the required App Information:
-   - **App name**: `NotAnotherCards Local`
-   - **User support email**: Choose your email.
-   - **Developer contact information**: Choose your email.
+1. In the top left-hand hambuger menu, under to **APIs & Services**, go to **Credentials**.
+2. Press **Create Credentials** -> **OAuth client ID**
+3. Follow the wizard step-by-step:
+   - **Configure consent screen** -> **Get Started**.
+   - **App information**: Give your project a name (e.g., `NotAnotherCards Local`) and select a user support email.
+   - **Audience**: Under the Audience section, configure the user type. Select **External** (this is where the External configuration now lives) so any Google user can access it.
+   - **Contact information**: Enter developer contact emails.
 4. Click **Save and Continue** (you can skip adding Scopes and Test Users for local development).
 
 ### Step 3: Create OAuth 2.0 Credentials
-1. Go to **APIs & Services** > **Credentials** in the left sidebar.
-2. Click **+ Create Credentials** at the top and select **OAuth client ID**.
+1. Go to **Clients** in the left sidebar under the Google Auth Platform navigation.
+2. Click **Create Client**.
 3. Choose **Web application** as the Application Type.
 4. Set the name to `Local Dev Client`.
 5. Under **Authorized JavaScript origins**, click **+ Add URI** and add:
@@ -43,7 +44,7 @@ Follow these steps to obtain a `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`:
    - `http://localhost:3000/api/auth/callback/google` *(Direct Backend Callback)*
    - `http://localhost:5173/api/auth/callback/google` *(Proxied Frontend Callback)*
 7. Click **Create**.
-8. Copy the **Client ID** and **Client Secret** from the modal that appears.
+8. Copy the **Client ID** and **Client Secret** from the details page or modal that appears.
 
 ---
 
@@ -106,6 +107,16 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 FACEBOOK_CLIENT_ID=your_facebook_app_id
 FACEBOOK_CLIENT_SECRET=your_facebook_app_secret
 ```
+
+---
+
+## 4. 🌐 Deployed Environments (Production/Staging)
+
+To get social logins working on a deployed instance:
+1. **Google Console Credentials**: In the same Google client configuration (or a new production-specific client), add your deployment's URLs:
+   - **Authorized JavaScript origins**: `https://cards.dustyway.org`
+   - **Authorized redirect URIs**: `https://cards.dustyway.org/api/auth/callback/google` (and Facebook callback URI `https://cards.dustyway.org/api/auth/callback/facebook` for Facebook).
+2. **Environment Variables**: Configure the `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`, and `FACEBOOK_CLIENT_SECRET` environment variables in your server's deployment or Docker Compose configuration exactly as shown in [Section 3](#3-environment-configuration).
 
 ---
 

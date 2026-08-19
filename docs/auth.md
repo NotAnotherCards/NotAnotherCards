@@ -35,7 +35,7 @@ FACEBOOK_CLIENT_ID=your-facebook-client-id
 FACEBOOK_CLIENT_SECRET=your-facebook-client-secret
 ```
 
-For a comprehensive guide on registering OAuth credentials for local testing, check out the [OAuth Setup Guide](file:///Users/samuelcastilloglantz/dev/42/ft_transcendence/docs/oauth-setup.md).
+For a comprehensive guide on registering OAuth credentials for local testing, check out the [OAuth Setup Guide](oauth-setup.md).
 
 ## API Endpoints
 
