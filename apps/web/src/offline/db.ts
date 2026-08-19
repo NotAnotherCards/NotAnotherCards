@@ -64,23 +64,25 @@ export async function checkOnboardingComplete(
     shouldClose = true;
   }
 
-  const db = await activeManager.init();
-  let complete = false;
-  if (db) {
-    const profiles = await db.get(UserProfile).query().fetch();
-    const profile = profiles[0];
-    if (
-      profile &&
-      profile.username &&
-      profile.native_language_id &&
-      profile.target_language_id
-    ) {
-      complete = true;
+  try {
+    const db = await activeManager.init();
+    let complete = false;
+    if (db) {
+      const profiles = await db.get(UserProfile).query().fetch();
+      const profile = profiles[0];
+      if (
+        profile &&
+        profile.username &&
+        profile.native_language_id &&
+        profile.target_language_id
+      ) {
+        complete = true;
+      }
+    }
+    return complete;
+  } finally {
+    if (shouldClose) {
+      await closeUserDatabase();
     }
   }
-
-  if (shouldClose) {
-    await closeUserDatabase();
-  }
-  return complete;
 }

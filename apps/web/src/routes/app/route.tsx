@@ -39,12 +39,16 @@ export const Route = createFileRoute("/app")({
         to: "/app/dashboard",
       });
     }
+
+    return {
+      session,
+    };
   },
   component: AppLayout,
 });
 
 function AppLayout() {
-  const { data: session } = authClient.useSession();
+  const { session } = Route.useRouteContext();
   const userId = session?.user?.id;
 
   const [userManager, setUserManager] = useState<ReturnType<typeof createUserDatabaseManager> | null>(null);
