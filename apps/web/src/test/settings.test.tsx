@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { authClient } from "@/lib/auth-client";
 import { useStore } from "@/hooks/useStore";
-import { Settings } from "../components/dashboard/Settings";
+import { Settings } from "../components/dashboard/settings/Settings";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockSession = {

@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
-import { Settings } from "./Settings";
+import { Settings } from "./settings/Settings";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useStore } from "@/hooks/useStore";
 import { useSyncController, useSyncState } from "@/offline/syncProvider";
