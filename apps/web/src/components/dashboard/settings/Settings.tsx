@@ -54,7 +54,7 @@ export function Settings() {
               className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
             >
               <SettingsIcon className="size-4" />
-              Settings
+              Preferences
             </Button>
             <Button
               type="button"
