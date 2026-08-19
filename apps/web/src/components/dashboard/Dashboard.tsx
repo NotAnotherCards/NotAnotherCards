@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/PageContainer";
@@ -17,7 +16,6 @@ import {
   GraduationCap,
   BookOpen,
   Sparkles,
-  LogOut,
   Mail,
   Library,
   Settings as SettingsIcon,
@@ -74,7 +72,6 @@ export function DashboardComponent() {
   const store = useStore();
   const { data: session } = authClient.useSession();
   const isOnline = useOnlineStatus();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"overview" | "decks" | "settings">(
     "overview",
   );
@@ -82,11 +79,6 @@ export function DashboardComponent() {
     type: "list" | "detail";
     deckId?: string;
   }>({ type: "list" });
-
-  const handleLogout = async () => {
-    await authClient.signOut();
-    void navigate({ to: "/login" });
-  };
 
   const user = session?.user || {
     name: "Legendary Learner",
@@ -193,19 +185,6 @@ export function DashboardComponent() {
     <PageContainer
       title="Dashboard Page"
       description="Welcome to your language learning portal. Track your vocabulary review progress, explore dictionaries, and build your learning streak."
-      action={
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="cursor-pointer gap-1.5 text-destructive border-destructive/20 hover:bg-destructive/10"
-          >
-            <LogOut className="size-4" />
-            Logout
-          </Button>
-        </div>
-      }
     >
       {/* Navigation Tabs */}
       <div className="flex flex-col sm:flex-row border border-border/50 sm:border-0 sm:border-b gap-2 p-1.5 bg-muted/30 rounded-2xl w-full sm:w-fit">
