@@ -39,6 +39,11 @@ vi.mock("@/hooks/useStore", () => ({
   useStore: vi.fn(),
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => vi.fn(),
+  Link: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
@@ -104,7 +109,7 @@ describe("Settings Tab Component Specs", () => {
     expect(screen.getByText(/Profile Details/i)).toBeInTheDocument();
 
     // Click on Preferences / Settings sub-tab
-    const settingsTabBtn = screen.getByRole("button", { name: /^Settings$/i });
+    const settingsTabBtn = screen.getByRole("button", { name: /^Preferences$/i });
     await user.click(settingsTabBtn);
 
     // Verify Settings card / theme changer is displayed

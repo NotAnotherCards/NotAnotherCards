@@ -29,32 +29,34 @@ import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { z } from "zod";
 import { useNavigate } from "@tanstack/react-router";
 
+const passwordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[a-z]/, "Must contain at least one lowercase letter")
+      .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Must contain at least one number"),
+    confirmPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type PasswordFormValues = z.infer<typeof passwordSchema>;
+
 export function Security() {
   const navigate = useNavigate();
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
 
-  const passwordSchema = z
-    .object({
-      currentPassword: z
-        .string()
-        .min(8, "Password must be at least 8 characters"),
-      newPassword: z
-        .string()
-        .min(8, "Password must be at least 8 characters")
-        .regex(/[a-z]/, "Must contain at least one lowercase letter")
-        .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-        .regex(/[0-9]/, "Must contain at least one number"),
-      confirmPassword: z
-        .string()
-        .min(8, "Password must be at least 8 characters"),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: "Passwords do not match",
-      path: ["confirmPassword"],
-    });
-
-  const passwordForm = useForm({
+  const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: "",
@@ -63,7 +65,7 @@ export function Security() {
     },
   });
 
-  const onPasswordSubmit = async (data: any) => {
+  const onPasswordSubmit = async (data: PasswordFormValues) => {
     setSecurityError(null);
     setSecuritySuccess(null);
     try {
@@ -96,7 +98,7 @@ export function Security() {
   const handleLogout = async () => {
     try {
       await authClient.signOut();
-      navigate({ to: "/login" });
+      void navigate({ to: "/login" });
     } catch (err) {
       console.error("Logout failed", err);
     }
