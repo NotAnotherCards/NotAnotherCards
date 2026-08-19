@@ -2,7 +2,7 @@ import { render, screen, act } from "@testing-library/react";
 import { App, router } from "../App";
 import userEvent from "@testing-library/user-event";
 import { authClient } from "@/lib/auth-client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
 const mockSession = {
   session: {
@@ -23,17 +23,7 @@ const mockSession = {
   },
 };
 
-vi.mock("@/offline/db", () => {
-  const manager = {
-    init: vi.fn().mockResolvedValue(undefined),
-    state: { status: "ready" },
-  };
-  return {
-    manager,
-    createUserDatabaseManager: vi.fn(() => manager),
-    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
-  };
-});
+
 
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
@@ -59,6 +49,9 @@ describe("Dashboard Page Component Specs", () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
+  });
+
+  afterEach(() => {
   });
 
   it("renders welcome text, user email/name, and placeholder feature sections", async () => {

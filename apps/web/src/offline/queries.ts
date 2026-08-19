@@ -1,5 +1,5 @@
 import { Database, Q } from "@remelondb/core";
-import { UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
+import { UserDeck, UserCard, ReviewEvent, UserProfile } from "@repo/offline-db";
 
 // ==========================================
 // QUERIES
@@ -43,6 +43,10 @@ export function getReviewHistoryQuery(db: Database, userCardId?: string) {
       );
   }
   return db.get(ReviewEvent).query(Q.sortBy("reviewed_at", Q.desc));
+}
+
+export function getUserProfileQuery(db: Database) {
+  return db.get(UserProfile).query();
 }
 
 // ==========================================
@@ -181,6 +185,59 @@ export async function recordReviewEvent(
       user_card_id: cardId,
       rating,
       reviewed_at: now,
+    });
+  });
+}
+
+export async function createUserProfile(
+  db: Database,
+  profile: {
+    id: string;
+    username: string;
+    native_language_id: string;
+    target_language_id: string;
+  },
+) {
+  // Check if the profile already exists to prevent primary key constraint violations
+  const existing = await db
+    .get(UserProfile)
+    .query(Q.where("id", profile.id))
+    .fetch();
+
+  if (existing.length > 0) {
+    return await updateUserProfile(db, profile);
+  }
+
+  return await db.write(async () => {
+    return await db.get(UserProfile).create({
+      id: profile.id,
+      username: profile.username,
+      bio: null,
+      avatar_file_id: null,
+      native_language_id: profile.native_language_id,
+      target_language_id: profile.target_language_id,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    });
+  });
+}
+
+export async function updateUserProfile(
+  db: Database,
+  profile: {
+    username: string;
+    native_language_id: string;
+    target_language_id: string;
+  },
+) {
+  return await db.write(async () => {
+    const profiles = await db.get(UserProfile).query().fetch();
+    const existing = profiles[0];
+    return await existing.update((record) => {
+      record.username = profile.username;
+      record.native_language_id = profile.native_language_id;
+      record.target_language_id = profile.target_language_id;
+      record.updated_at = Date.now();
     });
   });
 }

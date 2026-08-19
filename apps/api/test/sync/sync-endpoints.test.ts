@@ -36,6 +36,10 @@ describePostgres('authenticated remelonDB endpoints', () => {
     frontendUrl: process.env.FRONTEND_URL,
     authSecret: process.env.BETTER_AUTH_SECRET,
     authUrl: process.env.BETTER_AUTH_URL,
+    googleId: process.env.GOOGLE_CLIENT_ID,
+    googleSecret: process.env.GOOGLE_CLIENT_SECRET,
+    facebookId: process.env.FACEBOOK_CLIENT_ID,
+    facebookSecret: process.env.FACEBOOK_CLIENT_SECRET,
   };
 
   const signUp = async (label: string): Promise<TestUser> => {
@@ -70,6 +74,10 @@ describePostgres('authenticated remelonDB endpoints', () => {
     process.env.FRONTEND_URL = 'http://localhost:5173';
     process.env.BETTER_AUTH_SECRET = 'test-secret-at-least-32-characters';
     process.env.BETTER_AUTH_URL = 'http://localhost:3000';
+    process.env.GOOGLE_CLIENT_ID = 'dummy-google-client-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'dummy-google-client-secret';
+    process.env.FACEBOOK_CLIENT_ID = 'dummy-facebook-client-id';
+    process.env.FACEBOOK_CLIENT_SECRET = 'dummy-facebook-client-secret';
 
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
@@ -102,6 +110,10 @@ describePostgres('authenticated remelonDB endpoints', () => {
     process.env.FRONTEND_URL = previousEnvironment.frontendUrl;
     process.env.BETTER_AUTH_SECRET = previousEnvironment.authSecret;
     process.env.BETTER_AUTH_URL = previousEnvironment.authUrl;
+    process.env.GOOGLE_CLIENT_SECRET = previousEnvironment.googleSecret;
+    process.env.GOOGLE_CLIENT_ID = previousEnvironment.googleId;
+    process.env.FACEBOOK_CLIENT_SECRET = previousEnvironment.facebookSecret;
+    process.env.FACEBOOK_CLIENT_ID = previousEnvironment.facebookId;
   }, 30_000);
 
   it('rejects unauthenticated and malformed requests with transport statuses', async () => {

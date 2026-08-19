@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, afterAll, beforeEach } from "vitest";
+vi.unmock("@/offline/db");
 import type { Database } from "@remelondb/core";
 import { NodeSqliteDriver } from "@remelondb/driver-node";
 import { useStore } from "@/hooks/useStore";

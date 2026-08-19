@@ -50,8 +50,12 @@ describePostgres('client-server sync, end to end', () => {
     process.env.BETTER_AUTH_SECRET ??= 'e2e-only-secret';
     process.env.BETTER_AUTH_URL ??= 'http://localhost:3000';
     process.env.FRONTEND_URL ??= 'http://localhost:5173';
+    process.env.GOOGLE_CLIENT_ID = 'dummy-google-client-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'dummy-google-client-secret';
+    process.env.FACEBOOK_CLIENT_ID = 'dummy-facebook-client-id';
+    process.env.FACEBOOK_CLIENT_SECRET = 'dummy-facebook-client-secret';
     // import after the env is in place: the app reads it at module init
-    const { AppModule } = (await import('../../src/app.module')) as {
+    const { AppModule } = (await import('../../src/app.module.js')) as {
       AppModule: new () => unknown;
     };
     const moduleRef = await Test.createTestingModule({

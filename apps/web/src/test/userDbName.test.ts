@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+vi.unmock("@/offline/db");
 import { userDbName } from "../offline/db";
 
 describe("userDbName", () => {

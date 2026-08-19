@@ -1,9 +1,9 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { HomeComponent } from "@/components/Home";
+import { OnBoardingComponent } from "@/components/OnBoarding";
 import { authClient } from "@/lib/auth-client";
 import { checkOnboardingComplete } from "@/offline/db";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/app/onboarding")({
   beforeLoad: async () => {
     const { data: session } = await authClient.getSession();
     if (session) {
@@ -15,5 +15,5 @@ export const Route = createFileRoute("/")({
       }
     }
   },
-  component: HomeComponent,
+  component: OnBoardingComponent,
 });

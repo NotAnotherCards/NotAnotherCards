@@ -36,7 +36,6 @@ export const sendResetPasswordEmail = async ({
       if (!res.ok) {
         throw new Error(`Resend API returned status ${res.status}`);
       }
-      console.log(`📧 Email sent to ${to} via Resend.`);
       return;
     } catch (err: unknown) {
       console.error('Failed to send email via Resend, falling back...', err);
@@ -67,7 +66,6 @@ export const sendResetPasswordEmail = async ({
         text,
         html: `<p>${text.replace(/\n/g, '<br/>')}</p>`,
       });
-      console.log(`📧 Email sent to ${to} via SMTP.`);
       return;
     } catch (err: unknown) {
       console.error('Failed to send email via SMTP, falling back...', err);

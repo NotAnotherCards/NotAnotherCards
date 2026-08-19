@@ -2,7 +2,7 @@ import { authClient } from "@/lib/auth-client";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { DatabaseBanner } from "@/components/DatabaseBanner";
-import { createUserDatabaseManager, closeUserDatabase } from "@/offline/db";
+import { createUserDatabaseManager, closeUserDatabase, checkOnboardingComplete } from "@/offline/db";
 import { createRunSync } from "@/offline/sync";
 import {
   createSyncController,
@@ -14,19 +14,44 @@ import { SyncStatus } from "@/components/SyncStatus";
 import { DatabaseProvider } from "@remelondb/core/react";
 
 export const Route = createFileRoute("/app")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data: session } = await authClient.getSession();
     if (!session) {
+      if (
+        location.pathname === "/app/onboarding" ||
+        location.pathname === "/app"
+      ) {
+        throw redirect({
+          to: "/",
+        });
+      }
       throw redirect({
         to: "/login",
       });
     }
+
+    const onboardingComplete = await checkOnboardingComplete(session.user.id);
+    if (!onboardingComplete && location.pathname !== "/app/onboarding") {
+      throw redirect({
+        to: "/app/onboarding",
+      });
+    }
+
+    if (location.pathname === "/app") {
+      throw redirect({
+        to: "/app/dashboard",
+      });
+    }
+
+    return {
+      session,
+    };
   },
   component: AppLayout,
 });
 
 function AppLayout() {
-  const { data: session } = authClient.useSession();
+  const { session } = Route.useRouteContext();
   const userId = session?.user?.id;
 
   const [userManager, setUserManager] = useState<ReturnType<

@@ -28,6 +28,26 @@ export class AuthService {
       database: drizzleAdapter(this.db, {
         provider: 'pg',
       }),
+      socialProviders: {
+        google: {
+          clientId: configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+          clientSecret: configService.getOrThrow<string>(
+            'GOOGLE_CLIENT_SECRET',
+          ),
+        },
+        facebook: {
+          clientId: configService.getOrThrow<string>('FACEBOOK_CLIENT_ID'),
+          clientSecret: configService.getOrThrow<string>(
+            'FACEBOOK_CLIENT_SECRET',
+          ),
+        },
+      },
+      account: {
+        accountLinking: {
+          enabled: true,
+          trustedProviders: ['google', 'facebook'],
+        },
+      },
       emailAndPassword: {
         enabled: true,
         revokeSessionsOnPasswordReset: true,

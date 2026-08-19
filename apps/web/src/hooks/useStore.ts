@@ -1,12 +1,17 @@
 import { useEffect, useCallback, useState, useRef } from "react";
 import type { Database } from "@remelondb/core";
 import { useDatabase, useDatabaseState } from "@remelondb/core/react";
-import { UserDeckRecord, UserCardRecord } from "@repo/offline-db";
+import {
+  UserDeckRecord,
+  UserCardRecord,
+  UserProfileRecord,
+} from "@repo/offline-db";
 import { useQuery } from "@remelondb/core/react";
 import { useSyncController } from "@/offline/syncProvider";
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
+  getUserProfileQuery,
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
   deleteDeck as dbDeleteDeck,
@@ -14,6 +19,8 @@ import {
   updateCard as dbUpdateCard,
   deleteCard as dbDeleteCard,
   recordReviewEvent as dbRecordReview,
+  createUserProfile as dbCreateUserProfile,
+  updateUserProfile as dbUpdateUserProfile,
 } from "../offline/queries";
 
 export type Deck = UserDeckRecord;
@@ -21,7 +28,7 @@ export type Card = UserCardRecord;
 
 export function useDelayedLoading(
   isLoading: boolean,
-  { delay = 200, minDuration = 400 } = {}
+  { delay = 200, minDuration = 400 } = {},
 ) {
   const [ready, setReady] = useState(!isLoading);
   const [showSpinner, setShowSpinner] = useState(false);
@@ -99,7 +106,11 @@ export function useStore() {
     db && getPersonalDictionaryQuery(db),
   );
 
-  const isLoading = isInitializing || decksLoading || cardsLoading;
+  const { data: profiles, isLoading: profileLoading } =
+    useQuery<UserProfileRecord>(db && getUserProfileQuery(db));
+
+  const isLoading =
+    isInitializing || decksLoading || cardsLoading || profileLoading;
   const { ready, showSpinner } = useDelayedLoading(isLoading);
 
   const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(
@@ -107,7 +118,9 @@ export function useStore() {
     {
       select: useCallback(
         (rows: UserCardRecord[]) =>
-          rows.filter((c) => c.due_at <= now).sort((a, b) => a.due_at - b.due_at),
+          rows
+            .filter((c) => c.due_at <= now)
+            .sort((a, b) => a.due_at - b.due_at),
         [now],
       ),
     },
@@ -195,6 +208,35 @@ export function useStore() {
     window.location.reload();
   }, []);
 
+  const createUserProfile = useCallback(
+    async (profile: {
+      id: string;
+      username: string;
+      native_language_id: string;
+      target_language_id: string;
+    }) => {
+      if (!db) throw new Error("Database not initialized");
+      const result = await dbCreateUserProfile(db, profile);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const updateUserProfile = useCallback(
+    async (profile: {
+      username: string;
+      native_language_id: string;
+      target_language_id: string;
+    }) => {
+      if (!db) throw new Error("Database not initialized");
+      const result = await dbUpdateUserProfile(db, profile);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
   return {
     db,
     decks,
@@ -204,7 +246,7 @@ export function useStore() {
     isTakenOver: status === "taken-over",
     ready,
     showSpinner,
-    isLoading: isInitializing || decksLoading || cardsLoading,
+    isLoading,
     error: initError,
     reconnect,
     createDeck,
@@ -215,5 +257,8 @@ export function useStore() {
     deleteCard,
     recordReview,
     getCardsCount,
+    createUserProfile,
+    updateUserProfile,
+    profile: (profiles?.[0] || null) as UserProfileRecord | null,
   };
 }
