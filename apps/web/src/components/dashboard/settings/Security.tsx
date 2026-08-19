@@ -23,12 +23,14 @@ import {
   Save,
   Check,
   Shield,
+  LogOut,
 } from "lucide-react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { z } from "zod";
+import { useNavigate } from "@tanstack/react-router";
 
 export function Security() {
-
+  const navigate = useNavigate();
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
 
@@ -91,135 +93,176 @@ export function Security() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await authClient.signOut();
+      navigate({ to: "/login" });
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
+  };
+
   return (
-    <form
-      onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
-      className="space-y-6"
-    >
-      <Card className="border border-border/60 shadow-xs rounded-3xl">
+    <div className="space-y-6">
+      <form
+        onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+        className="space-y-6"
+      >
+        <Card className="border border-border/60 shadow-xs rounded-3xl">
+          <CardHeader className="flex flex-row items-center gap-3 pb-4">
+            <div className="p-2 bg-primary/10 rounded-2xl text-primary">
+              <Shield className="size-5" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-bold">
+                Change Password
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Update your account password. You will be logged out of other
+                devices.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <FieldSet className="space-y-4">
+              <FieldGroup className="grid grid-cols-1 gap-4">
+                <Controller
+                  name="currentPassword"
+                  control={passwordForm.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        Current Password
+                      </FieldLabel>
+                      <PasswordInput
+                        {...field}
+                        id={field.name}
+                        placeholder="••••••••"
+                        aria-invalid={fieldState.invalid}
+                        aria-describedby={
+                          fieldState.invalid ? "currentPassword-error" : undefined
+                        }
+                      />
+                      <FieldError
+                        id="currentPassword-error"
+                        errors={[fieldState.error]}
+                      />
+                    </Field>
+                  )}
+                />
+
+                <Controller
+                  name="newPassword"
+                  control={passwordForm.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                      <PasswordInput
+                        {...field}
+                        id={field.name}
+                        placeholder="••••••••"
+                        aria-invalid={fieldState.invalid}
+                        aria-describedby={
+                          fieldState.invalid ? "newPassword-error" : undefined
+                        }
+                      />
+                      <FieldError
+                        id="newPassword-error"
+                        errors={[fieldState.error]}
+                      />
+                    </Field>
+                  )}
+                />
+
+                <Controller
+                  name="confirmPassword"
+                  control={passwordForm.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        Confirm New Password
+                      </FieldLabel>
+                      <PasswordInput
+                        {...field}
+                        id={field.name}
+                        placeholder="••••••••"
+                        aria-invalid={fieldState.invalid}
+                        aria-describedby={
+                          fieldState.invalid
+                            ? "confirmPassword-error"
+                            : undefined
+                        }
+                      />
+                      <FieldError
+                        id="confirmPassword-error"
+                        errors={[fieldState.error]}
+                      />
+                    </Field>
+                  )}
+                />
+              </FieldGroup>
+            </FieldSet>
+
+            {/* Messages & Save Button inside CardContent */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-border/40">
+              <div className="flex-1">
+                <FormErrorMessage message={securityError} />
+                {securitySuccess && (
+                  <div className="flex items-center gap-1.5 text-xs font-semibold dark:text-emerald-400 bg-emerald-500/10 py-2 px-3 rounded-2xl w-fit animate-in fade-in duration-300">
+                    <Check className="size-3.5" />
+                    {securitySuccess}
+                  </div>
+                )}
+              </div>
+              <Button
+                type="submit"
+                disabled={passwordForm.formState.isSubmitting}
+                className="cursor-pointer gap-2 px-6 min-w-32 self-end sm:self-auto"
+              >
+                {passwordForm.formState.isSubmitting ? (
+                  <>
+                    <Spinner />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="size-4" />
+                    Update Password
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </form>
+
+      {/* Log Out Card */}
+      <Card className="border border-destructive/30 shadow-xs rounded-3xl">
         <CardHeader className="flex flex-row items-center gap-3 pb-4">
-          <div className="p-2 bg-primary/10 rounded-2xl text-primary">
-            <Shield className="size-5" />
+          <div className="p-2 bg-destructive/10 rounded-2xl text-destructive">
+            <LogOut className="size-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-bold">
-              Change Password
+            <CardTitle className="text-base font-bold text-destructive">
+              Log Out
             </CardTitle>
             <CardDescription className="text-xs">
-              Update your account password. You will be logged out of other
-              devices.
+              Log out of your account on this device.
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
-          <FieldSet className="space-y-4">
-            <FieldGroup className="grid grid-cols-1 gap-4">
-              <Controller
-                name="currentPassword"
-                control={passwordForm.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      Current Password
-                    </FieldLabel>
-                    <PasswordInput
-                      {...field}
-                      id={field.name}
-                      placeholder="••••••••"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={
-                        fieldState.invalid ? "currentPassword-error" : undefined
-                      }
-                    />
-                    <FieldError
-                      id="currentPassword-error"
-                      errors={[fieldState.error]}
-                    />
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="newPassword"
-                control={passwordForm.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
-                    <PasswordInput
-                      {...field}
-                      id={field.name}
-                      placeholder="••••••••"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={
-                        fieldState.invalid ? "newPassword-error" : undefined
-                      }
-                    />
-                    <FieldError
-                      id="newPassword-error"
-                      errors={[fieldState.error]}
-                    />
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="confirmPassword"
-                control={passwordForm.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      Confirm New Password
-                    </FieldLabel>
-                    <PasswordInput
-                      {...field}
-                      id={field.name}
-                      placeholder="••••••••"
-                      aria-invalid={fieldState.invalid}
-                      aria-describedby={
-                        fieldState.invalid ? "confirmPassword-error" : undefined
-                      }
-                    />
-                    <FieldError
-                      id="confirmPassword-error"
-                      errors={[fieldState.error]}
-                    />
-                  </Field>
-                )}
-              />
-            </FieldGroup>
-          </FieldSet>
+        <CardContent className="flex justify-end">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleLogout}
+            className="cursor-pointer gap-2 px-6"
+          >
+            <LogOut className="size-4" />
+            Log Out
+          </Button>
         </CardContent>
       </Card>
-
-      {/* Messages & Save Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
-        <div className="flex-1">
-          <FormErrorMessage message={securityError} />
-          {securitySuccess && (
-            <div className="flex items-center gap-1.5 text-xs font-semibold dark:text-emerald-400 bg-emerald-500/10 py-2 px-3 rounded-2xl w-fit animate-in fade-in duration-300">
-              <Check className="size-3.5" />
-              {securitySuccess}
-            </div>
-          )}
-        </div>
-        <Button
-          type="submit"
-          disabled={passwordForm.formState.isSubmitting}
-          className="cursor-pointer gap-2 px-6 min-w-32 self-end sm:self-auto"
-        >
-          {passwordForm.formState.isSubmitting ? (
-            <>
-              <Spinner />
-              Updating...
-            </>
-          ) : (
-            <>
-              <Save className="size-4" />
-              Update Password
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }

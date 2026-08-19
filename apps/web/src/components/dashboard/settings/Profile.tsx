@@ -19,13 +19,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import {
-  ChevronDown,
-  User,
-  Globe,
-  Save,
-  Check,
-} from "lucide-react";
+import { ChevronDown, User, Globe, Save, Check } from "lucide-react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { LANGUAGES } from "@/lib/languages";
 import { useStore } from "@/hooks/useStore";

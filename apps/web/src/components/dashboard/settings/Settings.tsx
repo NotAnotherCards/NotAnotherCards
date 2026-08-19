@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import {
-  User,
-  Settings as SettingsIcon,
-  Shield,
-} from "lucide-react";
+import { User, Settings as SettingsIcon, Shield } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { Profile } from "./Profile";
 import { Preferences } from "./Preferences";
