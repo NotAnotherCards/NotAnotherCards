@@ -20,16 +20,64 @@ import {
   LogOut,
   Mail,
   Library,
+  Settings as SettingsIcon,
+  RefreshCw,
 } from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
+import { Settings } from "./Settings";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useStore } from "@/hooks/useStore";
+import { useSyncController, useSyncState } from "@/offline/syncProvider";
+
+function DashboardSyncStatus() {
+  const controller = useSyncController();
+  const state = useSyncState();
+  if (!controller) {
+    return <span className="text-muted-foreground font-semibold">Offline</span>;
+  }
+
+  const LABELS: Record<string, string> = {
+    idle: "Synced",
+    syncing: "Syncing…",
+    offline: "Offline",
+    error: "Sync failed",
+    "resync-required": "Reset required",
+  };
+
+  const statusColor =
+    state.status === "idle" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+    state.status === "syncing" ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse" :
+    state.status === "error" ? "bg-destructive/10 text-destructive" :
+    "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+
+  return (
+    <div className="flex items-center gap-1.5 font-semibold">
+      <span className={`px-2 py-0.5 rounded-full ${statusColor}`}>
+        {LABELS[state.status] ?? state.status}
+      </span>
+      {(state.status === "error" || state.status === "offline") && (
+        <button
+          type="button"
+          onClick={() => controller.syncNow()}
+          className="flex items-center gap-1 underline text-[10px] text-muted-foreground hover:text-foreground cursor-pointer font-normal"
+        >
+          <RefreshCw className="size-3" />
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function DashboardComponent() {
   const store = useStore();
   const { data: session } = authClient.useSession();
+  const isOnline = useOnlineStatus();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"overview" | "decks">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "decks" | "settings">(
+    "overview",
+  );
   const [subView, setSubView] = useState<{
     type: "list" | "detail";
     deckId?: string;
@@ -160,14 +208,14 @@ export function DashboardComponent() {
       }
     >
       {/* Navigation Tabs */}
-      <div className="flex border-b border-border/50 gap-2 p-1 bg-muted/30 rounded-2xl w-fit">
+      <div className="flex flex-col sm:flex-row border border-border/50 sm:border-0 sm:border-b gap-2 p-1.5 bg-muted/30 rounded-2xl w-full sm:w-fit">
         <Button
           variant={activeTab === "overview" ? "secondary" : "ghost"}
           size="sm"
           onClick={() => {
             setActiveTab("overview");
           }}
-          className="cursor-pointer font-semibold rounded-xl text-xs px-4"
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <BookOpen className="size-3.5 mr-1.5" />
           Overview
@@ -179,15 +227,26 @@ export function DashboardComponent() {
             setActiveTab("decks");
             setSubView({ type: "list" });
           }}
-          className="cursor-pointer font-semibold rounded-xl text-xs px-4"
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <Library className="size-3.5 mr-1.5" />
-          Decks & Library
+          My Library
+        </Button>
+        <Button
+          variant={activeTab === "settings" ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => {
+            setActiveTab("settings");
+          }}
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
+        >
+          <SettingsIcon className="size-3.5 mr-1.5" />
+         Profile & Settings
         </Button>
       </div>
 
       {/* Tab Contents */}
-      {activeTab === "overview" ? (
+      {activeTab === "overview" && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Overview Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -221,9 +280,20 @@ export function DashboardComponent() {
               <CardContent className="space-y-4 pt-0">
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
                   <span className="text-muted-foreground">Status</span>
-                  <span className="font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                    Online
+                  <span
+                    className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
+                      isOnline
+                        ? "bg-emerald-500/10 dark:text-emerald-400"
+                        : "bg-destructive/10 text-destructive animate-pulse"
+                    }`}
+                  >
+                    {isOnline ? "Online" : "Offline"}
                   </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
+                  <span className="text-muted-foreground">Sync</span>
+                  <DashboardSyncStatus />
                 </div>
 
                 <div className="flex gap-2">
@@ -396,7 +466,9 @@ export function DashboardComponent() {
             </Card>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === "decks" && (
         <div className="space-y-6">
           {subView.type === "list" ? (
             <DeckList
@@ -410,6 +482,8 @@ export function DashboardComponent() {
           )}
         </div>
       )}
+
+      {activeTab === "settings" && <Settings />}
     </PageContainer>
   );
 }

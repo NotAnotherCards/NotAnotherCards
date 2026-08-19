@@ -3,9 +3,13 @@ import { render, fireEvent, screen } from "@testing-library/react";
 import { DatabaseBanner } from "../components/DatabaseBanner";
 import * as remelonReact from "@remelondb/core/react";
 
-vi.mock("@remelondb/core/react", () => ({
-  useDatabaseState: vi.fn(),
-}));
+vi.mock("@remelondb/core/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@remelondb/core/react")>();
+  return {
+    ...actual,
+    useDatabaseState: vi.fn(),
+  };
+});
 
 describe("DatabaseBanner Component", () => {
   const mockReload = vi.fn();

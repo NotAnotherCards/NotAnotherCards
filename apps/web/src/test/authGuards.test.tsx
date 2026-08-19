@@ -22,17 +22,7 @@ const mockSession = {
   },
 };
 
-vi.mock("@/offline/db", () => {
-  const manager = {
-    init: vi.fn().mockResolvedValue(undefined),
-    state: { status: "ready" },
-  };
-  return {
-    manager,
-    createUserDatabaseManager: vi.fn(() => manager),
-    closeUserDatabase: vi.fn().mockResolvedValue(undefined),
-  };
-});
+
 
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
@@ -139,5 +129,80 @@ describe("Auth Guards", () => {
 
     // Verify the URL is updated to /app/dashboard
     expect(window.location.pathname).toBe("/app/dashboard");
-  }, 15000);
+  });
+
+  it("redirects logged-out users from onboarding to home", async () => {
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    // Set initial route to /login before rendering so that redirect to / is a real route change
+    window.history.pushState(null, "", "/login");
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/app/onboarding" });
+    });
+
+    expect(window.location.pathname).toBe("/");
+  });
+
+  it("redirects logged-out users from /app to home", async () => {
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    // Set initial route to /login before rendering so that redirect to / is a real route change
+    window.history.pushState(null, "", "/login");
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/app" });
+    });
+
+    expect(window.location.pathname).toBe("/");
+  });
+
+  it("redirects logged-in users from /app to dashboard", async () => {
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    // Set initial route to /login before rendering so that redirect to /app/dashboard is a real route change
+    window.history.pushState(null, "", "/login");
+
+    render(<App />);
+
+    await act(async () => {
+      await router.navigate({ to: "/app" });
+    });
+
+    expect(window.location.pathname).toBe("/app/dashboard");
+  });
 });

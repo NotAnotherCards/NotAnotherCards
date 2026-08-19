@@ -89,7 +89,7 @@ export function RegisterComponent() {
     if (error) {
       setApiError(error.message || "An unexpected error occurred");
     } else {
-      void navigate({ to: "/app/dashboard" });
+      void navigate({ to: "/app/onboarding" });
     }
   };
 

@@ -112,7 +112,7 @@ export function FlashcardModal({
         >
           {/* FRONT Side */}
           <div
-            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-8 transition-colors duration-300"
+            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100/50 dark:from-zinc-800 dark:to-zinc-900 flex flex-col items-center justify-center p-8 transition-colors duration-300"
             style={{
               backfaceVisibility: "hidden",
             }}
@@ -137,7 +137,7 @@ export function FlashcardModal({
 
           {/* BACK Side */}
           <div
-            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-8 transition-colors duration-300"
+            className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100/50 dark:from-zinc-800 dark:to-zinc-900 flex flex-col items-center justify-center p-8 transition-colors duration-300"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
