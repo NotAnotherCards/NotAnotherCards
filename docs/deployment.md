@@ -53,20 +53,25 @@ The same `docker-compose.yml` runs in three places:
    OpenAI-compatible provider instead; costs cents for a demo and needs no
    code change. Without any endpoint the app still runs and shows jobs as
    queued, which is compliant but not much of a demo.
-2. **The VPS**: same compose, plus nginx/certbot, `AI_API_BASE` pointing at the
-   GX10 through the tailnet.
+2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
+   host nginx/certbot serving `app.notanothercards.com` and `AI_API_BASE`
+   pointing at the GX10 through the tailnet. The production override removes
+   the postgres host port and binds app diagnostic ports to loopback.
 3. **A teammate's machine during AI work**: same compose, `AI_API_BASE`
    pointing at the GX10 with a personal key (see "Access").
 
 ## Deploys
 
-- GitHub Actions deploys on merge to main: SSH with a deploy key to a
-  restricted deploy user on the VPS, `docker compose pull && up -d`. Merging a
-  PR is deploying; reverting a PR is rolling back.
-- Compose file, nginx config, and this document live in the repo. The setup
-  must be reproducible on a fresh VPS from the repo alone.
-- Production env vars are documented in `.env.example` files, values stay on
-  the server (subject III.3).
+- GitHub Actions deploys on merge to main (`.github/workflows/deploy.yml`):
+  SSH with a dedicated deploy key to the `deploy` user on the project VPS,
+  then run the base and production compose files with `--wait`. Merging a PR
+  is deploying; reverting a PR is rolling back.
+- The compose files, HTTP bootstrap nginx config
+  (`infra/vps/app.notanothercards.com.conf`), and reproducible setup guide
+  (`infra/vps/README.md`) live in the repo.
+- Production values stay in `/opt/notanothercards/.env` and the team password
+  manager; deployment credentials use GitHub's protected `production`
+  environment (subject III.3).
 
 ## The AI backend
 
@@ -197,4 +202,3 @@ than the rest of the stack combined — a poor fit for a small VPS — and at
 our scale structured log search adds little over metrics plus
 `docker compose logs`. RAG: possible later on the same box, needs its own
 design.
-

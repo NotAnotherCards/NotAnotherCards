@@ -1,0 +1,50 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://app.notanothercards.com
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          port: 22
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            cd /opt/notanothercards
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              up -d --build --wait
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              ps
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --retry 5 \
+              --retry-delay 3 \
+              https://app.notanothercards.com/health
