@@ -27,7 +27,15 @@ PORT=3000
 DATABASE_URL=postgresql://<user>:<password>@localhost:5432/notanothercards
 BETTER_AUTH_SECRET=your-base64-random-secret
 BETTER_AUTH_URL=http://localhost:3000
+
+# Social Auth Credentials (Optional for local dev, see docs/oauth-setup.md)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+FACEBOOK_CLIENT_ID=your-facebook-client-id
+FACEBOOK_CLIENT_SECRET=your-facebook-client-secret
 ```
+
+For a comprehensive guide on registering OAuth credentials for local testing, check out the [OAuth Setup Guide](oauth-setup.md).
 
 ## API Endpoints
 

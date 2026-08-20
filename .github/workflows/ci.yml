@@ -72,5 +72,8 @@ jobs:
           FACEBOOK_CLIENT_ID: dummy-facebook-client-id
           FACEBOOK_CLIENT_SECRET: dummy-facebook-client-secret
 
+      - name: Validate Infrastructure Configs
+        run: pnpm test:infra
+
       - name: Build & Verify
         run: pnpm build 
