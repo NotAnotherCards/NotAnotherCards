@@ -25,10 +25,7 @@ describe('DatabaseBanner', () => {
   })
 
   it('warns and retries when the database failed to open', () => {
-    mockUseDatabaseState.mockReturnValue({
-      status: 'error',
-      error: new Error('nope'),
-    })
+    mockUseDatabaseState.mockReturnValue({ status: 'error', error: new Error('nope') })
 
     const { getByText } = render(<DatabaseBanner />)
     expect(getByText(/Offline database unavailable/)).toBeTruthy()

@@ -33,9 +33,7 @@ describe("Forgot Password Form Component Tests", () => {
     const user = userEvent.setup();
     render(<ForgotPasswordComponent />);
 
-    const submitButton = screen.getByRole("button", {
-      name: /Send Reset Link/i,
-    });
+    const submitButton = screen.getByRole("button", { name: /Send Reset Link/i });
 
     // Submit empty form
     await user.click(submitButton);
@@ -60,9 +58,7 @@ describe("Forgot Password Form Component Tests", () => {
     render(<ForgotPasswordComponent />);
 
     const emailInput = screen.getByLabelText(/Email/i);
-    const submitButton = screen.getByRole("button", {
-      name: /Send Reset Link/i,
-    });
+    const submitButton = screen.getByRole("button", { name: /Send Reset Link/i });
 
     await user.type(emailInput, "user@example.com");
     await user.click(submitButton);
@@ -74,9 +70,7 @@ describe("Forgot Password Form Component Tests", () => {
 
     // Check that success confirmation screen is displayed
     await screen.findByText("Check your email");
-    expect(
-      screen.getByText(/We've sent a password reset link/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/We've sent a password reset link/i)).toBeInTheDocument();
   });
 
   it("applies loading and disabled state to submit button while request is pending", async () => {
@@ -98,9 +92,7 @@ describe("Forgot Password Form Component Tests", () => {
     render(<ForgotPasswordComponent />);
 
     const emailInput = screen.getByLabelText(/Email/i);
-    const submitButton = screen.getByRole("button", {
-      name: /Send Reset Link/i,
-    });
+    const submitButton = screen.getByRole("button", { name: /Send Reset Link/i });
 
     await user.type(emailInput, "user@example.com");
 
@@ -132,18 +124,14 @@ describe("Forgot Password Form Component Tests", () => {
     render(<ForgotPasswordComponent />);
 
     const emailInput = screen.getByLabelText(/Email/i);
-    const submitButton = screen.getByRole("button", {
-      name: /Send Reset Link/i,
-    });
+    const submitButton = screen.getByRole("button", { name: /Send Reset Link/i });
 
     await user.type(emailInput, "user@example.com");
     await user.click(submitButton);
 
     await screen.findByText("Check your email");
 
-    const resendButton = screen.getByRole("button", {
-      name: /Resend email in 30s/i,
-    });
+    const resendButton = screen.getByRole("button", { name: /Resend email in 30s/i });
     expect(resendButton).toBeDisabled();
   });
 });
@@ -157,9 +145,7 @@ describe("Reset Password Form Component Tests", () => {
     const user = userEvent.setup();
     render(<ResetPasswordComponent />);
 
-    const submitButton = screen.getByRole("button", {
-      name: /Reset Password/i,
-    });
+    const submitButton = screen.getByRole("button", { name: /Reset Password/i });
 
     // Submit empty form
     await user.click(submitButton);
@@ -190,9 +176,7 @@ describe("Reset Password Form Component Tests", () => {
 
     const passwordInput = screen.getByLabelText(/^New Password$/i);
     const confirmInput = screen.getByLabelText(/Confirm New Password/i);
-    const submitButton = screen.getByRole("button", {
-      name: /Reset Password/i,
-    });
+    const submitButton = screen.getByRole("button", { name: /Reset Password/i });
 
     await user.type(passwordInput, "NewSecurePass123!");
     await user.type(confirmInput, "NewSecurePass123!");

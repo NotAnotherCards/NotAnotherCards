@@ -12,7 +12,11 @@ import { SyncTransportError } from "./sync";
  * successful ordinary sync clears it.
  */
 export type SyncStatus =
-  "idle" | "syncing" | "offline" | "error" | "resync-required";
+  | "idle"
+  | "syncing"
+  | "offline"
+  | "error"
+  | "resync-required";
 
 export interface SyncControllerState {
   readonly status: SyncStatus;
@@ -90,7 +94,8 @@ export function createSyncController(
         },
         (error: unknown) => {
           if (disposed) return;
-          const transport = error instanceof SyncTransportError ? error : null;
+          const transport =
+            error instanceof SyncTransportError ? error : null;
           if (transport?.status === 401) {
             // the session is gone: stop the machinery, the auth layer
             // owns what happens next; a manual retry re-arms

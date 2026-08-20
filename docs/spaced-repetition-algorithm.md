@@ -17,18 +17,18 @@ each level has a fixed review interval
 
 Example:
 
-| Level | Meaning        | Next interval |
-| ----: | -------------- | ------------- |
-|     0 | New / failed   | now           |
-|     1 | Very weak      | 30 minutes    |
-|     2 | Weak           | 12 hours      |
-|     3 | Early learning | 1 day         |
-|     4 | Some memory    | 3 days        |
-|     5 | Getting stable | 7 days        |
-|     6 | Stable         | 14 days       |
-|     7 | Strong         | 30 days       |
-|     8 | Very strong    | 60 days       |
-|     9 | Mature         | 120 days      |
+| Level | Meaning | Next interval |
+| ----: | ------- | ------------- |
+| 0 | New / failed | now |
+| 1 | Very weak | 30 minutes |
+| 2 | Weak | 12 hours |
+| 3 | Early learning | 1 day |
+| 4 | Some memory | 3 days |
+| 5 | Getting stable | 7 days |
+| 6 | Stable | 14 days |
+| 7 | Strong | 30 days |
+| 8 | Very strong | 60 days |
+| 9 | Mature | 120 days |
 
 If the user remembers the card:
 
@@ -443,39 +443,39 @@ relearn_successes
 
 Recommended database fields for `user_cards`:
 
-| Field               | Type                     | Required | Default value | Meaning                                                                                |
-| ------------------- | ------------------------ | -------- | ------------- | -------------------------------------------------------------------------------------- |
-| `status`            | text                     | not null | `new`         | Current learning mode: `new`, `learning`, `review`, or `relearn`.                      |
-| `level`             | integer                  | not null | `0`           | Current learning level from `0` to `9`.                                                |
-| `due_at`            | timestamp with time zone | not null | `now()`       | When the card can be selected again. `new` cards still wait for the `new` queue group. |
-| `previous_level`    | integer                  | nullable | `null`        | Used only for `relearn`. Stores the old review level before the user forgot the card.  |
-| `relearn_successes` | integer                  | not null | `0`           | Number of successful `relearn` answers in a row.                                       |
+| Field | Type | Required | Default value | Meaning |
+| ----- | ---- | -------- | ------------- | ------- |
+| `status` | text | not null | `new` | Current learning mode: `new`, `learning`, `review`, or `relearn`. |
+| `level` | integer | not null | `0` | Current learning level from `0` to `9`. |
+| `due_at` | timestamp with time zone | not null | `now()` | When the card can be selected again. `new` cards still wait for the `new` queue group. |
+| `previous_level` | integer | nullable | `null` | Used only for `relearn`. Stores the old review level before the user forgot the card. |
+| `relearn_successes` | integer | not null | `0` | Number of successful `relearn` answers in a row. |
 
 Suggested levels:
 
-| Level | Next interval      |
-| ----: | ------------------ |
-|     0 | now / next session |
-|     1 | 30 minutes         |
-|     2 | 12 hours           |
-|     3 | 1 day              |
-|     4 | 3 days             |
-|     5 | 7 days             |
-|     6 | 14 days            |
-|     7 | 30 days            |
-|     8 | 60 days            |
-|     9 | 120 days           |
+| Level | Next interval |
+| ----: | ------------- |
+| 0     | now / next session |
+| 1     | 30 minutes |
+| 2     | 12 hours |
+| 3     | 1 day |
+| 4     | 3 days |
+| 5     | 7 days |
+| 6     | 14 days |
+| 7     | 30 days |
+| 8     | 60 days |
+| 9     | 120 days |
 
 ### 4.2 Card Statuses
 
 Each card has one current status.
 
-| Status     | Meaning                                                                                         |
-| ---------- | ----------------------------------------------------------------------------------------------- |
-| `new`      | The card was added, but the user has not started learning it yet.                               |
-| `learning` | The card is on levels `0-2`.                                                                    |
-| `review`   | The card is on levels `3-9`.                                                                    |
-| `relearn`  | The card was previously in `review`, but the user forgot it and now needs short recovery steps. |
+| Status | Meaning |
+| ------ | ------- |
+| `new` | The card was added, but the user has not started learning it yet. |
+| `learning` | The card is on levels `0-2`. |
+| `review` | The card is on levels `3-9`. |
+| `relearn` | The card was previously in `review`, but the user forgot it and now needs short recovery steps. |
 
 Important distinction:
 
@@ -509,21 +509,21 @@ Forgot / swipe left
 
 The full transition table:
 
-| Current status | Current level              | Action       | New status | New level                    | Next show                   |
-| -------------- | -------------------------- | ------------ | ---------- | ---------------------------- | --------------------------- |
-| `new`          | 0                          | remember     | `learning` | 1                            | +30 minutes                 |
-| `new`          | 0                          | forgot       | `learning` | 0                            | next session                |
-| `learning`     | 0                          | remember     | `learning` | 1                            | +30 minutes                 |
-| `learning`     | 1                          | remember     | `learning` | 2                            | +12 hours                   |
-| `learning`     | 2                          | remember     | `review`   | 3                            | +1 day                      |
-| `learning`     | 0-2                        | forgot       | `learning` | 0                            | next session                |
-| `review`       | 3-8                        | remember     | `review`   | current level + 1            | interval for new level      |
-| `review`       | 9                          | remember     | `review`   | 9                            | +120 days                   |
-| `review`       | 3-9                        | forgot       | `relearn`  | 0                            | next session                |
-| `relearn`      | 0, `relearn_successes = 0` | remember     | `relearn`  | 0, `relearn_successes = 1`   | +30 minutes / next session  |
-| `relearn`      | 0, `relearn_successes = 1` | remember     | `review`   | `max(3, previous_level - 3)` | interval for returned level |
-| `relearn`      | 0                          | forgot       | `relearn`  | 0                            | next session                |
-| any            | any                        | manual reset | `learning` | 0                            | next session                |
+| Current status | Current level | Action | New status | New level | Next show |
+| -------------- | ------------- | ------ | ---------- | --------- | --------- |
+| `new` | 0 | remember | `learning` | 1 | +30 minutes |
+| `new` | 0 | forgot | `learning` | 0 | next session |
+| `learning` | 0 | remember | `learning` | 1 | +30 minutes |
+| `learning` | 1 | remember | `learning` | 2 | +12 hours |
+| `learning` | 2 | remember | `review` | 3 | +1 day |
+| `learning` | 0-2 | forgot | `learning` | 0 | next session |
+| `review` | 3-8 | remember | `review` | current level + 1 | interval for new level |
+| `review` | 9 | remember | `review` | 9 | +120 days |
+| `review` | 3-9 | forgot | `relearn` | 0 | next session |
+| `relearn` | 0, `relearn_successes = 0` | remember | `relearn` | 0, `relearn_successes = 1` | +30 minutes / next session |
+| `relearn` | 0, `relearn_successes = 1` | remember | `review` | `max(3, previous_level - 3)` | interval for returned level |
+| `relearn` | 0 | forgot | `relearn` | 0 | next session |
+| any | any | manual reset | `learning` | 0 | next session |
 
 For `review + forgot`, store:
 
@@ -722,13 +722,13 @@ relearn_successes
 
 Field meanings:
 
-| Field               | Meaning                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| `status`            | Current learning mode: `new`, `learning`, `review`, or `relearn`.                           |
-| `level`             | Current learning level from `0` to `9`.                                                     |
-| `due_at`            | When the card should be shown again.                                                        |
-| `previous_level`    | Used only for `relearn`. It stores the review level the card had before the user forgot it. |
-| `relearn_successes` | How many successful answers in a row the card has in `relearn`.                             |
+| Field | Meaning |
+| ----- | ------- |
+| `status` | Current learning mode: `new`, `learning`, `review`, or `relearn`. |
+| `level` | Current learning level from `0` to `9`. |
+| `due_at` | When the card should be shown again. |
+| `previous_level` | Used only for `relearn`. It stores the review level the card had before the user forgot it. |
+| `relearn_successes` | How many successful answers in a row the card has in `relearn`. |
 
 For history and analytics, also write events to `review_events`:
 
@@ -894,18 +894,18 @@ Whenever the target word appears on screen, its audio should be played automatic
 
 Recommended progression:
 
-| Level | Main test type       | What the app shows             | What the user recalls | Why                                                             |
-| ----: | -------------------- | ------------------------------ | --------------------- | --------------------------------------------------------------- |
-|     0 | Recognition          | Target word with audio         | Native meaning        | The easiest first contact with the word.                        |
-|     1 | Recognition          | Target word with audio         | Native meaning        | Reinforce basic understanding.                                  |
-|     2 | Listening            | Audio                          | Native meaning        | Start connecting sound and meaning.                             |
-|     3 | Production           | Native meaning                 | Target word           | Begin active recall, not only recognition.                      |
-|     4 | Production           | Native meaning                 | Target word           | Strengthen active recall.                                       |
-|     5 | Listening production | Audio                          | Target word           | Check whether the user can recognize sound and recall spelling. |
-|     6 | Context recognition  | Sentence with highlighted word | Native meaning        | Move closer to real language usage.                             |
-|     7 | Context production   | Sentence with highlighted word | Target word           | Check whether the user can produce the word from context.       |
-|     8 | Listening production | Audio                          | Target word           | Keep listening and spelling strong at high levels.              |
-|     9 | Context production   | Sentence with highlighted word | Target word           | Mature cards should be checked in realistic context.            |
+| Level | Main test type | What the app shows | What the user recalls | Why |
+| ----: | -------------- | ------------------ | --------------------- | --- |
+| 0 | Recognition | Target word with audio | Native meaning | The easiest first contact with the word. |
+| 1 | Recognition | Target word with audio | Native meaning | Reinforce basic understanding. |
+| 2 | Listening | Audio | Native meaning | Start connecting sound and meaning. |
+| 3 | Production | Native meaning | Target word | Begin active recall, not only recognition. |
+| 4 | Production | Native meaning | Target word | Strengthen active recall. |
+| 5 | Listening production | Audio | Target word | Check whether the user can recognize sound and recall spelling. |
+| 6 | Context recognition | Sentence with highlighted word | Native meaning | Move closer to real language usage. |
+| 7 | Context production | Sentence with highlighted word | Target word | Check whether the user can produce the word from context. |
+| 8 | Listening production | Audio | Target word | Keep listening and spelling strong at high levels. |
+| 9 | Context production | Sentence with highlighted word | Target word | Mature cards should be checked in realistic context. |
 
 Simpler first implementation:
 

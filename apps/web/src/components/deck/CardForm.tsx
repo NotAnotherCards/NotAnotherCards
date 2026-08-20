@@ -1,14 +1,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Layers } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,14 +15,8 @@ import {
 } from "@/components/ui/field";
 
 const cardSchema = z.object({
-  front: z
-    .string()
-    .min(1, "Front content is required")
-    .max(1000, "Content cannot exceed 1000 characters"),
-  back: z
-    .string()
-    .min(1, "Back content is required")
-    .max(1000, "Content cannot exceed 1000 characters"),
+  front: z.string().min(1, "Front content is required").max(1000, "Content cannot exceed 1000 characters"),
+  back: z.string().min(1, "Back content is required").max(1000, "Content cannot exceed 1000 characters"),
 });
 
 type CardFormData = z.infer<typeof cardSchema>;
@@ -42,13 +29,7 @@ interface CardFormProps {
   title: string;
 }
 
-export function CardForm({
-  initialData,
-  onSubmit,
-  onCancel,
-  title,
-  error,
-}: CardFormProps) {
+export function CardForm({ initialData, onSubmit, onCancel, title, error }: CardFormProps) {
   const form = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
@@ -93,7 +74,7 @@ export function CardForm({
               Create the question and answer for this study card.
             </CardDescription>
           </CardHeader>
-
+          
           <CardContent className="pt-4">
             <FieldSet>
               <FieldGroup>
@@ -111,9 +92,7 @@ export function CardForm({
                         placeholder="e.g. What is the capital of Spain? or ¿Cómo estás?"
                         rows={3}
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={
-                          fieldState.invalid ? "front-error" : undefined
-                        }
+                        aria-describedby={fieldState.invalid ? "front-error" : undefined}
                         className={`w-full flex min-h-20 rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 ${
                           fieldState.invalid
                             ? "border-destructive focus-visible:ring-destructive/30"
@@ -121,10 +100,7 @@ export function CardForm({
                         }`}
                         autoFocus
                       />
-                      <FieldError
-                        id="front-error"
-                        errors={[fieldState.error]}
-                      />
+                      <FieldError id="front-error" errors={[fieldState.error]} />
                     </Field>
                   )}
                 />
@@ -143,9 +119,7 @@ export function CardForm({
                         placeholder="e.g. Madrid or How are you? (Informal)"
                         rows={3}
                         aria-invalid={fieldState.invalid}
-                        aria-describedby={
-                          fieldState.invalid ? "back-error" : undefined
-                        }
+                        aria-describedby={fieldState.invalid ? "back-error" : undefined}
                         className={`w-full flex min-h-20 rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 ${
                           fieldState.invalid
                             ? "border-destructive focus-visible:ring-destructive/30"

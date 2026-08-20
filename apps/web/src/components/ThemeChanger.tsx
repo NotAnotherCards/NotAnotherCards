@@ -13,9 +13,7 @@ export const ThemeChanger = () => {
   }, []);
 
   if (!mounted) {
-    return (
-      <div className="h-10 w-30 rounded-full bg-secondary/20 animate-pulse" />
-    );
+    return <div className="h-10 w-30 rounded-full bg-secondary/20 animate-pulse" />;
   }
 
   const options = [
@@ -49,3 +47,4 @@ export const ThemeChanger = () => {
     </div>
   );
 };
+
