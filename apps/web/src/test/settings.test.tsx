@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { authClient } from "@/lib/auth-client";
 import { useStore } from "@/hooks/useStore";
-import { Settings } from "../components/dashboard/Settings";
+import { Settings } from "../components/dashboard/settings/Settings";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockSession = {
@@ -37,6 +37,11 @@ const mockProfile = {
 
 vi.mock("@/hooks/useStore", () => ({
   useStore: vi.fn(),
+}));
+
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => vi.fn(),
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock("@remelondb/core/react", () => ({
@@ -104,7 +109,7 @@ describe("Settings Tab Component Specs", () => {
     expect(screen.getByText(/Profile Details/i)).toBeInTheDocument();
 
     // Click on Preferences / Settings sub-tab
-    const settingsTabBtn = screen.getByRole("button", { name: /^Settings$/i });
+    const settingsTabBtn = screen.getByRole("button", { name: /^Preferences$/i });
     await user.click(settingsTabBtn);
 
     // Verify Settings card / theme changer is displayed
@@ -249,5 +254,75 @@ describe("Settings Tab Component Specs", () => {
 
     // Success banner should disappear immediately
     expect(screen.queryByText("Settings saved successfully!")).toBeNull();
+  });
+
+  it("navigates to Security subtab and renders change password form", async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+
+    const securityTabBtn = screen.getByRole("button", { name: /^Security$/i });
+    await user.click(securityTabBtn);
+
+    expect(screen.getByText(/Change Password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Current Password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^New Password$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Confirm New Password/i)).toBeInTheDocument();
+  });
+
+  it("displays password validation errors for weak or non-matching inputs", async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+
+    const securityTabBtn = screen.getByRole("button", { name: /^Security$/i });
+    await user.click(securityTabBtn);
+
+    const currentInput = screen.getByLabelText(/Current Password/i);
+    const newInput = screen.getByLabelText(/^New Password$/i);
+    const confirmInput = screen.getByLabelText(/Confirm New Password/i);
+    const submitBtn = screen.getByRole("button", { name: /Update Password/i });
+
+    // Try submitting empty
+    await user.click(submitBtn);
+    expect(await screen.findAllByText("Password must be at least 8 characters")).toHaveLength(3);
+
+    // Try with mismatching passwords
+    await user.type(currentInput, "OldPass123!");
+    await user.type(newInput, "NewPass123!");
+    await user.type(confirmInput, "DifferentPass123!");
+    await user.click(submitBtn);
+    expect(await screen.findByText("Passwords do not match")).toBeInTheDocument();
+  });
+
+  it("submits the change password form successfully and calls authClient.changePassword", async () => {
+    const user = userEvent.setup();
+    vi.mocked(authClient.changePassword).mockResolvedValue({
+      data: { status: true },
+      error: null,
+    });
+
+    render(<Settings />);
+
+    const securityTabBtn = screen.getByRole("button", { name: /^Security$/i });
+    await user.click(securityTabBtn);
+
+    const currentInput = screen.getByLabelText(/Current Password/i);
+    const newInput = screen.getByLabelText(/^New Password$/i);
+    const confirmInput = screen.getByLabelText(/Confirm New Password/i);
+    const submitBtn = screen.getByRole("button", { name: /Update Password/i });
+
+    await user.type(currentInput, "CurrentPassword1!");
+    await user.type(newInput, "NewPassword123!");
+    await user.type(confirmInput, "NewPassword123!");
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(authClient.changePassword).toHaveBeenCalledWith({
+        currentPassword: "CurrentPassword1!",
+        newPassword: "NewPassword123!",
+        revokeOtherSessions: true,
+      });
+    });
+
+    expect(await screen.findByText("Password changed successfully!")).toBeInTheDocument();
   });
 });

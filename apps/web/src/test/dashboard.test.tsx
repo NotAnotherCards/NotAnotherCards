@@ -99,12 +99,18 @@ describe("Dashboard Page Component Specs", () => {
       await router.navigate({ to: "/app/dashboard" });
     });
 
-    // Find the logout button
-    const logoutButton = await screen.findByRole("button", {
-      name: /logout/i,
-    });
+    // Click Settings tab on dashboard
+    const settingsTab = await screen.findByRole("button", { name: /Profile & Settings/i });
+    await user.click(settingsTab);
 
-    // Click the logout button
+    // Click Security tab in settings sidebar
+    const securityTab = await screen.findByRole("button", { name: /^Security$/i });
+    await user.click(securityTab);
+
+    // Find and click the logout button inside Security
+    const logoutButton = await screen.findByRole("button", {
+      name: /^Log Out$/i,
+    });
     await user.click(logoutButton);
 
     // Verify signOut was called
