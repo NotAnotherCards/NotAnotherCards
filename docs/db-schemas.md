@@ -138,6 +138,34 @@ updated_at          number (integer Unix ms) NOT NULL
 
 The three UUID fields are currently values only; no `files` or `languages` tables or foreign-key constraints exist yet.
 
+### Sync infrastructure
+
+These server-only RemelonDB bookkeeping objects were introduced by [migration `0005`](../apps/api/drizzle/0005_remelon-sync-store.sql). They support synchronization and retention and do not contain application data or exist in the local schema.
+
+#### `remelon_rev` ([API schema](../apps/api/src/sync/schema.ts#L16))
+
+A PostgreSQL sequence that allocates the global, monotonically increasing revisions stored in synchronized rows' `rev` columns.
+
+#### `remelon_revision_checkpoints` ([API schema](../apps/api/src/sync/schema.ts#L23))
+
+```text
+observed_at         timestamptz PK
+rev                 bigint NOT NULL
+
+INDEX(observed_at)
+```
+
+Records the highest served revision observed at a point in time. Retention uses these checkpoints to determine which tombstones are old enough to garbage-collect safely.
+
+#### `remelon_sync_meta` ([API schema](../apps/api/src/sync/schema.ts#L18))
+
+```text
+key                 text PK
+value               bigint NOT NULL
+```
+
+Stores persistent sync metadata. It currently records `gc_floor`, the oldest valid incremental-sync cursor after garbage collection.
+
 ## Future ideas
 
 Everything in this section is exploratory and is not part of the current database contract.
