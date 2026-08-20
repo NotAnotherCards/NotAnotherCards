@@ -5,7 +5,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:infra": "docker compose config -q",
+    "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
