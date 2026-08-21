@@ -96,8 +96,10 @@ function AppLayout() {
       cancelled = true;
       controller?.dispose();
       setSyncController(null);
-      void closeUserDatabase().catch((err) => {
-        console.error('Database close failed', err);
+      // Close the manager this effect created, not the current global,
+      // so an interleaved successor stays open.
+      void closeUserDatabase(manager).catch((err) => {
+        console.error("Database close failed", err);
       });
       setUserManager(null);
     };
