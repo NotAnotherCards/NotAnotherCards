@@ -16,6 +16,11 @@ export type { DatabaseManagerState as DatabaseState };
 
 export let manager: ReturnType<typeof createDatabaseManager> | null = null;
 
+// Which user's database the global manager holds. Guards need this to
+// know whether reusing it would cross accounts; the manager itself
+// does not record what it opened.
+let managerDbName: string | null = null;
+
 /**
  * OPFS database name for a user. The id is hex-encoded from its UTF-8
  * bytes so that distinct ids always map to distinct names — encoding the
@@ -29,10 +34,8 @@ export function userDbName(userId: string): string {
   return `user_${hex}.db`;
 }
 
-export function createUserDatabaseManager(userId: string) {
-  const dbName = userDbName(userId);
-
-  manager = createDatabaseManager({
+function createManagerFor(dbName: string) {
+  return createDatabaseManager({
     open: (onTakenOver) =>
       Database.open({
         driver: new WebSqliteDriver({
@@ -45,26 +48,66 @@ export function createUserDatabaseManager(userId: string) {
         name: dbName,
       }),
   });
+}
+
+export function createUserDatabaseManager(userId: string) {
+  managerDbName = userDbName(userId);
+  manager = createManagerFor(managerDbName);
   return manager;
 }
 
-export async function closeUserDatabase() {
+export async function closeUserDatabase(
+  instance?: ReturnType<typeof createDatabaseManager> | null,
+) {
+  // Closes the given manager, or the active one when called bare.
   // manager.close() (remelondb >=0.1.7) tears down the driver and
   // discards an init that resolves after the close.
-  await manager?.close();
-  manager = null;
+  const target = instance ?? manager;
+  await target?.close();
+  // Clear the global only after a successful close, and only while it
+  // still points at the closed manager. A failed close keeps the
+  // reference for the caller, and closing one instance never nulls out
+  // a successor that became active during the await.
+  if (manager === target) {
+    manager = null;
+    managerDbName = null;
+  }
 }
 
-export async function checkOnboardingComplete(
-  userId: string,
-): Promise<boolean> {
-  let activeManager = manager;
-  let shouldClose = false;
+const pendingOnboardingChecks = new Map<string, Promise<boolean>>();
 
-  if (!activeManager) {
-    activeManager = createUserDatabaseManager(userId);
-    shouldClose = true;
+export function checkOnboardingComplete(userId: string): Promise<boolean> {
+  // Route guards overlap under redirect chains and superseded
+  // navigations; concurrent checks for one user share a single run.
+  const pending = pendingOnboardingChecks.get(userId);
+  if (pending) {
+    return pending;
   }
+  const check = runOnboardingCheck(userId).finally(() => {
+    pendingOnboardingChecks.delete(userId);
+  });
+  pendingOnboardingChecks.set(userId, check);
+  return check;
+}
+
+async function runOnboardingCheck(userId: string): Promise<boolean> {
+  // Reuse the active manager when AppLayout already has this user's
+  // database open. Without SharedWorker, on Chrome for Android for
+  // one, the driver enforces a single owner and a second open fails.
+  // Another user's manager never qualifies: an account transition must
+  // not answer one user's check from another user's data. An idle
+  // manager does not count either: it is unstarted, closing, or dead
+  // after a failed close, and adopting one would reopen a database
+  // nobody closes again. The private manager never reaches the global,
+  // so a slow check from an abandoned navigation can only ever close
+  // the connection it created itself.
+  const shared =
+    manager !== null &&
+    managerDbName === userDbName(userId) &&
+    manager.state.status !== "idle"
+      ? manager
+      : null;
+  const activeManager = shared ?? createManagerFor(userDbName(userId));
 
   try {
     const db = await activeManager.init();
@@ -97,8 +140,8 @@ export async function checkOnboardingComplete(
     }
     return complete;
   } finally {
-    if (shouldClose) {
-      await closeUserDatabase();
+    if (!shared) {
+      await activeManager.close();
     }
   }
 }
