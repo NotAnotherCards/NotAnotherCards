@@ -1,12 +1,20 @@
 import { View } from 'react-native';
+import type { DatabaseManager } from '@remelondb/core';
 import { useDatabaseState } from '@remelondb/core/react';
-import { manager } from '@/lib/db';
+import { useSessionDatabase } from '@/lib/database-provider';
 import { Button } from './ui/button';
 import { Text } from './ui/text';
 
 // Only the error state is worth showing: on native there are no tabs, so the
 // taken-over state is unreachable, and idle/loading/ready need no banner.
 export function DatabaseBanner() {
+  const { manager } = useSessionDatabase();
+  if (!manager) return null;
+
+  return <ActiveDatabaseBanner manager={manager} />;
+}
+
+function ActiveDatabaseBanner({ manager }: { manager: DatabaseManager }) {
   const { status } = useDatabaseState(manager);
 
   if (status !== 'error') return null;
