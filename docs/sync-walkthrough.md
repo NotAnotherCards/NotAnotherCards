@@ -119,7 +119,7 @@ every committed change stamps its rows with the next value. A pull
 "since cursor 41" is then a query for rows with revision greater than
 41, served from one consistent snapshot, and the returned cursor names
 that snapshot. This is the invariant everything else leans on, the
-*snapshot rule*: every change committed after the pull's snapshot,
+_snapshot rule_: every change committed after the pull's snapshot,
 including changes that were in flight concurrently and committed a
 moment later, must be returned by some future pull from that cursor.
 Nothing is ever allowed to fall between two pulls.
@@ -127,7 +127,7 @@ Nothing is ever allowed to fall between two pulls.
 That last clause is why timestamp-based sync ("give me rows where
 `last_modified > 14:32:07`") is non-conforming, not merely unfashionable.
 Wall clocks on two machines disagree; more subtly, two transactions can
-*write* their timestamps in one order and *commit* in the other. A pull
+_write_ their timestamps in one order and _commit_ in the other. A pull
 that lands between the two commits reads the later timestamp but not the
 earlier row, and that row is now invisible to every future incremental
 pull. No error is raised; a card is simply missing on one device
@@ -155,13 +155,13 @@ the next opportunity. Deleted data would resurrect constantly, which is
 both a bug and a privacy problem.
 
 So deletions are first-class: the wire carries them as ids in `deleted`,
-and the server keeps a *tombstone* per deleted id, a row that remembers
+and the server keeps a _tombstone_ per deleted id, a row that remembers
 "this id died at revision N" while its user content is scrubbed
 immediately. Tombstones let every device, however late it syncs, learn
 about the deletion through an ordinary incremental pull. They also guard
 the write path: a push that tries to write to a tombstoned id is
 refused by the store, and, by contract, that refusal must be reported
-(more under *Rejections* below). Content is scrubbed the moment the
+(more under _Rejections_ below). Content is scrubbed the moment the
 deletion commits, which matters for data protection.
 
 ## When does a sync run?
@@ -226,23 +226,21 @@ sync layer works underneath. The reading side goes through the query
 DSL, `Q`:
 
 ```ts
-const dueCards = db.get(UserCard).query(
-  Q.where('due_at', Q.lte(now)),
-  Q.sortBy('due_at', Q.asc),
-)
-const cards = await dueCards.fetch()          // one-shot
-const stop = dueCards.observe(render)         // reactive
+const dueCards = db
+  .get(UserCard)
+  .query(Q.where("due_at", Q.lte(now)), Q.sortBy("due_at", Q.asc));
+const cards = await dueCards.fetch(); // one-shot
+const stop = dueCards.observe(render); // reactive
 ```
 
 Joins and counts follow the same shape. The cards of one deck, newest
 first, and a live count of everything due:
 
 ```ts
-const deckCards = db.get(UserCard).query(
-  Q.where('deck_id', deck.id),
-  Q.sortBy('created_at', Q.desc),
-)
-dueCards.observeCount(setBadge)   // re-fires as the number changes
+const deckCards = db
+  .get(UserCard)
+  .query(Q.where("deck_id", deck.id), Q.sortBy("created_at", Q.desc));
+dueCards.observeCount(setBadge); // re-fires as the number changes
 ```
 
 The difference between the two calls is the heart of the design.
@@ -277,19 +275,26 @@ dirty records ride out on the next push:
 ```ts
 await db.write(async () => {
   const card = await db.get(UserCard).create({
-    deck_id: deck.id, front, back,
-    due_at: now, created_at: now, updated_at: now,
-  })
-  await staleCard.update((r) => { r.back = fixed; r.updated_at = now })
-  await oldCard.markAsDeleted()
-})
+    deck_id: deck.id,
+    front,
+    back,
+    due_at: now,
+    created_at: now,
+    updated_at: now,
+  });
+  await staleCard.update((r) => {
+    r.back = fixed;
+    r.updated_at = now;
+  });
+  await oldCard.markAsDeleted();
+});
 ```
 
 In React, the bridge hooks wrap query observation so a component is one
 line away from live data:
 
 ```tsx
-const { data: decks } = useQuery(() => (db ? getDecksQuery(db) : null), [db])
+const { data: decks } = useQuery(() => (db ? getDecksQuery(db) : null), [db]);
 ```
 
 The UI never waits for the network. One habit follows: components read
@@ -346,7 +351,7 @@ still has to look.
 
 A successful push answers with more than "ok". While the pushing device
 was offline, other devices may have committed changes; the push response
-carries exactly those *foreign* changes, everything committed between
+carries exactly those _foreign_ changes, everything committed between
 the request cursor and the push's own snapshot, excluding the push's own
 records (a device never receives its own writes back, so apply stays
 cheap). Cursor and interleave are a package: returning a new cursor
@@ -358,7 +363,7 @@ Computing the interleave completely is not always possible, and the
 protocol makes the honest escape explicit: a server may answer
 `cursor: null, changes: null`, "applied, but no interleave", and the
 client picks everything up on the next pull, its own echo absorbed by
-idempotent apply. This *degraded mode* is mandatory when the request
+idempotent apply. This _degraded mode_ is mandatory when the request
 cursor is older than the server's tombstone retention (next section): a
 "complete as far as I know" interleave would silently resurrect a
 deleted record.
@@ -366,7 +371,7 @@ deleted record.
 ## Retention, GC, and the emergency exit
 
 Tombstones and change history cannot be kept forever. The server prunes
-old tombstones periodically; the *retention floor* is the oldest
+old tombstones periodically; the _retention floor_ is the oldest
 revision it can still serve completely. A cursor older than the floor
 cannot be answered honestly, because the deletions between that cursor
 and the floor are gone; serving partial data would drop deletions
@@ -548,11 +553,11 @@ usually in the envelope before it is in the logs.
 
 ## Glossary
 
-| Term | Meaning |
-|------|---------|
-| Cursor | Opaque token naming a position in the server's commit history; the client stores and echoes it, never interprets it. |
-| Tombstone | The server's record that an id was deleted (content scrubbed immediately), kept so late devices learn of deletions. |
-| Conflict | Whole-push answer when any pushed record changed on the server after the push's base cursor; nothing applies. |
-| Rejected | Per-record refusal list; refused records stay dirty on the client and retry. Refusals are never silent. |
-| Retention floor | Oldest revision the server can still serve completely; older cursors get `resyncRequired`. |
-| Resync | Full rebuild from a `null` pull with replacement semantics; local dirty records survive. |
+| Term            | Meaning                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Cursor          | Opaque token naming a position in the server's commit history; the client stores and echoes it, never interprets it. |
+| Tombstone       | The server's record that an id was deleted (content scrubbed immediately), kept so late devices learn of deletions.  |
+| Conflict        | Whole-push answer when any pushed record changed on the server after the push's base cursor; nothing applies.        |
+| Rejected        | Per-record refusal list; refused records stay dirty on the client and retry. Refusals are never silent.              |
+| Retention floor | Oldest revision the server can still serve completely; older cursors get `resyncRequired`.                           |
+| Resync          | Full rebuild from a `null` pull with replacement semantics; local dirty records survive.                             |

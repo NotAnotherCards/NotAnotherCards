@@ -2,9 +2,16 @@ import { authClient } from "@/lib/auth-client";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { DatabaseBanner } from "@/components/DatabaseBanner";
-import { createUserDatabaseManager, closeUserDatabase, checkOnboardingComplete } from "@/offline/db";
+import {
+  createUserDatabaseManager,
+  closeUserDatabase,
+  checkOnboardingComplete,
+} from "@/offline/db";
 import { createRunSync } from "@/offline/sync";
-import { createSyncController, type SyncController } from "@/offline/syncController";
+import {
+  createSyncController,
+  type SyncController,
+} from "@/offline/syncController";
 import { SyncProvider } from "@/offline/syncProvider";
 import { SyncStatus } from "@/components/SyncStatus";
 
@@ -51,8 +58,12 @@ function AppLayout() {
   const { session } = Route.useRouteContext();
   const userId = session?.user?.id;
 
-  const [userManager, setUserManager] = useState<ReturnType<typeof createUserDatabaseManager> | null>(null);
-  const [syncController, setSyncController] = useState<SyncController | null>(null);
+  const [userManager, setUserManager] = useState<ReturnType<
+    typeof createUserDatabaseManager
+  > | null>(null);
+  const [syncController, setSyncController] = useState<SyncController | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!userId) {
@@ -95,13 +106,13 @@ function AppLayout() {
   return (
     <DatabaseProvider manager={userManager}>
       <SyncProvider controller={syncController}>
-      <div className="flex-1 flex flex-col bg-background">
-        <DatabaseBanner />
-        <SyncStatus />
-        <div className="flex-1 flex flex-col">
-          <Outlet />
+        <div className="flex-1 flex flex-col bg-background">
+          <DatabaseBanner />
+          <SyncStatus />
+          <div className="flex-1 flex flex-col">
+            <Outlet />
+          </div>
         </div>
-      </div>
       </SyncProvider>
     </DatabaseProvider>
   );

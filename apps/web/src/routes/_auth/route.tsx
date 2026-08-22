@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_auth")({
   beforeLoad: async () => {
     const { data: session } = await authClient.getSession();
     if (session) {
-      const onboardingComplete = await checkOnboardingComplete(session.user.id)
+      const onboardingComplete = await checkOnboardingComplete(session.user.id);
       if (!onboardingComplete) {
         throw redirect({
           to: "/app/onboarding",

@@ -14,8 +14,6 @@ describe("App", () => {
   it("renders the starter home page", async () => {
     render(<App />);
 
-    expect(
-      await screen.findByText(/NotAnotherCards/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/NotAnotherCards/i)).toBeInTheDocument();
   });
 });

@@ -34,7 +34,9 @@ async function post(path: "pull" | "push", body: unknown): Promise<unknown> {
       body: JSON.stringify(body),
     });
   } catch (error) {
-    throw new SyncTransportError(`sync ${path}: network failure (${String(error)})`);
+    throw new SyncTransportError(
+      `sync ${path}: network failure (${String(error)})`,
+    );
   }
   if (!response.ok) {
     throw new SyncTransportError(
@@ -53,7 +55,9 @@ export async function pullChanges(args: SyncPullArgs): Promise<SyncPullResult> {
   const raw = await post("pull", args);
   const parsed = syncWireSchemas.pullResult.safeParse(raw);
   if (!parsed.success) {
-    throw new SyncTransportError(`sync pull: invalid wire shape (${parsed.error.issues[0]?.message ?? "unknown"})`);
+    throw new SyncTransportError(
+      `sync pull: invalid wire shape (${parsed.error.issues[0]?.message ?? "unknown"})`,
+    );
   }
   return parsed.data as SyncPullResult;
 }
@@ -62,7 +66,9 @@ export async function pushChanges(args: SyncPushArgs): Promise<SyncPushResult> {
   const raw = await post("push", args);
   const parsed = syncWireSchemas.pushResult.safeParse(raw);
   if (!parsed.success) {
-    throw new SyncTransportError(`sync push: invalid wire shape (${parsed.error.issues[0]?.message ?? "unknown"})`);
+    throw new SyncTransportError(
+      `sync push: invalid wire shape (${parsed.error.issues[0]?.message ?? "unknown"})`,
+    );
   }
   return parsed.data as SyncPushResult;
 }

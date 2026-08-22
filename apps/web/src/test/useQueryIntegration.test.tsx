@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, act, waitFor } from "@testing-library/react";
 import { Database, createDatabaseManager } from "@remelondb/core";
-import { DatabaseProvider, useQuery, useDatabaseState } from "@remelondb/core/react";
+import {
+  DatabaseProvider,
+  useQuery,
+  useDatabaseState,
+} from "@remelondb/core/react";
 import { NodeSqliteDriver } from "@remelondb/driver-node";
 import { schema, UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
 import { getDecksQuery, createDeck } from "@/offline/queries";
@@ -46,7 +50,7 @@ describe("useQuery Integration Test", () => {
     render(
       <DatabaseProvider manager={manager}>
         <DecksTestComponent db={db} />
-      </DatabaseProvider>
+      </DatabaseProvider>,
     );
 
     // Initial check: status becomes ready and list is empty
