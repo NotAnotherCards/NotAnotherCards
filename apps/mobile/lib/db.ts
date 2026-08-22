@@ -7,19 +7,20 @@ import {
   UserCard,
   ReviewEvent,
   UserProfile,
+  userDbName,
 } from '@repo/offline-db'
 
-// Same bootstrap as the web client (apps/web/src/offline/db.ts). Native has
-// no tabs, so the takeover callback is unused and the taken-over state is
-// unreachable; the manager still gives us the deduplicated open, retryable
-// failure, and the shared React hook.
-export const manager = createDatabaseManager({
-  open: () =>
-    Database.open({
-      driver: new RnSqliteDriver(),
-      schema,
-      migrations,
-      modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
-      name: 'notanothercards.db',
-    }),
-})
+// Native has no takeover path, but the manager deduplicates concurrent opens,
+// exposes retryable state to React, and invalidates an open that finishes late.
+export function createUserDatabaseManager(userId: string) {
+  return createDatabaseManager({
+    open: () =>
+      Database.open({
+        driver: new RnSqliteDriver(),
+        schema,
+        migrations,
+        modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
+        name: userDbName(userId),
+      }),
+  })
+}
