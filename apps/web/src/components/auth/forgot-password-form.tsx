@@ -100,7 +100,12 @@ export function ForgotPasswordComponent() {
             <CheckCircle2 className="h-10 w-10" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Please check your inbox for <span className="font-medium text-foreground">{form.getValues("email")}</span>. If the email doesn't arrive in a few minutes, check your spam folder.
+            Please check your inbox for{" "}
+            <span className="font-medium text-foreground">
+              {form.getValues("email")}
+            </span>
+            . If the email doesn't arrive in a few minutes, check your spam
+            folder.
           </p>
 
           {resendMessage && (
@@ -156,7 +161,9 @@ export function ForgotPasswordComponent() {
                     placeholder="name@example.com"
                     autoComplete="email"
                     aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.invalid ? "email-error" : undefined}
+                    aria-describedby={
+                      fieldState.invalid ? "email-error" : undefined
+                    }
                   />
                   <FieldError id="email-error" errors={[fieldState.error]} />
                 </Field>

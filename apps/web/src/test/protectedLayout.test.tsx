@@ -71,8 +71,7 @@ describe("App Layout Guards", () => {
     });
   });
 
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
   it("renders the protection wrapper on the dashboard page", async () => {
     render(<App />);

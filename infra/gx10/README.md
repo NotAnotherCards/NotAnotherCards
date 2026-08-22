@@ -61,14 +61,16 @@ const client = new OpenAI({
 const params: GatewayChatParams = {
   model: "qwen",
   think: false, // ~3 s; leave thinking on for fewer factual errors at ~30 s
-  messages: [{
-    role: "user",
-    content:
-      'You generate flashcards for a spaced-repetition app. Create 5 flashcards ' +
-      'for the topic "JavaScript array methods (map, filter, reduce)". ' +
-      'Reply with only a JSON array, each element {"front": string, "back": string}. ' +
-      "Front is a question or prompt, back is the answer. Keep each side under 20 words.",
-  }],
+  messages: [
+    {
+      role: "user",
+      content:
+        "You generate flashcards for a spaced-repetition app. Create 5 flashcards " +
+        'for the topic "JavaScript array methods (map, filter, reduce)". ' +
+        'Reply with only a JSON array, each element {"front": string, "back": string}. ' +
+        "Front is a question or prompt, back is the answer. Keep each side under 20 words.",
+    },
+  ],
 };
 
 const r = await client.chat.completions.create(params);
@@ -86,14 +88,14 @@ across models.
 Which model for what (measured, see
 [docs/model-report.md](../../docs/model-report.md)):
 
-| model | use it for | notes |
-|---|---|---|
-| `qwen` | default chat and generation | fast with `think: false`; thinking mode is slower, more accurate, and doubles as our reviewer |
-| `qwen-next-80b` | best accuracy, no hurry | ~45 s per answer |
-| `mistral-small` | second opinion, dense-model style | |
-| `fact-check` | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no |
-| `moderation` | content screening | granite guardian risk prompts |
-| `embeddings` | vectors (bge-m3) | embeddings API, not chat |
+| model           | use it for                             | notes                                                                                         |
+| --------------- | -------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `qwen`          | default chat and generation            | fast with `think: false`; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `qwen-next-80b` | best accuracy, no hurry                | ~45 s per answer                                                                              |
+| `mistral-small` | second opinion, dense-model style      |                                                                                               |
+| `fact-check`    | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no                                            |
+| `moderation`    | content screening                      | granite guardian risk prompts                                                                 |
+| `embeddings`    | vectors (bge-m3)                       | embeddings API, not chat                                                                      |
 
 Good to know:
 
@@ -168,11 +170,11 @@ Conventions:
   anyway; the limit is not a throughput budget, it is a backstop that
   stops a runaway script after a minute instead of never. The production
   worker gets `"key_alias": "production-worker",
-  "max_parallel_requests": 2` to protect the single GPU.
+"max_parallel_requests": 2` to protect the single GPU.
 - Keys do not expire; they are valid until revoked. For a deliberately
   short-lived key (demo day), mint it with `"duration": "30d"`.
 - List keys: `curl -s http://100.64.0.1:4000/key/list -H "Authorization:
-  Bearer $KEY"`. Revoking needs the master key (teammates report a leak,
+Bearer $KEY"`. Revoking needs the master key (teammates report a leak,
   they cannot revoke themselves):
 
   ```sh
@@ -182,6 +184,7 @@ Conventions:
   ```
 
   Losing a key file is no incident, revoke and re-mint.
+
 - When handing a key over, point the person at "After you have your key"
   above.
 - The master key is admin-only; never hand it out or put it in an app.
@@ -193,7 +196,7 @@ Conventions:
   must go through LiteLLM, never around it.
 - Docker must start after tailscaled, or the tailscale-IP port bindings
   fail. After a reboot, recover with `docker compose down && docker
-  compose up -d` (volumes survive; a plain `up -d` can leave containers
+compose up -d` (volumes survive; a plain `up -d` can leave containers
   split across two networks).
 - Daemon logs: `docker compose logs ollama` (not journalctl — the native
   service is disabled).

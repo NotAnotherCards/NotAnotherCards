@@ -23,8 +23,6 @@ const mockSession = {
   },
 };
 
-
-
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
@@ -51,8 +49,7 @@ describe("Dashboard Page Component Specs", () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
   });
 
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
   it("renders welcome text, user email/name, and placeholder feature sections", async () => {
     render(<App />);
@@ -100,11 +97,15 @@ describe("Dashboard Page Component Specs", () => {
     });
 
     // Click Settings tab on dashboard
-    const settingsTab = await screen.findByRole("button", { name: /Profile & Settings/i });
+    const settingsTab = await screen.findByRole("button", {
+      name: /Profile & Settings/i,
+    });
     await user.click(settingsTab);
 
     // Click Security tab in settings sidebar
-    const securityTab = await screen.findByRole("button", { name: /^Security$/i });
+    const securityTab = await screen.findByRole("button", {
+      name: /^Security$/i,
+    });
     await user.click(securityTab);
 
     // Find and click the logout button inside Security

@@ -4,11 +4,7 @@
  * else a transport error that must never masquerade as protocol.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  pullChanges,
-  pushChanges,
-  SyncTransportError,
-} from "../offline/sync";
+import { pullChanges, pushChanges, SyncTransportError } from "../offline/sync";
 
 const emptyChanges = {
   user_decks: { created: [], updated: [], deleted: [] },
@@ -22,7 +18,7 @@ const jsonResponse = (status: number, body: unknown) =>
     headers: { "content-type": "application/json" },
   });
 
-const mockFetch = (impl: (typeof fetch)) => {
+const mockFetch = (impl: typeof fetch) => {
   const spy = vi.fn(impl);
   vi.stubGlobal("fetch", spy);
   return spy;
@@ -78,7 +74,11 @@ describe("sync transport", () => {
 
   it("401 is a transport error carrying the status", async () => {
     mockFetch(async () => jsonResponse(401, { message: "no session" }));
-    const attempt = pullChanges({ cursor: null, schemaVersion: 1, migration: null });
+    const attempt = pullChanges({
+      cursor: null,
+      schemaVersion: 1,
+      migration: null,
+    });
     await expect(attempt).rejects.toBeInstanceOf(SyncTransportError);
     await expect(
       pullChanges({ cursor: null, schemaVersion: 1, migration: null }),
@@ -93,7 +93,9 @@ describe("sync transport", () => {
   });
 
   it("malformed json is a transport error", async () => {
-    mockFetch(async () => new Response("<html>gateway</html>", { status: 200 }));
+    mockFetch(
+      async () => new Response("<html>gateway</html>", { status: 200 }),
+    );
     await expect(
       pullChanges({ cursor: null, schemaVersion: 1, migration: null }),
     ).rejects.toBeInstanceOf(SyncTransportError);

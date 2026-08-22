@@ -1,6 +1,12 @@
 import { Deck } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Edit, Trash2, FolderOpen } from "lucide-react";
 
 interface DeckCardProps {
@@ -62,7 +68,10 @@ export function DeckCard({
             <div className="text-xs text-muted-foreground font-medium">
               Total Cards
             </div>
-            <span className="text-sm font-bold text-foreground" data-testid="total-cards-badge">
+            <span
+              className="text-sm font-bold text-foreground"
+              data-testid="total-cards-badge"
+            >
               {totalCards}
             </span>
           </div>

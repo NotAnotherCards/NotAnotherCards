@@ -24,7 +24,9 @@ vi.mock("@/lib/auth-client", () => {
       signUp: {
         email: vi.fn(() => Promise.resolve({ data: null, error: null })),
       },
-      requestPasswordReset: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      requestPasswordReset: vi.fn(() =>
+        Promise.resolve({ data: null, error: null }),
+      ),
       resetPassword: vi.fn(() => Promise.resolve({ data: null, error: null })),
       changePassword: vi.fn(() => Promise.resolve({ data: null, error: null })),
       signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
@@ -49,7 +51,6 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: vi.fn(),
   })),
 });
-
 
 // Mock useDatabaseState to avoid Worker errors in tests
 vi.mock("@remelondb/core/react", async (importOriginal) => {

@@ -8,8 +8,7 @@ import {
   type AppDatabase,
 } from '../../src/database/database-schema';
 
-const baseConnectionString =
-  process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+const baseConnectionString = process.env.TEST_DATABASE_URL;
 
 export const hasPostgres = Boolean(baseConnectionString);
 
@@ -61,7 +60,7 @@ export async function resetPostgres(): Promise<void> {
   if (!testPool) return;
 
   await testPool.query(`
-    truncate table user_profiles, review_events, user_cards, user_decks cascade;
+    truncate table user_profiles, review_events, user_cards, user_decks, ai_generation_jobs, ai_usage cascade;
     delete from remelon_revision_checkpoints;
     delete from remelon_sync_meta;
     delete from "user";

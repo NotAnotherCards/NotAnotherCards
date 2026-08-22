@@ -22,20 +22,30 @@ export function SyncStatus() {
       data-testid="sync-status"
     >
       <span className="flex h-2 w-2 relative shrink-0">
-        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-          state.status === "idle" ? "bg-emerald-400" :
-          state.status === "syncing" ? "bg-blue-400" :
-          state.status === "error" ? "bg-destructive" : "bg-amber-400"
-        }`}></span>
-        <span className={`relative inline-flex rounded-full h-2 w-2 ${
-          state.status === "idle" ? "bg-emerald-500" :
-          state.status === "syncing" ? "bg-blue-500" :
-          state.status === "error" ? "bg-destructive" : "bg-amber-500"
-        }`}></span>
+        <span
+          className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+            state.status === "idle"
+              ? "bg-emerald-400"
+              : state.status === "syncing"
+                ? "bg-blue-400"
+                : state.status === "error"
+                  ? "bg-destructive"
+                  : "bg-amber-400"
+          }`}
+        ></span>
+        <span
+          className={`relative inline-flex rounded-full h-2 w-2 ${
+            state.status === "idle"
+              ? "bg-emerald-500"
+              : state.status === "syncing"
+                ? "bg-blue-500"
+                : state.status === "error"
+                  ? "bg-destructive"
+                  : "bg-amber-500"
+          }`}
+        ></span>
       </span>
-      <span>
-        {LABELS[state.status] ?? state.status}
-      </span>
+      <span>{LABELS[state.status] ?? state.status}</span>
       {retryable && (
         <button
           type="button"

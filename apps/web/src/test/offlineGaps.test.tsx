@@ -31,9 +31,8 @@ import {
 vi.mock("../offline/db", async () => {
   const { createDatabaseManager, Database } = await import("@remelondb/core");
   const { NodeSqliteDriver } = await import("@remelondb/driver-node");
-  const { schema, UserDeck, UserCard, ReviewEvent } = await import(
-    "@repo/offline-db"
-  );
+  const { schema, UserDeck, UserCard, ReviewEvent } =
+    await import("@repo/offline-db");
   const manager = createDatabaseManager({
     open: () =>
       Database.open({
@@ -133,8 +132,6 @@ describe("deck deletion on the wire", () => {
     const { changes } = await fetchLocalChanges(db);
     expect(changes.user_decks.deleted).toContain(deck.id);
     expect(changes.user_decks.updated.map((r) => r.id)).not.toContain(deck.id);
-
-
   });
 });
 
@@ -158,7 +155,5 @@ describe("deck deletion cascade", () => {
     // so the review row stays behind, referencing a deleted card.
     const orphaned = await getReviewHistoryQuery(db).fetch();
     expect(orphaned).toHaveLength(0);
-
-
   });
 });
