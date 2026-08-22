@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-vi.unmock("@/offline/db");
-import { userDbName } from "../offline/db";
+import { userDbName } from "@repo/offline-db";
+import { describe, expect, it } from "vitest";
 
 describe("userDbName", () => {
   it("is deterministic and well-formed", () => {
@@ -18,6 +17,11 @@ describe("userDbName", () => {
     // collides; encoding the full UTF-8 bytes keeps them distinct. This is
     // the exact bug that would let two accounts share one OPFS database.
     expect(userDbName("😀")).not.toBe(userDbName("😁"));
+  });
+
+  it("hex-encodes the complete UTF-8 representation", () => {
+    expect(userDbName("café")).toBe("user_636166c3a9.db");
+    expect(userDbName("😀")).toBe("user_f09f9880.db");
   });
 
   it("keeps a batch of varied ids all distinct", () => {

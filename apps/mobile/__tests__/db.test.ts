@@ -1,5 +1,5 @@
-import { Database } from '@remelondb/core'
-import { schema } from '@repo/offline-db'
+import { createDatabaseManager, Database } from '@remelondb/core'
+import { schema, userDbName } from '@repo/offline-db'
 
 // Capture the open callback that lib/db.ts hands to createDatabaseManager,
 // so we can inspect what it would open without touching native sqlite.
@@ -31,19 +31,32 @@ type OpenOptions = {
   name: string
 }
 
-async function openOptions(): Promise<OpenOptions> {
-  require('../lib/db') // runs createDatabaseManager, sets capturedOpen
+async function openOptions(userId = 'user-a'): Promise<OpenOptions> {
+  const { createUserDatabaseManager } = require('../lib/db') as typeof import('../lib/db')
+  createUserDatabaseManager(userId)
   expect(capturedOpen).toBeDefined()
   await capturedOpen!()
   return (Database.open as jest.Mock).mock.calls[0][0] as OpenOptions
 }
 
 describe('database bootstrap', () => {
-  it('opens the app database with the shared schema', async () => {
+  beforeEach(() => {
+    capturedOpen = undefined
+    jest.clearAllMocks()
+  })
+
+  it('does not create a manager at module load', () => {
+    require('../lib/db')
+
+    expect(createDatabaseManager).not.toHaveBeenCalled()
+  })
+
+  it('opens an account-scoped database with the shared schema', async () => {
     const options = await openOptions()
 
     expect(options.schema).toBe(schema)
-    expect(options.name).toBe('notanothercards.db')
+    expect(options.name).toBe(userDbName('user-a'))
+    expect(options.name).not.toBe('notanothercards.db')
   })
 
   // Registering models is manual, so a table added to @repo/offline-db is easy

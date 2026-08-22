@@ -9,6 +9,7 @@
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
     "typecheck": "tsc --noEmit",
+    "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
     "test": "jest",
     "dev:mobile": "expo start"
   },
