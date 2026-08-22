@@ -1,35 +1,27 @@
 # How our sync works
 
 A walkthrough of the remelonDB sync protocol as used in NotAnotherCards,
-based on the normative spec (sync-wire.md in the remelonDB repository).
+based on the normative spec (`sync-wire.md` in the remelonDB repository).
 
 ## Why syncing is a real problem
 
-Our app promises something simple to state and hard to build: review
-your flashcards anywhere, with or without internet, on your phone or in
-the browser, and everything ends up consistent. You rate twenty cards on
-the train with no signal. At home, your laptop already shows the
-results.
+The app should support reviewing flashcards without a connection. You
+can rate twenty cards on a train with no signal. After the phone
+reconnects and syncs, the laptop should show those results.
 
-Offline-first, multi-device is less a feature of the app than its
-architecture. Sync is what makes the local database we have already
-built more than a per-device data store. Anki is the reference point
-here: its sync is the feature users rely on most, because flashcard
-usage naturally splits across contexts, review on the phone, manage on
-the laptop. Without sync we would either go online-only, losing the
-offline use case and most of the point of the local database, or stay
-single-device, which would be a much weaker product.
+Sync turns the local database from a per-device store into shared state.
+Flashcard use naturally splits across devices: review on the phone,
+manage decks on the laptop. Without sync, the app would have to require a
+connection or keep each user's data on one device.
 
-The hard part is that devices can change things while they are out of
-touch with the server. Your phone edits a card on the train; your laptop
-edited the same card yesterday evening, and the phone has not synced
+Devices can change things while they are out of touch with the server.
+Your phone edits a card on the train. Your laptop edited the same card
+yesterday evening, and the phone has not synced
 since before that. Nothing happened at the same time, yet when the phone
 comes back online there are two versions of one card. Something has to
-decide what the truth is now, and every device has to converge on it,
-without losing anybody's work and without quietly bringing back things
-that were deleted. Naive implementations tend to fail in one of two
-ways, and both failures are silent: a change gets lost, or a deletion
-comes back.
+decide the current state, and every device has to converge on it without
+losing work or bringing back deleted records. Common silent failures are
+lost changes and resurrected deletions.
 
 The rules for how a device and the server talk are written down in one
 normative document, `sync-wire.md` in the remelonDB repository. It is a
@@ -37,11 +29,11 @@ contract in the RFC sense (MUST/SHOULD/MAY), the client implements one
 side, every backend implements the other, and a conformance suite tests
 compliance mechanically. This walkthrough covers the same ground in
 prose, at a level where you could review a sync-related PR without
-reading the engine source first. If you take away one sentence, take
-this one: **a device never overwrites the server blindly, and the server
-never refuses anything silently.**
+reading the engine source first. A device never overwrites the server
+blindly, and the wire response identifies every record the server
+refuses.
 
-## Two operations, nothing else
+## Pull and push
 
 The protocol consists of exactly two request types.
 
@@ -83,8 +75,9 @@ the last-synced version, and the server then includes full current
 records for those tables and columns regardless of the cursor. A device
 can be perfectly up to date by cursor position and still never have
 received data for a column that did not exist in its old schema; this
-field closes that gap. In short: behind in time (cursor), behind in
-shape (schemaVersion), freshly reshaped (migration).
+field closes that gap. The fields track progress in server history
+(`cursor`), schema compatibility (`schemaVersion`), and the first sync
+after a schema change (`migration`).
 
 A push request and its two possible answers:
 
@@ -101,11 +94,12 @@ A push request and its two possible answers:
 Records travel whole, all user columns plus `id`; the client's internal
 bookkeeping fields (`_status`, `_changed`) never appear on the wire in
 either direction, and unknown keys are stripped by the client rather
-than treated as errors. One deliberate looseness: strict
-created/updated classification is not required. The client applies an
-`updated` for a locally missing record as a create (and vice versa), and
-a server may report all live rows as `updated`. If a changeset names one
-id in both arrays, the last statement wins; it must not fail.
+than treated as errors. Created/updated classification is flexible. The
+client applies an `updated` for a locally missing record as a create (and
+vice versa), and a server may report all live rows as `updated`. If a
+changeset names one id in both live arrays, the last statement wins. If
+the same id also appears in `deleted`, the deletion supersedes its
+created or updated content.
 
 ## The cursor, and why it is not a timestamp
 
@@ -143,8 +137,8 @@ None of this bans timestamps from the app. Our rows are full of them:
 that wrote them, and the sync layer carries them without ever reading
 them. The rule is only about the delivery mechanism: what a device has
 or has not seen is tracked by revision, never by comparing clocks. Two
-clocks, two jobs: row timestamps say what happened when in the user's
-world; the cursor says who has been told what.
+Row timestamps say what happened when in the user's world. The cursor
+says which changes a device has received.
 
 ## Deletions are the hard part
 
@@ -166,23 +160,19 @@ deletion commits, which matters for data protection.
 
 ## When does a sync run?
 
-The protocol has no opinion: `synchronize()` is a function, and calling
-it is app policy. Everything about the design makes calling it safe at
-any moment: apply is idempotent, a conflicted push retries in a bounded
-loop, and a failed transport leaves your unsynced local writes
-untouched. The usual triggers are app start, regaining connectivity,
-returning to the foreground, and a debounce after a burst of local
-writes, with a periodic timer as backstop.
+The protocol does not schedule sync. `synchronize()` runs when the app
+calls it. Apply is idempotent, a conflicted push retries in a bounded
+loop, and a failed transport leaves local writes dirty.
 
-One client detail worth knowing: `synchronize()` returns a structured
-`SynchronizeResult` saying what it pulled, pushed, rejected, and whether
-it had to resync, so the app can react to a run's outcome without reading
-logs.
+The web controller currently runs an initial sync, then reacts to
+connectivity, page visibility, a 60-second interval, and debounced local
+writes. Mobile scheduling is not implemented yet.
 
-This is something we still have to decide and implement, for web and
-mobile. Until then, everything in this document still holds, the local
-database simply accumulates dirty records and the first sync carries
-them.
+`synchronize()` returns a `SynchronizeResult` with lease status, pulled
+and pushed counts, a rejected count, `rejectedRecords` grouped by table,
+conflict retry count, and whether a replacement resync occurred. The web
+adapter currently forwards only `resynced`, so rejected records are not
+reflected in application sync status.
 
 ## Inside the client
 
@@ -245,16 +235,16 @@ const deckCards = db.get(UserCard).query(
 dueCards.observeCount(setBadge)   // re-fires as the number changes
 ```
 
-The difference between the two calls is the heart of the design.
+The two calls serve different purposes.
 `fetch()` asks a question once, and the answer is stale the moment
 anything changes. `observe()` subscribes to the question: the callback
 receives the results now, and again every time they change, for any
 reason: the user edits a card, a review event lands, or a background
 sync applies a pull from the server. A component simply renders whatever
-its observation last delivered; that is all "reactive" means. The payoff
-shows in the sync case: when `synchronize()` applies the laptop's
+its observation last delivered; that is all "reactive" means. When
+`synchronize()` applies the laptop's
 changes, the phone's observers fire and the UI updates, with no
-component knowing sync exists.
+component needing to know that sync caused the update.
 
 This is why queries are data, not SQL strings: `Q.where`, `Q.sortBy`,
 `Q.on` for joins compose into a plain structure the engine can read, so
@@ -289,13 +279,13 @@ In React, the bridge hooks wrap query observation so a component is one
 line away from live data:
 
 ```tsx
-const { data: decks } = useQuery(() => (db ? getDecksQuery(db) : null), [db])
+const { data: decks } = useQuery(db ? getDecksQuery(db) : null)
 ```
 
-The UI never waits for the network. One habit follows: components read
-the database, not push responses. Whether a write has synced is the
-database manager's business (`useDatabaseState` exposes it), not
-something feature code should track by hand.
+The UI never waits for the network. Components read the database rather
+than push responses. The application sync controller owns sync status
+and exposes it through `useSyncState`; `useDatabaseState` reports manager
+initialization and failure state, not sync outcomes.
 
 ## Conflict: when both sides changed the same record
 
@@ -314,19 +304,18 @@ surfaces a sync error instead of spinning. Per-column merging is
 deliberately the client's job, not the server's: the server would have
 to guess, while the client knows exactly which columns the user touched.
 
-The practical consequence: nobody's edit disappears without trace, and
-whole-push conflict keeps the server's reasoning trivial while the
-client recovers the fine granularity during its merge.
+Whole-push conflict prevents partial server writes. The client restores
+per-column detail during its merge.
 
 ## Rejections: when the server says no to a single record
 
 Conflict is about timing; rejection is about content. A push can contain
-a record the server will not accept regardless of timing, one that
-fails validation, references another user's data, or targets a
-tombstoned id. Rejection is per record: the server applies the
-acceptable rest of the push and names the refused ids in `rejected`,
-grouped by table. The client keeps those records dirty, so they are
-visible as unsaved and will retry on the next push rather than vanish.
+a record the server will not accept regardless of timing, one that fails
+validation, references another user's data, targets a tombstoned id, or
+violates a database uniqueness or foreign-key constraint. Rejection is
+per record: the server applies the acceptable rows and names refused ids
+in `rejected`, grouped by table. A refused id retains its pre-push server
+state. The client keeps its local record dirty for a later retry.
 
 The contract states the underlying principle in bold: **refusals are
 never silent.** Everything the server declines to apply must be visible
@@ -338,9 +327,9 @@ record, and the device has diverged permanently, with zero errors
 anywhere. The conformance suite pins this rule with dedicated
 cases, including the tombstone variant.
 
-For feature work this yields a simple habit: when a write matters, read
-the push response. The protocol guarantees the server told you; the app
-still has to look.
+The sync adapter or controller should inspect `SynchronizeResult` and
+expose rejected records to the UI. Feature components do not need to
+parse push responses themselves.
 
 ## The interleave: what a push answer carries
 
@@ -354,8 +343,8 @@ without the complete interleave would skip those foreign changes
 forever, the same lost-write hole the snapshot rule closes on the pull
 side.
 
-Computing the interleave completely is not always possible, and the
-protocol makes the honest escape explicit: a server may answer
+Computing the interleave completely is not always possible. A server may
+answer
 `cursor: null, changes: null`, "applied, but no interleave", and the
 client picks everything up on the next pull, its own echo absorbed by
 idempotent apply. This *degraded mode* is mandatory when the request
@@ -363,7 +352,7 @@ cursor is older than the server's tombstone retention (next section): a
 "complete as far as I know" interleave would silently resurrect a
 deleted record.
 
-## Retention, GC, and the emergency exit
+## Retention, GC, and resync
 
 Tombstones and change history cannot be kept forever. The server prunes
 old tombstones periodically; the *retention floor* is the oldest
@@ -375,8 +364,8 @@ silently. The only lawful answer is `resyncRequired`.
 On receiving it, the client rebuilds: it pulls from `null`, reconciles
 against the full snapshot with replacement semantics, destroys local
 synced records that no longer exist on the server, and keeps local dirty
-records, which merge and push as usual. Slow and safe over fast and
-wrong. From the app's perspective the whole mechanism reduces to one
+records, which merge and push as usual. From the app's perspective the
+mechanism is one
 rare, well-defined event: a device away too long starts fresh and loses
 nothing it authored.
 
@@ -422,58 +411,55 @@ rejection bookkeeping, the interleave computation, degraded mode. It is
 the layer this whole document describes, and it is app-agnostic; it
 knows tables only by name.
 
-Below it sits the **store seam**: nine small methods (`changedSince`,
-`upsert`, `tombstone`, `tombstonedIds`, and friends) that know rows,
-revisions, and scopes, and nothing about cursors or conflicts. Our
-implementation is `@remelondb/store-drizzle` over Postgres: a config
-block per synced table pointing at the machinery columns, with the
-protocol obligations earned by a global revision sequence and a per-user
-advisory lock serializing the commit path, exactly the mechanism the
-cursor section demanded. An in-memory store ships as reference and test
-double; the conformance suite runs against both.
+Below it sits the **store seam**: one `SyncStore.transaction` entry point
+and eight `SyncStoreTx` methods, including `changedSince`, `upsert`,
+`tombstone`, and `tombstonedIds`. They know rows, revisions, and scopes,
+not cursors or conflicts. `upsert` may return ids refused by storage;
+the engine adds them to `rejected`. Our implementation is
+`@remelondb/store-drizzle` over Postgres: a config block per synced table
+points at the machinery columns, while a global revision sequence and a
+per-user advisory lock serialize the commit path. An in-memory store
+ships as reference and test double; the conformance suite runs against
+both.
 
 On top, the **NestJS binding** exposes `POST /sync/pull` and
 `POST /sync/push`, stamps the sync scope from the authenticated session
 (which is why client rows carry no `user_id`), and hands the request to
 the engine.
 
-NAC's own code enters through three engine hooks, and this is where
-sync-related app PRs usually live. Per-table `validate` runs each
+NotAnotherCards configures three engine hooks. Per-table `validate` runs
+each
 incoming record through the shared Zod row schema. `appendOnly: true`
 on a table makes the engine reject writes to existing ids, which is how
 review events are enforced as history. And `crossValidate` is the
 app-level pass for relational rules the engine cannot know: cards must
 reference a live deck owned by the same user, deleting a deck cascades
 to its cards and their review events, and so on. Everything rejected by
-any of these lands in the same `rejected` list the client already knows
-how to handle, so app policy and protocol policy speak one language.
+any of these lands in the same `rejected` list returned by the protocol.
 
 ## How we know it works
 
-A contract is worth what its enforcement is worth. This one is checked
-three ways, all automated.
+Three automated checks enforce the contract.
 
 First, the protocol design exists as a small formal model (Quint), whose
-invariants are checked when the model changes. This is design-level
-verification: it explores interleavings of pulls, pushes, GC, and
-crashes that are impractical to enumerate by hand.
+invariants are checked when the model changes. It explores interleavings
+of pulls, pushes, GC, and lost responses. In 0.2.0 it also checks
+`rejectedNoEffect`: every rejected id keeps its pre-push server state.
 
-Second, the spec ends with a thirteen-item conformance checklist that ships
-as a runnable vitest suite (`@remelondb/server/conformance`), and our
+Second, the spec has an 18-case conformance checklist that ships as a
+runnable vitest suite (`@remelondb/server/conformance`), and our
 NestJS/Postgres backend runs it in CI against a real database on every
 relevant push. The items are concrete scenarios, from "full pull is
 complete and scoped to the caller" and "a change committing during a
 pull is never lost" through "a stale push conflicts and applies nothing"
-to "nothing of another user's data ever crosses". When we extend the
-server, this list stays green or the change does not merge.
+to storage refusals, deletion precedence, and cross-scope isolation.
 
 Third, a documented tour of request/response pairs replays against the
-reference server in CI, so the prose documentation cannot drift from the
+reference server in CI to detect drift between the documentation and the
 implementation.
 
-The short version: the sync rules are a written contract, the server is
-tested against them mechanically, and every scenario in this document
-corresponds to a test someone can run.
+The model, conformance suite, and replay test cover the protocol paths
+described above.
 
 ## Day-to-day rules that follow
 
@@ -486,11 +472,11 @@ corresponds to a test someone can run.
   session, deletion is protocol state, and neither belongs to app data.
 - **Review events are append-only.** A rating is history; correcting
   yourself means rating again, not editing the event. The server rejects
-  updates to review events (an engine-level table policy), and the app
-  sees that honestly in `rejected`.
-- **Read the push response where writes matter.** Rejection is per
-  record and guaranteed to be reported; the UI layer decides what to do
-  with it, but ignoring it forfeits the guarantee.
+  updates to review events through an engine-level table policy and
+  reports their ids in `rejected`.
+- **Propagate sync results.** Inspect `SynchronizeResult` at the sync
+  adapter or controller boundary and expose `rejectedRecords` through
+  application status.
 - **Schema changes to synced tables are coordinated changes.** The
   migration mechanism handles them, but it must be driven: bump the
   schema version, ship client and server in an agreed order, and expect
@@ -526,14 +512,12 @@ sync loop, a background job editing synced rows server-side, or a test
 writing to the database mid-sync. The fix is finding the concurrent
 writer, not raising the round limit.
 
-**A write seems saved but never reaches other devices.** Read the push
-response of the writing device: the id is almost certainly in
-`rejected`, and the record still dirty locally. Then ask why the server
-refused it: validation, ownership, append-only policy, or a tombstoned
-target. If the response claims success and the record still diverges,
-that would be a silent-refusal bug, which the contract forbids and the
-conformance cases now pin; report it against the library, with the
-response body attached.
+**A write seems saved but never reaches other devices.** Inspect the
+writing device's `SynchronizeResult` or raw push response. The id is
+likely in `rejected`, and the local record remains dirty. Then identify
+the refusal: validation, ownership, append-only policy, or a tombstoned
+target. If the response reports no refusal and the record still
+diverges, report a protocol bug with the response body attached.
 
 **Local tests pass, real sync misbehaves.** Check the test store: the
 in-memory reference store and the Drizzle store both pass conformance,
@@ -542,9 +526,10 @@ where they are configured. A test that talks to the store directly
 bypasses the engine, and with it every protocol rule this document
 describes; meaningful sync tests go through the engine's handlers.
 
-The rule underneath: the protocol never fails silently, so start every
-diagnosis by reading what the responses actually said. The answer is
-usually in the envelope before it is in the logs.
+The wire protocol reports refusals, but the application can still
+discard that result. Start diagnosis with the raw response and
+`SynchronizeResult`, then check how the adapter and controller propagate
+them.
 
 ## Glossary
 
