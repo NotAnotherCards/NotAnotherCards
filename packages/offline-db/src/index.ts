@@ -20,14 +20,14 @@ import {
 // TextEncoder global that happens to exist in browsers and Node-based tests.
 export function userDbName(userId: string): string {
   const encoded = encodeURIComponent(userId);
-  let hex = "";
+  let hex = '';
 
   for (let index = 0; index < encoded.length; index += 1) {
-    if (encoded[index] === "%") {
+    if (encoded[index] === '%') {
       hex += encoded.slice(index + 1, index + 3).toLowerCase();
       index += 2;
     } else {
-      hex += encoded.charCodeAt(index).toString(16).padStart(2, "0");
+      hex += encoded.charCodeAt(index).toString(16).padStart(2, '0');
     }
   }
 
