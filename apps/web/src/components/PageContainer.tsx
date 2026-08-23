@@ -1,7 +1,7 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
-interface PageContainerProps extends React.ComponentProps<"div"> {
+interface PageContainerProps extends React.ComponentProps<'div'> {
   title?: string;
   description?: string;
   action?: React.ReactNode;
@@ -18,7 +18,7 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        "flex-1 w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 sm:py-8 flex flex-col gap-6",
+        'flex-1 w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 sm:py-8 flex flex-col gap-6',
         className,
       )}
       {...props}

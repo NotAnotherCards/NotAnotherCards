@@ -1,5 +1,5 @@
-import { createAuthClient } from "better-auth/react";
-import { inferAdditionalFields } from "better-auth/client/plugins";
+import { createAuthClient } from 'better-auth/react';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
 
 export const authClient = createAuthClient({
   baseURL: window.location.origin,
@@ -7,9 +7,9 @@ export const authClient = createAuthClient({
     inferAdditionalFields({
       user: {
         timezone: {
-          type: "string",
+          type: 'string',
           required: false,
-          defaultValue: "UTC",
+          defaultValue: 'UTC',
         },
       },
     }),

@@ -4,11 +4,9 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-} from "@/components/ui/card";
-import {
-  Settings as SettingsIcon,
-} from "lucide-react";
-import { ThemeChanger } from "@/components/ThemeChanger";
+} from '@/components/ui/card';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { ThemeChanger } from '@/components/ThemeChanger';
 
 export function Preferences() {
   return (

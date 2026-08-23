@@ -1,7 +1,13 @@
-import { Deck } from "@/hooks/useStore";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Edit, Trash2, FolderOpen } from "lucide-react";
+import { Deck } from '@/hooks/useStore';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
+import { Edit, Trash2, FolderOpen } from 'lucide-react';
 
 interface DeckCardProps {
   deck: Deck;
@@ -51,7 +57,7 @@ export function DeckCard({
           </div>
         </div>
         <CardDescription className="text-xs line-clamp-2 min-h-8 mt-1">
-          {deck.description || "No description provided."}
+          {deck.description || 'No description provided.'}
         </CardDescription>
       </CardHeader>
 
@@ -62,7 +68,10 @@ export function DeckCard({
             <div className="text-xs text-muted-foreground font-medium">
               Total Cards
             </div>
-            <span className="text-sm font-bold text-foreground" data-testid="total-cards-badge">
+            <span
+              className="text-sm font-bold text-foreground"
+              data-testid="total-cards-badge"
+            >
               {totalCards}
             </span>
           </div>

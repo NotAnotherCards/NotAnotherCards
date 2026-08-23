@@ -4,51 +4,51 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { registerSchema, SignupFormData } from "@repo/schemas";
-import { AuthCard } from "@/components/auth/auth-card";
-import { authClient } from "@/lib/auth-client";
-import { useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { SocialLoginButton } from "@/components/auth/social-login-button";
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerSchema, SignupFormData } from '@repo/schemas';
+import { AuthCard } from '@/components/auth/auth-card';
+import { authClient } from '@/lib/auth-client';
+import { useNavigate } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { SocialLoginButton } from '@/components/auth/social-login-button';
 
 export function RegisterComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
   const [oauthProvider, setOauthProvider] = useState<
-    "google" | "facebook" | null
+    'google' | 'facebook' | null
   >(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const errorParam = params.get("error");
+    const errorParam = params.get('error');
     if (errorParam) {
-      if (errorParam === "OAuthCallbackError") {
+      if (errorParam === 'OAuthCallbackError') {
         setApiError(
-          "Social signup failed. Please try again or use another provider.",
+          'Social signup failed. Please try again or use another provider.',
         );
       } else {
-        setApiError(errorParam.replace(/_/g, " "));
+        setApiError(errorParam.replace(/_/g, ' '));
       }
     }
 
     const handlePageShow = () => {
       setOauthProvider(null);
     };
-    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener('pageshow', handlePageShow);
     return () => {
-      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener('pageshow', handlePageShow);
     };
   }, []);
 
-  const handleSocialLogin = async (provider: "google" | "facebook") => {
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     setApiError(null);
     setOauthProvider(provider);
     try {
@@ -58,21 +58,21 @@ export function RegisterComponent() {
         errorCallbackURL: `${window.location.origin}/register`,
       });
       if (error) {
-        setApiError(error.message || "Social login failed. Please try again.");
+        setApiError(error.message || 'Social login failed. Please try again.');
         setOauthProvider(null);
       }
     } catch {
       setOauthProvider(null);
-      setApiError("Social login failed. Please try again.");
+      setApiError('Social login failed. Please try again.');
     }
   };
   const form = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
     },
   });
 
@@ -87,9 +87,9 @@ export function RegisterComponent() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (error) {
-      setApiError(error.message || "An unexpected error occurred");
+      setApiError(error.message || 'An unexpected error occurred');
     } else {
-      void navigate({ to: "/app/onboarding" });
+      void navigate({ to: '/app/onboarding' });
     }
   };
 
@@ -115,13 +115,13 @@ export function RegisterComponent() {
                     id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      fieldState.invalid ? "name-error" : undefined
+                      fieldState.invalid ? 'name-error' : undefined
                     }
                   />
                   <FieldError id="name-error" errors={[fieldState.error]} />
                 </Field>
               )}
-            />{" "}
+            />{' '}
             <Controller
               name="email"
               control={form.control}
@@ -134,7 +134,7 @@ export function RegisterComponent() {
                     type="email"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      fieldState.invalid ? "email-error" : undefined
+                      fieldState.invalid ? 'email-error' : undefined
                     }
                   />
                   <FieldError id="email-error" errors={[fieldState.error]} />
@@ -152,13 +152,13 @@ export function RegisterComponent() {
                     id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      fieldState.invalid ? "password-error" : undefined
+                      fieldState.invalid ? 'password-error' : undefined
                     }
                   />
                   <FieldError id="password-error" errors={[fieldState.error]} />
                 </Field>
               )}
-            />{" "}
+            />{' '}
             <Controller
               name="confirmPassword"
               control={form.control}
@@ -170,7 +170,7 @@ export function RegisterComponent() {
                     id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      fieldState.invalid ? "confirmPassword-error" : undefined
+                      fieldState.invalid ? 'confirmPassword-error' : undefined
                     }
                   />
                   <FieldError
@@ -192,7 +192,7 @@ export function RegisterComponent() {
                   Creating account...
                 </span>
               ) : (
-                "Sign up"
+                'Sign up'
               )}
             </Button>
             <div className="relative my-2">
@@ -207,15 +207,15 @@ export function RegisterComponent() {
             </div>
             <SocialLoginButton
               provider="google"
-              isLoading={oauthProvider === "google"}
+              isLoading={oauthProvider === 'google'}
               disabled={oauthProvider !== null || isSubmitting}
-              onClick={() => handleSocialLogin("google")}
+              onClick={() => handleSocialLogin('google')}
             />
             <SocialLoginButton
               provider="facebook"
-              isLoading={oauthProvider === "facebook"}
+              isLoading={oauthProvider === 'facebook'}
               disabled={oauthProvider !== null || isSubmitting}
-              onClick={() => handleSocialLogin("facebook")}
+              onClick={() => handleSocialLogin('facebook')}
             />
           </FieldGroup>
         </FieldSet>

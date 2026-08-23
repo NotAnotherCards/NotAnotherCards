@@ -1,7 +1,12 @@
-import { useState, useEffect } from "react";
-import { Card, useStore } from "@/hooks/useStore";
-import { ChevronLeft, ChevronRight, RefreshCw, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { Card, useStore } from '@/hooks/useStore';
+import {
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  CheckCircle2,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FlashcardModalProps {
   card?: Card;
@@ -19,7 +24,7 @@ export function FlashcardModal({
   const store = useStore();
   const modalCards = cards.length > 0 ? cards : singleCard ? [singleCard] : [];
   const [currentCardId, setCurrentCardId] = useState(
-    initialCardId || singleCard?.id || ""
+    initialCardId || singleCard?.id || '',
   );
   const [isFlipped, setIsFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,28 +34,29 @@ export function FlashcardModal({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onClose();
         return;
       }
       if (modalCards.length <= 1) return;
 
-      if (e.key === "ArrowRight") {
+      if (e.key === 'ArrowRight') {
         setIsFlipped(false);
         const nextIndex = (currentIndex + 1) % modalCards.length;
         setCurrentCardId(modalCards[nextIndex].id);
-      } else if (e.key === "ArrowLeft") {
+      } else if (e.key === 'ArrowLeft') {
         setIsFlipped(false);
-        const prevIndex = (currentIndex - 1 + modalCards.length) % modalCards.length;
+        const prevIndex =
+          (currentIndex - 1 + modalCards.length) % modalCards.length;
         setCurrentCardId(modalCards[prevIndex].id);
-      } else if (e.key === " ") {
+      } else if (e.key === ' ') {
         e.preventDefault();
         setIsFlipped((f) => !f);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, modalCards, onClose]);
 
   if (!activeCard) return null;
@@ -65,7 +71,8 @@ export function FlashcardModal({
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsFlipped(false);
-    const prevIndex = (currentIndex - 1 + modalCards.length) % modalCards.length;
+    const prevIndex =
+      (currentIndex - 1 + modalCards.length) % modalCards.length;
     setCurrentCardId(modalCards[prevIndex].id);
   };
 
@@ -82,7 +89,7 @@ export function FlashcardModal({
         onClose();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to record review");
+      setError(err instanceof Error ? err.message : 'Failed to record review');
     }
   };
 
@@ -94,7 +101,7 @@ export function FlashcardModal({
       {/* 3D Flip Card Outer Container */}
       <div
         className="w-full max-w-lg h-80 select-none"
-        style={{ perspective: "1000px" }}
+        style={{ perspective: '1000px' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Flip Card Inner Wrapper */}
@@ -105,8 +112,8 @@ export function FlashcardModal({
           }}
           className="w-full h-full relative cursor-pointer rounded-3xl transition-transform duration-500 shadow-2xl"
           style={{
-            transformStyle: "preserve-3d",
-            transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            transformStyle: 'preserve-3d',
+            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
           }}
           data-testid="flashcard-inner"
         >
@@ -114,7 +121,7 @@ export function FlashcardModal({
           <div
             className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100/50 dark:from-zinc-800 dark:to-zinc-900 flex flex-col items-center justify-center p-8 transition-colors duration-300"
             style={{
-              backfaceVisibility: "hidden",
+              backfaceVisibility: 'hidden',
             }}
             data-testid="flashcard-front"
           >
@@ -139,8 +146,8 @@ export function FlashcardModal({
           <div
             className="absolute inset-0 w-full h-full rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100/50 dark:from-zinc-800 dark:to-zinc-900 flex flex-col items-center justify-center p-8 transition-colors duration-300"
             style={{
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
             }}
             data-testid="flashcard-back"
           >

@@ -1,35 +1,35 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { loginSchema, type LoginFormData } from '@repo/schemas'
-import { authClient } from '@/lib/auth-client'
-import { apiErrorMessage } from '@/lib/errors'
-import { Button } from '@/components/ui/button'
-import { FormField } from '@/components/ui/form-field'
-import { Text } from '@/components/ui/text'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema, type LoginFormData } from '@repo/schemas';
+import { authClient } from '@/lib/auth-client';
+import { apiErrorMessage } from '@/lib/errors';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { Text } from '@/components/ui/text';
 
 export function LoginForm() {
-  const [apiError, setApiError] = useState<string | null>(null)
+  const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
-  })
-  const { isSubmitting } = formState
+  });
+  const { isSubmitting } = formState;
 
   const onSubmit = async (data: LoginFormData) => {
-    setApiError(null)
+    setApiError(null);
     try {
       const { error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
-      })
+      });
       if (error) {
-        setApiError(apiErrorMessage(error))
+        setApiError(apiErrorMessage(error));
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err))
+      setApiError(apiErrorMessage(err));
     }
-  }
+  };
 
   return (
     <>
@@ -62,5 +62,5 @@ export function LoginForm() {
         className="mt-1"
       />
     </>
-  )
+  );
 }

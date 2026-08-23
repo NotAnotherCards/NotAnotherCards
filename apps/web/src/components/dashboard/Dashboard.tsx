@@ -1,24 +1,20 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { PageContainer } from "@/components/PageContainer";
-import {
-  BookOpen,
-  Library,
-  Settings as SettingsIcon,
-} from "lucide-react";
-import { DeckList } from "@/components/deck/DeckList";
-import { DeckDetail } from "@/components/deck/DeckDetail";
-import { Settings } from "./settings/Settings";
-import { Overview } from "./Overview";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { PageContainer } from '@/components/PageContainer';
+import { BookOpen, Library, Settings as SettingsIcon } from 'lucide-react';
+import { DeckList } from '@/components/deck/DeckList';
+import { DeckDetail } from '@/components/deck/DeckDetail';
+import { Settings } from './settings/Settings';
+import { Overview } from './Overview';
 
 export function DashboardComponent() {
-  const [activeTab, setActiveTab] = useState<"overview" | "decks" | "settings">(
-    "overview",
+  const [activeTab, setActiveTab] = useState<'overview' | 'decks' | 'settings'>(
+    'overview',
   );
   const [subView, setSubView] = useState<{
-    type: "list" | "detail";
+    type: 'list' | 'detail';
     deckId?: string;
-  }>({ type: "list" });
+  }>({ type: 'list' });
 
   return (
     <PageContainer
@@ -28,10 +24,10 @@ export function DashboardComponent() {
       {/* Navigation Tabs */}
       <div className="flex flex-col sm:flex-row border border-border/50 sm:border-0 sm:border-b gap-2 p-1.5 bg-muted/30 rounded-2xl w-full sm:w-fit">
         <Button
-          variant={activeTab === "overview" ? "secondary" : "ghost"}
+          variant={activeTab === 'overview' ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => {
-            setActiveTab("overview");
+            setActiveTab('overview');
           }}
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
@@ -39,11 +35,11 @@ export function DashboardComponent() {
           Overview
         </Button>
         <Button
-          variant={activeTab === "decks" ? "secondary" : "ghost"}
+          variant={activeTab === 'decks' ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => {
-            setActiveTab("decks");
-            setSubView({ type: "list" });
+            setActiveTab('decks');
+            setSubView({ type: 'list' });
           }}
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
@@ -51,10 +47,10 @@ export function DashboardComponent() {
           My Library
         </Button>
         <Button
-          variant={activeTab === "settings" ? "secondary" : "ghost"}
+          variant={activeTab === 'settings' ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => {
-            setActiveTab("settings");
+            setActiveTab('settings');
           }}
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
@@ -64,24 +60,24 @@ export function DashboardComponent() {
       </div>
 
       {/* Tab Contents */}
-      {activeTab === "overview" && <Overview />}
+      {activeTab === 'overview' && <Overview />}
 
-      {activeTab === "decks" && (
+      {activeTab === 'decks' && (
         <div className="space-y-6">
-          {subView.type === "list" ? (
+          {subView.type === 'list' ? (
             <DeckList
-              onSelectDeck={(deckId) => setSubView({ type: "detail", deckId })}
+              onSelectDeck={(deckId) => setSubView({ type: 'detail', deckId })}
             />
           ) : (
             <DeckDetail
               deckId={subView.deckId!}
-              onBack={() => setSubView({ type: "list" })}
+              onBack={() => setSubView({ type: 'list' })}
             />
           )}
         </div>
       )}
 
-      {activeTab === "settings" && <Settings />}
+      {activeTab === 'settings' && <Settings />}
     </PageContainer>
   );
 }

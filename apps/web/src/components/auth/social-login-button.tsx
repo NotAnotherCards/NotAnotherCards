@@ -1,10 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { GoogleIcon } from "../ui/google-icon";
-import { FacebookIcon } from "../ui/facebook-icon";
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { GoogleIcon } from '../ui/google-icon';
+import { FacebookIcon } from '../ui/facebook-icon';
 
 interface SocialLoginButtonProps {
-  provider: "google" | "facebook";
+  provider: 'google' | 'facebook';
   children?: React.ReactNode;
   isLoading?: boolean;
   disabled?: boolean;
@@ -27,14 +27,9 @@ export function SocialLoginButton({
       disabled={disabled || isLoading}
     >
       {isLoading && <Spinner className="h-4 w-4" />}
-      {!isLoading && provider === "google" && (
-        <GoogleIcon/>
-      )}
-      {!isLoading && provider === "facebook" && (
-        <FacebookIcon/>
-      )}
-      {children ||
-        `${provider.charAt(0).toUpperCase() + provider.slice(1)}`}
+      {!isLoading && provider === 'google' && <GoogleIcon />}
+      {!isLoading && provider === 'facebook' && <FacebookIcon />}
+      {children || `${provider.charAt(0).toUpperCase() + provider.slice(1)}`}
     </Button>
   );
 }

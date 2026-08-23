@@ -1,36 +1,36 @@
-import { Database, Q } from "@remelondb/core";
-import { UserDeck, UserCard, ReviewEvent, UserProfile } from "@repo/offline-db";
+import { Database, Q } from '@remelondb/core';
+import { UserDeck, UserCard, ReviewEvent, UserProfile } from '@repo/offline-db';
 
 // ==========================================
 // QUERIES
 // ==========================================
 
 export function getDecksQuery(db: Database) {
-  return db.get(UserDeck).query(Q.sortBy("created_at", Q.desc));
+  return db.get(UserDeck).query(Q.sortBy('created_at', Q.desc));
 }
 
 export function getDeckDetailQuery(db: Database, deckId: string) {
-  return db.get(UserDeck).query(Q.where("id", deckId));
+  return db.get(UserDeck).query(Q.where('id', deckId));
 }
 
 export function getPersonalDictionaryQuery(db: Database) {
-  return db.get(UserCard).query(Q.sortBy("created_at", Q.desc));
+  return db.get(UserCard).query(Q.sortBy('created_at', Q.desc));
 }
 
 export function getDeckCardsQuery(db: Database, deckId: string) {
   return db
     .get(UserCard)
-    .query(Q.where("deck_id", deckId), Q.sortBy("created_at", Q.desc));
+    .query(Q.where('deck_id', deckId), Q.sortBy('created_at', Q.desc));
 }
 
 export function getDueCardsQuery(db: Database, now: number = Date.now()) {
   return db
     .get(UserCard)
-    .query(Q.where("due_at", Q.lte(now)), Q.sortBy("due_at", Q.asc));
+    .query(Q.where('due_at', Q.lte(now)), Q.sortBy('due_at', Q.asc));
 }
 
 export function getCardDetailQuery(db: Database, cardId: string) {
-  return db.get(UserCard).query(Q.where("id", cardId));
+  return db.get(UserCard).query(Q.where('id', cardId));
 }
 
 export function getReviewHistoryQuery(db: Database, userCardId?: string) {
@@ -38,11 +38,11 @@ export function getReviewHistoryQuery(db: Database, userCardId?: string) {
     return db
       .get(ReviewEvent)
       .query(
-        Q.where("user_card_id", userCardId),
-        Q.sortBy("reviewed_at", Q.desc),
+        Q.where('user_card_id', userCardId),
+        Q.sortBy('reviewed_at', Q.desc),
       );
   }
-  return db.get(ReviewEvent).query(Q.sortBy("reviewed_at", Q.desc));
+  return db.get(ReviewEvent).query(Q.sortBy('reviewed_at', Q.desc));
 }
 
 export function getUserProfileQuery(db: Database) {
@@ -92,13 +92,13 @@ export async function deleteDeck(db: Database, deckId: string) {
     await deck.markAsDeleted();
     const cards = await db
       .get(UserCard)
-      .query(Q.where("deck_id", deckId))
+      .query(Q.where('deck_id', deckId))
       .fetch();
     for (const card of cards) {
       await card.markAsDeleted();
       const reviews = await db
         .get(ReviewEvent)
-        .query(Q.where("user_card_id", card.id))
+        .query(Q.where('user_card_id', card.id))
         .fetch();
       for (const review of reviews) {
         await review.markAsDeleted();
@@ -149,7 +149,7 @@ export async function deleteCard(db: Database, cardId: string) {
     await card.markAsDeleted();
     const reviews = await db
       .get(ReviewEvent)
-      .query(Q.where("user_card_id", cardId))
+      .query(Q.where('user_card_id', cardId))
       .fetch();
     for (const review of reviews) {
       await review.markAsDeleted();
@@ -201,7 +201,7 @@ export async function createUserProfile(
   // Check if the profile already exists to prevent primary key constraint violations
   const existing = await db
     .get(UserProfile)
-    .query(Q.where("id", profile.id))
+    .query(Q.where('id', profile.id))
     .fetch();
 
   if (existing.length > 0) {

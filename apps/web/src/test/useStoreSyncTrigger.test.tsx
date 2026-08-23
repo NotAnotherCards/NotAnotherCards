@@ -3,23 +3,23 @@
  * write callbacks each call notifyLocalWrite; a refactor that drops
  * one fails the count here.
  */
-import { describe, expect, it, vi } from "vitest";
-import { renderHook, waitFor, act } from "@testing-library/react";
-import { Database, createDatabaseManager } from "@remelondb/core";
-import { DatabaseProvider } from "@remelondb/core/react";
-import { NodeSqliteDriver } from "@remelondb/driver-node";
-import { schema, UserDeck, UserCard, ReviewEvent } from "@repo/offline-db";
-import { useStore } from "@/hooks/useStore";
-import { SyncProvider } from "@/offline/syncProvider";
-import type { SyncController } from "@/offline/syncController";
+import { describe, expect, it, vi } from 'vitest';
+import { renderHook, waitFor, act } from '@testing-library/react';
+import { Database, createDatabaseManager } from '@remelondb/core';
+import { DatabaseProvider } from '@remelondb/core/react';
+import { NodeSqliteDriver } from '@remelondb/driver-node';
+import { schema, UserDeck, UserCard, ReviewEvent } from '@repo/offline-db';
+import { useStore } from '@/hooks/useStore';
+import { SyncProvider } from '@/offline/syncProvider';
+import type { SyncController } from '@/offline/syncController';
 
-describe("useStore sync triggers", () => {
-  it("all seven writes call notifyLocalWrite", async () => {
+describe('useStore sync triggers', () => {
+  it('all seven writes call notifyLocalWrite', async () => {
     const db = await Database.open({
       driver: new NodeSqliteDriver(),
       schema,
       modelClasses: [UserDeck, UserCard, ReviewEvent],
-      name: ":memory:",
+      name: ':memory:',
     });
     const manager = createDatabaseManager({
       open: () => Promise.resolve(db),
@@ -28,7 +28,7 @@ describe("useStore sync triggers", () => {
 
     const notifyLocalWrite = vi.fn();
     const controller = {
-      state: { status: "idle", lastSyncAt: null, error: null },
+      state: { status: 'idle', lastSyncAt: null, error: null },
       subscribe: () => () => {},
       start: () => {},
       notifyLocalWrite,
@@ -43,13 +43,13 @@ describe("useStore sync triggers", () => {
         </DatabaseProvider>
       ),
     });
-    await waitFor(() => expect(result.current.status).toBe("ready"));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
 
     await act(async () => {
-      const deck = await result.current.createDeck("Deck", "desc");
-      await result.current.updateDeck(deck.id, "Deck 2", "desc");
-      const card = await result.current.createCard(deck.id, "front", "back");
-      await result.current.updateCard(card.id, "front 2", "back 2");
+      const deck = await result.current.createDeck('Deck', 'desc');
+      await result.current.updateDeck(deck.id, 'Deck 2', 'desc');
+      const card = await result.current.createCard(deck.id, 'front', 'back');
+      await result.current.updateCard(card.id, 'front 2', 'back 2');
       await result.current.recordReview(card.id, 2);
       await result.current.deleteCard(card.id);
       await result.current.deleteDeck(deck.id);
