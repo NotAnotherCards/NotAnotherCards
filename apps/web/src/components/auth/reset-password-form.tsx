@@ -1,37 +1,41 @@
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@/components/ui/field";
-import { PasswordInput } from "@/components/ui/password-input";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthCard } from "@/components/auth/auth-card";
-import { useState } from "react";
-import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { z } from "zod";
-import { authClient } from "@/lib/auth-client";
-import { useSearch, Link } from "@tanstack/react-router";
-import { passwordSchema } from "@repo/schemas";
-import { CheckCircle2 } from "lucide-react";
+} from '@/components/ui/field';
+import { PasswordInput } from '@/components/ui/password-input';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AuthCard } from '@/components/auth/auth-card';
+import { useState } from 'react';
+import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { z } from 'zod';
+import { authClient } from '@/lib/auth-client';
+import { useSearch, Link } from '@tanstack/react-router';
+import { passwordSchema } from '@repo/schemas';
+import { CheckCircle2 } from 'lucide-react';
 
 const resetPasswordConfirmSchema = z
   .object({
     password: passwordSchema,
-    confirmPassword: z.string().min(1, "Please confirm your password"),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
   });
-export type ResetPasswordConfirmFormData = z.infer<typeof resetPasswordConfirmSchema>;
+export type ResetPasswordConfirmFormData = z.infer<
+  typeof resetPasswordConfirmSchema
+>;
 
 export function ResetPasswordComponent() {
-  const search = useSearch({ from: "/_auth/reset-password" }) as { token?: string };
+  const search = useSearch({ from: '/_auth/reset-password' }) as {
+    token?: string;
+  };
   const token = search.token;
 
   const [apiError, setApiError] = useState<string | null>(null);
@@ -40,8 +44,8 @@ export function ResetPasswordComponent() {
   const form = useForm<ResetPasswordConfirmFormData>({
     resolver: zodResolver(resetPasswordConfirmSchema),
     defaultValues: {
-      password: "",
-      confirmPassword: "",
+      password: '',
+      confirmPassword: '',
     },
   });
 
@@ -49,7 +53,7 @@ export function ResetPasswordComponent() {
 
   const onSubmit = async (data: ResetPasswordConfirmFormData) => {
     if (!token) {
-      setApiError("Reset token is missing or invalid.");
+      setApiError('Reset token is missing or invalid.');
       return;
     }
     setApiError(null);
@@ -59,7 +63,7 @@ export function ResetPasswordComponent() {
     });
 
     if (error) {
-      setApiError(error.message || "An unexpected error occurred");
+      setApiError(error.message || 'An unexpected error occurred');
     } else {
       setSuccess(true);
     }
@@ -111,7 +115,9 @@ export function ResetPasswordComponent() {
                     id={field.name}
                     autoComplete="new-password"
                     aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.invalid ? "password-error" : undefined}
+                    aria-describedby={
+                      fieldState.invalid ? 'password-error' : undefined
+                    }
                   />
                   <FieldError id="password-error" errors={[fieldState.error]} />
                 </Field>
@@ -122,15 +128,22 @@ export function ResetPasswordComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Confirm New Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    Confirm New Password
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}
                     autoComplete="new-password"
                     aria-invalid={fieldState.invalid}
-                    aria-describedby={fieldState.invalid ? "confirmPassword-error" : undefined}
+                    aria-describedby={
+                      fieldState.invalid ? 'confirmPassword-error' : undefined
+                    }
                   />
-                  <FieldError id="confirmPassword-error" errors={[fieldState.error]} />
+                  <FieldError
+                    id="confirmPassword-error"
+                    errors={[fieldState.error]}
+                  />
                 </Field>
               )}
             />
@@ -142,7 +155,7 @@ export function ResetPasswordComponent() {
                   Updating password...
                 </span>
               ) : (
-                "Reset Password"
+                'Reset Password'
               )}
             </Button>
           </FieldGroup>

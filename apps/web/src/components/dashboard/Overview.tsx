@@ -1,12 +1,12 @@
-import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
+import { authClient } from '@/lib/auth-client';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Clock,
   BookMarked,
@@ -17,10 +17,10 @@ import {
   Mail,
   Library,
   RefreshCw,
-} from "lucide-react";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import { useStore } from "@/hooks/useStore";
-import { useSyncController, useSyncState } from "@/offline/syncProvider";
+} from 'lucide-react';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useStore } from '@/hooks/useStore';
+import { useSyncController, useSyncState } from '@/offline/syncProvider';
 
 function DashboardSyncStatus() {
   const controller = useSyncController();
@@ -30,28 +30,28 @@ function DashboardSyncStatus() {
   }
 
   const LABELS: Record<string, string> = {
-    idle: "Synced",
-    syncing: "Syncing…",
-    offline: "Offline",
-    error: "Sync failed",
-    "resync-required": "Reset required",
+    idle: 'Synced',
+    syncing: 'Syncing…',
+    offline: 'Offline',
+    error: 'Sync failed',
+    'resync-required': 'Reset required',
   };
 
   const statusColor =
-    state.status === "idle"
-      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-      : state.status === "syncing"
-        ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse"
-        : state.status === "error"
-          ? "bg-destructive/10 text-destructive"
-          : "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+    state.status === 'idle'
+      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+      : state.status === 'syncing'
+        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse'
+        : state.status === 'error'
+          ? 'bg-destructive/10 text-destructive'
+          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
 
   return (
     <div className="flex items-center gap-1.5 font-semibold">
       <span className={`px-2 py-0.5 rounded-full ${statusColor}`}>
         {LABELS[state.status] ?? state.status}
       </span>
-      {(state.status === "error" || state.status === "offline") && (
+      {(state.status === 'error' || state.status === 'offline') && (
         <button
           type="button"
           onClick={() => controller.syncNow()}
@@ -71,8 +71,8 @@ export function Overview() {
   const isOnline = useOnlineStatus();
 
   const user = session?.user || {
-    name: "Legendary Learner",
-    email: "learner@notanothercards.com",
+    name: 'Legendary Learner',
+    email: 'learner@notanothercards.com',
   };
 
   // Dynamic statistics from local remelonDB store
@@ -80,30 +80,30 @@ export function Overview() {
     {
       title: "Today's Reviews",
       value: `${store.dueCards.length} cards`,
-      description: "Due for review",
+      description: 'Due for review',
       icon: Clock,
-      color: "text-emerald-500 bg-emerald-500/10",
+      color: 'text-emerald-500 bg-emerald-500/10',
     },
     {
-      title: "Personal Dictionary",
+      title: 'Personal Dictionary',
       value: `${store.cards.length} cards`,
-      description: "Added to your collection",
+      description: 'Added to your collection',
       icon: BookMarked,
-      color: "text-blue-500 bg-blue-500/10",
+      color: 'text-blue-500 bg-blue-500/10',
     },
     {
-      title: "Learning Streak",
-      value: "7 Days",
-      description: "Daily learning-day streak",
+      title: 'Learning Streak',
+      value: '7 Days',
+      description: 'Daily learning-day streak',
       icon: Flame,
-      color: "text-orange-500 bg-orange-500/10",
+      color: 'text-orange-500 bg-orange-500/10',
     },
     {
-      title: "Words Learned",
-      value: "1,240 / 10,000",
-      description: "12.4% total progress",
+      title: 'Words Learned',
+      value: '1,240 / 10,000',
+      description: '12.4% total progress',
       icon: GraduationCap,
-      color: "text-purple-500 bg-purple-500/10",
+      color: 'text-purple-500 bg-purple-500/10',
     },
   ];
 
@@ -111,43 +111,43 @@ export function Overview() {
   const readyMadeDictionaries = [
     {
       id: 1,
-      name: "Top-100 words",
-      description: "Most common foundational words",
-      progress: "100%",
+      name: 'Top-100 words',
+      description: 'Most common foundational words',
+      progress: '100%',
       percent: 100,
-      status: "Completed",
+      status: 'Completed',
     },
     {
       id: 2,
-      name: "Top-300 words",
-      description: "Essential everyday vocabulary",
-      progress: "85%",
+      name: 'Top-300 words',
+      description: 'Essential everyday vocabulary',
+      progress: '85%',
       percent: 85,
-      status: "In Progress",
+      status: 'In Progress',
     },
     {
       id: 3,
-      name: "Top-500 words",
-      description: "Intermediate conversational phrases",
-      progress: "20%",
+      name: 'Top-500 words',
+      description: 'Intermediate conversational phrases',
+      progress: '20%',
       percent: 20,
-      status: "In Progress",
+      status: 'In Progress',
     },
     {
       id: 4,
-      name: "Top-1000 words",
-      description: "Broad everyday comprehension",
-      progress: "0%",
+      name: 'Top-1000 words',
+      description: 'Broad everyday comprehension',
+      progress: '0%',
       percent: 0,
-      status: "Not Started",
+      status: 'Not Started',
     },
     {
       id: 5,
-      name: "Thematic: Business English",
-      description: "Professional terms and jargon",
-      progress: "0%",
+      name: 'Thematic: Business English',
+      description: 'Professional terms and jargon',
+      progress: '0%',
       percent: 0,
-      status: "Not Started",
+      status: 'Not Started',
     },
   ];
 
@@ -155,19 +155,19 @@ export function Overview() {
   const dailyGoals = [
     {
       id: 1,
-      title: "Daily Review",
-      description: "Review at least 20 words due today",
-      progress: "20 / 20",
+      title: 'Daily Review',
+      description: 'Review at least 20 words due today',
+      progress: '20 / 20',
       percent: 100,
-      reward: "Completed",
+      reward: 'Completed',
     },
     {
       id: 2,
-      title: "New Vocabulary",
-      description: "Add 10 new words to your personal dictionary",
-      progress: "6 / 10",
+      title: 'New Vocabulary',
+      description: 'Add 10 new words to your personal dictionary',
+      progress: '6 / 10',
       percent: 60,
-      reward: "4 remaining",
+      reward: '4 remaining',
     },
   ];
   return (
@@ -179,9 +179,9 @@ export function Overview() {
           <CardHeader className="flex flex-row items-center gap-4 pb-4">
             <div className="size-14 rounded-full bg-linear-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xl shadow-inner border border-primary/20">
               {user.name
-                .split(" ")
+                .split(' ')
                 .map((n) => n[0])
-                .join("")
+                .join('')
                 .substring(0, 2)
                 .toUpperCase()}
             </div>
@@ -207,11 +207,11 @@ export function Overview() {
               <span
                 className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
                   isOnline
-                    ? "bg-emerald-500/10 dark:text-emerald-400"
-                    : "bg-destructive/10 text-destructive animate-pulse"
+                    ? 'bg-emerald-500/10 dark:text-emerald-400'
+                    : 'bg-destructive/10 text-destructive animate-pulse'
                 }`}
               >
-                {isOnline ? "Online" : "Offline"}
+                {isOnline ? 'Online' : 'Offline'}
               </span>
             </div>
 
@@ -225,7 +225,7 @@ export function Overview() {
                 className="flex-1 cursor-pointer gap-1.5"
                 size="sm"
                 onClick={() => {
-                    // TODO: link to deck review route
+                  // TODO: link to deck review route
                 }}
               >
                 <Library className="size-3.5" />
@@ -322,11 +322,11 @@ export function Overview() {
                       <td className="px-6 py-3.5 text-right">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            dict.status === "Completed"
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                              : dict.status === "In Progress"
-                                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                : "bg-muted text-muted-foreground"
+                            dict.status === 'Completed'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              : dict.status === 'In Progress'
+                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                : 'bg-muted text-muted-foreground'
                           }`}
                         >
                           {dict.status}
@@ -376,8 +376,8 @@ export function Overview() {
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                       quest.percent === 100
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                     }`}
                   >
                     {quest.reward}

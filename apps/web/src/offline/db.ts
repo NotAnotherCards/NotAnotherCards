@@ -1,6 +1,6 @@
-import { createDatabaseManager, Database } from "@remelondb/core";
-import type { DatabaseManagerState } from "@remelondb/core";
-import { WebSqliteDriver } from "@remelondb/driver-web";
+import { createDatabaseManager, Database } from '@remelondb/core';
+import type { DatabaseManagerState } from '@remelondb/core';
+import { WebSqliteDriver } from '@remelondb/driver-web';
 import {
   schema,
   migrations,
@@ -9,9 +9,9 @@ import {
   ReviewEvent,
   UserProfile,
   userDbName,
-} from "@repo/offline-db";
-import { synchronize } from "@remelondb/core";
-import { pullChanges, pushChanges } from "./sync";
+} from '@repo/offline-db';
+import { synchronize } from '@remelondb/core';
+import { pullChanges, pushChanges } from './sync';
 
 export type { DatabaseManagerState as DatabaseState };
 
@@ -70,7 +70,7 @@ export async function checkOnboardingComplete(
           });
           profiles = await db.get(UserProfile).query().fetch();
         } catch (err) {
-          console.warn("Pre-onboarding check sync failed", err);
+          console.warn('Pre-onboarding check sync failed', err);
         }
       }
       const profile = profiles[0];

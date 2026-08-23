@@ -1,4 +1,4 @@
-import { apiURL } from './api-url'
+import { apiURL } from './api-url';
 
 // better-auth reports HTTP errors through its { error } result (status 0 and
 // no message when the connection itself failed), but can also throw a raw
@@ -8,7 +8,7 @@ export function apiErrorMessage(err: unknown): string {
   const obj =
     err !== null && typeof err === 'object'
       ? (err as { message?: unknown; status?: unknown })
-      : undefined
+      : undefined;
   const message =
     err instanceof Error
       ? err.message
@@ -16,17 +16,17 @@ export function apiErrorMessage(err: unknown): string {
         ? err
         : obj && 'message' in obj
           ? String(obj.message ?? '')
-          : ''
+          : '';
   if (
     obj?.status === 0 ||
     /fetch failed|network request failed|failed to connect|econnrefused/i.test(
       message,
     )
   ) {
-    return `Can't reach the server at ${apiURL} — is the API running?`
+    return `Can't reach the server at ${apiURL} — is the API running?`;
   }
   if (!message && typeof obj?.status === 'number' && obj.status >= 500) {
-    return `The server hit an error (HTTP ${obj.status}) — check the API logs.`
+    return `The server hit an error (HTTP ${obj.status}) — check the API logs.`;
   }
-  return message || 'An unexpected error occurred'
+  return message || 'An unexpected error occurred';
 }

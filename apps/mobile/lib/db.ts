@@ -1,5 +1,5 @@
-import { createDatabaseManager, Database } from '@remelondb/core'
-import { RnSqliteDriver } from '@remelondb/driver-rn'
+import { createDatabaseManager, Database } from '@remelondb/core';
+import { RnSqliteDriver } from '@remelondb/driver-rn';
 import {
   schema,
   migrations,
@@ -8,7 +8,7 @@ import {
   ReviewEvent,
   UserProfile,
   userDbName,
-} from '@repo/offline-db'
+} from '@repo/offline-db';
 
 // Native has no takeover path, but the manager deduplicates concurrent opens,
 // exposes retryable state to React, and invalidates an open that finishes late.
@@ -22,5 +22,5 @@ export function createUserDatabaseManager(userId: string) {
         modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
         name: userDbName(userId),
       }),
-  })
+  });
 }

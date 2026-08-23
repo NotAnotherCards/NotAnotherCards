@@ -1,15 +1,15 @@
-import { Link, type Href } from 'expo-router'
-import type { ReactNode } from 'react'
-import { View } from 'react-native'
-import { Text } from '@/components/ui/text'
+import { Link, type Href } from 'expo-router';
+import type { ReactNode } from 'react';
+import { View } from 'react-native';
+import { Text } from '@/components/ui/text';
 
 interface AuthCardProps {
-  title: string
-  description: string
-  children: ReactNode
-  footerText: string
-  footerLinkText: string
-  footerLinkTo: Href
+  title: string;
+  description: string;
+  children: ReactNode;
+  footerText: string;
+  footerLinkText: string;
+  footerLinkTo: Href;
 }
 
 export function AuthCard({
@@ -34,5 +34,5 @@ export function AuthCard({
         </View>
       </View>
     </View>
-  )
+  );
 }

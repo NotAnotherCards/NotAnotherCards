@@ -1,13 +1,13 @@
-import { useEffect, useCallback, useState, useRef } from "react";
-import type { Database } from "@remelondb/core";
-import { useDatabase, useDatabaseState } from "@remelondb/core/react";
+import { useEffect, useCallback, useState, useRef } from 'react';
+import type { Database } from '@remelondb/core';
+import { useDatabase, useDatabaseState } from '@remelondb/core/react';
 import {
   UserDeckRecord,
   UserCardRecord,
   UserProfileRecord,
-} from "@repo/offline-db";
-import { useQuery } from "@remelondb/core/react";
-import { useSyncController } from "@/offline/syncProvider";
+} from '@repo/offline-db';
+import { useQuery } from '@remelondb/core/react';
+import { useSyncController } from '@/offline/syncProvider';
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
@@ -21,7 +21,7 @@ import {
   recordReviewEvent as dbRecordReview,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
-} from "../offline/queries";
+} from '../offline/queries';
 
 export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
@@ -80,10 +80,10 @@ export function useStore() {
   const sync = useSyncController();
 
   const db = useDatabase() as Database | null;
-  const isInitializing = status === "loading" || status === "idle";
+  const isInitializing = status === 'loading' || status === 'idle';
   const initError =
-    status === "error"
-      ? managerError?.message || "Failed to open local database"
+    status === 'error'
+      ? managerError?.message || 'Failed to open local database'
       : null;
 
   const [, setTimeTrigger] = useState(0);
@@ -129,7 +129,7 @@ export function useStore() {
   // Local Writes
   const createDeck = useCallback(
     async (title: string, description: string) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbCreateDeck(db, title, description);
       sync?.notifyLocalWrite();
       return result;
@@ -139,7 +139,7 @@ export function useStore() {
 
   const updateDeck = useCallback(
     async (id: string, title: string, description: string) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbUpdateDeck(db, id, title, description);
       sync?.notifyLocalWrite();
       return result;
@@ -149,7 +149,7 @@ export function useStore() {
 
   const deleteDeck = useCallback(
     async (id: string) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbDeleteDeck(db, id);
       sync?.notifyLocalWrite();
       return result;
@@ -159,7 +159,7 @@ export function useStore() {
 
   const createCard = useCallback(
     async (deckId: string, front: string, back: string) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbCreateCard(db, deckId, front, back);
       sync?.notifyLocalWrite();
       return result;
@@ -169,7 +169,7 @@ export function useStore() {
 
   const updateCard = useCallback(
     async (id: string, front: string, back: string) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbUpdateCard(db, id, front, back);
       sync?.notifyLocalWrite();
       return result;
@@ -179,7 +179,7 @@ export function useStore() {
 
   const deleteCard = useCallback(
     async (id: string) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbDeleteCard(db, id);
       sync?.notifyLocalWrite();
       return result;
@@ -189,7 +189,7 @@ export function useStore() {
 
   const recordReview = useCallback(
     async (cardId: string, rating: number) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbRecordReview(db, cardId, rating);
       sync?.notifyLocalWrite();
       return result;
@@ -215,7 +215,7 @@ export function useStore() {
       native_language_id: string;
       target_language_id: string;
     }) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbCreateUserProfile(db, profile);
       sync?.notifyLocalWrite();
       return result;
@@ -229,7 +229,7 @@ export function useStore() {
       native_language_id: string;
       target_language_id: string;
     }) => {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error('Database not initialized');
       const result = await dbUpdateUserProfile(db, profile);
       sync?.notifyLocalWrite();
       return result;
@@ -243,7 +243,7 @@ export function useStore() {
     cards,
     dueCards,
     status,
-    isTakenOver: status === "taken-over",
+    isTakenOver: status === 'taken-over',
     ready,
     showSpinner,
     isLoading,

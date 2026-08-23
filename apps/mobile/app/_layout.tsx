@@ -1,18 +1,18 @@
-import '../global.css'
-import { Stack } from 'expo-router'
-import { StatusBar } from 'expo-status-bar'
-import { StyleSheet } from 'react-native'
-import { DatabaseBanner } from '@/components/database-banner'
-import { useColorScheme } from 'nativewind'
-import { applySavedThemePreference, navigationColors } from '@/lib/theme'
-import { SessionDatabaseProvider } from '@/lib/database-provider'
+import '../global.css';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { StyleSheet } from 'react-native';
+import { DatabaseBanner } from '@/components/database-banner';
+import { useColorScheme } from 'nativewind';
+import { applySavedThemePreference, navigationColors } from '@/lib/theme';
+import { SessionDatabaseProvider } from '@/lib/database-provider';
 
 // Before first render so the saved theme never flashes the wrong scheme.
-applySavedThemePreference()
+applySavedThemePreference();
 
 export default function RootLayout() {
-  const { colorScheme } = useColorScheme()
-  const nav = navigationColors[colorScheme === 'dark' ? 'dark' : 'light']
+  const { colorScheme } = useColorScheme();
+  const nav = navigationColors[colorScheme === 'dark' ? 'dark' : 'light'];
 
   return (
     <SessionDatabaseProvider>
@@ -36,5 +36,5 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </SessionDatabaseProvider>
-  )
+  );
 }

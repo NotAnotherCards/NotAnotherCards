@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { ModelFor, type InferRecord } from "@remelondb/core";
-import { zodTable } from "@remelondb/core/zod";
+import { z } from 'zod';
+import { ModelFor, type InferRecord } from '@remelondb/core';
+import { zodTable } from '@remelondb/core/zod';
 
 export const UserDeckRow = z.object({
   title: z.string().min(1),
@@ -34,38 +34,38 @@ export const UserProfileRow = z.object({
   updated_at: z.number().int().nonnegative(),
 });
 
-export const userDecks = zodTable("user_decks", UserDeckRow, {
-  indexed: ["updated_at"],
+export const userDecks = zodTable('user_decks', UserDeckRow, {
+  indexed: ['updated_at'],
 });
 
-export const userCards = zodTable("user_cards", UserCardRow, {
-  indexed: ["deck_id", "due_at", "updated_at"],
+export const userCards = zodTable('user_cards', UserCardRow, {
+  indexed: ['deck_id', 'due_at', 'updated_at'],
 });
 
-export const reviewEvents = zodTable("review_events", ReviewEventRow, {
-  indexed: ["user_card_id"],
+export const reviewEvents = zodTable('review_events', ReviewEventRow, {
+  indexed: ['user_card_id'],
 });
 
-export const userProfiles = zodTable("user_profiles", UserProfileRow, {
-  indexed: ["updated_at"],
+export const userProfiles = zodTable('user_profiles', UserProfileRow, {
+  indexed: ['updated_at'],
 });
 
 export class UserDeck extends ModelFor(userDecks) {
   static associations = {
-    cards: { type: "has_many" as const, foreignKey: "deck_id" },
+    cards: { type: 'has_many' as const, foreignKey: 'deck_id' },
   };
 }
 
 export class UserCard extends ModelFor(userCards) {
   static associations = {
-    deck: { type: "belongs_to" as const, key: "deck_id" },
-    review_events: { type: "has_many" as const, foreignKey: "user_card_id" },
+    deck: { type: 'belongs_to' as const, key: 'deck_id' },
+    review_events: { type: 'has_many' as const, foreignKey: 'user_card_id' },
   };
 }
 
 export class ReviewEvent extends ModelFor(reviewEvents) {
   static associations = {
-    user_card: { type: "belongs_to" as const, key: "user_card_id" },
+    user_card: { type: 'belongs_to' as const, key: 'user_card_id' },
   };
 }
 

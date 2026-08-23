@@ -1,29 +1,29 @@
-import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Input } from '@/components/ui/input';
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@/components/ui/field";
+} from '@/components/ui/field';
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
-} from "@/components/ui/card";
-import { authClient } from "@/lib/auth-client";
-import { ChevronDown, User, Globe, Save, Check } from "lucide-react";
-import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { LANGUAGES } from "@/lib/languages";
-import { useStore } from "@/hooks/useStore";
-import { ProfileFormValues, userProfileFormSchema } from "@repo/schemas";
+} from '@/components/ui/card';
+import { authClient } from '@/lib/auth-client';
+import { ChevronDown, User, Globe, Save, Check } from 'lucide-react';
+import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { LANGUAGES } from '@/lib/languages';
+import { useStore } from '@/hooks/useStore';
+import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 
 export function Profile() {
   const { data: session, refetch } = authClient.useSession();
@@ -34,29 +34,29 @@ export function Profile() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(userProfileFormSchema),
     defaultValues: {
-      username: "",
-      native_language_id: "",
-      target_language_id: "",
+      username: '',
+      native_language_id: '',
+      target_language_id: '',
     },
   });
 
   const { isSubmitting, isDirty } = form.formState;
 
-  const nativeLanguage = form.watch("native_language_id");
+  const nativeLanguage = form.watch('native_language_id');
 
   // Sync form values once profile or session is loaded
   useEffect(() => {
     if (profile) {
       form.reset({
-        username: profile.username || "",
-        native_language_id: profile.native_language_id || "",
-        target_language_id: profile.target_language_id || "",
+        username: profile.username || '',
+        native_language_id: profile.native_language_id || '',
+        target_language_id: profile.target_language_id || '',
       });
     } else if (session?.user) {
       form.reset({
-        username: "",
-        native_language_id: "",
-        target_language_id: "",
+        username: '',
+        native_language_id: '',
+        target_language_id: '',
       });
     }
   }, [profile, session, form]);
@@ -73,19 +73,19 @@ export function Profile() {
     setSuccessMessage(null);
     try {
       await updateUserProfile({
-        username: data.username || "",
-        native_language_id: data.native_language_id || "",
-        target_language_id: data.target_language_id || "",
+        username: data.username || '',
+        native_language_id: data.native_language_id || '',
+        target_language_id: data.target_language_id || '',
       });
 
-      setSuccessMessage("Settings saved successfully!");
+      setSuccessMessage('Settings saved successfully!');
       void refetch();
       setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
     } catch (err) {
       setApiError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
+        err instanceof Error ? err.message : 'An unexpected error occurred',
       );
     }
   };
@@ -118,12 +118,12 @@ export function Profile() {
                     <FieldLabel htmlFor={field.name}>Username</FieldLabel>
                     <Input
                       {...field}
-                      value={field.value ?? ""}
+                      value={field.value ?? ''}
                       id={field.name}
                       placeholder="Username"
                       aria-invalid={fieldState.invalid}
                       aria-describedby={
-                        fieldState.invalid ? "username-error" : undefined
+                        fieldState.invalid ? 'username-error' : undefined
                       }
                     />
                     <FieldError
@@ -167,12 +167,12 @@ export function Profile() {
                     <div className="relative w-full">
                       <select
                         {...field}
-                        value={field.value ?? ""}
+                        value={field.value ?? ''}
                         id={field.name}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid
-                            ? "native_language_id-error"
+                            ? 'native_language_id-error'
                             : undefined
                         }
                         className="h-9 w-full min-w-0 rounded-3xl border bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
@@ -218,12 +218,12 @@ export function Profile() {
                     <div className="relative w-full">
                       <select
                         {...field}
-                        value={field.value ?? ""}
+                        value={field.value ?? ''}
                         id={field.name}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid
-                            ? "target_language_id-error"
+                            ? 'target_language_id-error'
                             : undefined
                         }
                         className="h-9 w-full min-w-0 rounded-3xl border  bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"

@@ -1,41 +1,39 @@
-import { render, screen, act } from "@testing-library/react";
-import { App, router } from "../App";
-import userEvent from "@testing-library/user-event";
-import { authClient } from "@/lib/auth-client";
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { render, screen, act } from '@testing-library/react';
+import { App, router } from '../App';
+import userEvent from '@testing-library/user-event';
+import { authClient } from '@/lib/auth-client';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockSession = {
   session: {
-    id: "session-123",
-    userId: "user-123",
+    id: 'session-123',
+    userId: 'user-123',
     expiresAt: new Date(Date.now() + 3600000),
-    token: "token-123",
+    token: 'token-123',
     createdAt: new Date(),
     updatedAt: new Date(),
   },
   user: {
-    id: "user-123",
-    email: "john.doe@example.com",
-    name: "John Doe",
+    id: 'user-123',
+    email: 'john.doe@example.com',
+    name: 'John Doe',
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
 };
 
-
-
-vi.mock("@remelondb/core/react", () => ({
-  useDatabaseState: () => ({ status: "ready", error: null }),
+vi.mock('@remelondb/core/react', () => ({
+  useDatabaseState: () => ({ status: 'ready', error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-describe("Dashboard Page Component Specs", () => {
+describe('Dashboard Page Component Specs', () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
-    window.history.pushState(null, "", "/app/dashboard");
+    window.history.pushState(null, '', '/app/dashboard');
 
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
@@ -51,13 +49,12 @@ describe("Dashboard Page Component Specs", () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
   });
 
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
-  it("renders welcome text, user email/name, and placeholder feature sections", async () => {
+  it('renders welcome text, user email/name, and placeholder feature sections', async () => {
     render(<App />);
     await act(async () => {
-      await router.navigate({ to: "/app/dashboard" });
+      await router.navigate({ to: '/app/dashboard' });
     });
 
     // 1. Dashboard renders welcome text
@@ -66,17 +63,17 @@ describe("Dashboard Page Component Specs", () => {
     ).toBeInTheDocument();
 
     // 2. Dashboard shows user email/name
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
-    expect(screen.getByText("john.doe@example.com")).toBeInTheDocument();
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
 
     // 3. Dashboard has placeholder sections for future features
-    expect(screen.getByText("Explore Dictionaries")).toBeInTheDocument();
-    expect(screen.getByText("Daily Learning Goals")).toBeInTheDocument();
+    expect(screen.getByText('Explore Dictionaries')).toBeInTheDocument();
+    expect(screen.getByText('Daily Learning Goals')).toBeInTheDocument();
     expect(screen.getByText("Today's Reviews")).toBeInTheDocument();
-    expect(screen.getByText("Personal Dictionary")).toBeInTheDocument();
+    expect(screen.getByText('Personal Dictionary')).toBeInTheDocument();
   });
 
-  it("calls signOut and redirects the user to the login page on logout click", async () => {
+  it('calls signOut and redirects the user to the login page on logout click', async () => {
     // Mock signOut implementation to clear logged-in mocks on call
     vi.mocked(authClient.signOut).mockImplementation(async () => {
       vi.mocked(authClient.getSession).mockResolvedValue({
@@ -96,19 +93,23 @@ describe("Dashboard Page Component Specs", () => {
     const user = userEvent.setup();
     render(<App />);
     await act(async () => {
-      await router.navigate({ to: "/app/dashboard" });
+      await router.navigate({ to: '/app/dashboard' });
     });
 
     // Click Settings tab on dashboard
-    const settingsTab = await screen.findByRole("button", { name: /Profile & Settings/i });
+    const settingsTab = await screen.findByRole('button', {
+      name: /Profile & Settings/i,
+    });
     await user.click(settingsTab);
 
     // Click Security tab in settings sidebar
-    const securityTab = await screen.findByRole("button", { name: /^Security$/i });
+    const securityTab = await screen.findByRole('button', {
+      name: /^Security$/i,
+    });
     await user.click(securityTab);
 
     // Find and click the logout button inside Security
-    const logoutButton = await screen.findByRole("button", {
+    const logoutButton = await screen.findByRole('button', {
       name: /^Log Out$/i,
     });
     await user.click(logoutButton);
@@ -118,7 +119,7 @@ describe("Dashboard Page Component Specs", () => {
 
     // Verify user is redirected to the login page
     expect(
-      await screen.findByRole("heading", { name: /Welcome Back/i }),
+      await screen.findByRole('heading', { name: /Welcome Back/i }),
     ).toBeInTheDocument();
   });
 });
