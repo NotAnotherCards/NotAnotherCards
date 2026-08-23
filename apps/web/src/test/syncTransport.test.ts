@@ -116,4 +116,36 @@ describe('sync transport', () => {
       pushChanges({ cursor: '1', changes: emptyChanges }),
     ).rejects.toBeInstanceOf(SyncTransportError);
   });
+
+  it('forwards the abort signal to fetch', async () => {
+    const spy = mockFetch(async () =>
+      jsonResponse(200, { cursor: null, changes: null }),
+    );
+    const controller = new AbortController();
+    await pushChanges(
+      { cursor: '1', changes: emptyChanges },
+      controller.signal,
+    );
+    expect(spy.mock.calls[0]?.[1]).toMatchObject({ signal: controller.signal });
+  });
+
+  it('an aborted request is a transport error without a status', async () => {
+    mockFetch(
+      (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    const controller = new AbortController();
+    const pending = pushChanges(
+      { cursor: '1', changes: emptyChanges },
+      controller.signal,
+    );
+    controller.abort();
+    const error = await pending.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(SyncTransportError);
+    expect((error as SyncTransportError).status).toBeUndefined();
+  });
 });
