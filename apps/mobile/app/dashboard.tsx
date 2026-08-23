@@ -5,19 +5,14 @@ import { apiErrorMessage } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { useSessionDatabase } from '@/lib/database-provider'
 
 export default function Dashboard() {
   const router = useRouter()
   const { data: session, isPending, error, refetch } = authClient.useSession()
-  const { closeActiveDatabase } = useSessionDatabase()
 
+  // SessionDatabaseProvider closes the offline database when the session
+  // goes away; nothing to do here beyond signing out.
   const onLogout = async () => {
-    try {
-      await closeActiveDatabase()
-    } catch (error) {
-      console.error('closing the offline database failed', error)
-    }
     try {
       await authClient.signOut()
     } catch {

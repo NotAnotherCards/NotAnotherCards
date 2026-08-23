@@ -198,6 +198,34 @@ describe('SessionDatabaseProvider', () => {
     expect(manager.close).toHaveBeenCalled()
   })
 
+  it('keeps the manager across re-renders with the same session', async () => {
+    mockSessionState = {
+      data: { user: { id: 'user-a' } },
+      isPending: false,
+    }
+
+    const view = renderProvider()
+    await waitFor(() => expect(view.getByText('user-a')).toBeTruthy())
+    const manager = mockCreateUserDatabaseManager.mock.results[0]
+      .value as FakeManager
+
+    // A session refetch re-renders with the same user; the database must
+    // not close and reopen on every such render.
+    mockSessionState = {
+      data: { user: { id: 'user-a' } },
+      isPending: false,
+    }
+    view.rerender(
+      <SessionDatabaseProvider>
+        <ActiveOwner />
+      </SessionDatabaseProvider>,
+    )
+
+    expect(view.getByText('user-a')).toBeTruthy()
+    expect(mockCreateUserDatabaseManager).toHaveBeenCalledTimes(1)
+    expect(manager.close).not.toHaveBeenCalled()
+  })
+
   it('creates a fresh manager when the same account signs in again', async () => {
     const firstManager = makeManager('first-user-a')
     const reopenedManager = makeManager('reopened-user-a')

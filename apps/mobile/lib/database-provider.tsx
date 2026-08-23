@@ -1,6 +1,5 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -19,7 +18,6 @@ type OwnedManager = {
 
 type SessionDatabase = {
   manager: DatabaseManager | null
-  closeActiveDatabase: () => Promise<void>
 }
 
 const SessionDatabaseContext = createContext<SessionDatabase | null>(null)
@@ -30,16 +28,14 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   const [ownedManager, setOwnedManager] = useState<OwnedManager | null>(null)
   const ownedManagerRef = useRef<OwnedManager | null>(null)
 
-  const closeActiveDatabase = useCallback(async () => {
-    const owned = ownedManagerRef.current
-    ownedManagerRef.current = null
-    setOwnedManager(null)
-    await owned?.manager.close()
-  }, [])
-
+  // The only place the database is closed. Logout and account switch both
+  // arrive here as a session change; nothing else should call close().
   useEffect(() => {
     if (!userId) {
-      void closeActiveDatabase()
+      const owned = ownedManagerRef.current
+      ownedManagerRef.current = null
+      setOwnedManager(null)
+      void owned?.manager.close()
       return
     }
 
@@ -58,9 +54,13 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
       if (ownedManagerRef.current === owned) {
         ownedManagerRef.current = null
       }
+      // Not awaited: on an account switch the next effect opens the new
+      // user's file while this one is still closing, which is safe only
+      // because the files differ. Anything that must finish before the
+      // close (aborting an in-flight sync, #148) goes above this line.
       void manager.close()
     }
-  }, [closeActiveDatabase, userId])
+  }, [userId])
 
   const activeManager =
     ownedManager?.userId === userId ? ownedManager.manager : null
@@ -75,9 +75,7 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <SessionDatabaseContext.Provider
-      value={{ manager: activeManager, closeActiveDatabase }}
-    >
+    <SessionDatabaseContext.Provider value={{ manager: activeManager }}>
       {content}
     </SessionDatabaseContext.Provider>
   )

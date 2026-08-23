@@ -4,7 +4,6 @@ import Dashboard from '@/app/dashboard'
 
 const mockUseSession = jest.fn()
 const mockSignOut = jest.fn()
-const mockCloseActiveDatabase = jest.fn()
 const mockReplace = jest.fn()
 
 jest.mock('../lib/auth-client', () => ({
@@ -12,13 +11,6 @@ jest.mock('../lib/auth-client', () => ({
     useSession: () => mockUseSession(),
     signOut: (...args: unknown[]) => mockSignOut(...args),
   },
-}))
-
-jest.mock('../lib/database-provider', () => ({
-  useSessionDatabase: () => ({
-    manager: null,
-    closeActiveDatabase: mockCloseActiveDatabase,
-  }),
 }))
 
 jest.mock('expo-router', () => {
@@ -34,7 +26,6 @@ jest.mock('expo-router', () => {
 describe('Dashboard screen', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockCloseActiveDatabase.mockResolvedValue(undefined)
     mockSignOut.mockResolvedValue(undefined)
   })
 
@@ -71,7 +62,7 @@ describe('Dashboard screen', () => {
     expect(mockRefetch).toHaveBeenCalled()
   })
 
-  it('closes the active database before signing out', async () => {
+  it('signs out and returns to login', async () => {
     mockUseSession.mockReturnValue({
       data: {
         user: { id: 'user-a', name: 'Jane Doe', email: 'jane@example.com' },
@@ -82,28 +73,6 @@ describe('Dashboard screen', () => {
     const { getByText } = render(<Dashboard />)
     fireEvent.press(getByText('Log out'))
 
-    await waitFor(() => expect(mockSignOut).toHaveBeenCalled())
-    expect(mockCloseActiveDatabase).toHaveBeenCalled()
-    expect(mockCloseActiveDatabase.mock.invocationCallOrder[0]).toBeLessThan(
-      mockSignOut.mock.invocationCallOrder[0],
-    )
-    expect(mockReplace).toHaveBeenCalledWith('/login')
-  })
-
-  it('still signs out when closing the database fails', async () => {
-    mockUseSession.mockReturnValue({
-      data: {
-        user: { id: 'user-a', name: 'Jane Doe', email: 'jane@example.com' },
-      },
-      isPending: false,
-    })
-    mockCloseActiveDatabase.mockRejectedValueOnce(new Error('close failed'))
-
-    const { getByText } = render(<Dashboard />)
-    fireEvent.press(getByText('Log out'))
-
-    // A database that refuses to close must not strand the user in a session
-    // they asked to leave.
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled())
     expect(mockReplace).toHaveBeenCalledWith('/login')
   })
