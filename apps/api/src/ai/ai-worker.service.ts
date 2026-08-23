@@ -11,7 +11,7 @@ import { sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import { aiUsage, DeckGenerationPayload } from './schema';
-import { AiGatewayService } from './ai-gateway.service';
+import { AiGatewayService, AiParseError } from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
 
@@ -72,7 +72,18 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     this.isProcessing = true;
 
     try {
-      // Atomic dequeue with row lock: select and update 1 pending or stalled job
+      // 1. Recover exhausted stalled jobs: any job stuck in processing with max attempts is marked failed
+      await this.db.execute(sql`
+        UPDATE ai_generation_jobs
+        SET status = 'failed',
+            error = 'Job timed out while processing on final attempt',
+            updated_at = NOW()
+        WHERE status = 'processing'
+          AND locked_at < NOW() - INTERVAL '5 minutes'
+          AND attempts >= max_attempts;
+      `);
+
+      // 2. Atomic dequeue with row lock: select and update 1 pending (due for run) or stalled retryable job
       const claimResult = await this.db.execute(sql`
         UPDATE ai_generation_jobs
         SET status = 'processing',
@@ -81,8 +92,10 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
             updated_at = NOW()
         WHERE id = (
           SELECT id FROM ai_generation_jobs
-          WHERE (status = 'pending' OR (status = 'processing' AND locked_at < NOW() - INTERVAL '5 minutes'))
-            AND attempts < max_attempts
+          WHERE (
+            (status = 'pending' AND (next_run_at IS NULL OR next_run_at <= NOW()))
+            OR (status = 'processing' AND locked_at < NOW() - INTERVAL '5 minutes' AND attempts < max_attempts)
+          )
           ORDER BY created_at ASC
           FOR UPDATE SKIP LOCKED
           LIMIT 1
@@ -135,6 +148,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         systemPrompt,
         userPrompt,
         payload.model,
+        payload.count,
       );
 
       // Record success and log token usage in a transaction
@@ -169,16 +183,53 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       const errorMessage =
         err instanceof Error ? err.message : 'Unknown generation error';
 
-      await this.db.execute(sql`
-        UPDATE ai_generation_jobs
-        SET status = ${nextStatus},
-            error = ${errorMessage},
-            updated_at = NOW()
-        WHERE id = ${job.id}
-      `);
+      // Exponential backoff: attempt 1 -> 20s, attempt 2 -> 40s (capped at 300s)
+      const backoffSeconds = Math.min(
+        300,
+        Math.pow(2, Math.max(1, job.attempts)) * 10,
+      );
+
+      // If gateway returned usage before parse failure, log the token usage
+      if (err instanceof AiParseError && err.usage) {
+        try {
+          await this.db.insert(aiUsage).values({
+            id: randomUUID(),
+            userId: job.user_id,
+            jobId: job.id,
+            model: err.model,
+            promptTokens: err.usage.promptTokens,
+            completionTokens: err.usage.completionTokens,
+            totalTokens: err.usage.totalTokens,
+          });
+        } catch (usageErr) {
+          this.logger.error(
+            'Failed to log token usage on parse error',
+            usageErr,
+          );
+        }
+      }
+
+      if (isFinalAttempt) {
+        await this.db.execute(sql`
+          UPDATE ai_generation_jobs
+          SET status = 'failed',
+              error = ${errorMessage},
+              updated_at = NOW()
+          WHERE id = ${job.id}
+        `);
+      } else {
+        await this.db.execute(sql`
+          UPDATE ai_generation_jobs
+          SET status = 'pending',
+              next_run_at = NOW() + (${backoffSeconds} || ' seconds')::interval,
+              error = ${errorMessage},
+              updated_at = NOW()
+          WHERE id = ${job.id}
+        `);
+      }
 
       this.logger.warn(
-        `Job ${job.id} execution failed (attempt ${job.attempts}/${job.max_attempts}, next status: ${nextStatus}): ${errorMessage}`,
+        `Job ${job.id} execution failed (attempt ${job.attempts}/${job.max_attempts}, next status: ${nextStatus}, backoff: ${backoffSeconds}s): ${errorMessage}`,
       );
     }
   }

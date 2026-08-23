@@ -33,7 +33,7 @@ describe('AiLimitsService', () => {
 
     limitsService = new AiLimitsService(mockDb, mockConfig);
     await expect(
-      limitsService.checkUserCanSubmitJob('user-1'),
+      limitsService.checkUserCanSubmitJob(mockDb, 'user-1'),
     ).resolves.toBeUndefined();
   });
 
@@ -45,7 +45,6 @@ describe('AiLimitsService', () => {
           where: jest.fn().mockImplementation(() => {
             callIndex++;
             if (callIndex === 1) {
-              // active jobs query returns 2
               return Promise.resolve([{ count: 2 }]);
             }
             return Promise.resolve([{ totalTokens: 0, requestCount: 0 }]);
@@ -56,12 +55,12 @@ describe('AiLimitsService', () => {
 
     limitsService = new AiLimitsService(mockDb, mockConfig);
 
-    await expect(limitsService.checkUserCanSubmitJob('user-1')).rejects.toThrow(
-      HttpException,
-    );
+    await expect(
+      limitsService.checkUserCanSubmitJob(mockDb, 'user-1'),
+    ).rejects.toThrow(HttpException);
 
     try {
-      await limitsService.checkUserCanSubmitJob('user-1');
+      await limitsService.checkUserCanSubmitJob(mockDb, 'user-1');
     } catch (err: unknown) {
       if (err instanceof HttpException) {
         expect(err.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
@@ -91,7 +90,7 @@ describe('AiLimitsService', () => {
     limitsService = new AiLimitsService(mockDb, mockConfig);
 
     try {
-      await limitsService.checkUserCanSubmitJob('user-1');
+      await limitsService.checkUserCanSubmitJob(mockDb, 'user-1');
       throw new Error('Should have thrown');
     } catch (err: unknown) {
       if (err instanceof HttpException) {
@@ -122,7 +121,7 @@ describe('AiLimitsService', () => {
     limitsService = new AiLimitsService(mockDb, mockConfig);
 
     try {
-      await limitsService.checkUserCanSubmitJob('user-1');
+      await limitsService.checkUserCanSubmitJob(mockDb, 'user-1');
       throw new Error('Should have thrown');
     } catch (err: unknown) {
       if (err instanceof HttpException) {
@@ -159,6 +158,5 @@ describe('AiLimitsService', () => {
     expect(status.maxTokens).toBe(1000);
     expect(status.requestsUsed).toBe(3);
     expect(status.maxRequests).toBe(5);
-    expect(status.resetAt).toBeDefined();
   });
 });

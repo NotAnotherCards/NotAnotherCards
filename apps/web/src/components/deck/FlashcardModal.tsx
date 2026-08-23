@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, useStore } from "@/hooks/useStore";
-import {
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  CheckCircle2,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface FlashcardModalProps {
@@ -24,7 +19,7 @@ export function FlashcardModal({
   const store = useStore();
   const modalCards = cards.length > 0 ? cards : singleCard ? [singleCard] : [];
   const [currentCardId, setCurrentCardId] = useState(
-    initialCardId || singleCard?.id || "",
+    initialCardId || singleCard?.id || ""
   );
   const [isFlipped, setIsFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +41,7 @@ export function FlashcardModal({
         setCurrentCardId(modalCards[nextIndex].id);
       } else if (e.key === "ArrowLeft") {
         setIsFlipped(false);
-        const prevIndex =
-          (currentIndex - 1 + modalCards.length) % modalCards.length;
+        const prevIndex = (currentIndex - 1 + modalCards.length) % modalCards.length;
         setCurrentCardId(modalCards[prevIndex].id);
       } else if (e.key === " ") {
         e.preventDefault();
@@ -71,8 +65,7 @@ export function FlashcardModal({
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsFlipped(false);
-    const prevIndex =
-      (currentIndex - 1 + modalCards.length) % modalCards.length;
+    const prevIndex = (currentIndex - 1 + modalCards.length) % modalCards.length;
     setCurrentCardId(modalCards[prevIndex].id);
   };
 

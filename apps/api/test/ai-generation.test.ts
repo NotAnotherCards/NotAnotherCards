@@ -31,10 +31,11 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
       AI_MAX_DAILY_TOKENS_PER_USER: '50000',
       AI_MAX_DAILY_REQUESTS_PER_USER: '25',
       AI_WORKER_ENABLED: 'false', // driven manually during test
+      AI_MOCK: '1',
     });
 
     limitsService = new AiLimitsService(db, configService);
-    queueService = new AiQueueService(db);
+    queueService = new AiQueueService(db, limitsService);
     gatewayService = new AiGatewayService(configService);
     workerService = new AiWorkerService(db, gatewayService, configService);
   });
@@ -52,7 +53,7 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
 
     // 1. Check user can submit
     await expect(
-      limitsService.checkUserCanSubmitJob(userId),
+      limitsService.checkUserCanSubmitJob(db, userId),
     ).resolves.toBeUndefined();
 
     // 2. Enqueue topic deck generation
@@ -60,7 +61,6 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
       type: 'topic_deck',
       topic: 'Spanish preterite verbs',
       count: 5,
-      promptVersion: 'v1',
     });
 
     expect(job.id).toBeDefined();
@@ -94,7 +94,7 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
     expect(usageRecords[0].totalTokens).toBeGreaterThan(0);
   });
 
-  it('enforces active pending job cap in PostgreSQL', async () => {
+  it('enforces active pending job cap in PostgreSQL atomically', async () => {
     const userId = 'user-a';
 
     // Enqueue 2 jobs (max allowed is 2)
@@ -102,27 +102,33 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
       type: 'topic_deck',
       topic: 'Topic 1',
       count: 5,
-      promptVersion: 'v1',
     });
     await queueService.enqueueJob(userId, {
       type: 'topic_deck',
       topic: 'Topic 2',
       count: 5,
-      promptVersion: 'v1',
     });
 
     // 3rd attempt should fail with active cap error
-    await expect(limitsService.checkUserCanSubmitJob(userId)).rejects.toThrow(
-      'Active generation cap reached',
-    );
+    await expect(
+      queueService.enqueueJob(userId, {
+        type: 'topic_deck',
+        topic: 'Topic 3',
+        count: 5,
+      }),
+    ).rejects.toThrow('Active generation cap reached');
 
     // Process one job with worker
     await workerService.processNextJob();
 
     // Now user should be allowed to submit again
     await expect(
-      limitsService.checkUserCanSubmitJob(userId),
-    ).resolves.toBeUndefined();
+      queueService.enqueueJob(userId, {
+        type: 'topic_deck',
+        topic: 'Topic 3',
+        count: 5,
+      }),
+    ).resolves.toBeDefined();
   });
 
   it('calculates quota status correctly from PostgreSQL records', async () => {
@@ -138,7 +144,6 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
       type: 'text_cards',
       sourceText: 'Some biology text for test cards.',
       count: 2,
-      promptVersion: 'v1',
     });
 
     await workerService.processNextJob();

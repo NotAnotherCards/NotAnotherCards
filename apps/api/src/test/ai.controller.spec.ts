@@ -83,12 +83,13 @@ describe('AiController', () => {
       userId: 'user-1',
       status: 'pending' as const,
       type: 'topic_deck' as const,
-      payload: { topic: 'Spanish', count: 5, promptVersion: 'v1' },
+      payload: { topic: 'Spanish', count: 5 },
       result: null,
       error: null,
       attempts: 0,
       maxAttempts: 3,
       lockedAt: null,
+      nextRunAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
       completedAt: null,
@@ -102,14 +103,10 @@ describe('AiController', () => {
       count: 5,
     });
 
-    expect(mockLimitsService.checkUserCanSubmitJob).toHaveBeenCalledWith(
-      'user-1',
-    );
     expect(mockQueueService.enqueueJob).toHaveBeenCalledWith('user-1', {
       type: 'topic_deck',
       topic: 'Spanish',
       count: 5,
-      promptVersion: 'v1',
     });
     expect(result).toEqual({ job: mockJob });
   });
@@ -121,12 +118,13 @@ describe('AiController', () => {
       userId: 'user-1',
       status: 'completed' as const,
       type: 'topic_deck' as const,
-      payload: { topic: 'Spanish', count: 5, promptVersion: 'v1' },
+      payload: { topic: 'Spanish', count: 5 },
       result: null,
       error: null,
       attempts: 1,
       maxAttempts: 3,
       lockedAt: null,
+      nextRunAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
       completedAt: new Date(),
@@ -148,12 +146,13 @@ describe('AiController', () => {
         userId: 'user-1',
         status: 'completed' as const,
         type: 'topic_deck' as const,
-        payload: { topic: 'Spanish', count: 5, promptVersion: 'v1' },
+        payload: { topic: 'Spanish', count: 5 },
         result: null,
         error: null,
         attempts: 1,
         maxAttempts: 3,
         lockedAt: null,
+        nextRunAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
         completedAt: new Date(),
@@ -177,7 +176,6 @@ describe('AiController', () => {
       maxRequests: 25,
       activePendingJobs: 0,
       maxPendingJobs: 2,
-      resetAt: '2026-08-22T00:00:00.000Z',
     };
     mockLimitsService.getQuotaStatus.mockResolvedValue(mockQuota);
 

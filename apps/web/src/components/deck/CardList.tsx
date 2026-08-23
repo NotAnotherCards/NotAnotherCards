@@ -58,8 +58,7 @@ export function CardList({
             Database Inactive (Taken Over)
           </h3>
           <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-            This tab is currently inactive because the offline database is open
-            in another tab. Click below to use the database in this window.
+            This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
           </p>
         </div>
         <Button

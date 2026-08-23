@@ -106,9 +106,7 @@ describe("DatabaseBanner Component", () => {
     });
 
     render(<DatabaseBanner />);
-    expect(
-      screen.getByText(/Failed to initialize database/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Failed to initialize database/i)).toBeInTheDocument();
 
     const button = screen.getByRole("button", { name: /Retry/i });
     fireEvent.click(button);

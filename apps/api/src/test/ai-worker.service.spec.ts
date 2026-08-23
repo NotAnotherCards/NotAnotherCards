@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AiWorkerService } from '../ai/ai-worker.service';
-import { AiGatewayService } from '../ai/ai-gateway.service';
+import { AiGatewayService, AiParseError } from '../ai/ai-gateway.service';
 
 describe('AiWorkerService', () => {
   let mockGateway: jest.Mocked<AiGatewayService>;
@@ -23,7 +23,10 @@ describe('AiWorkerService', () => {
 
   it('returns false when no jobs are pending in queue', async () => {
     const mockDb = {
-      execute: jest.fn().mockResolvedValue({ rows: [] }),
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] }) // recovery query
+        .mockResolvedValueOnce({ rows: [] }), // dequeue query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
     const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
@@ -41,7 +44,6 @@ describe('AiWorkerService', () => {
       payload: {
         topic: 'Biology',
         count: 2,
-        promptVersion: 'v1',
       },
       attempts: 1,
       max_attempts: 3,
@@ -67,7 +69,10 @@ describe('AiWorkerService', () => {
     });
 
     const mockDb = {
-      execute: jest.fn().mockResolvedValue({ rows: [mockJob] }),
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] }) // recovery query
+        .mockResolvedValueOnce({ rows: [mockJob] }), // claim query
       transaction: jest.fn(
         (
           cb: (tx: {
@@ -90,12 +95,12 @@ describe('AiWorkerService', () => {
     expect(mockDb.execute).toHaveBeenCalled();
   });
 
-  it('retries job (status remains pending) if attempt < max_attempts', async () => {
+  it('retries job with backoff (status remains pending) if attempt < max_attempts', async () => {
     const mockJob = {
       id: 'job-2',
       user_id: 'user-1',
       type: 'topic_deck',
-      payload: { topic: 'Math', count: 2, promptVersion: 'v1' },
+      payload: { topic: 'Math', count: 2 },
       attempts: 1,
       max_attempts: 3,
     };
@@ -105,14 +110,18 @@ describe('AiWorkerService', () => {
     );
 
     const mockDb = {
-      execute: jest.fn().mockResolvedValue({ rows: [mockJob] }),
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] }) // recovery query
+        .mockResolvedValueOnce({ rows: [mockJob] }) // claim query
+        .mockResolvedValueOnce({}), // backoff update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
     const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
-    expect(mockDb.execute).toHaveBeenCalledTimes(2); // 1 to claim, 1 to update on error
+    expect(mockDb.execute).toHaveBeenCalledTimes(3);
   });
 
   it('marks job as failed when attempts reach max_attempts', async () => {
@@ -120,7 +129,7 @@ describe('AiWorkerService', () => {
       id: 'job-3',
       user_id: 'user-1',
       type: 'topic_deck',
-      payload: { topic: 'Math', count: 2, promptVersion: 'v1' },
+      payload: { topic: 'Math', count: 2 },
       attempts: 3,
       max_attempts: 3,
     };
@@ -130,13 +139,55 @@ describe('AiWorkerService', () => {
     );
 
     const mockDb = {
-      execute: jest.fn().mockResolvedValue({ rows: [mockJob] }),
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] }) // recovery query
+        .mockResolvedValueOnce({ rows: [mockJob] }) // claim query
+        .mockResolvedValueOnce({}), // fail update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
     const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
-    expect(mockDb.execute).toHaveBeenCalledTimes(2);
+    expect(mockDb.execute).toHaveBeenCalledTimes(3);
+  });
+
+  it('logs token consumption when AiParseError occurs on otherwise valid HTTP response', async () => {
+    const mockJob = {
+      id: 'job-parse-err',
+      user_id: 'user-1',
+      type: 'topic_deck',
+      payload: { topic: 'Physics', count: 2 },
+      attempts: 1,
+      max_attempts: 3,
+    };
+
+    const parseError = new AiParseError(
+      'Malformed card JSON',
+      { promptTokens: 15, completionTokens: 10, totalTokens: 25 },
+      'qwen',
+    );
+
+    mockGateway.generateCards.mockRejectedValue(parseError);
+
+    const mockInsert = jest.fn().mockReturnValue({
+      values: jest.fn().mockResolvedValue({}),
+    });
+
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [mockJob] })
+        .mockResolvedValueOnce({}),
+      insert: mockInsert,
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const processed = await workerService.processNextJob();
+
+    expect(processed).toBe(true);
+    expect(mockInsert).toHaveBeenCalledTimes(1); // logs token usage into ai_usage
   });
 });

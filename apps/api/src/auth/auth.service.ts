@@ -68,8 +68,7 @@ export class AuthService {
         revokeSessionsOnPasswordReset: true,
         sendResetPassword: async ({ user, token }) => {
           const frontendUrl =
-            this.configService.get<string>('FRONTEND_URL') ??
-            'http://localhost:5173';
+            this.configService.getOrThrow<string>('FRONTEND_URL');
           const resetLink = `${frontendUrl}/reset-password?token=${token}`;
           await sendResetPasswordEmail({
             to: user.email,
@@ -89,18 +88,13 @@ export class AuthService {
       },
       plugins: [expo()],
       trustedOrigins: [
-        this.configService.get<string>('FRONTEND_URL') ??
-          'http://localhost:5173',
+        this.configService.getOrThrow<string>('FRONTEND_URL'),
         'notanothercards://',
         'exp://',
         'exp://**',
       ],
-      secret:
-        this.configService.get<string>('BETTER_AUTH_SECRET') ??
-        'default-secret-at-least-32-characters-long',
-      baseURL:
-        this.configService.get<string>('BETTER_AUTH_URL') ??
-        'http://localhost:3000',
+      secret: this.configService.getOrThrow<string>('BETTER_AUTH_SECRET'),
+      baseURL: this.configService.getOrThrow<string>('BETTER_AUTH_URL'),
     });
 
     this.auth = auth;

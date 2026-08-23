@@ -38,21 +38,21 @@ answering (more tokens, more latency), plain rows disable it per request
 
 ## Results
 
-| config                 | sets | format ok | median s | confirmed errors |
-| ---------------------- | ---- | --------- | -------- | ---------------- |
-| qwen3.6:35b            | 30   | 30/30     | 3.0      | 5                |
-| qwen3.6:35b+think      | 30   | 30/30     | 30.4     | 2                |
-| qwen3-next:80b         | 30   | 30/30     | 43.5     | 1*               |
-| mistral-small3.2       | 30   | 30/30     | 12.8     | 3                |
-| nemotron3:33b          | 18   | 17/18     | 2.2      | 3                |
-| granite4.1:8b          | 18   | 18/18     | 5.5      | 5                |
-| lfm2.5                 | 18   | 17/18     | 6.6      | 14               |
-| qwythos-27b            | 18   | 18/18     | 16.4     | 2                |
-| qwythos-27b+think      | 18   | 18/18     | 74.6     | 3                |
-| qwythos-9b             | 18   | 18/18     | 4.2      | 7                |
-| qwythos-9b+think       | 18   | 17/18     | 27.2     | 8                |
-| fable-fusion-27b       | 18   | 18/18     | 14.1     | 4                |
-| fable-fusion-27b+think | 18   | 18/18     | 125.5    | 0                |
+| config | sets | format ok | median s | confirmed errors |
+|---|---|---|---|---|
+| qwen3.6:35b | 30 | 30/30 | 3.0 | 5 |
+| qwen3.6:35b+think | 30 | 30/30 | 30.4 | 2 |
+| qwen3-next:80b | 30 | 30/30 | 43.5 | 1* |
+| mistral-small3.2 | 30 | 30/30 | 12.8 | 3 |
+| nemotron3:33b | 18 | 17/18 | 2.2 | 3 |
+| granite4.1:8b | 18 | 18/18 | 5.5 | 5 |
+| lfm2.5 | 18 | 17/18 | 6.6 | 14 |
+| qwythos-27b | 18 | 18/18 | 16.4 | 2 |
+| qwythos-27b+think | 18 | 18/18 | 74.6 | 3 |
+| qwythos-9b | 18 | 18/18 | 4.2 | 7 |
+| qwythos-9b+think | 18 | 17/18 | 27.2 | 8 |
+| fable-fusion-27b | 18 | 18/18 | 14.1 | 4 |
+| fable-fusion-27b+think | 18 | 18/18 | 125.5 | 0 |
 
 \* the 80b's one confirmed error ("conjugate hablar for él: habló") is
 actually correct; the judge miscalled it. Its real count is 0 or 1.
@@ -281,6 +281,7 @@ card style in the app, the generation prompt has to say so explicitly, e.g.
 - Wann duftet die ganze Straße nach Brot? — Um sieben Uhr.
 - Nach was duftet die Straße um sieben Uhr? — Sie duftet nach frischem Brot.
 
+
 ## Verification
 
 The generation numbers above justify a verification layer: even the best
@@ -313,13 +314,13 @@ setup above, same benchmarks.
 
 Judges, on the 10-card planted-error benchmark (4 bad, 6 clean):
 
-| judge                        | caught | false positives | total time |
-| ---------------------------- | ------ | --------------- | ---------- |
-| qwen3.6:35b think (baseline) | 4/4    | 0               | ~3 min     |
-| mistral-small3.2 (baseline)  | 3/4    | 1               | ~1 min     |
-| prometheus-7b                | 3/4    | 2               | 31 s       |
-| selene-mini (8B)             | 2/4    | 2               | 17 s       |
-| glider (3.8B)                | 0/4    | 0               | 10 s       |
+| judge | caught | false positives | total time |
+|---|---|---|---|
+| qwen3.6:35b think (baseline) | 4/4 | 0 | ~3 min |
+| mistral-small3.2 (baseline) | 3/4 | 1 | ~1 min |
+| prometheus-7b | 3/4 | 2 | 31 s |
+| selene-mini (8B) | 2/4 | 2 | 17 s |
+| glider (3.8B) | 0/4 | 0 | 10 s |
 
 None of the purpose-trained judges beats the general models. glider judged
 everything OK. The pattern matches generation: judging Spanish grammar
@@ -330,11 +331,11 @@ prometheus GGUF is an older version.
 
 Grounding checkers, all 188 German cards:
 
-| checker                        | flags | assessment                                                        |
-| ------------------------------ | ----- | ----------------------------------------------------------------- |
-| bespoke-minicheck:7b           | 3     | all genuine                                                       |
-| lynx-8b                        | 5     | 3 genuine, 2 defensible cards flagged                             |
-| HHEM (Vectara, CPU classifier) | 10    | genuine inferences plus several German paraphrase false positives |
+| checker | flags | assessment |
+|---|---|---|
+| bespoke-minicheck:7b | 3 | all genuine |
+| lynx-8b | 5 | 3 genuine, 2 defensible cards flagged |
+| HHEM (Vectara, CPU classifier) | 10 | genuine inferences plus several German paraphrase false positives |
 
 minicheck stays the pick. HHEM is fast and would likely do better on
 English sources; on German it penalizes paraphrase. Lynx is a reasonable
@@ -344,12 +345,12 @@ custom model code predates the 5.x API).
 
 Moderation, benign false-positive rate on generated cards:
 
-| model                  | flagged   |
-| ---------------------- | --------- |
+| model | flagged |
+|---|---|
 | granite4.1-guardian:8b | 0 / 1,344 |
-| shieldgemma            | 0 / 300   |
-| llama-guard3           | 0 / 300   |
-| qwen3guard-8b          | 0 / 300   |
+| shieldgemma | 0 / 300 |
+| llama-guard3 | 0 / 300 |
+| qwen3guard-8b | 0 / 300 |
 
 All four are silent on benign content. guardian stays because it is already
 integrated and doubles as a groundedness checker; there is no measured
@@ -404,7 +405,6 @@ total: conjugation tables, historical dates, and music intervals is where
 models fabricate.
 
 ### qwen3.6:35b (5)
-
 - "conjugate hablar for yo" => "Hablaré" — future tense, not preterite (hablé).
 - "Sept 5, 1793 event" => "Law of Suspects" — that law came Sept 17; Sept 5 is terror declared "the order of the day".
 - "On what date did Louis XVI execute Marie Antoinette?" => Oct 16, 1793 — the date is right but the front is wrong: Louis XVI was executed nine months before her.
@@ -412,28 +412,23 @@ models fabricate.
 - German: "beginnt mit dem Backen" — the text never says he starts baking (grounding drift).
 
 ### qwen3.6:35b+think (2)
-
 - "balanced chemical equation" => prose description — front demands an equation, back gives none.
 - "dar and ver: both use written accents" — di, dio, vi, vio carry no accents.
 
 ### qwen3-next:80b (1, disputed)
-
 - "conjugate hablar for él" => "Habló." — correct; judge miscall. Real count 0.
 
 ### mistral-small3.2 (3)
-
 - "What interval sounds like Sol-Do?" => "descending perfect fifth" — defensible (G down to C); disputed.
 - "same as a perfect fourth but higher" => "perfect fifth" — the front is not a meaningful question; fair kill.
 - "reduce arguments" => mixes reduce's arguments with the callback's — conflated.
 
 ### nemotron3:33b (3)
-
 - "smallest interval on a piano" => "Octave" — it is the semitone.
 - "-er verbs, third person singular" => "-é (comer → comí)" — both wrong for él (comió).
 - "method that returns true/false" => filter explanation — front ambiguous, back true of filter; disputed.
 
 ### granite4.1:8b (5)
-
 - "-ar preterite endings" => "aba, abas, ..." — those are imperfect endings.
 - "She ate lunch" => "Comió al almuerzo" — should be "el almuerzo" (or almorzó).
 - "reactants of photosynthesis" => includes sunlight — energy input, not a reactant; strict but standard.
@@ -441,7 +436,6 @@ models fabricate.
 - "octave = seven scale steps" — arguably correct counting; disputed.
 
 ### lfm2.5 (14)
-
 - Five German cards: "kniet den Teig" three times (kneels, not kneads), one card answering its own question with itself, one placing kneading at seven o'clock (fabricated).
 - "Which year did Louis XVI and Marie Antoinette die" => "January 21, 1793" — answers a date for a year question, and she died in October.
 - Four music cards, all garbled ("perfect fifth: first to fourth note", "D major is a whole step above C", ...).
@@ -449,17 +443,14 @@ models fabricate.
 - Three Spanish cards including "hablar: Ir + past participle" — nonsense.
 
 ### qwythos-27b (2)
-
 - "major third: four semitones (whole + whole + half)" — the parenthetical sums to five.
 - "perfect fifth above C: G (the seventh letter from C)" — G is the fifth letter from C.
 
 ### qwythos-27b+think (3)
-
 - Two Reign-of-Terror cards with contradictory start dates, one tying it to Robespierre joining the Committee on June 10, 1793 (he joined in July; the Terror is usually dated from September).
 - "How do stems change in the preterite" => an answer about accent placement — describes endings, not stem changes.
 
 ### qwythos-9b (7)
-
 - "end of the Revolution / Napoleon's first coronation" => "November 2, 1805 (Battle of Trafalgar)" — Trafalgar was Oct 21, 1805 and is neither.
 - "Who was proclaimed King in 1793" => "Louis XVI (after his execution)" — self-refuting.
 - "Flight to Varennes: June 20, 1791" — correct; disputed.
@@ -469,7 +460,6 @@ models fabricate.
 - "leer for él/ella" => "Leió" — leyó.
 
 ### qwythos-9b+think (8)
-
 - "reactants of photosynthesis" => includes sunlight — same strict flag as granite.
 - German: "Um wie viele Uhr riecht die Straße?" => "Uhr sieben." — broken German on both sides.
 - "which note pairs form a third" => "C-E major, C-Eb minor" — correct; disputed.
@@ -480,7 +470,6 @@ models fabricate.
 - "can preterite express ongoing actions" => "Yes, with context: 'Estaba leyendo'" — estaba leyendo is imperfect, contradicting the answer.
 
 ### fable-fusion-27b (4)
-
 - "reactants of photosynthesis" => includes light energy — same strict flag.
 - "how many whole steps make an octave" => "six whole steps plus two half steps" — six whole steps alone are the octave; as written it sums to 14 semitones.
 - "conjugate hablar for yo" => "Hablé" — correct; disputed.

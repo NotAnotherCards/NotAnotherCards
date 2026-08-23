@@ -85,21 +85,15 @@ describe("Settings Tab Component Specs", () => {
     render(<Settings />);
 
     // Assert username is populated
-    const usernameInput = screen.getByLabelText(
-      /Username/i,
-    ) as HTMLInputElement;
+    const usernameInput = screen.getByLabelText(/Username/i) as HTMLInputElement;
     expect(usernameInput.value).toBe("john_doe");
 
     // Assert native language (English) is selected
-    const nativeSelect = screen.getByLabelText(
-      /Native Language/i,
-    ) as HTMLSelectElement;
+    const nativeSelect = screen.getByLabelText(/Native Language/i) as HTMLSelectElement;
     expect(nativeSelect.value).toBe("00000000-0000-0000-0000-000000000001");
 
     // Assert target language (Spanish) is selected
-    const targetSelect = screen.getByLabelText(
-      /Target Language/i,
-    ) as HTMLSelectElement;
+    const targetSelect = screen.getByLabelText(/Target Language/i) as HTMLSelectElement;
     expect(targetSelect.value).toBe("00000000-0000-0000-0000-000000000002");
 
     // Assert Save button is disabled on load (since form is clean)
@@ -115,21 +109,15 @@ describe("Settings Tab Component Specs", () => {
     expect(screen.getByText(/Profile Details/i)).toBeInTheDocument();
 
     // Click on Preferences / Settings sub-tab
-    const settingsTabBtn = screen.getByRole("button", {
-      name: /^Preferences$/i,
-    });
+    const settingsTabBtn = screen.getByRole("button", { name: /^Preferences$/i });
     await user.click(settingsTabBtn);
 
     // Verify Settings card / theme changer is displayed
     expect(screen.getByText(/Theme/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Select how the application looks to you/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Select how the application looks to you/i)).toBeInTheDocument();
 
     // Click back to Profile & Languages sub-tab
-    const profileTabBtn = screen.getByRole("button", {
-      name: /Profile & Languages/i,
-    });
+    const profileTabBtn = screen.getByRole("button", { name: /Profile & Languages/i });
     await user.click(profileTabBtn);
 
     // Verify profile card details are back
@@ -140,12 +128,8 @@ describe("Settings Tab Component Specs", () => {
     const user = userEvent.setup();
     render(<Settings />);
 
-    const nativeSelect = screen.getByLabelText(
-      /Native Language/i,
-    ) as HTMLSelectElement;
-    const targetSelect = screen.getByLabelText(
-      /Target Language/i,
-    ) as HTMLSelectElement;
+    const nativeSelect = screen.getByLabelText(/Native Language/i) as HTMLSelectElement;
+    const targetSelect = screen.getByLabelText(/Target Language/i) as HTMLSelectElement;
 
     // By default, native language is English. Verify English is NOT an option in target select.
     let englishOption = Array.from(targetSelect.options).find(
@@ -154,10 +138,7 @@ describe("Settings Tab Component Specs", () => {
     expect(englishOption).toBeUndefined();
 
     // Change Native Language to French (00000000-0000-0000-0000-000000000003)
-    await user.selectOptions(
-      nativeSelect,
-      "00000000-0000-0000-0000-000000000003",
-    );
+    await user.selectOptions(nativeSelect, "00000000-0000-0000-0000-000000000003");
 
     // English should now be available in target language select options
     englishOption = Array.from(targetSelect.options).find(
@@ -188,9 +169,7 @@ describe("Settings Tab Component Specs", () => {
     await user.click(saveBtn);
 
     // Verify error is shown
-    expect(
-      await screen.findByText("Username must be at least 3 characters"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Username must be at least 3 characters")).toBeInTheDocument();
   });
 
   it("saves modifications successfully and calls useStore.updateUserProfile", async () => {
@@ -202,16 +181,10 @@ describe("Settings Tab Component Specs", () => {
     await user.type(usernameInput, "alex_new");
 
     const nativeSelect = screen.getByLabelText(/Native Language/i);
-    await user.selectOptions(
-      nativeSelect,
-      "00000000-0000-0000-0000-000000000003",
-    ); // French
+    await user.selectOptions(nativeSelect, "00000000-0000-0000-0000-000000000003"); // French
 
     const targetSelect = screen.getByLabelText(/Target Language/i);
-    await user.selectOptions(
-      targetSelect,
-      "00000000-0000-0000-0000-000000000004",
-    ); // German
+    await user.selectOptions(targetSelect, "00000000-0000-0000-0000-000000000004"); // German
 
     const saveBtn = screen.getByRole("button", { name: /Save Changes/i });
     await user.click(saveBtn);
@@ -224,9 +197,7 @@ describe("Settings Tab Component Specs", () => {
     });
 
     // Verify success banner is shown
-    expect(
-      await screen.findByText("Settings saved successfully!"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Settings saved successfully!")).toBeInTheDocument();
   });
 
   it("clears success messages once the form becomes dirty again", async () => {
@@ -245,9 +216,7 @@ describe("Settings Tab Component Specs", () => {
         };
         vi.mocked(useStore).mockReturnValue({
           createUserProfile: vi.fn(),
-          updateUserProfile: vi.fn() as unknown as ReturnType<
-            typeof useStore
-          >["updateUserProfile"],
+          updateUserProfile: vi.fn() as unknown as ReturnType<typeof useStore>["updateUserProfile"],
           profile: currentProfile,
           decks: [],
           cards: [],
@@ -265,9 +234,7 @@ describe("Settings Tab Component Specs", () => {
     const user = userEvent.setup();
     const { rerender } = render(<Settings />);
 
-    const usernameInput = screen.getByLabelText(
-      /Username/i,
-    ) as HTMLInputElement;
+    const usernameInput = screen.getByLabelText(/Username/i) as HTMLInputElement;
     await user.type(usernameInput, "_mod");
 
     const saveBtn = screen.getByRole("button", { name: /Save Changes/i });
@@ -277,9 +244,7 @@ describe("Settings Tab Component Specs", () => {
     rerender(<Settings />);
 
     // Check success banner is shown
-    expect(
-      await screen.findByText("Settings saved successfully!"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Settings saved successfully!")).toBeInTheDocument();
 
     // Wait for the form to reset back to initial clean state (which will have the new username)
     await waitFor(() => expect(usernameInput.value).toBe("john_doe_mod"));
@@ -318,18 +283,14 @@ describe("Settings Tab Component Specs", () => {
 
     // Try submitting empty
     await user.click(submitBtn);
-    expect(
-      await screen.findAllByText("Password must be at least 8 characters"),
-    ).toHaveLength(3);
+    expect(await screen.findAllByText("Password must be at least 8 characters")).toHaveLength(3);
 
     // Try with mismatching passwords
     await user.type(currentInput, "OldPass123!");
     await user.type(newInput, "NewPass123!");
     await user.type(confirmInput, "DifferentPass123!");
     await user.click(submitBtn);
-    expect(
-      await screen.findByText("Passwords do not match"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Passwords do not match")).toBeInTheDocument();
   });
 
   it("submits the change password form successfully and calls authClient.changePassword", async () => {
@@ -362,8 +323,6 @@ describe("Settings Tab Component Specs", () => {
       });
     });
 
-    expect(
-      await screen.findByText("Password changed successfully!"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Password changed successfully!")).toBeInTheDocument();
   });
 });

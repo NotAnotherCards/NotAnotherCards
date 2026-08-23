@@ -27,9 +27,14 @@ export function SocialLoginButton({
       disabled={disabled || isLoading}
     >
       {isLoading && <Spinner className="h-4 w-4" />}
-      {!isLoading && provider === "google" && <GoogleIcon />}
-      {!isLoading && provider === "facebook" && <FacebookIcon />}
-      {children || `${provider.charAt(0).toUpperCase() + provider.slice(1)}`}
+      {!isLoading && provider === "google" && (
+        <GoogleIcon/>
+      )}
+      {!isLoading && provider === "facebook" && (
+        <FacebookIcon/>
+      )}
+      {children ||
+        `${provider.charAt(0).toUpperCase() + provider.slice(1)}`}
     </Button>
   );
 }

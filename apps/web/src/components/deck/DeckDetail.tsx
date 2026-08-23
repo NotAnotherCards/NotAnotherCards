@@ -1,21 +1,8 @@
 import { useState } from "react";
 import { useStore, Card } from "@/hooks/useStore";
 import { Button } from "@/components/ui/button";
-import {
-  Card as UICard,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  AlertCircle,
-  ArrowLeft,
-  Loader2,
-  Plus,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
+import { Card as UICard, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { AlertCircle, ArrowLeft, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { CardForm } from "./CardForm";
 import { CardList } from "./CardList";
 import { writeErrorMessage } from "@/lib/write-error";
@@ -55,9 +42,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               Database Inactive (Taken Over)
             </h3>
             <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-              This tab is currently inactive because the offline database is
-              open in another tab. Click below to use the database in this
-              window.
+              This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
             </p>
           </div>
           <Button
@@ -77,9 +62,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       return (
         <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
           <Loader2 className="animate-spin size-8 text-primary" />
-          <p className="text-sm text-muted-foreground animate-pulse">
-            Loading deck details...
-          </p>
+          <p className="text-sm text-muted-foreground animate-pulse">Loading deck details...</p>
         </div>
       );
     }
@@ -87,7 +70,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   const deck = store.decks.find((d) => d.id === deckId);
-
+  
   if (!deck) {
     return (
       <div className="text-center p-8">
@@ -224,28 +207,27 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 Delete Card?
               </CardTitle>
               <CardDescription>
-                Are you sure you want to permanently delete this study card from
-                your deck?
+                Are you sure you want to permanently delete this study card from your deck?
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               <FormErrorMessage message={writeError} className="mb-4" />
               <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setCardToDelete(null)}
-                  className="cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteCard}
-                  disabled={isDeleting}
-                  className="cursor-pointer"
-                >
-                  Delete
-                </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCardToDelete(null)}
+                className="cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteCard}
+                disabled={isDeleting}
+                className="cursor-pointer"
+              >
+                Delete
+              </Button>
               </div>
             </CardContent>
           </UICard>

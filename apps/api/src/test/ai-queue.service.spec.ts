@@ -1,34 +1,49 @@
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AiQueueService } from '../ai/ai-queue.service';
+import { AiLimitsService } from '../ai/ai-limits.service';
 
 describe('AiQueueService', () => {
   let queueService: AiQueueService;
+  let mockLimitsService: jest.Mocked<AiLimitsService>;
   let mockDb: {
     insert: jest.Mock;
     select: jest.Mock;
+    execute: jest.Mock;
+    transaction: jest.Mock;
   };
 
   beforeEach(() => {
+    mockLimitsService = {
+      checkUserCanSubmitJob: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<AiLimitsService>;
+
     mockDb = {
       insert: jest.fn(),
       select: jest.fn(),
+      execute: jest.fn().mockResolvedValue({}),
+      transaction: jest.fn(
+        (
+          cb: (tx: NodePgDatabase<Record<string, unknown>>) => Promise<unknown>,
+        ) => cb(mockDb as unknown as NodePgDatabase<Record<string, unknown>>),
+      ),
     };
+
     queueService = new AiQueueService(
       mockDb as unknown as NodePgDatabase<Record<string, unknown>>,
+      mockLimitsService,
     );
   });
 
-  it('enqueues a generation job', async () => {
+  it('enqueues a generation job under transaction and advisory lock', async () => {
     const mockCreatedJob = {
       id: 'job-123',
       userId: 'user-1',
-      type: 'topic_deck',
-      status: 'pending',
+      type: 'topic_deck' as const,
+      status: 'pending' as const,
       payload: {
         topic: 'Spanish',
         count: 5,
-        promptVersion: 'v1',
       },
     };
 
@@ -42,11 +57,12 @@ describe('AiQueueService', () => {
       type: 'topic_deck',
       topic: 'Spanish',
       count: 5,
-      promptVersion: 'v1',
     });
 
     expect(job).toEqual(mockCreatedJob);
-    expect(mockDb.insert).toHaveBeenCalled();
+    expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    expect(mockLimitsService.checkUserCanSubmitJob).toHaveBeenCalledTimes(1);
+    expect(mockDb.execute).toHaveBeenCalledTimes(1); // advisory lock
   });
 
   it('retrieves an existing job if user owns it', async () => {

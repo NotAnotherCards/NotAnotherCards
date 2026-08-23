@@ -42,8 +42,6 @@ export class AiController {
       });
     }
 
-    await this.limitsService.checkUserCanSubmitJob(userId);
-
     const job = await this.queueService.enqueueJob(
       userId,
       validationResult.data,

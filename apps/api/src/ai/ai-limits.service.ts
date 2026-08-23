@@ -12,7 +12,6 @@ export interface QuotaStatus {
   maxRequests: number;
   activePendingJobs: number;
   maxPendingJobs: number;
-  resetAt: string;
 }
 
 @Injectable()
@@ -37,9 +36,12 @@ export class AiLimitsService {
     );
   }
 
-  async checkUserCanSubmitJob(userId: string): Promise<void> {
+  async checkUserCanSubmitJob(
+    executor: NodePgDatabase<Record<string, unknown>> = this.db,
+    userId: string,
+  ): Promise<void> {
     // 1. Check pending/processing cap
-    const activeJobsResult = await this.db
+    const activeJobsResult = await executor
       .select({ count: sql<number>`count(*)::int` })
       .from(aiGenerationJobs)
       .where(
@@ -59,7 +61,7 @@ export class AiLimitsService {
 
     // 2. Check 24-hour daily quota
     const windowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const usageResult = await this.db
+    const usageResult = await executor
       .select({
         totalTokens: sql<number>`coalesce(sum(${aiUsage.totalTokens}), 0)::int`,
         requestCount: sql<number>`count(*)::int`,
@@ -122,7 +124,6 @@ export class AiLimitsService {
       maxRequests: this.maxDailyRequests,
       activePendingJobs: activeCount,
       maxPendingJobs: this.maxPendingJobs,
-      resetAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     };
   }
 }

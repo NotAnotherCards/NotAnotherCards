@@ -5,17 +5,19 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import { aiGenerationJobs, DeckGenerationPayload } from './schema';
 import { CreateAiJobInput } from './dto/create-generation-job.dto';
+import { AiLimitsService } from './ai-limits.service';
 
 @Injectable()
 export class AiQueueService {
   constructor(
     @Inject(DATABASE_CONNECTION)
     private readonly db: NodePgDatabase<Record<string, unknown>>,
+    private readonly limitsService: AiLimitsService,
   ) {}
 
   async enqueueJob(userId: string, input: CreateAiJobInput) {
@@ -25,23 +27,33 @@ export class AiQueueService {
       sourceText: input.sourceText,
       count: input.count ?? 5,
       model: input.model,
-      promptVersion: input.promptVersion ?? 'v1',
     };
 
-    const [job] = await this.db
-      .insert(aiGenerationJobs)
-      .values({
-        id: jobId,
-        userId,
-        type: input.type,
-        status: 'pending',
-        payload,
-        attempts: 0,
-        maxAttempts: 3,
-      })
-      .returning();
+    return await this.db.transaction(async (tx) => {
+      // 1. Transaction-scoped advisory lock keyed by user id
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext('ai_user_' || ${userId}))`,
+      );
 
-    return job;
+      // 2. Check limits inside the locked transaction
+      await this.limitsService.checkUserCanSubmitJob(tx, userId);
+
+      // 3. Insert job
+      const [job] = await tx
+        .insert(aiGenerationJobs)
+        .values({
+          id: jobId,
+          userId,
+          type: input.type,
+          status: 'pending',
+          payload,
+          attempts: 0,
+          maxAttempts: 3,
+        })
+        .returning();
+
+      return job;
+    });
   }
 
   async getJobById(userId: string, jobId: string) {

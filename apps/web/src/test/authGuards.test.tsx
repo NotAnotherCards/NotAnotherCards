@@ -22,6 +22,8 @@ const mockSession = {
   },
 };
 
+
+
 vi.mock("@remelondb/core/react", () => ({
   useDatabaseState: () => ({ status: "ready", error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),

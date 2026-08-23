@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/PageContainer";
-import { BookOpen, Library, Settings as SettingsIcon } from "lucide-react";
+import {
+  BookOpen,
+  Library,
+  Settings as SettingsIcon,
+} from "lucide-react";
 import { DeckList } from "@/components/deck/DeckList";
 import { DeckDetail } from "@/components/deck/DeckDetail";
 import { Settings } from "./settings/Settings";

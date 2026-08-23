@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+export const AI_MODELS = ['qwen', 'qwen-next-80b', 'mistral-small'] as const;
+export type AiModel = (typeof AI_MODELS)[number];
+
 export const createAiJobSchema = z
   .object({
     type: z.enum(['topic_deck', 'text_cards']),
@@ -16,8 +19,7 @@ export const createAiJobSchema = z
       .max(10000, 'Source text cannot exceed 10000 characters')
       .optional(),
     count: z.number().int().min(1).max(20).default(5),
-    model: z.string().trim().optional(),
-    promptVersion: z.string().trim().default('v1'),
+    model: z.enum(AI_MODELS).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.type === 'topic_deck' && !data.topic) {

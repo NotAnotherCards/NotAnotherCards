@@ -22,7 +22,6 @@ export interface DeckGenerationPayload {
   sourceText?: string;
   count: number;
   model?: string;
-  promptVersion: string;
 }
 
 export const aiGenerationJobs = pgTable(
@@ -40,6 +39,9 @@ export const aiGenerationJobs = pgTable(
     attempts: integer('attempts').default(0).notNull(),
     maxAttempts: integer('max_attempts').default(3).notNull(),
     lockedAt: timestamp('locked_at', { withTimezone: true }),
+    nextRunAt: timestamp('next_run_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -51,6 +53,7 @@ export const aiGenerationJobs = pgTable(
   (table) => [
     index('ai_jobs_user_status_idx').on(table.userId, table.status),
     index('ai_jobs_status_attempts_idx').on(table.status, table.attempts),
+    index('ai_jobs_status_next_run_idx').on(table.status, table.nextRunAt),
   ],
 );
 

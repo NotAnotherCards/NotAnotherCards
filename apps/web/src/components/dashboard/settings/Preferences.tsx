@@ -5,7 +5,9 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Settings as SettingsIcon } from "lucide-react";
+import {
+  Settings as SettingsIcon,
+} from "lucide-react";
 import { ThemeChanger } from "@/components/ThemeChanger";
 
 export function Preferences() {

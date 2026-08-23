@@ -19,7 +19,12 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
-import { Save, Check, Shield, LogOut } from "lucide-react";
+import {
+  Save,
+  Check,
+  Shield,
+  LogOut,
+} from "lucide-react";
 import { FormErrorMessage } from "@/components/auth/form-error-message";
 import { z } from "zod";
 import { useNavigate } from "@tanstack/react-router";
@@ -137,9 +142,7 @@ export function Security() {
                         placeholder="••••••••"
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
-                          fieldState.invalid
-                            ? "currentPassword-error"
-                            : undefined
+                          fieldState.invalid ? "currentPassword-error" : undefined
                         }
                       />
                       <FieldError

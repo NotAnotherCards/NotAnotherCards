@@ -9,6 +9,7 @@ CREATE TABLE "ai_generation_jobs" (
 	"attempts" integer DEFAULT 0 NOT NULL,
 	"max_attempts" integer DEFAULT 3 NOT NULL,
 	"locked_at" timestamp with time zone,
+	"next_run_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"completed_at" timestamp with time zone
@@ -29,4 +30,5 @@ ALTER TABLE "ai_generation_jobs" ADD CONSTRAINT "ai_generation_jobs_user_id_user
 ALTER TABLE "ai_usage" ADD CONSTRAINT "ai_usage_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "ai_jobs_user_status_idx" ON "ai_generation_jobs" USING btree ("user_id","status");--> statement-breakpoint
 CREATE INDEX "ai_jobs_status_attempts_idx" ON "ai_generation_jobs" USING btree ("status","attempts");--> statement-breakpoint
+CREATE INDEX "ai_jobs_status_next_run_idx" ON "ai_generation_jobs" USING btree ("status","next_run_at");--> statement-breakpoint
 CREATE INDEX "ai_usage_user_created_idx" ON "ai_usage" USING btree ("user_id","created_at");

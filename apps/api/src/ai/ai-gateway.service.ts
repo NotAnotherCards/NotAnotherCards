@@ -12,6 +12,21 @@ export interface InferenceResult {
   model: string;
 }
 
+export class AiParseError extends Error {
+  constructor(
+    message: string,
+    public readonly usage: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    },
+    public readonly model: string,
+  ) {
+    super(message);
+    this.name = 'AiParseError';
+  }
+}
+
 interface ChatCompletionResponse {
   choices?: Array<{
     message?: {
@@ -40,17 +55,33 @@ export class AiGatewayService {
     systemPrompt: string,
     userPrompt: string,
     requestedModel?: string,
+    requestedCount = 5,
   ): Promise<InferenceResult> {
     const apiBase = this.config.get<string>('AI_API_BASE');
     const apiKey = this.config.get<string>('AI_API_KEY') ?? '';
+    const isMockExplicit =
+      this.config.get<string>('AI_MOCK') === '1' ||
+      this.config.get<string>('AI_MOCK') === 'true' ||
+      process.env.NODE_ENV === 'test';
     const model =
       requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'qwen';
 
-    // If no backend configured, run mock mode (enables docker compose without AI box)
+    // If no endpoint is configured:
+    // When AI_MOCK is explicitly enabled (or in tests), use mock generator.
+    // Otherwise, throw an error so the job stays visibly queued in pending per docs/deployment.md.
     if (!apiBase) {
-      this.logger.log('No AI_API_BASE provided. Using mock generator.');
-      return this.mockGeneration(userPrompt, model);
+      if (isMockExplicit) {
+        this.logger.log('AI_MOCK is active. Using mock generator.');
+        return this.mockGeneration(userPrompt, model, requestedCount);
+      }
+      throw new Error(
+        'AI gateway is not configured (AI_API_BASE is unset). Jobs remain queued.',
+      );
     }
+
+    const timeoutMs = Number(
+      this.config.get<string>('AI_REQUEST_TIMEOUT_MS') ?? 60000,
+    );
 
     const res = await fetch(`${apiBase}/chat/completions`, {
       method: 'POST',
@@ -66,6 +97,7 @@ export class AiGatewayService {
         ],
         temperature: 0.7,
       }),
+      signal: AbortSignal.timeout(timeoutMs),
     });
 
     if (!res.ok) {
@@ -73,21 +105,32 @@ export class AiGatewayService {
     }
 
     const data = (await res.json()) as ChatCompletionResponse;
+    const usage = {
+      promptTokens: data.usage?.prompt_tokens ?? 0,
+      completionTokens: data.usage?.completion_tokens ?? 0,
+      totalTokens: data.usage?.total_tokens ?? 0,
+    };
+
     const rawContent: string = data.choices?.[0]?.message?.content ?? '';
-    const cards = this.parseCardsFromJson(rawContent);
+    let cards: CardOutput[];
+    try {
+      cards = this.parseCardsFromJson(rawContent, requestedCount);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new AiParseError(msg, usage, model);
+    }
 
     return {
       cards,
-      usage: {
-        promptTokens: data.usage?.prompt_tokens ?? 0,
-        completionTokens: data.usage?.completion_tokens ?? 0,
-        totalTokens: data.usage?.total_tokens ?? 0,
-      },
+      usage,
       model,
     };
   }
 
-  private parseCardsFromJson(raw: string): CardOutput[] {
+  private parseCardsFromJson(
+    raw: string,
+    requestedCount: number,
+  ): CardOutput[] {
     // 1. Strip reasoning thoughts if model produced thinking tokens
     const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     // 2. Extract JSON bracket boundaries [ ... ]
@@ -104,7 +147,10 @@ export class AiGatewayService {
       throw new Error('Parsed AI output is not an array');
     }
 
-    return (parsed as RawCardItem[]).map((item, idx) => {
+    const maxCards = Math.max(1, Math.min(requestedCount, 20));
+    const slice = parsed.slice(0, maxCards);
+
+    return (slice as RawCardItem[]).map((item, idx) => {
       if (
         typeof item !== 'object' ||
         item === null ||
@@ -114,25 +160,34 @@ export class AiGatewayService {
         throw new Error(`Card at index ${idx} is missing front or back string`);
       }
       return {
-        front: item.front.slice(0, 500),
-        back: item.back.slice(0, 500),
+        front: item.front.slice(0, 1000),
+        back: item.back.slice(0, 1000),
       };
     });
   }
 
-  private mockGeneration(prompt: string, model: string): InferenceResult {
+  private mockGeneration(
+    prompt: string,
+    model: string,
+    requestedCount = 5,
+  ): InferenceResult {
+    const count = Math.max(1, Math.min(requestedCount, 20));
+    const cards: CardOutput[] = [];
+
+    for (let i = 1; i <= count; i++) {
+      cards.push({
+        front: `Card ${i}: What is the core concept of "${prompt.slice(0, 30)}"?`,
+        back: `Explanation and practical application for card ${i}.`,
+      });
+    }
+
     return {
-      cards: [
-        {
-          front: `What is the core concept of "${prompt.slice(0, 30)}"?`,
-          back: 'Fundamental concept explained.',
-        },
-        {
-          front: 'Key application or syntax?',
-          back: 'Practical usage example.',
-        },
-      ],
-      usage: { promptTokens: 35, completionTokens: 45, totalTokens: 80 },
+      cards,
+      usage: {
+        promptTokens: 20 + count * 5,
+        completionTokens: 25 + count * 10,
+        totalTokens: 45 + count * 15,
+      },
       model: `${model}-mock`,
     };
   }

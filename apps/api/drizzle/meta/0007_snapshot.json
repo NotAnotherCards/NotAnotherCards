@@ -1,5 +1,5 @@
 {
-  "id": "be7a37a8-157f-4493-bd91-206c981a2e7a",
+  "id": "1eff80e5-8462-4239-ae2d-7bd4ddae99cb",
   "prevId": "decfa725-16ab-4764-98f3-82105986ad88",
   "version": "7",
   "dialect": "postgresql",
@@ -71,6 +71,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "next_run_at": {
+          "name": "next_run_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -125,6 +132,27 @@
             },
             {
               "expression": "attempts",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ai_jobs_status_next_run_idx": {
+          "name": "ai_jobs_status_next_run_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "next_run_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

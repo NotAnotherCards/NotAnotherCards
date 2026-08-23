@@ -53,7 +53,6 @@ The same `docker-compose.yml` runs in three places:
    OpenAI-compatible provider instead; costs cents for a demo and needs no
    code change. Without any endpoint the app still runs and shows jobs as
    queued, which is compliant but not much of a demo.
-
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
    host nginx/certbot serving `app.notanothercards.com` and `AI_API_BASE`
    pointing at the GX10 through the tailnet. The production override removes
@@ -163,12 +162,12 @@ needed for the monitoring module, independent of the AI demo path.
 
 ## Module claims
 
-| Module                                                 | Points | Status                      |
-| ------------------------------------------------------ | ------ | --------------------------- |
-| AI: Complete LLM system interface (Major)              | 2      | already planned (A17)       |
-| DevOps: Monitoring with Prometheus and Grafana (Major) | 2      | claimed in the modules plan |
-| DevOps: Health check / status page, backups (Minor)    | 1      | under consideration (A20)   |
-| Cybersecurity: WAF/ModSecurity + Vault (Major)         | 2      | skipped for now             |
+| Module | Points | Status |
+|---|---|---|
+| AI: Complete LLM system interface (Major) | 2 | already planned (A17) |
+| DevOps: Monitoring with Prometheus and Grafana (Major) | 2 | claimed in the modules plan |
+| DevOps: Health check / status page, backups (Minor) | 1 | under consideration (A20) |
+| Cybersecurity: WAF/ModSecurity + Vault (Major) | 2 | skipped for now |
 
 ### AI: Complete LLM system interface (Major)
 
