@@ -157,7 +157,7 @@ describe("database manager ownership (issue #140)", () => {
     expect(db.manager).toBe(active);
   });
 
-  it("a failed close keeps the global reference, and checks refuse the dead manager", async () => {
+  it("a failed close still clears the global, so no dead manager is ever adoptable", async () => {
     profileRows = [
       {
         username: "sam",
@@ -167,21 +167,44 @@ describe("database manager ownership (issue #140)", () => {
     ];
     const db = await loadSubject();
 
-    const active = db.createUserDatabaseManager("user-a");
+    db.createUserDatabaseManager("user-a");
     const activeStub = stubManagers[0];
     await activeStub.init();
 
     closeFailure = new Error("driver close failed");
     await expect(db.closeUserDatabase()).rejects.toThrow("driver close failed");
-    expect(db.manager).toBe(active);
+    // The global only ever holds a manager nobody has tried to close.
+    expect(db.manager).toBeNull();
 
-    // The kept manager reads idle; a later check must open its own
-    // connection instead of adopting and silently reopening it.
+    // A later check opens its own connection rather than reopening the
+    // closed one.
     closeFailure = null;
     await expect(db.checkOnboardingComplete("user-a")).resolves.toBe(true);
     expect(stubManagers).toHaveLength(2);
     expect(stubManagers[1].close).toHaveBeenCalledTimes(1);
-    expect(db.manager).toBe(active);
+    expect(db.manager).toBeNull();
+  });
+
+  it("a check may adopt an unstarted manager; init deduplicates on the instance", async () => {
+    profileRows = [
+      {
+        username: "sam",
+        native_language_id: "en",
+        target_language_id: "de",
+      },
+    ];
+    const db = await loadSubject();
+
+    // Published but not yet initialized: the sliver between AppLayout
+    // creating the manager and its init() call.
+    db.createUserDatabaseManager("user-a");
+    const activeStub = stubManagers[0];
+
+    await expect(db.checkOnboardingComplete("user-a")).resolves.toBe(true);
+    // No second manager was created, and the shared one stays open.
+    expect(stubManagers).toHaveLength(1);
+    expect(activeStub.init).toHaveBeenCalled();
+    expect(activeStub.close).not.toHaveBeenCalled();
   });
 
   it("onboarding checks never publish their manager to the global", async () => {
