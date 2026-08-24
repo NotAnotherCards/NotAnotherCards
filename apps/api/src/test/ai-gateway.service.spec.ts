@@ -96,6 +96,13 @@ describe('AiGatewayService', () => {
     ]);
     expect(result.usage.totalTokens).toBe(40);
     expect(result.model).toBe('mistral-small');
+
+    // Reasoning must be off: with it, a five-card job runs into the 60s
+    // request timeout (measured 26-56s vs ~3s without).
+    const sentBody = JSON.parse(
+      (mockFetch.mock.calls[0][1] as RequestInit).body as string,
+    ) as Record<string, unknown>;
+    expect(sentBody.reasoning_effort).toBe('none');
   });
 
   it('strips <think> tags before parsing JSON', async () => {
