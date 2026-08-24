@@ -1,0 +1,82 @@
+[
+ {
+  "topic": "spanish",
+  "run": 1,
+  "front": "Yo verb ending for -ar verbs?",
+  "back": "-é",
+  "verdict": "error",
+  "judgeTail": "r *tú*, -a for *él/ella*, etc. Mixing preterite endings into a general rule violates standard pedagogical practice.\n- **Coherence & well-formedness:** While syntactically simple, the content teaches an incomplete and misleading rule that will cause conjugation errors in actual usage.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 2,
+  "front": "Ending for -ir verbs (ellos)?",
+  "back": "Ieron (comieron).",
+  "verdict": "error",
+  "judgeTail": "s to specify that this rule applies only to the preterite tense; in other tenses (e.g., present *viven*, imperfect *vivían*, future *vivirán*), the endings differ entirely. These inaccuracies violate the requirement to teach the correct rule and maintain strict grammatical standards.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 5,
+  "front": "Yo form of -ar verbs (hablar)",
+  "back": "hablé",
+  "verdict": "error",
+  "judgeTail": "ompt or explicitly teach the conjugation rule (e.g., “For regular -ar verbs in the preterite, add -é to the stem for the yo form”). As written, it relies on an unstated assumption, lacks necessary grammatical context, and does not fulfill the requirement of teaching the correct rule.\n\nVERDICT: error"
+ },
+ {
+  "topic": "biology",
+  "run": 2,
+  "front": "What molecule is the main product of the Calvin cycle?",
+  "back": "Glucose (C6H12O6)",
+  "verdict": "error",
+  "judgeTail": "ectly identifies glucose as the main product of the Calvin cycle. While the question-and-answer format is coherent and well-formed, it contains a factual inaccuracy by confusing the specific product of the light-independent reactions with the final carbohydrate synthesized from them.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 1,
+  "front": "Reign of Terror begins",
+  "back": "Robespierre leads Committee of Public Safety",
+  "verdict": "error",
+  "judgeTail": "tually corresponds more closely to the *height* rather than the start of the Terror. The tense is also slightly off (\"leads\" should be \"led\"). Because it provides a thematic/leadership detail instead of the correct date or triggering event, it is factually mismatched to the question.\n\nVERDICT: error"
+ },
+ {
+  "topic": "programming",
+  "run": 3,
+  "front": "How does reduce() accumulate values?",
+  "back": "Reduces array to single output value",
+  "verdict": "error",
+  "judgeTail": "ecution and the persistent accumulator variable that is updated on each pass. Because the question specifically asks for the accumulation process and the card only provides a high-level outcome/definition, the pair is misaligned and insufficient for verifying technical understanding.\n\nVERDICT: error"
+ },
+ {
+  "topic": "programming",
+  "run": 5,
+  "front": "Which method does not mutate the original array?",
+  "back": "map, filter, and reduce all return new arrays",
+  "verdict": "error",
+  "judgeTail": "lter` do not mutate the original array, but it incorrectly claims that `reduce` also \"returns new arrays.\" This is factually wrong: `reduce` collapses an array into a single accumulated value and does not return an array. Because of this inaccuracy, the card contains a factual error.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 2,
+  "front": "What is the interval between C and A? (minor third)",
+  "back": "Minor third",
+  "verdict": "error",
+  "judgeTail": "nes a major sixth. The card's answer of \"Minor third\" would only be correct if the direction were reversed (A up to C) or descending.\n\nComparison: The card's answer does not match the factual interval for C to A. While coherent and well-formed in structure, it is factually incorrect.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 2,
+  "front": "What is the interval between C and Bb?",
+  "back": "Minor sixth",
+  "verdict": "error",
+  "judgeTail": " of 7 letter names makes it a seventh. Measuring the distance in semitones yields 10, which defines a minor seventh. (A minor sixth from C would be Ab.)\n\nThe card's answer states \"Minor sixth,\" which is factually incorrect regardless of standard ascending interval naming conventions.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 5,
+  "front": "What is the distance of a third?",
+  "back": "Two scale notes apart (e.g., C to E)",
+  "verdict": "error",
+  "judgeTail": "tates a third is \"Two scale notes apart.\" Interval names in music theory are based on the count of diatonic degrees (letter names) inclusive. C to E spans three notes (C, D, and E), which is why it's called a third. Stating \"two\" is factually wrong for standard interval nomenclature.\n\nVERDICT: error"
+ }
+]

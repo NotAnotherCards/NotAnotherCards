@@ -1,0 +1,1086 @@
+{
+  "model": "claude-fable-5",
+  "reviewCount": 204,
+  "results": [
+    {
+      "id": "item-017da3f87824bc9c",
+      "disposition": "major_error",
+      "reason": "Reverses required card type (English prompt on front instead of German verb + example) and the front example 'Wir beginnen…' reveals the answer, making the card unusable as written."
+    },
+    {
+      "id": "item-02afab0ceb5dc15f",
+      "disposition": "major_error",
+      "reason": "Violates required card type: front must be German verb with German example, back English; this is English-to-German. Also the example uses separable 'umdrehen' while teaching 'drehen'."
+    },
+    {
+      "id": "item-046e0c8464043e17",
+      "disposition": "major_error",
+      "reason": "Factually contradicts the source text: the street smells of fresh bread at seven o'clock ('Um sieben Uhr'), not four."
+    },
+    {
+      "id": "item-07d807db77fafd76",
+      "disposition": "major_error",
+      "reason": "Factually wrong: the second parameter of a .reduce() callback is the current value; the accumulator is the first parameter."
+    },
+    {
+      "id": "item-080c1720125b3fbc",
+      "disposition": "major_error",
+      "reason": "Teaches a false rule: events like 'la fiesta' take ser for location ('La fiesta es en el jardín'); 'está - location' is the classic error this topic must prevent."
+    },
+    {
+      "id": "item-084f59d754769c2a",
+      "disposition": "minor_error",
+      "reason": "Front grammar is broken ('When did King Louis XVI execute') and should read 'was executed'; the date January 21, 1793 is correct and the card is otherwise usable."
+    },
+    {
+      "id": "item-0853424c6802d4ee",
+      "disposition": "minor_error",
+      "reason": "German question is ungrammatical ('Welcher Bedeutung' should be 'Welche Bedeutung') and 'arbeiten' is below B1, but the translation 'to work' is correct and the card is usable."
+    },
+    {
+      "id": "item-0ce5e39b92427193",
+      "disposition": "judge_false_positive",
+      "reason": "Cloze sentence is taken verbatim from the text, the answer 'Freitag' is correct, and the card meets all prompt requirements."
+    },
+    {
+      "id": "item-11f3c8f58848451e",
+      "disposition": "major_error",
+      "reason": "Example sentence 'Wir anfangen um acht Uhr' is grammatically wrong; 'anfangen' is separable ('Wir fangen um acht Uhr an'), so the card teaches incorrect German."
+    },
+    {
+      "id": "item-12a918fe214b404b",
+      "disposition": "major_error",
+      "reason": "Front mislabels 'comer' as a regular -ar verb; it is an -er verb, a core factual error in a card teaching conjugation classes."
+    },
+    {
+      "id": "item-13473ea62c8c6458",
+      "disposition": "judge_false_positive",
+      "reason": "'Two scale notes apart (e.g., C to E)' is accurate as a step count (C→D→E) and the example is correct; acceptable for a beginner interval deck."
+    },
+    {
+      "id": "item-139c4a559df3fb43",
+      "disposition": "judge_false_positive",
+      "reason": "'El libro está sobre la mesa' correctly uses estar for object location with the requested one-word rationale; no issues or in-set duplicates."
+    },
+    {
+      "id": "item-13adc5b99dde71bc",
+      "disposition": "minor_error",
+      "reason": "Answer 'das Buch, die Bücher' is correct, but the front 'Was ist ein Buch?' literally asks for a definition, mismatching the answer and deviating from the requested bare-noun front."
+    },
+    {
+      "id": "item-148634ba8d6a6d74",
+      "disposition": "judge_false_positive",
+      "reason": "'Los niños están en el jardín' correctly uses estar for location of people; the two-word rationale is a harmless deviation."
+    },
+    {
+      "id": "item-15b7b0892b226094",
+      "disposition": "major_error",
+      "reason": "The period is the 'Thermidorian Reaction,' not the 'Thermian Reaction'; the name is the core answer, so the card teaches a nonexistent term."
+    },
+    {
+      "id": "item-17cdeb8bfea38164",
+      "disposition": "judge_false_positive",
+      "reason": "'Yo hablé' is a correct regular -ar preterite example; concise but accurate and not duplicated within the set."
+    },
+    {
+      "id": "item-1a513eeb272c5279",
+      "disposition": "minor_error",
+      "reason": "Correct content, but German question is ungrammatical: should be 'Wonach duftet die ganze Straße...?' ('Was duftet' asks what smells, not what it smells of). Also largely mirrors card 3."
+    },
+    {
+      "id": "item-1aaf931f43953516",
+      "disposition": "judge_false_positive",
+      "reason": "'hablaste' is the correct tú preterite form of hablar; card is clear and on topic."
+    },
+    {
+      "id": "item-1d822d373548639c",
+      "disposition": "major_error",
+      "reason": "Back 'Um Uhr Uhr.' is malformed and omits the answer ('Um sieben Uhr'); unusable as written."
+    },
+    {
+      "id": "item-1e0eb25976428d47",
+      "disposition": "minor_error",
+      "reason": "'es' is correct, but the reason 'origin' is wrong; 'Madrid es la capital' is identity/definition, not origin. Explanation should be fixed."
+    },
+    {
+      "id": "item-22c017309afe9827",
+      "disposition": "major_error",
+      "reason": "Front violates the required format (bare noun): it reveals the article 'das', defeating the card's purpose, and the question ('im Singular') is incoherent with the back."
+    },
+    {
+      "id": "item-22c5eaec29375d09",
+      "disposition": "minor_error",
+      "reason": "Answer describes filter() correctly but does not actually contrast it with map() as the question asks; needs the comparison."
+    },
+    {
+      "id": "item-23214441b3c9c4a0",
+      "disposition": "major_error",
+      "reason": "Front should be the bare noun 'Fenster'; instead it gives 'das Fenster', revealing the article that the back is supposed to test."
+    },
+    {
+      "id": "item-2344bbb89f1b1bd4",
+      "disposition": "minor_error",
+      "reason": "Translation is fine, but the example sentence uses 'sich treffen', not 'zusammentreffen'; example does not illustrate the headword."
+    },
+    {
+      "id": "item-242154efed5d39c4",
+      "disposition": "judge_false_positive",
+      "reason": "Regular -er verbs take '-ió' for él/ella in the preterite; concise and correct."
+    },
+    {
+      "id": "item-24a354e8cd446268",
+      "disposition": "minor_error",
+      "reason": "Back is correct, but front is garbled German ('wie viele Plurale gibt es') and deviates from the requested bare-noun front."
+    },
+    {
+      "id": "item-25e3a87a3d3c704b",
+      "disposition": "minor_error",
+      "reason": "Non-mutation claim is correct, but 'they return new arrays' is inaccurate for reduce(), which returns a single accumulated value."
+    },
+    {
+      "id": "item-27b2db975b208ec7",
+      "disposition": "minor_error",
+      "reason": "Back is correct and article not revealed, but the front is incoherent ('Namen ... im Singular') and not the requested bare noun."
+    },
+    {
+      "id": "item-2996c87491776002",
+      "disposition": "minor_error",
+      "reason": "A third spans three scale degrees/letter names, but 'three steps' is misleading (C to E is two steps); wording should say 'three scale degrees'. Also overlaps with card 5."
+    },
+    {
+      "id": "item-2a019867fc596c96",
+      "disposition": "judge_false_positive",
+      "reason": "Yo ending for regular -ar preterite verbs is '-é'; correct and concise."
+    },
+    {
+      "id": "item-2bcad14d89d31093",
+      "disposition": "minor_error",
+      "reason": "'es' is correct, but the reason uses two words in wrong Spanish order ('permanente característica' should be 'característica permanente') and the prompt asked for one word."
+    },
+    {
+      "id": "item-2cc7013b4ab6cffc",
+      "disposition": "minor_error",
+      "reason": "Six semitones/tritone is correct, but C–F♯ is spelled as an augmented fourth; the diminished fifth from C is G♭. Example should be corrected."
+    },
+    {
+      "id": "item-2de8b03f37a137ec",
+      "disposition": "minor_error",
+      "reason": "Answer is correct only by reference to the deck title; 'three basic intervals for beginners' is not a real music fact, so the card is weak/circular but not wrong."
+    },
+    {
+      "id": "item-2e114f75cd3ac93f",
+      "disposition": "minor_error",
+      "reason": "hablé is correct, but 'hablar + é' misrepresents the formation (stem habl- + é); wording should be fixed."
+    },
+    {
+      "id": "item-2efb4491426d424f",
+      "disposition": "major_error",
+      "reason": "Front must be the bare noun ('Lampe'); 'Was ist die Lampe?' reveals the article and violates the required card format."
+    },
+    {
+      "id": "item-3212cc579f5e0376",
+      "disposition": "minor_error",
+      "reason": "Definition is correct, but 'Den Raum' should be nominative 'Der Raum'; grammatical fix needed for a German learner card."
+    },
+    {
+      "id": "item-33af337e56204e11",
+      "disposition": "major_error",
+      "reason": "Front includes the article ('das Fenster') although the prompt requires the noun without article; it gives away part of the answer and violates the format."
+    },
+    {
+      "id": "item-33c9ede4df37cc04",
+      "disposition": "minor_error",
+      "reason": "Core idea (single value; accumulator and current value) is right, but 'its two parameters' is ambiguous (reduce takes callback + initialValue; callback has four params) and the back is awkwardly worded."
+    },
+    {
+      "id": "item-351b0371e839286c",
+      "disposition": "judge_false_positive",
+      "reason": "E is a major third above C; explanation is correct and concise."
+    },
+    {
+      "id": "item-36245d6e7d5ce3e5",
+      "disposition": "minor_error",
+      "reason": "-ieron is the correct ellos ending, but the example 'comieron' is an -er verb, not -ir, and 'Ieron' is oddly capitalized."
+    },
+    {
+      "id": "item-37bc586869edf74e",
+      "disposition": "minor_error",
+      "reason": "Answer is correct, but the front is a truncated fragment ('... und kocht dann ___.') rather than a sentence from the text as requested."
+    },
+    {
+      "id": "item-389431190797d6ea",
+      "disposition": "minor_error",
+      "reason": "'fue' is acceptable, but the reason is a phrase rather than the requested one word, and estuvo is also possible; should note the choice."
+    },
+    {
+      "id": "item-3895d1eaad312881",
+      "disposition": "major_error",
+      "reason": "Marie Antoinette was executed 16 October 1793, not in September, and the Committee of Public Safety was created in April 1793; the answer is factually wrong."
+    },
+    {
+      "id": "item-38aac72e52ce3648",
+      "disposition": "major_error",
+      "reason": "Cloze blanks only part of a word ('Groß' of 'Großmutter') and the front is not a sentence from the text; violates the requested cloze format."
+    },
+    {
+      "id": "item-3a7667b5b9f1cc39",
+      "disposition": "major_error",
+      "reason": "Answer uses English 'four' instead of German 'vier' in a German comprehension card; language mix makes it unusable as written."
+    },
+    {
+      "id": "item-3aae76c34e52bc88",
+      "disposition": "minor_error",
+      "reason": "Topic requires dates and the card gives none (Terror began Sept 1793); content otherwise broadly acceptable."
+    },
+    {
+      "id": "item-3ccf6f3df23f4f59",
+      "disposition": "judge_false_positive",
+      "reason": "'Hoy es muy tarde' correctly uses ser for time; card matches the requested format."
+    },
+    {
+      "id": "item-3ddc37800848ec2c",
+      "disposition": "judge_false_positive",
+      "reason": "'somos' is correct for occupation/identity; the DOCTOR mnemonic tag is a harmless addition."
+    },
+    {
+      "id": "item-4179dfaca9e066b2",
+      "disposition": "minor_error",
+      "reason": "Answer 'comí' is correct for yo form of comer, but the split 'com-i' misrepresents the ending (should be -í, accented) and the front is vague about which verb/person is asked."
+    },
+    {
+      "id": "item-434c3a6c08968e7a",
+      "disposition": "major_error",
+      "reason": "'Sofa' is neuter: das Sofa, die Sofas. 'der Sofa' teaches a wrong article; front also ignores the requested noun-only format."
+    },
+    {
+      "id": "item-43af82c5f3d0c553",
+      "disposition": "judge_false_positive",
+      "reason": "Louis XVI was guillotined on 21 January 1793; card is accurate and within spec."
+    },
+    {
+      "id": "item-4445551d0623300c",
+      "disposition": "major_error",
+      "reason": "C to Bb is a minor seventh (10 semitones), not a minor sixth; also outside the thirds/fifths/octaves scope."
+    },
+    {
+      "id": "item-468e63e036887ce3",
+      "disposition": "major_error",
+      "reason": "Card is reversed (English-to-German, Back holds the German), violating the requested format; 'betreffen' means 'to concern/affect', not 'to involve', and the example sentence is unnatural."
+    },
+    {
+      "id": "item-47611e5e96c522d8",
+      "disposition": "major_error",
+      "reason": "Wrong: the accumulator starts as reduce's optional initialValue, or the array's first element if omitted—not the callback's first argument or zero."
+    },
+    {
+      "id": "item-47884628f0edf1af",
+      "disposition": "judge_false_positive",
+      "reason": "Valid cloze from the text; 'Freitag' is the exact missing word."
+    },
+    {
+      "id": "item-47d3d67f6eb5730d",
+      "disposition": "major_error",
+      "reason": "A minor third is three half steps, not two; two half steps is a major second."
+    },
+    {
+      "id": "item-4b7bd371d02bcad9",
+      "disposition": "minor_error",
+      "reason": "Back is correct (das Buch, die Bücher), but front 'Was ist das Buch?' gives away the article and deviates from the noun-only front format."
+    },
+    {
+      "id": "item-4c17d7eca5d48ddd",
+      "disposition": "minor_error",
+      "reason": "Twelve semitones is correct, but the added claim that the octave is 'the highest diatonic interval' is a muddled, misleading qualification."
+    },
+    {
+      "id": "item-4d55a3a23212836b",
+      "disposition": "major_error",
+      "reason": "Translation is correct, but the note 'Comer is irregular' is false—comer is a regular -er verb in the preterite."
+    },
+    {
+      "id": "item-4e04b0aadc557414",
+      "disposition": "major_error",
+      "reason": "Front is a full sentence only, not the German verb (lesen) with an example as required; the card tests sentence translation rather than the verb."
+    },
+    {
+      "id": "item-4e2d6121807dc21d",
+      "disposition": "major_error",
+      "reason": "Not a cloze card: the sentence is given in full with no ___ blank and a comprehension question is appended, violating the requested card type."
+    },
+    {
+      "id": "item-4e7bd15f2928b961",
+      "disposition": "major_error",
+      "reason": "'DOS HACES' is not a recognized term, the front asks for three verbs while the back lists five, and 'fue' given as the base form is inconsistent; the card is incoherent."
+    },
+    {
+      "id": "item-53fcbe1e14edbf7b",
+      "disposition": "minor_error",
+      "reason": "Date is correct, but the front is ungrammatical ('When did King Louis XVI execute by guillotine?'—should be 'was executed')."
+    },
+    {
+      "id": "item-54d29fad97de4268",
+      "disposition": "minor_error",
+      "reason": "Definition is circular and inaccurate in scope: an octave is the same note name at double/half frequency (12 semitones); 'one or two octaves' confuses the definition."
+    },
+    {
+      "id": "item-56c657a4082a4492",
+      "disposition": "major_error",
+      "reason": "Prompt requires front to be the bare noun; front 'Wie heißt das Kissen?' adds a question and leaks the article 'das', defeating the card's purpose. Back itself is correct."
+    },
+    {
+      "id": "item-5708874e84bbfcfc",
+      "disposition": "minor_error",
+      "reason": "Answer is muddled: it lists map (which never changes length) as an answer to 'which changes length'. Intended point (filter yields a shorter-or-equal new array) is correct but wording must be fixed."
+    },
+    {
+      "id": "item-590078c69eaea581",
+      "disposition": "minor_error",
+      "reason": "Front omits the isolated German verb ('lernen') required by the prompt; only the example sentence is given. Translation 'to learn / to study' is correct."
+    },
+    {
+      "id": "item-593cd1a5539df28c",
+      "disposition": "major_error",
+      "reason": "Front is not a sentence from the text and is ungrammatical German ('weil sie ___ freut sich', missing 'über', wrong subordinate word order); also repeats the 'Besuch' cloze of card 3."
+    },
+    {
+      "id": "item-5aecbc32ec6c2561",
+      "disposition": "minor_error",
+      "reason": "Sentence is a rewritten paraphrase ('kocht dann Kaffee mit dem Besuch'), not a sentence from the text as required; cloze answer 'Kaffee' is correct and usable."
+    },
+    {
+      "id": "item-5b306a8db65e9889",
+      "disposition": "major_error",
+      "reason": "'DOS HAS' group is fabricated; 'Oner (poder)' is nonsense, and the list of 'five' verbs then adds four more. Teaches a false rule."
+    },
+    {
+      "id": "item-5b81eff8b8fe9e55",
+      "disposition": "judge_false_positive",
+      "reason": "Preterite nosotros ending for -er/-ir verbs is -imos; correct and concise."
+    },
+    {
+      "id": "item-5bc5bbf10951ba65",
+      "disposition": "minor_error",
+      "reason": "Core point (none of the three mutate the original) is right, but 'all return new arrays' is false for reduce, which returns a single accumulated value; question also wrongly implies a single method."
+    },
+    {
+      "id": "item-5f6638c476be8b41",
+      "disposition": "minor_error",
+      "reason": "Front lacks the isolated verb 'ausschalten' required by the prompt; translation 'to turn off' is correct."
+    },
+    {
+      "id": "item-61864b5293515dfa",
+      "disposition": "judge_false_positive",
+      "reason": "Verb plus short example on front, correct English translation on back; matches prompt format."
+    },
+    {
+      "id": "item-636162a82d7bfdc1",
+      "disposition": "minor_error",
+      "reason": "Front omits the isolated verb ('sich treffen'); 'to arrange' is not a correct gloss for treffen in this sentence. 'to meet' is right."
+    },
+    {
+      "id": "item-6409e282426bc2f8",
+      "disposition": "judge_false_positive",
+      "reason": "'soy' is correct; 'description' (identity/occupation) is an acceptable one-word rationale for ser."
+    },
+    {
+      "id": "item-6505604d9cb6cc40",
+      "disposition": "judge_false_positive",
+      "reason": "Accurately describes filter and its contrast with map (selection vs transformation); 'reducing size' is a reasonable simplification."
+    },
+    {
+      "id": "item-652175f59086af17",
+      "disposition": "major_error",
+      "reason": "Front is garbled ('When did King Louis XVI execute the Reign of Terror begin?'), merging two events; unusable as written."
+    },
+    {
+      "id": "item-65a13ce9700e2db7",
+      "disposition": "minor_error",
+      "reason": "Glucose is the correct stored product; adding ATP (a transient light-reaction intermediate consumed in the Calvin cycle) muddles the answer for high school level."
+    },
+    {
+      "id": "item-661512f6981c4f57",
+      "disposition": "minor_error",
+      "reason": "'Same pitch, but higher' is self-contradictory; should say same note name/pitch class at double the frequency, sounding higher."
+    },
+    {
+      "id": "item-661c430683b97fcf",
+      "disposition": "major_error",
+      "reason": "'Happy Birthday' does not begin with an octave (first two notes are a repeated pitch, then a major second); only 'Over the Rainbow' is correct. Factually wrong example."
+    },
+    {
+      "id": "item-6670541ad56d4d8b",
+      "disposition": "minor_error",
+      "reason": "'es' is correct (ser for events/time), but the front shows the infinitive '(ser)' instead of a blank, revealing the ser/estar choice; reason is two words rather than one."
+    },
+    {
+      "id": "item-67e5b3006320569c",
+      "disposition": "judge_false_positive",
+      "reason": "'hablé' is the correct yo preterite of hablar; tense is implied by the deck topic."
+    },
+    {
+      "id": "item-69d36338859f02a8",
+      "disposition": "judge_false_positive",
+      "reason": "Correct: a third spans three letter names (C to E). Wording is slightly awkward but usable."
+    },
+    {
+      "id": "item-6c635bc6fa8509cd",
+      "disposition": "minor_error",
+      "reason": "Opening sentence 'A third spans four semitones' is a false generalization contradicted by the next sentence; the major/minor breakdown is correct."
+    },
+    {
+      "id": "item-6c9a193cf1bc6f1c",
+      "disposition": "minor_error",
+      "reason": "'es' is correct, but 'ser de María' here expresses possession, not origin; the reason label is wrong."
+    },
+    {
+      "id": "item-6e3aa1a7a922720b",
+      "disposition": "major_error",
+      "reason": "Front includes the English translation, giving away the answer and violating the requested front format (German verb + German sentence only)."
+    },
+    {
+      "id": "item-6ea0b799aeaeac65",
+      "disposition": "minor_error",
+      "reason": "'Four steps' is only correct if counting steps between letters; a fifth spans five scale degrees, so the phrasing is ambiguous and misleading for beginners."
+    },
+    {
+      "id": "item-6eb90f7739d90508",
+      "disposition": "major_error",
+      "reason": "Violates required format (no German example sentence, front is a question), 'können' is A1 not B1, and 'Welche englische Verb' is ungrammatical German."
+    },
+    {
+      "id": "item-6ec387c59954c036",
+      "disposition": "major_error",
+      "reason": "Front gives the article ('das Sofa'), but the prompt requires the noun without article; this reveals part of the answer and violates the card type."
+    },
+    {
+      "id": "item-71cf0bee97c95014",
+      "disposition": "minor_error",
+      "reason": "Off-topic (seconds, not thirds/fifths/octaves) and 'two scale steps' is ambiguous—a second spans two degrees but one step."
+    },
+    {
+      "id": "item-71d46b9ba6bfbfa8",
+      "disposition": "judge_false_positive",
+      "reason": "Correct: tú preterite ending for -er/-ir verbs is -iste (comiste)."
+    },
+    {
+      "id": "item-73f7ae29a166448d",
+      "disposition": "minor_error",
+      "reason": "Answer mixes English 'seven' into German ('Um sieben Uhr'); content correct but must be fixed for a German-language card."
+    },
+    {
+      "id": "item-761d0047049c3ec8",
+      "disposition": "major_error",
+      "reason": "Question is nonsensical ('Louis XVI execute the monarchy'—he was executed) and asks for a year while the back gives a date; malformed as written."
+    },
+    {
+      "id": "item-76a8894dad137c9f",
+      "disposition": "major_error",
+      "reason": "Front is an incomplete, malformed question; back's '(not ido)' is confusing since 'ido' is a participle, not a preterite form. Unusable as written."
+    },
+    {
+      "id": "item-78b47255223facde",
+      "disposition": "minor_error",
+      "reason": "'Four scale steps' is ambiguous; a fifth spans five scale degrees (four steps between them). Wording should be clarified."
+    },
+    {
+      "id": "item-7a6098afafdc6333",
+      "disposition": "judge_false_positive",
+      "reason": "'comiste' is the correct tú preterite of comer; fill-in format is clear and fits the deck."
+    },
+    {
+      "id": "item-7a87e66e78e708d8",
+      "disposition": "major_error",
+      "reason": "Back is circular (restates 'abolition of the monarchy') and misattributes: the Tuileries storming was 10 August 1792; the September 1792 event was the National Convention proclaiming the Republic (21–22 Sept)."
+    },
+    {
+      "id": "item-7aa48cfe89c981e6",
+      "disposition": "minor_error",
+      "reason": "'3 notes apart' is ambiguous (C to F is three notes away); should say 'spanning three letter names/scale degrees'. Answer itself is fine."
+    },
+    {
+      "id": "item-7af459b83b33706d",
+      "disposition": "judge_false_positive",
+      "reason": "'hablamos' is the correct nosotros preterite; hablar is established by the deck's preceding cards."
+    },
+    {
+      "id": "item-7b0892ee7b82ee11",
+      "disposition": "minor_error",
+      "reason": "Intended point (thirds are major/minor, never perfect) is correct, but the front is cryptic and the back omits the minor third; wording should be clarified."
+    },
+    {
+      "id": "item-7b73f39d6870005a",
+      "disposition": "minor_error",
+      "reason": "Example uses reflexive 'sich erinnern' (= to remember), but headword is bare 'erinnern' (= to remind); should list 'sich erinnern'."
+    },
+    {
+      "id": "item-7b97da446f48dd7d",
+      "disposition": "major_error",
+      "reason": "'Hable' lacks the accent; 'hablé' is the preterite, while 'hable' is present subjunctive—teaches a wrong form to beginners."
+    },
+    {
+      "id": "item-7d2f8f69867f5ef0",
+      "disposition": "judge_false_positive",
+      "reason": "Acceptable at high-school level and even notes G3P as the direct product."
+    },
+    {
+      "id": "item-7d9ee93fa1b20ea1",
+      "disposition": "minor_error",
+      "reason": "Direct product of the Calvin cycle is G3P; glucose is a common high-school simplification but the back should mention G3P or 'sugar'."
+    },
+    {
+      "id": "item-81b8cc800e3616be",
+      "disposition": "minor_error",
+      "reason": "Answer 'frisches Brot' is correct, but the question is awkwardly phrased; text says the street smells of bread ('Wonach duftet die ganze Straße?')."
+    },
+    {
+      "id": "item-82f44927aac269ce",
+      "disposition": "major_error",
+      "reason": "Front includes the article ('das Sofa') despite the prompt requiring the noun without article; this defeats the card's purpose."
+    },
+    {
+      "id": "item-859a0828358620ff",
+      "disposition": "judge_false_positive",
+      "reason": "Exact sentence from the text with 'kocht' correctly blanked; suitable A2 cloze."
+    },
+    {
+      "id": "item-85b6372bcbb00f70",
+      "disposition": "judge_false_positive",
+      "reason": "'habló' is the correct él/ella/usted preterite of hablar, established in the set."
+    },
+    {
+      "id": "item-86cde1ea606b6840",
+      "disposition": "major_error",
+      "reason": "Ill-posed, subjective question with no single correct answer (many intervals 'create richness'); not a recallable fact."
+    },
+    {
+      "id": "item-873e7dce7e9d4abd",
+      "disposition": "minor_error",
+      "reason": "Definition is circular ('a third is the third note') and vague; should specify counting letter names inclusively (e.g., C–E). Also overlaps with the set's first card."
+    },
+    {
+      "id": "item-87e502a7db1e6547",
+      "disposition": "minor_error",
+      "reason": "'Fui' is correct for yo of ser, but the front should specify ser (not estar) and the person; back should give the verb name."
+    },
+    {
+      "id": "item-8851b765b274f1ed",
+      "disposition": "major_error",
+      "reason": "'usted tuvo' is correct, but the listed paradigm 'tuvo, tuviste, tuvo' gives a false yo form (should be tuve); teaches a wrong conjugation."
+    },
+    {
+      "id": "item-8ae7ce835e363992",
+      "disposition": "minor_error",
+      "reason": "Prompt asked for one word blanked; card blanks two ('gebacken hat') and ends the sentence with a stray comma. Content is otherwise correct."
+    },
+    {
+      "id": "item-8b9b68fe0b70d773",
+      "disposition": "major_error",
+      "reason": "'Here Comes the Bride' opens with a perfect fourth, not a fifth; the card teaches a wrong example (Star Wars is fine)."
+    },
+    {
+      "id": "item-8ce961a8d8b822a0",
+      "disposition": "minor_error",
+      "reason": "Sunlight is the energy input, not a chemical reactant; reactants are CO2 and water. Wording should be qualified."
+    },
+    {
+      "id": "item-8d37816af3dc363d",
+      "disposition": "minor_error",
+      "reason": "Grammar error in front: 'Welcher Bedeutung' should be 'Welche Bedeutung'. Translation and example are correct."
+    },
+    {
+      "id": "item-8e81da44458a1130",
+      "disposition": "major_error",
+      "reason": "'Twinkle Twinkle Little Star' begins with a perfect fifth (C–G), not a third; factually wrong."
+    },
+    {
+      "id": "item-9006cb47eb621d26",
+      "disposition": "minor_error",
+      "reason": "'riechen nach' requires 'Wonach riecht', not 'Woran riecht'; answer is correct."
+    },
+    {
+      "id": "item-90b1f676ad1f691e",
+      "disposition": "minor_error",
+      "reason": "'La comida está deliciosa' is equally (often more) natural for a specific dish; sentence is ambiguous for a ser/estar drill and should be reworded."
+    },
+    {
+      "id": "item-928d53d3fd087762",
+      "disposition": "major_error",
+      "reason": "Louis XVI's oath at the Fête de la Fédération was July 14, 1790, and he formally accepted the Constitution on September 14, 1791; July 9, 1790 is wrong."
+    },
+    {
+      "id": "item-92bd183aaa704fd1",
+      "disposition": "minor_error",
+      "reason": "filter() does not necessarily reduce array size; should say 'may reduce' / 'keeps only elements passing a test' versus map transforming each element."
+    },
+    {
+      "id": "item-9480e35d01fa5ee5",
+      "disposition": "major_error",
+      "reason": "Prompt requires front to be the noun without article; front 'die Tür' reveals the article, defeating the card's purpose."
+    },
+    {
+      "id": "item-94c74df99acfc58a",
+      "disposition": "minor_error",
+      "reason": "Back never names the verb 'ir' (the question asked which verb); forms fui/fueron are correct. Should also note ir/ser share these forms."
+    },
+    {
+      "id": "item-97fb157ca90311f5",
+      "disposition": "judge_false_positive",
+      "reason": "-é is the correct yo preterite ending for -ar verbs; phrasing is slightly odd but acceptable."
+    },
+    {
+      "id": "item-98ef97c333deed9e",
+      "disposition": "minor_error",
+      "reason": "'Was riecht die Straße' is ungrammatical for the intended meaning; should be 'Wonach riecht'. Answer correct."
+    },
+    {
+      "id": "item-994184e85b65fcc1",
+      "disposition": "minor_error",
+      "reason": "Front is garbled ('um Uhr?' missing 'sieben'; 'Nach was' should be 'Wonach'); answer is correct and the fix is trivial."
+    },
+    {
+      "id": "item-997310c5324322f3",
+      "disposition": "judge_false_positive",
+      "reason": "reduce() is the method whose callback takes an accumulator; correct and concise."
+    },
+    {
+      "id": "item-99de7161bb21cc5e",
+      "disposition": "minor_error",
+      "reason": "Opening sentence 'A third spans four semitones' is a false generalization, though the card then correctly distinguishes major (4) and minor (3); first sentence should be removed."
+    },
+    {
+      "id": "item-9bcf58ceeb251000",
+      "disposition": "major_error",
+      "reason": "Front asks what caused the Reign of Terror, but the back gives dates and leader, never a cause; answers a different question."
+    },
+    {
+      "id": "item-9c6aabf2616125b9",
+      "disposition": "minor_error",
+      "reason": "Front is malformed ('um Uhr' missing 'sieben') and 'Nach was' is colloquial (better 'Wonach'); answer is correct and the question is still understandable."
+    },
+    {
+      "id": "item-9fb6b2baa1f6bcbf",
+      "disposition": "major_error",
+      "reason": "Prompt requires the front to be the noun without article; 'die Lampe' gives away the article and violates the requested card format."
+    },
+    {
+      "id": "item-a02afcd451f1352f",
+      "disposition": "minor_error",
+      "reason": "Core answer correct but 'pass true test' is garbled wording; should read 'pass a test (callback returns true)'."
+    },
+    {
+      "id": "item-a13f9f5896555efd",
+      "disposition": "minor_error",
+      "reason": "'5 letters above' is ambiguous (C to G is the 5th letter counting inclusively, 4 letters above) and omits the 7-semitone/perfect qualification; usable but imprecise."
+    },
+    {
+      "id": "item-a50c1b0df7b046b5",
+      "disposition": "major_error",
+      "reason": "Front is an English sentence, but the prompt requires a Spanish sentence with a blank; also the reason is two words instead of one."
+    },
+    {
+      "id": "item-a6fc5321165a25cf",
+      "disposition": "minor_error",
+      "reason": "Front asks for the first argument only (accumulator), but back lists two; content is correct but question/answer scope mismatch should be fixed."
+    },
+    {
+      "id": "item-a9c78230a92743d2",
+      "disposition": "major_error",
+      "reason": "Front must be the bare noun (e.g. 'Stuhl'); 'Was ist der Stuhl?' includes the article, defeating the card's purpose and violating the requested format."
+    },
+    {
+      "id": "item-ab72b64d40bf37e0",
+      "disposition": "minor_error",
+      "reason": "1799 coup of 18 Brumaire is correct, but 'ending the Revolution's radical phase' is imprecise—the radical phase ended with Thermidor in 1794; the coup is usually said to end the Revolution itself."
+    },
+    {
+      "id": "item-ac142be230b5ce1a",
+      "disposition": "minor_error",
+      "reason": "Comprehension answer is right, but 'wovon duftet' / 'vom frischen Brot' uses the wrong preposition (correct: 'wonach' / 'nach frischem Brot'), poor modeling for A2 learners."
+    },
+    {
+      "id": "item-b396da3679e4621d",
+      "disposition": "major_error",
+      "reason": "Not a sentence from the text as required, and 'im Wochenende' is ungrammatical German (should be 'am Wochenende'); violates card type and teaches an error."
+    },
+    {
+      "id": "item-b3abb526e55f55b4",
+      "disposition": "minor_error",
+      "reason": "4 semitones is correct, but the parenthetical '(whole steps)' is misleading—4 semitones equals 2 whole steps; front wording is also clumsy."
+    },
+    {
+      "id": "item-b464500922885cdd",
+      "disposition": "major_error",
+      "reason": "Teaches a false rule: 'drop -r' would yield 'hablaé'; the correct rule is to drop the -ar ending before adding -é, -aste, etc."
+    },
+    {
+      "id": "item-b601145c9ba87b2a",
+      "disposition": "judge_false_positive",
+      "reason": "'comí' is the correct yo preterite of comer; cloze format is clear and within limits."
+    },
+    {
+      "id": "item-b67ede79deedf909",
+      "disposition": "judge_false_positive",
+      "reason": "Front is the bare noun and back gives correct article and plural ('der Stuhl, die Stühle'); fully matches the prompt format."
+    },
+    {
+      "id": "item-b68746b8db34851e",
+      "disposition": "major_error",
+      "reason": "C up to A is a major sixth, not a minor third; the front also leaks the answer in parentheses."
+    },
+    {
+      "id": "item-b6cf1047739df3f5",
+      "disposition": "minor_error",
+      "reason": "Answer is correct, but 'Wie spät duftet...' is unidiomatic German; should be 'Wann' or 'Um wie viel Uhr'."
+    },
+    {
+      "id": "item-b6e435971be39a13",
+      "disposition": "major_error",
+      "reason": "Back 'Um Uhr Uhr.' is malformed and omits the answer (sieben)."
+    },
+    {
+      "id": "item-b6f886bc4977fff0",
+      "disposition": "minor_error",
+      "reason": "Sept 21, 1792 is the abolition of the monarchy by the Convention; 'overthrow' is usually dated Aug 10, 1792. Wording should say 'abolition'."
+    },
+    {
+      "id": "item-b774f4555acafd5d",
+      "disposition": "judge_false_positive",
+      "reason": "Second argument of reduce() is indeed the optional initialValue for the accumulator; correct and within limits."
+    },
+    {
+      "id": "item-b78329b6060af3c6",
+      "disposition": "judge_false_positive",
+      "reason": "Declaration of the Rights of Man and of the Citizen was adopted August 26, 1789; correct."
+    },
+    {
+      "id": "item-bdf5ef656030e109",
+      "disposition": "major_error",
+      "reason": "Prompt requires the German verb plus example on the front and the verb's English translation on the back; card gives only a sentence and sentence translation, no verb card."
+    },
+    {
+      "id": "item-bee7debb7531efcb",
+      "disposition": "major_error",
+      "reason": "'Hable' lacks the accent; 'hablé' is the preterite, 'hable' is subjunctive—teaches a wrong form. Also lists conjugations rather than the endings asked for."
+    },
+    {
+      "id": "item-bfb20fddd2b47746",
+      "disposition": "major_error",
+      "reason": "'Ich warte am Bus' does not mean 'at the bus stop' (an der Bushaltestelle); front also omits the required verb listing, and sentence is A1 not B1."
+    },
+    {
+      "id": "item-c0161a8540140f1d",
+      "disposition": "minor_error",
+      "reason": "Answer correct, but front should be 'Wonach duftet...' — 'Was duftet' is ungrammatical for this meaning."
+    },
+    {
+      "id": "item-c190c2901f56d0d2",
+      "disposition": "major_error",
+      "reason": "Front is an English sentence, not a Spanish sentence with a blank as required."
+    },
+    {
+      "id": "item-c27f009709d3c924",
+      "disposition": "minor_error",
+      "reason": "Chloroplasts is correct, but 'specifically the thylakoid membranes' ignores the Calvin cycle in the stroma; should be qualified."
+    },
+    {
+      "id": "item-c5984ff4d0f12105",
+      "disposition": "major_error",
+      "reason": "Question is nonsensical and the back does not answer it; it just describes a perfect fifth."
+    },
+    {
+      "id": "item-c6883d09ba6f76e2",
+      "disposition": "minor_error",
+      "reason": "reduce() requires only one argument (the callback); back says 'two' but then calls the second optional—self-contradictory wording needs fixing."
+    },
+    {
+      "id": "item-c73b4093142c9c2d",
+      "disposition": "judge_false_positive",
+      "reason": "Valid cloze from the text with correct missing word; '__' vs '___' is harmless."
+    },
+    {
+      "id": "item-c7bac7b5aa8978a4",
+      "disposition": "minor_error",
+      "reason": "'es' is correct, but reason should be 'date/day' and be one word; 'specific time' is vague and two words."
+    },
+    {
+      "id": "item-c809268058522247",
+      "disposition": "minor_error",
+      "reason": "Date is correct, but the execution (Jan 1793) preceded the Reign of Terror (Sept 1793–July 1794); the added qualifier is inaccurate and should be removed."
+    },
+    {
+      "id": "item-c83bbd12cfc1a977",
+      "disposition": "judge_false_positive",
+      "reason": "Yo escribí una carta is a correct, natural beginner preterite example; slight openness of the blank is acceptable."
+    },
+    {
+      "id": "item-c99a8d490d28be68",
+      "disposition": "judge_false_positive",
+      "reason": "Verbatim sentence from the text with a correct single-word cloze (Zug); meets all constraints."
+    },
+    {
+      "id": "item-c9b80552bb5f8646",
+      "disposition": "major_error",
+      "reason": "Reverses direction to English-to-German and the example sentence on the front reveals the answer ('erinnere'), so the card cannot test anything as written."
+    },
+    {
+      "id": "item-cab2943cdadc3cd1",
+      "disposition": "minor_error",
+      "reason": "Answer Freitag is correct, but the sentence is a paraphrase, not a sentence from the text as the prompt requires."
+    },
+    {
+      "id": "item-cbe8b91bf68e4531",
+      "disposition": "minor_error",
+      "reason": "Translation is correct, but the example sentence uses 'beginnt' rather than the target verb 'anfangen' (should be 'fängt ... an')."
+    },
+    {
+      "id": "item-cde4311488cf671f",
+      "disposition": "major_error",
+      "reason": "Front is an English sentence, not the required Spanish sentence with a blank; violates the requested card type."
+    },
+    {
+      "id": "item-ce9f14a845ac47c3",
+      "disposition": "judge_false_positive",
+      "reason": "Valid A2 German comprehension question with an accurate, concise answer summarizing the text."
+    },
+    {
+      "id": "item-cf214d76315ba919",
+      "disposition": "major_error",
+      "reason": "Front states the answer ('to make') in the question, lacks the required example sentence, and 'machen' is not a B1 verb; unusable as written."
+    },
+    {
+      "id": "item-cf3bcb00651d7262",
+      "disposition": "minor_error",
+      "reason": "Answer 1789 is correct, but the front is ungrammatical ('did ... adopt' should be 'was ... adopted')."
+    },
+    {
+      "id": "item-cf4490605938e2cc",
+      "disposition": "minor_error",
+      "reason": "Core idea (completed past actions) is right, but 'with no ongoing effect' is a misleading qualifier for beginners and should be dropped."
+    },
+    {
+      "id": "item-cfeb9d500fc024e0",
+      "disposition": "major_error",
+      "reason": "Front has no blank; it gives the full sentence 'Hoy es viernes', violating the required fill-in format."
+    },
+    {
+      "id": "item-d10c207d1fa5195d",
+      "disposition": "minor_error",
+      "reason": "Answer correct, but front has a grammar error ('in den Satz' should be 'im Satz') and 'lesen' is A1 rather than B1."
+    },
+    {
+      "id": "item-d1c7ffa5306af2d0",
+      "disposition": "major_error",
+      "reason": "Front is nonsensical ('King Louis XVI execute Louis XVI'), presenting a false premise; malformed despite correct date."
+    },
+    {
+      "id": "item-d26ae66f27f8510c",
+      "disposition": "minor_error",
+      "reason": "Translation correct, but 'Welcher Bedeutung' is ungrammatical (should be 'Welche Bedeutung') and 'kommen' is A1 rather than B1."
+    },
+    {
+      "id": "item-d6c7234069da1ca6",
+      "disposition": "major_error",
+      "reason": "Front includes the English translation of the example ('She takes part'), giving away the answer; defeats the German-to-English recall purpose."
+    },
+    {
+      "id": "item-d72adc0490be8a71",
+      "disposition": "minor_error",
+      "reason": "Rule is correct (stem = infinitive minus -ar/-er/-ir) but 'Infinitive - ar/er/ir' is ambiguous notation and the front is vague; wording should be clarified."
+    },
+    {
+      "id": "item-d78fa1c01a156bf7",
+      "disposition": "minor_error",
+      "reason": "Back is correct but answers 'what' rather than 'how'; it never mentions the accumulator/callback mechanism the front asks about."
+    },
+    {
+      "id": "item-dce262b7608be3b2",
+      "disposition": "judge_false_positive",
+      "reason": "Regular -er/-ir verbs take -ió for él/ella in the preterite; correct and clear."
+    },
+    {
+      "id": "item-de4299c81d499b17",
+      "disposition": "major_error",
+      "reason": "'My Bonnie' opens with a major sixth, not a perfect fourth; the back is also a meta non-answer ('not in this set')."
+    },
+    {
+      "id": "item-de4563f7d6511b45",
+      "disposition": "judge_false_positive",
+      "reason": "'hablaste' is the correct tú preterite form of hablar."
+    },
+    {
+      "id": "item-de70bd9cfc9f63c7",
+      "disposition": "judge_false_positive",
+      "reason": "Question and answer match the text (street smells of fresh bread at seven); acceptable A2 comprehension card."
+    },
+    {
+      "id": "item-de9a51d4d9ac5c4e",
+      "disposition": "major_error",
+      "reason": "'Happy Birthday' begins with a major second, not an octave; the octave leap comes later in the song. Factually wrong."
+    },
+    {
+      "id": "item-df58c875d16799b1",
+      "disposition": "major_error",
+      "reason": "'felices' is the textbook estar example (están felices); teaching 'son - permanent trait' for this ambiguous sentence misleads learners on the core ser/estar distinction."
+    },
+    {
+      "id": "item-e108e878522beb22",
+      "disposition": "minor_error",
+      "reason": "Front omits the required German verb (hören) and only gives the sentence; hören is also A1 rather than B1. Translation is correct."
+    },
+    {
+      "id": "item-e17d17c64c42d514",
+      "disposition": "judge_false_positive",
+      "reason": "'der Tisch, die Tische' is correct and matches the requested format."
+    },
+    {
+      "id": "item-e1cdc52ec078b7d1",
+      "disposition": "minor_error",
+      "reason": "Front lacks the bare German verb (einkaufen) required by the prompt; translation itself is fine."
+    },
+    {
+      "id": "item-e4e63f63254bc3d3",
+      "disposition": "minor_error",
+      "reason": "Asks for an organelle but answers with thylakoid membranes (a structure within the chloroplast); location is right but the question/answer mismatch should be fixed."
+    },
+    {
+      "id": "item-e5e275ce99063cc2",
+      "disposition": "judge_false_positive",
+      "reason": "Correct cloze taken verbatim from the text; 'freut' is the missing word."
+    },
+    {
+      "id": "item-e68d4a72b83b16ec",
+      "disposition": "major_error",
+      "reason": "Louis XVI was executed on January 21, 1793, not July 14, 1793. Factually wrong date."
+    },
+    {
+      "id": "item-e7799e17921ee732",
+      "disposition": "minor_error",
+      "reason": "Content is correct but the deck topic requires dates and the card gives none (January 21, 1793)."
+    },
+    {
+      "id": "item-e8d4abd1e6ca5ae9",
+      "disposition": "major_error",
+      "reason": "'vivimos' is correct, but the back claims an 'irregular stem'; vivir is fully regular in the preterite, so the card teaches a false rule."
+    },
+    {
+      "id": "item-e9c8d222a96c3d34",
+      "disposition": "minor_error",
+      "reason": "Date and method correct, but Louis XVI's execution (Jan 1793) preceded the Reign of Terror (Sept 1793–July 1794, as the set's own card implies); drop the 'during the Reign of Terror' qualifier."
+    },
+    {
+      "id": "item-ee89aaf675a4fce6",
+      "disposition": "minor_error",
+      "reason": "22 August 1795 is the date the Convention adopted the Constitution of Year III; the Directory actually took office on 2 November 1795. 'After the Convention' is vague. Needs clarification."
+    },
+    {
+      "id": "item-ef73bbeeaaa8d8d1",
+      "disposition": "major_error",
+      "reason": "Violates requested format: no German verb headword given, only a sentence; back lacks the verb translation and 'I buy a bread' is ungrammatical English (bread is uncountable)."
+    },
+    {
+      "id": "item-ef86cca8b6cde997",
+      "disposition": "minor_error",
+      "reason": "Correct date and method, but the execution in January 1793 predates the Reign of Terror (1793–1794 per the set's own card); qualifier should be removed."
+    },
+    {
+      "id": "item-f0cd8b05a160c40b",
+      "disposition": "minor_error",
+      "reason": "Answer correct, but front is ungrammatical ('When did King Louis XVI behead?'); should be 'When was Louis XVI beheaded?'"
+    },
+    {
+      "id": "item-f1fc1fab08b4bc90",
+      "disposition": "major_error",
+      "reason": "filter() does not return a boolean for each element; it returns a new array. The callback returns booleans. The front mischaracterizes the method and would teach a false model; also overlaps card 2."
+    },
+    {
+      "id": "item-f2f5f755ef25dc60",
+      "disposition": "major_error",
+      "reason": "Back does not answer the question asked ('how many notes'); it gives a definition instead of a count (8 scale degrees / 12 semitones). Mismatched front/back."
+    },
+    {
+      "id": "item-f66eff9e9b68cd76",
+      "disposition": "minor_error",
+      "reason": "-amos is correct for -ar verbs, but examples 'comimos, vivimos' are -er/-ir verbs with -imos, contradicting the answer; examples should be -ar verbs only."
+    },
+    {
+      "id": "item-fefcf6972c8820fc",
+      "disposition": "major_error",
+      "reason": "'abmachen' means to arrange/agree on (einen Termin abmachen = to arrange an appointment) or to remove; 'to cancel' is absagen. Translation is wrong."
+    },
+    {
+      "id": "item-ff59faa2cbaf43b7",
+      "disposition": "minor_error",
+      "reason": "Core answer correct, but '(der Backer)' is a misspelled, meaningless addition; 'Er ist Bäcker' would be more natural."
+    },
+    {
+      "id": "item-ffbde208be66d35b",
+      "disposition": "minor_error",
+      "reason": "Core distinction usable, but '3 note steps'/'5 note steps' is imprecise and could be misread as whole steps; should say spans 3 vs 5 scale degrees (letter names)."
+    },
+    {
+      "id": "item-fffc6848cb0b3d3b",
+      "disposition": "minor_error",
+      "reason": "Answer correct, but front has a grammar error: 'während der Stadt' should be 'während die Stadt noch schläft'."
+    }
+  ],
+  "updatedAt": "2026-08-24T14:31:22.147Z",
+  "lastUsage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5461,
+    "cache_read_input_tokens": 533,
+    "output_tokens": 2607,
+    "output_tokens_details": {
+      "thinking_tokens": 1447
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 5461,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 2607,
+        "cache_read_input_tokens": 533,
+        "cache_creation_input_tokens": 5461,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 5461
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "lastModelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 4726,
+      "outputTokens": 14,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.004796,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000,
+      "canonicalModel": "claude-haiku-4-5",
+      "provider": "firstParty"
+    },
+    "claude-fable-5": {
+      "inputTokens": 2,
+      "outputTokens": 2607,
+      "cacheReadInputTokens": 533,
+      "cacheCreationInputTokens": 5461,
+      "webSearchRequests": 0,
+      "costUSD": 0.24012299999999998,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "canonicalModel": "claude-fable-5",
+      "provider": "firstParty"
+    }
+  }
+}

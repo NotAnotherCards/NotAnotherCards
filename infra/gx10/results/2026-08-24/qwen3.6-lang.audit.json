@@ -1,0 +1,34 @@
+[
+ {
+  "topic": "de-articles",
+  "run": 3,
+  "front": "Tisch",
+  "back": "der Tisch, die Tische",
+  "verdict": "error",
+  "judgeTail": "ake an umlaut in the plural (i → ü), and omitting this diacritical mark makes the form incorrect. While the choice of definite articles (\"der\"/\"die\") and the overall structure follow standard flashcard conventions, the missing umlaut violates the explicit spelling rule for this word.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 3,
+  "front": "erklären: Kannst du das erklären?",
+  "back": "explain: Can you explain that?",
+  "verdict": "error",
+  "judgeTail": "standard pedagogical flashcard design. Additionally, German infinitives should consistently be rendered with \"to\" in English (*to explain* rather than just *explain*). For strict instructional clarity, these should be separated into distinct cards or unified under one scope per card.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-cloze",
+  "run": 2,
+  "front": "Die Großmutter freut sich immer über Besuch und __ dann Kaffee.",
+  "back": "kocht",
+  "verdict": "grounding",
+  "detail": "No"
+ },
+ {
+  "topic": "de-cloze",
+  "run": 2,
+  "front": "Lena fährt zu ihrer __mutter.",
+  "back": "Groß",
+  "verdict": "grounding",
+  "detail": "No"
+ }
+]
