@@ -1,0 +1,42 @@
+[
+ {
+  "topic": "spanish",
+  "run": 1,
+  "front": "Form preterite of 'vivir' for nosotros",
+  "back": "nosotros vivimos. Irregular stem viv- + imos.",
+  "verdict": "error",
+  "judgeTail": " *-imos* is simply the standard thematic vowel for -ir verbs (distinguishing it from the *-amos* ending of -ar verbs), not an irregular feature. By falsely labeling a fully regular conjugation as irregular, the card teaches an incorrect grammatical rule and risks misleading learners.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 2,
+  "front": "Translate to Spanish: She ate yesterday",
+  "back": "Ella comió ayer. Comer is irregular.",
+  "verdict": "error",
+  "judgeTail": "andard regular verb across all tenses. Stating that it is irregular misleads learners and violates the requirement to teach the correct grammatical rule. The card should either omit the note or correctly state that *comer* follows regular preterite conjugation patterns for -er verbs.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 5,
+  "front": "How do you form preterite of regular -ar verb comer?",
+  "back": "Comí, comiste, comió, comimos, comisteis, comieron",
+  "verdict": "error",
+  "judgeTail": " accent patterns and endings to use. While the spelling, accents, and word forms in the answer are accurate, the flashcard fails pedagogically because it silently accepts a false grammatical premise rather than correcting it or aligning the question with the actual rule being tested.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 5,
+  "front": "Preterite of tener, 'you' formal?",
+  "back": "usted tuvo. Preterite is tuvo, tuviste, tuvo.",
+  "verdict": "error",
+  "judgeTail": " reflect the conjugation pattern and explicitly teach the rule, rather than providing a disjointed and incomplete list. While spelling, accents, and word choice on the card are technically fine, its pedagogical content is flawed and violates the requirement to teach the correct rule.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 4,
+  "front": "What is an octave in terms of pitch?",
+  "back": "Same note name, one or two octaves higher/lower.",
+  "verdict": "error",
+  "judgeTail": "2:1 frequency ratio or eight scale degrees). The phrasing reads more like a transposition instruction or example rather than a clear definition of what an octave *is*. Minor wording differences are acceptable, but this goes beyond that by introducing logical and factual inaccuracies.\n\nVERDICT: error"
+ }
+]

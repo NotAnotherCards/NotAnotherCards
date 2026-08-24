@@ -1,0 +1,58 @@
+[
+ {
+  "topic": "de-articles",
+  "run": 3,
+  "front": "What is the German word for 'sofa'?",
+  "back": "der Sofa, die Sofas",
+  "verdict": "error",
+  "judgeTail": "ously neuter in standard German (*das*), not masculine (*der*). This error directly contradicts the established gender rule for loanwords ending in *-o*, which are almost exclusively neuter. Teaching *der* instead of *das* violates core grammatical accuracy and will mislead learners.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-articles",
+  "run": 4,
+  "front": "Nenne das 'Bett' im Singular.",
+  "back": "das Bett, die Betten",
+  "verdict": "error",
+  "judgeTail": "gn, answering outside the requested parameter violates coherence and precision. Learners must be trained to match the exact grammatical number specified in the prompt; adding unsolicited information blurs the focus and does not directly teach the targeted rule for this specific item.\n\nVERDICT: error"
+ },
+ {
+  "topic": "es-ser-estar",
+  "run": 2,
+  "front": "Los niños ___ en el jardín.",
+  "back": "están - temporary location",
+  "verdict": "error",
+  "judgeTail": "ocations would require *ser*. Location in Spanish unconditionally triggers *estar*. While the verb choice is accurate, the explanatory tag misrepresents a core conjugation rule. Minor wording flexibility does not apply when the stated rule contradicts standard grammatical principles.\n\nVERDICT: error"
+ },
+ {
+  "topic": "es-ser-estar",
+  "run": 3,
+  "front": "Hoy ___ viernes.",
+  "back": "es - specific time",
+  "verdict": "error",
+  "judgeTail": "pically refers to clock hours or temporary temporal contexts). While the word itself is correctly spelled, uses proper capitalization, and contains no invented terms, the rule it attempts to teach is inaccurate. This will confuse learners regarding when to apply *ser* versus *estar*.\n\nVERDICT: error"
+ },
+ {
+  "topic": "es-ser-estar",
+  "run": 5,
+  "front": "Hoy es viernes.",
+  "back": "es - specific time",
+  "verdict": "error",
+  "judgeTail": " it with \"- specific time\". Days of the week do not fall under the \"time\" category; that label belongs exclusively to clock hours (e.g., *Son las tres*). Using \"specific time\" to explain why *ser* is used for *viernes* teaches an inaccurate grammatical rule and will mislead learners.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 2,
+  "front": "Wie sagt man auf Deutsch 'to turn' mit einem Beispielsatz?",
+  "back": "drehen - Ich drehe den Stuhl um.",
+  "verdict": "error",
+  "judgeTail": "hange the example sentence to exclude the prefix (e.g., *Ich drehe den Stuhl*) if the goal is simply to teach \"drehen\".\n\nBy listing only \"drehen\" while providing an example that relies entirely on the prefix \"um\", the card creates a mismatch between the vocabulary item and its usage.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 2,
+  "front": "Wie sagt man auf Deutsch 'to involve' mit einem Beispielsatz?",
+  "back": "betreffen - Dieses Buch betrifft alle.",
+  "verdict": "error",
+  "judgeTail": "slung für Englischlernende propagiert. Bei Verben sind Artikel/Plural nicht anwendbar, doch die falsche Übersetzung allein reicht bereits aus, um das Lernziel zu verfälschen. Zudem fehlen bei einer strikten Prüfung keine weiteren formalen Fehler, aber der didaktische Kern ist falsch.\n\nVERDICT: error"
+ }
+]
