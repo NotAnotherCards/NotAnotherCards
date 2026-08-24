@@ -8,16 +8,25 @@ import {
 } from 'react';
 import type { DatabaseManager } from '@remelondb/core';
 import { DatabaseProvider } from '@remelondb/core/react';
+import {
+  createRunSync,
+  createSyncController,
+  type SyncController,
+} from '@remelondb/core';
 import { authClient } from './auth-client';
 import { createUserDatabaseManager } from './db';
+import { pullChanges, pushChanges } from './sync';
+import { nativeSyncTriggers } from './sync-triggers';
 
 type OwnedManager = {
   userId: string;
   manager: DatabaseManager;
+  syncController: SyncController | null;
 };
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
+  syncController: SyncController | null;
 };
 
 const SessionDatabaseContext = createContext<SessionDatabase | null>(null);
@@ -35,35 +44,51 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
       const owned = ownedManagerRef.current;
       ownedManagerRef.current = null;
       setOwnedManager(null);
+      owned?.syncController?.dispose();
       void owned?.manager.close();
       return;
     }
 
     const manager = createUserDatabaseManager(userId);
-    const owned = { userId, manager };
+    const owned: OwnedManager = { userId, manager, syncController: null };
     ownedManagerRef.current = owned;
     setOwnedManager(owned);
 
-    manager.init().catch((error: unknown) => {
-      if (ownedManagerRef.current === owned) {
-        console.error('opening the offline database failed', error);
-      }
-    });
+    manager
+      .init()
+      .then((database) => {
+        // Sync starts only once this user's database is open, and only if
+        // this session is still the active one.
+        if (ownedManagerRef.current !== owned || !database) return;
+        const controller = createSyncController({
+          runSync: createRunSync({ database, pullChanges, pushChanges }),
+          triggers: nativeSyncTriggers,
+        });
+        owned.syncController = controller;
+        setOwnedManager({ ...owned });
+        controller.start();
+      })
+      .catch((error: unknown) => {
+        if (ownedManagerRef.current === owned) {
+          console.error('opening the offline database failed', error);
+        }
+      });
 
     return () => {
       if (ownedManagerRef.current === owned) {
         ownedManagerRef.current = null;
       }
-      // Not awaited: on an account switch the next effect opens the new
-      // user's file while this one is still closing, which is safe only
-      // because the files differ. Anything that must finish before the
-      // close (aborting an in-flight sync, #148) goes above this line.
+      // Dispose aborts an in-flight sync (#148) and must run before the
+      // close below. The close is not awaited: on an account switch the
+      // next effect opens the new user's file while this one is still
+      // closing, which is safe only because the files differ.
+      owned.syncController?.dispose();
       void manager.close();
     };
   }, [userId]);
 
-  const activeManager =
-    ownedManager?.userId === userId ? ownedManager.manager : null;
+  const active = ownedManager?.userId === userId ? ownedManager : null;
+  const activeManager = active?.manager ?? null;
   // Render the tree either way. The manager is created in an effect, so an
   // authenticated first paint has no manager yet; blanking here would unmount
   // the navigator, including the unauthenticated screens. Consumers reach the
@@ -75,7 +100,12 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <SessionDatabaseContext.Provider value={{ manager: activeManager }}>
+    <SessionDatabaseContext.Provider
+      value={{
+        manager: activeManager,
+        syncController: active?.syncController ?? null,
+      }}
+    >
       {content}
     </SessionDatabaseContext.Provider>
   );
