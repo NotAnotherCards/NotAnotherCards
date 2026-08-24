@@ -2,11 +2,10 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
-import { useEffect } from 'react';
-import { manager } from '@/lib/db';
 import { DatabaseBanner } from '@/components/database-banner';
 import { useColorScheme } from 'nativewind';
 import { applySavedThemePreference, navigationColors } from '@/lib/theme';
+import { SessionDatabaseProvider } from '@/lib/database-provider';
 
 // Before first render so the saved theme never flashes the wrong scheme.
 applySavedThemePreference();
@@ -15,18 +14,8 @@ export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const nav = navigationColors[colorScheme === 'dark' ? 'dark' : 'light'];
 
-  useEffect(() => {
-    if (manager.state.status === 'idle' || manager.state.status === 'error') {
-      // The banner shows the failure to the user; log it too, otherwise the
-      // reason is invisible when debugging on a device.
-      manager.init().catch((error: unknown) => {
-        console.error('opening the offline database failed', error);
-      });
-    }
-  }, []);
-
   return (
-    <>
+    <SessionDatabaseProvider>
       <DatabaseBanner />
       <Stack
         screenOptions={{
@@ -46,6 +35,6 @@ export default function RootLayout() {
         <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
       </Stack>
       <StatusBar style="auto" />
-    </>
+    </SessionDatabaseProvider>
   );
 }

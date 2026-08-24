@@ -10,6 +10,8 @@ export default function Dashboard() {
   const router = useRouter();
   const { data: session, isPending, error, refetch } = authClient.useSession();
 
+  // SessionDatabaseProvider closes the offline database when the session
+  // goes away; nothing to do here beyond signing out.
   const onLogout = async () => {
     try {
       await authClient.signOut();
