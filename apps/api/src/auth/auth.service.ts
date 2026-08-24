@@ -24,28 +24,43 @@ export class AuthService {
     private readonly db: NodePgDatabase<typeof schema>,
     private readonly configService: ConfigService,
   ) {
+    const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    const googleClientSecret = this.configService.get<string>(
+      'GOOGLE_CLIENT_SECRET',
+    );
+    const facebookClientId =
+      this.configService.get<string>('FACEBOOK_CLIENT_ID');
+    const facebookClientSecret = this.configService.get<string>(
+      'FACEBOOK_CLIENT_SECRET',
+    );
+
+    const socialProviders: Record<
+      string,
+      { clientId: string; clientSecret: string }
+    > = {};
+    if (googleClientId && googleClientSecret) {
+      socialProviders.google = {
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      };
+    }
+    if (facebookClientId && facebookClientSecret) {
+      socialProviders.facebook = {
+        clientId: facebookClientId,
+        clientSecret: facebookClientSecret,
+      };
+    }
+
     const auth = betterAuth({
       database: drizzleAdapter(this.db, {
         provider: 'pg',
       }),
-      socialProviders: {
-        google: {
-          clientId: configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
-          clientSecret: configService.getOrThrow<string>(
-            'GOOGLE_CLIENT_SECRET',
-          ),
-        },
-        facebook: {
-          clientId: configService.getOrThrow<string>('FACEBOOK_CLIENT_ID'),
-          clientSecret: configService.getOrThrow<string>(
-            'FACEBOOK_CLIENT_SECRET',
-          ),
-        },
-      },
+      socialProviders:
+        Object.keys(socialProviders).length > 0 ? socialProviders : undefined,
       account: {
         accountLinking: {
           enabled: true,
-          trustedProviders: ['google', 'facebook'],
+          trustedProviders: Object.keys(socialProviders),
         },
       },
       emailAndPassword: {

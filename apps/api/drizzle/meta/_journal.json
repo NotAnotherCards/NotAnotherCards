@@ -50,6 +50,13 @@
       "when": 1786823324295,
       "tag": "0006_outstanding_synch",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787483793289,
+      "tag": "0007_oval_lilith",
+      "breakpoints": true
     }
   ]
 }
