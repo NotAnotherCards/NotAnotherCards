@@ -66,6 +66,8 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
         targetLanguageId: null,
       },
     },
+    // Still needed on 0.2.0: neither a bare assignment nor wrapping each
+    // table in `drizzleSyncTable` type-checks against our concrete
   } as unknown as DrizzleStoreOptions<string>['tables'];
 
   const store = withSyncCascadingDeletes(
