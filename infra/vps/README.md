@@ -11,12 +11,15 @@ in [`docs/deployment.md`](../../docs/deployment.md).
 | Item                 | Value                                                     |
 | -------------------- | --------------------------------------------------------- |
 | Public application   | `https://app.notanothercards.com`                         |
+| Monitoring Grafana   | `https://grafana.notanothercards.com`                     |
 | VPS IPv4             | `169.58.127.208`                                          |
 | VPS IPv6             | `2a02:c207:3020:2790::1`                                  |
 | Production checkout  | `/opt/notanothercards`                                    |
 | Runtime environment  | `/opt/notanothercards/.env`                               |
 | Host Nginx site      | `/etc/nginx/sites-available/app.notanothercards.com.conf` |
+| Host Nginx Grafana   | `/etc/nginx/sites-available/grafana.notanothercards.com.conf` |
 | Compose files        | `docker-compose.yml` and `docker-compose.production.yml`  |
+| Monitoring Compose   | `infra/monitoring/docker-compose.yml`                     |
 | Deployment account   | `deploy` (non-human, key-only)                            |
 | GitHub environment   | `production`                                              |
 | Public inbound ports | TCP 22, 80, and 443 only                                  |

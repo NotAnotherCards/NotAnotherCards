@@ -146,7 +146,9 @@ describePostgres('client-server sync, end to end', () => {
     await syncClient(a, cookie);
     await syncClient(b, cookie);
     const onB = await decks(b).fetch();
-    expect(onB.map((record) => record.title)).toEqual(['E2E Spanish']);
+    expect(
+      onB.map((record) => (record as unknown as { title: string }).title),
+    ).toEqual(['E2E Spanish']);
 
     // delete on B, tombstone reaches A
     await b.write(async () => {

@@ -14,6 +14,7 @@ import { aiUsage, DeckGenerationPayload } from './schema';
 import { AiGatewayService, AiParseError } from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
+import { MetricsService } from '../metrics/metrics.service';
 
 interface ClaimedJobRow {
   id: string;
@@ -37,6 +38,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly db: NodePgDatabase<Record<string, unknown>>,
     private readonly aiGateway: AiGatewayService,
     private readonly config: ConfigService,
+    private readonly metricsService: MetricsService,
   ) {
     this.pollIntervalMs = Number(
       this.config.get<string>('AI_WORKER_POLL_INTERVAL_MS') ?? 2000,
@@ -174,6 +176,12 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         });
       });
 
+      this.metricsService.aiJobsCompletedTotal.inc();
+      this.metricsService.aiTokensConsumedTotal.inc(
+        { model: inference.model },
+        inference.usage.totalTokens,
+      );
+
       this.logger.log(
         `Job ${job.id} completed (${inference.cards.length} cards, ${inference.usage.totalTokens} tokens)`,
       );
@@ -210,6 +218,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (isFinalAttempt) {
+        this.metricsService.aiJobsFailedTotal.inc();
+
         await this.db.execute(sql`
           UPDATE ai_generation_jobs
           SET status = 'failed',

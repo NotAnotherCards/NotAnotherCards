@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # NestJS API application metrics (/metrics)
+  - job_name: 'api-vps'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+
+  # VPS host hardware metrics (CPU, RAM, Disk)
+  - job_name: 'node-vps'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # PostgreSQL database metrics
+  - job_name: 'postgres-vps'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # LiteLLM AI Gateway metrics on GX10 (scraped over Tailscale)
+  - job_name: 'litellm-gx10'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['100.64.0.1:4000']
+
+  # NVIDIA DCGM GPU exporter on GX10 (GPU utilization, memory, temperature)
+  - job_name: 'dcgm-gpu-gx10'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['100.64.0.1:9400']
+
+  # GX10 host hardware metrics
+  - job_name: 'node-gx10'
+    static_configs:
+      - targets: ['100.64.0.1:9100']
