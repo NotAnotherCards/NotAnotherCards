@@ -19,6 +19,15 @@ model_list:
       model: ollama_chat/mistral-small3.2
       api_base: http://ollama:11434
 
+  # comparison only, not for generation: 2.5x slower than qwen and 13
+  # confirmed errors per 30 sets vs qwen's 5 (model report addendum).
+  # Send reasoning_effort "none"; "low" generates more reasoning than
+  # the default.
+  - model_name: qwen3.8
+    litellm_params:
+      model: ollama_chat/qwen3.8:27b
+      api_base: http://ollama:11434
+
   # grounding check: "Document: ...\nClaim: ..." -> yes/no
   - model_name: fact-check
     litellm_params:

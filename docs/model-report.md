@@ -480,3 +480,89 @@ entries across all models (8 of 57) are exactly why the pipeline
 recommendation says regenerate flagged cards instead of trusting judge
 verdicts: the judge is a filter with noise in both directions, not an
 oracle.
+
+## Addendum: qwen3.8 (measured 2026-08-22, ollama 0.32.15)
+
+qwen3.8:27b refuses to pull on ollama 0.32.5 ("requires a newer version
+of Ollama"), so the box moved to 0.32.15 for this round. Single runs per topic rather than the main table's
+three to five, so latencies are comparable but the error columns are not:
+factual accuracy was not judged in the latency round; the accuracy row
+below repeats the main table's protocol.
+
+| config | sets | format ok | median s | tok/s | confirmed errors |
+|---|---|---|---|---|---|
+| qwen3.6:35b (rerun, effort none) | 6 | 6/6 | 2.8 | ~70 | - |
+| qwen3.8:27b (effort none) | 6 | 6/6 | 7.4 | ~25 | - |
+| qwen3.8:27b (SGLang, NVFP4, MTP) | 6 | 6/6 | 7.0 | ~26 | - |
+| qwen3.8:27b (accuracy run, 30 sets) | 30 | 30/30 | 6.3 | ~25 | 13 |
+
+qwen3.6's rerun matches the main table's 3.0 s, so the ollama upgrade
+changed nothing for the resident models.
+
+The accuracy run used five runs per topic (145 cards), minicheck for the
+German comprehension cards and the qwen-with-thinking judge for the rest,
+every flag reviewed by hand as in the appendix. The judge flagged 16;
+review confirmed 13 and cleared 2 miscalls ("none of map/filter/reduce
+mutates" is correct, and "When the Saints Go Marching In" does open with
+a major third), with 1 borderline counted as an error. Music was the
+weakest topic with 7 confirmed, including "an octave is two semitones"
+and "the perfect fifth is the most stable interval"; Spanish contributed
+5, several garbled or fabricated ("fuié"). At the same 30-set count the
+main table has qwen3.6 at 5, mistral-small at 3, qwen-next-80b at 0 to 1.
+
+**Why the smaller model is slower.** qwen3.6:35b is a mixture-of-experts
+model (`qwen35moe`) that activates a fraction of its weights per token.
+qwen3.8:27b is dense (`qwen35`): every token pays for all 27B parameters.
+The 2.5x throughput gap is architectural. Serving the NVFP4 checkpoint on
+SGLang with MTP speculative decoding, the combination most likely to close
+that gap on GB10 hardware, landed within measurement noise of plain
+ollama Q4_K_M.
+
+**Thinking control depends on the route.** Ollama's own `/v1` endpoint
+silently drops the native `think: false` field, so a client talking to
+ollama directly pays for reasoning tokens that are then discarded: 23 s
+and 524 completion tokens for a five-card set whose answer is 200 tokens.
+Through the LiteLLM gateway the flag works, because the `ollama_chat/`
+provider translates requests to ollama's native endpoint; verified with
+both `think: false` (0 reasoning tokens) and `reasoning_effort: "none"`
+(same result). The main table's nothink rows went through the gateway, so
+they were genuinely nothink. Prefer `reasoning_effort: "none"`: it works
+on both routes and is standard OpenAI-compatible vocabulary. Never use
+`"low"`: through the gateway it produced 3,279 reasoning characters for a
+two-card answer, and directly it produced more reasoning than the default
+on both models (2,500 to 3,300 tokens per set on qwen3.6, ten times the
+answer length). `model-test.mts --effort none` reproduces this;
+`--nothink` works through the gateway and is a no-op against ollama's
+`/v1` directly.
+
+**Verdict.** No slot for qwen3.8, now on accuracy grounds as well as
+speed. It is 2.5x slower than qwen3.6 with the highest confirmed error
+count of any model in the current config: 13 against qwen3.6's 5 and
+mistral-small's 3. The only opening was beating mistral-small on accuracy
+for the queued slot, and it lost by a factor of four. The recommendations
+stand unchanged; the `qwen3.8` gateway alias exists for direct comparison,
+not for generation.
+
+### qwen3.8:27b, effort none (13, from the addendum's accuracy run)
+
+Confirmed:
+
+- "Which pronouns use the same -ar preterite ending as yo and usted?" — false premise: yo takes -é, usted takes -ó; the answer restates a pronoun list.
+- "o stem vowel change for -er verbs" => "u in all persons" — the o=>u change belongs to -ir verbs, third person only.
+- "y stem change for -er verbs" => "i in all persons" — the y-insertion (leyó) is third person of vowel-stem verbs; "i in all persons" describes nothing.
+- "Give one irregular preterite verb ending in -ó" => "Fui, fuié, hube, hubo, dije, puse" — six forms instead of one, and "fuié" is not a Spanish word.
+- "the r ending for -er verbs (yo)" — not a concept; the example (comí) is right but the card teaches confusion.
+- "two gases essential for photosynthesis" => "carbon dioxide and water" — water is not a gas; the premise breaks its own answer.
+- "law abolished in 1789" => "feudalism, by the Declaration of the Rights of Man" — the August Decrees abolished feudalism; the Declaration is a rights charter.
+- "two most stable intervals" => lists three.
+- "one full octave" => "eight scale steps or two semitones" — an octave is 12 semitones; two is a major second.
+- "most stable interval" => "the perfect fifth" — unison/octave are; the fifth is next.
+- "distance between unison and fifth" => "seven diatonic steps or seven letter names" — five letter names (C-G).
+- "perfect fifth in steps" => "seven letter names and five whole steps or seven semitones" — only the semitone count is right; the same sentence contradicts it twice.
+- "identify an octave on a staff" => "one line to the next line above" — that is a third; an octave lands line-to-space four positions up.
+
+Borderline, counted: "folk song with a descending major third" => "Twinkle Twinkle or Mary Had a Little Lamb" — Twinkle opens with a rising fifth; Mary descends stepwise, not by leap.
+
+Judge miscalls, cleared: "which of map/filter/reduce mutates" => "none" (correct; the trick question fooled the judge), and "When the Saints Go Marching In" opening with a major third (it does: do-mi).
+
+The failure mode is confidently structured wrongness in systematic topics (interval arithmetic, conjugation classes): pedagogical phrasing wrapped around an inverted fact, which a learner has no reason to doubt. The famous-facts topics fared better.

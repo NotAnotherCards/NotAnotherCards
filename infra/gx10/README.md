@@ -91,6 +91,7 @@ Which model for what (measured, see
 | `qwen` | default chat and generation | fast with `think: false`; thinking mode is slower, more accurate, and doubles as our reviewer |
 | `qwen-next-80b` | best accuracy, no hurry | ~45 s per answer |
 | `mistral-small` | second opinion, dense-model style | |
+| `qwen3.8` | comparison only, not for generation | dense 27B, 5-9 s per set, 13 confirmed errors per 30 sets vs `qwen`'s 5; send `reasoning_effort: "none"`, never `"low"` (model report addendum) |
 | `fact-check` | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no |
 | `moderation` | content screening | granite guardian risk prompts |
 | `embeddings` | vectors (bge-m3) | embeddings API, not chat |

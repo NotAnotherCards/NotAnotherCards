@@ -29,6 +29,10 @@ const flag = (name: string): string | undefined => {
 const base = flag("--base") ?? "https://ai.dustyway.org/v1";
 const key = flag("--key") ?? process.env.AI_API_KEY ?? "";
 const nothink = args.includes("--nothink");
+// `think` is an ollama-native field; the OpenAI-compatible /v1 endpoint drops
+// it silently, so --nothink does nothing there. reasoning_effort is the /v1
+// control, and it is what litellm and the api gateway can actually send.
+const effort = flag("--effort");
 
 const FORMAT =
   'Reply with only a JSON array, each element {"front": string, "back": string}. ' +
@@ -63,6 +67,7 @@ async function ask(prompt: string): Promise<{ content: string; tokens: number; s
     model,
     messages: [{ role: "user", content: prompt }],
     ...(nothink && { think: false }),
+    ...(effort && { reasoning_effort: effort }),
   };
   const started = performance.now();
   const res = await fetch(`${base}/chat/completions`, {
