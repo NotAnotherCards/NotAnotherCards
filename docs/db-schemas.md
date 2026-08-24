@@ -559,9 +559,14 @@ This lets users edit any card without changing the global card for everyone.
 
 ---
 
-#### `user_card_notes`
+#### `user_card_annotations`
 
 Personal notes.
+
+> Renamed from `user_card_notes`, decided in
+> [issue #81](https://github.com/NotAnotherCards/NotAnotherCards/issues/81),
+> to free up "note" for the canonical `user_notes` source record proposed
+> below.
 
 ```txt
 id                  uuid PK
