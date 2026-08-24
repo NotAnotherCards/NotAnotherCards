@@ -29,6 +29,40 @@ jest.mock('../lib/auth-client', () => ({
   authClient: { useSession: () => mockUseSession() },
 }));
 
+const mockCreateRunSync = jest.fn(() => async () => ({
+  resynced: false,
+  rejected: 0,
+  rejectedRecords: {},
+}));
+type FakeSyncController = {
+  start: jest.Mock;
+  dispose: jest.Mock;
+  disposedAt: number[];
+};
+const disposeOrder: string[] = [];
+const madeControllers: FakeSyncController[] = [];
+const mockCreateSyncController = jest.fn(() => {
+  const controller: FakeSyncController = {
+    start: jest.fn(),
+    dispose: jest.fn(() => disposeOrder.push('dispose')),
+    disposedAt: [],
+  };
+  madeControllers.push(controller);
+  return controller;
+});
+jest.mock('@remelondb/core', () => ({
+  ...jest.requireActual('@remelondb/core'),
+  createRunSync: (...args: unknown[]) => mockCreateRunSync(...(args as [])),
+  createSyncController: () => mockCreateSyncController(),
+}));
+jest.mock('../lib/sync', () => ({
+  pullChanges: jest.fn(),
+  pushChanges: jest.fn(),
+}));
+jest.mock('../lib/sync-triggers', () => ({
+  nativeSyncTriggers: () => () => {},
+}));
+
 jest.mock('../lib/db', () => ({
   createUserDatabaseManager: (userId: string) =>
     mockCreateUserDatabaseManager(userId),
@@ -41,7 +75,10 @@ function makeManager(
   return {
     owner,
     init: jest.fn(() => init),
-    close: jest.fn().mockResolvedValue(undefined),
+    close: jest.fn(() => {
+      disposeOrder.push('close');
+      return Promise.resolve(undefined);
+    }),
     state: { status: 'idle', error: null },
     subscribe: jest.fn(() => () => {}),
   };
@@ -65,6 +102,8 @@ function renderProvider() {
 describe('SessionDatabaseProvider', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    disposeOrder.length = 0;
+    madeControllers.length = 0;
     mockSessionState = { data: null, isPending: true };
     mockCreateUserDatabaseManager.mockImplementation((userId: string) =>
       makeManager(userId),
@@ -196,6 +235,59 @@ describe('SessionDatabaseProvider', () => {
 
     await waitFor(() => expect(view.getByText('none')).toBeTruthy());
     expect(manager.close).toHaveBeenCalled();
+  });
+
+  it('starts sync once the database is open and disposes it before the close on logout', async () => {
+    mockSessionState = {
+      data: { user: { id: 'user-a' } },
+      isPending: false,
+    };
+
+    const view = renderProvider();
+    await waitFor(() => expect(view.getByText('user-a')).toBeTruthy());
+    await waitFor(() => expect(mockCreateSyncController).toHaveBeenCalled());
+    expect(madeControllers[0].start).toHaveBeenCalled();
+
+    mockSessionState = { data: null, isPending: false };
+    view.rerender(
+      <SessionDatabaseProvider>
+        <ActiveOwner />
+      </SessionDatabaseProvider>,
+    );
+
+    await waitFor(() => expect(view.getByText('none')).toBeTruthy());
+    expect(madeControllers[0].dispose).toHaveBeenCalled();
+    // the abort (dispose) must land before the database close (#148)
+    expect(disposeOrder.indexOf('dispose')).toBeLessThan(
+      disposeOrder.indexOf('close'),
+    );
+  });
+
+  it('never starts sync for a session that ended during init', async () => {
+    let resolveInit: (value: unknown) => void = () => {};
+    const slowInit = new Promise((resolve) => {
+      resolveInit = resolve;
+    });
+    mockCreateUserDatabaseManager.mockReturnValueOnce(
+      makeManager('user-a', slowInit),
+    );
+    mockSessionState = {
+      data: { user: { id: 'user-a' } },
+      isPending: false,
+    };
+
+    const view = renderProvider();
+    mockSessionState = { data: null, isPending: false };
+    view.rerender(
+      <SessionDatabaseProvider>
+        <ActiveOwner />
+      </SessionDatabaseProvider>,
+    );
+    await waitFor(() => expect(view.getByText('none')).toBeTruthy());
+
+    resolveInit({});
+    await Promise.resolve();
+    expect(mockCreateSyncController).not.toHaveBeenCalled();
   });
 
   it('keeps the manager across re-renders with the same session', async () => {
