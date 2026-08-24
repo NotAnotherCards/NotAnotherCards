@@ -74,11 +74,6 @@ export class MetricsService implements OnModuleInit {
     });
   }
 
-  /**
-   * Queries live queue depth at scrape time. Registered by AiWorkerService,
-   * which owns the database connection; keeps this service free of a direct
-   * database dependency.
-   */
   private aiQueueDepthProvider?: () => Promise<{
     pending: number;
     processing: number;
@@ -109,19 +104,13 @@ export class MetricsService implements OnModuleInit {
     this.httpRequestDurationSeconds.observe(labels, durationSeconds);
   }
 
-  // Returning formatted prometheus exposition text
   async getMetrics(): Promise<string> {
-    // Refresh queue gauges at scrape time so Prometheus always sees the
-    // real queue depth. A failing provider (e.g. database briefly down)
-    // must never break the scrape itself: stale gauges plus a live scrape
-    // are far more useful during an incident than no metrics at all.
     if (this.aiQueueDepthProvider) {
       try {
         const { pending, processing } = await this.aiQueueDepthProvider();
         this.aiJobsPending.set(pending);
         this.aiJobsProcessing.set(processing);
       } catch {
-        // keep last known gauge values
       }
     }
     return this.registry.metrics();
