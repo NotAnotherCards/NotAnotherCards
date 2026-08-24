@@ -69,3 +69,4 @@ export const syncWireSchemas = syncSchemas({
 });
 
 export * from './user-dictionary.js';
+export * from './sync-transport.js';
