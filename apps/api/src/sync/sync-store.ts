@@ -10,11 +10,17 @@ import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import { reviewEvents, userCards, userDecks, userProfiles } from './schema';
 import {
-  crossValidateSyncRelationships,
-  withSyncRelationshipDeletionPolicy,
+  createCrossValidateSyncRelationships,
+  withSyncCascadingDeletes,
+  type ProfileUsernameOwnerLookup,
 } from './sync-validation';
 
 export type AppSyncStore = DrizzleStore<string>;
+
+const findProfileUsernameOwnersByStore = new WeakMap<
+  AppSyncStore,
+  ProfileUsernameOwnerLookup
+>();
 
 export function createAppSyncStore(db: AppDatabase): AppSyncStore {
   const tables = {
@@ -55,47 +61,54 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scrub: {
         username: null,
         bio: null,
-        avatar_file_id: null,
-        native_language_id: null,
-        target_language_id: null,
+        avatarFileId: null,
+        nativeLanguageId: null,
+        targetLanguageId: null,
       },
     },
   } as unknown as DrizzleStoreOptions<string>['tables'];
 
-  return withSyncRelationshipDeletionPolicy(
-    createDrizzleStore<string>({
-      db: db as unknown as DrizzleDb,
-      tables,
-    }),
-    async (usernames) => {
-      if (usernames.length === 0) return new Map();
-      const profiles = await db
-        .select({
-          userId: userProfiles.userId,
-          username: userProfiles.username,
-        })
-        .from(userProfiles)
-        .where(
-          and(
-            inArray(userProfiles.username, [...new Set(usernames)]),
-            isNull(userProfiles.deletedAt),
-          ),
-        );
-      return new Map(
-        profiles.flatMap((profile) =>
-          profile.username === null
-            ? []
-            : [[profile.username, profile.userId] as const],
+  const store = withSyncCascadingDeletes(
+    createDrizzleStore<string>({ db: db as unknown as DrizzleDb, tables }),
+  );
+
+  findProfileUsernameOwnersByStore.set(store, async (usernames) => {
+    if (usernames.length === 0) return new Map();
+    const profiles = await db
+      .select({
+        userId: userProfiles.userId,
+        username: userProfiles.username,
+      })
+      .from(userProfiles)
+      .where(
+        and(
+          inArray(userProfiles.username, [...new Set(usernames)]),
+          isNull(userProfiles.deletedAt),
         ),
       );
-    },
-  );
+    return new Map(
+      profiles.flatMap((profile) =>
+        profile.username === null
+          ? []
+          : [[profile.username, profile.userId] as const],
+      ),
+    );
+  });
+
+  return store;
+}
+
+export function createAppCrossValidateChanges(store: AppSyncStore) {
+  const findProfileUsernameOwners =
+    findProfileUsernameOwnersByStore.get(store) ??
+    (() => Promise.resolve(new Map<string, string>()));
+  return createCrossValidateSyncRelationships(findProfileUsernameOwners);
 }
 
 export function createAppSyncEngine(store: AppSyncStore) {
   return createSyncEngine({
     store,
-    crossValidate: crossValidateSyncRelationships,
+    crossValidateChanges: createAppCrossValidateChanges(store),
     tables: {
       user_decks: {
         validate: (row) =>

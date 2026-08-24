@@ -10,8 +10,7 @@ import type { Request } from 'express';
 import { AuthModule } from '../auth/auth.module';
 import { AuthService } from '../auth/auth.service';
 import { REMELON_SYNC_STORE, SyncStoreModule } from './sync-store.module';
-import type { AppSyncStore } from './sync-store';
-import { crossValidateSyncRelationships } from './sync-validation';
+import { createAppCrossValidateChanges, type AppSyncStore } from './sync-store';
 
 @Module({
   imports: [
@@ -29,7 +28,7 @@ import { crossValidateSyncRelationships } from './sync-validation';
         tableOptions: { review_events: { appendOnly: true } },
         scopeFrom: (request) =>
           authService.userIdFromHeaders((request as Request).headers),
-        crossValidate: crossValidateSyncRelationships,
+        crossValidateChanges: createAppCrossValidateChanges(store),
       }),
     }),
   ],
