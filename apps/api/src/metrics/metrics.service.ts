@@ -110,7 +110,9 @@ export class MetricsService implements OnModuleInit {
         const { pending, processing } = await this.aiQueueDepthProvider();
         this.aiJobsPending.set(pending);
         this.aiJobsProcessing.set(processing);
-      } catch {}
+      } catch {
+        // preserves previous gauge values
+      }
     }
     return this.registry.metrics();
   }
