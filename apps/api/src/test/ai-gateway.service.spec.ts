@@ -99,9 +99,11 @@ describe('AiGatewayService', () => {
 
     // Reasoning must be off: with it, a five-card job runs into the 60s
     // request timeout (measured 26-56s vs ~3s without).
-    const sentBody = JSON.parse(
-      (mockFetch.mock.calls[0][1] as RequestInit).body as string,
-    ) as Record<string, unknown>;
+    const fetchCalls = mockFetch.mock.calls as [string, RequestInit][];
+    const sentBody = JSON.parse(fetchCalls[0][1].body as string) as Record<
+      string,
+      unknown
+    >;
     expect(sentBody.reasoning_effort).toBe('none');
   });
 
