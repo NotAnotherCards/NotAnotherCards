@@ -64,6 +64,8 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
           runSync: createRunSync({ database, pullChanges, pushChanges }),
           triggers: nativeSyncTriggers,
         });
+        // Cleanup closes over `owned`, so keep the controller on that object.
+        // Clone only for React, which needs a new reference to re-render.
         owned.syncController = controller;
         setOwnedManager({ ...owned });
         controller.start();
