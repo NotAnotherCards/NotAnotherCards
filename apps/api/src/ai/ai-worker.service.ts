@@ -4,6 +4,7 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -38,7 +39,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly db: NodePgDatabase<Record<string, unknown>>,
     private readonly aiGateway: AiGatewayService,
     private readonly config: ConfigService,
-    private readonly metricsService: MetricsService,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {
     this.pollIntervalMs = Number(
       this.config.get<string>('AI_WORKER_POLL_INTERVAL_MS') ?? 2000,
@@ -51,7 +53,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     // Queue depth is refreshed at scrape time from the database, so the
     // gauges are accurate regardless of which process changed the queue.
-    this.metricsService.registerAiQueueDepthProvider(async () => {
+    this.metricsService?.registerAiQueueDepthProvider(async () => {
       const result = await this.db.execute(sql`
         SELECT
           count(*) FILTER (WHERE status = 'pending')::int AS pending,
@@ -193,8 +195,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         });
       });
 
-      this.metricsService.aiJobsCompletedTotal.inc();
-      this.metricsService.aiTokensConsumedTotal.inc(
+      this.metricsService?.aiJobsCompletedTotal.inc();
+      this.metricsService?.aiTokensConsumedTotal.inc(
         { model: inference.model },
         inference.usage.totalTokens,
       );
@@ -235,7 +237,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (isFinalAttempt) {
-        this.metricsService.aiJobsFailedTotal.inc();
+        this.metricsService?.aiJobsFailedTotal.inc();
 
         await this.db.execute(sql`
           UPDATE ai_generation_jobs
