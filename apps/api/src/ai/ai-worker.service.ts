@@ -49,6 +49,23 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
+    // Queue depth is refreshed at scrape time from the database, so the
+    // gauges are accurate regardless of which process changed the queue.
+    this.metricsService.registerAiQueueDepthProvider(async () => {
+      const result = await this.db.execute(sql`
+        SELECT
+          count(*) FILTER (WHERE status = 'pending')::int AS pending,
+          count(*) FILTER (WHERE status = 'processing')::int AS processing
+        FROM ai_generation_jobs
+      `);
+      const row = result.rows[0] as
+        { pending: number; processing: number } | undefined;
+      return {
+        pending: Number(row?.pending ?? 0),
+        processing: Number(row?.processing ?? 0),
+      };
+    });
+
     if (this.workerEnabled) {
       this.timer = setInterval(() => {
         void this.processNextJob();
