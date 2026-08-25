@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 import {
   UserCardRow,
   syncWireSchemas,
@@ -6,10 +6,10 @@ import {
   UserDeckRow,
   ReviewEventRow,
   UserProfileRow,
-} from "@repo/offline-db";
+} from '@repo/offline-db';
 
-describe("@repo/offline-db wiring on web", () => {
-  it("imports and validates offline db schemas", () => {
+describe('@repo/offline-db wiring on web', () => {
+  it('imports and validates offline db schemas', () => {
     expect(schema.version).toBe(2);
     expect(schema.tables.user_cards).toBeDefined();
     expect(schema.tables.user_decks).toBeDefined();
@@ -18,9 +18,9 @@ describe("@repo/offline-db wiring on web", () => {
 
     expect(
       UserCardRow.safeParse({
-        deck_id: "deck123",
-        front: "front side",
-        back: "back side",
+        deck_id: 'deck123',
+        front: 'front side',
+        back: 'back side',
         due_at: 0,
         created_at: 0,
         updated_at: 0,
@@ -29,8 +29,8 @@ describe("@repo/offline-db wiring on web", () => {
 
     expect(
       UserDeckRow.safeParse({
-        title: "Test Deck",
-        description: "Deck description",
+        title: 'Test Deck',
+        description: 'Deck description',
         created_at: 0,
         updated_at: 0,
       }).success,
@@ -38,7 +38,7 @@ describe("@repo/offline-db wiring on web", () => {
 
     expect(
       ReviewEventRow.safeParse({
-        user_card_id: "usercard123",
+        user_card_id: 'usercard123',
         rating: 3,
         reviewed_at: 0,
       }).success,

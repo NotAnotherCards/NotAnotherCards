@@ -1,4 +1,4 @@
-const preset = require('jest-expo/jest-preset')
+const preset = require('jest-expo/jest-preset');
 
 // pnpm resolves two React copies into the tree (the pinned 19.2.3 and a 19.2.7
 // pulled via peers from web/api). react-test-renderer is built against 19.2.3,
@@ -11,7 +11,7 @@ const preset = require('jest-expo/jest-preset')
 // through the same babel transformer.
 const transformIgnorePatterns = preset.transformIgnorePatterns.map((pattern) =>
   pattern.replace('(?!(.pnpm|', '(?!(.pnpm|@remelondb|'),
-)
+);
 
 module.exports = {
   ...preset,
@@ -31,4 +31,4 @@ module.exports = {
     '^expo-sqlite/kv-store$': '<rootDir>/__mocks__/kv-store.ts',
     '^@/(.*)$': '<rootDir>/$1',
   },
-}
+};

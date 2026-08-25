@@ -1,26 +1,26 @@
-import { useState } from 'react'
-import { Pressable, View } from 'react-native'
-import { Text } from './ui/text'
+import { useState } from 'react';
+import { Pressable, View } from 'react-native';
+import { Text } from './ui/text';
 import {
   loadThemePreference,
   setThemePreference,
   type ThemePreference,
-} from '@/lib/theme'
+} from '@/lib/theme';
 
 // Same order as the web's theme switcher (#95): light, dark, system.
 const OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
   { value: 'system', label: 'System' },
-]
+];
 
 export function ThemeToggle() {
-  const [preference, setPreference] = useState(loadThemePreference)
+  const [preference, setPreference] = useState(loadThemePreference);
 
   const select = (value: ThemePreference) => {
-    setPreference(value)
-    setThemePreference(value)
-  }
+    setPreference(value);
+    setThemePreference(value);
+  };
 
   return (
     <View className="flex-row rounded-lg bg-muted p-1">
@@ -44,5 +44,5 @@ export function ThemeToggle() {
         </Pressable>
       ))}
     </View>
-  )
+  );
 }

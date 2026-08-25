@@ -1,5 +1,5 @@
-import * as React from "react";
-import { Link } from "@tanstack/react-router";
+import * as React from 'react';
+import { Link } from '@tanstack/react-router';
 import {
   Card,
   CardHeader,
@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 
 interface AuthCardProps {
   title: string;
@@ -46,7 +46,7 @@ export function AuthCard({
       {footerLinkText && (
         <CardFooter className="flex justify-center border-t border-border/10 pt-3 pb-4">
           <p className="text-xs text-muted-foreground">
-            {footerText}{" "}
+            {footerText}{' '}
             <Link
               to={footerLinkTo}
               className="text-primary font-medium hover:underline transition-colors"

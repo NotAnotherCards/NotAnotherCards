@@ -1,5 +1,5 @@
-import { createDatabaseManager, Database } from '@remelondb/core'
-import { RnSqliteDriver } from '@remelondb/driver-rn'
+import { createDatabaseManager, Database } from '@remelondb/core';
+import { RnSqliteDriver } from '@remelondb/driver-rn';
 import {
   schema,
   migrations,
@@ -7,7 +7,7 @@ import {
   UserCard,
   ReviewEvent,
   UserProfile,
-} from '@repo/offline-db'
+} from '@repo/offline-db';
 
 // Same bootstrap as the web client (apps/web/src/offline/db.ts). Native has
 // no tabs, so the takeover callback is unused and the taken-over state is
@@ -22,4 +22,4 @@ export const manager = createDatabaseManager({
       modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
       name: 'notanothercards.db',
     }),
-})
+});

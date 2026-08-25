@@ -1,25 +1,25 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { registerSchema, type SignupFormData } from '@repo/schemas'
-import { authClient } from '@/lib/auth-client'
-import { apiErrorMessage } from '@/lib/errors'
-import { Button } from '@/components/ui/button'
-import { FormField } from '@/components/ui/form-field'
-import { Text } from '@/components/ui/text'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerSchema, type SignupFormData } from '@repo/schemas';
+import { authClient } from '@/lib/auth-client';
+import { apiErrorMessage } from '@/lib/errors';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { Text } from '@/components/ui/text';
 
 // Hermes' Intl support is partial; if timezone detection fails the field
 // stays unset and the server defaults to UTC.
 function getTimezone(): string | undefined {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
   } catch {
-    return undefined
+    return undefined;
   }
 }
 
 export function SignupForm() {
-  const [apiError, setApiError] = useState<string | null>(null)
+  const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -28,25 +28,25 @@ export function SignupForm() {
       password: '',
       confirmPassword: '',
     },
-  })
-  const { isSubmitting } = formState
+  });
+  const { isSubmitting } = formState;
 
   const onSubmit = async (data: SignupFormData) => {
-    setApiError(null)
+    setApiError(null);
     try {
       const { error } = await authClient.signUp.email({
         name: data.name,
         email: data.email,
         password: data.password,
         timezone: getTimezone(),
-      })
+      });
       if (error) {
-        setApiError(apiErrorMessage(error))
+        setApiError(apiErrorMessage(error));
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err))
+      setApiError(apiErrorMessage(err));
     }
-  }
+  };
 
   return (
     <>
@@ -94,5 +94,5 @@ export function SignupForm() {
         className="mt-1"
       />
     </>
-  )
+  );
 }

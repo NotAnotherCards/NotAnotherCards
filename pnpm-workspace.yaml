@@ -1,6 +1,6 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
 allowBuilds:
   better-sqlite3: true
   esbuild: true
@@ -11,14 +11,14 @@ overrides:
   react-dom: 19.2.3
   # one core instance workspace-wide; differing @types/node peers
   # otherwise split it into two and break shared Model types
-  "@remelondb/core": 0.2.2
+  '@remelondb/core': 0.2.2
 minimumReleaseAgeExclude:
-  - "@turbo/darwin-64@2.10.4"
-  - "@turbo/darwin-arm64@2.10.4"
-  - "@turbo/linux-64@2.10.4"
-  - "@turbo/linux-arm64@2.10.4"
-  - "@turbo/windows-64@2.10.4"
-  - "@turbo/windows-arm64@2.10.4"
+  - '@turbo/darwin-64@2.10.4'
+  - '@turbo/darwin-arm64@2.10.4'
+  - '@turbo/linux-64@2.10.4'
+  - '@turbo/linux-arm64@2.10.4'
+  - '@turbo/windows-64@2.10.4'
+  - '@turbo/windows-arm64@2.10.4'
   - turbo@2.10.4
   - '@remelondb/core@0.2.0 || 0.2.2'
   - '@remelondb/driver-web@0.2.0 || 0.2.2'
@@ -26,7 +26,7 @@ minimumReleaseAgeExclude:
   - '@remelondb/nestjs@0.2.0 || 0.2.2'
   - '@remelondb/server@0.2.0 || 0.2.2'
   - '@remelondb/store-drizzle@0.2.0 || 0.2.2'
-  - "@expo/metro-runtime@57.0.7"
+  - '@expo/metro-runtime@57.0.7'
   - expo-constants@57.0.7
   - expo-linking@57.0.4
   - expo-router@57.0.8

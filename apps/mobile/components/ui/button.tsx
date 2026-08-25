@@ -1,10 +1,10 @@
-import { ActivityIndicator, Pressable, Text } from 'react-native'
-import { cn } from '@/lib/utils'
+import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { cn } from '@/lib/utils';
 
 type ButtonProps = React.ComponentProps<typeof Pressable> & {
-  label: string
-  loading?: boolean
-}
+  label: string;
+  loading?: boolean;
+};
 
 export function Button({
   className,
@@ -32,5 +32,5 @@ export function Button({
         </Text>
       )}
     </Pressable>
-  )
+  );
 }

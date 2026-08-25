@@ -1,74 +1,78 @@
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import { Controller, useForm } from "react-hook-form";
-import { LoginFormData, loginSchema } from "@repo/schemas";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthCard } from "@/components/auth/auth-card";
-import { authClient } from "@/lib/auth-client";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { SocialLoginButton } from "@/components/auth/social-login-button";
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
+import { Controller, useForm } from 'react-hook-form';
+import { LoginFormData, loginSchema } from '@repo/schemas';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AuthCard } from '@/components/auth/auth-card';
+import { authClient } from '@/lib/auth-client';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { SocialLoginButton } from '@/components/auth/social-login-button';
 
 export function LoginComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const [oauthProvider, setOauthProvider] = useState<"google" | "facebook" | null>(null);
+  const [oauthProvider, setOauthProvider] = useState<
+    'google' | 'facebook' | null
+  >(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const errorParam = params.get("error");
+    const errorParam = params.get('error');
     if (errorParam) {
-      if (errorParam === "OAuthCallbackError") {
-        setApiError("Social login failed. Please try again or use another provider.");
+      if (errorParam === 'OAuthCallbackError') {
+        setApiError(
+          'Social login failed. Please try again or use another provider.',
+        );
       } else {
-        setApiError(errorParam.replace(/_/g, " "));
+        setApiError(errorParam.replace(/_/g, ' '));
       }
     }
 
     const handlePageShow = () => {
       setOauthProvider(null);
     };
-    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener('pageshow', handlePageShow);
     return () => {
-      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener('pageshow', handlePageShow);
     };
   }, []);
 
-  const handleSocialLogin = async (provider: "google" | "facebook") => {
-    setApiError(null)
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    setApiError(null);
     setOauthProvider(provider);
     try {
-      const { error }  = await authClient.signIn.social({
+      const { error } = await authClient.signIn.social({
         provider,
         callbackURL: `${window.location.origin}/app/dashboard`,
         errorCallbackURL: `${window.location.origin}/login`,
       });
 
       if (error) {
-        setApiError(error.message || "Social login failed. Please try again.");
+        setApiError(error.message || 'Social login failed. Please try again.');
         setOauthProvider(null);
       }
     } catch {
       setOauthProvider(null);
-      setApiError("Social login failed. Please try again.");
+      setApiError('Social login failed. Please try again.');
     }
   };
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
@@ -82,12 +86,11 @@ export function LoginComponent() {
     });
 
     if (error) {
-      setApiError(error.message || "An unexpected error occurred");
+      setApiError(error.message || 'An unexpected error occurred');
     } else {
-      void navigate({ to: "/app/dashboard" });
+      void navigate({ to: '/app/dashboard' });
     }
   };
-
 
   return (
     <AuthCard
@@ -112,7 +115,7 @@ export function LoginComponent() {
                     type="email"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      fieldState.invalid ? "email-error" : undefined
+                      fieldState.invalid ? 'email-error' : undefined
                     }
                   />
                   <FieldError id="email-error" errors={[fieldState.error]} />
@@ -130,7 +133,7 @@ export function LoginComponent() {
                     id={field.name}
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
-                      fieldState.invalid ? "password-error" : undefined
+                      fieldState.invalid ? 'password-error' : undefined
                     }
                   />
                   <FieldError id="password-error" errors={[fieldState.error]} />
@@ -138,14 +141,18 @@ export function LoginComponent() {
               )}
             />
             <FormErrorMessage message={apiError} />
-            <Button type="submit" className="w-full" disabled={isSubmitting || oauthProvider !== null}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || oauthProvider !== null}
+            >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
                   Logging in...
                 </span>
               ) : (
-                "Login"
+                'Login'
               )}
             </Button>
             <div className="relative my-2">
@@ -160,22 +167,22 @@ export function LoginComponent() {
             </div>
             <SocialLoginButton
               provider="google"
-              isLoading={oauthProvider === "google"}
+              isLoading={oauthProvider === 'google'}
               disabled={oauthProvider !== null || isSubmitting}
-              onClick={() => handleSocialLogin("google")}
+              onClick={() => handleSocialLogin('google')}
             />
             <SocialLoginButton
               provider="facebook"
-              isLoading={oauthProvider === "facebook"}
+              isLoading={oauthProvider === 'facebook'}
               disabled={oauthProvider !== null || isSubmitting}
-              onClick={() => handleSocialLogin("facebook")}
+              onClick={() => handleSocialLogin('facebook')}
             />
           </FieldGroup>
         </FieldSet>
       </form>
       <div className="flex flex-col items-center justify-center gap-2 border-t border-border/10 pt-3.5 pb-2 text-center">
         <p className="text-xs text-muted-foreground">
-          Forgot your password?{" "}
+          Forgot your password?{' '}
           <Link
             to="/forgot-password"
             className="text-primary font-medium hover:underline transition-colors"
@@ -184,7 +191,7 @@ export function LoginComponent() {
           </Link>
         </p>
         <p className="text-xs text-muted-foreground">
-          Don't have an account?{" "}
+          Don't have an account?{' '}
           <Link
             to="/register"
             className="text-primary font-medium hover:underline transition-colors"
