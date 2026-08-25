@@ -43,15 +43,9 @@ export class AuthController {
       throw new BadRequestException('Username query parameter is required');
     }
 
-    // Check if username is taken by another user in user_profiles
-    const existingProfile = await this.db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.username, username))
-      .limit(1);
-
-    const taken =
-      existingProfile.length > 0 && existingProfile[0].userId !== userId;
+    // Check if username is taken by another user in active user_profiles
+    const owner = await getActiveUsernameOwner(this.db, username);
+    const taken = owner !== null && owner !== userId;
 
     return { available: !taken };
   }
