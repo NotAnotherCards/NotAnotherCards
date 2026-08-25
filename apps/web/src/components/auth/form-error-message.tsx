@@ -1,6 +1,6 @@
-import * as React from "react";
-import { AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface FormErrorMessageProps extends React.HTMLAttributes<HTMLDivElement> {
   message?: string | string[] | null;
@@ -24,7 +24,7 @@ export const FormErrorMessage = React.forwardRef<
       role="alert"
       aria-live="assertive"
       className={cn(
-        "flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200",
+        'flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200',
         className,
       )}
       {...props}
@@ -45,4 +45,4 @@ export const FormErrorMessage = React.forwardRef<
   );
 });
 
-FormErrorMessage.displayName = "FormErrorMessage";
+FormErrorMessage.displayName = 'FormErrorMessage';

@@ -3,8 +3,8 @@ import {
   column,
   createTable,
   schemaMigrations,
-} from "@remelondb/core";
-import { syncSchemas } from "@remelondb/core/zod";
+} from '@remelondb/core';
+import { syncSchemas } from '@remelondb/core/zod';
 import {
   userDecks,
   userCards,
@@ -14,7 +14,7 @@ import {
   UserCardRow,
   ReviewEventRow,
   UserProfileRow,
-} from "./user-dictionary.js";
+} from './user-dictionary.js';
 
 export const schema = appSchema({
   version: 2,
@@ -27,7 +27,7 @@ export const migrations = schemaMigrations({
       toVersion: 2,
       steps: [
         createTable({
-          name: "user_profiles",
+          name: 'user_profiles',
           columns: {
             username: column.string().optional(),
             bio: column.string().optional(),
@@ -50,4 +50,4 @@ export const syncWireSchemas = syncSchemas({
   user_profiles: UserProfileRow,
 });
 
-export * from "./user-dictionary.js";
+export * from './user-dictionary.js';

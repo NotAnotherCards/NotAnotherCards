@@ -3,8 +3,8 @@ import {
   useContext,
   useSyncExternalStore,
   type ReactNode,
-} from "react";
-import type { SyncController, SyncControllerState } from "./syncController";
+} from 'react';
+import type { SyncController, SyncControllerState } from './syncController';
 
 const SyncContext = createContext<SyncController | null>(null);
 
@@ -25,7 +25,7 @@ export function useSyncController(): SyncController | null {
 }
 
 const NO_SYNC: SyncControllerState = {
-  status: "idle",
+  status: 'idle',
   lastSyncAt: null,
   error: null,
 };

@@ -1,6 +1,6 @@
-import { createDatabaseManager, Database } from "@remelondb/core";
-import type { DatabaseManagerState } from "@remelondb/core";
-import { WebSqliteDriver } from "@remelondb/driver-web";
+import { createDatabaseManager, Database } from '@remelondb/core';
+import type { DatabaseManagerState } from '@remelondb/core';
+import { WebSqliteDriver } from '@remelondb/driver-web';
 import {
   schema,
   migrations,
@@ -8,9 +8,9 @@ import {
   UserCard,
   ReviewEvent,
   UserProfile,
-} from "@repo/offline-db";
-import { synchronize } from "@remelondb/core";
-import { pullChanges, pushChanges } from "./sync";
+} from '@repo/offline-db';
+import { synchronize } from '@remelondb/core';
+import { pullChanges, pushChanges } from './sync';
 
 export type { DatabaseManagerState as DatabaseState };
 
@@ -24,8 +24,8 @@ export let manager: ReturnType<typeof createDatabaseManager> | null = null;
  */
 export function userDbName(userId: string): string {
   const hex = Array.from(new TextEncoder().encode(userId))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
   return `user_${hex}.db`;
 }
 
@@ -82,7 +82,7 @@ export async function checkOnboardingComplete(
           });
           profiles = await db.get(UserProfile).query().fetch();
         } catch (err) {
-          console.warn("Pre-onboarding check sync failed", err);
+          console.warn('Pre-onboarding check sync failed', err);
         }
       }
       const profile = profiles[0];

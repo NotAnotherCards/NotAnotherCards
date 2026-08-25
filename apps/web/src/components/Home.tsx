@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -7,8 +7,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Layers } from "lucide-react";
+} from '@/components/ui/card';
+import { Layers } from 'lucide-react';
 
 export function HomeComponent() {
   return (

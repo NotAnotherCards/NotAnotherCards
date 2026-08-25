@@ -3,16 +3,16 @@ import {
   type Control,
   type FieldPath,
   type FieldValues,
-} from 'react-hook-form'
-import { View, type TextInputProps } from 'react-native'
-import { Input } from './input'
-import { Text } from './text'
+} from 'react-hook-form';
+import { View, type TextInputProps } from 'react-native';
+import { Input } from './input';
+import { Text } from './text';
 
 type FormFieldProps<T extends FieldValues> = {
-  control: Control<T>
-  name: FieldPath<T>
-  label: string
-} & Omit<TextInputProps, 'value' | 'onChangeText' | 'onBlur'>
+  control: Control<T>;
+  name: FieldPath<T>;
+  label: string;
+} & Omit<TextInputProps, 'value' | 'onChangeText' | 'onBlur'>;
 
 export function FormField<T extends FieldValues>({
   control,
@@ -42,5 +42,5 @@ export function FormField<T extends FieldValues>({
         </View>
       )}
     />
-  )
+  );
 }

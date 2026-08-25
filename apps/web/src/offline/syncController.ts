@@ -1,4 +1,4 @@
-import { SyncTransportError } from "./sync";
+import { SyncTransportError } from './sync';
 
 /**
  * One sync controller per authenticated database (#52). Local writes
@@ -12,11 +12,7 @@ import { SyncTransportError } from "./sync";
  * successful ordinary sync clears it.
  */
 export type SyncStatus =
-  | "idle"
-  | "syncing"
-  | "offline"
-  | "error"
-  | "resync-required";
+  'idle' | 'syncing' | 'offline' | 'error' | 'resync-required';
 
 export interface SyncControllerState {
   readonly status: SyncStatus;
@@ -53,7 +49,7 @@ export function createSyncController(
   const debounceMs = options.debounceMs ?? 2_000;
 
   let state: SyncControllerState = {
-    status: "idle",
+    status: 'idle',
     lastSyncAt: null,
     error: null,
   };
@@ -79,7 +75,7 @@ export function createSyncController(
       return;
     }
     running = true;
-    setState({ status: "syncing" });
+    setState({ status: 'syncing' });
     inFlight = new AbortController();
     options
       .runSync(inFlight.signal)
@@ -87,27 +83,26 @@ export function createSyncController(
         (result) => {
           if (disposed) return;
           setState({
-            status: result.resynced ? "resync-required" : "idle",
+            status: result.resynced ? 'resync-required' : 'idle',
             lastSyncAt: Date.now(),
             error: null,
           });
         },
         (error: unknown) => {
           if (disposed) return;
-          const transport =
-            error instanceof SyncTransportError ? error : null;
+          const transport = error instanceof SyncTransportError ? error : null;
           if (transport?.status === 401) {
             // the session is gone: stop the machinery, the auth layer
             // owns what happens next; a manual retry re-arms
             authBlocked = true;
-            setState({ status: "error", error: transport.message });
+            setState({ status: 'error', error: transport.message });
             return;
           }
           if (transport && transport.status === undefined) {
-            setState({ status: "offline", error: transport.message });
+            setState({ status: 'offline', error: transport.message });
             return;
           }
-          setState({ status: "error", error: String(error) });
+          setState({ status: 'error', error: String(error) });
         },
       )
       .finally(() => {
@@ -127,7 +122,7 @@ export function createSyncController(
 
   const onOnline = (): void => autoTrigger();
   const onVisibility = (): void => {
-    if (document.visibilityState === "visible") autoTrigger();
+    if (document.visibilityState === 'visible') autoTrigger();
   };
 
   return {
@@ -141,8 +136,8 @@ export function createSyncController(
     },
     start() {
       if (disposed) return;
-      window.addEventListener("online", onOnline);
-      document.addEventListener("visibilitychange", onVisibility);
+      window.addEventListener('online', onOnline);
+      document.addEventListener('visibilitychange', onVisibility);
       intervalTimer = setInterval(autoTrigger, intervalMs);
       run();
     },
@@ -164,8 +159,8 @@ export function createSyncController(
       inFlight?.abort(); // the database is about to close under us
       if (debounceTimer) clearTimeout(debounceTimer);
       if (intervalTimer) clearInterval(intervalTimer);
-      window.removeEventListener("online", onOnline);
-      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener('online', onOnline);
+      document.removeEventListener('visibilitychange', onVisibility);
       listeners.clear();
     },
   };
