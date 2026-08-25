@@ -1,10 +1,9 @@
-import { createSyncEngine } from '@remelondb/server';
+import { createSyncEngine, type SyncEngineOptions } from '@remelondb/server';
 import { and, inArray, isNull } from 'drizzle-orm';
 import {
   createDrizzleStore,
-  type DrizzleDb,
+  drizzleSyncTable,
   type DrizzleStore,
-  type DrizzleStoreOptions,
 } from '@remelondb/store-drizzle';
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
@@ -17,14 +16,16 @@ import {
 
 export type AppSyncStore = DrizzleStore<string>;
 
-const findProfileUsernameOwnersByStore = new WeakMap<
-  AppSyncStore,
-  ProfileUsernameOwnerLookup
->();
+export interface AppSyncStoreBundle {
+  readonly store: AppSyncStore;
+  readonly crossValidateChanges: NonNullable<
+    SyncEngineOptions<string>['crossValidateChanges']
+  >;
+}
 
-export function createAppSyncStore(db: AppDatabase): AppSyncStore {
+export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
   const tables = {
-    user_decks: {
+    user_decks: drizzleSyncTable<string, typeof userDecks>({
       table: userDecks,
       id: userDecks.id,
       rev: userDecks.rev,
@@ -32,8 +33,8 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scope: userDecks.userId,
       insertOnly: ['created_at'],
       scrub: { title: '', description: null },
-    },
-    user_cards: {
+    }),
+    user_cards: drizzleSyncTable<string, typeof userCards>({
       table: userCards,
       id: userCards.id,
       rev: userCards.rev,
@@ -41,8 +42,8 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scope: userCards.userId,
       insertOnly: ['created_at'],
       scrub: { front: '', back: '' },
-    },
-    review_events: {
+    }),
+    review_events: drizzleSyncTable<string, typeof reviewEvents>({
       table: reviewEvents,
       id: reviewEvents.id,
       rev: reviewEvents.rev,
@@ -50,8 +51,8 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scope: reviewEvents.userId,
       insertOnly: ['user_card_id', 'rating', 'reviewed_at'],
       scrub: { rating: 1 },
-    },
-    user_profiles: {
+    }),
+    user_profiles: drizzleSyncTable<string, typeof userProfiles>({
       table: userProfiles,
       id: userProfiles.userId,
       rev: userProfiles.rev,
@@ -65,16 +66,16 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
         nativeLanguageId: null,
         targetLanguageId: null,
       },
-    },
-    // Still needed on 0.2.0: neither a bare assignment nor wrapping each
-    // table in `drizzleSyncTable` type-checks against our concrete Drizzle-generated columns
-  } as unknown as DrizzleStoreOptions<string>['tables'];
+    }),
+  };
 
   const store = withSyncCascadingDeletes(
-    createDrizzleStore<string>({ db: db as unknown as DrizzleDb, tables }),
+    createDrizzleStore<string>({ db, tables }),
   );
 
-  findProfileUsernameOwnersByStore.set(store, async (usernames) => {
+  const findProfileUsernameOwners: ProfileUsernameOwnerLookup = async (
+    usernames,
+  ) => {
     if (usernames.length === 0) return new Map();
     const profiles = await db
       .select({
@@ -95,22 +96,23 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
           : [[profile.username, profile.userId] as const],
       ),
     );
-  });
+  };
 
-  return store;
+  return {
+    store,
+    crossValidateChanges: createCrossValidateSyncRelationships(
+      findProfileUsernameOwners,
+    ),
+  };
 }
 
-export function createAppCrossValidateChanges(store: AppSyncStore) {
-  const findProfileUsernameOwners =
-    findProfileUsernameOwnersByStore.get(store) ??
-    (() => Promise.resolve(new Map<string, string>()));
-  return createCrossValidateSyncRelationships(findProfileUsernameOwners);
-}
-
-export function createAppSyncEngine(store: AppSyncStore) {
+export function createAppSyncEngine({
+  store,
+  crossValidateChanges,
+}: AppSyncStoreBundle) {
   return createSyncEngine({
     store,
-    crossValidateChanges: createAppCrossValidateChanges(store),
+    crossValidateChanges,
     tables: {
       user_decks: {
         validate: (row) =>
@@ -134,8 +136,8 @@ export function createAppSyncEngine(store: AppSyncStore) {
 }
 
 export function createAppSyncBackend(db: AppDatabase) {
-  const store = createAppSyncStore(db);
-  return { store, engine: createAppSyncEngine(store) };
+  const bundle = createAppSyncStore(db);
+  return { store: bundle.store, engine: createAppSyncEngine(bundle) };
 }
 
 export type AppSyncEngine = ReturnType<typeof createAppSyncEngine>;
