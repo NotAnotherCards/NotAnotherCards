@@ -1,7 +1,7 @@
 /**
- * Transport for /sync/pull and /sync/push (#52): authenticated fetch,
- * wire-parsed responses, protocol outcomes passed through, everything
- * else a transport error that must never masquerade as protocol.
+ * Web's slice of the transport (#52, #148): relative URLs, the cookie
+ * jar, and abort forwarding. Classification and wire validation are
+ * remelonDB's and are tested upstream.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pullChanges, pushChanges, SyncTransportError } from '../offline/sync';
@@ -58,20 +58,6 @@ describe('sync transport', () => {
     expect(result).toMatchObject({ rejected: { review_events: ['r1'] } });
   });
 
-  it('passes conflict through as a protocol outcome', async () => {
-    mockFetch(async () => jsonResponse(200, { conflict: true }));
-    expect(await pushChanges({ cursor: '1', changes: emptyChanges })).toEqual({
-      conflict: true,
-    });
-  });
-
-  it('passes resyncRequired through as a protocol outcome', async () => {
-    mockFetch(async () => jsonResponse(200, { resyncRequired: true }));
-    expect(
-      await pullChanges({ cursor: '9', schemaVersion: 1, migration: null }),
-    ).toEqual({ resyncRequired: true });
-  });
-
   it('401 is a transport error carrying the status', async () => {
     mockFetch(async () => jsonResponse(401, { message: 'no session' }));
     const attempt = pullChanges({
@@ -85,35 +71,15 @@ describe('sync transport', () => {
     ).rejects.toMatchObject({ status: 401 });
   });
 
-  it('5xx is a transport error', async () => {
-    mockFetch(async () => jsonResponse(503, {}));
-    await expect(
-      pushChanges({ cursor: '1', changes: emptyChanges }),
-    ).rejects.toMatchObject({ status: 503 });
-  });
-
-  it('malformed json is a transport error', async () => {
-    mockFetch(
-      async () => new Response('<html>gateway</html>', { status: 200 }),
+  it('forwards the abort signal to fetch', async () => {
+    const spy = mockFetch(async () =>
+      jsonResponse(200, { cursor: null, changes: null }),
     );
-    await expect(
-      pullChanges({ cursor: null, schemaVersion: 1, migration: null }),
-    ).rejects.toBeInstanceOf(SyncTransportError);
-  });
-
-  it('a wire-shape violation is a transport error, not data', async () => {
-    mockFetch(async () => jsonResponse(200, { cursor: 7, changes: 'nope' }));
-    await expect(
-      pullChanges({ cursor: null, schemaVersion: 1, migration: null }),
-    ).rejects.toBeInstanceOf(SyncTransportError);
-  });
-
-  it('a network failure is a transport error', async () => {
-    mockFetch(async () => {
-      throw new TypeError('NetworkError when attempting to fetch resource');
-    });
-    await expect(
-      pushChanges({ cursor: '1', changes: emptyChanges }),
-    ).rejects.toBeInstanceOf(SyncTransportError);
+    const controller = new AbortController();
+    await pushChanges(
+      { cursor: '1', changes: emptyChanges },
+      controller.signal,
+    );
+    expect(spy.mock.calls[0]?.[1]).toMatchObject({ signal: controller.signal });
   });
 });

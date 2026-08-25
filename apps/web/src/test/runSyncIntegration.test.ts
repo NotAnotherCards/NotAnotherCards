@@ -45,7 +45,11 @@ describe('createRunSync against the real synchronize', () => {
       ),
     );
 
-    expect(await createRunSync(db)()).toEqual({ resynced: false });
+    expect(await createRunSync(db)()).toEqual({
+      resynced: false,
+      rejected: 0,
+      rejectedRecords: {},
+    });
     await db.driver.close();
   });
 
@@ -68,7 +72,11 @@ describe('createRunSync against the real synchronize', () => {
       }),
     );
 
-    expect(await createRunSync(db)()).toEqual({ resynced: true });
+    expect(await createRunSync(db)()).toEqual({
+      resynced: true,
+      rejected: 0,
+      rejectedRecords: {},
+    });
     // recovery means a replacement pull actually happened
     expect(pulls).toBeGreaterThanOrEqual(2);
     await db.driver.close();

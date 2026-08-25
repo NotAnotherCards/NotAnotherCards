@@ -9,6 +9,7 @@ import {
 } from '@/offline/db';
 import { createRunSync } from '@/offline/sync';
 import {
+  browserSyncTriggers,
   createSyncController,
   type SyncController,
 } from '@/offline/syncController';
@@ -81,7 +82,10 @@ function AppLayout() {
         if (cancelled || !database) return;
         // sync starts only once the user's database is open; it dies
         // with the session below
-        controller = createSyncController({ runSync: createRunSync(database) });
+        controller = createSyncController({
+          runSync: createRunSync(database),
+          triggers: browserSyncTriggers,
+        });
         setSyncController(controller);
         controller.start();
       } catch (err) {

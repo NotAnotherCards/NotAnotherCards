@@ -17,6 +17,7 @@ const fakeController = (state: Partial<SyncControllerState>) => {
     status: 'idle',
     lastSyncAt: null,
     error: null,
+    lastResult: null,
     ...state,
   };
   const syncNow = vi.fn();

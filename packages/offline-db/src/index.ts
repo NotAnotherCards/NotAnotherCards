@@ -16,6 +16,24 @@ import {
   UserProfileRow,
 } from './user-dictionary.js';
 
+// encodeURIComponent provides UTF-8 bytes in Hermes without relying on the
+// TextEncoder global that happens to exist in browsers and Node-based tests.
+export function userDbName(userId: string): string {
+  const encoded = encodeURIComponent(userId);
+  let hex = '';
+
+  for (let index = 0; index < encoded.length; index += 1) {
+    if (encoded[index] === '%') {
+      hex += encoded.slice(index + 1, index + 3).toLowerCase();
+      index += 2;
+    } else {
+      hex += encoded.charCodeAt(index).toString(16).padStart(2, '0');
+    }
+  }
+
+  return `user_${hex}.db`;
+}
+
 export const schema = appSchema({
   version: 2,
   tables: [userDecks, userCards, reviewEvents, userProfiles],
@@ -51,3 +69,4 @@ export const syncWireSchemas = syncSchemas({
 });
 
 export * from './user-dictionary.js';
+export * from './sync-transport.js';
