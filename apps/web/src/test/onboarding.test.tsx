@@ -246,4 +246,36 @@ describe('Onboarding Flow and Guard Specs', () => {
     ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/app/dashboard');
   });
+
+  it("checks username availability on blur and displays validation error if taken", async () => {
+    // Mock fetch for username availability check to return available: false
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/api/auth/check-username")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ available: false }),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as Response);
+    });
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    // Type a username
+    const usernameInput = await screen.findByLabelText(/Username/i, {}, { timeout: 5000 });
+    await user.type(usernameInput, "taken_user");
+
+    // Trigger blur by tabbing away
+    await user.tab();
+
+    // Verify availability check API was called
+    expect(global.fetch).toHaveBeenCalledWith("/api/auth/check-username?username=taken_user");
+
+    // Verify validation error is displayed
+    expect(await screen.findByText("Username is already taken")).toBeInTheDocument();
+  });
 });

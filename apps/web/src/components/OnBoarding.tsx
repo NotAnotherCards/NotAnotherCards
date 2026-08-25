@@ -90,6 +90,37 @@ export function OnBoardingComponent() {
                       aria-describedby={
                         fieldState.invalid ? 'username-error' : undefined
                       }
+                      onChange={(e) => {
+                        field.onChange(e);
+                        form.clearErrors("username");
+                      }}
+                      onBlur={async (e) => {
+                        field.onBlur();
+                        const val = e.target.value;
+                        if (val && val.length >= 3) {
+                          try {
+                            const res = await fetch(
+                              `/api/auth/check-username?username=${encodeURIComponent(val)}`,
+                            );
+                            if (res.ok) {
+                              const checkResult = await res.json();
+                              if (!checkResult.available) {
+                                form.setError("username", {
+                                  type: "manual",
+                                  message: "Username is already taken",
+                                });
+                              } else {
+                                form.clearErrors("username");
+                              }
+                            }
+                          } catch (err) {
+                            console.error(
+                              "Failed to check username availability",
+                              err,
+                            );
+                          }
+                        }
+                      }}
                     />
                     <FieldError
                       id="username-error"
