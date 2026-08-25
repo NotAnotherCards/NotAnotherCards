@@ -1,13 +1,13 @@
-import path from "path";
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import path from 'path';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { tanstackRouter } from '@tanstack/router-plugin/vite';
 
 export default defineConfig({
   plugins: [
     tanstackRouter({
-      target: "react",
+      target: 'react',
       autoCodeSplitting: true,
     }),
     react(),
@@ -15,14 +15,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
+      { find: '@', replacement: path.resolve(import.meta.dirname, './src') },
     ],
   },
   optimizeDeps: {
     exclude: [
-      "@remelondb/driver-web",
-      "@remelondb/core",
-      "@sqlite.org/sqlite-wasm",
+      '@remelondb/driver-web',
+      '@remelondb/core',
+      '@sqlite.org/sqlite-wasm',
     ],
   },
   build: {
@@ -30,8 +30,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("node_modules")) {
-            return "vendor";
+          if (id.includes('node_modules')) {
+            return 'vendor';
           }
         },
       },
@@ -39,8 +39,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "http://localhost:3000",
-      "/sync": "http://localhost:3000",
+      '/api': 'http://localhost:3000',
+      '/sync': 'http://localhost:3000',
     },
   },
 });

@@ -1,52 +1,47 @@
-import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { PasswordInput } from "@/components/ui/password-input";
+import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { PasswordInput } from '@/components/ui/password-input';
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@/components/ui/field";
+} from '@/components/ui/field';
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
-} from "@/components/ui/card";
-import { authClient } from "@/lib/auth-client";
-import {
-  Save,
-  Check,
-  Shield,
-  LogOut,
-} from "lucide-react";
-import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { z } from "zod";
-import { useNavigate } from "@tanstack/react-router";
+} from '@/components/ui/card';
+import { authClient } from '@/lib/auth-client';
+import { Save, Check, Shield, LogOut } from 'lucide-react';
+import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { z } from 'zod';
+import { useNavigate } from '@tanstack/react-router';
 
 const passwordSchema = z
   .object({
     currentPassword: z
       .string()
-      .min(8, "Password must be at least 8 characters"),
+      .min(8, 'Password must be at least 8 characters'),
     newPassword: z
       .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[a-z]/, "Must contain at least one lowercase letter")
-      .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Must contain at least one number"),
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[a-z]/, 'Must contain at least one lowercase letter')
+      .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
+      .regex(/[0-9]/, 'Must contain at least one number'),
     confirmPassword: z
       .string()
-      .min(8, "Password must be at least 8 characters"),
+      .min(8, 'Password must be at least 8 characters'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
   });
 
 type PasswordFormValues = z.infer<typeof passwordSchema>;
@@ -59,9 +54,9 @@ export function Security() {
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     },
   });
 
@@ -76,21 +71,21 @@ export function Security() {
       });
 
       if (error) {
-        throw new Error(error.message || "Failed to update password");
+        throw new Error(error.message || 'Failed to update password');
       }
 
-      setSecuritySuccess("Password changed successfully!");
+      setSecuritySuccess('Password changed successfully!');
       passwordForm.reset({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
       });
       setTimeout(() => {
         setSecuritySuccess(null);
       }, 5000);
     } catch (err) {
       setSecurityError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
+        err instanceof Error ? err.message : 'An unexpected error occurred',
       );
     }
   };
@@ -98,9 +93,9 @@ export function Security() {
   const handleLogout = async () => {
     try {
       await authClient.signOut();
-      void navigate({ to: "/login" });
+      void navigate({ to: '/login' });
     } catch (err) {
-      console.error("Logout failed", err);
+      console.error('Logout failed', err);
     }
   };
 
@@ -142,7 +137,9 @@ export function Security() {
                         placeholder="••••••••"
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
-                          fieldState.invalid ? "currentPassword-error" : undefined
+                          fieldState.invalid
+                            ? 'currentPassword-error'
+                            : undefined
                         }
                       />
                       <FieldError
@@ -165,7 +162,7 @@ export function Security() {
                         placeholder="••••••••"
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
-                          fieldState.invalid ? "newPassword-error" : undefined
+                          fieldState.invalid ? 'newPassword-error' : undefined
                         }
                       />
                       <FieldError
@@ -191,7 +188,7 @@ export function Security() {
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid
-                            ? "confirmPassword-error"
+                            ? 'confirmPassword-error'
                             : undefined
                         }
                       />

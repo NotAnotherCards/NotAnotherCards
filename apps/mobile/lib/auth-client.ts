@@ -1,8 +1,8 @@
-import { createAuthClient } from 'better-auth/react'
-import { expoClient } from '@better-auth/expo/client'
-import { inferAdditionalFields } from 'better-auth/client/plugins'
-import * as SecureStore from 'expo-secure-store'
-import { apiURL } from './api-url'
+import { createAuthClient } from 'better-auth/react';
+import { expoClient } from '@better-auth/expo/client';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
+import * as SecureStore from 'expo-secure-store';
+import { apiURL } from './api-url';
 
 export const authClient = createAuthClient({
   baseURL: apiURL,
@@ -20,4 +20,4 @@ export const authClient = createAuthClient({
       },
     }),
   ],
-})
+});

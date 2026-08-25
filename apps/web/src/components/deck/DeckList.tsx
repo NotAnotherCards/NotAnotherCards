@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { useStore, Deck } from "@/hooks/useStore";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useStore, Deck } from '@/hooks/useStore';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Plus,
   Library,
@@ -16,11 +16,11 @@ import {
   Loader2,
   Trash2,
   RefreshCw,
-} from "lucide-react";
-import { DeckForm } from "./DeckForm";
-import { DeckCard } from "./DeckCard";
-import { writeErrorMessage } from "@/lib/write-error";
-import { FormErrorMessage } from "@/components/auth/form-error-message";
+} from 'lucide-react';
+import { DeckForm } from './DeckForm';
+import { DeckCard } from './DeckCard';
+import { writeErrorMessage } from '@/lib/write-error';
+import { FormErrorMessage } from '@/components/auth/form-error-message';
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -36,24 +36,30 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
-  const handleCreateDeck = async (data: { title: string; description: string }) => {
+  const handleCreateDeck = async (data: {
+    title: string;
+    description: string;
+  }) => {
     setWriteError(null);
     try {
       await store.createDeck(data.title, data.description);
       setShowCreateForm(false);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, "Failed to create deck"));
+      setWriteError(writeErrorMessage(err, 'Failed to create deck'));
     }
   };
 
-  const handleEditDeck = async (data: { title: string; description: string }) => {
+  const handleEditDeck = async (data: {
+    title: string;
+    description: string;
+  }) => {
     if (!editingDeck) return;
     setWriteError(null);
     try {
       await store.updateDeck(editingDeck.id, data.title, data.description);
       setEditingDeck(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, "Failed to update deck"));
+      setWriteError(writeErrorMessage(err, 'Failed to update deck'));
     }
   };
 
@@ -65,7 +71,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
       await store.deleteDeck(deckToDelete);
       setDeckToDelete(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, "Failed to delete deck"));
+      setWriteError(writeErrorMessage(err, 'Failed to delete deck'));
     } finally {
       setIsDeleting(false);
     }
@@ -82,7 +88,8 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             Database Inactive (Taken Over)
           </h3>
           <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-            This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
+            This tab is currently inactive because the offline database is open
+            in another tab. Click below to use the database in this window.
           </p>
         </div>
         <Button
@@ -101,8 +108,12 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
       return (
         <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
           <Loader2 className="animate-spin size-8 text-primary" />
-          <p className="text-sm font-semibold text-foreground animate-pulse">Connecting Local Database...</p>
-          <p className="text-xs text-muted-foreground">Initializing offline storage handles and loading library.</p>
+          <p className="text-sm font-semibold text-foreground animate-pulse">
+            Connecting Local Database...
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Initializing offline storage handles and loading library.
+          </p>
         </div>
       );
     }
@@ -116,12 +127,19 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
           <AlertCircle className="size-8" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-destructive">Failed to Load Decks</h3>
+          <h3 className="text-base font-bold text-destructive">
+            Failed to Load Decks
+          </h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {store.error || "An error occurred while loading your library. Please try reloading."}
+            {store.error ||
+              'An error occurred while loading your library. Please try reloading.'}
           </p>
         </div>
-        <Button variant="outline" className="cursor-pointer gap-1.5" onClick={() => window.location.reload()}>
+        <Button
+          variant="outline"
+          className="cursor-pointer gap-1.5"
+          onClick={() => window.location.reload()}
+        >
           <RefreshCw className="size-4" />
           Retry
         </Button>
@@ -206,7 +224,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
           title="Edit Deck Details"
           initialData={{
             title: editingDeck.title,
-            description: editingDeck.description || "",
+            description: editingDeck.description || '',
           }}
           onSubmit={handleEditDeck}
           error={writeError}
@@ -237,21 +255,21 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
             <CardContent className="pt-0">
               <FormErrorMessage message={writeError} className="mb-4" />
               <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeckToDelete(null)}
-                className="cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteDeck}
-                disabled={isDeleting}
-                className="cursor-pointer"
-              >
-                Delete Permanently
-              </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeckToDelete(null)}
+                  className="cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteDeck}
+                  disabled={isDeleting}
+                  className="cursor-pointer"
+                >
+                  Delete Permanently
+                </Button>
               </div>
             </CardContent>
           </Card>

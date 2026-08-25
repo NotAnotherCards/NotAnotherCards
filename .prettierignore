@@ -1,1 +1,5 @@
 apps/web/src/routeTree.gen.ts
+**/dist/**
+**/android/**
+**/ios/**
+**/.expo/**

@@ -1,9 +1,9 @@
-import { TextInput } from 'react-native'
-import { cn } from '@/lib/utils'
+import { TextInput } from 'react-native';
+import { cn } from '@/lib/utils';
 
 type InputProps = React.ComponentProps<typeof TextInput> & {
-  invalid?: boolean
-}
+  invalid?: boolean;
+};
 
 export function Input({ className, invalid, ...props }: InputProps) {
   return (
@@ -15,5 +15,5 @@ export function Input({ className, invalid, ...props }: InputProps) {
       )}
       {...props}
     />
-  )
+  );
 }

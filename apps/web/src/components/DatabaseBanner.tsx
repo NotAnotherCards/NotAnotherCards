@@ -1,5 +1,5 @@
-import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
-import { useDatabaseState } from "@remelondb/core/react";
+import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { useDatabaseState } from '@remelondb/core/react';
 
 // Storage denied by the browser (private browsing, "never remember
 // history", blocked site data): remelondb >=0.1.8 fails fast with a
@@ -7,15 +7,15 @@ import { useDatabaseState } from "@remelondb/core/react";
 function isOpfsBlocked(error: Error | null): boolean {
   if (!error) return false;
   return (
-    (error as { code?: string }).code === "OPFS_UNAVAILABLE" ||
+    (error as { code?: string }).code === 'OPFS_UNAVAILABLE' ||
     /OPFS storage is unavailable/i.test(error.message)
   );
 }
 
 function getFriendlyErrorMessage(error: Error | null): string {
-  if (!error) return "Failed to load database.";
-  if (error.message.includes("shared worker did not answer")) {
-    return "Database connection timed out. Please retry or refresh the page.";
+  if (!error) return 'Failed to load database.';
+  if (error.message.includes('shared worker did not answer')) {
+    return 'Database connection timed out. Please retry or refresh the page.';
   }
   return error.message;
 }
@@ -23,7 +23,7 @@ function getFriendlyErrorMessage(error: Error | null): string {
 export function DatabaseBanner() {
   const { status, error } = useDatabaseState();
 
-  if (status === "ready" || status === "idle") {
+  if (status === 'ready' || status === 'idle') {
     return null;
   }
 
@@ -34,7 +34,7 @@ export function DatabaseBanner() {
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 pointer-events-none select-none animate-in fade-in slide-in-from-top-4 duration-300">
       <div className="bg-background/95 backdrop-blur-xs border border-border/80 rounded-2xl shadow-lg overflow-hidden pointer-events-auto">
-        {status === "loading" && (
+        {status === 'loading' && (
           <div className="bg-blue-500/10 border-blue-500/20 text-blue-800 px-4 py-3.5 flex items-center gap-2.5 text-xs">
             <Loader2 className="size-4 animate-spin text-blue-500 shrink-0" />
             <span>
@@ -43,7 +43,7 @@ export function DatabaseBanner() {
             </span>
           </div>
         )}
-        {status === "taken-over" && (
+        {status === 'taken-over' && (
           <div className="bg-amber-500/10 border-amber-500/20 dark:text-amber-300 px-4 py-3.5 flex items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <AlertCircle className="size-4 text-amber-500 shrink-0" />
@@ -62,7 +62,7 @@ export function DatabaseBanner() {
           </div>
         )}
 
-        {status === "error" && isOpfsBlocked(error) && (
+        {status === 'error' && isOpfsBlocked(error) && (
           <div className="bg-amber-500/10 border-amber-500/20 dark:text-amber-300 px-4 py-3.5 flex items-center gap-2 text-xs">
             <AlertCircle className="size-4 text-amber-500 shrink-0" />
             <span>
@@ -73,12 +73,12 @@ export function DatabaseBanner() {
           </div>
         )}
 
-        {status === "error" && !isOpfsBlocked(error) && (
+        {status === 'error' && !isOpfsBlocked(error) && (
           <div className="bg-destructive/10 border-destructive/20 dark:text-red-400 px-4 py-3.5 flex items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <AlertCircle className="size-4 text-destructive shrink-0" />
               <span>
-                <strong>Offline Database Error:</strong>{" "}
+                <strong>Offline Database Error:</strong>{' '}
                 {getFriendlyErrorMessage(error)}
               </span>
             </div>
