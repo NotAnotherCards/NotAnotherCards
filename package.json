@@ -11,8 +11,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js}\""
   },
   "devDependencies": {
-    "@remelondb/core": "0.2.0",
-    "@remelondb/driver-web": "0.2.0",
+    "@remelondb/core": "0.2.2",
+    "@remelondb/driver-web": "0.2.2",
     "eslint": "^10.6.0",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4"

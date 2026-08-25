@@ -205,7 +205,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       }),
     );
 
-    expect(result.rejected.user_profiles).toEqual(['user-b']);
+    expect(result.rejected?.user_profiles).toEqual(['user-b']);
     const state = pulled(await handlers.pull(pullArgs(null)));
     expect(state.changes.user_profiles?.updated).toEqual([
       expect.objectContaining({ id: 'user-a', username: 'alice' }),
@@ -815,8 +815,10 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
   });
 
   it('persists a time-based GC floor and expires older cursors', async () => {
-    const store = createAppSyncStore(db);
-    const handlers = createAppSyncEngine(store).as('user-a');
+    const { store, crossValidateChanges } = createAppSyncStore(db);
+    const handlers = createAppSyncEngine({ store, crossValidateChanges }).as(
+      'user-a',
+    );
     const start = pulled(await handlers.pull(pullArgs(null)));
     accepted(
       await handlers.push({
@@ -876,7 +878,8 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
   });
 
   it('rolls back every row when a push cannot be committed', async () => {
-    const durableStore = createAppSyncStore(db);
+    const { store: durableStore, crossValidateChanges } =
+      createAppSyncStore(db);
     const failingStore: AppSyncStore = {
       gc: (floor) => durableStore.gc(floor),
       transaction: (scope, mode, work) =>
@@ -890,7 +893,10 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
           }),
         ),
     };
-    const handlers = createAppSyncEngine(failingStore).as('user-a');
+    const handlers = createAppSyncEngine({
+      store: failingStore,
+      crossValidateChanges,
+    }).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
     const push: SyncPushArgs = {
       cursor: start.cursor,
