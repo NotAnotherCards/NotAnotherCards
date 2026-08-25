@@ -170,27 +170,92 @@ Stores persistent sync metadata. It currently records `gc_floor`, the oldest val
 
 Everything in this section is exploratory and is not part of the current database contract.
 
-### Proposed `user_cards` evolution
+### Proposed note/card content model
 
-Based on the suggestion from `@dustyway` in the [original review](https://github.com/NotAnotherCards/NotAnotherCards/pull/62#pullrequestreview-4827392383), `front` and `back` could contain Markdown for richer content, while an optional card type would be represented by a `kind` column instead of separate word, phrase, and comparison tables.
+Decided in the discussion on
+[issue #81](https://github.com/NotAnotherCards/NotAnotherCards/issues/81).
+`front` and `back` become Markdown, and a note/card split (the Anki model)
+replaces a single typed `user_cards` row: structure lives in a canonical **note**,
+and each **card** is a generated, per-review-mode Markdown front/back row with its
+own schedule.
 
 ```text
-id                  text PK
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-deck_id             text NOT NULL relation -> user_decks.id
-kind                text NOT NULL DEFAULT 'basic'                  [new addition]
-front               text NOT NULL  (Markdown content)
-back                text NOT NULL  (Markdown content)
-due_at              number (integer Unix ms) NOT NULL
-created_at          number (integer Unix ms) NOT NULL
-updated_at          number (integer Unix ms) NOT NULL
+user_notes
+  id                  text PK
+  user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+  rev                 bigint NOT NULL                                [server]
+  deleted_at          timestamptz NULL                               [server]
+  note_type           text NOT NULL       -- e.g. basic, word, phrase, comparison
+  fields_version      integer NOT NULL
+  fields_json         text NOT NULL       -- serialized JSON, validated by note_type + fields_version
+  additional_content  text NULL           -- Markdown, free-form content templates don't address individually
+  created_at          number (integer Unix ms) NOT NULL
+  updated_at          number (integer Unix ms) NOT NULL
+
+user_cards
+  id                  text PK
+  user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+  rev                 bigint NOT NULL                                [server]
+  deleted_at          timestamptz NULL                               [server]
+  note_id             text NOT NULL relation -> user_notes.id
+  template_key        text NOT NULL       -- selects the render template within note_type
+  active              boolean NOT NULL DEFAULT true
+  front               text NOT NULL  (Markdown content)
+  back                text NOT NULL  (Markdown content)
+  due_at              number (integer Unix ms) NOT NULL
+  created_at          number (integer Unix ms) NOT NULL
+  updated_at          number (integer Unix ms) NOT NULL
+
+user_note_decks
+  id                  text PK
+  user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+  rev                 bigint NOT NULL                                [server]
+  deleted_at          timestamptz NULL                               [server]
+  note_id             text NOT NULL relation -> user_notes.id
+  deck_id             text NOT NULL relation -> user_decks.id
+  active              boolean NOT NULL DEFAULT true
+  created_at          number (integer Unix ms) NOT NULL
+  updated_at          number (integer Unix ms) NOT NULL
 ```
 
-Treating `front` and `back` as Markdown changes their content contract but does not require a database migration because they are already stored as text. Before adopting this, rendering, sanitization, image storage, and supported Markdown rules must be defined.
+Key points from the discussion:
 
-Adding `kind` would require a database migration and matching updates to the API, wire, and local RemelonDB schemas. The initial allowed values and whether clients may define new kinds should be decided in the implementation ticket.
+- **Notes are the source of truth, cards are generated.** A card is never
+  edited directly; editing a note's `fields_json`/`additional_content` and
+  regenerating re-renders its cards in place, preserving `due_at` and
+  review history. Cards are reconciled by `(note_id, template_key)`, not
+  replaced.
+- **`fields_json` is the complete structured note**, not just the values
+  review templates read directly. Known values that get edited,
+  regenerated, searched, or reused (translation, pronunciation, grammar,
+  mnemonic, origin, examples, ...) belong in `fields_json`;
+  `additional_content` is reserved for genuinely free-form Markdown. This
+  intentionally accepts whole-value conflict resolution on `fields_json`
+  for concurrent offline edits, revisited if it proves too coarse.
+- **Sibling cards, one per review mode.** A `word` note (`original`,
+  `translation`, `pronunciation`, `examples`) generates sibling cards such
+  as original→translation, translation→original, audio→translation, and
+  context→translation, sharing `note_id` and each with its own schedule. A
+  manual front/back card is a `basic` note with one template and one card,
+  not a separate code path.
+- **Deck membership belongs to the note**, via `user_note_decks`, so one
+  note can appear in several decks (e.g. Top 300 and a themed deck) while
+  keeping one card and one schedule per review mode. Card activation is
+  global to the note, not per deck.
+- **Soft state vs. protocol deletion.** Removing deck membership or
+  disabling a review mode sets `active = false`; both use protocol
+  deletion only when their parent note or deck is deleted, cascading
+  tombstones to dependent rows. A note losing its last active membership
+  becomes unfiled rather than deleted, keeping it in the personal
+  dictionary.
+- **Deterministic identity.** `user_note_decks` and generated `user_cards`
+  rows use `uuidv5` over `(note_id, deck_id)` and `(note_id, template_key)`
+  respectively, so concurrent offline creation targets the same row instead
+  of leaving duplicate, randomly-keyed rows to reconcile.
+
+> No data migration is planned: existing cards are development data and can
+> be discarded when this schema lands, so the API, wire, and local RemelonDB
+> schemas can change together without a compatibility path.
 
 ### Proposed files/upload foundation
 
@@ -494,9 +559,14 @@ This lets users edit any card without changing the global card for everyone.
 
 ---
 
-#### `user_card_notes`
+#### `user_card_annotations`
 
 Personal notes.
+
+> Renamed from `user_card_notes`, decided in
+> [issue #81](https://github.com/NotAnotherCards/NotAnotherCards/issues/81),
+> to free up "note" for the canonical `user_notes` source record proposed
+> below.
 
 ```txt
 id                  uuid PK
