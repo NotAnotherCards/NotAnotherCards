@@ -17,6 +17,7 @@ image               text NULL
 created_at          timestamp NOT NULL DEFAULT now()
 updated_at          timestamp NOT NULL
 timezone            text NULL DEFAULT 'UTC'
+on_boarding_complete boolean NOT NULL DEFAULT false
 ```
 
 #### `session` ([API schema](../apps/api/src/database/schema.ts#L18))
