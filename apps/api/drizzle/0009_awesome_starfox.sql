@@ -1,0 +1,1 @@
+ALTER TABLE "user" ALTER COLUMN "on_boarding_complete" SET NOT NULL;

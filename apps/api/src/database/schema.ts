@@ -13,7 +13,7 @@ export const user = pgTable('user', {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   timezone: text("timezone").default("UTC"),
-  onBoardingComplete: boolean("on_boarding_complete").default(false),
+  onBoardingComplete: boolean("on_boarding_complete").default(false).notNull(),
 });
 
 export const session = pgTable(

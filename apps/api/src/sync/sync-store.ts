@@ -1,9 +1,10 @@
 import { createSyncEngine, type SyncEngineOptions } from '@remelondb/server';
-import { and, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import {
   createDrizzleStore,
   drizzleSyncTable,
   type DrizzleStore,
+  type DrizzleStoreOptions,
 } from '@remelondb/store-drizzle';
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
@@ -15,6 +16,32 @@ import {
 } from './sync-validation';
 
 export type AppSyncStore = DrizzleStore<string>;
+
+type AppTx = Parameters<Parameters<AppDatabase['transaction']>[0]>[0];
+
+export async function getActiveUsernameOwner(
+  db: AppDatabase | AppTx,
+  username: string,
+): Promise<string | null> {
+  const profiles = await db
+    .select({ userId: userProfiles.userId })
+    .from(userProfiles)
+    .where(
+      and(eq(userProfiles.username, username), isNull(userProfiles.deletedAt)),
+    )
+    .limit(1);
+  return profiles[0]?.userId ?? null;
+}
+
+export const syncScopeLockKey = (scope: string): bigint => {
+  // FNV-1a 64-bit hash matching RemelonDB's default implementation
+  let hash = 0xcbf29ce484222325n;
+  for (const char of scope) {
+    hash ^= BigInt(char.codePointAt(0)!);
+    hash = BigInt.asUintN(64, hash * 0x100000001b3n);
+  }
+  return BigInt.asIntN(64, hash);
+};
 
 export interface AppSyncStoreBundle {
   readonly store: AppSyncStore;
@@ -67,10 +94,14 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
         targetLanguageId: null,
       },
     }),
-  };
+  } as unknown as DrizzleStoreOptions<string>['tables'];
 
   const store = withSyncCascadingDeletes(
-    createDrizzleStore<string>({ db, tables }),
+    createDrizzleStore<string>({
+      db: db,
+      tables,
+      lockKey: syncScopeLockKey,
+    }),
   );
 
   const findProfileUsernameOwners: ProfileUsernameOwnerLookup = async (
