@@ -8,6 +8,8 @@ import {
   Body,
   UnauthorizedException,
   BadRequestException,
+  Get,
+  Query,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { toNodeHandler } from 'better-auth/node';
@@ -26,6 +28,33 @@ export class AuthController {
     @Inject(DATABASE_CONNECTION)
     private readonly db: AppDatabase,
   ) {}
+
+  @Get('check-username')
+  async checkUsername(
+    @Req() req: Request,
+    @Query('username') username: string,
+  ) {
+    const userId = await this.authService.userIdFromHeaders(req.headers);
+    if (!userId) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    if (!username) {
+      throw new BadRequestException('Username query parameter is required');
+    }
+
+    // Check if username is taken by another user in user_profiles
+    const existingProfile = await this.db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.username, username))
+      .limit(1);
+
+    const taken =
+      existingProfile.length > 0 && existingProfile[0].userId !== userId;
+
+    return { available: !taken };
+  }
 
   @Post('onboard')
   async onboard(

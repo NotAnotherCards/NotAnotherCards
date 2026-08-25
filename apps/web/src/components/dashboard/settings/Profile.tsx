@@ -72,10 +72,26 @@ export function Profile() {
     setApiError(null);
     setSuccessMessage(null);
     try {
+      const newUsername = data.username || "";
+      const currentUsername = profile?.username || "";
+
+      if (newUsername && newUsername !== currentUsername) {
+        const res = await fetch(
+          `/api/auth/check-username?username=${encodeURIComponent(newUsername)}`,
+        );
+        if (!res.ok) {
+          throw new Error("Failed to check username availability");
+        }
+        const checkResult = await res.json();
+        if (!checkResult.available) {
+          throw new Error("Username is already taken");
+        }
+      }
+
       await updateUserProfile({
-        username: data.username || '',
-        native_language_id: data.native_language_id || '',
-        target_language_id: data.target_language_id || '',
+        username: newUsername,
+        native_language_id: data.native_language_id || "",
+        target_language_id: data.target_language_id || "",
       });
 
       setSuccessMessage('Settings saved successfully!');
