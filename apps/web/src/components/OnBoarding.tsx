@@ -7,23 +7,21 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { AuthCard } from '@/components/auth/auth-card';
-import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
-import { FormErrorMessage } from '@/components/auth/form-error-message';
-import { useStore } from '@/hooks/useStore';
-import { authClient } from '@/lib/auth-client';
-import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
-import { LANGUAGES } from '@/lib/languages';
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthCard } from "@/components/auth/auth-card";
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
+import { authClient } from "@/lib/auth-client"
+import { ProfileFormValues, userProfileFormSchema } from "@repo/schemas";
+import { LANGUAGES } from "@/lib/languages"
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const { createUserProfile } = useStore();
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(userProfileFormSchema),
     defaultValues: {
@@ -40,21 +38,30 @@ export function OnBoardingComponent() {
   const onSubmit = async (data: ProfileFormValues) => {
     setApiError(null);
     try {
-      const { data: session } = await authClient.getSession();
-      if (!session) throw new Error('No active session');
-      await createUserProfile({
-        id: session.user.id,
-        username: data.username,
-        native_language_id: data.native_language_id,
-        target_language_id: data.target_language_id,
+      const res = await fetch("/api/auth/onboard", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          username: data.username,
+          native_language_id: data.native_language_id,
+          target_language_id: data.target_language_id,
+        }),
       });
-      void navigate({ to: '/app/dashboard' });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to save onboarding data");
+      }
+      await authClient.getSession();
+      void navigate({ to: "/app/dashboard" });
     } catch (err) {
       setApiError(
         err instanceof Error ? err.message : 'An unexpected error occurred',
       );
     }
   };
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 flex-1">

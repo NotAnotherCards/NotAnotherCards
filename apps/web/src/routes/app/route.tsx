@@ -1,20 +1,16 @@
-import { authClient } from '@/lib/auth-client';
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { DatabaseBanner } from '@/components/DatabaseBanner';
-import {
-  createUserDatabaseManager,
-  closeUserDatabase,
-  checkOnboardingComplete,
-} from '@/offline/db';
-import { createRunSync } from '@/offline/sync';
+import { authClient } from "@/lib/auth-client";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { DatabaseBanner } from "@/components/DatabaseBanner";
+import { createUserDatabaseManager, closeUserDatabase } from "@/offline/db";
+import { createRunSync } from "@/offline/sync";
 import {
   browserSyncTriggers,
   createSyncController,
   type SyncController,
-} from '@/offline/syncController';
-import { SyncProvider } from '@/offline/syncProvider';
-import { SyncStatus } from '@/components/SyncStatus';
+} from "@/offline/syncController";
+import { SyncProvider } from "@/offline/syncProvider";
+import { SyncStatus } from "@/components/SyncStatus";
 
 import { DatabaseProvider } from '@remelondb/core/react';
 
@@ -22,30 +18,25 @@ export const Route = createFileRoute('/app')({
   beforeLoad: async ({ location }) => {
     const { data: session } = await authClient.getSession();
     if (!session) {
-      if (
-        location.pathname === '/app/onboarding' ||
-        location.pathname === '/app'
-      ) {
+      throw redirect({
+        to: "/",
+      });
+    }
+
+    const onboardingComplete = !!session.user.onBoardingComplete;
+
+    if (onboardingComplete) {
+      if (location.pathname === "/app" || location.pathname === "/app/onboarding") {
         throw redirect({
-          to: '/',
+          to: "/app/dashboard",
         });
       }
-      throw redirect({
-        to: '/login',
-      });
-    }
-
-    const onboardingComplete = await checkOnboardingComplete(session.user.id);
-    if (!onboardingComplete && location.pathname !== '/app/onboarding') {
-      throw redirect({
-        to: '/app/onboarding',
-      });
-    }
-
-    if (location.pathname === '/app') {
-      throw redirect({
-        to: '/app/dashboard',
-      });
+    } else {
+      if (location.pathname !== "/app/onboarding") {
+        throw redirect({
+          to: "/app/onboarding",
+        });
+      }
     }
 
     return {
@@ -58,6 +49,7 @@ export const Route = createFileRoute('/app')({
 function AppLayout() {
   const { session } = Route.useRouteContext();
   const userId = session?.user?.id;
+  const onBoardingComplete = session?.user?.onBoardingComplete;
 
   const [userManager, setUserManager] = useState<ReturnType<
     typeof createUserDatabaseManager
@@ -67,7 +59,7 @@ function AppLayout() {
   );
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !onBoardingComplete) {
       setUserManager(null);
       setSyncController(null);
       return;
@@ -103,7 +95,17 @@ function AppLayout() {
       });
       setUserManager(null);
     };
-  }, [userId]);
+  }, [userId, onBoardingComplete]);
+
+  if (!onBoardingComplete) {
+    return (
+      <div className="flex-1 flex flex-col bg-background">
+        <div className="flex-1 flex flex-col">
+          <Outlet />
+        </div>
+      </div>
+    );
+  }
 
   if (!userManager) {
     return null;

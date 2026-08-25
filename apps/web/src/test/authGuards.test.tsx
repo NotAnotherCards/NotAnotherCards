@@ -19,6 +19,7 @@ const mockSession = {
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    onBoardingComplete: true,
   },
 };
 
@@ -35,7 +36,7 @@ describe('Auth Guards', () => {
     window.history.pushState(null, '', '/');
   });
 
-  it('redirects logged-out users from dashboard to login', async () => {
+  it("redirects logged-out users from dashboard to home", async () => {
     // Mock logged-out state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
@@ -56,13 +57,13 @@ describe('Auth Guards', () => {
       await router.navigate({ to: '/app/dashboard' });
     });
 
-    // Verify user is redirected to the login page
+    // Verify user is redirected to the home page (NotAnotherCards)
     expect(
-      await screen.findByRole('heading', { name: /Welcome Back/i }),
+      await screen.findByText(/NotAnotherCards/i),
     ).toBeInTheDocument();
 
-    // Verify the URL is updated to /login
-    expect(window.location.pathname).toBe('/login');
+    // Verify the URL is updated to /
+    expect(window.location.pathname).toBe("/");
   }, 15000);
 
   it('allows logged-in users to see the dashboard', async () => {

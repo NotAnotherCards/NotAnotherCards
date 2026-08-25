@@ -8,10 +8,8 @@ import {
   UserCard,
   ReviewEvent,
   UserProfile,
-  userDbName,
-} from '@repo/offline-db';
-import { synchronize } from '@remelondb/core';
-import { pullChanges, pushChanges } from './sync';
+} from "@repo/offline-db";
+
 
 export type { DatabaseManagerState as DatabaseState };
 
@@ -77,70 +75,4 @@ export async function closeUserDatabase(
   await target?.close();
 }
 
-const pendingOnboardingChecks = new Map<string, Promise<boolean>>();
 
-export function checkOnboardingComplete(userId: string): Promise<boolean> {
-  // Route guards overlap under redirect chains and superseded
-  // navigations; concurrent checks for one user share a single run.
-  const pending = pendingOnboardingChecks.get(userId);
-  if (pending) {
-    return pending;
-  }
-  const check = runOnboardingCheck(userId).finally(() => {
-    pendingOnboardingChecks.delete(userId);
-  });
-  pendingOnboardingChecks.set(userId, check);
-  return check;
-}
-
-async function runOnboardingCheck(userId: string): Promise<boolean> {
-  // Reuse the active manager when AppLayout already has this user's
-  // database open. Without SharedWorker, on Chrome for Android for
-  // one, the driver enforces a single owner and a second open fails.
-  // Another user's manager never qualifies: an account transition must
-  // not answer one user's check from another user's data. Status does
-  // not matter: closeUserDatabase clears the global before closing, so
-  // a published manager is always adoptable — even unstarted, since
-  // init() deduplicates on the same instance. The private manager never
-  // reaches the global, so a slow check from an abandoned navigation
-  // can only ever close the connection it created itself.
-  const shared =
-    manager !== null && managerDbName === userDbName(userId) ? manager : null;
-  const activeManager = shared ?? createManagerFor(userDbName(userId));
-
-  try {
-    const db = await activeManager.init();
-    let complete = false;
-    if (db) {
-      let profiles = await db.get(UserProfile).query().fetch();
-      // If the local database has no profiles, perform a single sync run
-      // to pull the user's existing profile (and other records) from the server.
-      if (profiles.length === 0) {
-        try {
-          await synchronize({
-            database: db,
-            pullChanges,
-            pushChanges,
-          });
-          profiles = await db.get(UserProfile).query().fetch();
-        } catch (err) {
-          console.warn('Pre-onboarding check sync failed', err);
-        }
-      }
-      const profile = profiles[0];
-      if (
-        profile &&
-        profile.username &&
-        profile.native_language_id &&
-        profile.target_language_id
-      ) {
-        complete = true;
-      }
-    }
-    return complete;
-  } finally {
-    if (!shared) {
-      await activeManager.close();
-    }
-  }
-}

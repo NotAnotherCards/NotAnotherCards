@@ -1,10 +1,9 @@
-import { render, screen, act } from '@testing-library/react';
-import { App, router } from '../App';
-import userEvent from '@testing-library/user-event';
-import { authClient } from '@/lib/auth-client';
-import { checkOnboardingComplete } from '@/offline/db';
-import { useStore } from '@/hooks/useStore';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, act } from "@testing-library/react";
+import { App, router } from "../App";
+import userEvent from "@testing-library/user-event";
+import { authClient } from "@/lib/auth-client";
+import { useStore } from "@/hooks/useStore";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockSession = {
   session: {
@@ -22,6 +21,15 @@ const mockSession = {
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    onBoardingComplete: false,
+  },
+};
+
+const mockSessionOnboarded = {
+  ...mockSession,
+  user: {
+    ...mockSession.user,
+    onBoardingComplete: true,
   },
 };
 
@@ -36,20 +44,14 @@ vi.mock('@remelondb/core/react', () => ({
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-describe('Onboarding Flow and Guard Specs', () => {
-  const mockCreateUserProfile = vi.fn().mockResolvedValue(undefined);
-
+describe("Onboarding Flow and Guard Specs", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    vi.mocked(checkOnboardingComplete).mockReset();
     vi.mocked(useStore).mockReset();
-
-    // Default mock to false (onboarding incomplete) so the router reset evaluates correctly
-    vi.mocked(checkOnboardingComplete).mockResolvedValue(false);
 
     // Default useStore mock returning base values
     vi.mocked(useStore).mockReturnValue({
-      createUserProfile: mockCreateUserProfile,
+      createUserProfile: vi.fn().mockResolvedValue(undefined),
       updateUserProfile: vi.fn().mockResolvedValue(undefined),
       profile: null,
       decks: [],
@@ -58,7 +60,7 @@ describe('Onboarding Flow and Guard Specs', () => {
       getCardsCount: () => 0,
     } as unknown as ReturnType<typeof useStore>);
 
-    // Default logged-in session mocks
+    // Default logged-in session mocks (not onboarded)
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSession,
       error: null,
@@ -70,6 +72,12 @@ describe('Onboarding Flow and Guard Specs', () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
+
+    // Mock global fetch
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
 
     // Reset global router state synchronously to /app/onboarding to avoid test pollution
     window.history.pushState(null, '', '/app/onboarding');
@@ -104,8 +112,19 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(window.location.pathname).toBe('/app/onboarding');
   });
 
-  it('redirects logged-in users to dashboard if onboarding is complete', async () => {
-    vi.mocked(checkOnboardingComplete).mockResolvedValue(true);
+  it("redirects logged-in users to dashboard if onboarding is complete", async () => {
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSessionOnboarded,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSessionOnboarded,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
     void router.invalidate();
 
     // Render - since onboarding is complete, it will redirect immediately to dashboard
@@ -162,7 +181,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     ).toBeInTheDocument();
   });
 
-  it('submits the form successfully and calls createUserProfile database action', async () => {
+  it("submits the form successfully and calls the onboarding API endpoint", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -186,20 +205,34 @@ describe('Onboarding Flow and Guard Specs', () => {
       '00000000-0000-0000-0000-000000000002',
     ); // Spanish
 
-    // Submit (flip guard state to true so dashboard redirection completes successfully)
-    vi.mocked(checkOnboardingComplete).mockResolvedValue(true);
-    const submitBtn = screen.getByRole('button', {
-      name: /Complete Registration/i,
+    // Submit (flip guard state to true by updating the session mock so dashboard redirection completes successfully)
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSessionOnboarded,
+      error: null,
     });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSessionOnboarded,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    const submitBtn = screen.getByRole("button", { name: /Complete Registration/i });
     await user.click(submitBtn);
 
-    // Verify createUserProfile database write was called with exact correct arguments
-    expect(mockCreateUserProfile).toHaveBeenCalledWith({
-      id: 'user-123',
-      username: 'alex_test',
-      native_language_id: '00000000-0000-0000-0000-000000000001',
-      target_language_id: '00000000-0000-0000-0000-000000000002',
-    });
+    // Verify fetch was called with correct endpoint and payload
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/auth/onboard",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          username: "alex_test",
+          native_language_id: "00000000-0000-0000-0000-000000000001",
+          target_language_id: "00000000-0000-0000-0000-000000000002",
+        }),
+      }),
+    );
 
     // Verify redirection to dashboard occurred after success
     expect(
