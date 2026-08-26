@@ -18,7 +18,7 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { authClient } from '@/lib/auth-client';
+import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
 import { ChevronDown, User, Globe, Save, Check } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { LANGUAGES } from '@/lib/languages';
@@ -72,8 +72,18 @@ export function Profile() {
     setApiError(null);
     setSuccessMessage(null);
     try {
+      const newUsername = data.username || '';
+      const currentUsername = profile?.username || '';
+
+      if (newUsername && newUsername !== currentUsername) {
+        const available = await checkUsernameAvailable(newUsername);
+        if (!available) {
+          throw new Error('Username is already taken');
+        }
+      }
+
       await updateUserProfile({
-        username: data.username || '',
+        username: newUsername,
         native_language_id: data.native_language_id || '',
         target_language_id: data.target_language_id || '',
       });

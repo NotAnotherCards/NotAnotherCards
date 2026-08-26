@@ -132,4 +132,103 @@ describe('Authentication (e2e)', () => {
       expect(body.message).toContain('Invalid email or password');
     });
   });
+
+  describe('GET /api/auth/check-username', () => {
+    let userCookie: string[];
+
+    beforeAll(async () => {
+      // Register a user to get a session cookie
+      const signupEmail = `username-check-${Date.now()}@test.com`;
+      const response = await request(app.getHttpServer())
+        .post('/api/auth/sign-up/email')
+        .set('Origin', frontendOrigin)
+        .send({
+          email: signupEmail,
+          password: 'TestPassword123!',
+          name: 'Username Checker',
+        })
+        .expect(200);
+
+      userCookie = response.headers['set-cookie'] as string[];
+    });
+
+    it('should reject requests without authentication', async () => {
+      await request(app.getHttpServer())
+        .get('/api/auth/check-username?username=random_name')
+        .set('Origin', frontendOrigin)
+        .expect(401);
+    });
+
+    it('should return available: true when the username is not taken', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/auth/check-username?username=completely_fresh_username')
+        .set('Origin', frontendOrigin)
+        .set('Cookie', userCookie)
+        .expect(200);
+
+      expect(response.body).toEqual({ available: true });
+    });
+
+    it('should return available: true when the username is owned by the current user', async () => {
+      // First, create the user profile with a specific username via the onboarding endpoint
+      const username = `my_own_username_${Date.now()}`;
+      await request(app.getHttpServer())
+        .post('/api/auth/onboard')
+        .set('Origin', frontendOrigin)
+        .set('Cookie', userCookie)
+        .send({
+          username,
+          native_language_id: '00000000-0000-0000-0000-000000000001',
+          target_language_id: '00000000-0000-0000-0000-000000000002',
+        })
+        .expect(200);
+
+      // Checking the same username should return available: true (since the current user owns it)
+      const response = await request(app.getHttpServer())
+        .get(`/api/auth/check-username?username=${username}`)
+        .set('Origin', frontendOrigin)
+        .set('Cookie', userCookie)
+        .expect(200);
+
+      expect(response.body).toEqual({ available: true });
+    });
+
+    it('should return available: false when the username is owned by another user', async () => {
+      // 1. Create a second user and onboard them with a specific username
+      const secondUserEmail = `other-user-${Date.now()}@test.com`;
+      const signupResponse = await request(app.getHttpServer())
+        .post('/api/auth/sign-up/email')
+        .set('Origin', frontendOrigin)
+        .send({
+          email: secondUserEmail,
+          password: 'TestPassword123!',
+          name: 'Other User',
+        })
+        .expect(200);
+
+      const secondUserCookie = signupResponse.headers['set-cookie'] as string[];
+      const sharedUsername = `taken_username_${Date.now()}`;
+
+      await request(app.getHttpServer())
+        .post('/api/auth/onboard')
+        .set('Origin', frontendOrigin)
+        .set('Cookie', secondUserCookie)
+        .send({
+          username: sharedUsername,
+          native_language_id: '00000000-0000-0000-0000-000000000001',
+          target_language_id: '00000000-0000-0000-0000-000000000002',
+        })
+        .expect(200);
+
+      // 2. Check the availability of that username from the first user's session
+      const response = await request(app.getHttpServer())
+        .get(`/api/auth/check-username?username=${sharedUsername}`)
+        .set('Origin', frontendOrigin)
+        .set('Cookie', userCookie)
+        .expect(200);
+
+      // It should be unavailable (false)
+      expect(response.body).toEqual({ available: false });
+    });
+  });
 });

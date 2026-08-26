@@ -15,7 +15,7 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
-import { authClient } from '@/lib/auth-client';
+import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
 import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 import { LANGUAGES } from '@/lib/languages';
 
@@ -90,6 +90,46 @@ export function OnBoardingComponent() {
                       aria-describedby={
                         fieldState.invalid ? 'username-error' : undefined
                       }
+                      onChange={(e) => {
+                        field.onChange(e);
+                        if (
+                          form.getFieldState('username').error?.type ===
+                          'manual'
+                        ) {
+                          form.clearErrors('username');
+                        }
+                      }}
+                      onBlur={async (e) => {
+                        field.onBlur();
+                        const val = e.target.value;
+                        const valid =
+                          userProfileFormSchema.shape.username.safeParse(
+                            val,
+                          ).success;
+                        if (valid) {
+                          try {
+                            const available = await checkUsernameAvailable(val);
+                            if (form.getValues('username') === val) {
+                              if (!available) {
+                                form.setError('username', {
+                                  type: 'manual',
+                                  message: 'Username is already taken',
+                                });
+                              } else if (
+                                form.getFieldState('username').error?.type ===
+                                'manual'
+                              ) {
+                                form.clearErrors('username');
+                              }
+                            }
+                          } catch (err) {
+                            console.error(
+                              'Failed to check username availability',
+                              err,
+                            );
+                          }
+                        }
+                      }}
                     />
                     <FieldError
                       id="username-error"

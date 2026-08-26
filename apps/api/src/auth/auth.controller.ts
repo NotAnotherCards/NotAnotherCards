@@ -8,6 +8,8 @@ import {
   Body,
   UnauthorizedException,
   BadRequestException,
+  Get,
+  Query,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { toNodeHandler } from 'better-auth/node';
@@ -26,6 +28,29 @@ export class AuthController {
     @Inject(DATABASE_CONNECTION)
     private readonly db: AppDatabase,
   ) {}
+
+  // Advisory check only; the database uniqueness constraint (user_profiles_username_unique)
+  // is the actual guard, as the advisory lock is user-specific.
+  @Get('check-username')
+  async checkUsername(
+    @Req() req: Request,
+    @Query('username') username: string,
+  ) {
+    const userId = await this.authService.userIdFromHeaders(req.headers);
+    if (!userId) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    if (!username) {
+      throw new BadRequestException('Username query parameter is required');
+    }
+
+    // Check if username is taken by another user in active user_profiles
+    const owner = await getActiveUsernameOwner(this.db, username);
+    const taken = owner !== null && owner !== userId;
+
+    return { available: !taken };
+  }
 
   @Post('onboard')
   async onboard(
