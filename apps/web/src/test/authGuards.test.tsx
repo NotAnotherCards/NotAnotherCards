@@ -149,7 +149,7 @@ describe('Auth Guards', () => {
     render(<App />);
 
     await act(async () => {
-      await router.navigate({ to: '/app/onboarding' });
+      await router.navigate({ to: '/onboarding' });
     });
 
     expect(window.location.pathname).toBe('/');

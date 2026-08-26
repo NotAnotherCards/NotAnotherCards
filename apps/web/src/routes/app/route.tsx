@@ -25,18 +25,16 @@ export const Route = createFileRoute('/app')({
 
     const onboardingComplete = !!session.user.onBoardingComplete;
 
-    if (onboardingComplete) {
-      if (location.pathname === "/app" || location.pathname === "/app/onboarding") {
-        throw redirect({
-          to: "/app/dashboard",
-        });
-      }
-    } else {
-      if (location.pathname !== "/app/onboarding") {
-        throw redirect({
-          to: "/app/onboarding",
-        });
-      }
+    if (!onboardingComplete) {
+      throw redirect({
+        to: "/onboarding",
+      });
+    }
+
+    if (location.pathname === "/app") {
+      throw redirect({
+        to: "/app/dashboard",
+      });
     }
 
     return {
@@ -49,7 +47,6 @@ export const Route = createFileRoute('/app')({
 function AppLayout() {
   const { session } = Route.useRouteContext();
   const userId = session?.user?.id;
-  const onBoardingComplete = session?.user?.onBoardingComplete;
 
   const [userManager, setUserManager] = useState<ReturnType<
     typeof createUserDatabaseManager
@@ -59,7 +56,7 @@ function AppLayout() {
   );
 
   useEffect(() => {
-    if (!userId || !onBoardingComplete) {
+    if (!userId) {
       setUserManager(null);
       setSyncController(null);
       return;
@@ -95,17 +92,7 @@ function AppLayout() {
       });
       setUserManager(null);
     };
-  }, [userId, onBoardingComplete]);
-
-  if (!onBoardingComplete) {
-    return (
-      <div className="flex-1 flex flex-col bg-background">
-        <div className="flex-1 flex flex-col">
-          <Outlet />
-        </div>
-      </div>
-    );
-  }
+  }, [userId]);
 
   if (!userManager) {
     return null;

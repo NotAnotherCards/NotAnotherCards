@@ -8,7 +8,7 @@ export const Route = createFileRoute('/_auth')({
       const onboardingComplete = session.user.onBoardingComplete
       if (!onboardingComplete) {
         throw redirect({
-          to: '/app/onboarding',
+          to: '/onboarding',
         });
       }
       throw redirect({

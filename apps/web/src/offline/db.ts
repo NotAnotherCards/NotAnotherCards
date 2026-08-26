@@ -8,8 +8,8 @@ import {
   UserCard,
   ReviewEvent,
   UserProfile,
+  userDbName,
 } from "@repo/offline-db";
-
 
 export type { DatabaseManagerState as DatabaseState };
 
@@ -19,20 +19,6 @@ export let manager: ReturnType<typeof createDatabaseManager> | null = null;
 // know whether reusing it would cross accounts; the manager itself
 // does not record what it opened.
 let managerDbName: string | null = null;
-
-/**
- * OPFS database name for a user. The id is hex-encoded from its UTF-8
- * bytes so that distinct ids always map to distinct names — encoding the
- * full bytes (not `charCodeAt`, which only sees a surrogate's high half)
- * is what keeps two accounts from colliding onto one database file.
- */
-export function userDbName(userId: string): string {
-  const hex = Array.from(new TextEncoder().encode(userId))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-  return `user_${hex}.db`;
-}
-
 function createManagerFor(dbName: string) {
   return createDatabaseManager({
     open: (onTakenOver) =>

@@ -79,9 +79,9 @@ describe("Onboarding Flow and Guard Specs", () => {
       json: async () => ({ success: true }),
     });
 
-    // Reset global router state synchronously to /app/onboarding to avoid test pollution
-    window.history.pushState(null, '', '/app/onboarding');
-    router.history.push('/app/onboarding');
+    // Reset global router state synchronously to /onboarding to avoid test pollution
+    window.history.pushState(null, '', '/onboarding');
+    router.history.push('/onboarding');
     void router.invalidate();
   });
 
@@ -109,7 +109,7 @@ describe("Onboarding Flow and Guard Specs", () => {
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
-    expect(window.location.pathname).toBe('/app/onboarding');
+    expect(window.location.pathname).toBe('/onboarding');
   });
 
   it("redirects logged-in users to dashboard if onboarding is complete", async () => {
@@ -139,7 +139,7 @@ describe("Onboarding Flow and Guard Specs", () => {
 
     // Attempt to navigate to onboarding
     await act(async () => {
-      void router.navigate({ to: '/app/onboarding' });
+      void router.navigate({ to: '/onboarding' });
     });
 
     // Should redirect back to dashboard
