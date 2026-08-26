@@ -20,8 +20,8 @@ export const auth = betterAuth({
       onBoardingComplete: {
         type: 'boolean',
         required: false,
-        defaultValue: false
-      }
+        defaultValue: false,
+      },
     },
   },
 });

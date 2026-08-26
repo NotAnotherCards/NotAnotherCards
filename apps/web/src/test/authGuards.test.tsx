@@ -36,7 +36,7 @@ describe('Auth Guards', () => {
     window.history.pushState(null, '', '/');
   });
 
-  it("redirects logged-out users from dashboard to home", async () => {
+  it('redirects logged-out users from dashboard to home', async () => {
     // Mock logged-out state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
@@ -58,12 +58,10 @@ describe('Auth Guards', () => {
     });
 
     // Verify user is redirected to the home page (NotAnotherCards)
-    expect(
-      await screen.findByText(/NotAnotherCards/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/NotAnotherCards/i)).toBeInTheDocument();
 
     // Verify the URL is updated to /
-    expect(window.location.pathname).toBe("/");
+    expect(window.location.pathname).toBe('/');
   }, 15000);
 
   it('allows logged-in users to see the dashboard', async () => {

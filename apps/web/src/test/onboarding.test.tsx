@@ -1,9 +1,9 @@
-import { render, screen, act } from "@testing-library/react";
-import { App, router } from "../App";
-import userEvent from "@testing-library/user-event";
-import { authClient } from "@/lib/auth-client";
-import { useStore } from "@/hooks/useStore";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, act } from '@testing-library/react';
+import { App, router } from '../App';
+import userEvent from '@testing-library/user-event';
+import { authClient } from '@/lib/auth-client';
+import { useStore } from '@/hooks/useStore';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockSession = {
   session: {
@@ -44,7 +44,7 @@ vi.mock('@remelondb/core/react', () => ({
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-describe("Onboarding Flow and Guard Specs", () => {
+describe('Onboarding Flow and Guard Specs', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(useStore).mockReset();
@@ -112,7 +112,7 @@ describe("Onboarding Flow and Guard Specs", () => {
     expect(window.location.pathname).toBe('/onboarding');
   });
 
-  it("redirects logged-in users to dashboard if onboarding is complete", async () => {
+  it('redirects logged-in users to dashboard if onboarding is complete', async () => {
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSessionOnboarded,
       error: null,
@@ -181,7 +181,7 @@ describe("Onboarding Flow and Guard Specs", () => {
     ).toBeInTheDocument();
   });
 
-  it("submits the form successfully and calls the onboarding API endpoint", async () => {
+  it('submits the form successfully and calls the onboarding API endpoint', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -218,18 +218,20 @@ describe("Onboarding Flow and Guard Specs", () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    const submitBtn = screen.getByRole("button", { name: /Complete Registration/i });
+    const submitBtn = screen.getByRole('button', {
+      name: /Complete Registration/i,
+    });
     await user.click(submitBtn);
 
     // Verify fetch was called with correct endpoint and payload
     expect(global.fetch).toHaveBeenCalledWith(
-      "/api/auth/onboard",
+      '/api/auth/onboard',
       expect.objectContaining({
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
-          username: "alex_test",
-          native_language_id: "00000000-0000-0000-0000-000000000001",
-          target_language_id: "00000000-0000-0000-0000-000000000002",
+          username: 'alex_test',
+          native_language_id: '00000000-0000-0000-0000-000000000001',
+          target_language_id: '00000000-0000-0000-0000-000000000002',
         }),
       }),
     );

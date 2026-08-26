@@ -9,7 +9,7 @@ import {
   ReviewEvent,
   UserProfile,
   userDbName,
-} from "@repo/offline-db";
+} from '@repo/offline-db';
 
 export type { DatabaseManagerState as DatabaseState };
 
@@ -60,5 +60,3 @@ export async function closeUserDatabase(
   }
   await target?.close();
 }
-
-

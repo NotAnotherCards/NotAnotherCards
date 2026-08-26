@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
-vi.unmock("@/offline/db");
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+vi.unmock('@/offline/db');
 
 type StubManager = {
   state: { status: string; error: null };
@@ -15,8 +15,8 @@ var stubManagers: StubManager[] = [];
 // eslint-disable-next-line no-var
 var closeFailure: Error | null = null;
 
-vi.mock("@remelondb/core", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@remelondb/core")>();
+vi.mock('@remelondb/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@remelondb/core')>();
   const fakeDb = {
     get: () => ({ query: () => ({ fetch: async () => [] }) }),
   };
@@ -24,13 +24,13 @@ vi.mock("@remelondb/core", async (importOriginal) => {
     ...actual,
     createDatabaseManager: vi.fn(() => {
       const stub: StubManager = {
-        state: { status: "idle", error: null },
+        state: { status: 'idle', error: null },
         init: vi.fn(async () => {
-          stub.state = { status: "ready", error: null };
+          stub.state = { status: 'ready', error: null };
           return fakeDb;
         }),
         close: vi.fn(async () => {
-          stub.state = { status: "idle", error: null };
+          stub.state = { status: 'idle', error: null };
           if (closeFailure) {
             throw closeFailure;
           }
@@ -43,37 +43,37 @@ vi.mock("@remelondb/core", async (importOriginal) => {
   };
 });
 
-vi.mock("@remelondb/driver-web", () => ({
+vi.mock('@remelondb/driver-web', () => ({
   WebSqliteDriver: class {},
 }));
 
-const loadSubject = () => import("../offline/db");
+const loadSubject = () => import('../offline/db');
 
-describe("database manager ownership (issue #140)", () => {
+describe('database manager ownership (issue #140)', () => {
   beforeEach(() => {
     vi.resetModules();
     stubManagers = [];
     closeFailure = null;
   });
 
-  it("a failed close still clears the global", async () => {
+  it('a failed close still clears the global', async () => {
     const db = await loadSubject();
 
-    db.createUserDatabaseManager("user-a");
+    db.createUserDatabaseManager('user-a');
     const activeStub = stubManagers[0];
     await activeStub.init();
 
-    closeFailure = new Error("driver close failed");
-    await expect(db.closeUserDatabase()).rejects.toThrow("driver close failed");
+    closeFailure = new Error('driver close failed');
+    await expect(db.closeUserDatabase()).rejects.toThrow('driver close failed');
     // The global only ever holds a manager nobody has tried to close.
     expect(db.manager).toBeNull();
   });
 
-  it("closing a specific manager clears the global only when it is still active", async () => {
+  it('closing a specific manager clears the global only when it is still active', async () => {
     const db = await loadSubject();
 
-    const first = db.createUserDatabaseManager("user-a");
-    const second = db.createUserDatabaseManager("user-a");
+    const first = db.createUserDatabaseManager('user-a');
+    const second = db.createUserDatabaseManager('user-a');
 
     // Closing the displaced first manager leaves the successor active.
     await db.closeUserDatabase(first);

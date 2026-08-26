@@ -1,16 +1,16 @@
-import { authClient } from "@/lib/auth-client";
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { DatabaseBanner } from "@/components/DatabaseBanner";
-import { createUserDatabaseManager, closeUserDatabase } from "@/offline/db";
-import { createRunSync } from "@/offline/sync";
+import { authClient } from '@/lib/auth-client';
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { DatabaseBanner } from '@/components/DatabaseBanner';
+import { createUserDatabaseManager, closeUserDatabase } from '@/offline/db';
+import { createRunSync } from '@/offline/sync';
 import {
   browserSyncTriggers,
   createSyncController,
   type SyncController,
-} from "@/offline/syncController";
-import { SyncProvider } from "@/offline/syncProvider";
-import { SyncStatus } from "@/components/SyncStatus";
+} from '@/offline/syncController';
+import { SyncProvider } from '@/offline/syncProvider';
+import { SyncStatus } from '@/components/SyncStatus';
 
 import { DatabaseProvider } from '@remelondb/core/react';
 
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/app')({
     const { data: session } = await authClient.getSession();
     if (!session) {
       throw redirect({
-        to: "/",
+        to: '/',
       });
     }
 
@@ -27,13 +27,13 @@ export const Route = createFileRoute('/app')({
 
     if (!onboardingComplete) {
       throw redirect({
-        to: "/onboarding",
+        to: '/onboarding',
       });
     }
 
-    if (location.pathname === "/app") {
+    if (location.pathname === '/app') {
       throw redirect({
-        to: "/app/dashboard",
+        to: '/app/dashboard',
       });
     }
 
@@ -88,7 +88,7 @@ function AppLayout() {
       // Close the manager this effect created, not the current global,
       // so an interleaved successor stays open.
       void closeUserDatabase(manager).catch((err) => {
-        console.error("Database close failed", err);
+        console.error('Database close failed', err);
       });
       setUserManager(null);
     };
