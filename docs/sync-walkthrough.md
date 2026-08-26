@@ -164,15 +164,43 @@ The protocol does not schedule sync. `synchronize()` runs when the app
 calls it. Apply is idempotent, a conflicted push retries in a bounded
 loop, and a failed transport leaves local writes dirty.
 
-The web controller currently runs an initial sync, then reacts to
-connectivity, page visibility, a 60-second interval, and debounced local
-writes. Mobile scheduling is not implemented yet.
+The web controller runs an initial sync, then reacts to connectivity,
+page visibility, a 60-second interval, and debounced local writes.
+Mobile reacts to connectivity returning and the app coming to the
+foreground. It has no interval or write debounce yet.
 
 `synchronize()` returns a `SynchronizeResult` with lease status, pulled
 and pushed counts, a rejected count, `rejectedRecords` grouped by table,
 conflict retry count, and whether a replacement resync occurred. The web
 adapter currently forwards only `resynced`, so rejected records are not
 reflected in application sync status.
+
+## Who owns the database and the sync controller
+
+One account, one local database file, named from the user id. Signing in
+as a different account opens a different file. That is the whole reason
+two accounts on one device never see each other's records.
+
+The session owns the database and the controller. On web that is the
+`/app` route layout, on mobile `SessionDatabaseProvider`. Nothing else
+opens or closes the database.
+
+Attach sync while the database is open, and detach it when it is not.
+Watching a single open call is not enough. A retry elsewhere in the app
+can bring the database back without the session owner hearing about it,
+and a reopen after an error hands back a new database that the old
+controller is not holding.
+
+Dispose the controller before closing the database. Disposing aborts an
+in-flight sync, so it cannot write into a database that is about to go
+away.
+
+Wait for the outstanding close of a file before opening it again.
+Signing out and back in as the same account reaches one file through two
+managers, so without the wait the close and the open overlap.
+
+Discard a slow open that lands after the session changed. It must not
+attach sync, and it must not become the active database.
 
 ## Inside the client
 
