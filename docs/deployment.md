@@ -87,6 +87,11 @@ The GX10 runs an inference server with LiteLLM in front. LiteLLM gives us:
   satisfies the module's rate-limiting requirement (see "Module claims").
 - **Logs.** Every request is logged with key, model, and token counts, so
   "what is the box actually used for" is a query.
+- **Metrics.** Prometheus metrics are served at
+  `https://ai.dustyway.org/metrics/` (trailing slash; `/metrics` answers a
+  307 to it). The endpoint is unauthenticated and its series carry
+  virtual-key aliases and spend, so the reverse proxy allows only the
+  production VPS and refuses everyone else with a 403.
 
 The models on offer are defined in `litellm-config.yaml` in the repo, so
 trying a new model is a PR.
