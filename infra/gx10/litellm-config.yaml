@@ -41,3 +41,7 @@ general_settings:
 
 litellm_settings:
   drop_params: true
+  # Serves /metrics for the monitoring stack (#77). The endpoint is
+  # unauthenticated and its series carry virtual-key aliases and spend,
+  # so the reverse proxy allows only the production VPS to reach it.
+  callbacks: ["prometheus"]
