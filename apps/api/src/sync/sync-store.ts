@@ -4,7 +4,6 @@ import {
   createDrizzleStore,
   drizzleSyncTable,
   type DrizzleStore,
-  type DrizzleStoreOptions,
 } from '@remelondb/store-drizzle';
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
@@ -94,7 +93,7 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
         targetLanguageId: null,
       },
     }),
-  } as unknown as DrizzleStoreOptions<string>['tables'];
+  };
 
   const store = withSyncCascadingDeletes(
     createDrizzleStore<string>({
