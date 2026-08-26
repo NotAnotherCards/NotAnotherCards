@@ -237,7 +237,7 @@ describe('Settings Tab Component Specs', () => {
     ).toBeInTheDocument();
   });
 
-  it("displays error and rejects saving when the username is already taken", async () => {
+  it('displays error and rejects saving when the username is already taken', async () => {
     // Mock fetch to return available: false
     global.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
@@ -251,30 +251,37 @@ describe('Settings Tab Component Specs', () => {
 
     const usernameInput = screen.getByLabelText(/Username/i);
     await user.clear(usernameInput);
-    await user.type(usernameInput, "taken_username");
+    await user.type(usernameInput, 'taken_username');
 
-    const saveBtn = screen.getByRole("button", { name: /Save Changes/i });
+    const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     await user.click(saveBtn);
 
     // Verify fetch was called with the checked username
-    expect(global.fetch).toHaveBeenCalledWith("/api/auth/check-username?username=taken_username");
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/auth/check-username?username=taken_username',
+    );
 
     // Verify database action updateUserProfile was NOT invoked
     expect(mockUpdateUserProfile).not.toHaveBeenCalled();
 
     // Verify error is displayed
-    expect(await screen.findByText("Username is already taken")).toBeInTheDocument();
+    expect(
+      await screen.findByText('Username is already taken'),
+    ).toBeInTheDocument();
   });
 
-  it("skips the username availability check if the username is not modified", async () => {
+  it('skips the username availability check if the username is not modified', async () => {
     global.fetch = vi.fn();
     const user = userEvent.setup();
     render(<Settings />);
 
     const nativeSelect = screen.getByLabelText(/Native Language/i);
-    await user.selectOptions(nativeSelect, "00000000-0000-0000-0000-000000000003"); // French
+    await user.selectOptions(
+      nativeSelect,
+      '00000000-0000-0000-0000-000000000003',
+    ); // French
 
-    const saveBtn = screen.getByRole("button", { name: /Save Changes/i });
+    const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     await user.click(saveBtn);
 
     // Verify fetch was NOT called since username was not changed from "john_doe"
@@ -284,7 +291,7 @@ describe('Settings Tab Component Specs', () => {
     expect(mockUpdateUserProfile).toHaveBeenCalled();
   });
 
-  it("clears success messages once the form becomes dirty again", async () => {
+  it('clears success messages once the form becomes dirty again', async () => {
     let currentProfile = { ...mockProfile };
 
     vi.mocked(useStore).mockReturnValue({

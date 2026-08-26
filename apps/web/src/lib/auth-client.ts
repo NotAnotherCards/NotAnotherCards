@@ -21,7 +21,9 @@ export const authClient = createAuthClient({
   ],
 });
 
-export async function checkUsernameAvailable(username: string): Promise<boolean> {
+export async function checkUsernameAvailable(
+  username: string,
+): Promise<boolean> {
   const res = await fetch(
     `/api/auth/check-username?username=${encodeURIComponent(username)}`,
   );

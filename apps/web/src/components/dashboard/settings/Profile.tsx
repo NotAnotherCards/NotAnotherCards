@@ -72,20 +72,20 @@ export function Profile() {
     setApiError(null);
     setSuccessMessage(null);
     try {
-      const newUsername = data.username || "";
-      const currentUsername = profile?.username || "";
+      const newUsername = data.username || '';
+      const currentUsername = profile?.username || '';
 
       if (newUsername && newUsername !== currentUsername) {
         const available = await checkUsernameAvailable(newUsername);
         if (!available) {
-          throw new Error("Username is already taken");
+          throw new Error('Username is already taken');
         }
       }
 
       await updateUserProfile({
         username: newUsername,
-        native_language_id: data.native_language_id || "",
-        target_language_id: data.target_language_id || "",
+        native_language_id: data.native_language_id || '',
+        target_language_id: data.target_language_id || '',
       });
 
       setSuccessMessage('Settings saved successfully!');
