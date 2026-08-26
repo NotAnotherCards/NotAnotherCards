@@ -7,8 +7,10 @@ afterEach(() => {
 });
 
 // Mock authClient globally for all tests
-vi.mock('@/lib/auth-client', () => {
+vi.mock('@/lib/auth-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/auth-client')>();
   return {
+    ...actual,
     authClient: {
       getSession: vi.fn(() => Promise.resolve({ data: null, error: null })),
       useSession: vi.fn(() => ({
@@ -31,16 +33,7 @@ vi.mock('@/lib/auth-client', () => {
       changePassword: vi.fn(() => Promise.resolve({ data: null, error: null })),
       signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
     },
-    checkUsernameAvailable: vi.fn(async (username: string) => {
-      const res = await fetch(
-        `/api/auth/check-username?username=${encodeURIComponent(username)}`,
-      );
-      if (!res.ok) {
-        throw new Error('Failed to check username availability');
-      }
-      const data = (await res.json()) as { available: boolean };
-      return data.available;
-    }),
+    checkUsernameAvailable: vi.fn(actual.checkUsernameAvailable),
   };
 });
 
