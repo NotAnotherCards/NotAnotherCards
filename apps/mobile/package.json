@@ -16,8 +16,8 @@
   "dependencies": {
     "@better-auth/expo": "^1.6.23",
     "@hookform/resolvers": "^5.4.0",
-    "@remelondb/core": "0.2.3",
-    "@remelondb/driver-rn": "0.2.3",
+    "@remelondb/core": "0.2.4",
+    "@remelondb/driver-rn": "0.2.4",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
     "better-auth": "^1.6.23",

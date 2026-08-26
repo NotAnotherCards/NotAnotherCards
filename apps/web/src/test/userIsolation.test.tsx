@@ -227,13 +227,18 @@ describe('User Database Isolation integration tests', () => {
     // Verify manager status is loading
     expect(manager.state.status).toBe('loading');
 
-    // Call logout/close before opening completes
-    await testCloseUserDatabase();
+    // Call logout/close before opening completes. Not awaited yet:
+    // remelondb >= 0.2.4 has close() wait for the in-flight open's
+    // cleanup, so awaiting here before resolving that open would have
+    // the test wait on itself.
+    const closing = testCloseUserDatabase();
 
     // Resolve the promise to let Database.open finish
     if (openPromiseResolve) {
       openPromiseResolve();
     }
+
+    await closing;
 
     // Wait for the initialization promise to finish (it should reject/throw because we closed the manager during init)
     await expect(initPromise).rejects.toThrow();
@@ -243,6 +248,34 @@ describe('User Database Isolation integration tests', () => {
     expect(currentManager).toBeNull();
 
     // Reset delay flag
+    delayDatabaseOpen = false;
+  });
+
+  it('close waits for a delayed open to be cleaned up (needs remelondb >= 0.2.4)', async () => {
+    delayDatabaseOpen = true;
+
+    const manager = testCreateUserDatabaseManager('user-a');
+    const initPromise = manager.init();
+    expect(manager.state.status).toBe('loading');
+
+    // Logout while the open is still in flight.
+    const closing = testCloseUserDatabase();
+    let closed = false;
+    void closing.then(() => {
+      closed = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Before 0.2.4 close() resolved here, leaving the late database to a
+    // detached driver.close() nobody could wait for. The mobile session
+    // provider's close chain only means anything because this is false:
+    // it sequences the next open behind this promise.
+    expect(closed).toBe(false);
+
+    openPromiseResolve?.();
+    await closing;
+    await expect(initPromise).rejects.toThrow();
+
     delayDatabaseOpen = false;
   });
 
