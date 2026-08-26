@@ -39,19 +39,20 @@ For a comprehensive guide on registering OAuth credentials for local testing, ch
 
 ## API Endpoints
 
-Better Auth registers these standard endpoints automatically at `/api/auth/`:
+Better Auth registers standard endpoints automatically, and we extend it with custom flow endpoints:
 
 | Method | Endpoint Path             | Payload                               | Description                               |
 | :----- | :------------------------ | :------------------------------------ | :---------------------------------------- |
 | `POST` | `/api/auth/sign-up/email` | `{ email, password, name, timezone }` | Registers a new user                      |
 | `POST` | `/api/auth/sign-in/email` | `{ email, password }`                 | Authenticates user & sets session cookies |
 | `POST` | `/api/auth/sign-out`      | _None_                                | Clears the session                        |
+| `POST` | `/api/auth/onboard`       | `{ username, native_language_id, target_language_id }` | Creates user profile and marks onboarding complete |
 
 ## Database Schema
 
 The authentication tables are managed by Drizzle in `apps/api/src/database/schema.ts` and correspond to the official Better Auth schema structure:
 
-- **`user`**: Better Auth identity metadata. Profile settings are stored separately in `user_profiles` and synchronized by remelonDB.
+- **`user`**: Better Auth identity metadata. Includes our custom `onBoardingComplete` boolean field (defaults to false) to track setup state. Profile settings are stored separately in `user_profiles` and synchronized by remelonDB.
 - **`session`**: Active user sessions mapped to tokens.
 - **`account`**: Credentials/Providers mapped to a user.
 - **`verification`**: Tokens for password resets and verification flows.

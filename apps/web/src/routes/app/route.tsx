@@ -2,11 +2,7 @@ import { authClient } from '@/lib/auth-client';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { DatabaseBanner } from '@/components/DatabaseBanner';
-import {
-  createUserDatabaseManager,
-  closeUserDatabase,
-  checkOnboardingComplete,
-} from '@/offline/db';
+import { createUserDatabaseManager, closeUserDatabase } from '@/offline/db';
 import { createRunSync } from '@/offline/sync';
 import {
   browserSyncTriggers,
@@ -22,23 +18,16 @@ export const Route = createFileRoute('/app')({
   beforeLoad: async ({ location }) => {
     const { data: session } = await authClient.getSession();
     if (!session) {
-      if (
-        location.pathname === '/app/onboarding' ||
-        location.pathname === '/app'
-      ) {
-        throw redirect({
-          to: '/',
-        });
-      }
       throw redirect({
-        to: '/login',
+        to: '/',
       });
     }
 
-    const onboardingComplete = await checkOnboardingComplete(session.user.id);
-    if (!onboardingComplete && location.pathname !== '/app/onboarding') {
+    const onboardingComplete = !!session.user.onBoardingComplete;
+
+    if (!onboardingComplete) {
       throw redirect({
-        to: '/app/onboarding',
+        to: '/onboarding',
       });
     }
 
@@ -96,7 +85,9 @@ function AppLayout() {
       cancelled = true;
       controller?.dispose();
       setSyncController(null);
-      void closeUserDatabase().catch((err) => {
+      // Close the manager this effect created, not the current global,
+      // so an interleaved successor stays open.
+      void closeUserDatabase(manager).catch((err) => {
         console.error('Database close failed', err);
       });
       setUserManager(null);

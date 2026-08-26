@@ -20,7 +20,6 @@ vi.mock('@/offline/db', () => {
     manager,
     createUserDatabaseManager: vi.fn(() => manager),
     closeUserDatabase: vi.fn().mockResolvedValue(undefined),
-    checkOnboardingComplete: vi.fn().mockResolvedValue(true),
   };
 });
 
@@ -40,6 +39,7 @@ const mockSession = {
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    onBoardingComplete: true,
   },
 };
 

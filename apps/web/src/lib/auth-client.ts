@@ -11,6 +11,11 @@ export const authClient = createAuthClient({
           required: false,
           defaultValue: 'UTC',
         },
+        onBoardingComplete: {
+          type: 'boolean',
+          required: false,
+          defaultValue: false,
+        },
       },
     }),
   ],

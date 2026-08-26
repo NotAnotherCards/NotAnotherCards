@@ -20,6 +20,7 @@ const mockSession = {
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    onBoardingComplete: true,
   },
 };
 

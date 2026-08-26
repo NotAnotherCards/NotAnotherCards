@@ -10,17 +10,17 @@ import {
   UserProfile,
   userDbName,
 } from '@repo/offline-db';
-import { synchronize } from '@remelondb/core';
-import { pullChanges, pushChanges } from './sync';
 
 export type { DatabaseManagerState as DatabaseState };
 
 export let manager: ReturnType<typeof createDatabaseManager> | null = null;
 
-export function createUserDatabaseManager(userId: string) {
-  const dbName = userDbName(userId);
-
-  manager = createDatabaseManager({
+// Which user's database the global manager holds. Guards need this to
+// know whether reusing it would cross accounts; the manager itself
+// does not record what it opened.
+let managerDbName: string | null = null;
+function createManagerFor(dbName: string) {
+  return createDatabaseManager({
     open: (onTakenOver) =>
       Database.open({
         driver: new WebSqliteDriver({
@@ -33,60 +33,30 @@ export function createUserDatabaseManager(userId: string) {
         name: dbName,
       }),
   });
+}
+
+export function createUserDatabaseManager(userId: string) {
+  managerDbName = userDbName(userId);
+  manager = createManagerFor(managerDbName);
   return manager;
 }
 
-export async function closeUserDatabase() {
+export async function closeUserDatabase(
+  instance?: ReturnType<typeof createDatabaseManager> | null,
+) {
+  // Closes the given manager, or the active one when called bare.
   // manager.close() (remelondb >=0.1.7) tears down the driver and
   // discards an init that resolves after the close.
-  await manager?.close();
-  manager = null;
-}
-
-export async function checkOnboardingComplete(
-  userId: string,
-): Promise<boolean> {
-  let activeManager = manager;
-  let shouldClose = false;
-
-  if (!activeManager) {
-    activeManager = createUserDatabaseManager(userId);
-    shouldClose = true;
+  const target = instance ?? manager;
+  // Clear the global before awaiting, and only while it still points at
+  // the target, so closing one instance never nulls out a successor that
+  // became active during the await. Clearing on a failed close too keeps
+  // the invariant that the global is only ever a manager nobody has
+  // tried to close — checks may then adopt it in any state, because
+  // init() deduplicates on the same instance.
+  if (manager === target) {
+    manager = null;
+    managerDbName = null;
   }
-
-  try {
-    const db = await activeManager.init();
-    let complete = false;
-    if (db) {
-      let profiles = await db.get(UserProfile).query().fetch();
-      // If the local database has no profiles, perform a single sync run
-      // to pull the user's existing profile (and other records) from the server.
-      if (profiles.length === 0) {
-        try {
-          await synchronize({
-            database: db,
-            pullChanges,
-            pushChanges,
-          });
-          profiles = await db.get(UserProfile).query().fetch();
-        } catch (err) {
-          console.warn('Pre-onboarding check sync failed', err);
-        }
-      }
-      const profile = profiles[0];
-      if (
-        profile &&
-        profile.username &&
-        profile.native_language_id &&
-        profile.target_language_id
-      ) {
-        complete = true;
-      }
-    }
-    return complete;
-  } finally {
-    if (shouldClose) {
-      await closeUserDatabase();
-    }
-  }
+  await target?.close();
 }

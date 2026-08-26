@@ -84,6 +84,11 @@ export class AuthService {
             required: false,
             defaultValue: 'UTC',
           },
+          onBoardingComplete: {
+            type: 'boolean',
+            required: false,
+            defaultValue: false,
+          },
         },
       },
       plugins: [expo()],
