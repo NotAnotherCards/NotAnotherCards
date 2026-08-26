@@ -7,6 +7,7 @@ dist
 dist-ssr
 *.local
 .env
+docker-compose.override.yml
 .cache
 server/dist
 public/dist
