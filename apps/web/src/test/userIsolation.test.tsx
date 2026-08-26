@@ -7,7 +7,7 @@ import { DatabaseProvider } from '@remelondb/core/react';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import * as path from 'path';
 import * as fs from 'fs';
-import { createUserDatabaseManager, closeUserDatabase } from '../offline/db';
+import { createUserDatabaseManager } from '../offline/db';
 
 // Use var to hoist variables for Vitest mock factories
 // eslint-disable-next-line no-var
@@ -54,16 +54,21 @@ vi.mock('@remelondb/core', async (importOriginal) => {
   };
 });
 
+// The module no longer keeps "the current manager": the session hook
+// owns each instance, so these tests close the one they created.
+let activeManager: ReturnType<typeof createUserDatabaseManager> | null = null;
+
 function testCreateUserDatabaseManager(userId: string) {
   isClosed = false;
-  return createUserDatabaseManager(userId);
+  activeManager = createUserDatabaseManager(userId);
+  return activeManager;
 }
 
-async function testCloseUserDatabase() {
+function testCloseUserDatabase() {
   isClosed = true;
-  await act(async () => {
-    await closeUserDatabase();
-  });
+  const closing = activeManager?.close() ?? Promise.resolve();
+  activeManager = null;
+  return closing;
 }
 
 describe('User Database Isolation integration tests', () => {
@@ -227,20 +232,25 @@ describe('User Database Isolation integration tests', () => {
     // Verify manager status is loading
     expect(manager.state.status).toBe('loading');
 
-    // Call logout/close before opening completes
-    await testCloseUserDatabase();
+    // Not awaited yet: close() waits for the in-flight open's cleanup
+    // (remelondb >= 0.2.4), so awaiting here before resolving that open
+    // would have the test wait on itself.
+    const closing = testCloseUserDatabase();
 
     // Resolve the promise to let Database.open finish
     if (openPromiseResolve) {
       openPromiseResolve();
     }
 
+    await act(async () => {
+      await closing;
+    });
+
     // Wait for the initialization promise to finish (it should reject/throw because we closed the manager during init)
     await expect(initPromise).rejects.toThrow();
 
-    // Assert the database connection is closed and manager is null
-    const { manager: currentManager } = await import('../offline/db');
-    expect(currentManager).toBeNull();
+    // The manager returned to idle; nothing it opened is still open.
+    expect(manager.state.status).toBe('idle');
 
     // Reset delay flag
     delayDatabaseOpen = false;

@@ -1,5 +1,3 @@
-import type { Database } from '@remelondb/core';
-import { createRunSync as createSharedRunSync } from '@remelondb/core';
 import { createAppSyncTransport, createHttpPost } from '@repo/offline-db';
 
 export { SyncTransportError } from '@repo/offline-db';
@@ -9,7 +7,3 @@ export { SyncTransportError } from '@repo/offline-db';
 export const { pullChanges, pushChanges } = createAppSyncTransport(
   createHttpPost({ baseUrl: '', credentials: 'include' }),
 );
-
-export function createRunSync(database: Database) {
-  return createSharedRunSync({ database, pullChanges, pushChanges });
-}
