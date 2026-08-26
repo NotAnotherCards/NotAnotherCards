@@ -17,6 +17,7 @@ type FakeManager = {
   close: jest.Mock;
   state: { status: string; error: null };
   subscribe: jest.Mock;
+  emit: () => void;
 };
 
 let mockSessionState: SessionState = { data: null, isPending: true };
@@ -68,20 +69,48 @@ jest.mock('../lib/db', () => ({
     mockCreateUserDatabaseManager(userId),
 }));
 
+// Mirrors the real manager's contract: subscribe emits the current state at
+// once and again on every change, and a settled init() leaves the manager
+// ready or in error.
 function makeManager(
   owner: string,
   init: Promise<unknown> = Promise.resolve({}),
 ): FakeManager {
-  return {
+  const listeners = new Set<(state: FakeManager['state']) => void>();
+  const emit = () => listeners.forEach((listener) => listener(manager.state));
+  const manager = {
     owner,
-    init: jest.fn(() => init),
+    database: {},
+    state: { status: 'idle', error: null },
+    init: jest.fn(() =>
+      init.then(
+        (database) => {
+          manager.state = { status: 'ready', error: null };
+          emit();
+          return database;
+        },
+        (error: unknown) => {
+          manager.state = { status: 'error', error: null };
+          emit();
+          throw error;
+        },
+      ),
+    ),
     close: jest.fn(() => {
       disposeOrder.push('close');
+      manager.state = { status: 'idle', error: null };
       return Promise.resolve(undefined);
     }),
-    state: { status: 'idle', error: null },
-    subscribe: jest.fn(() => () => {}),
-  };
+    emit,
+    subscribe: jest.fn((listener: (state: FakeManager['state']) => void) => {
+      listeners.add(listener);
+      listener(manager.state);
+      return () => {
+        listeners.delete(listener);
+      };
+    }),
+  } as unknown as FakeManager;
+  return manager;
 }
 
 function ActiveOwner() {
@@ -354,5 +383,140 @@ describe('SessionDatabaseProvider', () => {
     expect(firstManager.close).toHaveBeenCalled();
     expect(mockCreateUserDatabaseManager).toHaveBeenNthCalledWith(2, 'user-a');
     expect(reopenedManager.init).toHaveBeenCalled();
+  });
+
+  it('starts sync after the banner retry recovers a failed open', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    let failOpen = true;
+    const manager = makeManager('user-a');
+    // The banner calls init() on the manager itself, not through the
+    // provider, so recovery has to reach sync some other way.
+    manager.init = jest.fn(() => {
+      if (failOpen) {
+        failOpen = false;
+        manager.state = { status: 'error', error: null };
+        manager.emit();
+        return Promise.reject(new Error('boom'));
+      }
+      manager.state = { status: 'ready', error: null };
+      manager.emit();
+      return Promise.resolve({});
+    });
+    mockCreateUserDatabaseManager.mockReturnValueOnce(manager);
+    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+
+    const view = renderProvider();
+    await waitFor(() => expect(view.getByText('user-a')).toBeTruthy());
+    await waitFor(() => expect(manager.init).toHaveBeenCalledTimes(1));
+    expect(mockCreateSyncController).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await manager.init().catch(() => {});
+    });
+
+    expect(mockCreateSyncController).toHaveBeenCalledTimes(1);
+    expect(madeControllers[0].start).toHaveBeenCalled();
+  });
+
+  it('waits for the previous close before reopening the same account', async () => {
+    let resolveClose!: () => void;
+    const closePromise = new Promise<void>((resolve) => {
+      resolveClose = resolve;
+    });
+    const firstManager = makeManager('first-user-a');
+    firstManager.close = jest.fn(() => closePromise);
+    const secondManager = makeManager('second-user-a');
+    mockCreateUserDatabaseManager
+      .mockReturnValueOnce(firstManager)
+      .mockReturnValueOnce(secondManager);
+
+    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    const view = renderProvider();
+    await waitFor(() => expect(view.getByText('first-user-a')).toBeTruthy());
+
+    mockSessionState = { data: null, isPending: false };
+    view.rerender(
+      <SessionDatabaseProvider>
+        <ActiveOwner />
+      </SessionDatabaseProvider>,
+    );
+
+    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    await act(async () => {
+      view.rerender(
+        <SessionDatabaseProvider>
+          <ActiveOwner />
+        </SessionDatabaseProvider>,
+      );
+      await Promise.resolve();
+    });
+
+    // One SQLite file: the reopen must not start while the close is pending.
+    expect(secondManager.init).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveClose();
+      await closePromise;
+    });
+
+    await waitFor(() => expect(secondManager.init).toHaveBeenCalled());
+  });
+
+  it('reopens the account after a close that throws', async () => {
+    const firstManager = makeManager('first-user-a');
+    firstManager.close = jest.fn(() => Promise.reject(new Error('close boom')));
+    const secondManager = makeManager('second-user-a');
+    mockCreateUserDatabaseManager
+      .mockReturnValueOnce(firstManager)
+      .mockReturnValueOnce(secondManager);
+
+    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    const view = renderProvider();
+    await waitFor(() => expect(view.getByText('first-user-a')).toBeTruthy());
+
+    mockSessionState = { data: null, isPending: false };
+    view.rerender(
+      <SessionDatabaseProvider>
+        <ActiveOwner />
+      </SessionDatabaseProvider>,
+    );
+
+    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    view.rerender(
+      <SessionDatabaseProvider>
+        <ActiveOwner />
+      </SessionDatabaseProvider>,
+    );
+
+    // A rejected close must not leave every later open queued behind it.
+    await waitFor(() => expect(secondManager.init).toHaveBeenCalled());
+  });
+
+  it('reattaches sync when the database reopens after an error', async () => {
+    const manager = makeManager('user-a');
+    mockCreateUserDatabaseManager.mockReturnValueOnce(manager);
+    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+
+    const view = renderProvider();
+    await waitFor(() => expect(view.getByText('user-a')).toBeTruthy());
+    await waitFor(() =>
+      expect(mockCreateSyncController).toHaveBeenCalledTimes(1),
+    );
+
+    // The database drops out from under the controller, then comes back.
+    // The old controller holds the old Database, so it must be replaced.
+    await act(async () => {
+      manager.state = { status: 'error', error: null };
+      manager.emit();
+    });
+    expect(madeControllers[0].dispose).toHaveBeenCalled();
+
+    await act(async () => {
+      manager.state = { status: 'ready', error: null };
+      manager.emit();
+    });
+
+    expect(mockCreateSyncController).toHaveBeenCalledTimes(2);
+    expect(madeControllers[1].start).toHaveBeenCalled();
   });
 });

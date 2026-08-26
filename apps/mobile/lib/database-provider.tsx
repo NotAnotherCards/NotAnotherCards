@@ -31,11 +31,21 @@ type SessionDatabase = {
 
 const SessionDatabaseContext = createContext<SessionDatabase | null>(null);
 
+// Closes run one after another, and an open waits for the chain, so the
+// file is never opened and closed at the same time. The chain never
+// rejects: a close that throws must not strand every later open behind a
+// rejected promise.
+const chainClose = (
+  pending: Promise<void>,
+  manager: DatabaseManager,
+): Promise<void> => pending.then(() => manager.close()).catch(() => {});
+
 export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
   const userId = isPending ? null : (session?.user.id ?? null);
   const [ownedManager, setOwnedManager] = useState<OwnedManager | null>(null);
   const ownedManagerRef = useRef<OwnedManager | null>(null);
+  const pendingCloseRef = useRef<Promise<void>>(Promise.resolve());
 
   // The only place the database is closed. Logout and account switch both
   // arrive here as a session change; nothing else should call close().
@@ -45,7 +55,12 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
       ownedManagerRef.current = null;
       setOwnedManager(null);
       owned?.syncController?.dispose();
-      void owned?.manager.close();
+      if (owned) {
+        pendingCloseRef.current = chainClose(
+          pendingCloseRef.current,
+          owned.manager,
+        );
+      }
       return;
     }
 
@@ -54,38 +69,58 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
     ownedManagerRef.current = owned;
     setOwnedManager(owned);
 
-    manager
-      .init()
-      .then((database) => {
-        // Sync starts only once this user's database is open, and only if
-        // this session is still the active one.
-        if (ownedManagerRef.current !== owned || !database) return;
-        const controller = createSyncController({
-          runSync: createRunSync({ database, pullChanges, pushChanges }),
-          triggers: nativeSyncTriggers,
-        });
-        // Cleanup closes over `owned`, so keep the controller on that object.
-        // Clone only for React, which needs a new reference to re-render.
-        owned.syncController = controller;
+    // Sync attaches whenever the database is open, not only to the init()
+    // below: the banner's Retry calls init() on the manager directly, and
+    // a database recovered that way needs sync just as much.
+    const unsubscribe = manager.subscribe((state) => {
+      if (ownedManagerRef.current !== owned) return;
+      // Cleanup closes over `owned`, so keep the controller on that object.
+      // Clone only for React, which needs a new reference to re-render.
+      if (state.status !== 'ready') {
+        // Left ready: the Database this controller holds is gone, and a
+        // reopen builds a new one. Drop it so the next ready attaches.
+        if (!owned.syncController) return;
+        owned.syncController.dispose();
+        owned.syncController = null;
         setOwnedManager({ ...owned });
-        controller.start();
-      })
-      .catch((error: unknown) => {
-        if (ownedManagerRef.current === owned) {
-          console.error('opening the offline database failed', error);
-        }
+        return;
+      }
+      if (owned.syncController) return;
+      const controller = createSyncController({
+        runSync: createRunSync({
+          database: manager.database,
+          pullChanges,
+          pushChanges,
+        }),
+        triggers: nativeSyncTriggers,
       });
+      owned.syncController = controller;
+      setOwnedManager({ ...owned });
+      controller.start();
+    });
+
+    // Opens queue behind the previous close. A re-login as the same account
+    // reuses one SQLite file, so overlapping the close with the next open
+    // would race on disk.
+    const opened = pendingCloseRef.current.then(() => {
+      if (ownedManagerRef.current !== owned) return;
+      return manager.init();
+    });
+    opened.catch((error: unknown) => {
+      if (ownedManagerRef.current === owned) {
+        console.error('opening the offline database failed', error);
+      }
+    });
 
     return () => {
       if (ownedManagerRef.current === owned) {
         ownedManagerRef.current = null;
       }
+      unsubscribe();
       // Dispose aborts an in-flight sync (#148) and must run before the
-      // close below. The close is not awaited: on an account switch the
-      // next effect opens the new user's file while this one is still
-      // closing, which is safe only because the files differ.
+      // close below.
       owned.syncController?.dispose();
-      void manager.close();
+      pendingCloseRef.current = chainClose(pendingCloseRef.current, manager);
     };
   }, [userId]);
 
