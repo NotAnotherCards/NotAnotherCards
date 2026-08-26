@@ -31,6 +31,16 @@ vi.mock('@/lib/auth-client', () => {
       changePassword: vi.fn(() => Promise.resolve({ data: null, error: null })),
       signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
     },
+    checkUsernameAvailable: vi.fn(async (username: string) => {
+      const res = await fetch(
+        `/api/auth/check-username?username=${encodeURIComponent(username)}`,
+      );
+      if (!res.ok) {
+        throw new Error('Failed to check username availability');
+      }
+      const data = (await res.json()) as { available: boolean };
+      return data.available;
+    }),
   };
 });
 
