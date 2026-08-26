@@ -18,7 +18,7 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { authClient } from '@/lib/auth-client';
+import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
 import { ChevronDown, User, Globe, Save, Check } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { LANGUAGES } from '@/lib/languages';
@@ -76,14 +76,8 @@ export function Profile() {
       const currentUsername = profile?.username || "";
 
       if (newUsername && newUsername !== currentUsername) {
-        const res = await fetch(
-          `/api/auth/check-username?username=${encodeURIComponent(newUsername)}`,
-        );
-        if (!res.ok) {
-          throw new Error("Failed to check username availability");
-        }
-        const checkResult = await res.json();
-        if (!checkResult.available) {
+        const available = await checkUsernameAvailable(newUsername);
+        if (!available) {
           throw new Error("Username is already taken");
         }
       }

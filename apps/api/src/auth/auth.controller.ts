@@ -29,6 +29,8 @@ export class AuthController {
     private readonly db: AppDatabase,
   ) {}
 
+  // Advisory check only; the database uniqueness constraint (user_profiles_username_unique)
+  // is the actual guard, as the advisory lock is user-specific.
   @Get('check-username')
   async checkUsername(
     @Req() req: Request,

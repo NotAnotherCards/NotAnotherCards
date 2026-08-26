@@ -7,17 +7,17 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { AuthCard } from '@/components/auth/auth-card';
-import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
-import { FormErrorMessage } from '@/components/auth/form-error-message';
-import { authClient } from '@/lib/auth-client';
-import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
-import { LANGUAGES } from '@/lib/languages';
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthCard } from "@/components/auth/auth-card";
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { FormErrorMessage } from "@/components/auth/form-error-message";
+import { authClient, checkUsernameAvailable } from "@/lib/auth-client"
+import { ProfileFormValues, userProfileFormSchema } from "@repo/schemas";
+import { LANGUAGES } from "@/lib/languages"
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
@@ -92,24 +92,24 @@ export function OnBoardingComponent() {
                       }
                       onChange={(e) => {
                         field.onChange(e);
-                        form.clearErrors("username");
+                        if (form.getFieldState("username").error?.type === "manual") {
+                          form.clearErrors("username");
+                        }
                       }}
                       onBlur={async (e) => {
                         field.onBlur();
                         const val = e.target.value;
-                        if (val && val.length >= 3) {
+                        const valid = userProfileFormSchema.shape.username.safeParse(val).success;
+                        if (valid) {
                           try {
-                            const res = await fetch(
-                              `/api/auth/check-username?username=${encodeURIComponent(val)}`,
-                            );
-                            if (res.ok) {
-                              const checkResult = await res.json();
-                              if (!checkResult.available) {
+                            const available = await checkUsernameAvailable(val);
+                            if (form.getValues("username") === val) {
+                              if (!available) {
                                 form.setError("username", {
                                   type: "manual",
                                   message: "Username is already taken",
                                 });
-                              } else {
+                              } else if (form.getFieldState("username").error?.type === "manual") {
                                 form.clearErrors("username");
                               }
                             }
