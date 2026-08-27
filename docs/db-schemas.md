@@ -93,7 +93,7 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 ```
 
-#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts))
+#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L100))
 
 The canonical source for a learning item. `fields_json` is serialized JSON;
 `additional_content` is optional Markdown for genuinely free-form material.
@@ -113,7 +113,7 @@ updated_at          number (integer Unix ms) NOT NULL
 INDEX(user_id, rev)
 ```
 
-#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts))
+#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L62))
 
 Generated review questions. `front` and `back` deliberately remain generic
 Markdown instead of encoding subject-specific fields in this table. Every
@@ -138,7 +138,7 @@ INDEX(note_id)
 INDEX(user_id, due_at)
 ```
 
-#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts))
+#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L130))
 
 Note-level deck membership. A note can belong to several decks without
 duplicating the note, its generated cards, or their review schedules.
@@ -166,7 +166,7 @@ rows and those checks are added in epic follow-ups
 [#160](https://github.com/NotAnotherCards/NotAnotherCards/issues/160) and
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
-#### `review_events` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts#L45))
+#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L161), [local schema](../packages/offline-db/src/user-dictionary.ts#L45))
 
 ```text
 id                  text PK
@@ -180,7 +180,7 @@ reviewed_at         number (integer Unix ms) NOT NULL
 
 Review events are append-only in the sync configuration.
 
-#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts#L49))
+#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L185), [local schema](../packages/offline-db/src/user-dictionary.ts#L49))
 
 Contains app-specific profile data and is separate from Better Auth's `user` table.
 
@@ -340,7 +340,7 @@ Everything in this section is exploratory and is not part of the current databas
 
 ### Proposed files/upload foundation
 
-The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts) and [local schema](../packages/offline-db/src/user-dictionary.ts#L30), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
+The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L196) and [local schema](../packages/offline-db/src/user-dictionary.ts#L30), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
 
 #### `files`
 
