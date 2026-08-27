@@ -22,7 +22,9 @@ vi.mock('@/hooks/useStore', () => ({
 
 const card = {
   id: 'card-1',
-  deck_id: 'deck-1',
+  note_id: 'note-1',
+  template_key: 'front-back',
+  active: true,
   front: 'front side',
   back: 'back side',
 } as unknown as Card;

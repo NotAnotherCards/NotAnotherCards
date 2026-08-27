@@ -99,8 +99,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     );
   }
 
-  // Filter cards belonging to this deck
-  const cards = store.cards.filter((c) => c.deck_id === deckId);
+  const cards = store.getCardsForDeck(deckId);
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success

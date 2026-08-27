@@ -4,6 +4,7 @@ import { useDatabase, useDatabaseState } from '@remelondb/core/react';
 import {
   UserDeckRecord,
   UserCardRecord,
+  UserNoteDeckRecord,
   UserProfileRecord,
 } from '@repo/offline-db';
 import { useQuery } from '@remelondb/core/react';
@@ -11,6 +12,7 @@ import { useSyncController } from '@/offline/syncProvider';
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
+  getNoteDecksQuery,
   getUserProfileQuery,
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
@@ -106,11 +108,18 @@ export function useStore() {
     db && getPersonalDictionaryQuery(db),
   );
 
+  const { data: noteDecks, isLoading: noteDecksLoading } =
+    useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
+
   const { data: profiles, isLoading: profileLoading } =
     useQuery<UserProfileRecord>(db && getUserProfileQuery(db));
 
   const isLoading =
-    isInitializing || decksLoading || cardsLoading || profileLoading;
+    isInitializing ||
+    decksLoading ||
+    cardsLoading ||
+    noteDecksLoading ||
+    profileLoading;
   const { ready, showSpinner } = useDelayedLoading(isLoading);
 
   const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(
@@ -199,9 +208,26 @@ export function useStore() {
 
   const getCardsCount = useCallback(
     (deckId: string): number => {
-      return cards.filter((c) => c.deck_id === deckId).length;
+      const noteIds = new Set(
+        noteDecks
+          .filter((noteDeck) => noteDeck.deck_id === deckId)
+          .map((noteDeck) => noteDeck.note_id),
+      );
+      return cards.filter((card) => noteIds.has(card.note_id)).length;
     },
-    [cards],
+    [cards, noteDecks],
+  );
+
+  const getCardsForDeck = useCallback(
+    (deckId: string): UserCardRecord[] => {
+      const noteIds = new Set(
+        noteDecks
+          .filter((noteDeck) => noteDeck.deck_id === deckId)
+          .map((noteDeck) => noteDeck.note_id),
+      );
+      return cards.filter((card) => noteIds.has(card.note_id));
+    },
+    [cards, noteDecks],
   );
 
   const reconnect = useCallback(async () => {
@@ -257,6 +283,7 @@ export function useStore() {
     deleteCard,
     recordReview,
     getCardsCount,
+    getCardsForDeck,
     createUserProfile,
     updateUserProfile,
     profile: (profiles?.[0] || null) as UserProfileRecord | null,

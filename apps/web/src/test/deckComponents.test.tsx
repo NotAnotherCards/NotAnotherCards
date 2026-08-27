@@ -83,7 +83,9 @@ describe('DeckCard Component', () => {
 describe('CardItem Component', () => {
   const mockCard: Card = {
     id: 'card-test-1',
-    deck_id: 'deck-test-1',
+    note_id: 'note-test-1',
+    template_key: 'front-back',
+    active: true,
     front: 'Hola',
     back: 'Hello',
     due_at: Date.now(),
@@ -144,7 +146,9 @@ describe('CardItem Component', () => {
 describe('FlashcardModal Component', () => {
   const mockCard: Card = {
     id: 'card-test-1',
-    deck_id: 'deck-test-1',
+    note_id: 'note-test-1',
+    template_key: 'front-back',
+    active: true,
     front: 'Hola',
     back: 'Hello',
     due_at: Date.now(),
