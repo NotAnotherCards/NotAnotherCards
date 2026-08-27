@@ -8,14 +8,32 @@
  */
 import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { ReviewEventRow, UserDeckRow, UserProfileRow } from '@repo/offline-db';
-import { reviewEvents, userDecks, userProfiles } from '../../src/sync/schema';
+import {
+  ReviewEventRow,
+  UserCardRow,
+  UserDeckRow,
+  UserNoteDeckRow,
+  UserNoteRow,
+  UserProfileRow,
+} from '@repo/offline-db';
+import {
+  reviewEvents,
+  userCards,
+  userDecks,
+  userNoteDecks,
+  userNotes,
+  userProfiles,
+} from '../../src/sync/schema';
 
 const CASES = [
   { name: 'user_decks', row: UserDeckRow, table: userDecks },
-  // TODO(#160): restore user_cards parity coverage when the shared offline row
-  // swaps deck_id for note_id/template_key/active.
-  // { name: 'user_cards', row: UserCardRow, table: userCards },
+  { name: 'user_notes', row: UserNoteRow, table: userNotes },
+  { name: 'user_cards', row: UserCardRow, table: userCards },
+  {
+    name: 'user_note_decks',
+    row: UserNoteDeckRow,
+    table: userNoteDecks,
+  },
   { name: 'review_events', row: ReviewEventRow, table: reviewEvents },
   { name: 'user_profiles', row: UserProfileRow, table: userProfiles },
 ] as const;
