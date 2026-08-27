@@ -33,14 +33,33 @@ jobs:
             cd /opt/notanothercards
             git fetch origin main
             git reset --hard origin/main
+
+            # 1. Deploy App Bundle
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.production.yml \
               up -d --build --wait
+
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.production.yml \
               ps
+
+            # 2. Deploy Monitoring Stack (if configured)
+            if [ -f infra/monitoring/.env ]; then
+              docker compose \
+                -f infra/monitoring/docker-compose.yml \
+                --env-file infra/monitoring/.env \
+                up -d --wait
+              docker compose \
+                -f infra/monitoring/docker-compose.yml \
+                --env-file infra/monitoring/.env \
+                ps
+              curl --fail --silent --show-error --retry 5 --retry-delay 3 http://127.0.0.1:9090/-/healthy
+              curl --fail --silent --show-error --retry 5 --retry-delay 3 http://127.0.0.1:3001/api/health
+            fi
+
+            # 3. Verify Public App Health
             curl \
               --fail \
               --silent \

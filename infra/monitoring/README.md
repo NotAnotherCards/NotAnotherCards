@@ -44,26 +44,34 @@ Architecture and design rationale are documented in [`docs/deployment.md`](../..
 ## Quick Start (VPS Operations)
 
 ### 1. Configure Environment
-On the VPS, copy `.env.example` to `.env` inside `/opt/notanothercards-monitoring` (or `infra/monitoring`):
+On the VPS, install the environment file with mode `600` owned by `deploy:deploy`:
 
 ```bash
-cd /opt/notanothercards/infra/monitoring
-cp .env.example .env
-nano .env
+sudo install -m 600 -o deploy -g deploy \
+  /opt/notanothercards/infra/monitoring/.env.example \
+  /opt/notanothercards/infra/monitoring/.env
+sudo -u deploy nano /opt/notanothercards/infra/monitoring/.env
 ```
 
 Ensure secure values for:
 - `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`
-- `POSTGRES_EXPORTER_DATA_SOURCE_NAME`
+- `POSTGRES_EXPORTER_DATA_SOURCE_NAME` (matching credentials in `/opt/notanothercards/.env`)
 
 ### 2. Start the Monitoring Stack
 ```bash
-docker compose -f infra/monitoring/docker-compose.yml up -d
+cd /opt/notanothercards/infra/monitoring
+sudo -u deploy docker compose \
+  -f docker-compose.yml \
+  --env-file .env \
+  up -d --wait
 ```
 
 Check running containers:
 ```bash
-docker compose -f infra/monitoring/docker-compose.yml ps
+sudo -u deploy docker compose \
+  -f docker-compose.yml \
+  --env-file .env \
+  ps
 ```
 
 ### 3. Nginx Reverse Proxy Setup
@@ -100,5 +108,5 @@ sudo certbot --nginx -d grafana.notanothercards.com
 
 4. **View Monitoring Logs:**
    ```bash
-   docker compose -f infra/monitoring/docker-compose.yml logs --tail=100 -f
+   sudo -u deploy docker compose -f infra/monitoring/docker-compose.yml --env-file infra/monitoring/.env logs --tail=100 -f
    ```

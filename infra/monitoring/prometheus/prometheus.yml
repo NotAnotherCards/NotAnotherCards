@@ -12,7 +12,7 @@ scrape_configs:
   - job_name: 'api-vps'
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['host.docker.internal:3000']
+      - targets: ['api:3000']
 
   # VPS host hardware metrics (CPU, RAM, Disk)
   - job_name: 'node-vps'
@@ -26,7 +26,7 @@ scrape_configs:
 
   # LiteLLM AI Gateway metrics on GX10 (scraped over Tailscale)
   - job_name: 'litellm-gx10'
-    metrics_path: '/metrics'
+    metrics_path: '/metrics/'
     static_configs:
       - targets: ['100.64.0.1:4000']
 
