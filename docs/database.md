@@ -4,7 +4,9 @@ PostgreSQL, managed with Drizzle. Better Auth owns
 `apps/api/src/database/schema.ts`; the syncable app tables live in
 `apps/api/src/sync/schema.ts`. Generated migrations are in `apps/api/drizzle`.
 
-Together the schemas contain the four tables Better Auth needs and the core offline-first profile, deck, card, and review tables.
+Together the schemas contain the four tables Better Auth needs and the core
+offline-first profile, deck, note, generated-card, note-membership, and review
+tables.
 
 Server scope, revisions, and tombstones remain owned by PostgreSQL and the authenticated sync boundary.
 
@@ -60,7 +62,7 @@ Deriving one from the other (for example with `drizzle-zod`) would make
 drift impossible instead of just detected, and stays on the table for
 later. It means moving the Drizzle schema into a shared package and
 pulling `drizzle-orm` into the web and mobile dependency graphs, which
-at four small tables costs more than it saves. For now,
+at this scale costs more than it saves. For now,
 `apps/api/test/sync/schema-parity.test.ts` pins
 the two declarations together: every wire field must be a column with
 matching nullability, and every column must be a wire field or known
@@ -86,7 +88,8 @@ safe-integer numeric columns rather than PostgreSQL timestamp values.
 
 ### `user_decks`
 
-Represents a deck (collection of cards) owned by a user.
+Represents a named collection owned by a user. Decks collect notes through
+`user_note_decks`; cards do not carry deck membership themselves.
 
 - **`id`** (text/UUID, Primary Key): Client-generated unique identifier to prevent offline creation collisions.
 - **`user_id`** (text, Foreign Key): The authenticated remelonDB scope. It is server machinery and is not accepted from or returned to the client.
@@ -104,24 +107,104 @@ Represents a deck (collection of cards) owned by a user.
 
 ---
 
+### `user_notes`
+
+The canonical learning content from which review cards are generated. A note
+has a subject-independent `note_type`, a versioned serialized JSON payload, and
+optional free-form Markdown.
+
+- **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
+- **`user_id`** (text, Foreign Key): The authenticated sync scope.
+- **`note_type`** (text, NOT NULL): Selects the semantic note family, such as
+  `basic` or `word`.
+- **`fields_version`** (integer, NOT NULL): Selects the version of that note
+  type's validation schema.
+- **`fields_json`** (text, NOT NULL): Serialized complete structured note.
+- **`additional_content`** (text, nullable): Genuinely free-form Markdown not
+  addressed by individual fields or templates.
+- **`created_at` / `updated_at`** (double precision): Non-negative safe-integer
+  Unix milliseconds.
+- **`rev` / `deleted_at`**: Server-managed revision and tombstone fields.
+
+**Indexes:**
+
+- **`user_notes_user_rev_idx`**: Composite index on `(user_id, rev)` for incremental pulls.
+- **`user_notes_user_updated_idx`**: Composite index on `(user_id, updated_at)` for recency ordering.
+
+#### `fields_json` validation contract
+
+`fields_json` remains text at the database and sync boundary, but it is not an
+unvalidated escape hatch. Before accepting a note push, the server uses the
+pair `(note_type, fields_version)` to look up a Zod schema in an explicit
+registry, parses the serialized JSON, and validates the result. Malformed JSON,
+unknown type/version pairs, and payloads rejected by the selected schema must
+all reject the note write. This registry is shared with the local/wire row in
+[#160](https://github.com/NotAnotherCards/NotAnotherCards/issues/160) and wired
+into push validation in
+[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+
+Known values that may be edited, regenerated, searched, filtered, or reused by
+a template belong in `fields_json`; `additional_content` is only for prose
+without those semantics. In v1, `word` notes require
+`original_language` and `translation_language` in the validated payload even
+when a deck supplies their initial defaults.
+
+---
+
 ### `user_cards`
 
-Represents individual vocabulary cards, comparison cards, or phrases.
+Represents an individual review question generated from a note. The note owns
+the source content; each sibling card owns its own schedule and review history.
 
 **Indexes:**
 
 - **`user_cards_user_rev_idx`**: Composite index on `(user_id, rev)` for incremental pulls.
 - **`user_cards_user_updated_idx`**: Composite index on `(user_id, updated_at)` for listing a user's cards by recency.
+- **`user_cards_note_idx`**: Index on `(note_id)` for finding all sibling cards generated from a note.
 - **`user_cards_user_due_idx`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
 
 - **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
 - **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
-- **`deck_id`** (text): Links to `user_decks.id`. This is validated through the authenticated sync engine rather than a cascading SQL foreign key so
-  garbage collection can never hard-delete a live child row.
-- **`front` / `back`** (text, NOT NULL): The card prompt/question and response/translation.
-- **`due_at`** (timestamp with time zone, default now): The next scheduled review date-time determined by the spaced repetition algorithm.
+- **`note_id`** (text, NOT NULL): Links to `user_notes.id`. Ownership is
+  validated through the authenticated sync engine rather than a cascading SQL
+  foreign key so garbage collection can never hard-delete a live child row.
+- **`template_key`** (text, NOT NULL): Stable key for the rendering template
+  within the note type. Regeneration reconciles cards by
+  `(note_id, template_key)` so the schedule survives.
+- **`active`** (boolean, NOT NULL, default `true`): Whether this review mode is
+  currently enabled. Disabling a mode is soft state, not protocol deletion.
+- **`front` / `back`** (text, NOT NULL): Generic Markdown prompt and answer
+  rendered from the source note.
 - **`created_at` / `updated_at` / `due_at`** (double precision): Unix time in milliseconds. `rev` and `deleted_at` have the same server-only semantics as
   `user_decks`.
+
+---
+
+### `user_note_decks`
+
+Represents note-level membership in a deck. A note can belong to multiple
+decks while retaining one canonical payload and one schedule per sibling card.
+
+- **`id`** (text/UUID, Primary Key): Deterministic client ID derived from
+  `(note_id, deck_id)`.
+- **`user_id`** (text, Foreign Key): The authenticated sync scope.
+- **`note_id`** (text, NOT NULL): Links to `user_notes.id` through sync-layer
+  ownership validation.
+- **`deck_id`** (text, NOT NULL): Links to `user_decks.id` through sync-layer
+  ownership validation.
+- **`active`** (boolean, NOT NULL, default `true`): Whether the note currently
+  appears in the deck. Removing membership uses `active = false`; a note with
+  no active memberships remains in the personal dictionary.
+- **`created_at` / `updated_at`** (double precision): Non-negative safe-integer
+  Unix milliseconds.
+- **`rev` / `deleted_at`**: Server-managed revision and tombstone fields.
+
+**Indexes:**
+
+- **`user_note_decks_user_rev_idx`**: Composite index on `(user_id, rev)` for incremental pulls.
+- **`user_note_decks_user_updated_idx`**: Composite index on `(user_id, updated_at)` for recency ordering.
+- **`user_note_decks_note_idx`**: Index on `(note_id)` for resolving a note's memberships.
+- **`user_note_decks_deck_idx`**: Index on `(deck_id)` for resolving a deck's notes.
 
 ---
 
@@ -159,12 +242,13 @@ older than it receive `resyncRequired`. Deck titles/descriptions and card fronts
 and backs are scrubbed in the same update that creates their tombstones, before
 the retention window elapses.
 
-Parent deletion uses a transactional tombstone cascade: deleting a deck also
-tombstones its active cards and their review events, and deleting a card also
-tombstones its review events. If one push deletes a parent while creating or
-updating one of its descendants, the parent deletion is rejected and remains
-dirty; the descendant write can commit, and retrying the parent deletion then
-cascades from the resulting consistent state.
+The target parent-deletion policy follows note ownership rather than deck
+membership: deleting a note tombstones its cards, note-deck memberships, and
+the cards' review events; deleting a deck tombstones only its note-deck
+memberships and never the note or its learning progress. Deleting a card still
+tombstones its review events. Transactional cascade behavior and contradictory
+same-push handling are updated in epic follow-up
+[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
 ## Migrations
 
@@ -175,6 +259,21 @@ pnpm db:generate   # generate a migration from schema changes
 pnpm db:migrate    # apply pending migrations
 pnpm db:push       # push schema directly, dev only
 ```
+
+Migration `0010_fluffy_meggan` deliberately has no compatibility data rewrite.
+It adds required note fields to `user_cards` and removes `deck_id`, so a local
+database containing the old development cards must be reset before applying
+it. For the Compose development database, remove the development volume and
+recreate the services:
+
+```sh
+docker compose down --volumes
+docker compose up --build
+```
+
+This destroys local development data. Production-like or otherwise valuable
+databases must not apply this reset-only migration without an explicit data
+migration plan.
 
 ## Environment variables
 
