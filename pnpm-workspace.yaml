@@ -11,7 +11,7 @@ overrides:
   react-dom: 19.2.3
   # one core instance workspace-wide; differing @types/node peers
   # otherwise split it into two and break shared Model types
-  '@remelondb/core': 0.2.3
+  '@remelondb/core': 0.2.5
 minimumReleaseAgeExclude:
   - '@turbo/darwin-64@2.10.4'
   - '@turbo/darwin-arm64@2.10.4'
@@ -20,14 +20,14 @@ minimumReleaseAgeExclude:
   - '@turbo/windows-64@2.10.4'
   - '@turbo/windows-arm64@2.10.4'
   - turbo@2.10.4
-  - '@remelondb/core@0.2.0 || 0.2.2 || 0.2.3'
-  - '@remelondb/driver-web@0.2.0 || 0.2.2 || 0.2.3'
-  - '@remelondb/driver-node@0.2.0 || 0.2.2 || 0.2.3'
-  - '@remelondb/nestjs@0.2.0 || 0.2.2 || 0.2.3'
-  - '@remelondb/server@0.2.0 || 0.2.2 || 0.2.3'
-  - '@remelondb/store-drizzle@0.2.0 || 0.2.2 || 0.2.3'
+  - '@remelondb/core@0.2.4 || 0.2.5'
+  - '@remelondb/driver-web@0.2.4 || 0.2.5'
+  - '@remelondb/driver-node@0.2.4 || 0.2.5'
+  - '@remelondb/nestjs@0.2.4 || 0.2.5'
+  - '@remelondb/server@0.2.4 || 0.2.5'
+  - '@remelondb/store-drizzle@0.2.4 || 0.2.5'
   - '@expo/metro-runtime@57.0.7'
   - expo-constants@57.0.7
   - expo-linking@57.0.4
   - expo-router@57.0.8
-  - '@remelondb/driver-rn@0.2.0 || 0.2.2 || 0.2.3'
+  - '@remelondb/driver-rn@0.2.4 || 0.2.5'
