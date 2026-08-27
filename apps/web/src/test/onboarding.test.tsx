@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { App, router } from '../App';
 import userEvent from '@testing-library/user-event';
 import { authClient } from '@/lib/auth-client';
@@ -42,6 +42,14 @@ vi.mock('@remelondb/core/react', () => ({
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
+  // The root provider calls this, and the /app layout renders nothing
+  // without a manager. These tests are about routing, not the database
+  // lifecycle, so a stand-in is enough.
+  useSessionDatabase: () => ({
+    manager: { state: { status: 'ready', error: null } },
+    syncController: null,
+    closeError: null,
+  }),
 }));
 
 describe('Onboarding Flow and Guard Specs', () => {
@@ -183,6 +191,34 @@ describe('Onboarding Flow and Guard Specs', () => {
 
   it('submits the form successfully and calls the onboarding API endpoint', async () => {
     const user = userEvent.setup();
+
+    // The onboarded session must arrive because the component asked for
+    // it. getSession() does not update the reactive session the root
+    // database provider reads, so the component has to await refetch();
+    // flipping the mocks by hand after submit would hide it if that
+    // stopped happening. Installed before render, since the component
+    // takes refetch from the session it renders with.
+    const refetch = vi.fn(async () => {
+      vi.mocked(authClient.getSession).mockResolvedValue({
+        data: mockSessionOnboarded,
+        error: null,
+      });
+      vi.mocked(authClient.useSession).mockReturnValue({
+        data: mockSessionOnboarded,
+        isPending: false,
+        isRefetching: false,
+        error: null,
+        refetch,
+      } as unknown as ReturnType<typeof authClient.useSession>);
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch,
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
     render(<App />);
 
     // Fill in the form
@@ -205,23 +241,14 @@ describe('Onboarding Flow and Guard Specs', () => {
       '00000000-0000-0000-0000-000000000002',
     ); // Spanish
 
-    // Submit (flip guard state to true by updating the session mock so dashboard redirection completes successfully)
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSessionOnboarded,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSessionOnboarded,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
     const submitBtn = screen.getByRole('button', {
       name: /Complete Registration/i,
     });
     await user.click(submitBtn);
+
+    // Without this the user lands on /app with the provider still
+    // holding onBoardingComplete: false, and the layout renders nothing.
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
 
     // Verify fetch was called with correct endpoint and payload
     expect(global.fetch).toHaveBeenCalledWith(

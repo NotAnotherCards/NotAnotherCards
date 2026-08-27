@@ -1,18 +1,9 @@
 import { authClient } from '@/lib/auth-client';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 import { DatabaseBanner } from '@/components/DatabaseBanner';
-import { createUserDatabaseManager, closeUserDatabase } from '@/offline/db';
-import { createRunSync } from '@/offline/sync';
-import {
-  browserSyncTriggers,
-  createSyncController,
-  type SyncController,
-} from '@/offline/syncController';
 import { SyncProvider } from '@/offline/syncProvider';
+import { useSessionDatabase } from '@/offline/sessionDatabase';
 import { SyncStatus } from '@/components/SyncStatus';
-
-import { DatabaseProvider } from '@remelondb/core/react';
 
 export const Route = createFileRoute('/app')({
   beforeLoad: async ({ location }) => {
@@ -45,70 +36,26 @@ export const Route = createFileRoute('/app')({
 });
 
 function AppLayout() {
-  const { session } = Route.useRouteContext();
-  const userId = session?.user?.id;
+  // The database is owned by the provider in __root.tsx, above the
+  // router. This layout only consumes it: it is destroyed and rebuilt on
+  // navigation, which is exactly why it must not own the lifecycle.
+  const { manager, syncController } = useSessionDatabase();
 
-  const [userManager, setUserManager] = useState<ReturnType<
-    typeof createUserDatabaseManager
-  > | null>(null);
-  const [syncController, setSyncController] = useState<SyncController | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (!userId) {
-      setUserManager(null);
-      setSyncController(null);
-      return;
-    }
-    const manager = createUserDatabaseManager(userId);
-    setUserManager(manager);
-    let controller: SyncController | null = null;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const database = await manager.init();
-        if (cancelled || !database) return;
-        // sync starts only once the user's database is open; it dies
-        // with the session below
-        controller = createSyncController({
-          runSync: createRunSync(database),
-          triggers: browserSyncTriggers,
-        });
-        setSyncController(controller);
-        controller.start();
-      } catch (err) {
-        console.error('Database initialization failed', err);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      controller?.dispose();
-      setSyncController(null);
-      // Close the manager this effect created, not the current global,
-      // so an interleaved successor stays open.
-      void closeUserDatabase(manager).catch((err) => {
-        console.error('Database close failed', err);
-      });
-      setUserManager(null);
-    };
-  }, [userId]);
-
-  if (!userManager) {
+  if (!manager) {
     return null;
   }
 
+  // No DatabaseProvider here: the root provider already supplies the
+  // manager to this subtree.
   return (
-    <DatabaseProvider manager={userManager}>
-      <SyncProvider controller={syncController}>
-        <div className="flex-1 flex flex-col bg-background">
-          <DatabaseBanner />
-          <SyncStatus />
-          <div className="flex-1 flex flex-col">
-            <Outlet />
-          </div>
+    <SyncProvider controller={syncController}>
+      <div className="flex-1 flex flex-col bg-background">
+        <DatabaseBanner />
+        <SyncStatus />
+        <div className="flex-1 flex flex-col">
+          <Outlet />
         </div>
-      </SyncProvider>
-    </DatabaseProvider>
+      </div>
+    </SyncProvider>
   );
 }

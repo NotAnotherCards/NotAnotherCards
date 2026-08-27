@@ -1,11 +1,6 @@
-export {
-  createSyncController,
-  type RunSyncResult,
-  type SyncController,
-  type SyncControllerOptions,
-  type SyncControllerState,
-  type SyncControllerStatus,
-} from '@remelondb/core';
+// The session hook builds the controller now; what is left here is the
+// browser's wake-ups, plus the two types the sync UI names.
+export type { SyncController, SyncControllerState } from '@remelondb/core';
 
 /** Browser wake-ups: back online, tab becomes visible. */
 export function browserSyncTriggers(fire: () => void): () => void {

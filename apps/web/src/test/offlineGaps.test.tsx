@@ -28,12 +28,19 @@ import {
   getReviewHistoryQuery,
 } from '@/offline/queries';
 
+// `var` is intentional: vitest hoists mock factories above lexical
+// declarations, and the tests need the manager the factory built.
+// eslint-disable-next-line no-var
+var testManager: ReturnType<
+  typeof import('@remelondb/core').createDatabaseManager
+>;
+
 vi.mock('../offline/db', async () => {
   const { createDatabaseManager, Database } = await import('@remelondb/core');
   const { NodeSqliteDriver } = await import('@remelondb/driver-node');
   const { schema, UserDeck, UserCard, ReviewEvent } =
     await import('@repo/offline-db');
-  const manager = createDatabaseManager({
+  testManager = createDatabaseManager({
     open: () =>
       Database.open({
         driver: new NodeSqliteDriver(),
@@ -42,11 +49,7 @@ vi.mock('../offline/db', async () => {
         name: ':memory:',
       }),
   });
-  return {
-    manager,
-    createUserDatabaseManager: () => manager,
-    closeUserDatabase: () => manager.database.driver.close(),
-  };
+  return { createUserDatabaseManager: () => testManager };
 });
 
 describe('due-cards reactivity', () => {
@@ -61,11 +64,12 @@ describe('due-cards reactivity', () => {
   });
 
   it("shows a card again once its 'Again' interval has elapsed", async () => {
-    const { manager } = await import('../offline/db');
-    await manager!.init();
+    const { createUserDatabaseManager } = await import('../offline/db');
+    const manager = createUserDatabaseManager('user-a');
+    await manager.init();
     const { result, rerender } = renderHook(() => useStore(), {
       wrapper: ({ children }) => (
-        <DatabaseProvider manager={manager!}>{children}</DatabaseProvider>
+        <DatabaseProvider manager={manager}>{children}</DatabaseProvider>
       ),
     });
     await waitFor(() => expect(result.current.status).toBe('ready'));

@@ -28,6 +28,14 @@ vi.mock('@remelondb/core/react', () => ({
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
+  // The root provider calls this, and the /app layout renders nothing
+  // without a manager. These tests are about routing, not the database
+  // lifecycle, so a stand-in is enough.
+  useSessionDatabase: () => ({
+    manager: { state: { status: 'ready', error: null } },
+    syncController: null,
+    closeError: null,
+  }),
 }));
 
 describe('Auth Guards', () => {
