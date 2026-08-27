@@ -271,6 +271,11 @@ docker compose down --volumes
 docker compose up --build
 ```
 
+The shared offline schema likewise moves to version 3. Its local migration
+adds `user_notes` and `user_note_decks`, recreates `user_cards` in the new
+shape, and clears the now-orphaned review history. Existing local decks and
+profiles are preserved; legacy development cards and reviews are not.
+
 This destroys local development data. Production-like or otherwise valuable
 databases must not apply this reset-only migration without an explicit data
 migration plan.

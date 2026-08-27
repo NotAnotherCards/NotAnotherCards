@@ -73,14 +73,11 @@ INDEX(identifier)
 The synchronized contract consists of the following six logical tables. The
 API schema adds `user_id`, `rev`, and `deleted_at` for ownership, revision
 tracking, and tombstones. RemelonDB supplies its own local record metadata, so
-those server columns are not application fields in the local Zod tables. The
-new server tables land in
-[#159](https://github.com/NotAnotherCards/NotAnotherCards/issues/159); their matching local declarations follow in
-[#160](https://github.com/NotAnotherCards/NotAnotherCards/issues/160).
+those server columns are not application fields in the local Zod tables.
 
 All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `reviewed_at`) are non-negative integer Unix milliseconds and must remain within JavaScript's safe-integer range. PostgreSQL stores them as `double precision`; the wire and local schemas validate them as integers found in [`apps/api/src/sync/schema.ts`](../apps/api/src/sync/schema.ts).
 
-#### `user_decks` ([API schema](../apps/api/src/sync/schema.ts#L34), [local schema](../packages/offline-db/src/user-dictionary.ts#L37))
+#### `user_decks` ([API schema](../apps/api/src/sync/schema.ts#L35), [local schema](../packages/offline-db/src/user-dictionary.ts#L127))
 
 ```text
 id                  text PK
@@ -93,7 +90,7 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 ```
 
-#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L100))
+#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L101), [local schema](../packages/offline-db/src/user-dictionary.ts#L135))
 
 The canonical source for a learning item. `fields_json` is serialized JSON;
 `additional_content` is optional Markdown for genuinely free-form material.
@@ -113,7 +110,7 @@ updated_at          number (integer Unix ms) NOT NULL
 INDEX(user_id, rev)
 ```
 
-#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L62))
+#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L63), [local schema](../packages/offline-db/src/user-dictionary.ts#L131))
 
 Generated review questions. `front` and `back` deliberately remain generic
 Markdown instead of encoding subject-specific fields in this table. Every
@@ -138,7 +135,7 @@ INDEX(note_id)
 INDEX(user_id, due_at)
 ```
 
-#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L130))
+#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L131), [local schema](../packages/offline-db/src/user-dictionary.ts#L139))
 
 Note-level deck membership. A note can belong to several decks without
 duplicating the note, its generated cards, or their review schedules.
@@ -161,12 +158,11 @@ INDEX(deck_id)
 
 The note/card and note/deck relations are declared in Drizzle. As with the
 previous card/deck relationship, authenticated ownership and parent checks are
-sync-layer concerns rather than cascading SQL foreign keys. The shared local
-rows and those checks are added in epic follow-ups
-[#160](https://github.com/NotAnotherCards/NotAnotherCards/issues/160) and
+sync-layer concerns rather than cascading SQL foreign keys. The
+server ownership checks remain in
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
-#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L161), [local schema](../packages/offline-db/src/user-dictionary.ts#L45))
+#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L162), [local schema](../packages/offline-db/src/user-dictionary.ts#L143))
 
 ```text
 id                  text PK
@@ -180,7 +176,7 @@ reviewed_at         number (integer Unix ms) NOT NULL
 
 Review events are append-only in the sync configuration.
 
-#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L185), [local schema](../packages/offline-db/src/user-dictionary.ts#L49))
+#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L186), [local schema](../packages/offline-db/src/user-dictionary.ts#L147))
 
 Contains app-specific profile data and is separate from Better Auth's `user` table.
 
@@ -340,7 +336,7 @@ Everything in this section is exploratory and is not part of the current databas
 
 ### Proposed files/upload foundation
 
-The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L196) and [local schema](../packages/offline-db/src/user-dictionary.ts#L30), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
+The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L196) and [local schema](../packages/offline-db/src/user-dictionary.ts#L117), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
 
 #### `files`
 
