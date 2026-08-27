@@ -71,6 +71,15 @@ function testCloseUserDatabase() {
   return closing;
 }
 
+// Closing the manager re-renders every mounted useStore subscriber, so the
+// tests holding one flush the close inside act(). The delayed-open test
+// can't: it has to resolve the in-flight open before awaiting close.
+function closeUserDatabaseInAct() {
+  return act(async () => {
+    await testCloseUserDatabase();
+  });
+}
+
 describe('User Database Isolation integration tests', () => {
   beforeEach(() => {
     delayDatabaseOpen = false;
@@ -113,7 +122,7 @@ describe('User Database Isolation integration tests', () => {
     );
 
     // Close Database for User A (simulating logout)
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // 2. Log in as user-b
     const managerB = testCreateUserDatabaseManager('user-b');
@@ -133,7 +142,7 @@ describe('User Database Isolation integration tests', () => {
     expect(storeB.current.decks).toHaveLength(0);
 
     // Close Database for User B
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // 3. Log back in as user-a
     const managerA2 = testCreateUserDatabaseManager('user-a');
@@ -153,7 +162,7 @@ describe('User Database Isolation integration tests', () => {
     expect(storeA2.current.decks[0].title).toBe('Spanish Verbs');
 
     // Clean up
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
   });
 
   it('keeps two non-BMP ids that share a UTF-16 surrogate isolated (db-name collision regression)', async () => {
@@ -182,7 +191,7 @@ describe('User Database Isolation integration tests', () => {
       expect(storeA.current.decks.map((d) => d.id)).toContain(deckId),
     );
 
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // A different id that would collide under the old encoding.
     const managerB = testCreateUserDatabaseManager('😁');
@@ -199,7 +208,7 @@ describe('User Database Isolation integration tests', () => {
     expect(storeB.current.decks.map((d) => d.id)).not.toContain(deckId);
     expect(storeB.current.decks).toHaveLength(0);
 
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
   });
 
   it('prevents further queries/writes through the old manager after logout', async () => {
@@ -214,7 +223,7 @@ describe('User Database Isolation integration tests', () => {
     await waitFor(() => expect(store.current.status).toBe('ready'));
 
     // Logout closes database
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // Attempts to write through the old manager/database should throw/fail
     await expect(store.current.createDeck('Spanish', '')).rejects.toThrow();
@@ -279,7 +288,7 @@ describe('User Database Isolation integration tests', () => {
     });
 
     // 2. Tab/Session switches user to user-b: close A first
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // 3. Open user-b's database
     const managerB = testCreateUserDatabaseManager('user-b');
@@ -296,6 +305,6 @@ describe('User Database Isolation integration tests', () => {
     expect(storeB.current.decks.map((d) => d.id)).not.toContain(deckId);
 
     // Clean up
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
   });
 });
