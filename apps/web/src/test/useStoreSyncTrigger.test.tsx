@@ -8,7 +8,14 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { Database, createDatabaseManager } from '@remelondb/core';
 import { DatabaseProvider } from '@remelondb/core/react';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
-import { schema, UserDeck, UserCard, ReviewEvent } from '@repo/offline-db';
+import {
+  schema,
+  UserDeck,
+  UserNote,
+  UserCard,
+  UserNoteDeck,
+  ReviewEvent,
+} from '@repo/offline-db';
 import { useStore } from '@/hooks/useStore';
 import { SyncProvider } from '@/offline/syncProvider';
 import type { SyncController } from '@/offline/syncController';
@@ -18,7 +25,7 @@ describe('useStore sync triggers', () => {
     const db = await Database.open({
       driver: new NodeSqliteDriver(),
       schema,
-      modelClasses: [UserDeck, UserCard, ReviewEvent],
+      modelClasses: [UserDeck, UserNote, UserCard, UserNoteDeck, ReviewEvent],
       name: ':memory:',
     });
     const manager = createDatabaseManager({
