@@ -1,5 +1,12 @@
-import { Database, Q } from '@remelondb/core';
-import { UserDeck, UserCard, ReviewEvent, UserProfile } from '@repo/offline-db';
+import { Database, Q, randomId } from '@remelondb/core';
+import {
+  UserDeck,
+  UserNote,
+  UserCard,
+  UserNoteDeck,
+  ReviewEvent,
+  UserProfile,
+} from '@repo/offline-db';
 
 // ==========================================
 // QUERIES
@@ -14,19 +21,37 @@ export function getDeckDetailQuery(db: Database, deckId: string) {
 }
 
 export function getPersonalDictionaryQuery(db: Database) {
-  return db.get(UserCard).query(Q.sortBy('created_at', Q.desc));
+  return db
+    .get(UserCard)
+    .query(Q.where('active', true), Q.sortBy('created_at', Q.desc));
 }
 
 export function getDeckCardsQuery(db: Database, deckId: string) {
-  return db
-    .get(UserCard)
-    .query(Q.where('deck_id', deckId), Q.sortBy('created_at', Q.desc));
+  return db.get(UserCard).query(
+    Q.unsafeSqlQuery(
+      `select distinct "user_cards".*
+       from "user_cards"
+       join "user_note_decks"
+         on "user_note_decks"."note_id" = "user_cards"."note_id"
+       where "user_note_decks"."deck_id" = ?
+         and "user_note_decks"."active" = 1
+         and "user_note_decks"."_status" is not 'deleted'
+         and "user_cards"."active" = 1
+         and "user_cards"."_status" is not 'deleted'
+       order by "user_cards"."created_at" desc`,
+      [deckId],
+    ),
+  );
 }
 
 export function getDueCardsQuery(db: Database, now: number = Date.now()) {
   return db
     .get(UserCard)
-    .query(Q.where('due_at', Q.lte(now)), Q.sortBy('due_at', Q.asc));
+    .query(
+      Q.where('active', true),
+      Q.where('due_at', Q.lte(now)),
+      Q.sortBy('due_at', Q.asc),
+    );
 }
 
 export function getCardDetailQuery(db: Database, cardId: string) {
@@ -47,6 +72,10 @@ export function getReviewHistoryQuery(db: Database, userCardId?: string) {
 
 export function getUserProfileQuery(db: Database) {
   return db.get(UserProfile).query();
+}
+
+export function getNoteDecksQuery(db: Database) {
+  return db.get(UserNoteDeck).query(Q.where('active', true));
 }
 
 // ==========================================
@@ -89,21 +118,14 @@ export async function updateDeck(
 export async function deleteDeck(db: Database, deckId: string) {
   return await db.write(async () => {
     const deck = await db.get(UserDeck).find(deckId);
-    await deck.markAsDeleted();
-    const cards = await db
-      .get(UserCard)
+    const noteDecks = await db
+      .get(UserNoteDeck)
       .query(Q.where('deck_id', deckId))
       .fetch();
-    for (const card of cards) {
-      await card.markAsDeleted();
-      const reviews = await db
-        .get(ReviewEvent)
-        .query(Q.where('user_card_id', card.id))
-        .fetch();
-      for (const review of reviews) {
-        await review.markAsDeleted();
-      }
-    }
+    await db.batch([
+      ...noteDecks.map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
+      deck.prepareMarkAsDeleted(),
+    ]);
   });
 }
 
@@ -115,14 +137,39 @@ export async function createCard(
 ) {
   return await db.write(async () => {
     const now = Date.now();
-    return await db.get(UserCard).create({
-      deck_id: deckId,
+    const noteId = randomId();
+    const cardId = randomId();
+    const noteDeckId = randomId();
+    const note = db.get(UserNote).prepareCreate({
+      id: noteId,
+      note_type: 'basic',
+      fields_version: 1,
+      fields_json: JSON.stringify({ front, back }),
+      additional_content: null,
+      created_at: now,
+      updated_at: now,
+    });
+    const card = db.get(UserCard).prepareCreate({
+      id: cardId,
+      note_id: noteId,
+      template_key: 'front-back',
+      active: true,
       front,
       back,
       due_at: now,
       created_at: now,
       updated_at: now,
     });
+    const noteDeck = db.get(UserNoteDeck).prepareCreate({
+      id: noteDeckId,
+      note_id: noteId,
+      deck_id: deckId,
+      active: true,
+      created_at: now,
+      updated_at: now,
+    });
+    await db.batch([note, card, noteDeck]);
+    return await db.get(UserCard).find(cardId);
   });
 }
 
@@ -135,25 +182,45 @@ export async function updateCard(
   return await db.write(async () => {
     const now = Date.now();
     const card = await db.get(UserCard).find(cardId);
-    return await card.update((record) => {
-      record.front = front;
-      record.back = back;
-      record.updated_at = now;
-    });
+    const note = await db.get(UserNote).find(card.note_id);
+    await db.batch([
+      note.prepareUpdate((record) => {
+        record.fields_json = JSON.stringify({ front, back });
+        record.updated_at = now;
+      }),
+      card.prepareUpdate((record) => {
+        record.front = front;
+        record.back = back;
+        record.updated_at = now;
+      }),
+    ]);
+    return card;
   });
 }
 
 export async function deleteCard(db: Database, cardId: string) {
   return await db.write(async () => {
     const card = await db.get(UserCard).find(cardId);
-    await card.markAsDeleted();
+    const note = await db.get(UserNote).find(card.note_id);
+    const cards = await db
+      .get(UserCard)
+      .query(Q.where('note_id', card.note_id))
+      .fetch();
+    const cardIds = cards.map((sibling) => sibling.id);
+    const noteDecks = await db
+      .get(UserNoteDeck)
+      .query(Q.where('note_id', card.note_id))
+      .fetch();
     const reviews = await db
       .get(ReviewEvent)
-      .query(Q.where('user_card_id', cardId))
+      .query(Q.where('user_card_id', Q.oneOf(cardIds)))
       .fetch();
-    for (const review of reviews) {
-      await review.markAsDeleted();
-    }
+    await db.batch([
+      ...reviews.map((review) => review.prepareMarkAsDeleted()),
+      ...cards.map((sibling) => sibling.prepareMarkAsDeleted()),
+      ...noteDecks.map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
+      note.prepareMarkAsDeleted(),
+    ]);
   });
 }
 
