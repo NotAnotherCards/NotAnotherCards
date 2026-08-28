@@ -9,7 +9,7 @@ export const Route = createFileRoute('/')({
       const onboardingComplete = session.user.onBoardingComplete;
       if (onboardingComplete) {
         throw redirect({
-          to: '/app/dashboard',
+          to: '/dashboard',
         });
       }
     }

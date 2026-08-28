@@ -59,7 +59,7 @@ export function OnBoardingComponent() {
         throw new Error(errData.message || 'Failed to save onboarding data');
       }
       await refetchSession();
-      void navigate({ to: '/app/dashboard' });
+      void navigate({ to: '/dashboard' });
     } catch (err) {
       setApiError(
         err instanceof Error ? err.message : 'An unexpected error occurred',
