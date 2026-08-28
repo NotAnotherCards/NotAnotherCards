@@ -49,6 +49,27 @@ const legacySchema = appSchema({
   ],
 });
 
+const v3CreatedTables = [
+  'user_notes',
+  'user_cards',
+  'user_note_decks',
+  'review_events',
+] as const;
+
+async function v3CreatedTableDdl(database: Database) {
+  const placeholders = v3CreatedTables.map(() => '?').join(', ');
+  return database.read(() =>
+    database.driver.query(
+      `select type, name, tbl_name, sql
+       from sqlite_master
+       where (type = 'table' and name in (${placeholders}))
+          or (type = 'index' and tbl_name in (${placeholders}))
+       order by type, name`,
+      [...v3CreatedTables, ...v3CreatedTables],
+    ),
+  );
+}
+
 describe('offline note/card migration', () => {
   let directory: string | undefined;
 
@@ -57,7 +78,7 @@ describe('offline note/card migration', () => {
     directory = undefined;
   });
 
-  it('preserves decks while resetting incompatible cards and reviews', async () => {
+  it('preserves decks, resets incompatible rows, and matches fresh v3 DDL', async () => {
     directory = await mkdtemp(join(tmpdir(), 'nac-offline-migration-'));
     const name = join(directory, 'user.db');
     const legacy = await Database.open({
@@ -112,6 +133,17 @@ describe('offline note/card migration', () => {
     expect(await migrated.get(UserCard).query().fetch()).toEqual([]);
     expect(await migrated.get(UserNoteDeck).query().fetch()).toEqual([]);
     expect(await migrated.get(ReviewEvent).query().fetch()).toEqual([]);
+
+    const fresh = await Database.open({
+      driver: new NodeSqliteDriver(),
+      schema,
+      name: join(directory, 'fresh.db'),
+    });
+    expect(await v3CreatedTableDdl(migrated)).toEqual(
+      await v3CreatedTableDdl(fresh),
+    );
+
+    await fresh.driver.close();
     await migrated.driver.close();
   });
 });

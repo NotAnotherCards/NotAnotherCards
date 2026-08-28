@@ -75,6 +75,9 @@ export const migrations = schemaMigrations({
     {
       toVersion: 3,
       steps: [
+        // v2 cards cannot be attached to the new note model. They have a
+        // deck_id but no note_id. These are the immutable v2 physical table
+        // names; future renames must not rewrite this migration history
         unsafeExecuteSql('drop table "review_events"'),
         unsafeExecuteSql('drop table "user_cards"'),
         createTable({
