@@ -42,7 +42,7 @@ vi.mock('@remelondb/core/react', () => ({
 describe('Dashboard Page Component Specs', () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
-    window.history.pushState(null, '', '/app/dashboard');
+    window.history.pushState(null, '', '/dashboard');
 
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
@@ -63,7 +63,7 @@ describe('Dashboard Page Component Specs', () => {
   it('renders welcome text, user email/name, and placeholder feature sections', async () => {
     render(<App />);
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // 1. Dashboard renders welcome text
@@ -102,7 +102,7 @@ describe('Dashboard Page Component Specs', () => {
     const user = userEvent.setup();
     render(<App />);
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // Click Settings tab on dashboard

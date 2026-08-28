@@ -42,7 +42,7 @@ vi.mock('@remelondb/core/react', () => ({
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
-  // The root provider calls this, and the /app layout renders nothing
+  // The root provider calls this, and the  layout renders nothing
   // without a manager. These tests are about routing, not the database
   // lifecycle, so a stand-in is enough.
   useSessionDatabase: () => ({
@@ -106,7 +106,7 @@ describe('Onboarding Flow and Guard Specs', () => {
 
     // Attempt to navigate to dashboard
     await act(async () => {
-      void router.navigate({ to: '/app/dashboard' });
+      void router.navigate({ to: '/dashboard' });
     });
 
     // Should redirect back to onboarding and render the onboarding page elements
@@ -158,7 +158,7 @@ describe('Onboarding Flow and Guard Specs', () => {
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
-    expect(window.location.pathname).toBe('/app/dashboard');
+    expect(window.location.pathname).toBe('/dashboard');
   });
 
   it('displays validation errors for invalid or empty fields', async () => {
@@ -246,7 +246,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     });
     await user.click(submitBtn);
 
-    // Without this the user lands on /app with the provider still
+    // Without this the user lands on  with the provider still
     // holding onBoardingComplete: false, and the layout renders nothing.
     await waitFor(() => expect(refetch).toHaveBeenCalled());
 
@@ -271,7 +271,7 @@ describe('Onboarding Flow and Guard Specs', () => {
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
-    expect(window.location.pathname).toBe('/app/dashboard');
+    expect(window.location.pathname).toBe('/dashboard');
   });
 
   it('checks username availability on blur and displays validation error if taken', async () => {

@@ -8,7 +8,7 @@ vi.mock('@remelondb/core/react', () => ({
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
-  // The root provider calls this, and the /app layout renders nothing
+  // The root provider calls this, and the  layout renders nothing
   // without a manager. These tests are about routing, not the database
   // lifecycle, so a stand-in is enough.
   useSessionDatabase: () => ({
@@ -51,13 +51,13 @@ const mockSession = {
   },
 };
 
-// Verify that navigating to the /app subdirectory loads the text from route.tsx(app) alongside nested pages like dashboard
+// Verify that navigating to the  subdirectory loads the text from route.tsx(app) alongside nested pages like dashboard
 describe('App Layout Guards', () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
-    window.history.pushState(null, '', '/app/dashboard');
+    window.history.pushState(null, '', '/dashboard');
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // Mock logged-in state

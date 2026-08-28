@@ -11,9 +11,9 @@ describe('App', () => {
     });
   });
 
-  it('renders the starter home page', async () => {
+  it('redirects to the login page by default when logged out', async () => {
     render(<App />);
 
-    expect(await screen.findByText(/NotAnotherCards/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Welcome Back/i })).toBeInTheDocument();
   });
 });

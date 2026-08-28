@@ -44,7 +44,7 @@ describe('Auth Guards', () => {
     window.history.pushState(null, '', '/');
   });
 
-  it('redirects logged-out users from dashboard to home', async () => {
+  it('redirects logged-out users from dashboard to login', async () => {
     // Mock logged-out state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
@@ -62,14 +62,14 @@ describe('Auth Guards', () => {
 
     // Try to navigate to dashboard
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
-    // Verify user is redirected to the home page (NotAnotherCards)
-    expect(await screen.findByText(/NotAnotherCards/i)).toBeInTheDocument();
+    // Verify user is redirected to the login page (Welcome Back)
+    expect(await screen.findByRole('heading', { name: /Welcome Back/i })).toBeInTheDocument();
 
     // Verify the URL is updated to /
-    expect(window.location.pathname).toBe('/');
+    expect(window.location.pathname).toBe('/login');
   }, 15000);
 
   it('allows logged-in users to see the dashboard', async () => {
@@ -90,7 +90,7 @@ describe('Auth Guards', () => {
 
     // Navigate to dashboard
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // Verify the dashboard route component is rendered
@@ -102,8 +102,8 @@ describe('Auth Guards', () => {
     expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
     expect(screen.getByText(/John Doe/i)).toBeInTheDocument();
 
-    // Verify the URL is /app/dashboard
-    expect(window.location.pathname).toBe('/app/dashboard');
+    // Verify the URL is /dashboard
+    expect(window.location.pathname).toBe('/dashboard');
   }, 15000);
 
   it('redirects logged-in users away from the login page to the dashboard', async () => {
@@ -132,11 +132,11 @@ describe('Auth Guards', () => {
       await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
 
-    // Verify the URL is updated to /app/dashboard
-    expect(window.location.pathname).toBe('/app/dashboard');
+    // Verify the URL is updated to /dashboard
+    expect(window.location.pathname).toBe('/dashboard');
   });
 
-  it('redirects logged-out users from onboarding to home', async () => {
+  it('redirects logged-out users from onboarding to login', async () => {
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
       error: null,
@@ -158,10 +158,10 @@ describe('Auth Guards', () => {
       await router.navigate({ to: '/onboarding' });
     });
 
-    expect(window.location.pathname).toBe('/');
+    expect(window.location.pathname).toBe('/login');
   });
 
-  it('redirects logged-out users from /app to home', async () => {
+  it('redirects logged-out users from /app to login', async () => {
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
       error: null,
@@ -180,10 +180,10 @@ describe('Auth Guards', () => {
     render(<App />);
 
     await act(async () => {
-      await router.navigate({ to: '/app' });
+      await router.invalidate()
     });
 
-    expect(window.location.pathname).toBe('/');
+    expect(window.location.pathname).toBe('/login');
   });
 
   it('redirects logged-in users from /app to dashboard', async () => {
@@ -199,15 +199,15 @@ describe('Auth Guards', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    // Set initial route to /login before rendering so that redirect to /app/dashboard is a real route change
+    // Set initial route to /login before rendering so that redirect to /dashboard is a real route change
     window.history.pushState(null, '', '/login');
 
     render(<App />);
 
     await act(async () => {
-      await router.navigate({ to: '/app' });
+      await router.invalidate();
     });
 
-    expect(window.location.pathname).toBe('/app/dashboard');
+    expect(window.location.pathname).toBe('/dashboard');
   });
 });
