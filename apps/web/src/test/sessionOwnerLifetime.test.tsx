@@ -66,9 +66,9 @@ describe('session database owner lifetime', () => {
   beforeEach(async () => {
     mounts = 0;
     unmounts = 0;
-    window.history.pushState(null, '', '/app/dashboard');
+    window.history.pushState(null, '', '/dashboard');
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: onboardedSession,
@@ -109,7 +109,7 @@ describe('session database owner lifetime', () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
     await act(async () => {
       await router.invalidate();
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // Sign back in.
@@ -126,7 +126,7 @@ describe('session database owner lifetime', () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
     await act(async () => {
       await router.invalidate();
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // Mounted in __root, the owner never went away, so its close queue

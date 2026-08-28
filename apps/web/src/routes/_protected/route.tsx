@@ -5,48 +5,40 @@ import { SyncProvider } from '@/offline/syncProvider';
 import { useSessionDatabase } from '@/offline/sessionDatabase';
 import { SyncStatus } from '@/components/SyncStatus';
 
-export const Route = createFileRoute('/app')({
+export const Route = createFileRoute('/_protected')({
   beforeLoad: async ({ location }) => {
     const { data: session } = await authClient.getSession();
     if (!session) {
       throw redirect({
-        to: '/',
+        to: '/login',
       });
+    } else {
+      const onBoardingComplete = session.user.onBoardingComplete;
+      if (!onBoardingComplete) {
+        if (location.pathname !== '/onboarding') {
+          throw redirect({
+            to: '/onboarding',
+          });
+        }
+      } else {
+        if (location.pathname === '/onboarding') {
+          throw redirect({
+            to: '/dashboard',
+          });
+        }
+      }
     }
-
-    const onboardingComplete = !!session.user.onBoardingComplete;
-
-    if (!onboardingComplete) {
-      throw redirect({
-        to: '/onboarding',
-      });
-    }
-
-    if (location.pathname === '/app') {
-      throw redirect({
-        to: '/app/dashboard',
-      });
-    }
-
-    return {
-      session,
-    };
   },
-  component: AppLayout,
+  component: ProtectedLayout,
 });
 
-function AppLayout() {
-  // The database is owned by the provider in __root.tsx, above the
-  // router. This layout only consumes it: it is destroyed and rebuilt on
-  // navigation, which is exactly why it must not own the lifecycle.
+function ProtectedLayout() {
   const { manager, syncController } = useSessionDatabase();
 
   if (!manager) {
     return null;
   }
 
-  // No DatabaseProvider here: the root provider already supplies the
-  // manager to this subtree.
   return (
     <SyncProvider controller={syncController}>
       <div className="flex-1 flex flex-col bg-background">
