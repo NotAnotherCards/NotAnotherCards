@@ -14,6 +14,8 @@ describe('App', () => {
   it('redirects to the login page by default when logged out', async () => {
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: /Welcome Back/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /Welcome Back/i }),
+    ).toBeInTheDocument();
   });
 });

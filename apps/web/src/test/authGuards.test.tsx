@@ -66,7 +66,9 @@ describe('Auth Guards', () => {
     });
 
     // Verify user is redirected to the login page (Welcome Back)
-    expect(await screen.findByRole('heading', { name: /Welcome Back/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /Welcome Back/i }),
+    ).toBeInTheDocument();
 
     // Verify the URL is updated to /
     expect(window.location.pathname).toBe('/login');
@@ -180,7 +182,7 @@ describe('Auth Guards', () => {
     render(<App />);
 
     await act(async () => {
-      await router.invalidate()
+      await router.invalidate();
     });
 
     expect(window.location.pathname).toBe('/login');

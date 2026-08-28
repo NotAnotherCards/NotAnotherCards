@@ -51,4 +51,3 @@ function ProtectedLayout() {
     </SyncProvider>
   );
 }
-
