@@ -1,30 +1,32 @@
-import { Redirect, useRouter } from 'expo-router'
-import { ActivityIndicator, View } from 'react-native'
-import { authClient } from '@/lib/auth-client'
-import { apiErrorMessage } from '@/lib/errors'
-import { Button } from '@/components/ui/button'
-import { Text } from '@/components/ui/text'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { Redirect, useRouter } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import { authClient } from '@/lib/auth-client';
+import { apiErrorMessage } from '@/lib/errors';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Dashboard() {
-  const router = useRouter()
-  const { data: session, isPending, error, refetch } = authClient.useSession()
+  const router = useRouter();
+  const { data: session, isPending, error, refetch } = authClient.useSession();
 
+  // SessionDatabaseProvider closes the offline database when the session
+  // goes away; nothing to do here beyond signing out.
   const onLogout = async () => {
     try {
-      await authClient.signOut()
+      await authClient.signOut();
     } catch {
       // Server unreachable - still drop back to the login screen.
     }
-    router.replace('/login')
-  }
+    router.replace('/login');
+  };
 
   if (isPending) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator />
       </View>
-    )
+    );
   }
 
   // A failed session fetch (server down) is not the same as "not logged in" -
@@ -37,12 +39,12 @@ export default function Dashboard() {
         </Text>
         <Button label="Retry" onPress={() => refetch()} />
       </View>
-    )
+    );
   }
 
   // Only authenticated users may see the dashboard.
   if (!session) {
-    return <Redirect href="/login" />
+    return <Redirect href="/login" />;
   }
 
   return (
@@ -57,5 +59,5 @@ export default function Dashboard() {
       <ThemeToggle />
       <Button label="Log out" onPress={onLogout} />
     </View>
-  )
+  );
 }

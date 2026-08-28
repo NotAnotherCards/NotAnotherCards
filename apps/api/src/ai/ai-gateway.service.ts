@@ -96,6 +96,12 @@ export class AiGatewayService {
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.7,
+        // Generation must not reason: with reasoning, a five-card job runs
+        // 26-56s against the 60s timeout (a measured 4s margin on an idle
+        // GPU); without it, ~3s and a tenth of the tokens. Works on the
+        // LiteLLM path and on OpenAI-compatible fallbacks; providers that
+        // ignore it are no worse off.
+        reasoning_effort: 'none',
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });

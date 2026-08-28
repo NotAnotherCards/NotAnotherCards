@@ -1,55 +1,63 @@
-import { render, screen, act } from "@testing-library/react";
-import { App, router } from "../App";
-import { authClient } from "@/lib/auth-client";
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { render, screen, act } from '@testing-library/react';
+import { App, router } from '../App';
+import { authClient } from '@/lib/auth-client';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock("@remelondb/core/react", () => ({
-  useDatabaseState: () => ({ status: "ready", error: null }),
+vi.mock('@remelondb/core/react', () => ({
+  useDatabaseState: () => ({ status: 'ready', error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
+  // The root provider calls this, and the /app layout renders nothing
+  // without a manager. These tests are about routing, not the database
+  // lifecycle, so a stand-in is enough.
+  useSessionDatabase: () => ({
+    manager: { state: { status: 'ready', error: null } },
+    syncController: null,
+    closeError: null,
+  }),
 }));
 
-vi.mock("@/offline/db", () => {
+vi.mock('@/offline/db', () => {
   const manager = {
     init: vi.fn().mockResolvedValue(undefined),
-    state: { status: "ready" },
+    state: { status: 'ready' },
     subscribe: vi.fn(() => () => {}),
   };
   return {
     manager,
     createUserDatabaseManager: vi.fn(() => manager),
     closeUserDatabase: vi.fn().mockResolvedValue(undefined),
-    checkOnboardingComplete: vi.fn().mockResolvedValue(true),
   };
 });
 
 const mockSession = {
   session: {
-    id: "session-123",
-    userId: "user-123",
+    id: 'session-123',
+    userId: 'user-123',
     expiresAt: new Date(Date.now() + 3600000),
-    token: "token-123",
+    token: 'token-123',
     createdAt: new Date(),
     updatedAt: new Date(),
   },
   user: {
-    id: "user-123",
-    email: "user@example.com",
-    name: "John Doe",
+    id: 'user-123',
+    email: 'user@example.com',
+    name: 'John Doe',
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    onBoardingComplete: true,
   },
 };
 
 // Verify that navigating to the /app subdirectory loads the text from route.tsx(app) alongside nested pages like dashboard
-describe("App Layout Guards", () => {
+describe('App Layout Guards', () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
-    window.history.pushState(null, "", "/app/dashboard");
+    window.history.pushState(null, '', '/app/dashboard');
     await act(async () => {
-      await router.navigate({ to: "/app/dashboard" });
+      await router.navigate({ to: '/app/dashboard' });
     });
 
     // Mock logged-in state
@@ -71,14 +79,13 @@ describe("App Layout Guards", () => {
     });
   });
 
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
-  it("renders the protection wrapper on the dashboard page", async () => {
+  it('renders the protection wrapper on the dashboard page', async () => {
     render(<App />);
     // Verify the dashboard route component is rendered inside it
     expect(
-      await screen.findByRole("heading", { name: /DASHBOARD PAGE/i }),
+      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
   });
 });

@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { Card, useStore } from "@/hooks/useStore";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { Card, useStore } from '@/hooks/useStore';
+import { Input } from '@/components/ui/input';
 import {
   Card as UICard,
   CardHeader,
   CardTitle,
   CardContent,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Search,
   Library,
@@ -15,10 +15,10 @@ import {
   Loader2,
   Plus,
   RefreshCw,
-} from "lucide-react";
-import { CardItem } from "./CardItem";
-import { FlashcardModal } from "./FlashcardModal";
-import { Button } from "../ui/button";
+} from 'lucide-react';
+import { CardItem } from './CardItem';
+import { FlashcardModal } from './FlashcardModal';
+import { Button } from '../ui/button';
 
 interface CardListProps {
   cards: Card[];
@@ -38,7 +38,7 @@ export function CardList({
   error,
 }: CardListProps) {
   const store = useStore();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
 
   const filteredCards = cards.filter(
@@ -58,7 +58,8 @@ export function CardList({
             Database Inactive (Taken Over)
           </h3>
           <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-            This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.
+            This tab is currently inactive because the offline database is open
+            in another tab. Click below to use the database in this window.
           </p>
         </div>
         <Button
@@ -96,7 +97,7 @@ export function CardList({
             Failed to Load Cards
           </h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {error || "An error occurred while loading deck contents."}
+            {error || 'An error occurred while loading deck contents.'}
           </p>
         </div>
         <Button
@@ -138,7 +139,7 @@ export function CardList({
             <p className="text-sm font-semibold">No Cards Found</p>
             <p className="text-xs max-w-xs mt-1">
               {searchTerm
-                ? "Try refining your search term to find cards in this deck."
+                ? 'Try refining your search term to find cards in this deck.'
                 : "This deck is empty. Click 'Add Card' above to start building your collection."}
             </p>
             {!searchTerm && cards.length === 0 ? (

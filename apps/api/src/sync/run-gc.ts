@@ -14,7 +14,7 @@ async function main(): Promise<void> {
     const db = drizzle(pool, { schema: databaseSchema }) as AppDatabase;
     const result = await runTombstoneGc({
       db,
-      store: createAppSyncStore(db),
+      store: createAppSyncStore(db).store,
     });
     console.log(
       result.floor === null

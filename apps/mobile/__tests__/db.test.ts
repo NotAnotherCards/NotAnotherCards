@@ -1,57 +1,73 @@
-import { Database } from '@remelondb/core'
-import { schema } from '@repo/offline-db'
+import { createDatabaseManager, Database } from '@remelondb/core';
+import { schema, userDbName } from '@repo/offline-db';
 
 // Capture the open callback that lib/db.ts hands to createDatabaseManager,
 // so we can inspect what it would open without touching native sqlite.
-let capturedOpen: (() => Promise<unknown>) | undefined
+let capturedOpen: (() => Promise<unknown>) | undefined;
 
 jest.mock('@remelondb/core', () => {
-  const actual = jest.requireActual('@remelondb/core')
+  const actual = jest.requireActual('@remelondb/core');
   return {
     ...actual,
-    createDatabaseManager: jest.fn((options: { open: () => Promise<unknown> }) => {
-      capturedOpen = options.open
-      return {
-        state: { status: 'idle', error: null },
-        init: jest.fn(),
-        subscribe: jest.fn(() => () => {}),
-      }
-    }),
+    createDatabaseManager: jest.fn(
+      (options: { open: () => Promise<unknown> }) => {
+        capturedOpen = options.open;
+        return {
+          state: { status: 'idle', error: null },
+          init: jest.fn(),
+          subscribe: jest.fn(() => () => {}),
+        };
+      },
+    ),
     Database: { ...actual.Database, open: jest.fn().mockResolvedValue({}) },
-  }
-})
+  };
+});
 
 jest.mock('@remelondb/driver-rn', () => ({
   RnSqliteDriver: class {},
-}))
+}));
 
 type OpenOptions = {
-  schema: typeof schema
-  modelClasses: Array<{ table: string }>
-  name: string
-}
+  schema: typeof schema;
+  modelClasses: Array<{ table: string }>;
+  name: string;
+};
 
-async function openOptions(): Promise<OpenOptions> {
-  require('../lib/db') // runs createDatabaseManager, sets capturedOpen
-  expect(capturedOpen).toBeDefined()
-  await capturedOpen!()
-  return (Database.open as jest.Mock).mock.calls[0][0] as OpenOptions
+async function openOptions(userId = 'user-a'): Promise<OpenOptions> {
+  const { createUserDatabaseManager } =
+    require('../lib/db') as typeof import('../lib/db');
+  createUserDatabaseManager(userId);
+  expect(capturedOpen).toBeDefined();
+  await capturedOpen!();
+  return (Database.open as jest.Mock).mock.calls[0][0] as OpenOptions;
 }
 
 describe('database bootstrap', () => {
-  it('opens the app database with the shared schema', async () => {
-    const options = await openOptions()
+  beforeEach(() => {
+    capturedOpen = undefined;
+    jest.clearAllMocks();
+  });
 
-    expect(options.schema).toBe(schema)
-    expect(options.name).toBe('notanothercards.db')
-  })
+  it('does not create a manager at module load', () => {
+    require('../lib/db');
+
+    expect(createDatabaseManager).not.toHaveBeenCalled();
+  });
+
+  it('opens an account-scoped database with the shared schema', async () => {
+    const options = await openOptions();
+
+    expect(options.schema).toBe(schema);
+    expect(options.name).toBe(userDbName('user-a'));
+    expect(options.name).not.toBe('notanothercards.db');
+  });
 
   // Registering models is manual, so a table added to @repo/offline-db is easy
   // to miss here: its records would come back untyped and without associations.
   it('registers a model class for every table in the shared schema', async () => {
-    const options = await openOptions()
+    const options = await openOptions();
 
-    const registered = options.modelClasses.map((model) => model.table).sort()
-    expect(registered).toEqual(Object.keys(schema.tables).sort())
-  })
-})
+    const registered = options.modelClasses.map((model) => model.table).sort();
+    expect(registered).toEqual(Object.keys(schema.tables).sort());
+  });
+});

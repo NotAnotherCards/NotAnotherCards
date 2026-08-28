@@ -1,57 +1,68 @@
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { ChevronDown } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { ChevronDown } from 'lucide-react';
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthCard } from "@/components/auth/auth-card";
-import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { FormErrorMessage } from "@/components/auth/form-error-message";
-import { useStore } from "@/hooks/useStore";
-import { authClient } from "@/lib/auth-client"
-import { ProfileFormValues, userProfileFormSchema } from "@repo/schemas";
-import { LANGUAGES } from "@/lib/languages"
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AuthCard } from '@/components/auth/auth-card';
+import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
+import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
+import { LANGUAGES } from '@/lib/languages';
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
+  // The root database provider reads the reactive session, and
+  // getSession() does not update it. Without this refetch the provider
+  // still holds onBoardingComplete: false when /app mounts, and the
+  // layout renders nothing.
+  const { refetch: refetchSession } = authClient.useSession();
   const [apiError, setApiError] = useState<string | null>(null);
-  const { createUserProfile } = useStore();
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(userProfileFormSchema),
     defaultValues: {
-      username: "",
-      native_language_id: "",
-      target_language_id: "",
+      username: '',
+      native_language_id: '',
+      target_language_id: '',
     },
   });
 
-  const nativeLanguage = form.watch("native_language_id");
+  const nativeLanguage = form.watch('native_language_id');
 
   const { isSubmitting } = form.formState;
 
   const onSubmit = async (data: ProfileFormValues) => {
     setApiError(null);
     try {
-      const { data: session } = await authClient.getSession();
-      if (!session) throw new Error("No active session");
-      await createUserProfile({
-        id: session.user.id,
-        username: data.username,
-        native_language_id: data.native_language_id,
-        target_language_id: data.target_language_id,
+      const res = await fetch('/api/auth/onboard', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: data.username,
+          native_language_id: data.native_language_id,
+          target_language_id: data.target_language_id,
+        }),
       });
-      void navigate({ to: "/app/dashboard" });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to save onboarding data');
+      }
+      await refetchSession();
+      void navigate({ to: '/app/dashboard' });
     } catch (err) {
       setApiError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
+        err instanceof Error ? err.message : 'An unexpected error occurred',
       );
     }
   };
@@ -76,14 +87,54 @@ export function OnBoardingComponent() {
                     <FieldLabel htmlFor={field.name}>Username</FieldLabel>
                     <Input
                       {...field}
-                      value={field.value ?? ""}
+                      value={field.value ?? ''}
                       id={field.name}
                       autoComplete="username"
                       autoFocus
                       aria-invalid={fieldState.invalid}
                       aria-describedby={
-                        fieldState.invalid ? "username-error" : undefined
+                        fieldState.invalid ? 'username-error' : undefined
                       }
+                      onChange={(e) => {
+                        field.onChange(e);
+                        if (
+                          form.getFieldState('username').error?.type ===
+                          'manual'
+                        ) {
+                          form.clearErrors('username');
+                        }
+                      }}
+                      onBlur={async (e) => {
+                        field.onBlur();
+                        const val = e.target.value;
+                        const valid =
+                          userProfileFormSchema.shape.username.safeParse(
+                            val,
+                          ).success;
+                        if (valid) {
+                          try {
+                            const available = await checkUsernameAvailable(val);
+                            if (form.getValues('username') === val) {
+                              if (!available) {
+                                form.setError('username', {
+                                  type: 'manual',
+                                  message: 'Username is already taken',
+                                });
+                              } else if (
+                                form.getFieldState('username').error?.type ===
+                                'manual'
+                              ) {
+                                form.clearErrors('username');
+                              }
+                            }
+                          } catch (err) {
+                            console.error(
+                              'Failed to check username availability',
+                              err,
+                            );
+                          }
+                        }
+                      }}
                     />
                     <FieldError
                       id="username-error"
@@ -104,12 +155,12 @@ export function OnBoardingComponent() {
                     <div className="relative w-full">
                       <select
                         {...field}
-                        value={field.value ?? ""}
+                        value={field.value ?? ''}
                         id={field.name}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid
-                            ? "native_language_id-error"
+                            ? 'native_language_id-error'
                             : undefined
                         }
                         className="h-9 w-full min-w-0 rounded-3xl border focus-visible:border-ring bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
@@ -155,12 +206,12 @@ export function OnBoardingComponent() {
                     <div className="relative w-full">
                       <select
                         {...field}
-                        value={field.value ?? ""}
+                        value={field.value ?? ''}
                         id={field.name}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid
-                            ? "target_language_id-error"
+                            ? 'target_language_id-error'
                             : undefined
                         }
                         className="h-9 w-full min-w-0 rounded-3xl border bg-input/50 pl-3 pr-10 py-1 text-base transition-[color,box-shadow,background-color] outline-none appearance-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 md:text-sm text-foreground cursor-pointer"
@@ -205,7 +256,7 @@ export function OnBoardingComponent() {
                     Saving...
                   </span>
                 ) : (
-                  "Complete registration"
+                  'Complete registration'
                 )}
               </Button>
             </FieldGroup>

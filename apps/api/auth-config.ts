@@ -17,6 +17,11 @@ export const auth = betterAuth({
         required: false,
         defaultValue: 'UTC',
       },
+      onBoardingComplete: {
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+      },
     },
   },
 });

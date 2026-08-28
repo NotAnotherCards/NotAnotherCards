@@ -6,7 +6,7 @@ import {
   createAppSyncEngine,
   createAppSyncStore,
   type AppSyncEngine,
-  type AppSyncStore,
+  type AppSyncStoreBundle,
 } from './sync-store';
 
 export const REMELON_SYNC_STORE = Symbol('REMELON_SYNC_STORE');
@@ -18,13 +18,14 @@ export const REMELON_SYNC_ENGINE = Symbol('REMELON_SYNC_ENGINE');
     {
       provide: REMELON_SYNC_STORE,
       inject: [DATABASE_CONNECTION],
-      useFactory: (db: AppDatabase): AppSyncStore => createAppSyncStore(db),
+      useFactory: (db: AppDatabase): AppSyncStoreBundle =>
+        createAppSyncStore(db),
     },
     {
       provide: REMELON_SYNC_ENGINE,
       inject: [REMELON_SYNC_STORE],
-      useFactory: (store: AppSyncStore): AppSyncEngine =>
-        createAppSyncEngine(store),
+      useFactory: (bundle: AppSyncStoreBundle): AppSyncEngine =>
+        createAppSyncEngine(bundle),
     },
   ],
   exports: [REMELON_SYNC_STORE, REMELON_SYNC_ENGINE],

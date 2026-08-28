@@ -205,7 +205,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       }),
     );
 
-    expect(result.rejected.user_profiles).toEqual(['user-b']);
+    expect(result.rejected?.user_profiles).toEqual(['user-b']);
     const state = pulled(await handlers.pull(pullArgs(null)));
     expect(state.changes.user_profiles?.updated).toEqual([
       expect.objectContaining({ id: 'user-a', username: 'alice' }),
@@ -321,6 +321,80 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
         { userId: 'user-b', username: 'bob' },
       ]),
     );
+  });
+
+  it('releases a username when the profile is tombstoned', async () => {
+    const now = Date.now();
+    const engine = createAppSyncEngine(createAppSyncStore(db));
+    const userA = engine.as('user-a');
+    const userB = engine.as('user-b');
+    const profile = (username: string | null, updatedAt: number) => ({
+      username,
+      bio: null,
+      avatar_file_id: null,
+      native_language_id: null,
+      target_language_id: null,
+      created_at: now,
+      updated_at: updatedAt,
+    });
+
+    const startA = pulled(await userA.pull(pullArgs(null)));
+    const createdA = accepted(
+      await userA.push({
+        cursor: startA.cursor,
+        changes: {
+          user_profiles: {
+            created: [{ id: 'user-a', ...profile('alice', now) }],
+            updated: [],
+            deleted: [],
+          },
+        },
+      }),
+    );
+    expect(createdA.rejected?.user_profiles ?? []).toEqual([]);
+
+    const deletedA = accepted(
+      await userA.push({
+        cursor: createdA.cursor!,
+        changes: {
+          user_profiles: { created: [], updated: [], deleted: ['user-a'] },
+        },
+      }),
+    );
+    expect(deletedA.rejected?.user_profiles ?? []).toEqual([]);
+
+    // scrub blanks username in the same stroke as the tombstone, so the
+    // unique constraint stops holding the name
+    const [tombstoned] = await db
+      .select({
+        username: userProfiles.username,
+        deletedAt: userProfiles.deletedAt,
+      })
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, 'user-a'));
+    expect(tombstoned?.username).toBeNull();
+    expect(tombstoned?.deletedAt).not.toBeNull();
+
+    const startB = pulled(await userB.pull(pullArgs(null)));
+    const claimedB = accepted(
+      await userB.push({
+        cursor: startB.cursor,
+        changes: {
+          user_profiles: {
+            created: [{ id: 'user-b', ...profile('alice', now + 1) }],
+            updated: [],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(claimedB.rejected?.user_profiles ?? []).toEqual([]);
+    const [ownerB] = await db
+      .select({ username: userProfiles.username })
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, 'user-b'));
+    expect(ownerB?.username).toBe('alice');
   });
 
   it('round-trips all tables and persists through a fresh backend instance', async () => {
@@ -815,8 +889,10 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
   });
 
   it('persists a time-based GC floor and expires older cursors', async () => {
-    const store = createAppSyncStore(db);
-    const handlers = createAppSyncEngine(store).as('user-a');
+    const { store, crossValidateChanges } = createAppSyncStore(db);
+    const handlers = createAppSyncEngine({ store, crossValidateChanges }).as(
+      'user-a',
+    );
     const start = pulled(await handlers.pull(pullArgs(null)));
     accepted(
       await handlers.push({
@@ -876,7 +952,8 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
   });
 
   it('rolls back every row when a push cannot be committed', async () => {
-    const durableStore = createAppSyncStore(db);
+    const { store: durableStore, crossValidateChanges } =
+      createAppSyncStore(db);
     const failingStore: AppSyncStore = {
       gc: (floor) => durableStore.gc(floor),
       transaction: (scope, mode, work) =>
@@ -890,7 +967,10 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
           }),
         ),
     };
-    const handlers = createAppSyncEngine(failingStore).as('user-a');
+    const handlers = createAppSyncEngine({
+      store: failingStore,
+      crossValidateChanges,
+    }).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
     const push: SyncPushArgs = {
       cursor: start.cursor,

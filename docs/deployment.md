@@ -48,17 +48,48 @@ The same `docker-compose.yml` runs in three places:
    so campus firewalls are not a problem) with `AI_API_BASE` pointing at the
    GX10. (The GPU dashboard is visible either way — Grafana is a public
    URL.) Running a model on the eval machine itself is not an option, so
-   plan B for the box
-   being unreachable on eval day is pointing `AI_API_BASE` at a hosted
-   OpenAI-compatible provider instead; costs cents for a demo and needs no
-   code change. Without any endpoint the app still runs and shows jobs as
-   queued, which is compliant but not much of a demo.
+   plan B for the box being unreachable on eval day is the hosted fallback
+   provider below; it costs cents for a demo and needs no code change.
+   Without any endpoint the app still runs and shows jobs as queued, which
+   is compliant but not much of a demo.
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
    host nginx/certbot serving `app.notanothercards.com` and `AI_API_BASE`
    pointing at the GX10 through the tailnet. The production override removes
    the postgres host port and binds app diagnostic ports to loopback.
 3. **A teammate's machine during AI work**: same compose, `AI_API_BASE`
    pointing at the GX10 with a personal key (see "Access").
+
+## Fallback provider
+
+The api can run against any OpenAI-compatible endpoint instead of the
+GX10. The working recipe uses NanoGPT, which serves the same model as the
+box's `qwen` alias:
+
+```
+AI_API_BASE=https://nano-gpt.com/api/v1
+AI_API_KEY=<NanoGPT key>
+AI_DEFAULT_MODEL=Qwen/Qwen3.6-35B-A3B
+```
+
+Three things make this configuration and not just a URL swap:
+
+- The model id must change with the base URL. The GX10's LiteLLM aliases
+  (`qwen`) mean nothing to a hosted provider, and the code's fallback
+  default is such an alias, so `AI_DEFAULT_MODEL` always travels with
+  `AI_API_BASE` as a pair.
+- On NanoGPT, reasoning is selected by model id: `:thinking` suffixed ids
+  reason, bare ids do not. Use the bare id. A reasoning model inflates a
+  five-card job from roughly 250 tokens to roughly 2,000, and on a
+  per-token API that is billed, not just slow.
+- Card topics and source texts leave our infrastructure and reach a third
+  party. For a demo that is fine; for anything sensitive, NanoGPT lists
+  TEE variants of the same models, or use the box.
+
+Each response carries the request's exact cost (`x_nanogpt_pricing`), so a
+demo day can be priced from one job. A deployment that should rest on the
+fallback keeps these three variables in its `.env`; a one-off switch
+passes them on the `docker compose up` command line, which overrides the
+file.
 
 ## Deploys
 
@@ -87,6 +118,11 @@ The GX10 runs an inference server with LiteLLM in front. LiteLLM gives us:
   satisfies the module's rate-limiting requirement (see "Module claims").
 - **Logs.** Every request is logged with key, model, and token counts, so
   "what is the box actually used for" is a query.
+- **Metrics.** Prometheus metrics are served at
+  `https://ai.dustyway.org/metrics/` (trailing slash; `/metrics` answers a
+  307 to it). The endpoint is unauthenticated and its series carry
+  virtual-key aliases and spend, so the reverse proxy allows only the
+  production VPS and refuses everyone else with a 403.
 
 The models on offer are defined in `litellm-config.yaml` in the repo, so
 trying a new model is a PR.

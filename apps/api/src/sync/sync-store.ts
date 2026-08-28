@@ -1,24 +1,57 @@
-import { createSyncEngine } from '@remelondb/server';
-import { and, inArray, isNull } from 'drizzle-orm';
+import { createSyncEngine, type SyncEngineOptions } from '@remelondb/server';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import {
   createDrizzleStore,
-  type DrizzleDb,
+  drizzleSyncTable,
   type DrizzleStore,
-  type DrizzleStoreOptions,
 } from '@remelondb/store-drizzle';
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import { reviewEvents, userCards, userDecks, userProfiles } from './schema';
 import {
-  crossValidateSyncRelationships,
-  withSyncRelationshipDeletionPolicy,
+  createCrossValidateSyncRelationships,
+  withSyncCascadingDeletes,
+  type ProfileUsernameOwnerLookup,
 } from './sync-validation';
 
 export type AppSyncStore = DrizzleStore<string>;
 
-export function createAppSyncStore(db: AppDatabase): AppSyncStore {
+type AppTx = Parameters<Parameters<AppDatabase['transaction']>[0]>[0];
+
+export async function getActiveUsernameOwner(
+  db: AppDatabase | AppTx,
+  username: string,
+): Promise<string | null> {
+  const profiles = await db
+    .select({ userId: userProfiles.userId })
+    .from(userProfiles)
+    .where(
+      and(eq(userProfiles.username, username), isNull(userProfiles.deletedAt)),
+    )
+    .limit(1);
+  return profiles[0]?.userId ?? null;
+}
+
+export const syncScopeLockKey = (scope: string): bigint => {
+  // FNV-1a 64-bit hash matching RemelonDB's default implementation
+  let hash = 0xcbf29ce484222325n;
+  for (const char of scope) {
+    hash ^= BigInt(char.codePointAt(0)!);
+    hash = BigInt.asUintN(64, hash * 0x100000001b3n);
+  }
+  return BigInt.asIntN(64, hash);
+};
+
+export interface AppSyncStoreBundle {
+  readonly store: AppSyncStore;
+  readonly crossValidateChanges: NonNullable<
+    SyncEngineOptions<string>['crossValidateChanges']
+  >;
+}
+
+export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
   const tables = {
-    user_decks: {
+    user_decks: drizzleSyncTable<string, typeof userDecks>({
       table: userDecks,
       id: userDecks.id,
       rev: userDecks.rev,
@@ -26,8 +59,8 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scope: userDecks.userId,
       insertOnly: ['created_at'],
       scrub: { title: '', description: null },
-    },
-    user_cards: {
+    }),
+    user_cards: drizzleSyncTable<string, typeof userCards>({
       table: userCards,
       id: userCards.id,
       rev: userCards.rev,
@@ -35,8 +68,8 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scope: userCards.userId,
       insertOnly: ['created_at'],
       scrub: { front: '', back: '' },
-    },
-    review_events: {
+    }),
+    review_events: drizzleSyncTable<string, typeof reviewEvents>({
       table: reviewEvents,
       id: reviewEvents.id,
       rev: reviewEvents.rev,
@@ -44,8 +77,8 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scope: reviewEvents.userId,
       insertOnly: ['user_card_id', 'rating', 'reviewed_at'],
       scrub: { rating: 1 },
-    },
-    user_profiles: {
+    }),
+    user_profiles: drizzleSyncTable<string, typeof userProfiles>({
       table: userProfiles,
       id: userProfiles.userId,
       rev: userProfiles.rev,
@@ -55,47 +88,61 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStore {
       scrub: {
         username: null,
         bio: null,
-        avatar_file_id: null,
-        native_language_id: null,
-        target_language_id: null,
+        avatarFileId: null,
+        nativeLanguageId: null,
+        targetLanguageId: null,
       },
-    },
-  } as unknown as DrizzleStoreOptions<string>['tables'];
-
-  return withSyncRelationshipDeletionPolicy(
-    createDrizzleStore<string>({
-      db: db as unknown as DrizzleDb,
-      tables,
     }),
-    async (usernames) => {
-      if (usernames.length === 0) return new Map();
-      const profiles = await db
-        .select({
-          userId: userProfiles.userId,
-          username: userProfiles.username,
-        })
-        .from(userProfiles)
-        .where(
-          and(
-            inArray(userProfiles.username, [...new Set(usernames)]),
-            isNull(userProfiles.deletedAt),
-          ),
-        );
-      return new Map(
-        profiles.flatMap((profile) =>
-          profile.username === null
-            ? []
-            : [[profile.username, profile.userId] as const],
+  };
+
+  const store = withSyncCascadingDeletes(
+    createDrizzleStore<string>({
+      db: db,
+      tables,
+      lockKey: syncScopeLockKey,
+    }),
+  );
+
+  const findProfileUsernameOwners: ProfileUsernameOwnerLookup = async (
+    usernames,
+  ) => {
+    if (usernames.length === 0) return new Map();
+    const profiles = await db
+      .select({
+        userId: userProfiles.userId,
+        username: userProfiles.username,
+      })
+      .from(userProfiles)
+      .where(
+        and(
+          inArray(userProfiles.username, [...new Set(usernames)]),
+          isNull(userProfiles.deletedAt),
         ),
       );
-    },
-  );
+    return new Map(
+      profiles.flatMap((profile) =>
+        profile.username === null
+          ? []
+          : [[profile.username, profile.userId] as const],
+      ),
+    );
+  };
+
+  return {
+    store,
+    crossValidateChanges: createCrossValidateSyncRelationships(
+      findProfileUsernameOwners,
+    ),
+  };
 }
 
-export function createAppSyncEngine(store: AppSyncStore) {
+export function createAppSyncEngine({
+  store,
+  crossValidateChanges,
+}: AppSyncStoreBundle) {
   return createSyncEngine({
     store,
-    crossValidate: crossValidateSyncRelationships,
+    crossValidateChanges,
     tables: {
       user_decks: {
         validate: (row) =>
@@ -119,8 +166,8 @@ export function createAppSyncEngine(store: AppSyncStore) {
 }
 
 export function createAppSyncBackend(db: AppDatabase) {
-  const store = createAppSyncStore(db);
-  return { store, engine: createAppSyncEngine(store) };
+  const bundle = createAppSyncStore(db);
+  return { store: bundle.store, engine: createAppSyncEngine(bundle) };
 }
 
 export type AppSyncEngine = ReturnType<typeof createAppSyncEngine>;

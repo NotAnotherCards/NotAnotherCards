@@ -9,14 +9,15 @@
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
     "typecheck": "tsc --noEmit",
+    "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
     "test": "jest",
     "dev:mobile": "expo start"
   },
   "dependencies": {
     "@better-auth/expo": "^1.6.23",
     "@hookform/resolvers": "^5.4.0",
-    "@remelondb/core": "0.2.0",
-    "@remelondb/driver-rn": "0.2.0",
+    "@remelondb/core": "0.2.5",
+    "@remelondb/driver-rn": "0.2.5",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
     "better-auth": "^1.6.23",
