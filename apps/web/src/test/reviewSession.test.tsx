@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReviewSession } from '@/components/review/ReviewSession';
 import type { Card } from '@/hooks/useStore';
 
@@ -30,7 +30,20 @@ function revealCard() {
   fireEvent.click(screen.getByTestId('review-card'));
 }
 
+function finishCardExit() {
+  act(() => {
+    vi.runOnlyPendingTimers();
+  });
+}
+
 describe('ReviewSession', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
   it('shows the card front first and reveals both sides on click', () => {
     renderSession();
 
@@ -87,12 +100,13 @@ describe('ReviewSession', () => {
   it.each([
     ['Forgot', 'ArrowLeft'],
     ['Hard', 'ArrowUp'],
-    ['Easy', 'ArrowRight'],
+    ['Remember', 'ArrowRight'],
   ])('moves to the next card after %s', (_, key) => {
     renderSession([card, secondCard]);
     revealCard();
 
     fireEvent.keyDown(window, { key });
+    finishCardExit();
 
     expect(screen.getByText('sein')).toBeInTheDocument();
     expect(screen.queryByText('to be')).not.toBeInTheDocument();
@@ -103,6 +117,7 @@ describe('ReviewSession', () => {
     revealCard();
 
     fireEvent.click(screen.getByRole('button', { name: 'Hard' }));
+    finishCardExit();
 
     expect(screen.getByText('sein')).toBeInTheDocument();
   });
@@ -117,7 +132,7 @@ describe('ReviewSession', () => {
 
     expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Forgot');
     expect(screen.getByTestId('swipe-feedback')).toHaveClass(
-      'text-destructive',
+      'text-muted-foreground',
     );
     expect(screen.getByTestId('review-card-surface')).toHaveStyle({
       transform: 'translate3d(-60px, 0px, 0) rotate(-2.5deg)',
@@ -193,22 +208,43 @@ describe('ReviewSession', () => {
     renderSession();
 
     expect(
-      screen.queryByRole('button', { name: 'Card menu coming soon' }),
+      screen.queryByRole('button', { name: 'Open card settings' }),
     ).not.toBeInTheDocument();
 
     revealCard();
 
     expect(
-      screen.getByRole('button', { name: 'Card menu coming soon' }),
-    ).toBeDisabled();
+      screen.getByRole('button', { name: 'Open card settings' }),
+    ).toBeEnabled();
+  });
+
+  it('opens the card settings placeholder and closes it', () => {
+    renderSession();
+    revealCard();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open card settings' }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Card settings' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog').parentElement).toHaveClass(
+      'items-center',
+      'justify-center',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('opens word details and returns to the same answer view when closed', () => {
     renderSession();
     revealCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show more details' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open word details' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('dialog').parentElement).toHaveClass(
+      'items-center',
+      'justify-center',
+    );
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Close word details' }),
@@ -223,12 +259,55 @@ describe('ReviewSession', () => {
     revealCard();
 
     fireEvent.keyDown(window, { key: 'ArrowDown' });
+    finishCardExit();
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog').parentElement).toHaveClass(
+      'items-center',
+      'justify-center',
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Delete “gehen”?' }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(
       screen.getByRole('heading', { name: 'Deletion is not available yet' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('dialog').parentElement).toHaveClass(
+      'items-center',
+      'justify-center',
+    );
+  });
+
+  it('keeps the visible answer buttons without shadows', () => {
+    renderSession();
+    revealCard();
+
+    expect(screen.getByRole('button', { name: 'Forgot' })).toHaveClass(
+      'shadow-none',
+    );
+    expect(screen.getByRole('button', { name: 'Hard' })).toHaveClass(
+      'shadow-none',
+    );
+    expect(screen.getByRole('button', { name: 'Remember' })).toHaveClass(
+      'shadow-none',
+    );
+    expect(screen.getByTestId('review-answer-buttons')).toHaveClass('mt-6');
+  });
+
+  it('shows the next card while the answered card exits to the chosen side', () => {
+    renderSession([card, secondCard]);
+    revealCard();
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+
+    expect(screen.getByTestId('next-review-card')).toHaveTextContent('sein');
+    expect(screen.getByTestId('review-card-surface')).toHaveStyle({
+      transform: 'translate3d(-120vw, 0, 0) rotate(-10deg)',
+    });
+
+    finishCardExit();
+    expect(screen.getByText('sein')).toBeInTheDocument();
   });
 
   it('returns to the dashboard', () => {

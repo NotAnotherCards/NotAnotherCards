@@ -8,13 +8,19 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import {
+  CURRENT_REVIEW_MODE,
+  getAnswerForReviewGesture,
+  type ReviewAnswer,
+  type ReviewMode,
+} from './review-controls';
 
-type ReviewAnswer = 'forgot' | 'hard' | 'easy';
-type SwipeDirection = ReviewAnswer | 'delete';
+type SwipeDirection = Exclude<ReviewAnswer, 'very-easy'> | 'delete';
 
 type ReviewSessionProps = {
   cards: Card[];
   onExit: () => void;
+  reviewMode?: ReviewMode;
 };
 
 const SWIPE_THRESHOLD_PX = 48;
@@ -22,14 +28,22 @@ const SWIPE_FEEDBACK_THRESHOLD_PX = 1;
 const MAX_DRAG_DISTANCE_X_PX = 96;
 const MAX_DRAG_DISTANCE_Y_PX = 72;
 const MAX_DRAG_ROTATION_DEG = 4;
+const REVIEW_CARD_EXIT_DURATION_MS = 250;
+
+const exitTransformByDirection: Record<SwipeDirection, string> = {
+  forgot: 'translate3d(-120vw, 0, 0) rotate(-10deg)',
+  remember: 'translate3d(120vw, 0, 0) rotate(10deg)',
+  hard: 'translate3d(0, -120dvh, 0) rotate(0deg)',
+  delete: 'translate3d(0, 120dvh, 0) rotate(0deg)',
+};
 
 const swipeFeedback: Record<SwipeDirection, { label: string; className: string }> = {
   forgot: {
     label: 'Forgot',
-    className: 'right-5 top-5 text-right text-destructive',
+    className: 'right-5 top-5 text-right text-muted-foreground',
   },
-  easy: {
-    label: 'Easy',
+  remember: {
+    label: 'Remember',
     className:
       'left-5 top-5 text-emerald-700 dark:text-emerald-400',
   },
@@ -44,52 +58,113 @@ const swipeFeedback: Record<SwipeDirection, { label: string; className: string }
   },
 };
 
-export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
+export function ReviewSession({
+  cards,
+  onExit,
+  reviewMode = CURRENT_REVIEW_MODE,
+}: ReviewSessionProps) {
   const [sessionCards] = useState(cards);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isWordDetailsOpen, setIsWordDetailsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [isDeletePlaceholderOpen, setIsDeletePlaceholderOpen] = useState(false);
   const [dragDirection, setDragDirection] = useState<SwipeDirection | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isRecentering, setIsRecentering] = useState(false);
+  const [exitDirection, setExitDirection] = useState<SwipeDirection | null>(
+    null,
+  );
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const pendingPointerPosition = useRef<{ x: number; y: number } | null>(
     null,
   );
   const activeDragDirection = useRef<SwipeDirection | null>(null);
+  const exitTimer = useRef<number | null>(null);
   const didHandleSwipe = useRef(false);
   const card = sessionCards[currentCardIndex];
+  const nextCard = sessionCards[currentCardIndex + 1];
 
   const revealAnswer = () => setIsFlipped(true);
   const openWordDetails = () => setIsWordDetailsOpen(true);
-  const openDeleteConfirmation = () => setIsDeleteConfirmationOpen(true);
+  const openSettings = () => setIsSettingsOpen(true);
+
+  const restoreCurrentCard = () => {
+    setExitDirection(null);
+    setIsDeleteConfirmationOpen(false);
+    setIsDeletePlaceholderOpen(false);
+  };
+
+  const startCardExit = (direction: SwipeDirection) => {
+    if (exitDirection) return;
+
+    setDragDirection(null);
+    setDragOffset({ x: 0, y: 0 });
+    setIsDragging(false);
+    setIsRecentering(false);
+    setExitDirection(direction);
+    exitTimer.current = window.setTimeout(() => {
+      if (direction === 'delete') {
+        setIsDeleteConfirmationOpen(true);
+        return;
+      }
+
+      setIsWordDetailsOpen(false);
+      setIsFlipped(false);
+      setCurrentCardIndex((index) => index + 1);
+      setExitDirection(null);
+    }, REVIEW_CARD_EXIT_DURATION_MS);
+  };
 
   const answerCard = (answer: ReviewAnswer) => {
     // The next step will persist this answer and update due_at before advance.
     void answer;
-    setIsWordDetailsOpen(false);
-    setIsFlipped(false);
-    setCurrentCardIndex((index) => index + 1);
+    const directionByAnswer: Record<
+      Exclude<ReviewAnswer, 'very-easy'>,
+      SwipeDirection
+    > = {
+      forgot: 'forgot',
+      hard: 'hard',
+      remember: 'remember',
+    };
+
+    if (answer !== 'very-easy') startCardExit(directionByAnswer[answer]);
   };
 
   useEffect(() => {
+    return () => {
+      if (exitTimer.current) window.clearTimeout(exitTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isSettingsOpen) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setIsSettingsOpen(false);
+        }
+        return;
+      }
+
       if (isWordDetailsOpen) {
         if (event.key === 'Escape') {
           event.preventDefault();
           setIsWordDetailsOpen(false);
         } else if (event.key === 'ArrowRight') {
           event.preventDefault();
-          answerCard('easy');
+          const answer = getAnswerForReviewGesture(reviewMode, 'right');
+          if (answer) answerCard(answer);
         } else if (event.key === 'ArrowLeft') {
           event.preventDefault();
-          answerCard('forgot');
+          const answer = getAnswerForReviewGesture(reviewMode, 'left');
+          if (answer) answerCard(answer);
         } else if (event.key === 'ArrowUp') {
           event.preventDefault();
-          answerCard('hard');
+          const answer = getAnswerForReviewGesture(reviewMode, 'up');
+          if (answer) answerCard(answer);
         }
         return;
       }
@@ -110,16 +185,19 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
 
       if (event.key === 'ArrowRight') {
         event.preventDefault();
-        answerCard('easy');
+        const answer = getAnswerForReviewGesture(reviewMode, 'right');
+        if (answer) answerCard(answer);
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        answerCard('forgot');
+        const answer = getAnswerForReviewGesture(reviewMode, 'left');
+        if (answer) answerCard(answer);
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        answerCard('hard');
+        const answer = getAnswerForReviewGesture(reviewMode, 'up');
+        if (answer) answerCard(answer);
       } else if (event.key === 'ArrowDown') {
         event.preventDefault();
-        openDeleteConfirmation();
+        startCardExit('delete');
       } else if (event.code === 'Space') {
         event.preventDefault();
         openWordDetails();
@@ -128,7 +206,7 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFlipped, isWordDetailsOpen]);
+  }, [exitDirection, isFlipped, isSettingsOpen, isWordDetailsOpen, reviewMode]);
 
   const getSwipeDirection = (
     horizontalDistance: number,
@@ -143,13 +221,20 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
     }
 
     if (Math.abs(horizontalDistance) >= Math.abs(verticalDistance)) {
-      return horizontalDistance > 0 ? 'easy' : 'forgot';
+      return getAnswerForReviewGesture(
+        reviewMode,
+        horizontalDistance > 0 ? 'right' : 'left',
+      );
     }
 
-    return verticalDistance < 0 ? 'hard' : 'delete';
+    return verticalDistance < 0
+      ? getAnswerForReviewGesture(reviewMode, 'up')
+      : 'delete';
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (exitDirection) return;
+
     event.currentTarget.setPointerCapture?.(event.pointerId);
     pointerStart.current = { x: event.clientX, y: event.clientY };
     pendingPointerPosition.current = null;
@@ -162,7 +247,7 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!isFlipped || !pointerStart.current) return;
+    if (exitDirection || !isFlipped || !pointerStart.current) return;
 
     if (isRecentering) {
       pendingPointerPosition.current = {
@@ -218,6 +303,8 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (exitDirection) return;
+
     const start = pointerStart.current;
     pointerStart.current = null;
     pendingPointerPosition.current = null;
@@ -239,7 +326,7 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
     if (!isFlipped) {
       revealAnswer();
     } else if (direction === 'delete') {
-      openDeleteConfirmation();
+      startCardExit('delete');
     } else {
       answerCard(direction);
     }
@@ -253,10 +340,23 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
     <PageContainer className="max-w-3xl py-4 sm:py-6">
       <div className="flex flex-col items-stretch">
         <div className="relative z-10 w-full sm:max-w-xl sm:self-center">
+          {nextCard && (
+            <div
+              className="pointer-events-none absolute inset-x-0 top-3 z-0 flex min-h-[min(52dvh,28rem)] w-full items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+              data-testid="next-review-card"
+              aria-hidden="true"
+            >
+              <span className="max-h-[42svh] overflow-y-auto text-3xl font-bold wrap-break-word sm:max-h-56">
+                {nextCard.front}
+              </span>
+            </div>
+          )}
           <div
-            className={`relative ${isDragging ? '' : 'transition-transform duration-200 ease-out'}`}
+            className={`relative z-10 ${isDragging ? '' : 'transition-[transform,opacity] duration-[250ms] ease-out'} ${exitDirection ? 'opacity-0' : ''}`}
             style={
-              isFlipped
+              exitDirection
+                ? { transform: exitTransformByDirection[exitDirection] }
+                : isFlipped
                 ? {
                     transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotate(${(dragOffset.x / MAX_DRAG_DISTANCE_X_PX) * MAX_DRAG_ROTATION_DEG}deg)`,
                   }
@@ -274,6 +374,7 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
             <button
               type="button"
               onClick={() => {
+                if (exitDirection) return;
                 if (didHandleSwipe.current) {
                   didHandleSwipe.current = false;
                   return;
@@ -303,16 +404,6 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
               <div className="flex w-full max-h-[42svh] flex-col items-center gap-5 overflow-y-auto py-12 sm:max-h-56">
                 <div className="flex max-w-full items-center gap-2 text-xl font-medium text-muted-foreground">
                   <span className="wrap-break-word">{card.front}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled
-                    className="pointer-events-auto size-8 shrink-0"
-                    aria-label="Card menu coming soon"
-                  >
-                    <Cog className="size-4" />
-                  </Button>
                 </div>
                 <span className="h-px w-16 shrink-0 bg-border" />
                 <span className="text-3xl font-bold wrap-break-word">
@@ -336,43 +427,56 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
             )}
 
             {isFlipped && (
-              <Button
-                variant="ghost"
-                onClick={openWordDetails}
-                className="absolute bottom-16 left-1/2 min-h-11 -translate-x-1/2 cursor-pointer gap-2 text-muted-foreground"
-              >
-                <BookOpen className="size-4" />
-                Show more details
-              </Button>
+              <div className="absolute bottom-16 left-1/2 flex -translate-x-1/2 items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={openWordDetails}
+                  className="size-11 cursor-pointer text-muted-foreground"
+                  aria-label="Open word details"
+                >
+                  <BookOpen className="size-5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={openSettings}
+                  className="pointer-events-auto size-11 shrink-0 cursor-pointer text-muted-foreground"
+                  aria-label="Open card settings"
+                >
+                  <Cog className="size-5" />
+                </Button>
+              </div>
             )}
           </div>
         </div>
 
         {isFlipped && (
           <div
-            className="relative z-0 mt-4 grid grid-cols-3 gap-2 sm:mx-auto sm:w-full sm:max-w-xl"
+            className="relative z-0 mt-6 grid grid-cols-3 gap-2 sm:mx-auto sm:w-full sm:max-w-xl"
             data-testid="review-answer-buttons"
           >
             <Button
               variant="outline"
               onClick={() => answerCard('forgot')}
-              className="min-h-12 cursor-pointer border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="min-h-12 cursor-pointer border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
             >
               Forgot
             </Button>
             <Button
               variant="outline"
               onClick={() => answerCard('hard')}
-              className="min-h-12 cursor-pointer border-amber-500/30 text-amber-700 hover:bg-amber-500/10 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300"
+              className="min-h-12 cursor-pointer border-amber-500/50 bg-amber-50/80 text-amber-800 shadow-none hover:bg-amber-100 hover:text-amber-900 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
             >
               Hard
             </Button>
             <Button
               variant="outline"
-              onClick={() => answerCard('easy')}
-              className="min-h-12 cursor-pointer border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+              onClick={() => answerCard('remember')}
+              className="min-h-12 cursor-pointer border-emerald-500/30 text-emerald-700 shadow-none hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
             >
-              Easy
+              Remember
             </Button>
           </div>
         )}
@@ -391,12 +495,18 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
         <WordDetailsDialog
           onClose={() => setIsWordDetailsOpen(false)}
           onAnswer={answerCard}
+          reviewMode={reviewMode}
         />
+      )}
+
+      {isSettingsOpen && (
+        <SettingsPlaceholderDialog onClose={() => setIsSettingsOpen(false)} />
       )}
 
       {isDeleteConfirmationOpen && (
         <DeleteConfirmationDialog
-          onCancel={() => setIsDeleteConfirmationOpen(false)}
+          word={card.front}
+          onCancel={restoreCurrentCard}
           onConfirm={() => {
             setIsDeleteConfirmationOpen(false);
             setIsDeletePlaceholderOpen(true);
@@ -406,7 +516,7 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
 
       {isDeletePlaceholderOpen && (
         <DeletePlaceholderDialog
-          onClose={() => setIsDeletePlaceholderOpen(false)}
+          onClose={restoreCurrentCard}
         />
       )}
     </PageContainer>
@@ -416,9 +526,14 @@ export function ReviewSession({ cards, onExit }: ReviewSessionProps) {
 type WordDetailsDialogProps = {
   onClose: () => void;
   onAnswer: (answer: ReviewAnswer) => void;
+  reviewMode: ReviewMode;
 };
 
-function WordDetailsDialog({ onClose, onAnswer }: WordDetailsDialogProps) {
+function WordDetailsDialog({
+  onClose,
+  onAnswer,
+  reviewMode,
+}: WordDetailsDialogProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -440,16 +555,22 @@ function WordDetailsDialog({ onClose, onAnswer }: WordDetailsDialogProps) {
       return;
     }
 
-    if (Math.abs(horizontalDistance) >= Math.abs(verticalDistance)) {
-      onAnswer(horizontalDistance > 0 ? 'easy' : 'forgot');
-    } else if (verticalDistance < 0) {
-      onAnswer('hard');
-    }
+    const answer =
+      Math.abs(horizontalDistance) >= Math.abs(verticalDistance)
+        ? getAnswerForReviewGesture(
+            reviewMode,
+            horizontalDistance > 0 ? 'right' : 'left',
+          )
+        : verticalDistance < 0
+          ? getAnswerForReviewGesture(reviewMode, 'up')
+          : null;
+
+    if (answer) onAnswer(answer);
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end bg-black/60 p-4 backdrop-blur-xs sm:items-center sm:justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
@@ -495,16 +616,18 @@ function WordDetailsDialog({ onClose, onAnswer }: WordDetailsDialogProps) {
 }
 
 type DeleteConfirmationDialogProps = {
+  word: string;
   onCancel: () => void;
   onConfirm: () => void;
 };
 
 function DeleteConfirmationDialog({
+  word,
   onCancel,
   onConfirm,
 }: DeleteConfirmationDialogProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/60 p-4 backdrop-blur-xs sm:items-center sm:justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
       <div
         role="alertdialog"
         aria-modal="true"
@@ -513,7 +636,7 @@ function DeleteConfirmationDialog({
         className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
       >
         <h2 id="delete-word-title" className="text-xl font-bold">
-          Delete word?
+          Delete “{word}”?
         </h2>
         <p
           id="delete-word-description"
@@ -536,7 +659,7 @@ function DeleteConfirmationDialog({
 
 function DeletePlaceholderDialog({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/60 p-4 backdrop-blur-xs sm:items-center sm:justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
       <div
         role="dialog"
         aria-modal="true"
@@ -548,6 +671,33 @@ function DeletePlaceholderDialog({ onClose }: { onClose: () => void }) {
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           We will add this once deleting a word has a defined note and sibling-card behaviour.
+        </p>
+        <Button onClick={onClose} className="mt-6 min-h-12 w-full cursor-pointer">
+          Close
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SettingsPlaceholderDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-placeholder-title"
+        aria-describedby="settings-placeholder-description"
+        className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
+      >
+        <h2 id="settings-placeholder-title" className="text-xl font-bold">
+          Card settings
+        </h2>
+        <p
+          id="settings-placeholder-description"
+          className="mt-2 text-sm text-muted-foreground"
+        >
+          Card settings will be available later.
         </p>
         <Button onClick={onClose} className="mt-6 min-h-12 w-full cursor-pointer">
           Close
