@@ -1,5 +1,5 @@
 {
-  "id": "8a9fd24a-b9c6-45d4-9022-37c17a1adafb",
+  "id": "cab71006-b334-41ba-8d7a-f52db431587f",
   "prevId": "2597f0f9-9130-4eb8-9eb7-90b0a5b1bbf3",
   "version": "7",
   "dialect": "postgresql",
@@ -907,6 +907,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "scheduled_interval_minutes": {
+          "name": "scheduled_interval_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "created_at": {
           "name": "created_at",
           "type": "double precision",
@@ -1022,6 +1029,10 @@
         "user_cards_due_at_safe_integer_check": {
           "name": "user_cards_due_at_safe_integer_check",
           "value": "\"user_cards\".\"due_at\" >= 0 and \"user_cards\".\"due_at\" <= 9007199254740991 and \"user_cards\".\"due_at\" = trunc(\"user_cards\".\"due_at\")"
+        },
+        "user_cards_scheduled_interval_minutes_non_negative_check": {
+          "name": "user_cards_scheduled_interval_minutes_non_negative_check",
+          "value": "\"user_cards\".\"scheduled_interval_minutes\" >= 0"
         },
         "user_cards_created_at_safe_integer_check": {
           "name": "user_cards_created_at_safe_integer_check",

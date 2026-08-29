@@ -30,6 +30,7 @@ CREATE TABLE "user_notes" (
 ALTER TABLE "user_cards" ADD COLUMN "note_id" text NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_cards" ADD COLUMN "template_key" text NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_cards" ADD COLUMN "active" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_cards" ADD COLUMN "scheduled_interval_minutes" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_note_decks" ADD CONSTRAINT "user_note_decks_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_notes" ADD CONSTRAINT "user_notes_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "user_note_decks_user_rev_idx" ON "user_note_decks" USING btree ("user_id","rev");--> statement-breakpoint
@@ -39,4 +40,5 @@ CREATE INDEX "user_note_decks_deck_idx" ON "user_note_decks" USING btree ("deck_
 CREATE INDEX "user_notes_user_rev_idx" ON "user_notes" USING btree ("user_id","rev");--> statement-breakpoint
 CREATE INDEX "user_notes_user_updated_idx" ON "user_notes" USING btree ("user_id","updated_at");--> statement-breakpoint
 CREATE INDEX "user_cards_note_idx" ON "user_cards" USING btree ("note_id");--> statement-breakpoint
-ALTER TABLE "user_cards" DROP COLUMN "deck_id";
+ALTER TABLE "user_cards" DROP COLUMN "deck_id";--> statement-breakpoint
+ALTER TABLE "user_cards" ADD CONSTRAINT "user_cards_scheduled_interval_minutes_non_negative_check" CHECK ("user_cards"."scheduled_interval_minutes" >= 0);
