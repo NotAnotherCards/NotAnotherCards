@@ -93,7 +93,7 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 ```
 
-#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L100))
+#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L107))
 
 The canonical source for a learning item. `fields_json` is serialized JSON;
 `additional_content` is optional Markdown for genuinely free-form material.
@@ -130,6 +130,7 @@ active              boolean NOT NULL DEFAULT true
 front               text (Markdown) NOT NULL
 back                text (Markdown) NOT NULL
 due_at              number (integer Unix ms) NOT NULL
+scheduled_interval_minutes  integer NOT NULL DEFAULT 0 -- minutes to next review; 0 = never reviewed
 created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 
@@ -138,7 +139,7 @@ INDEX(note_id)
 INDEX(user_id, due_at)
 ```
 
-#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L130))
+#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L137))
 
 Note-level deck membership. A note can belong to several decks without
 duplicating the note, its generated cards, or their review schedules.
@@ -166,7 +167,7 @@ rows and those checks are added in epic follow-ups
 [#160](https://github.com/NotAnotherCards/NotAnotherCards/issues/160) and
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
-#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L161), [local schema](../packages/offline-db/src/user-dictionary.ts#L45))
+#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L168), [local schema](../packages/offline-db/src/user-dictionary.ts#L45))
 
 ```text
 id                  text PK
@@ -180,7 +181,7 @@ reviewed_at         number (integer Unix ms) NOT NULL
 
 Review events are append-only in the sync configuration.
 
-#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L185), [local schema](../packages/offline-db/src/user-dictionary.ts#L49))
+#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L192), [local schema](../packages/offline-db/src/user-dictionary.ts#L49))
 
 Contains app-specific profile data and is separate from Better Auth's `user` table.
 
@@ -260,6 +261,7 @@ user_cards
   front               text NOT NULL  (Markdown content)
   back                text NOT NULL  (Markdown content)
   due_at              number (integer Unix ms) NOT NULL
+  scheduled_interval_minutes  integer NOT NULL DEFAULT 0 -- minutes to next review; 0 = never reviewed
   created_at          number (integer Unix ms) NOT NULL
   updated_at          number (integer Unix ms) NOT NULL
 
@@ -295,6 +297,13 @@ Key points from the discussion:
   context→translation, sharing `note_id` and each with its own schedule. A
   manual front/back card is a `basic` note with one template and one card,
   not a separate code path.
+- **Cards store their current scheduled interval.** The scheduler calculates
+  the next interval as `previous interval * rating multiplier`, subject to
+  named floor and cap constants in the shared scheduler module (see
+  [#157](https://github.com/NotAnotherCards/NotAnotherCards/issues/157)). The
+  card stores the rounded result in `scheduled_interval_minutes` while
+  `due_at` remains the absolute queue timestamp. V1 has no `level` or scheduler
+  `status` columns.
 - **Deck membership belongs to the note**, via `user_note_decks`, so one
   note can appear in several decks (e.g. Top 300 and a themed deck) while
   keeping one card and one schedule per review mode. Card activation is
@@ -340,7 +349,7 @@ Everything in this section is exploratory and is not part of the current databas
 
 ### Proposed files/upload foundation
 
-The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L196) and [local schema](../packages/offline-db/src/user-dictionary.ts#L30), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
+The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L203) and [local schema](../packages/offline-db/src/user-dictionary.ts#L30), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
 
 #### `files`
 
