@@ -7,18 +7,10 @@ export const BasicNoteFieldsV1 = z.strictObject({
   back: z.string(),
 });
 
-// The word-note payload is intentionally open while the exact v1 content
-// shape is still being discussed in #157
-export const WordNoteFieldsV1 = z.looseObject({
-  original_language: z.string().min(1),
-  translation_language: z.string().min(1),
-});
-
 export const noteFieldsSchemas: Readonly<
   Record<string, Readonly<Record<number, z.ZodType>>>
 > = {
   basic: { 1: BasicNoteFieldsV1 },
-  word: { 1: WordNoteFieldsV1 },
 };
 
 export type NoteFieldsValidationResult =
