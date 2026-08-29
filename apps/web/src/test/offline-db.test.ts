@@ -86,7 +86,12 @@ describe('@repo/offline-db wiring on web', () => {
       UserNoteRow.safeParse({
         note_type: 'word',
         fields_version: 1,
-        fields_json: JSON.stringify({ original_language: 'de' }),
+        fields_json: JSON.stringify({
+          original_language: 'de',
+          translation_language: 'en',
+          original: 'Hund',
+          translation: 'dog',
+        }),
         additional_content: null,
         created_at: 0,
         updated_at: 0,
