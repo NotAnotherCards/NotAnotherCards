@@ -89,6 +89,7 @@ describe('CardItem Component', () => {
     front: 'Hola',
     back: 'Hello',
     due_at: Date.now(),
+    scheduled_interval_minutes: 0,
     created_at: Date.now(),
     updated_at: Date.now(),
   };
@@ -152,6 +153,7 @@ describe('FlashcardModal Component', () => {
     front: 'Hola',
     back: 'Hello',
     due_at: Date.now(),
+    scheduled_interval_minutes: 0,
     created_at: Date.now(),
     updated_at: Date.now(),
   };

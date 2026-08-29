@@ -37,6 +37,7 @@ describe('@repo/offline-db wiring on API', () => {
                front: 'front side',
                back: 'back side',
                due_at: 0,
+               scheduled_interval_minutes: 0,
                created_at: 0,
                updated_at: 0,
              }).success,

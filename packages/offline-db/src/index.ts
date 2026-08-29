@@ -100,6 +100,7 @@ export const migrations = schemaMigrations({
             front: column.string(),
             back: column.string(),
             due_at: column.number().indexed(),
+            scheduled_interval_minutes: column.number(),
             created_at: column.number(),
             updated_at: column.number().indexed(),
           },

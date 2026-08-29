@@ -157,6 +157,7 @@ export async function createCard(
       front,
       back,
       due_at: now,
+      scheduled_interval_minutes: 0,
       created_at: now,
       updated_at: now,
     });

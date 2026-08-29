@@ -159,6 +159,7 @@ describe('deck deletion cascade', () => {
 
     const deck = await createDeck(db, 'Deck');
     const card = await createCard(db, deck.id, 'front', 'back');
+    expect(card.scheduled_interval_minutes).toBe(0);
     await recordReviewEvent(db, card.id, 3);
 
     expect(await getDeckCardsQuery(db, deck.id).fetch()).toHaveLength(1);

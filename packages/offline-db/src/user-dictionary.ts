@@ -70,6 +70,7 @@ export const UserCardRow = z.object({
   front: z.string(),
   back: z.string(),
   due_at: z.number().int().nonnegative(),
+  scheduled_interval_minutes: z.number().int().min(0),
   created_at: z.number().int().nonnegative(),
   updated_at: z.number().int().nonnegative(),
 });
