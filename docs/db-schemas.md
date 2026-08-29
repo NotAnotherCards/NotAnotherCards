@@ -317,7 +317,10 @@ Key points from the discussion:
 - **Deterministic identity.** `user_note_decks` and generated `user_cards`
   rows use `uuidv5` over `(note_id, deck_id)` and `(note_id, template_key)`
   respectively, so concurrent offline creation targets the same row instead
-  of leaving duplicate, randomly-keyed rows to reconcile.
+  of leaving duplicate, randomly-keyed rows to reconcile. A generated card or
+  note-deck membership is never protocol-deleted while its parents remain
+  live: recreating it would derive the same tombstoned ID, and writes to
+  tombstoned IDs are rejected. Use `active = false` instead.
 
 > No data migration is planned: existing cards are development data and can
 > be discarded. The reset-only change is staged across the API schema (#159),
