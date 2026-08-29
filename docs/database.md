@@ -143,9 +143,11 @@ by the row and wire contracts. Server-side sync-store enforcement remains in
 
 Known values that may be edited, regenerated, searched, filtered, or reused by
 a template belong in `fields_json`; `additional_content` is only for prose
-without those semantics. In v1, `word` notes require
-`original_language` and `translation_language` in the validated payload even
-when a deck supplies their initial defaults.
+without those semantics. Only the complete `basic@1` contract is currently
+registered. `word@1` remains unsupported until its full stable field and
+template contract is defined; that eventual contract must include
+`original_language` and `translation_language`, even when a deck supplies
+their initial defaults.
 
 ---
 

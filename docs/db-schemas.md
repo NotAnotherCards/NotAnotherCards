@@ -338,9 +338,11 @@ table to any one subject. Enforcement of the same contract at the sync-store
 boundary remains in
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
-For word notes, the v1 schema must include `original_language` and
-`translation_language`; a deck may supply defaults, but deck membership is not
-the canonical language source.
+Only the complete `basic@1` contract is currently registered. `word@1` remains
+unsupported until its full stable field and template contract is defined. That
+eventual contract must include `original_language` and `translation_language`;
+a deck may supply defaults, but deck membership is not the canonical language
+source.
 
 ## Future ideas
 
