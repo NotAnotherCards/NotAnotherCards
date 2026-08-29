@@ -9,7 +9,24 @@
 import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { ReviewEventRow, UserDeckRow, UserProfileRow } from '@repo/offline-db';
-import { reviewEvents, userDecks, userProfiles } from '../../src/sync/schema';
+import {
+  reviewEvents,
+  userCards,
+  userDecks,
+  userProfiles,
+} from '../../src/sync/schema';
+
+const EXPECTED_USER_CARD_WIRE_COLUMNS = [
+  'note_id',
+  'template_key',
+  'active',
+  'front',
+  'back',
+  'due_at',
+  'scheduled_interval_minutes',
+  'created_at',
+  'updated_at',
+] as const;
 
 const CASES = [
   { name: 'user_decks', row: UserDeckRow, table: userDecks },
@@ -26,6 +43,18 @@ const CASES = [
 const MACHINERY = new Set(['id', 'rev', 'deleted_at', 'user_id']);
 
 type ColumnFacts = { name: string; notNull: boolean };
+
+it('pins the user_cards columns expected by the future wire row', () => {
+  const columns = Object.values(
+    getTableColumns(userCards),
+  ) as unknown as ColumnFacts[];
+  const wireColumns = columns
+    .map((column) => column.name)
+    .filter((name) => !MACHINERY.has(name))
+    .sort();
+
+  expect(wireColumns).toEqual([...EXPECTED_USER_CARD_WIRE_COLUMNS].sort());
+});
 
 describe.each(CASES)('parity: $name', ({ name, row, table }) => {
   const columns = Object.values(

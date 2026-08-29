@@ -17,8 +17,10 @@ describePostgres('note/card PostgreSQL migration', () => {
       table_name: string;
       column_name: string;
       is_nullable: 'YES' | 'NO';
+      data_type: string;
+      column_default: string | null;
     }>(`
-      select table_name, column_name, is_nullable
+      select table_name, column_name, is_nullable, data_type, column_default
       from information_schema.columns
       where table_schema = 'public'
         and table_name in ('user_notes', 'user_cards', 'user_note_decks')
@@ -27,18 +29,44 @@ describePostgres('note/card PostgreSQL migration', () => {
     const columns = new Map(
       result.rows.map((column) => [
         `${column.table_name}.${column.column_name}`,
-        column.is_nullable,
+        column,
       ]),
     );
 
-    expect(columns.get('user_notes.fields_json')).toBe('NO');
-    expect(columns.get('user_cards.note_id')).toBe('NO');
-    expect(columns.get('user_cards.template_key')).toBe('NO');
-    expect(columns.get('user_cards.active')).toBe('NO');
+    expect(columns.get('user_notes.fields_json')?.is_nullable).toBe('NO');
+    expect(columns.get('user_cards.note_id')?.is_nullable).toBe('NO');
+    expect(columns.get('user_cards.template_key')?.is_nullable).toBe('NO');
+    expect(columns.get('user_cards.active')?.is_nullable).toBe('NO');
+    expect(columns.get('user_cards.scheduled_interval_minutes')).toMatchObject({
+      is_nullable: 'NO',
+      data_type: 'integer',
+      column_default: '0',
+    });
     expect(columns.has('user_cards.deck_id')).toBe(false);
-    expect(columns.get('user_note_decks.note_id')).toBe('NO');
-    expect(columns.get('user_note_decks.deck_id')).toBe('NO');
-    expect(columns.get('user_note_decks.active')).toBe('NO');
+    expect(columns.get('user_note_decks.note_id')?.is_nullable).toBe('NO');
+    expect(columns.get('user_note_decks.deck_id')?.is_nullable).toBe('NO');
+    expect(columns.get('user_note_decks.active')?.is_nullable).toBe('NO');
+  });
+
+  it('enforces a non-negative scheduled interval', async () => {
+    const result = await db.execute<{
+      constraint_name: string;
+      definition: string;
+    }>(`
+      select conname as constraint_name, pg_get_constraintdef(oid) as definition
+      from pg_constraint
+      where conrelid = 'user_cards'::regclass
+        and contype = 'c'
+    `);
+    const constraint = result.rows.find(
+      (row) =>
+        row.constraint_name ===
+        'user_cards_scheduled_interval_minutes_non_negative_check',
+    );
+
+    expect(constraint?.definition).toMatch(
+      /scheduled_interval_minutes\s*>=\s*0/,
+    );
   });
 
   it('creates the incremental-pull and relationship indexes', async () => {
