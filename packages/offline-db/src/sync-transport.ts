@@ -1,5 +1,5 @@
 import { createSyncTransport, type SyncPost } from '@remelondb/core/transport';
-import { syncWireSchemas } from './index.js';
+import { syncWireSchemas } from './sync-schemas.js';
 
 export {
   createHttpPost,
