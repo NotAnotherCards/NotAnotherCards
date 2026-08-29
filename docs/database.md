@@ -134,13 +134,11 @@ optional free-form Markdown.
 #### `fields_json` validation contract
 
 `fields_json` remains text at the database and sync boundary, but it is not an
-unvalidated escape hatch. Before accepting a note push, the server uses the
-pair `(note_type, fields_version)` to look up a Zod schema in an explicit
-registry, parses the serialized JSON, and validates the result. Malformed JSON,
-unknown type/version pairs, and payloads rejected by the selected schema must
-all reject the note write. This registry is shared with the local/wire row in
-[#160](https://github.com/NotAnotherCards/NotAnotherCards/issues/160) and wired
-into push validation in
+unvalidated escape hatch. The shared local/wire validator uses the pair
+`(note_type, fields_version)` to look up a Zod schema in an explicit registry,
+parses the serialized JSON, and validates the result. Malformed JSON, unknown
+type/version pairs, and payloads rejected by the selected schema are rejected
+by the row and wire contracts. Server-side sync-store enforcement remains in
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
 Known values that may be edited, regenerated, searched, filtered, or reused by
@@ -175,11 +173,11 @@ the source content; each sibling card owns its own schedule and review history.
   currently enabled. Disabling a mode is soft state, not protocol deletion.
 - **`front` / `back`** (text, NOT NULL): Generic Markdown prompt and answer
   rendered from the source note.
-- **`scheduled_interval_minutes`** (integer, NOT NULL, default `0`): The
-  card's current interval in whole minutes. `0` means the card has never been
-  reviewed. The shared scheduler multiplies this value by rating-specific
-  policy constants and updates it together with `due_at`; v1 does not store a
-  scheduler `level` or `status`.
+- **`scheduled_interval_minutes`** (integer, NOT NULL; server default `0`,
+  required on the local/wire row): The card's current interval in whole
+  minutes. `0` means the card has never been reviewed. The shared scheduler
+  multiplies this value by rating-specific policy constants and updates it
+  together with `due_at`; v1 does not store a scheduler `level` or `status`.
 - **`created_at` / `updated_at` / `due_at`** (double precision): Unix time in milliseconds. `rev` and `deleted_at` have the same server-only semantics as
   `user_decks`.
 
