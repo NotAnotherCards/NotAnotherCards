@@ -28,6 +28,10 @@ export function getPersonalDictionaryQuery(db: Database) {
     .query(Q.where('active', true), Q.sortBy('created_at', Q.desc));
 }
 
+export function getNotesQuery(db: Database) {
+  return db.get(UserNote).query(Q.sortBy('created_at', Q.desc));
+}
+
 export function getDeckCardsQuery(db: Database, deckId: string) {
   return db.get(UserCard).query(
     Q.unsafeSqlQuery(
@@ -187,6 +191,13 @@ export async function updateCard(
     const now = Date.now();
     const card = await db.get(UserCard).find(cardId);
     const note = await db.get(UserNote).find(card.note_id);
+    if (
+      note.note_type !== 'basic' ||
+      note.fields_version !== 1 ||
+      card.template_key !== 'front-back'
+    ) {
+      throw new Error('The front/back editor only supports basic notes');
+    }
     await db.batch([
       note.prepareUpdate((record) => {
         record.fields_json = JSON.stringify({ front, back });
@@ -202,23 +213,57 @@ export async function updateCard(
   });
 }
 
-export async function deleteCard(db: Database, cardId: string) {
+export async function removeNoteFromDeck(
+  db: Database,
+  noteId: string,
+  deckId: string,
+) {
   return await db.write(async () => {
+    const now = Date.now();
+    const memberships = await db
+      .get(UserNoteDeck)
+      .query(Q.where('note_id', noteId), Q.where('deck_id', deckId))
+      .fetch();
+    await db.batch(
+      memberships.map((membership) =>
+        membership.prepareUpdate((record) => {
+          record.active = false;
+          record.updated_at = now;
+        }),
+      ),
+    );
+  });
+}
+
+export async function disableCard(db: Database, cardId: string) {
+  return await db.write(async () => {
+    const now = Date.now();
     const card = await db.get(UserCard).find(cardId);
-    const note = await db.get(UserNote).find(card.note_id);
+    return await card.update((record) => {
+      record.active = false;
+      record.updated_at = now;
+    });
+  });
+}
+
+export async function deleteNote(db: Database, noteId: string) {
+  return await db.write(async () => {
+    const note = await db.get(UserNote).find(noteId);
     const cards = await db
       .get(UserCard)
-      .query(Q.where('note_id', card.note_id))
+      .query(Q.where('note_id', noteId))
       .fetch();
     const cardIds = cards.map((sibling) => sibling.id);
     const noteDecks = await db
       .get(UserNoteDeck)
-      .query(Q.where('note_id', card.note_id))
+      .query(Q.where('note_id', noteId))
       .fetch();
-    const reviews = await db
-      .get(ReviewEvent)
-      .query(Q.where('user_card_id', Q.oneOf(cardIds)))
-      .fetch();
+    const reviews = cardIds.length
+      ? await db
+          .get(ReviewEvent)
+          .query(Q.where('user_card_id', Q.oneOf(cardIds)))
+          .fetch()
+      : [];
     await db.batch([
       ...reviews.map((review) => review.prepareMarkAsDeleted()),
       ...cards.map((sibling) => sibling.prepareMarkAsDeleted()),
@@ -228,6 +273,14 @@ export async function deleteCard(db: Database, cardId: string) {
   });
 }
 
+// Represents existing temporary behavior, converted to minutes to match schedule_interval_minutes
+const REVIEW_INTERVAL_MINUTES: Readonly<Record<number, number>> = {
+  1: 5,
+  2: 24 * 60,
+  3: 3 * 24 * 60,
+  4: 7 * 24 * 60,
+};
+
 export async function recordReviewEvent(
   db: Database,
   cardId: string,
@@ -235,28 +288,27 @@ export async function recordReviewEvent(
 ) {
   return await db.write(async () => {
     const now = Date.now();
-
-    // Spaced Repetition scheduling intervals based on rating (1: Hard/Again, 2: Good, 3: Easy, 4: Mastered)
-    const intervals: Record<number, number> = {
-      1: 5 * 60 * 1000, // 5 minutes
-      2: 24 * 60 * 60 * 1000, // 1 day
-      3: 3 * 24 * 60 * 60 * 1000, // 3 days
-      4: 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
-
-    const nextDue = now + (intervals[rating] || 24 * 60 * 60 * 1000);
+    const scheduledIntervalMinutes = REVIEW_INTERVAL_MINUTES[rating];
+    if (scheduledIntervalMinutes === undefined) {
+      throw new Error(`Unsupported review rating: ${rating}`);
+    }
+    const nextDue = now + scheduledIntervalMinutes * 60_000;
 
     const card = await db.get(UserCard).find(cardId);
-    await card.update((record) => {
+    const reviewId = randomId();
+    const cardUpdate = card.prepareUpdate((record) => {
+      record.scheduled_interval_minutes = scheduledIntervalMinutes;
       record.due_at = nextDue;
       record.updated_at = now;
     });
-
-    return await db.get(ReviewEvent).create({
+    const review = db.get(ReviewEvent).prepareCreate({
+      id: reviewId,
       user_card_id: cardId,
       rating,
       reviewed_at: now,
     });
+    await db.batch([cardUpdate, review]);
+    return await db.get(ReviewEvent).find(reviewId);
   });
 }
 
