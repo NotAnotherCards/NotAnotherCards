@@ -149,7 +149,7 @@ describe('Authentication (e2e)', () => {
         })
         .expect(200);
 
-      userCookie = response.headers['set-cookie'] as string[];
+      userCookie = (response.headers['set-cookie'] || []) as string[];
     });
 
     it('should reject requests without authentication', async () => {
@@ -206,7 +206,8 @@ describe('Authentication (e2e)', () => {
         })
         .expect(200);
 
-      const secondUserCookie = signupResponse.headers['set-cookie'] as string[];
+      const secondUserCookie = (signupResponse.headers['set-cookie'] ||
+        []) as string[];
       const sharedUsername = `taken_username_${Date.now()}`;
 
       await request(app.getHttpServer())
