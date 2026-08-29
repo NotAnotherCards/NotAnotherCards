@@ -62,6 +62,9 @@ jobs:
       - name: Check Formatting
         run: pnpm format:check
 
+      - name: Check Offline Database Import Cycles
+        run: pnpm check:cycles:offline-db
+
       - name: Run Unit Tests
         run: pnpm test
         env:
