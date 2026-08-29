@@ -6,6 +6,8 @@ import {
   UserNoteDeck,
   ReviewEvent,
   UserProfile,
+  cardId,
+  noteDeckId,
 } from '@repo/offline-db';
 
 // ==========================================
@@ -138,8 +140,9 @@ export async function createCard(
   return await db.write(async () => {
     const now = Date.now();
     const noteId = randomId();
-    const cardId = randomId();
-    const noteDeckId = randomId();
+    const templateKey = 'front-back';
+    const generatedCardId = cardId(noteId, templateKey);
+    const membershipId = noteDeckId(noteId, deckId);
     const note = db.get(UserNote).prepareCreate({
       id: noteId,
       note_type: 'basic',
@@ -150,9 +153,9 @@ export async function createCard(
       updated_at: now,
     });
     const card = db.get(UserCard).prepareCreate({
-      id: cardId,
+      id: generatedCardId,
       note_id: noteId,
-      template_key: 'front-back',
+      template_key: templateKey,
       active: true,
       front,
       back,
@@ -162,7 +165,7 @@ export async function createCard(
       updated_at: now,
     });
     const noteDeck = db.get(UserNoteDeck).prepareCreate({
-      id: noteDeckId,
+      id: membershipId,
       note_id: noteId,
       deck_id: deckId,
       active: true,
@@ -170,7 +173,7 @@ export async function createCard(
       updated_at: now,
     });
     await db.batch([note, card, noteDeck]);
-    return await db.get(UserCard).find(cardId);
+    return await db.get(UserCard).find(generatedCardId);
   });
 }
 

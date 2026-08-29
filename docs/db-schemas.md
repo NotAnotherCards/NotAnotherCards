@@ -308,13 +308,15 @@ Key points from the discussion:
   tombstones to dependent rows. A note losing its last active membership
   becomes unfiled rather than deleted, keeping it in the personal
   dictionary.
-- **Deterministic identity.** `user_note_decks` and generated `user_cards`
-  rows use `uuidv5` over `(note_id, deck_id)` and `(note_id, template_key)`
-  respectively, so concurrent offline creation targets the same row instead
-  of leaving duplicate, randomly-keyed rows to reconcile. A generated card or
-  note-deck membership is never protocol-deleted while its parents remain
-  live: recreating it would derive the same tombstoned ID, and writes to
-  tombstoned IDs are rejected. Use `active = false` instead.
+- **Deterministic identity.** Generated `user_cards` and `user_note_decks` rows
+  use the shared `cardId(noteId, templateKey)` and
+  `noteDeckId(noteId, deckId)` helpers. Each applies a table-specific, fixed
+  UUIDv5 namespace to the JSON-serialized argument tuple, so concurrent
+  offline creation targets the same row instead of leaving duplicate,
+  randomly-keyed rows to reconcile. A generated card or note-deck membership
+  is never protocol-deleted while its parents remain live: recreating it would
+  derive the same tombstoned ID, and writes to tombstoned IDs are rejected. Use
+  `active = false` instead.
 
 > No compatibility data migration is provided for the old card shape. Existing
 > API development databases must be reset before applying the new migration;

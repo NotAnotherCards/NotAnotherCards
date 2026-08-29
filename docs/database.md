@@ -161,7 +161,8 @@ the source content; each sibling card owns its own schedule and review history.
 - **`user_cards_note_idx`**: Index on `(note_id)` for finding all sibling cards generated from a note.
 - **`user_cards_user_due_idx`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
 
-- **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
+- **`id`** (text/UUID, Primary Key): Deterministic UUIDv5 derived by the shared
+  `cardId(noteId, templateKey)` helper.
 - **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
 - **`note_id`** (text, NOT NULL): Links to `user_notes.id`. Ownership is
   validated through the authenticated sync engine rather than a cascading SQL
@@ -188,8 +189,8 @@ the source content; each sibling card owns its own schedule and review history.
 Represents note-level membership in a deck. A note can belong to multiple
 decks while retaining one canonical payload and one schedule per sibling card.
 
-- **`id`** (text/UUID, Primary Key): Deterministic client ID derived from
-  `(note_id, deck_id)`.
+- **`id`** (text/UUID, Primary Key): Deterministic UUIDv5 derived by the shared
+  `noteDeckId(noteId, deckId)` helper.
 - **`user_id`** (text, Foreign Key): The authenticated sync scope.
 - **`note_id`** (text, NOT NULL): Links to `user_notes.id` through sync-layer
   ownership validation.

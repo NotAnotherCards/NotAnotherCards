@@ -8,7 +8,33 @@ import {
   UserDeckRow,
   ReviewEventRow,
   UserProfileRow,
+  cardId,
+  noteDeckId,
 } from '@repo/offline-db';
+
+describe('deterministic offline IDs', () => {
+  it.each([
+    [
+      'user card',
+      cardId,
+      'note-123',
+      'front-back',
+      'db1cd149-906b-5c3c-a848-460f9a72773c',
+    ],
+    [
+      'note-deck membership',
+      noteDeckId,
+      'note-123',
+      'deck-456',
+      '64222a0f-3a7f-51a4-97d9-05ae44a1ca59',
+    ],
+  ])(
+    'pins the %s sync protocol vector',
+    (_label, deriveId, first, second, expected) => {
+      expect(deriveId(first, second)).toBe(expected);
+    },
+  );
+});
 
 describe('@repo/offline-db wiring on web', () => {
   it('imports and validates offline db schemas', () => {

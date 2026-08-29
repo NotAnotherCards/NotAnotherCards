@@ -25,6 +25,8 @@ import {
   UserCard,
   UserNoteDeck,
   ReviewEvent,
+  cardId as deriveCardId,
+  noteDeckId as deriveNoteDeckId,
 } from '@repo/offline-db';
 import { useStore } from '@/hooks/useStore';
 import { DatabaseProvider } from '@remelondb/core/react';
@@ -159,7 +161,13 @@ describe('deck deletion cascade', () => {
 
     const deck = await createDeck(db, 'Deck');
     const card = await createCard(db, deck.id, 'front', 'back');
+    expect(card.id).toBe(deriveCardId(card.note_id, card.template_key));
     expect(card.scheduled_interval_minutes).toBe(0);
+    const [membership] = await db
+      .get(UserNoteDeck)
+      .query(Q.where('note_id', card.note_id), Q.where('deck_id', deck.id))
+      .fetch();
+    expect(membership?.id).toBe(deriveNoteDeckId(card.note_id, deck.id));
     await recordReviewEvent(db, card.id, 3);
 
     expect(await getDeckCardsQuery(db, deck.id).fetch()).toHaveLength(1);
