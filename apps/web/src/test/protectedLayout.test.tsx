@@ -51,8 +51,8 @@ const mockSession = {
   },
 };
 
-// Verify that navigating to the  subdirectory loads the text from route.tsx(app) alongside nested pages like dashboard
-describe('App Layout Guards', () => {
+// Verify that navigating to a protected route loads the layout along with nested pages like dashboard
+describe('Protected Layout Guards', () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, '', '/dashboard');

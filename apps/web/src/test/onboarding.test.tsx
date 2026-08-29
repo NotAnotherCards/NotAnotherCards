@@ -37,6 +37,8 @@ vi.mock('@/hooks/useStore', () => ({
   useStore: vi.fn(),
 }));
 
+let mockManager: unknown = { state: { status: 'ready', error: null } };
+
 vi.mock('@remelondb/core/react', () => ({
   useDatabaseState: () => ({ status: 'ready', error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
@@ -46,7 +48,7 @@ vi.mock('@remelondb/core/react', () => ({
   // without a manager. These tests are about routing, not the database
   // lifecycle, so a stand-in is enough.
   useSessionDatabase: () => ({
-    manager: { state: { status: 'ready', error: null } },
+    manager: mockManager,
     syncController: null,
     closeError: null,
   }),
@@ -56,6 +58,7 @@ describe('Onboarding Flow and Guard Specs', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(useStore).mockReset();
+    mockManager = { state: { status: 'ready', error: null } };
 
     // Default useStore mock returning base values
     vi.mocked(useStore).mockReturnValue({
@@ -312,5 +315,18 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByText('Username is already taken'),
     ).toBeInTheDocument();
+  });
+
+  it('allows rendering /onboarding when manager is null (for incomplete user)', async () => {
+    mockManager = null;
+    render(<App />);
+    expect(
+      await screen.findByText(
+        /Choose your username and language preferences/i,
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/onboarding');
   });
 });

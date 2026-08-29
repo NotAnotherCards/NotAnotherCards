@@ -8,8 +8,7 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
-  // The database provider belongs here, above every route, not inside
-  // the `/app` layout: it holds the queue that makes the next open wait
+  // The database provider belongs here, above every route: it holds the queue that makes the next open wait
   // for the previous close, and a route layout is destroyed and rebuilt
   // on navigation.
   return (

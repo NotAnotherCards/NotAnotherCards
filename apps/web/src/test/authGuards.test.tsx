@@ -163,53 +163,36 @@ describe('Auth Guards', () => {
     expect(window.location.pathname).toBe('/login');
   });
 
-  it('redirects logged-out users from /app to login', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: null,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: null,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    // Set initial route to /login before rendering so that redirect to / is a real route change
-    window.history.pushState(null, '', '/login');
-
+  it('renders 404 for /app without redirecting', async () => {
     render(<App />);
 
     await act(async () => {
-      await router.invalidate();
+      router.history.push('/app');
     });
 
-    expect(window.location.pathname).toBe('/login');
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/app');
   });
 
-  it('redirects logged-in users from /app to dashboard', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSession,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSession,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    // Set initial route to /login before rendering so that redirect to /dashboard is a real route change
-    window.history.pushState(null, '', '/login');
-
+  it('renders 404 for /app/dashboard without redirecting', async () => {
     render(<App />);
 
     await act(async () => {
-      await router.invalidate();
+      router.history.push('/app/dashboard');
     });
 
-    expect(window.location.pathname).toBe('/dashboard');
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/app/dashboard');
+  });
+
+  it('renders 404 for /app/onboarding without redirecting', async () => {
+    render(<App />);
+
+    await act(async () => {
+      router.history.push('/app/onboarding');
+    });
+
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/app/onboarding');
   });
 });
