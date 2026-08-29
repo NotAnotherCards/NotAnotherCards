@@ -4,6 +4,7 @@ import { useDatabase, useDatabaseState } from '@remelondb/core/react';
 import {
   UserDeckRecord,
   UserCardRecord,
+  UserNoteRecord,
   UserNoteDeckRecord,
   UserProfileRecord,
 } from '@repo/offline-db';
@@ -12,6 +13,7 @@ import { useSyncController } from '@/offline/syncProvider';
 import {
   getDecksQuery,
   getPersonalDictionaryQuery,
+  getNotesQuery,
   getNoteDecksQuery,
   getUserProfileQuery,
   createDeck as dbCreateDeck,
@@ -19,7 +21,7 @@ import {
   deleteDeck as dbDeleteDeck,
   createCard as dbCreateCard,
   updateCard as dbUpdateCard,
-  deleteCard as dbDeleteCard,
+  removeNoteFromDeck as dbRemoveNoteFromDeck,
   recordReviewEvent as dbRecordReview,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
@@ -108,6 +110,10 @@ export function useStore() {
     db && getPersonalDictionaryQuery(db),
   );
 
+  const { data: notes, isLoading: notesLoading } = useQuery<UserNoteRecord>(
+    db && getNotesQuery(db),
+  );
+
   const { data: noteDecks, isLoading: noteDecksLoading } =
     useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
 
@@ -118,6 +124,7 @@ export function useStore() {
     isInitializing ||
     decksLoading ||
     cardsLoading ||
+    notesLoading ||
     noteDecksLoading ||
     profileLoading;
   const { ready, showSpinner } = useDelayedLoading(isLoading);
@@ -186,14 +193,26 @@ export function useStore() {
     [db, sync],
   );
 
-  const deleteCard = useCallback(
-    async (id: string) => {
+  const removeNoteFromDeck = useCallback(
+    async (noteId: string, deckId: string) => {
       if (!db) throw new Error('Database not initialized');
-      const result = await dbDeleteCard(db, id);
+      const result = await dbRemoveNoteFromDeck(db, noteId, deckId);
       sync?.notifyLocalWrite();
       return result;
     },
     [db, sync],
+  );
+
+  const isBasicCard = useCallback(
+    (card: UserCardRecord): boolean => {
+      const note = notes.find((candidate) => candidate.id === card.note_id);
+      return (
+        note?.note_type === 'basic' &&
+        note.fields_version === 1 &&
+        card.template_key === 'front-back'
+      );
+    },
+    [notes],
   );
 
   const recordReview = useCallback(
@@ -280,8 +299,9 @@ export function useStore() {
     deleteDeck,
     createCard,
     updateCard,
-    deleteCard,
+    removeNoteFromDeck,
     recordReview,
+    isBasicCard,
     getCardsCount,
     getCardsForDeck,
     createUserProfile,
