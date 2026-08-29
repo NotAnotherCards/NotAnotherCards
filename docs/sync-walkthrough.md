@@ -182,7 +182,7 @@ as a different account opens a different file. That is the whole reason
 two accounts on one device never see each other's records.
 
 The session owns the database and the controller. On web that is the
-`/app` route layout, on mobile `SessionDatabaseProvider`. Nothing else
+`_protected` route layout, on mobile `SessionDatabaseProvider`. Nothing else
 opens or closes the database.
 
 Attach sync while the database is open, and detach it when it is not.
