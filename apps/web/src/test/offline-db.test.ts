@@ -20,18 +20,31 @@ describe('@repo/offline-db wiring on web', () => {
     expect(schema.tables.review_events).toBeDefined();
     expect(schema.tables.user_profiles).toBeDefined();
 
+    const cardRow = {
+      note_id: 'note123',
+      template_key: 'front-back',
+      active: true,
+      front: 'front side',
+      back: 'back side',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    };
+    expect(UserCardRow.parse(cardRow)).toEqual(cardRow);
+    const wireCardRow = { id: 'card123', ...cardRow };
+    expect(syncWireSchemas.rows.user_cards.parse(wireCardRow)).toEqual(
+      wireCardRow,
+    );
     expect(
       UserCardRow.safeParse({
-        note_id: 'note123',
-        template_key: 'front-back',
-        active: true,
-        front: 'front side',
-        back: 'back side',
-        due_at: 0,
-        created_at: 0,
-        updated_at: 0,
+        ...cardRow,
+        scheduled_interval_minutes: -1,
       }).success,
-    ).toBe(true);
+    ).toBe(false);
+    const cardWithoutInterval: Partial<typeof cardRow> = { ...cardRow };
+    delete cardWithoutInterval.scheduled_interval_minutes;
+    expect(UserCardRow.safeParse(cardWithoutInterval).success).toBe(false);
 
     expect(
       UserNoteRow.safeParse({
