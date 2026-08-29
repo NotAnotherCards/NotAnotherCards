@@ -55,6 +55,7 @@ it('enforces nonnegative safe-integer sync timestamps', () => {
     getTableConfig(userCards).checks.map((constraint) => constraint.name),
   ).toEqual([
     'user_cards_due_at_safe_integer_check',
+    'user_cards_scheduled_interval_minutes_non_negative_check',
     'user_cards_created_at_safe_integer_check',
     'user_cards_updated_at_safe_integer_check',
   ]);
@@ -84,6 +85,10 @@ it('defines the note/card/deck-membership model', () => {
   expect('deckId' in userCards).toBe(false);
   expect(userCards.active.notNull).toBe(true);
   expect(userCards.active.hasDefault).toBe(true);
+  expect(userCards.scheduledIntervalMinutes.getSQLType()).toBe('integer');
+  expect(userCards.scheduledIntervalMinutes.notNull).toBe(true);
+  expect(userCards.scheduledIntervalMinutes.hasDefault).toBe(true);
+  expect(userCards.scheduledIntervalMinutes.default).toBe(0);
   expect(userNoteDecks.active.notNull).toBe(true);
   expect(userNoteDecks.active.hasDefault).toBe(true);
 

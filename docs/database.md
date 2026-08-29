@@ -175,6 +175,11 @@ the source content; each sibling card owns its own schedule and review history.
   currently enabled. Disabling a mode is soft state, not protocol deletion.
 - **`front` / `back`** (text, NOT NULL): Generic Markdown prompt and answer
   rendered from the source note.
+- **`scheduled_interval_minutes`** (integer, NOT NULL, default `0`): The
+  card's current interval in whole minutes. `0` means the card has never been
+  reviewed. The shared scheduler multiplies this value by rating-specific
+  policy constants and updates it together with `due_at`; v1 does not store a
+  scheduler `level` or `status`.
 - **`created_at` / `updated_at` / `due_at`** (double precision): Unix time in milliseconds. `rev` and `deleted_at` have the same server-only semantics as
   `user_decks`.
 
@@ -260,7 +265,7 @@ pnpm db:migrate    # apply pending migrations
 pnpm db:push       # push schema directly, dev only
 ```
 
-Migration `0010_fluffy_meggan` deliberately has no compatibility data rewrite.
+Migration `0010_shocking_roulette` deliberately has no compatibility data rewrite.
 It adds required note fields to `user_cards` and removes `deck_id`, so a local
 database containing the old development cards must be reset before applying
 it. For the Compose development database, remove the development volume and

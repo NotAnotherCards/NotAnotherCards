@@ -90,7 +90,7 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 ```
 
-#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L101), [local schema](../packages/offline-db/src/user-dictionary.ts#L135))
+#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L107), [local schema](../packages/offline-db/src/user-dictionary.ts#L136))
 
 The canonical source for a learning item. `fields_json` is serialized JSON;
 `additional_content` is optional Markdown for genuinely free-form material.
@@ -127,6 +127,7 @@ active              boolean NOT NULL DEFAULT true
 front               text (Markdown) NOT NULL
 back                text (Markdown) NOT NULL
 due_at              number (integer Unix ms) NOT NULL
+scheduled_interval_minutes  integer NOT NULL DEFAULT 0 -- minutes to next review; 0 = never reviewed
 created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 
@@ -135,7 +136,7 @@ INDEX(note_id)
 INDEX(user_id, due_at)
 ```
 
-#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L131), [local schema](../packages/offline-db/src/user-dictionary.ts#L139))
+#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L137), [local schema](../packages/offline-db/src/user-dictionary.ts#L140))
 
 Note-level deck membership. A note can belong to several decks without
 duplicating the note, its generated cards, or their review schedules.
@@ -162,7 +163,7 @@ sync-layer concerns rather than cascading SQL foreign keys. The
 server ownership checks remain in
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
-#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L162), [local schema](../packages/offline-db/src/user-dictionary.ts#L143))
+#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L168), [local schema](../packages/offline-db/src/user-dictionary.ts#L144))
 
 ```text
 id                  text PK
@@ -176,7 +177,7 @@ reviewed_at         number (integer Unix ms) NOT NULL
 
 Review events are append-only in the sync configuration.
 
-#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L186), [local schema](../packages/offline-db/src/user-dictionary.ts#L147))
+#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L192), [local schema](../packages/offline-db/src/user-dictionary.ts#L148))
 
 Contains app-specific profile data and is separate from Better Auth's `user` table.
 
@@ -256,6 +257,7 @@ user_cards
   front               text NOT NULL  (Markdown content)
   back                text NOT NULL  (Markdown content)
   due_at              number (integer Unix ms) NOT NULL
+  scheduled_interval_minutes  integer NOT NULL DEFAULT 0 -- minutes to next review; 0 = never reviewed
   created_at          number (integer Unix ms) NOT NULL
   updated_at          number (integer Unix ms) NOT NULL
 
@@ -291,6 +293,13 @@ Key points from the discussion:
   context→translation, sharing `note_id` and each with its own schedule. A
   manual front/back card is a `basic` note with one template and one card,
   not a separate code path.
+- **Cards store their current scheduled interval.** The scheduler calculates
+  the next interval as `previous interval * rating multiplier`, subject to
+  named floor and cap constants in the shared scheduler module (see
+  [#157](https://github.com/NotAnotherCards/NotAnotherCards/issues/157)). The
+  card stores the rounded result in `scheduled_interval_minutes` while
+  `due_at` remains the absolute queue timestamp. V1 has no `level` or scheduler
+  `status` columns.
 - **Deck membership belongs to the note**, via `user_note_decks`, so one
   note can appear in several decks (e.g. Top 300 and a themed deck) while
   keeping one card and one schedule per review mode. Card activation is
@@ -304,7 +313,10 @@ Key points from the discussion:
 - **Deterministic identity.** `user_note_decks` and generated `user_cards`
   rows use `uuidv5` over `(note_id, deck_id)` and `(note_id, template_key)`
   respectively, so concurrent offline creation targets the same row instead
-  of leaving duplicate, randomly-keyed rows to reconcile.
+  of leaving duplicate, randomly-keyed rows to reconcile. A generated card or
+  note-deck membership is never protocol-deleted while its parents remain
+  live: recreating it would derive the same tombstoned ID, and writes to
+  tombstoned IDs are rejected. Use `active = false` instead.
 
 > No data migration is planned: existing cards are development data and can
 > be discarded. The reset-only change is staged across the API schema (#159),
@@ -336,7 +348,7 @@ Everything in this section is exploratory and is not part of the current databas
 
 ### Proposed files/upload foundation
 
-The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L196) and [local schema](../packages/offline-db/src/user-dictionary.ts#L117), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
+The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L203) and [local schema](../packages/offline-db/src/user-dictionary.ts#L118), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
 
 #### `files`
 
