@@ -18,6 +18,7 @@ import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as AppDashboardRouteImport } from './routes/app/dashboard'
+import { Route as AppDeckReviewRouteImport } from './routes/app/deck-review'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -63,6 +64,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppDeckReviewRoute = AppDeckReviewRouteImport.update({
+  id: '/deck-review',
+  path: '/deck-review',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deck-review': typeof AppDeckReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deck-review': typeof AppDeckReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/_auth/register': typeof AuthRegisterRoute
   '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deck-review': typeof AppDeckReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/app/dashboard'
+    | '/app/deck-review'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/app/dashboard'
+    | '/app/deck-review'
   id:
     | '__root__'
     | '/'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/_auth/register'
     | '/_auth/reset-password'
     | '/app/dashboard'
+    | '/app/deck-review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -202,6 +214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/deck-review': {
+      id: '/app/deck-review'
+      path: '/deck-review'
+      fullPath: '/app/deck-review'
+      preLoaderRoute: typeof AppDeckReviewRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -225,10 +244,12 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface AppRouteRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDeckReviewRoute: typeof AppDeckReviewRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppDeckReviewRoute: AppDeckReviewRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

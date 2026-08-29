@@ -29,6 +29,20 @@ export function getDueCardsQuery(db: Database, now: number = Date.now()) {
     .query(Q.where('due_at', Q.lte(now)), Q.sortBy('due_at', Q.asc));
 }
 
+export function getDeckDueCardsQuery(
+  db: Database,
+  deckId: string,
+  now: number = Date.now(),
+) {
+  return db
+    .get(UserCard)
+    .query(
+      Q.where('deck_id', deckId),
+      Q.where('due_at', Q.lte(now)),
+      Q.sortBy('due_at', Q.asc),
+    );
+}
+
 export function getCardDetailQuery(db: Database, cardId: string) {
   return db.get(UserCard).query(Q.where('id', cardId));
 }
