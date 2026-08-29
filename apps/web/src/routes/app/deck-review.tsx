@@ -5,7 +5,9 @@ import { getDeckDueCardsQuery } from '@/offline/queries';
 import { useQuery } from '@remelondb/core/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { authClient } from '@/lib/auth-client';
+import { saveLastReviewDeckId } from '@/lib/review-preferences';
 
 type DeckReviewSearch = {
   deckId?: string;
@@ -25,6 +27,7 @@ function DeckReviewRoute() {
   const { deckId } = Route.useSearch();
   const store = useStore();
   const navigate = useNavigate();
+  const { data: session } = authClient.useSession();
   const dueCardsQuery = useMemo(
     () =>
       store.db && deckId
@@ -35,6 +38,13 @@ function DeckReviewRoute() {
   const { data: dueCards = [], isLoading: dueCardsLoading } = useQuery(
     dueCardsQuery,
   );
+  const deck = store.decks.find((item) => item.id === deckId);
+
+  useEffect(() => {
+    if (deck && session?.user.id) {
+      saveLastReviewDeckId(session.user.id, deck.id);
+    }
+  }, [deck, session?.user.id]);
 
   if (!deckId) {
     return (
@@ -94,8 +104,6 @@ function DeckReviewRoute() {
       </main>
     );
   }
-
-  const deck = store.decks.find((item) => item.id === deckId);
 
   if (!deck) {
     return (

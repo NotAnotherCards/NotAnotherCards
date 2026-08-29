@@ -21,6 +21,15 @@ import {
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useStore } from '@/hooks/useStore';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
+import { useNavigate } from '@tanstack/react-router';
+import {
+  clearLastReviewDeckId,
+  getLastReviewDeckId,
+} from '@/lib/review-preferences';
+
+type OverviewProps = {
+  onChooseDeck: () => void;
+};
 
 function DashboardSyncStatus() {
   const controller = useSyncController();
@@ -65,14 +74,36 @@ function DashboardSyncStatus() {
   );
 }
 
-export function Overview() {
+export function Overview({ onChooseDeck }: OverviewProps) {
   const store = useStore();
   const { data: session } = authClient.useSession();
+  const navigate = useNavigate();
   const isOnline = useOnlineStatus();
 
   const user = session?.user || {
     name: 'Legendary Learner',
     email: 'learner@notanothercards.com',
+  };
+
+  const handleStartReview = () => {
+    const userId = session?.user.id;
+    if (!userId) {
+      onChooseDeck();
+      return;
+    }
+
+    const lastDeckId = getLastReviewDeckId(userId);
+    const lastDeckStillExists = store.decks.some(
+      (deck) => deck.id === lastDeckId,
+    );
+
+    if (lastDeckId && lastDeckStillExists) {
+      void navigate({ to: '/app/deck-review', search: { deckId: lastDeckId } });
+      return;
+    }
+
+    if (lastDeckId) clearLastReviewDeckId(userId);
+    onChooseDeck();
   };
 
   // Dynamic statistics from local remelonDB store
@@ -224,9 +255,7 @@ export function Overview() {
               <Button
                 className="flex-1 cursor-pointer gap-1.5"
                 size="sm"
-                onClick={() => {
-                  // TODO: link to deck review route
-                }}
+                onClick={handleStartReview}
               >
                 <Library className="size-3.5" />
                 Start Review

@@ -39,6 +39,7 @@ describe('DeckCard Component', () => {
         deck={mockDeck}
         totalCards={12}
         onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
       />,
@@ -53,6 +54,7 @@ describe('DeckCard Component', () => {
 
   it('calls action callbacks on click events', () => {
     const onSelectDeck = vi.fn();
+    const onStartReview = vi.fn();
     const onEditDeck = vi.fn();
     const onDeleteDeck = vi.fn();
 
@@ -61,6 +63,7 @@ describe('DeckCard Component', () => {
         deck={mockDeck}
         totalCards={12}
         onSelectDeck={onSelectDeck}
+        onStartReview={onStartReview}
         onEditDeck={onEditDeck}
         onDeleteDeck={onDeleteDeck}
       />,
@@ -77,6 +80,9 @@ describe('DeckCard Component', () => {
     // Click Delete icon button
     fireEvent.click(screen.getByTitle('Delete Deck'));
     expect(onDeleteDeck).toHaveBeenCalledWith('deck-test-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Review' }));
+    expect(onStartReview).toHaveBeenCalledWith('deck-test-1');
   });
 });
 

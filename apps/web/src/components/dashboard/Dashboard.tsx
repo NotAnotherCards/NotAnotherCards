@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/PageContainer';
 import { BookOpen, Library, Settings as SettingsIcon } from 'lucide-react';
@@ -8,6 +9,7 @@ import { Settings } from './settings/Settings';
 import { Overview } from './Overview';
 
 export function DashboardComponent() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'decks' | 'settings'>(
     'overview',
   );
@@ -60,13 +62,23 @@ export function DashboardComponent() {
       </div>
 
       {/* Tab Contents */}
-      {activeTab === 'overview' && <Overview />}
+      {activeTab === 'overview' && (
+        <Overview
+          onChooseDeck={() => {
+            setActiveTab('decks');
+            setSubView({ type: 'list' });
+          }}
+        />
+      )}
 
       {activeTab === 'decks' && (
         <div className="space-y-6">
           {subView.type === 'list' ? (
             <DeckList
               onSelectDeck={(deckId) => setSubView({ type: 'detail', deckId })}
+              onStartReview={(deckId) =>
+                navigate({ to: '/app/deck-review', search: { deckId } })
+              }
             />
           ) : (
             <DeckDetail
