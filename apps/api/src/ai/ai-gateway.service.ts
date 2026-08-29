@@ -57,7 +57,9 @@ export class AiGatewayService {
     requestedModel?: string,
     requestedCount = 5,
   ): Promise<InferenceResult> {
-    const apiBase = this.config.get<string>('AI_API_BASE');
+    // A trailing slash here produced `POST //chat/completions`, which the
+    // gateway answers with 404, so every job failed until the env was fixed.
+    const apiBase = this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, '');
     const apiKey = this.config.get<string>('AI_API_KEY') ?? '';
     const isMockExplicit =
       this.config.get<string>('AI_MOCK') === '1' ||
