@@ -35,7 +35,6 @@ import {
   createCard,
   recordReviewEvent,
   deleteDeck,
-  getDeckCardsQuery,
   getReviewHistoryQuery,
 } from '@/offline/queries';
 
@@ -170,7 +169,9 @@ describe('deck deletion cascade', () => {
     expect(membership?.id).toBe(deriveNoteDeckId(card.note_id, deck.id));
     await recordReviewEvent(db, card.id, 3);
 
-    expect(await getDeckCardsQuery(db, deck.id).fetch()).toHaveLength(1);
+    expect(
+      await db.get(UserNoteDeck).query(Q.where('deck_id', deck.id)).fetch(),
+    ).toHaveLength(1);
 
     await deleteDeck(db, deck.id);
 
@@ -178,7 +179,6 @@ describe('deck deletion cascade', () => {
     expect(reviews).toHaveLength(1);
     expect(await db.get(UserCard).find(card.id)).toBeDefined();
     expect(await db.get(UserNote).find(card.note_id)).toBeDefined();
-    expect(await getDeckCardsQuery(db, deck.id).fetch()).toEqual([]);
     expect(
       await db.get(UserNoteDeck).query(Q.where('deck_id', deck.id)).fetch(),
     ).toEqual([]);

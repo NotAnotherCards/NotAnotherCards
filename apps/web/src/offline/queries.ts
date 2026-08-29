@@ -18,10 +18,6 @@ export function getDecksQuery(db: Database) {
   return db.get(UserDeck).query(Q.sortBy('created_at', Q.desc));
 }
 
-export function getDeckDetailQuery(db: Database, deckId: string) {
-  return db.get(UserDeck).query(Q.where('id', deckId));
-}
-
 export function getPersonalDictionaryQuery(db: Database) {
   return db
     .get(UserCard)
@@ -30,24 +26,6 @@ export function getPersonalDictionaryQuery(db: Database) {
 
 export function getNotesQuery(db: Database) {
   return db.get(UserNote).query(Q.sortBy('created_at', Q.desc));
-}
-
-export function getDeckCardsQuery(db: Database, deckId: string) {
-  return db.get(UserCard).query(
-    Q.unsafeSqlQuery(
-      `select distinct "user_cards".*
-       from "user_cards"
-       join "user_note_decks"
-         on "user_note_decks"."note_id" = "user_cards"."note_id"
-       where "user_note_decks"."deck_id" = ?
-         and "user_note_decks"."active" = 1
-         and "user_note_decks"."_status" is not 'deleted'
-         and "user_cards"."active" = 1
-         and "user_cards"."_status" is not 'deleted'
-       order by "user_cards"."created_at" desc`,
-      [deckId],
-    ),
-  );
 }
 
 export function getDueCardsQuery(db: Database, now: number = Date.now()) {

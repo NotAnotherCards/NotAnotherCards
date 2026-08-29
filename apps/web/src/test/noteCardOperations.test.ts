@@ -16,7 +16,6 @@ import {
   createDeck,
   deleteNote,
   disableCard,
-  getDeckCardsQuery,
   getPersonalDictionaryQuery,
   getReviewHistoryQuery,
   recordReviewEvent,
@@ -89,8 +88,6 @@ describe('note, card, and membership operations', () => {
 
     await removeNoteFromDeck(db, card.note_id, firstDeck.id);
 
-    expect(await getDeckCardsQuery(db, firstDeck.id).fetch()).toEqual([]);
-    expect(await getDeckCardsQuery(db, secondDeck.id).fetch()).toHaveLength(1);
     expect(await getPersonalDictionaryQuery(db).fetch()).toHaveLength(1);
     expect(await getReviewHistoryQuery(db).fetch()).toHaveLength(1);
     expect(await db.get(UserNote).find(card.note_id)).toBeDefined();
@@ -98,6 +95,10 @@ describe('note, card, and membership operations', () => {
       (await db.get(UserNoteDeck).find(noteDeckId(card.note_id, firstDeck.id)))
         .active,
     ).toBe(false);
+    expect(
+      (await db.get(UserNoteDeck).find(noteDeckId(card.note_id, secondDeck.id)))
+        .active,
+    ).toBe(true);
   });
 
   it('disables only the selected sibling card', async () => {
