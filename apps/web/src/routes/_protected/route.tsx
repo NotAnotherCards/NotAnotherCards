@@ -1,5 +1,5 @@
 import { authClient } from '@/lib/auth-client';
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { createFileRoute, Outlet, redirect, useLocation } from '@tanstack/react-router';
 import { DatabaseBanner } from '@/components/DatabaseBanner';
 import { SyncProvider } from '@/offline/syncProvider';
 import { useSessionDatabase } from '@/offline/sessionDatabase';
@@ -34,15 +34,16 @@ export const Route = createFileRoute('/_protected')({
 
 function ProtectedLayout() {
   const { manager, syncController } = useSessionDatabase();
+  const location = useLocation()
 
-  if (!manager) {
+  if (!manager && location.pathname !== '/onboarding') {
     return null;
   }
 
   return (
     <SyncProvider controller={syncController}>
       <div className="flex-1 flex flex-col bg-background">
-        <DatabaseBanner />
+        {manager && <DatabaseBanner />}
         <SyncStatus />
         <div className="flex-1 flex flex-col">
           <Outlet />
