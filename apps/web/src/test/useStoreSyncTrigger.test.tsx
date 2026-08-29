@@ -58,7 +58,7 @@ describe('useStore sync triggers', () => {
       const card = await result.current.createCard(deck.id, 'front', 'back');
       await result.current.updateCard(card.id, 'front 2', 'back 2');
       await result.current.recordReview(card.id, 2);
-      await result.current.deleteCard(card.id);
+      await result.current.removeNoteFromDeck(card.note_id, deck.id);
       await result.current.deleteDeck(deck.id);
     });
 
