@@ -41,6 +41,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Log in' }} />
         <Stack.Screen name="register" options={{ title: 'Register' }} />
+        <Stack.Screen name="onboarding" options={{ title: 'Set up profile' }} />
         <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
       </Stack>
       <StatusBar style="auto" />

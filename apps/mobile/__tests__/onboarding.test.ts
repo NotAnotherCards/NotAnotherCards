@@ -11,8 +11,8 @@ import { completeOnboarding } from '../lib/onboarding';
 
 const values = {
   username: 'philipp',
-  native_language_id: 'a',
-  target_language_id: 'b',
+  native_language_id: '00000000-0000-0000-0000-000000000001',
+  target_language_id: '00000000-0000-0000-0000-000000000002',
 };
 
 describe('completeOnboarding', () => {
