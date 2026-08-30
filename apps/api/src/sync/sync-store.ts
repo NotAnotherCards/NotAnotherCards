@@ -1,11 +1,22 @@
-import { createSyncEngine, type SyncEngineOptions } from '@remelondb/server';
+import {
+  syncEngineFromOptions,
+  type SyncEngineConfig,
+} from '@remelondb/nestjs';
+import type { SyncEngineOptions } from '@remelondb/server';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import {
   createDrizzleStore,
   drizzleSyncTable,
   type DrizzleStore,
 } from '@remelondb/store-drizzle';
-import { syncWireSchemas } from '@repo/offline-db';
+import {
+  ReviewEventRow,
+  UserCardRow,
+  UserDeckRow,
+  UserNoteDeckRow,
+  UserNoteRow,
+  UserProfileRow,
+} from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import {
   reviewEvents,
@@ -55,6 +66,21 @@ export interface AppSyncStoreBundle {
     SyncEngineOptions<string>['crossValidateChanges']
   >;
 }
+
+export const appSyncTables: SyncEngineConfig<string>['tables'] = {
+  user_decks: UserDeckRow,
+  user_notes: UserNoteRow,
+  user_cards: UserCardRow,
+  user_note_decks: UserNoteDeckRow,
+  review_events: ReviewEventRow,
+  user_profiles: UserProfileRow,
+};
+
+export const appSyncTableOptions: NonNullable<
+  SyncEngineConfig<string>['tableOptions']
+> = {
+  review_events: { appendOnly: true },
+};
 
 export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
   const tables = {
@@ -160,41 +186,20 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
   };
 }
 
-export function createAppSyncEngine({
+export function createAppSyncEngineConfig({
   store,
   crossValidateChanges,
-}: AppSyncStoreBundle) {
-  return createSyncEngine({
+}: AppSyncStoreBundle): SyncEngineConfig<string> {
+  return {
     store,
+    tables: appSyncTables,
+    tableOptions: appSyncTableOptions,
     crossValidateChanges,
-    tables: {
-      user_decks: {
-        validate: (row) =>
-          syncWireSchemas.rows.user_decks.safeParse(row).success,
-      },
-      user_notes: {
-        validate: (row) =>
-          syncWireSchemas.rows.user_notes.safeParse(row).success,
-      },
-      user_cards: {
-        validate: (row) =>
-          syncWireSchemas.rows.user_cards.safeParse(row).success,
-      },
-      user_note_decks: {
-        validate: (row) =>
-          syncWireSchemas.rows.user_note_decks.safeParse(row).success,
-      },
-      review_events: {
-        appendOnly: true,
-        validate: (row) =>
-          syncWireSchemas.rows.review_events.safeParse(row).success,
-      },
-      user_profiles: {
-        validate: (row) =>
-          syncWireSchemas.rows.user_profiles.safeParse(row).success,
-      },
-    },
-  });
+  };
+}
+
+export function createAppSyncEngine(bundle: AppSyncStoreBundle) {
+  return syncEngineFromOptions(createAppSyncEngineConfig(bundle));
 }
 
 export function createAppSyncBackend(db: AppDatabase) {

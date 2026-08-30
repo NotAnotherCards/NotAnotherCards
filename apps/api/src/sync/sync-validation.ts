@@ -5,7 +5,7 @@ import type {
   WireRow,
 } from '@remelondb/server';
 import type { DrizzleStore } from '@remelondb/store-drizzle';
-import { cardId, noteDeckId } from '@repo/offline-db';
+import { cardId, noteDeckId, validateNoteFieldsJson } from '@repo/offline-db';
 
 const USER_DECKS = 'user_decks';
 const USER_NOTES = 'user_notes';
@@ -170,7 +170,12 @@ export function createCrossValidateSyncRelationships(
         ? new Map<string, string>()
         : await findProfileUsernameOwners(submittedUsernames);
 
-    const deckChanges = await tx.changedSince(USER_DECKS, scope, 0);
+    // Durable parent state is only needed when this push references it. Parent
+    // deletes without new/updated children are handled by the cascade wrapper.
+    const deckChanges =
+      membershipRows.length === 0
+        ? []
+        : await tx.changedSince(USER_DECKS, scope, 0);
     const ownedDeckIds = activeIds(deckChanges);
     const deletedDeckIds = tombstoneIds(deckChanges);
 
@@ -178,21 +183,38 @@ export function createCrossValidateSyncRelationships(
       if (!deletedDeckIds.has(deck.id)) ownedDeckIds.add(deck.id);
     }
 
-    const deckDeletes = new Set(
-      deckDeletesRequested.filter((id) => ownedDeckIds.has(id)),
-    );
+    const deckDeletes = new Set(deckDeletesRequested);
 
-    const noteChanges = await tx.changedSince(USER_NOTES, scope, 0);
+    // RemelonDB currently rebuilds table schemas from `.shape`, which drops
+    // UserNoteRow's object-level superRefine. Keep this contract at the
+    // application cross-validation boundary shared by both engine paths.
+    const rejectedNotes = noteRows.filter((note) => {
+      const noteType = stringField(note, 'note_type');
+      const fieldsJson = stringField(note, 'fields_json');
+      const fieldsVersion = note['fields_version'];
+      return (
+        noteType === null ||
+        fieldsJson === null ||
+        typeof fieldsVersion !== 'number' ||
+        !validateNoteFieldsJson(noteType, fieldsVersion, fieldsJson).success
+      );
+    });
+    const rejectedNoteIds = new Set(rejectedNotes.map((note) => note.id));
+
+    const noteChanges =
+      cardRows.length === 0 && membershipRows.length === 0
+        ? []
+        : await tx.changedSince(USER_NOTES, scope, 0);
     const ownedNoteIds = activeIds(noteChanges);
     const deletedNoteIds = tombstoneIds(noteChanges);
 
     for (const note of noteRows) {
-      if (!deletedNoteIds.has(note.id)) ownedNoteIds.add(note.id);
+      if (!rejectedNoteIds.has(note.id) && !deletedNoteIds.has(note.id)) {
+        ownedNoteIds.add(note.id);
+      }
     }
 
-    const noteDeletes = new Set(
-      noteDeletesRequested.filter((id) => ownedNoteIds.has(id)),
-    );
+    const noteDeletes = new Set(noteDeletesRequested);
 
     const rejectedCards = cardRows.filter((card) => {
       const noteId = stringField(card, 'note_id');
@@ -241,7 +263,10 @@ export function createCrossValidateSyncRelationships(
       }
     }
 
-    const cardChanges = await tx.changedSince(USER_CARDS, scope, 0);
+    const cardChanges =
+      reviewRows.length === 0
+        ? []
+        : await tx.changedSince(USER_CARDS, scope, 0);
     const ownedCardIds = activeIds(cardChanges);
     const deletedCardIds = tombstoneIds(cardChanges);
     const cardNoteIds = new Map<string, string>();
@@ -258,9 +283,7 @@ export function createCrossValidateSyncRelationships(
       }
     }
 
-    const cardDeletes = new Set(
-      cardDeletesRequested.filter((id) => ownedCardIds.has(id)),
-    );
+    const cardDeletes = new Set(cardDeletesRequested);
 
     const rejectedReviews = reviewRows.filter((review) => {
       const reviewCardId = stringField(review, 'user_card_id');
@@ -285,7 +308,10 @@ export function createCrossValidateSyncRelationships(
 
     return {
       [USER_DECKS]: [...blockedDeckDeletes],
-      [USER_NOTES]: [...blockedNoteDeletes],
+      [USER_NOTES]: [
+        ...rejectedNotes.map((note) => note.id),
+        ...blockedNoteDeletes,
+      ],
       [USER_CARDS]: [
         ...rejectedCards.map((card) => card.id),
         ...blockedCardDeletes,
