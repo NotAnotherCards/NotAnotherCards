@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   CURRENT_REVIEW_MODE,
   getAnswerForReviewGesture,
+  reviewAnswerLabels,
   type ReviewAnswer,
   type ReviewMode,
 } from './review-controls';
@@ -39,16 +40,16 @@ const exitTransformByDirection: Record<SwipeDirection, string> = {
 
 const swipeFeedback: Record<SwipeDirection, { label: string; className: string }> = {
   forgot: {
-    label: 'Forgot',
+    label: reviewAnswerLabels.forgot,
     className: 'right-5 top-5 text-right text-muted-foreground',
   },
   remember: {
-    label: 'Remember',
+    label: reviewAnswerLabels.remember,
     className:
       'left-5 top-5 text-emerald-700 dark:text-emerald-400',
   },
   hard: {
-    label: 'Hard',
+    label: reviewAnswerLabels.hard,
     className:
       'bottom-5 left-1/2 -translate-x-1/2 text-amber-700 dark:text-amber-400',
   },
@@ -130,7 +131,12 @@ export function ReviewSession({
       remember: 'remember',
     };
 
-    if (answer !== 'very-easy') startCardExit(directionByAnswer[answer]);
+    if (answer === 'very-easy') {
+      startCardExit('remember');
+      return;
+    }
+
+    startCardExit(directionByAnswer[answer]);
   };
 
   useEffect(() => {
@@ -462,21 +468,28 @@ export function ReviewSession({
               onClick={() => answerCard('forgot')}
               className="min-h-12 cursor-pointer border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
             >
-              Forgot
+              {reviewAnswerLabels.forgot}
             </Button>
             <Button
               variant="outline"
               onClick={() => answerCard('hard')}
               className="min-h-12 cursor-pointer border-amber-500/50 bg-amber-50/80 text-amber-800 shadow-none hover:bg-amber-100 hover:text-amber-900 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
             >
-              Hard
+              {reviewAnswerLabels.hard}
             </Button>
             <Button
               variant="outline"
               onClick={() => answerCard('remember')}
               className="min-h-12 cursor-pointer border-emerald-500/30 text-emerald-700 shadow-none hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
             >
-              Remember
+              {reviewAnswerLabels.remember}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => answerCard('very-easy')}
+              className="col-start-2 min-h-12 cursor-pointer border-blue-500/30 text-blue-700 shadow-none hover:bg-blue-500/10 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              {reviewAnswerLabels['very-easy']}
             </Button>
           </div>
         )}

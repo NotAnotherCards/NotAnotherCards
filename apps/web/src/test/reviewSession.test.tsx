@@ -99,8 +99,8 @@ describe('ReviewSession', () => {
 
   it.each([
     ['Forgot', 'ArrowLeft'],
-    ['Hard', 'ArrowUp'],
-    ['Remember', 'ArrowRight'],
+    ['Struggled', 'ArrowUp'],
+    ['Remembered', 'ArrowRight'],
   ])('moves to the next card after %s', (_, key) => {
     renderSession([card, secondCard]);
     revealCard();
@@ -116,9 +116,23 @@ describe('ReviewSession', () => {
     renderSession([card, secondCard]);
     revealCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hard' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Struggled' }));
     finishCardExit();
 
+    expect(screen.getByText('sein')).toBeInTheDocument();
+  });
+
+  it('moves to the next card to the right after Knew it', () => {
+    renderSession([card, secondCard]);
+    revealCard();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Knew it' }));
+
+    expect(screen.getByTestId('review-card-surface')).toHaveStyle({
+      transform: 'translate3d(120vw, 0, 0) rotate(10deg)',
+    });
+
+    finishCardExit();
     expect(screen.getByText('sein')).toBeInTheDocument();
   });
 
@@ -286,10 +300,14 @@ describe('ReviewSession', () => {
     expect(screen.getByRole('button', { name: 'Forgot' })).toHaveClass(
       'shadow-none',
     );
-    expect(screen.getByRole('button', { name: 'Hard' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Struggled' })).toHaveClass(
       'shadow-none',
     );
-    expect(screen.getByRole('button', { name: 'Remember' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Remembered' })).toHaveClass(
+      'shadow-none',
+    );
+    expect(screen.getByRole('button', { name: 'Knew it' })).toHaveClass(
+      'col-start-2',
       'shadow-none',
     );
     expect(screen.getByTestId('review-answer-buttons')).toHaveClass('mt-6');

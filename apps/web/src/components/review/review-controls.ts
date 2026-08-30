@@ -2,9 +2,16 @@ export type ReviewAnswer = 'forgot' | 'hard' | 'remember' | 'very-easy';
 export type ReviewMode = 'two' | 'three' | 'four';
 export type ReviewGesture = 'left' | 'right' | 'up';
 
+export const reviewAnswerLabels: Record<ReviewAnswer, string> = {
+  forgot: 'Forgot',
+  hard: 'Struggled',
+  remember: 'Remembered',
+  'very-easy': 'Knew it',
+};
+
 type GestureReviewAnswer = Exclude<ReviewAnswer, 'very-easy'>;
 
-export const CURRENT_REVIEW_MODE: ReviewMode = 'three';
+export const CURRENT_REVIEW_MODE: ReviewMode = 'four';
 
 const answersByGesture: Record<
   ReviewMode,
