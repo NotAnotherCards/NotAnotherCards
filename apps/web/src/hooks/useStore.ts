@@ -7,6 +7,9 @@ import {
   UserNoteRecord,
   UserNoteDeckRecord,
   UserProfileRecord,
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
 } from '@repo/offline-db';
 import { useQuery } from '@remelondb/core/react';
 import { useSyncController } from '@/offline/syncProvider';
@@ -207,9 +210,9 @@ export function useStore() {
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
       return (
-        note?.note_type === 'basic' &&
-        note.fields_version === 1 &&
-        card.template_key === 'front-back'
+        note?.note_type === BASIC_NOTE_TYPE &&
+        note.fields_version === BASIC_NOTE_FIELDS_VERSION &&
+        card.template_key === BASIC_FRONT_BACK_TEMPLATE_KEY
       );
     },
     [notes],

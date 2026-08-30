@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { ModelFor, type InferRecord } from '@remelondb/core';
 import { zodTable } from '@remelondb/core/zod';
+import {
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
+} from './note-constants.js';
 
 export const BasicNoteFieldsV1 = z.strictObject({
   front: z.string(),
@@ -10,7 +14,9 @@ export const BasicNoteFieldsV1 = z.strictObject({
 export const noteFieldsSchemas: Readonly<
   Record<string, Readonly<Record<number, z.ZodType>>>
 > = {
-  basic: { 1: BasicNoteFieldsV1 },
+  [BASIC_NOTE_TYPE]: {
+    [BASIC_NOTE_FIELDS_VERSION]: BasicNoteFieldsV1,
+  },
 };
 
 export type NoteFieldsValidationResult =

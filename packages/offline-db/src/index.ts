@@ -121,5 +121,7 @@ export const migrations = schemaMigrations({
 
 export * from './user-dictionary.js';
 export * from './ids.js';
+export * from './note-constants.js';
+export * from './review-scheduler.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
