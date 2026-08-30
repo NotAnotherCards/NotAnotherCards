@@ -55,7 +55,7 @@ it('enforces nonnegative safe-integer sync timestamps', () => {
     getTableConfig(userCards).checks.map((constraint) => constraint.name),
   ).toEqual([
     'user_cards_due_at_safe_integer_check',
-    'user_cards_scheduled_interval_minutes_non_negative_check',
+    'user_cards_scheduled_interval_minutes_range_check',
     'user_cards_created_at_safe_integer_check',
     'user_cards_updated_at_safe_integer_check',
   ]);

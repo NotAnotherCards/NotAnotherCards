@@ -48,7 +48,7 @@ describePostgres('note/card PostgreSQL migration', () => {
     expect(columns.get('user_note_decks.active')?.is_nullable).toBe('NO');
   });
 
-  it('enforces a non-negative scheduled interval', async () => {
+  it('enforces the scheduled interval range', async () => {
     const result = await db.execute<{
       constraint_name: string;
       definition: string;
@@ -61,11 +61,14 @@ describePostgres('note/card PostgreSQL migration', () => {
     const constraint = result.rows.find(
       (row) =>
         row.constraint_name ===
-        'user_cards_scheduled_interval_minutes_non_negative_check',
+        'user_cards_scheduled_interval_minutes_range_check',
     );
 
     expect(constraint?.definition).toMatch(
-      /scheduled_interval_minutes\s*>=\s*0/,
+      /scheduled_interval_minutes\s*>=\s*0/i,
+    );
+    expect(constraint?.definition).toMatch(
+      /scheduled_interval_minutes\s*<=\s*172800/i,
     );
   });
 

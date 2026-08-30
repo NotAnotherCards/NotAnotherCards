@@ -6,6 +6,7 @@ import {
   BASIC_NOTE_TYPE,
   cardId,
   noteDeckId,
+  REVIEW_INTERVAL_CAP_MINUTES,
 } from '@repo/offline-db';
 import type { App } from 'supertest/types';
 import request from 'supertest';
@@ -365,6 +366,72 @@ describePostgres('authenticated remelonDB endpoints', () => {
       cards: '0',
       memberships: '0',
       reviews: '0',
+    });
+  });
+
+  it('rejects an over-cap card and its same-push review without blocking valid rows', async () => {
+    const now = Date.now();
+    const ids = modelIds('interval-cap');
+    const invalidTemplateKey = 'over-cap-template';
+    const invalidCardId = cardId(ids.note, invalidTemplateKey);
+    const invalidReviewId = 'endpoint-review-interval-over-cap';
+    const changes = modelChanges(now, 'interval-cap');
+    changes.user_cards.created[0].scheduled_interval_minutes =
+      REVIEW_INTERVAL_CAP_MINUTES;
+    changes.user_cards.created.push({
+      id: invalidCardId,
+      note_id: ids.note,
+      template_key: invalidTemplateKey,
+      active: true,
+      front: 'over cap',
+      back: 'over cap',
+      due_at: now,
+      scheduled_interval_minutes: REVIEW_INTERVAL_CAP_MINUTES + 1,
+      created_at: now,
+      updated_at: now,
+    });
+    changes.review_events.created.push({
+      id: invalidReviewId,
+      user_card_id: invalidCardId,
+      rating: 3,
+      reviewed_at: now,
+    });
+    const initial = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userA.cookie)
+      .send(pullBody(null))
+      .expect(200);
+
+    const response = await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userA.cookie)
+      .send({ cursor: (initial.body as { cursor: string }).cursor, changes })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      rejected: {
+        user_cards: [invalidCardId],
+        review_events: [invalidReviewId],
+      },
+    });
+
+    const persisted = await db.execute<{
+      note_count: string;
+      valid_interval: number | null;
+      invalid_card_count: string;
+      invalid_review_count: string;
+    }>(`
+      select
+        (select count(*) from user_notes where id = '${ids.note}')::text as note_count,
+        (select scheduled_interval_minutes from user_cards where id = '${ids.card}') as valid_interval,
+        (select count(*) from user_cards where id = '${invalidCardId}')::text as invalid_card_count,
+        (select count(*) from review_events where id = '${invalidReviewId}')::text as invalid_review_count
+    `);
+    expect(persisted.rows[0]).toEqual({
+      note_count: '1',
+      valid_interval: REVIEW_INTERVAL_CAP_MINUTES,
+      invalid_card_count: '0',
+      invalid_review_count: '0',
     });
   });
 
