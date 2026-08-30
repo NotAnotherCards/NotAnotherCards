@@ -7,7 +7,14 @@ import {
 } from '@remelondb/store-drizzle';
 import { syncWireSchemas } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
-import { reviewEvents, userCards, userDecks, userProfiles } from './schema';
+import {
+  reviewEvents,
+  userCards,
+  userDecks,
+  userNoteDecks,
+  userNotes,
+  userProfiles,
+} from './schema';
 import {
   createCrossValidateSyncRelationships,
   withSyncCascadingDeletes,
@@ -60,6 +67,15 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
       insertOnly: ['created_at'],
       scrub: { title: '', description: null },
     }),
+    user_notes: drizzleSyncTable<string, typeof userNotes>({
+      table: userNotes,
+      id: userNotes.id,
+      rev: userNotes.rev,
+      deletedAt: userNotes.deletedAt,
+      scope: userNotes.userId,
+      insertOnly: ['created_at'],
+      scrub: { fieldsJson: '', additionalContent: null },
+    }),
     user_cards: drizzleSyncTable<string, typeof userCards>({
       table: userCards,
       id: userCards.id,
@@ -68,6 +84,14 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
       scope: userCards.userId,
       insertOnly: ['created_at'],
       scrub: { front: '', back: '' },
+    }),
+    user_note_decks: drizzleSyncTable<string, typeof userNoteDecks>({
+      table: userNoteDecks,
+      id: userNoteDecks.id,
+      rev: userNoteDecks.rev,
+      deletedAt: userNoteDecks.deletedAt,
+      scope: userNoteDecks.userId,
+      insertOnly: ['created_at'],
     }),
     review_events: drizzleSyncTable<string, typeof reviewEvents>({
       table: reviewEvents,
@@ -148,9 +172,17 @@ export function createAppSyncEngine({
         validate: (row) =>
           syncWireSchemas.rows.user_decks.safeParse(row).success,
       },
+      user_notes: {
+        validate: (row) =>
+          syncWireSchemas.rows.user_notes.safeParse(row).success,
+      },
       user_cards: {
         validate: (row) =>
           syncWireSchemas.rows.user_cards.safeParse(row).success,
+      },
+      user_note_decks: {
+        validate: (row) =>
+          syncWireSchemas.rows.user_note_decks.safeParse(row).success,
       },
       review_events: {
         appendOnly: true,

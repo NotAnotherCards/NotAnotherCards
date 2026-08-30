@@ -4,6 +4,8 @@ import {
   ReviewEventRow,
   UserCardRow,
   UserDeckRow,
+  UserNoteDeckRow,
+  UserNoteRow,
   UserProfileRow,
 } from '@repo/offline-db';
 import type { Request } from 'express';
@@ -24,7 +26,9 @@ import type { AppSyncStoreBundle } from './sync-store';
         store,
         tables: {
           user_decks: UserDeckRow,
+          user_notes: UserNoteRow,
           user_cards: UserCardRow,
+          user_note_decks: UserNoteDeckRow,
           review_events: ReviewEventRow,
           user_profiles: UserProfileRow,
         },
