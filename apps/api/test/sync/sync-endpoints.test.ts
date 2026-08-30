@@ -121,6 +121,44 @@ const modelChanges = (now: number, suffix: string) => {
   };
 };
 
+const invalidNoteCases = [
+  {
+    name: 'malformed JSON',
+    suffix: 'malformed-json',
+    note_type: BASIC_NOTE_TYPE,
+    fields_version: BASIC_NOTE_FIELDS_VERSION,
+    fields_json: '{invalid',
+  },
+  {
+    name: 'unsupported note type',
+    suffix: 'unsupported-type',
+    note_type: 'word',
+    fields_version: 1,
+    fields_json: '{}',
+  },
+  {
+    name: 'unsupported fields version',
+    suffix: 'unsupported-version',
+    note_type: BASIC_NOTE_TYPE,
+    fields_version: 999,
+    fields_json: JSON.stringify({ front: 'a', back: 'b' }),
+  },
+  {
+    name: 'incomplete basic fields',
+    suffix: 'incomplete-basic',
+    note_type: BASIC_NOTE_TYPE,
+    fields_version: BASIC_NOTE_FIELDS_VERSION,
+    fields_json: JSON.stringify({ front: 'a' }),
+  },
+  {
+    name: 'extra basic field',
+    suffix: 'extra-basic-field',
+    note_type: BASIC_NOTE_TYPE,
+    fields_version: BASIC_NOTE_FIELDS_VERSION,
+    fields_json: JSON.stringify({ front: 'a', back: 'b', hint: 'extra' }),
+  },
+] as const;
+
 const describePostgres = hasPostgres ? describe : describe.skip;
 
 describePostgres('authenticated remelonDB endpoints', () => {
@@ -230,6 +268,104 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .set('Cookie', userA.cookie)
       .send({ nonsense: true })
       .expect(400);
+  });
+
+  it.each(invalidNoteCases)(
+    'rejects a note with $name without persisting it',
+    async ({ suffix, note_type, fields_version, fields_json }) => {
+      const now = Date.now();
+      const noteId = `invalid-note-${suffix}`;
+      const initial = await request(app.getHttpServer())
+        .post('/sync/pull')
+        .set('Cookie', userA.cookie)
+        .send(pullBody(null))
+        .expect(200);
+
+      const response = await request(app.getHttpServer())
+        .post('/sync/push')
+        .set('Cookie', userA.cookie)
+        .send({
+          cursor: (initial.body as { cursor: string }).cursor,
+          changes: {
+            user_notes: {
+              created: [
+                {
+                  id: noteId,
+                  note_type,
+                  fields_version,
+                  fields_json,
+                  additional_content: null,
+                  created_at: now,
+                  updated_at: now,
+                },
+              ],
+              updated: [],
+              deleted: [],
+            },
+          },
+        })
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        rejected: { user_notes: [noteId] },
+      });
+      const persisted = await db.execute<{ count: string }>(
+        `select count(*)::text as count from user_notes where id = '${noteId}'`,
+      );
+      expect(Number(persisted.rows[0]?.count)).toBe(0);
+    },
+  );
+
+  it('rejects children and reviews of an invalid same-push note', async () => {
+    const now = Date.now();
+    const suffix = 'invalid-parent';
+    const ids = modelIds(suffix);
+    const changes = modelChanges(now, suffix);
+    changes.user_notes.created[0].fields_json = '{invalid';
+    const initial = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userA.cookie)
+      .send(pullBody(null))
+      .expect(200);
+
+    const response = await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userA.cookie)
+      .send({
+        cursor: (initial.body as { cursor: string }).cursor,
+        changes,
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      rejected: {
+        user_notes: [ids.note],
+        user_cards: [ids.card],
+        user_note_decks: [ids.membership],
+        review_events: [ids.review],
+      },
+    });
+    const persisted = await db.execute<{
+      decks: string;
+      notes: string;
+      cards: string;
+      memberships: string;
+      reviews: string;
+    }>(`
+      select
+        (select count(*) from user_decks)::text as decks,
+        (select count(*) from user_notes)::text as notes,
+        (select count(*) from user_cards)::text as cards,
+        (select count(*) from user_note_decks)::text as memberships,
+        (select count(*) from review_events)::text as reviews
+    `);
+    expect(persisted.rows[0]).toEqual({
+      decks: '1',
+      notes: '0',
+      cards: '0',
+      memberships: '0',
+      reviews: '0',
+    });
   });
 
   it('serves the note model, isolates relationships, and preserves notes when decks are deleted', async () => {
