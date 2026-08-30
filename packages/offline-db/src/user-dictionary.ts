@@ -5,6 +5,7 @@ import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
 } from './note-constants.js';
+import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
 
 export const BasicNoteFieldsV1 = z.strictObject({
   front: z.string(),
@@ -68,7 +69,11 @@ export const UserCardRow = z.object({
   front: z.string(),
   back: z.string(),
   due_at: z.number().int().nonnegative(),
-  scheduled_interval_minutes: z.number().int().min(0),
+  scheduled_interval_minutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(REVIEW_INTERVAL_CAP_MINUTES),
   created_at: z.number().int().nonnegative(),
   updated_at: z.number().int().nonnegative(),
 });

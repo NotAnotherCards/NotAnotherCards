@@ -1030,9 +1030,9 @@
           "name": "user_cards_due_at_safe_integer_check",
           "value": "\"user_cards\".\"due_at\" >= 0 and \"user_cards\".\"due_at\" <= 9007199254740991 and \"user_cards\".\"due_at\" = trunc(\"user_cards\".\"due_at\")"
         },
-        "user_cards_scheduled_interval_minutes_non_negative_check": {
-          "name": "user_cards_scheduled_interval_minutes_non_negative_check",
-          "value": "\"user_cards\".\"scheduled_interval_minutes\" >= 0"
+        "user_cards_scheduled_interval_minutes_range_check": {
+          "name": "user_cards_scheduled_interval_minutes_range_check",
+          "value": "\"user_cards\".\"scheduled_interval_minutes\" between 0 and 172800"
         },
         "user_cards_created_at_safe_integer_check": {
           "name": "user_cards_created_at_safe_integer_check",

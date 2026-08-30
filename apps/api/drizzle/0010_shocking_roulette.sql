@@ -41,4 +41,4 @@ CREATE INDEX "user_notes_user_rev_idx" ON "user_notes" USING btree ("user_id","r
 CREATE INDEX "user_notes_user_updated_idx" ON "user_notes" USING btree ("user_id","updated_at");--> statement-breakpoint
 CREATE INDEX "user_cards_note_idx" ON "user_cards" USING btree ("note_id");--> statement-breakpoint
 ALTER TABLE "user_cards" DROP COLUMN "deck_id";--> statement-breakpoint
-ALTER TABLE "user_cards" ADD CONSTRAINT "user_cards_scheduled_interval_minutes_non_negative_check" CHECK ("user_cards"."scheduled_interval_minutes" >= 0);
+ALTER TABLE "user_cards" ADD CONSTRAINT "user_cards_scheduled_interval_minutes_range_check" CHECK ("user_cards"."scheduled_interval_minutes" between 0 and 172800);
