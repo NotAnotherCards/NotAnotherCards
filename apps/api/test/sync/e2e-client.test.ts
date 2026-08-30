@@ -19,6 +19,10 @@ import {
   UserCardRow,
   UserDeck,
   UserDeckRow,
+  UserNote,
+  UserNoteDeck,
+  UserNoteDeckRow,
+  UserNoteRow,
   UserProfile,
   UserProfileRow,
   migrations,
@@ -35,7 +39,9 @@ const describePostgres = hasPostgres ? describe : describe.skip;
 
 const wire = syncSchemas({
   user_decks: UserDeckRow,
+  user_notes: UserNoteRow,
   user_cards: UserCardRow,
+  user_note_decks: UserNoteDeckRow,
   review_events: ReviewEventRow,
   user_profiles: UserProfileRow,
 });
@@ -78,7 +84,14 @@ describePostgres('client-server sync, end to end', () => {
       driver: new NodeSqliteDriver(),
       schema,
       migrations,
-      modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
+      modelClasses: [
+        UserDeck,
+        UserNote,
+        UserCard,
+        UserNoteDeck,
+        ReviewEvent,
+        UserProfile,
+      ],
       name: ':memory:',
     });
 
@@ -127,9 +140,7 @@ describePostgres('client-server sync, end to end', () => {
   const decks = (db: Database) =>
     db.get(UserDeck).query(Q.sortBy('created_at', Q.desc));
 
-  // TODO(#161): restore once the server registers user_notes and
-  // user_note_decks; schema-v3 clients include both tables in every push.
-  it.skip('converges two devices and scopes users apart', async () => {
+  it('converges two devices and scopes users apart', async () => {
     const cookie = await register('a');
     const a = await openClient();
     const b = await openClient();
