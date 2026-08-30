@@ -178,9 +178,12 @@ the source content; each sibling card owns its own schedule and review history.
   rendered from the source note.
 - **`scheduled_interval_minutes`** (integer, NOT NULL; server default `0`,
   required on the local/wire row): The card's current interval in whole
-  minutes. `0` means the card has never been reviewed. The shared scheduler
-  multiplies this value by rating-specific policy constants and updates it
-  together with `due_at`; v1 does not store a scheduler `level` or `status`.
+  minutes, constrained to `0..172800`. `0` means the card has never been
+  reviewed; `172800` is the shared 120-day scheduler cap. Both the wire
+  validator and PostgreSQL check constraint enforce this range. The shared
+  scheduler multiplies this value by rating-specific policy constants and
+  updates it together with `due_at`; v1 does not store a scheduler `level` or
+  `status`.
 - **`created_at` / `updated_at` / `due_at`** (double precision): Unix time in milliseconds. `rev` and `deleted_at` have the same server-only semantics as
   `user_decks`.
 
