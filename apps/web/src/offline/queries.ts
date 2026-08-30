@@ -6,6 +6,10 @@ import {
   UserNoteDeck,
   ReviewEvent,
   UserProfile,
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
+  calculateReviewSchedule,
   cardId,
   noteDeckId,
 } from '@repo/offline-db';
@@ -122,13 +126,13 @@ export async function createCard(
   return await db.write(async () => {
     const now = Date.now();
     const noteId = randomId();
-    const templateKey = 'front-back';
+    const templateKey = BASIC_FRONT_BACK_TEMPLATE_KEY;
     const generatedCardId = cardId(noteId, templateKey);
     const membershipId = noteDeckId(noteId, deckId);
     const note = db.get(UserNote).prepareCreate({
       id: noteId,
-      note_type: 'basic',
-      fields_version: 1,
+      note_type: BASIC_NOTE_TYPE,
+      fields_version: BASIC_NOTE_FIELDS_VERSION,
       fields_json: JSON.stringify({ front, back }),
       additional_content: null,
       created_at: now,
@@ -170,9 +174,9 @@ export async function updateCard(
     const card = await db.get(UserCard).find(cardId);
     const note = await db.get(UserNote).find(card.note_id);
     if (
-      note.note_type !== 'basic' ||
-      note.fields_version !== 1 ||
-      card.template_key !== 'front-back'
+      note.note_type !== BASIC_NOTE_TYPE ||
+      note.fields_version !== BASIC_NOTE_FIELDS_VERSION ||
+      card.template_key !== BASIC_FRONT_BACK_TEMPLATE_KEY
     ) {
       throw new Error('The front/back editor only supports basic notes');
     }
@@ -251,14 +255,6 @@ export async function deleteNote(db: Database, noteId: string) {
   });
 }
 
-// Represents existing temporary behavior, converted to minutes to match schedule_interval_minutes
-const REVIEW_INTERVAL_MINUTES: Readonly<Record<number, number>> = {
-  1: 5,
-  2: 24 * 60,
-  3: 3 * 24 * 60,
-  4: 7 * 24 * 60,
-};
-
 export async function recordReviewEvent(
   db: Database,
   cardId: string,
@@ -266,17 +262,16 @@ export async function recordReviewEvent(
 ) {
   return await db.write(async () => {
     const now = Date.now();
-    const scheduledIntervalMinutes = REVIEW_INTERVAL_MINUTES[rating];
-    if (scheduledIntervalMinutes === undefined) {
-      throw new Error(`Unsupported review rating: ${rating}`);
-    }
-    const nextDue = now + scheduledIntervalMinutes * 60_000;
-
     const card = await db.get(UserCard).find(cardId);
+    const schedule = calculateReviewSchedule(
+      card.scheduled_interval_minutes,
+      rating,
+      now,
+    );
     const reviewId = randomId();
     const cardUpdate = card.prepareUpdate((record) => {
-      record.scheduled_interval_minutes = scheduledIntervalMinutes;
-      record.due_at = nextDue;
+      record.scheduled_interval_minutes = schedule.scheduled_interval_minutes;
+      record.due_at = schedule.due_at;
       record.updated_at = now;
     });
     const review = db.get(ReviewEvent).prepareCreate({

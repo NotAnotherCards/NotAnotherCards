@@ -196,7 +196,7 @@ describe('note, card, and membership operations', () => {
     expect((await db.get(UserCard).find(wordCardId)).front).toBe('Hund');
   });
 
-  it('stores the interval and due time with the review event in one batch', async () => {
+  it('stores each multiplicative schedule and review event in one batch', async () => {
     const db = await openDatabase();
     const deck = await createDeck(db, 'Deck');
     const card = await createCard(db, deck.id, 'front', 'back');
@@ -214,5 +214,21 @@ describe('note, card, and membership operations', () => {
     expect(updatedCard.due_at).toBe(reviewedAt + 3 * 24 * 60 * 60_000);
     expect(review.reviewed_at).toBe(reviewedAt);
     expect(review.rating).toBe(3);
+
+    const secondReviewAt = reviewedAt + 60_000;
+    vi.mocked(Date.now).mockReturnValue(secondReviewAt);
+    batch.mockClear();
+
+    await recordReviewEvent(db, card.id, 3);
+
+    expect(batch).toHaveBeenCalledTimes(1);
+    expect(batch.mock.calls[0][0]).toHaveLength(2);
+    const reviewedAgain = await db.get(UserCard).find(card.id);
+    expect(reviewedAgain.scheduled_interval_minutes).toBe(
+      Math.round(3 * 24 * 60 * 2.5),
+    );
+    expect(reviewedAgain.due_at).toBe(
+      secondReviewAt + Math.round(3 * 24 * 60 * 2.5) * 60_000,
+    );
   });
 });

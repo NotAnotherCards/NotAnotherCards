@@ -192,4 +192,24 @@ describe('FlashcardModal Component', () => {
     // Renders the Back text
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
+
+  it('shows the multiplicative next interval for a reviewed card', async () => {
+    render(
+      <FlashcardModal
+        card={{
+          ...mockCard,
+          scheduled_interval_minutes: 3 * 24 * 60,
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('flashcard-inner'));
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Good (7.5d)' }),
+    ).toBeInTheDocument();
+  });
 });

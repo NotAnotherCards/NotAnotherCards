@@ -8,6 +8,9 @@ import {
   UserDeckRow,
   ReviewEventRow,
   UserProfileRow,
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
   cardId,
   noteDeckId,
 } from '@repo/offline-db';
@@ -38,6 +41,15 @@ describe('deterministic offline IDs', () => {
 
 describe('@repo/offline-db wiring on web', () => {
   it('imports and validates offline db schemas', () => {
+    expect({
+      noteType: BASIC_NOTE_TYPE,
+      fieldsVersion: BASIC_NOTE_FIELDS_VERSION,
+      templateKey: BASIC_FRONT_BACK_TEMPLATE_KEY,
+    }).toEqual({
+      noteType: 'basic',
+      fieldsVersion: 1,
+      templateKey: 'front-back',
+    });
     expect(schema.version).toBe(3);
     expect(schema.tables.user_cards).toBeDefined();
     expect(schema.tables.user_decks).toBeDefined();
