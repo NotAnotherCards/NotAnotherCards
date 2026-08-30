@@ -66,7 +66,7 @@ export class AiGatewayService {
       this.config.get<string>('AI_MOCK') === 'true' ||
       process.env.NODE_ENV === 'test';
     const model =
-      requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'qwen';
+      requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'gemma4';
 
     // If no endpoint is configured:
     // When AI_MOCK is explicitly enabled (or in tests), use mock generator.

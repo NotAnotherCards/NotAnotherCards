@@ -63,18 +63,18 @@ The same `docker-compose.yml` runs in three places:
 
 The api can run against any OpenAI-compatible endpoint instead of the
 GX10. The working recipe uses NanoGPT, which serves the same model as the
-box's `qwen` alias:
+box's `gemma4` alias:
 
 ```
 AI_API_BASE=https://nano-gpt.com/api/v1
 AI_API_KEY=<NanoGPT key>
-AI_DEFAULT_MODEL=Qwen/Qwen3.6-35B-A3B
+AI_DEFAULT_MODEL=google/gemma-4-26b-a4b-it
 ```
 
 Three things make this configuration and not just a URL swap:
 
 - The model id must change with the base URL. The GX10's LiteLLM aliases
-  (`qwen`) mean nothing to a hosted provider, and the code's fallback
+  (`gemma4`) mean nothing to a hosted provider, and the code's fallback
   default is such an alias, so `AI_DEFAULT_MODEL` always travels with
   `AI_API_BASE` as a pair.
 - On NanoGPT, reasoning is selected by model id: `:thinking` suffixed ids

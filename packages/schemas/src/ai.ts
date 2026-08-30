@@ -1,6 +1,16 @@
 import { z } from 'zod';
 
-export const AI_MODELS = ['qwen', 'qwen-next-80b', 'mistral-small'] as const;
+// Gateway aliases (infra/gx10/litellm-config.yaml). 'qwen' is the deprecated
+// name for 'qwen3.6', kept until production sends the new one (#193).
+export const AI_MODELS = [
+  'gemma4',
+  'qwen3.6',
+  'qwen',
+  'qwen-next-80b',
+  'qwen3.8',
+  'muse-glimmer',
+  'mistral-small',
+] as const;
 export type AiModel = (typeof AI_MODELS)[number];
 
 export const createAiJobSchema = z
