@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createAiJobSchema } from './ai';
+import { AI_MODELS, aiCardOutputSchema, createAiJobSchema } from './ai';
 
 describe('createAiJobSchema', () => {
   it('validates a valid topic_deck request', () => {
@@ -7,14 +7,14 @@ describe('createAiJobSchema', () => {
       type: 'topic_deck',
       topic: 'Spanish greetings',
       count: 5,
-      model: 'qwen',
+      model: 'gemma4',
     };
     const result = createAiJobSchema.safeParse(input);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.topic).toBe('Spanish greetings');
       expect(result.data.count).toBe(5);
-      expect(result.data.model).toBe('qwen');
+      expect(result.data.model).toBe('gemma4');
     }
   });
 
@@ -72,5 +72,25 @@ describe('createAiJobSchema', () => {
         count: 25,
       }).success,
     ).toBe(false);
+  });
+
+  it('accepts every configured alias', () => {
+    for (const model of AI_MODELS) {
+      expect(
+        createAiJobSchema.safeParse({ type: 'topic_deck', topic: 'x', model })
+          .success,
+      ).toBe(true);
+    }
+  });
+});
+
+describe('aiCardOutputSchema', () => {
+  it('parses a card as gemma4 returns it', () => {
+    expect(
+      aiCardOutputSchema.safeParse({
+        front: 'What is the primary function of the Spanish preterite tense?',
+        back: 'To describe actions that were completed at a specific point in the past.',
+      }).success,
+    ).toBe(true);
   });
 });
