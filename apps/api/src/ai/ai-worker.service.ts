@@ -157,6 +157,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           UPDATE ai_generation_jobs
           SET status = 'completed',
               result = ${JSON.stringify(inference.cards)}::jsonb,
+              payload = payload || jsonb_build_object('model', ${inference.model}::text),
               error = NULL,
               completed_at = NOW(),
               updated_at = NOW()

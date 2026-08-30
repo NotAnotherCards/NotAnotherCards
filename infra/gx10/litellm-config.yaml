@@ -1,8 +1,23 @@
 # Models offered by the gateway. Adding a model here (plus `ollama pull`
 # on the box) is how a new model becomes available — one line, one PR.
 model_list:
-  # interactive default; also the reviewer when called with thinking enabled
-  # (model choices: docs/model-report.md)
+  # interactive default (docs/model-report-v2.md): 50/50 parseable sets,
+  # lowest adjudicated issue rate, 3.49 s median for a five-card set
+  - model_name: gemma4
+    litellm_params:
+      model: ollama_chat/gemma4:26b-a4b-it-q4_K_M
+      api_base: http://ollama:11434
+
+  # low-latency fallback for gemma4 (router_settings below): ~0.8 s faster,
+  # 14 adjudicated issues in 236 cards against gemma4's 10 in 240; also the
+  # reviewer when called with thinking enabled
+  - model_name: qwen3.6
+    litellm_params:
+      model: ollama_chat/qwen3.6:35b
+      api_base: http://ollama:11434
+
+  # deprecated alias for qwen3.6, kept while production still sends "qwen";
+  # remove after #193 updates the production env
   - model_name: qwen
     litellm_params:
       model: ollama_chat/qwen3.6:35b
@@ -14,6 +29,23 @@ model_list:
       model: ollama_chat/qwen3-next:80b
       api_base: http://ollama:11434
 
+  # comparison only, not for generation: 2.5x slower than qwen3.6 and 13
+  # confirmed errors per 30 sets vs qwen3.6's 5 (model report addendum).
+  # Send reasoning_effort "none"; "low" generates more reasoning than
+  # the default.
+  - model_name: qwen3.8
+    litellm_params:
+      model: ollama_chat/qwen3.8:27b
+      api_base: http://ollama:11434
+
+  # quality on par with gemma4 in the v2 sample, but ~17 s per set;
+  # kept for comparison in the generation playground (#178)
+  - model_name: muse-glimmer
+    litellm_params:
+      model: ollama_chat/muse-glimmer:30b-q4_K_M
+      api_base: http://ollama:11434
+
+  # older results, not directly comparable with the v2 table; rerun pending
   - model_name: mistral-small
     litellm_params:
       model: ollama_chat/mistral-small3.2
@@ -38,6 +70,10 @@ model_list:
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
+
+router_settings:
+  # a gemma4 failure retries on qwen3.6 (docs/model-report-v2.md recommendation)
+  fallbacks: [{ "gemma4": ["qwen3.6"] }]
 
 litellm_settings:
   drop_params: true

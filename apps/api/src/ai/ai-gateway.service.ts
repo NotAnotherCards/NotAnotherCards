@@ -28,6 +28,7 @@ export class AiParseError extends Error {
 }
 
 interface ChatCompletionResponse {
+  model?: string;
   choices?: Array<{
     message?: {
       content?: string;
@@ -66,7 +67,7 @@ export class AiGatewayService {
       this.config.get<string>('AI_MOCK') === 'true' ||
       process.env.NODE_ENV === 'test';
     const model =
-      requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'qwen';
+      requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'gemma4';
 
     // If no endpoint is configured:
     // When AI_MOCK is explicitly enabled (or in tests), use mock generator.
@@ -131,7 +132,9 @@ export class AiGatewayService {
     return {
       cards,
       usage,
-      model,
+      // the gateway reports the deployment that answered; on a router
+      // fallback that is not the alias we asked for
+      model: data.model ?? model,
     };
   }
 
