@@ -138,8 +138,7 @@ unvalidated escape hatch. The shared local/wire validator uses the pair
 `(note_type, fields_version)` to look up a Zod schema in an explicit registry,
 parses the serialized JSON, and validates the result. Malformed JSON, unknown
 type/version pairs, and payloads rejected by the selected schema are rejected
-by the row and wire contracts. Server-side sync-store enforcement remains in
-[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+by both the wire contract and the server-side sync store.
 
 Known values that may be edited, regenerated, searched, filtered, or reused by
 a template belong in `fields_json`; `additional_content` is only for prose
@@ -164,7 +163,8 @@ the source content; each sibling card owns its own schedule and review history.
 - **`user_cards_user_due_idx`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
 
 - **`id`** (text/UUID, Primary Key): Deterministic UUIDv5 derived by the shared
-  `cardId(noteId, templateKey)` helper.
+  `cardId(noteId, templateKey)` helper. Every live pushed row is checked by
+  recomputing this ID; a client-supplied random or stale ID is rejected.
 - **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
 - **`note_id`** (text, NOT NULL): Links to `user_notes.id`. Ownership is
   validated through the authenticated sync engine rather than a cascading SQL
@@ -192,7 +192,9 @@ Represents note-level membership in a deck. A note can belong to multiple
 decks while retaining one canonical payload and one schedule per sibling card.
 
 - **`id`** (text/UUID, Primary Key): Deterministic UUIDv5 derived by the shared
-  `noteDeckId(noteId, deckId)` helper.
+  `noteDeckId(noteId, deckId)` helper. Every live pushed row is checked by
+  recomputing this ID; changing either parent without changing the ID is
+  rejected.
 - **`user_id`** (text, Foreign Key): The authenticated sync scope.
 - **`note_id`** (text, NOT NULL): Links to `user_notes.id` through sync-layer
   ownership validation.
@@ -245,16 +247,17 @@ pnpm --filter api sync:gc
 Each run records a checkpoint and garbage-collects through the newest checkpoint
 that is at least 90 days old. The floor never decreases; incremental cursors
 older than it receive `resyncRequired`. Deck titles/descriptions and card fronts
-and backs are scrubbed in the same update that creates their tombstones, before
-the retention window elapses.
+and backs are scrubbed in the same update that creates their tombstones. Note
+`fields_json` and `additional_content` are likewise blanked before the retention
+window elapses.
 
-The target parent-deletion policy follows note ownership rather than deck
+The parent-deletion policy follows note ownership rather than deck
 membership: deleting a note tombstones its cards, note-deck memberships, and
 the cards' review events; deleting a deck tombstones only its note-deck
 memberships and never the note or its learning progress. Deleting a card still
-tombstones its review events. Transactional cascade behavior and contradictory
-same-push handling are updated in epic follow-up
-[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+tombstones its review events. These cascades run transactionally. A parent
+delete submitted in the same push as a valid child create or update is rejected,
+so the accepted child write cannot be immediately erased by that push.
 
 ## Migrations
 
