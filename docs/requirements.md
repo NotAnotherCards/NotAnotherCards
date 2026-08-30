@@ -110,9 +110,9 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 ### 4.8 Data and Analytics: data export and import — Minor, 1 — planned — 15%
 
-- Export data in multiple formats (JSON, CSV, XML, etc.). **planned**: `docs/import-export-design.md`, JSON and CSV.
-- Import data with validation. **planned**: whole-file validation, one transaction.
-- Support bulk operations. **planned**: dry run and per-row report.
+- Export data in multiple formats (JSON, CSV, XML, etc.). **planned**: #192, JSON and CSV.
+- Import data with validation. **planned**: #192, whole-file validation, one atomic batch.
+- Support bulk operations. **planned**: #192, dry run and per-row report.
 
 ### 4.9 Gaming and user experience: gamification — Minor, 1 — not started — 0%
 
@@ -174,8 +174,8 @@ The subject requires 14 points. Incomplete modules count 0. The plan claims
   Estimate: 3 to 4 days. Proposal: give it priority over PWA and search.
 - **Advanced search (Minor, 1, not started).** Filters, sorting, and
   pagination over local queries, 1 to 2 days. Question: keep it?
-- **Export and import (Minor, 1, planned).** Designed, no unknowns, 2 to
-  3 days.
+- **Export and import (Minor, 1, planned).** Proposed decisions and open
+  questions are in #192. 2 to 3 days.
 - **GDPR (Minor, 1, reserve).** Request data, delete with confirmation, export
   in a readable format, confirmation emails. Reuses the export and the
   existing email path. Estimate: 1 to 2 days after export exists.
