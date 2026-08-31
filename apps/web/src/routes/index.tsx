@@ -20,10 +20,9 @@ export const Route = createFileRoute('/')({
         });
       }
     } else {
-      if (session === null && error === null)
-        throw redirect({
-          to: '/login',
-        });
+      throw redirect({
+        to: '/login',
+      });
     }
   },
   errorComponent: RouteErrorComponent,
