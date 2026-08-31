@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AiCardOutput } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,12 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
   const [newDeckTitle, setNewDeckTitle] = useState('');
   const [previewTab, setPreviewTab] = useState<'cards' | 'json'>('cards');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDeckId && decks.length > 0) {
+      setSelectedDeckId(decks[0].id);
+    }
+  }, [decks, selectedDeckId]);
 
   const handleSave = async () => {
     if (deckMode === 'existing') {

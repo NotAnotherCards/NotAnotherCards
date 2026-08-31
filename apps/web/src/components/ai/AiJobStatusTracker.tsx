@@ -14,6 +14,8 @@ export function AiJobStatusTracker({ jobId, status, error, onPoll }: AiJobStatus
   useEffect(() => {
     if (status === 'completed' || status === 'failed') return;
 
+    onPoll();
+
     const interval = setInterval(() => {
       onPoll();
     }, 2500);
