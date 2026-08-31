@@ -18,7 +18,7 @@ export function AiJobStatusTracker({ jobId, status, error, onPoll }: AiJobStatus
 
     const interval = setInterval(() => {
       onPoll();
-    }, 2500);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [status, onPoll]);
