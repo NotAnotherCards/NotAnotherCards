@@ -195,4 +195,58 @@ describe('Auth Guards', () => {
     expect(await screen.findByText('Page not found')).toBeInTheDocument();
     expect(window.location.pathname).toBe('/app/onboarding');
   });
+
+  it('renders error component on session fetch failure and allows retry', async () => {
+    const mockError = new Error('Network error');
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: null,
+      error: mockError,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+      isRefetching: false,
+      error: mockError,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    render(<App />);
+
+    // Try to navigate to dashboard
+    await act(async () => {
+      await router.navigate({ to: '/dashboard' });
+    });
+
+    // Verify error component is rendered and redirect didn't happen
+    expect(await screen.findByText('Network error')).toBeInTheDocument();
+    expect(screen.getByText('Session Error')).toBeInTheDocument();
+    expect(window.location.pathname).not.toBe('/login');
+
+    const retryBtn = screen.getByRole('button', { name: /Retry/i });
+    expect(retryBtn).toBeInTheDocument();
+
+    // Mock next session fetch to succeed
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    // Click retry
+    await act(async () => {
+      retryBtn.click();
+    });
+
+    // Check we made it to dashboard page
+    expect(
+      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+    ).toBeInTheDocument();
+  });
 });
+
