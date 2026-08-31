@@ -23,9 +23,7 @@ interface AiPlaygroundFormProps {
 }
 
 export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlaygroundFormProps) {
-  const [type, setType] = useState<'topic_deck' | 'text_cards'>('topic_deck');
   const [topic, setTopic] = useState('');
-  const [sourceText, setSourceText] = useState('');
   const [count, setCount] = useState(5);
   const [model, setModel] = useState<AiModel>('qwen');
   const [error, setError] = useState<string | null>(null);
@@ -34,20 +32,14 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
     e.preventDefault();
     setError(null);
 
-    if (type === 'topic_deck' && !topic.trim()) {
+    if (!topic.trim()) {
       setError('Subject/Topic cannot be empty');
       return;
     }
 
-    if (type === 'text_cards' && !sourceText.trim()) {
-      setError('Source text cannot be empty');
-      return;
-    }
-
     onSubmit({
-      type,
-      topic: type === 'topic_deck' ? topic : undefined,
-      sourceText: type === 'text_cards' ? sourceText : undefined,
+      type: 'topic_deck',
+      topic: topic.trim(),
       count,
       model,
     });
@@ -81,73 +73,27 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
           />
         </div>
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          Quotas reset daily. Use the models playground to tweak options and preview payload structures.
+          Quotas reset daily. Use the playground to test card generation.
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex bg-muted/50 p-1 rounded-xl border border-border/40">
-        <button
-          type="button"
-          onClick={() => { setType('topic_deck'); setError(null); }}
-          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            type === 'topic_deck'
-              ? 'bg-background text-foreground shadow-sm shadow-black/10'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Topic Deck
-        </button>
-        <button
-          type="button"
-          onClick={() => { setType('text_cards'); setError(null); }}
-          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-            type === 'text_cards'
-              ? 'bg-background text-foreground shadow-sm shadow-black/10'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Source Text
-        </button>
-      </div>
-
-      {/* Dynamic Content Fields */}
-      {type === 'topic_deck' ? (
-        <Field className="space-y-2">
-          <FieldLabel htmlFor="topic">Subject / Topic</FieldLabel>
-          <FieldDescription>Describe what you want to learn (e.g. "Spanish Nouns", "Irregular French Verbs").</FieldDescription>
-          <Input
-            id="topic"
-            placeholder="e.g. Spanish Subjunctive"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value.slice(0, 300))}
-            maxLength={300}
-            className="w-full border-border/60 focus-visible:ring-violet-500/20"
-          />
-          <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <span>Limit 300 chars</span>
-            <span>{topic.length}/300</span>
-          </div>
-        </Field>
-      ) : (
-        <Field className="space-y-2">
-          <FieldLabel htmlFor="sourceText">Source Text</FieldLabel>
-          <FieldDescription>Paste study guides, paragraphs, or vocabulary lists to extract flashcards from.</FieldDescription>
-          <textarea
-            id="sourceText"
-            rows={5}
-            placeholder="Paste text up to 10,000 characters here..."
-            value={sourceText}
-            onChange={(e) => setSourceText(e.target.value.slice(0, 10000))}
-            maxLength={10000}
-            className="w-full min-w-0 rounded-2xl border border-border/60 bg-input/50 px-3 py-2 text-base transition-all placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none disabled:opacity-50 md:text-sm resize-y"
-          />
-          <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <span>Limit 10,000 chars</span>
-            <span>{sourceText.length}/10,000</span>
-          </div>
-        </Field>
-      )}
+      {/* Subject / Topic Field */}
+      <Field className="space-y-2">
+        <FieldLabel htmlFor="topic">Subject / Topic</FieldLabel>
+        <FieldDescription>Describe what you want to learn (e.g. "Spanish Nouns", "Irregular French Verbs").</FieldDescription>
+        <Input
+          id="topic"
+          placeholder="e.g. Spanish Subjunctive"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value.slice(0, 300))}
+          maxLength={300}
+          className="w-full border-border/60 focus-visible:ring-violet-500/20"
+        />
+        <div className="flex justify-between items-center text-xs text-muted-foreground">
+          <span>Limit 300 chars</span>
+          <span>{topic.length}/300</span>
+        </div>
+      </Field>
 
       {/* Configuration Sliders & Dropdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

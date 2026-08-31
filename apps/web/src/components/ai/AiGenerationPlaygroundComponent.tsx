@@ -109,6 +109,7 @@ export function AiGenerationPlaygroundComponent() {
         if (updatedJob.status === 'completed' || updatedJob.status === 'failed') {
           setLoading(false);
           void fetchJobs();
+          void fetchQuota();
         }
       }
     } catch (err) {
