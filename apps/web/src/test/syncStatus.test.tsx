@@ -17,6 +17,7 @@ const fakeController = (state: Partial<SyncControllerState>) => {
     status: 'idle',
     lastSyncAt: null,
     error: null,
+    cause: null,
     lastResult: null,
     ...state,
   };
