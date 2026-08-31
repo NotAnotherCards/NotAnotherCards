@@ -1,6 +1,7 @@
 import { Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import { Edit, Unlink, Eye } from 'lucide-react';
+import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface CardItemProps {
   card: Card;
@@ -23,13 +24,13 @@ export function CardItem({
         className="px-6 py-4 font-medium max-w-62.5 truncate"
         title={card.front}
       >
-        {card.front}
+        <MarkdownRenderer content={card.front} />
       </td>
       <td
         className="px-6 py-4 text-muted-foreground max-w-62.5 truncate"
         title={card.back}
       >
-        {card.back}
+        <MarkdownRenderer content={card.back} />
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-1.5">
