@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { CreateAiJobInput, AI_MODELS, AiModel } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldDescription, FieldError } from '@/components/ui/field';
+import {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from '@/components/ui/field';
 import { Sparkles } from 'lucide-react';
 
 interface QuotaData {
@@ -22,7 +27,11 @@ interface AiPlaygroundFormProps {
   isSubmitting: boolean;
 }
 
-export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlaygroundFormProps) {
+export function AiPlaygroundForm({
+  quota,
+  onSubmit,
+  isSubmitting,
+}: AiPlaygroundFormProps) {
   const [topic, setTopic] = useState('');
   const [count, setCount] = useState(5);
   const [model, setModel] = useState<AiModel>('qwen');
@@ -48,7 +57,8 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
   const usedCount = quota?.requestsUsed ?? quota?.used ?? 0;
   const limitCount = quota?.maxRequests ?? quota?.limit ?? 25;
 
-  const quotaPercent = limitCount > 0 ? Math.min((usedCount / limitCount) * 100, 100) : 0;
+  const quotaPercent =
+    limitCount > 0 ? Math.min((usedCount / limitCount) * 100, 100) : 0;
   const isQuotaExceeded = limitCount > 0 ? usedCount >= limitCount : false;
 
   return (
@@ -61,13 +71,17 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
             AI Quota Status
           </span>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-            {quota ? `${usedCount}/${limitCount} requests used` : 'Loading quota...'}
+            {quota
+              ? `${usedCount}/${limitCount} requests used`
+              : 'Loading quota...'}
           </span>
         </div>
         <div className="w-full bg-muted/60 h-2 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ease-out ${
-              isQuotaExceeded ? 'bg-destructive' : 'bg-linear-to-r from-violet-500 to-indigo-500'
+              isQuotaExceeded
+                ? 'bg-destructive'
+                : 'bg-linear-to-r from-violet-500 to-indigo-500'
             }`}
             style={{ width: `${quota ? quotaPercent : 0}%` }}
           />
@@ -80,7 +94,10 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
       {/* Subject / Topic Field */}
       <Field className="space-y-2">
         <FieldLabel htmlFor="topic">Subject / Topic</FieldLabel>
-        <FieldDescription>Describe what you want to learn (e.g. "Spanish Nouns", "Irregular French Verbs").</FieldDescription>
+        <FieldDescription>
+          Describe what you want to learn (e.g. "Spanish Nouns", "Irregular
+          French Verbs").
+        </FieldDescription>
         <Input
           id="topic"
           placeholder="e.g. Spanish Subjunctive"
@@ -110,12 +127,19 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
               {AI_MODELS.map((m) => {
                 let displayName: string = m;
                 if (m === 'qwen') displayName = 'Qwen (Fast)';
-                else if (m === 'qwen-next-80b') displayName = 'Qwen Next 80B (Smart)';
+                else if (m === 'qwen-next-80b')
+                  displayName = 'Qwen Next 80B (Smart)';
                 else if (m === 'mistral-small') displayName = 'Mistral Small';
-                else if (m === 'Qwen/Qwen3.6-35B-A3B') displayName = 'Qwen 3.6 35B (NanoGPT)';
-                else if (m === 'google/gemma-2-27b-it') displayName = 'Gemma 2 27B (NanoGPT)';
+                else if (m === 'Qwen/Qwen3.6-35B-A3B')
+                  displayName = 'Qwen 3.6 35B (NanoGPT)';
+                else if (m === 'google/gemma-2-27b-it')
+                  displayName = 'Gemma 2 27B (NanoGPT)';
                 return (
-                  <option key={m} value={m} className="bg-background text-foreground">
+                  <option
+                    key={m}
+                    value={m}
+                    className="bg-background text-foreground"
+                  >
                     {displayName}
                   </option>
                 );

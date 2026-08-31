@@ -10,7 +10,12 @@ interface AiJobStatusTrackerProps {
   onPoll: () => void;
 }
 
-export function AiJobStatusTracker({ jobId, status, error, onPoll }: AiJobStatusTrackerProps) {
+export function AiJobStatusTracker({
+  jobId,
+  status,
+  error,
+  onPoll,
+}: AiJobStatusTrackerProps) {
   useEffect(() => {
     if (status === 'completed' || status === 'failed') return;
 
@@ -24,8 +29,16 @@ export function AiJobStatusTracker({ jobId, status, error, onPoll }: AiJobStatus
   }, [status, onPoll]);
 
   const steps = [
-    { key: 'pending', label: 'Queuing Job', desc: 'Waiting for processor slot' },
-    { key: 'processing', label: 'Processing LLM', desc: 'Querying model and formatting structured output' },
+    {
+      key: 'pending',
+      label: 'Queuing Job',
+      desc: 'Waiting for processor slot',
+    },
+    {
+      key: 'processing',
+      label: 'Processing LLM',
+      desc: 'Querying model and formatting structured output',
+    },
     { key: 'completed', label: 'Done', desc: 'Cards generated successfully' },
   ];
 
@@ -44,10 +57,14 @@ export function AiJobStatusTracker({ jobId, status, error, onPoll }: AiJobStatus
   return (
     <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-md max-w-md mx-auto space-y-6 shadow-xl relative overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-violet-500 via-indigo-500 to-amber-500 animate-pulse" />
-      
+
       <div className="text-center space-y-2">
-        <h3 className="text-lg font-semibold tracking-tight">Generating Your Deck</h3>
-        <p className="text-xs text-muted-foreground font-mono">Job ID: {jobId}</p>
+        <h3 className="text-lg font-semibold tracking-tight">
+          Generating Your Deck
+        </h3>
+        <p className="text-xs text-muted-foreground font-mono">
+          Job ID: {jobId}
+        </p>
       </div>
 
       <div className="flex justify-center py-4">
@@ -91,12 +108,20 @@ export function AiJobStatusTracker({ jobId, status, error, onPoll }: AiJobStatus
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold transition-colors duration-200 ${
-                  state === 'active' ? 'text-primary' : state === 'finished' ? 'text-foreground/80' : 'text-muted-foreground'
-                }`}>
+                <p
+                  className={`text-sm font-semibold transition-colors duration-200 ${
+                    state === 'active'
+                      ? 'text-primary'
+                      : state === 'finished'
+                        ? 'text-foreground/80'
+                        : 'text-muted-foreground'
+                  }`}
+                >
                   {step.label}
                 </p>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{step.desc}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                  {step.desc}
+                </p>
               </div>
             </div>
           );

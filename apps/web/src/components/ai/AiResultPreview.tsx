@@ -3,7 +3,14 @@ import { AiCardOutput } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { ArrowRight, BookOpen, Layers, FolderPlus, FileJson, CheckCircle2 } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Layers,
+  FolderPlus,
+  FileJson,
+  CheckCircle2,
+} from 'lucide-react';
 
 interface Deck {
   id: string;
@@ -17,7 +24,12 @@ interface AiResultPreviewProps {
   isSaving: boolean;
 }
 
-export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPreviewProps) {
+export function AiResultPreview({
+  cards,
+  decks,
+  onSave,
+  isSaving,
+}: AiResultPreviewProps) {
   const [deckMode, setDeckMode] = useState<'existing' | 'new'>('existing');
   const [selectedDeckId, setSelectedDeckId] = useState(decks[0]?.id || '');
   const [newDeckTitle, setNewDeckTitle] = useState('');
@@ -74,8 +86,12 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Generation Results</h2>
-          <p className="text-sm text-muted-foreground">Generated {cards.length} structured flashcard note candidates.</p>
+          <h2 className="text-xl font-bold tracking-tight">
+            Generation Results
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Generated {cards.length} structured flashcard note candidates.
+          </p>
         </div>
 
         {/* Tab Toggle */}
@@ -83,7 +99,9 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
           <button
             onClick={() => setPreviewTab('cards')}
             className={`flex items-center gap-1 py-1 px-2.5 rounded-md font-medium transition-all ${
-              previewTab === 'cards' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+              previewTab === 'cards'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             }`}
           >
             <Layers className="size-3" /> Cards
@@ -91,7 +109,9 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
           <button
             onClick={() => setPreviewTab('json')}
             className={`flex items-center gap-1 py-1 px-2.5 rounded-md font-medium transition-all ${
-              previewTab === 'json' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+              previewTab === 'json'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             }`}
           >
             <FileJson className="size-3" /> Note Schema
@@ -107,14 +127,18 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
               className="bg-card/40 border border-border/60 rounded-2xl p-4 shadow-sm hover:border-violet-500/30 transition-all duration-200 group flex flex-col md:flex-row gap-4 justify-between items-stretch"
             >
               <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Front</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Front
+                </div>
                 <div className="text-sm font-medium">{card.front}</div>
               </div>
               <div className="hidden md:flex items-center text-muted-foreground">
                 <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
               </div>
               <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Back</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Back
+                </div>
                 <div className="text-sm font-medium">{card.back}</div>
               </div>
             </div>
@@ -130,7 +154,10 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
       <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">
         <div>
           <h3 className="text-lg font-bold tracking-tight">Save to Database</h3>
-          <p className="text-sm text-muted-foreground">Choose deck membership. Saving creates independent Recognition & Recall schedules.</p>
+          <p className="text-sm text-muted-foreground">
+            Choose deck membership. Saving creates independent Recognition &
+            Recall schedules.
+          </p>
         </div>
 
         {/* Deck Mode Toggle */}
@@ -139,7 +166,9 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
             type="button"
             onClick={() => setDeckMode('existing')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
-              deckMode === 'existing' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+              deckMode === 'existing'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             }`}
           >
             <BookOpen className="size-3.5" /> Select Deck
@@ -148,7 +177,9 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
             type="button"
             onClick={() => setDeckMode('new')}
             className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
-              deckMode === 'new' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+              deckMode === 'new'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             }`}
           >
             <FolderPlus className="size-3.5" /> Create New
@@ -166,9 +197,15 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
                 onChange={(e) => setSelectedDeckId(e.target.value)}
                 className="w-full rounded-3xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
               >
-                <option value="" disabled>-- Choose a deck --</option>
+                <option value="" disabled>
+                  -- Choose a deck --
+                </option>
                 {decks.map((deck) => (
-                  <option key={deck.id} value={deck.id} className="bg-background text-foreground">
+                  <option
+                    key={deck.id}
+                    value={deck.id}
+                    className="bg-background text-foreground"
+                  >
                     {deck.title}
                   </option>
                 ))}
@@ -193,7 +230,11 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
 
         <Button
           onClick={handleSave}
-          disabled={isSaving || (deckMode === 'existing' && !selectedDeckId) || (deckMode === 'new' && !newDeckTitle.trim())}
+          disabled={
+            isSaving ||
+            (deckMode === 'existing' && !selectedDeckId) ||
+            (deckMode === 'new' && !newDeckTitle.trim())
+          }
           className="w-full bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-3xl py-5 shadow-lg shadow-emerald-500/10 font-semibold cursor-pointer"
         >
           {isSaving ? 'Saving to Deck...' : 'Save Cards to Deck'}
@@ -206,7 +247,9 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
           <CheckCircle2 className="size-5 shrink-0 text-white" />
           <div>
             <h4 className="font-semibold text-sm">Deck Saved!</h4>
-            <p className="text-xs text-emerald-100">Cards have been added to your local library.</p>
+            <p className="text-xs text-emerald-100">
+              Cards have been added to your local library.
+            </p>
           </div>
         </div>
       )}

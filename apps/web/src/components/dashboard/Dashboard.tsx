@@ -9,9 +9,9 @@ import { Overview } from './Overview';
 import { AiGenerationPlaygroundComponent } from '../ai/AiGenerationPlaygroundComponent';
 
 export function DashboardComponent() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'decks' | 'settings' | 'playground'>(
-    'overview',
-  );
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'decks' | 'settings' | 'playground'
+  >('overview');
   const [subView, setSubView] = useState<{
     type: 'list' | 'detail';
     deckId?: string;

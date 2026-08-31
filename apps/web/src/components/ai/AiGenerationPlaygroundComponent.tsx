@@ -91,7 +91,8 @@ export function AiGenerationPlaygroundComponent() {
       setCurrentJob(data.job);
       void fetchQuota();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error occurred starting job';
+      const msg =
+        err instanceof Error ? err.message : 'Error occurred starting job';
       setErrorMessage(msg);
       setLoading(false);
     }
@@ -106,7 +107,10 @@ export function AiGenerationPlaygroundComponent() {
         const updatedJob = data.job;
         setCurrentJob(updatedJob);
 
-        if (updatedJob.status === 'completed' || updatedJob.status === 'failed') {
+        if (
+          updatedJob.status === 'completed' ||
+          updatedJob.status === 'failed'
+        ) {
           setLoading(false);
           void fetchJobs();
           void fetchQuota();
@@ -190,7 +194,9 @@ export function AiGenerationPlaygroundComponent() {
 
           <div className="space-y-2.5 max-h-62.5 overflow-y-auto pr-1">
             {jobs.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-6">No previous jobs found.</p>
+              <p className="text-xs text-muted-foreground text-center py-6">
+                No previous jobs found.
+              </p>
             ) : (
               jobs.map((job) => (
                 <button
@@ -205,23 +211,33 @@ export function AiGenerationPlaygroundComponent() {
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        {job.type === 'topic_deck' ? 'Topic' : 'Source Paragraph'}
+                        {job.type === 'topic_deck'
+                          ? 'Topic'
+                          : 'Source Paragraph'}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/60">•</span>
-                      <span className="text-[10px] font-mono text-muted-foreground/80">{job.id.slice(0, 8)}</span>
+                      <span className="text-[10px] text-muted-foreground/60">
+                        •
+                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground/80">
+                        {job.id.slice(0, 8)}
+                      </span>
                     </div>
                     <p className="text-sm font-semibold truncate text-foreground/90">
-                      {job.payload.topic || job.payload.sourceText || 'Untitled job'}
+                      {job.payload.topic ||
+                        job.payload.sourceText ||
+                        'Untitled job'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                      job.status === 'completed'
-                        ? 'bg-emerald-500/10 text-emerald-500'
-                        : job.status === 'failed'
-                          ? 'bg-destructive/10 text-destructive'
-                          : 'bg-amber-500/10 text-amber-500'
-                    }`}>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        job.status === 'completed'
+                          ? 'bg-emerald-500/10 text-emerald-500'
+                          : job.status === 'failed'
+                            ? 'bg-destructive/10 text-destructive'
+                            : 'bg-amber-500/10 text-amber-500'
+                      }`}
+                    >
                       {job.status}
                     </span>
                   </div>
@@ -234,11 +250,13 @@ export function AiGenerationPlaygroundComponent() {
 
       {/* Right side: Results Preview */}
       <div className="lg:col-span-7 space-y-8">
-        {currentJob && currentJob.status === 'completed' && currentJob.result ? (
+        {currentJob &&
+        currentJob.status === 'completed' &&
+        currentJob.result ? (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
             <AiResultPreview
               cards={currentJob.result}
-              decks={decks.map(d => ({ id: d.id, title: d.title }))}
+              decks={decks.map((d) => ({ id: d.id, title: d.title }))}
               onSave={handleSaveDeck}
               isSaving={saving}
             />
@@ -249,9 +267,12 @@ export function AiGenerationPlaygroundComponent() {
               <Zap className="size-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-sm">No Results Preview</h3>
+              <h3 className="font-semibold text-foreground text-sm">
+                No Results Preview
+              </h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                Trigger a generation task or select a completed past job from the log on the left to view results.
+                Trigger a generation task or select a completed past job from
+                the log on the left to view results.
               </p>
             </div>
           </div>
