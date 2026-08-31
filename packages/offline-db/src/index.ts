@@ -125,3 +125,4 @@ export * from './note-constants.js';
 export * from './review-scheduler.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
+export * from './queries.js';

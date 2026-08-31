@@ -21,7 +21,7 @@ import {
   recordReviewEvent,
   removeNoteFromDeck,
   updateCard,
-} from '@/offline/queries';
+} from '@repo/offline-db';
 
 const openDatabases: Database[] = [];
 

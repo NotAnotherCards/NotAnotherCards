@@ -28,7 +28,7 @@ import {
   recordReviewEvent as dbRecordReview,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
-} from '../offline/queries';
+} from '@repo/offline-db';
 
 export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
