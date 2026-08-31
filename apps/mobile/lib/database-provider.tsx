@@ -32,8 +32,12 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
   // Null while the session check runs: useSession keeps the previous
   // user visible while it refetches, and that user's database is the
-  // wrong one to open.
-  const userId = isPending ? null : (session?.user.id ?? null);
+  // wrong one to open. Also null until onboarding completed: the profile
+  // row the first pull expects is created by the /onboard transaction.
+  const userId =
+    isPending || !session?.user.onBoardingComplete
+      ? null
+      : (session.user.id ?? null);
 
   const { manager, syncController, closeError } = useOwnedDatabase({
     userId,
