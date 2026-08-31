@@ -6,8 +6,14 @@ import { Field, FieldLabel, FieldDescription, FieldError } from '@/components/ui
 import { Sparkles } from 'lucide-react';
 
 interface QuotaData {
-  used: number;
-  limit: number;
+  used?: number;
+  limit?: number;
+  requestsUsed?: number;
+  maxRequests?: number;
+  usedTokens?: number;
+  maxTokens?: number;
+  activePendingJobs?: number;
+  maxPendingJobs?: number;
 }
 
 interface AiPlaygroundFormProps {
@@ -47,8 +53,11 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
     });
   };
 
-  const quotaPercent = quota ? Math.min((quota.used / quota.limit) * 100, 100) : 0;
-  const isQuotaExceeded = quota ? quota.used >= quota.limit : false;
+  const usedCount = quota?.requestsUsed ?? quota?.used ?? 0;
+  const limitCount = quota?.maxRequests ?? quota?.limit ?? 25;
+
+  const quotaPercent = limitCount > 0 ? Math.min((usedCount / limitCount) * 100, 100) : 0;
+  const isQuotaExceeded = limitCount > 0 ? usedCount >= limitCount : false;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -60,7 +69,7 @@ export function AiPlaygroundForm({ quota, onSubmit, isSubmitting }: AiPlayground
             AI Quota Status
           </span>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-            {quota ? `${quota.used}/${quota.limit} jobs used` : 'Loading quota...'}
+            {quota ? `${usedCount}/${limitCount} requests used` : 'Loading quota...'}
           </span>
         </div>
         <div className="w-full bg-muted/60 h-2 rounded-full overflow-hidden">

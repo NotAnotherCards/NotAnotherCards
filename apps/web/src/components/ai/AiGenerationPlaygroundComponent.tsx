@@ -3,12 +3,18 @@ import { CreateAiJobInput, AiCardOutput } from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
 import { AiJobStatusTracker, JobStatus } from './AiJobStatusTracker';
 import { AiResultPreview } from './AiResultPreview';
-import { Sparkles, Calendar, Zap, AlertCircle } from 'lucide-react';
+import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 
-interface Quota {
-  used: number;
-  limit: number;
+export interface Quota {
+  used?: number;
+  limit?: number;
+  requestsUsed?: number;
+  maxRequests?: number;
+  usedTokens?: number;
+  maxTokens?: number;
+  activePendingJobs?: number;
+  maxPendingJobs?: number;
 }
 
 interface Job {
