@@ -55,7 +55,7 @@ describe('Redirects and Session Creation (e2e)', () => {
 
   describe('OAuth Redirect Responses', () => {
     it('should initiate Google OAuth flow and return the redirect URL', async () => {
-      const callbackURL = `${frontendOrigin}/app/dashboard`;
+      const callbackURL = `${frontendOrigin}/dashboard`;
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-in/social')
         .set('Origin', frontendOrigin)
@@ -80,7 +80,7 @@ describe('Redirects and Session Creation (e2e)', () => {
     });
 
     it('should initiate Facebook OAuth flow and return the redirect URL', async () => {
-      const callbackURL = `${frontendOrigin}/app/dashboard`;
+      const callbackURL = `${frontendOrigin}/dashboard`;
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-in/social')
         .set('Origin', frontendOrigin)

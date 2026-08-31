@@ -95,7 +95,7 @@ describe('SessionDatabaseProvider', () => {
   });
 
   it('passes no user before onboarding is complete', () => {
-    // The database used to be opened by the /app layout, behind a guard
+    // The database used to be opened by the old `/app` layout, behind a guard
     // that checked this. From the root there is no guard in front.
     mockSessionState = {
       data: { user: { id: 'user-a', onBoardingComplete: false } },
