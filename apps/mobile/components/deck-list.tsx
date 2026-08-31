@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useDecks, type Deck } from '@/lib/decks';
-import { apiErrorMessage } from '@/lib/errors';
+import { writeErrorMessage } from '@repo/offline-db';
 import { Button } from './ui/button';
 import { Text } from './ui/text';
 import { DeckForm } from './deck-form';
@@ -38,7 +38,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
       await write();
       done();
     } catch (err) {
-      setWriteError(apiErrorMessage(err));
+      setWriteError(writeErrorMessage(err, 'The write failed'));
     }
   };
 
@@ -123,7 +123,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
           {deleting?.id === deck.id ? (
             <View className="gap-2">
               <Text className="text-sm">
-                Delete this deck? Its cards stay in your collection.
+                Delete this deck? Its cards are kept and stay in review (#212).
               </Text>
               <View className="flex-row gap-2">
                 <Button

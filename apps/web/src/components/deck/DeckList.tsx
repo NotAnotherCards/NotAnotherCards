@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { DeckForm } from './DeckForm';
 import { DeckCard } from './DeckCard';
-import { writeErrorMessage } from '@/lib/write-error';
+import { writeErrorMessage } from '@repo/offline-db';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 
 interface DeckListProps {
