@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Redirect, useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import {
   LANGUAGES,
   type ProfileFormValues,
@@ -61,7 +61,7 @@ function LanguageField({
 
 export default function Onboarding() {
   const router = useRouter();
-  const { data: session, refetch } = authClient.useSession();
+  const { data: session, isPending, error, refetch } = authClient.useSession();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState, watch, setValue } =
     useForm<ProfileFormValues>({
@@ -94,6 +94,33 @@ export default function Onboarding() {
       setApiError(apiErrorMessage(error));
     }
   };
+
+  if (isPending) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  // refetch() resolves even when the request failed and stores the error
+  // reactively, so a failed session refresh lands here, not in onSubmit's
+  // catch. A failed fetch is not the same as "not logged in": offer a
+  // retry instead of bouncing to /login.
+  if (error) {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 p-6">
+        <Text className="text-center text-destructive">
+          {apiErrorMessage(error)}
+        </Text>
+        <Button label="Retry" onPress={() => refetch()} />
+      </View>
+    );
+  }
+
+  if (!session) {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <ScrollView

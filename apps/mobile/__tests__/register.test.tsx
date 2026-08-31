@@ -107,4 +107,15 @@ describe('Register screen', () => {
     fireEvent.press(getByRole('button', { name: 'Create account' }));
     expect(await findByText(/Can't reach the server/)).toBeTruthy();
   });
+
+  it('routes to onboarding when the profile is unfinished', async () => {
+    mockSession = {
+      data: { user: { name: 'Jane Doe', onBoardingComplete: false } },
+      isPending: false,
+    };
+    render(<Register />);
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/onboarding'),
+    );
+  });
 });

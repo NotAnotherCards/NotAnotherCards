@@ -5,9 +5,15 @@ import Onboarding from '@/app/onboarding';
 const mockReplace = jest.fn();
 
 // expo-router isn't available in the test env; stub the pieces the screen uses.
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockReplace }),
-}));
+jest.mock('expo-router', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return {
+    useRouter: () => ({ replace: mockReplace }),
+    Redirect: ({ href }: { href: string }) =>
+      React.createElement(Text, null, `redirect:${href}`),
+  };
+});
 
 const mockCompleteOnboarding = jest.fn(
   async (_values: unknown): Promise<void> => undefined,
@@ -21,6 +27,7 @@ jest.mock('../lib/onboarding', () => ({
 let mockSession: {
   data: { user: { onBoardingComplete: boolean } } | null;
   isPending: boolean;
+  error?: Error | null;
 };
 const mockRefetch = jest.fn();
 
@@ -45,6 +52,7 @@ beforeEach(() => {
   mockSession = {
     data: { user: { onBoardingComplete: false } },
     isPending: false,
+    error: null,
   };
   mockReplace.mockClear();
   mockRefetch.mockClear();
@@ -91,5 +99,29 @@ describe('Onboarding screen', () => {
     render(<Onboarding />);
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
     expect(mockCompleteOnboarding).not.toHaveBeenCalled();
+  });
+
+  it('redirects signed-out users to login', () => {
+    mockSession = { data: null, isPending: false, error: null };
+    const { getByText } = render(<Onboarding />);
+    expect(getByText('redirect:/login')).toBeTruthy();
+  });
+
+  it('offers a retry instead of the form when the session fetch failed', () => {
+    // refetch() resolves even on failure and parks the error here, so a
+    // failed refresh after a successful onboard must not look like a
+    // silent no-op.
+    mockSession = {
+      data: null,
+      isPending: false,
+      error: new Error('Network request failed'),
+    };
+    const { getByText, queryByText } = render(<Onboarding />);
+    expect(getByText('Retry')).toBeTruthy();
+    expect(queryByText('Complete setup')).toBeNull();
+    expect(queryByText('redirect:/login')).toBeNull();
+
+    fireEvent.press(getByText('Retry'));
+    expect(mockRefetch).toHaveBeenCalled();
   });
 });

@@ -50,16 +50,16 @@ describe('completeOnboarding', () => {
     expect(headers).toEqual({ 'content-type': 'application/json' });
   });
 
-  it("surfaces the server's message on a username conflict", async () => {
+  it("surfaces the server's message on a taken username", async () => {
     mockGetCookie.mockReturnValue('session=abc');
     (globalThis.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 409,
-      json: () => Promise.resolve({ message: 'Username already taken' }),
+      status: 400,
+      json: () => Promise.resolve({ message: 'Username is already taken' }),
     });
 
     await expect(completeOnboarding(values)).rejects.toThrow(
-      'Username already taken',
+      'Username is already taken',
     );
   });
 
