@@ -13,7 +13,6 @@ describe('Redirects and Session Creation (e2e)', () => {
   const testUser = {
     email: `redirect-tester-${Date.now()}@random.com`,
     password: 'securePassword123!',
-    username: `redirect_tester_${Date.now()}`,
     name: 'Redirect Tester',
   };
 
@@ -93,7 +92,6 @@ describe('Redirects and Session Creation (e2e)', () => {
           email: testUser.email,
           password: testUser.password,
           name: testUser.name,
-          username: testUser.username,
         })
         .expect(200);
 
@@ -122,7 +120,6 @@ describe('Redirects and Session Creation (e2e)', () => {
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe(testUser.email);
       expect(body.user.name).toBe(testUser.name);
-      expect(body.user.username).toBe(testUser.username);
       expect(body.session).toBeDefined();
     });
 
