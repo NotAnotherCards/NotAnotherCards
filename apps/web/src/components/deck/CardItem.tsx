@@ -24,13 +24,13 @@ export function CardItem({
         className="px-6 py-4 font-medium max-w-62.5 truncate"
         title={card.front}
       >
-        <MarkdownRenderer content={card.front} />
+        <MarkdownRenderer content={card.front} inline />
       </td>
       <td
         className="px-6 py-4 text-muted-foreground max-w-62.5 truncate"
         title={card.back}
       >
-        <MarkdownRenderer content={card.back} />
+        <MarkdownRenderer content={card.back} inline />
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-1.5">
