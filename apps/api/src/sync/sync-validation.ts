@@ -5,9 +5,12 @@ import type {
   WireRow,
 } from '@remelondb/server';
 import type { DrizzleStore } from '@remelondb/store-drizzle';
+import { cardId, noteDeckId, validateNoteFieldsJson } from '@repo/offline-db';
 
 const USER_DECKS = 'user_decks';
+const USER_NOTES = 'user_notes';
 const USER_CARDS = 'user_cards';
+const USER_NOTE_DECKS = 'user_note_decks';
 const REVIEW_EVENTS = 'review_events';
 const USER_PROFILES = 'user_profiles';
 
@@ -39,17 +42,49 @@ async function cascadeDeckTombstones(
   deckIds: readonly string[],
 ): Promise<void> {
   const decks = new Set(deckIds);
-  const cardIds = liveRows(await tx.changedSince(USER_CARDS, scope, 0))
-    .filter((card) => {
-      const deckId = stringField(card, 'deck_id');
+  const membershipIds = liveRows(
+    await tx.changedSince(USER_NOTE_DECKS, scope, 0),
+  )
+    .filter((membership) => {
+      const deckId = stringField(membership, 'deck_id');
       return deckId !== null && decks.has(deckId);
     })
+    .map((membership) => membership.id);
+
+  if (membershipIds.length > 0) {
+    await tx.tombstone(USER_NOTE_DECKS, scope, membershipIds);
+  }
+  await tx.tombstone(USER_DECKS, scope, deckIds);
+}
+
+async function cascadeNoteTombstones(
+  tx: SyncStoreTx<string>,
+  scope: string,
+  noteIds: readonly string[],
+): Promise<void> {
+  const notes = new Set(noteIds);
+  const cardIds = liveRows(await tx.changedSince(USER_CARDS, scope, 0))
+    .filter((card) => {
+      const noteId = stringField(card, 'note_id');
+      return noteId !== null && notes.has(noteId);
+    })
     .map((card) => card.id);
+  const membershipIds = liveRows(
+    await tx.changedSince(USER_NOTE_DECKS, scope, 0),
+  )
+    .filter((membership) => {
+      const noteId = stringField(membership, 'note_id');
+      return noteId !== null && notes.has(noteId);
+    })
+    .map((membership) => membership.id);
 
   if (cardIds.length > 0) {
     await cascadeCardTombstones(tx, scope, cardIds);
   }
-  await tx.tombstone(USER_DECKS, scope, deckIds);
+  if (membershipIds.length > 0) {
+    await tx.tombstone(USER_NOTE_DECKS, scope, membershipIds);
+  }
+  await tx.tombstone(USER_NOTES, scope, noteIds);
 }
 
 async function cascadeCardTombstones(
@@ -72,7 +107,7 @@ async function cascadeCardTombstones(
 }
 
 /**
- * Cascades deck/card deletions to their children. Ids rejected by
+ * Cascades deck/note/card deletions to their children. Ids rejected by
  * cross-validation never reach here: the engine strips them from the
  * requested deletes before calling `tombstone`
  */
@@ -90,6 +125,10 @@ export function withSyncCascadingDeletes(
           tombstone: async (table, txScope, ids) => {
             if (table === USER_DECKS) {
               await cascadeDeckTombstones(tx, txScope, ids);
+              return;
+            }
+            if (table === USER_NOTES) {
+              await cascadeNoteTombstones(tx, txScope, ids);
               return;
             }
             if (table === USER_CARDS) {
@@ -114,8 +153,11 @@ export function createCrossValidateSyncRelationships(
   return async (tx, scope, changes) => {
     const deckRows = changes[USER_DECKS]?.rows ?? [];
     const deckDeletesRequested = changes[USER_DECKS]?.deleted ?? [];
+    const noteRows = changes[USER_NOTES]?.rows ?? [];
+    const noteDeletesRequested = changes[USER_NOTES]?.deleted ?? [];
     const cardRows = changes[USER_CARDS]?.rows ?? [];
     const cardDeletesRequested = changes[USER_CARDS]?.deleted ?? [];
+    const membershipRows = changes[USER_NOTE_DECKS]?.rows ?? [];
     const reviewRows = changes[REVIEW_EVENTS]?.rows ?? [];
     const profileRows = changes[USER_PROFILES]?.rows ?? [];
 
@@ -128,7 +170,12 @@ export function createCrossValidateSyncRelationships(
         ? new Map<string, string>()
         : await findProfileUsernameOwners(submittedUsernames);
 
-    const deckChanges = await tx.changedSince(USER_DECKS, scope, 0);
+    // Durable parent state is only needed when this push references it. Parent
+    // deletes without new/updated children are handled by the cascade wrapper.
+    const deckChanges =
+      membershipRows.length === 0
+        ? []
+        : await tx.changedSince(USER_DECKS, scope, 0);
     const ownedDeckIds = activeIds(deckChanges);
     const deletedDeckIds = tombstoneIds(deckChanges);
 
@@ -136,48 +183,111 @@ export function createCrossValidateSyncRelationships(
       if (!deletedDeckIds.has(deck.id)) ownedDeckIds.add(deck.id);
     }
 
-    const deckDeletes = new Set(
-      deckDeletesRequested.filter((id) => ownedDeckIds.has(id)),
-    );
+    const deckDeletes = new Set(deckDeletesRequested);
+
+    // RemelonDB currently rebuilds table schemas from `.shape`, which drops
+    // UserNoteRow's object-level superRefine. Keep this contract at the
+    // application cross-validation boundary shared by both engine paths.
+    const rejectedNotes = noteRows.filter((note) => {
+      const noteType = stringField(note, 'note_type');
+      const fieldsJson = stringField(note, 'fields_json');
+      const fieldsVersion = note['fields_version'];
+      return (
+        noteType === null ||
+        fieldsJson === null ||
+        typeof fieldsVersion !== 'number' ||
+        !validateNoteFieldsJson(noteType, fieldsVersion, fieldsJson).success
+      );
+    });
+    const rejectedNoteIds = new Set(rejectedNotes.map((note) => note.id));
+
+    const noteChanges =
+      cardRows.length === 0 && membershipRows.length === 0
+        ? []
+        : await tx.changedSince(USER_NOTES, scope, 0);
+    const ownedNoteIds = activeIds(noteChanges);
+    const deletedNoteIds = tombstoneIds(noteChanges);
+
+    for (const note of noteRows) {
+      if (!rejectedNoteIds.has(note.id) && !deletedNoteIds.has(note.id)) {
+        ownedNoteIds.add(note.id);
+      }
+    }
+
+    const noteDeletes = new Set(noteDeletesRequested);
 
     const rejectedCards = cardRows.filter((card) => {
-      const deckId = stringField(card, 'deck_id');
-      return deckId === null || !ownedDeckIds.has(deckId);
+      const noteId = stringField(card, 'note_id');
+      const templateKey = stringField(card, 'template_key');
+      return (
+        noteId === null ||
+        templateKey === null ||
+        !ownedNoteIds.has(noteId) ||
+        card.id !== cardId(noteId, templateKey)
+      );
     });
     const rejectedCardIds = new Set(rejectedCards.map((card) => card.id));
-    const blockedDeckDeletes = new Set<string>();
+    const blockedNoteDeletes = new Set<string>();
     for (const card of cardRows) {
       if (rejectedCardIds.has(card.id)) continue;
-      const deckId = stringField(card, 'deck_id');
+      const noteId = stringField(card, 'note_id');
+      if (noteId !== null && noteDeletes.has(noteId)) {
+        blockedNoteDeletes.add(noteId);
+      }
+    }
+
+    const rejectedMemberships = membershipRows.filter((membership) => {
+      const noteId = stringField(membership, 'note_id');
+      const deckId = stringField(membership, 'deck_id');
+      return (
+        noteId === null ||
+        deckId === null ||
+        !ownedNoteIds.has(noteId) ||
+        !ownedDeckIds.has(deckId) ||
+        membership.id !== noteDeckId(noteId, deckId)
+      );
+    });
+    const rejectedMembershipIds = new Set(
+      rejectedMemberships.map((membership) => membership.id),
+    );
+    const blockedDeckDeletes = new Set<string>();
+    for (const membership of membershipRows) {
+      if (rejectedMembershipIds.has(membership.id)) continue;
+      const noteId = stringField(membership, 'note_id');
+      const deckId = stringField(membership, 'deck_id');
+      if (noteId !== null && noteDeletes.has(noteId)) {
+        blockedNoteDeletes.add(noteId);
+      }
       if (deckId !== null && deckDeletes.has(deckId)) {
         blockedDeckDeletes.add(deckId);
       }
     }
 
-    const cardChanges = await tx.changedSince(USER_CARDS, scope, 0);
+    const cardChanges =
+      reviewRows.length === 0
+        ? []
+        : await tx.changedSince(USER_CARDS, scope, 0);
     const ownedCardIds = activeIds(cardChanges);
     const deletedCardIds = tombstoneIds(cardChanges);
-    const cardDeckIds = new Map<string, string>();
+    const cardNoteIds = new Map<string, string>();
     for (const card of liveRows(cardChanges)) {
-      const deckId = stringField(card, 'deck_id');
-      if (deckId !== null) cardDeckIds.set(card.id, deckId);
+      const noteId = stringField(card, 'note_id');
+      if (noteId !== null) cardNoteIds.set(card.id, noteId);
     }
 
     for (const card of cardRows) {
       if (!rejectedCardIds.has(card.id) && !deletedCardIds.has(card.id)) {
         ownedCardIds.add(card.id);
-        const deckId = stringField(card, 'deck_id');
-        if (deckId !== null) cardDeckIds.set(card.id, deckId);
+        const noteId = stringField(card, 'note_id');
+        if (noteId !== null) cardNoteIds.set(card.id, noteId);
       }
     }
 
-    const cardDeletes = new Set(
-      cardDeletesRequested.filter((id) => ownedCardIds.has(id)),
-    );
+    const cardDeletes = new Set(cardDeletesRequested);
 
     const rejectedReviews = reviewRows.filter((review) => {
-      const cardId = stringField(review, 'user_card_id');
-      return cardId === null || !ownedCardIds.has(cardId);
+      const reviewCardId = stringField(review, 'user_card_id');
+      return reviewCardId === null || !ownedCardIds.has(reviewCardId);
     });
     const rejectedReviewIds = new Set(
       rejectedReviews.map((review) => review.id),
@@ -185,21 +295,28 @@ export function createCrossValidateSyncRelationships(
     const blockedCardDeletes = new Set<string>();
     for (const review of reviewRows) {
       if (rejectedReviewIds.has(review.id)) continue;
-      const cardId = stringField(review, 'user_card_id');
-      if (cardId === null) continue;
-      if (cardDeletes.has(cardId)) blockedCardDeletes.add(cardId);
-      const deckId = cardDeckIds.get(cardId);
-      if (deckId !== undefined && deckDeletes.has(deckId)) {
-        blockedDeckDeletes.add(deckId);
+      const reviewCardId = stringField(review, 'user_card_id');
+      if (reviewCardId === null) continue;
+      if (cardDeletes.has(reviewCardId)) {
+        blockedCardDeletes.add(reviewCardId);
+      }
+      const noteId = cardNoteIds.get(reviewCardId);
+      if (noteId !== undefined && noteDeletes.has(noteId)) {
+        blockedNoteDeletes.add(noteId);
       }
     }
 
     return {
       [USER_DECKS]: [...blockedDeckDeletes],
+      [USER_NOTES]: [
+        ...rejectedNotes.map((note) => note.id),
+        ...blockedNoteDeletes,
+      ],
       [USER_CARDS]: [
         ...rejectedCards.map((card) => card.id),
         ...blockedCardDeletes,
       ],
+      [USER_NOTE_DECKS]: rejectedMemberships.map((membership) => membership.id),
       [REVIEW_EVENTS]: rejectedReviews.map((review) => review.id),
       [USER_PROFILES]: profileRows
         .filter((profile) => {

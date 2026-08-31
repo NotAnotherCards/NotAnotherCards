@@ -60,7 +60,7 @@ export async function resetPostgres(): Promise<void> {
   if (!testPool) return;
 
   await testPool.query(`
-    truncate table user_profiles, review_events, user_cards, user_decks, ai_generation_jobs, ai_usage cascade;
+    truncate table user_profiles, review_events, user_note_decks, user_cards, user_notes, user_decks, ai_generation_jobs, ai_usage cascade;
     delete from remelon_revision_checkpoints;
     delete from remelon_sync_meta;
     delete from "user";

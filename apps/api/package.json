@@ -83,13 +83,30 @@
     "moduleFileExtensions": [
       "js",
       "json",
-      "ts"
+      "ts",
+      "mjs"
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)sx?$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "module": "commonjs",
+            "moduleResolution": "node",
+            "allowJs": true,
+            "resolvePackageJsonExports": false
+          }
+        }
+      ],
+      "^.+\\.mjs$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^@repo/offline-db$": "<rootDir>/../../../packages/offline-db/src/index.ts",
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transformIgnorePatterns": [],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

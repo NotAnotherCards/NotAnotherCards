@@ -8,7 +8,14 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { Database, createDatabaseManager } from '@remelondb/core';
 import { DatabaseProvider } from '@remelondb/core/react';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
-import { schema, UserDeck, UserCard, ReviewEvent } from '@repo/offline-db';
+import {
+  schema,
+  UserDeck,
+  UserNote,
+  UserCard,
+  UserNoteDeck,
+  ReviewEvent,
+} from '@repo/offline-db';
 import { useStore } from '@/hooks/useStore';
 import { SyncProvider } from '@/offline/syncProvider';
 import type { SyncController } from '@/offline/syncController';
@@ -18,7 +25,7 @@ describe('useStore sync triggers', () => {
     const db = await Database.open({
       driver: new NodeSqliteDriver(),
       schema,
-      modelClasses: [UserDeck, UserCard, ReviewEvent],
+      modelClasses: [UserDeck, UserNote, UserCard, UserNoteDeck, ReviewEvent],
       name: ':memory:',
     });
     const manager = createDatabaseManager({
@@ -51,7 +58,7 @@ describe('useStore sync triggers', () => {
       const card = await result.current.createCard(deck.id, 'front', 'back');
       await result.current.updateCard(card.id, 'front 2', 'back 2');
       await result.current.recordReview(card.id, 2);
-      await result.current.deleteCard(card.id);
+      await result.current.removeNoteFromDeck(card.note_id, deck.id);
       await result.current.deleteDeck(deck.id);
     });
 
