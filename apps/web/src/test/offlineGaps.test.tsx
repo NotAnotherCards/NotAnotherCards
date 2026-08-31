@@ -36,7 +36,7 @@ import {
   recordReviewEvent,
   deleteDeck,
   getReviewHistoryQuery,
-} from '@/offline/queries';
+} from '@repo/offline-db';
 
 // `var` is intentional: vitest hoists mock factories above lexical
 // declarations, and the tests need the manager the factory built.

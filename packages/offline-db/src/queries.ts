@@ -1,18 +1,18 @@
 import { Database, Q, randomId } from '@remelondb/core';
 import {
+  ReviewEvent,
+  UserCard,
   UserDeck,
   UserNote,
-  UserCard,
   UserNoteDeck,
-  ReviewEvent,
   UserProfile,
-  BASIC_FRONT_BACK_TEMPLATE_KEY,
+} from './user-dictionary.js';
+import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
+import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
-  calculateReviewSchedule,
-  cardId,
-  noteDeckId,
-} from '@repo/offline-db';
+} from './note-constants.js';
+import { calculateReviewSchedule } from './review-scheduler.js';
 
 // ==========================================
 // QUERIES
