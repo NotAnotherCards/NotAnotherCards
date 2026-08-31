@@ -27,14 +27,14 @@ const SessionDatabaseContext = createContext<SessionDatabase | null>(null);
  * placement is required rather than tidy: the hook's close queue lives
  * as long as the component calling it, and TanStack destroys and
  * recreates a route layout faster than a close finishes. Mounted inside
- * `/app`, the queue would be empty again on every navigation and the
+ * a subroute layout like the `_protected` route, the queue would be empty again on every navigation and the
  * next open would have nothing to wait for.
  */
 export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
   // Only a settled session, and only one that has finished onboarding.
-  // The database used to be opened by the `/app` layout, which sits
-  // behind a guard that checks both; from the root there is no guard in
+  // The database used to be opened by the old `/app` layout, which sat
+  // behind a guard that checked both; from the root there is no guard in
   // front, so the condition moves here. A user still on `/onboarding`
   // has no profile yet and no reason to open a database.
   const userId =
