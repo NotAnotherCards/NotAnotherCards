@@ -54,7 +54,7 @@ export function LoginComponent() {
     try {
       const { error } = await authClient.signIn.social({
         provider,
-        callbackURL: `${window.location.origin}/app/dashboard`,
+        callbackURL: `${window.location.origin}/dashboard`,
         errorCallbackURL: `${window.location.origin}/login`,
       });
 
@@ -88,7 +88,7 @@ export function LoginComponent() {
     if (error) {
       setApiError(error.message || 'An unexpected error occurred');
     } else {
-      void navigate({ to: '/app/dashboard' });
+      void navigate({ to: '/dashboard' });
     }
   };
 

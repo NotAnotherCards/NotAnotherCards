@@ -181,9 +181,7 @@ One account, one local database file, named from the user id. Signing in
 as a different account opens a different file. That is the whole reason
 two accounts on one device never see each other's records.
 
-The session owns the database and the controller. On web that is the
-`/app` route layout, on mobile `SessionDatabaseProvider`. Nothing else
-opens or closes the database.
+The session owns the database and the controller. On both web and mobile, `SessionDatabaseProvider` owns this lifecycle (on web, this is rendered at the root in `__root.tsx` to keep ownership above the router, meaning protected layouts or routes only consume it). Nothing else opens or closes the database.
 
 Attach sync while the database is open, and detach it when it is not.
 Watching a single open call is not enough. A retry elsewhere in the app

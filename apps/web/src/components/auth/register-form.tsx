@@ -54,7 +54,7 @@ export function RegisterComponent() {
     try {
       const { error } = await authClient.signIn.social({
         provider,
-        callbackURL: `${window.location.origin}/app/dashboard`,
+        callbackURL: `${window.location.origin}/dashboard`,
         errorCallbackURL: `${window.location.origin}/register`,
       });
       if (error) {

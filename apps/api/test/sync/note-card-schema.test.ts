@@ -117,7 +117,8 @@ describePostgres('note/card PostgreSQL migration', () => {
       );
 
       try {
-        await tx.execute(sql.raw(`
+        await tx.execute(
+          sql.raw(`
           CREATE TABLE user_cards (
             id text PRIMARY KEY NOT NULL,
             deck_id text NOT NULL
@@ -129,18 +130,21 @@ describePostgres('note/card PostgreSQL migration', () => {
           INSERT INTO user_cards (id, deck_id) VALUES ('v2-card', 'v2-deck');
           INSERT INTO review_events (id, user_card_id)
           VALUES ('v2-review', 'v2-card');
-        `));
+        `),
+        );
 
         for (const statement of statements) {
           await tx.execute(sql.raw(statement));
         }
 
         const [{ cards, reviews }] = (
-          await tx.execute<{ cards: string; reviews: string }>(sql.raw(`
+          await tx.execute<{ cards: string; reviews: string }>(
+            sql.raw(`
             SELECT
               (SELECT count(*) FROM user_cards)::text AS cards,
               (SELECT count(*) FROM review_events)::text AS reviews
-          `))
+          `),
+          )
         ).rows;
 
         expect({ cards, reviews }).toEqual({ cards: '0', reviews: '0' });

@@ -23,7 +23,7 @@ export function OnBoardingComponent() {
   const navigate = useNavigate();
   // The root database provider reads the reactive session, and
   // getSession() does not update it. Without this refetch the provider
-  // still holds onBoardingComplete: false when /app mounts, and the
+  // still holds onBoardingComplete: false when the protected layout mounts, and the
   // layout renders nothing.
   const { refetch: refetchSession } = authClient.useSession();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export function OnBoardingComponent() {
         throw new Error(errData.message || 'Failed to save onboarding data');
       }
       await refetchSession();
-      void navigate({ to: '/app/dashboard' });
+      void navigate({ to: '/dashboard' });
     } catch (err) {
       setApiError(
         err instanceof Error ? err.message : 'An unexpected error occurred',
