@@ -124,4 +124,21 @@ describe('Onboarding screen', () => {
     fireEvent.press(getByText('Retry'));
     expect(mockRefetch).toHaveBeenCalled();
   });
+
+  it('disables the native language in the target picker instead of hiding it', () => {
+    const { getByLabelText } = render(<Onboarding />);
+    fireEvent.press(getByLabelText(/Native language: .*German/));
+
+    const germanAsTarget = getByLabelText(/Target language: .*German/);
+    expect(germanAsTarget.props.accessibilityState).toMatchObject({
+      disabled: true,
+    });
+    fireEvent.press(germanAsTarget);
+    expect(germanAsTarget.props.accessibilityState.selected).toBe(false);
+    // The other three stay selectable.
+    expect(
+      getByLabelText(/Target language: .*Spanish/).props.accessibilityState
+        .disabled,
+    ).toBeFalsy();
+  });
 });
