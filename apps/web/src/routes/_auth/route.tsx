@@ -6,7 +6,7 @@ export const Route = createFileRoute('/_auth')({
   beforeLoad: async () => {
     const { data: session, error } = await authClient.getSession();
     if (error) {
-      throw error
+      throw error;
     }
     if (session) {
       const onboardingComplete = session.user.onBoardingComplete;

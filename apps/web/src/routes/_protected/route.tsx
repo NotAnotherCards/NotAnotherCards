@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_protected')({
   beforeLoad: async ({ location }) => {
     const { data: session, error } = await authClient.getSession();
     if (error) {
-      throw error
+      throw error;
     }
     if (!session) {
       throw redirect({
