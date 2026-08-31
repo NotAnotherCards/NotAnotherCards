@@ -210,7 +210,7 @@ describe('Authentication (e2e)', () => {
           native_language_id: '00000000-0000-0000-0000-000000000001',
           target_language_id: '00000000-0000-0000-0000-000000000002',
         })
-        .expect(200);
+        .expect(201);
 
       // Checking the same username should return available: true (since the current user owns it)
       const response = await request(app.getHttpServer())
@@ -247,7 +247,7 @@ describe('Authentication (e2e)', () => {
           native_language_id: '00000000-0000-0000-0000-000000000001',
           target_language_id: '00000000-0000-0000-0000-000000000002',
         })
-        .expect(200);
+        .expect(201);
 
       // 2. Check the availability of that username from the first user's session
       const response = await request(app.getHttpServer())
