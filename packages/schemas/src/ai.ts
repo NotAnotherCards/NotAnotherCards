@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-export const AI_MODELS = [
-  'qwen',
-  'qwen-next-80b',
-  'mistral-small'
-] as const;
+export const AI_MODELS = ['qwen', 'qwen-next-80b', 'mistral-small'] as const;
 export type AiModel = (typeof AI_MODELS)[number];
 
 export const createAiJobSchema = z
