@@ -50,6 +50,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@remelondb/driver-node": "0.2.6",
     "@repo/eslint-config": "workspace:*",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",

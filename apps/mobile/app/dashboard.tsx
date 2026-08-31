@@ -1,10 +1,11 @@
 import { Redirect, useRouter } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { authClient } from '@/lib/auth-client';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { DeckList } from '@/components/deck-list';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -55,18 +56,26 @@ export default function Dashboard() {
   }
 
   return (
-    <View className="flex-1 justify-center gap-2 bg-background p-6">
-      <Text className="text-2xl font-semibold">Dashboard</Text>
-      <Text className="mt-2 text-base">
-        Welcome, <Text className="font-semibold">{session.user.name}</Text>!
-      </Text>
-      <Text className="mb-4 text-muted-foreground">
-        Logged in as {session.user.email}
-      </Text>
-      <ThemeToggle />
-      <Button onPress={onLogout}>
-        <Text>Log out</Text>
-      </Button>
-    </View>
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerClassName="gap-4 p-6"
+    >
+      <View className="gap-1">
+        <Text className="text-2xl font-semibold">Dashboard</Text>
+        <Text className="text-base">
+          Welcome, <Text className="font-semibold">{session.user.name}</Text>!
+        </Text>
+        <Text className="text-muted-foreground">
+          Logged in as {session.user.email}
+        </Text>
+      </View>
+      <DeckList />
+      <View className="gap-2 pt-4">
+        <ThemeToggle />
+        <Button onPress={onLogout}>
+          <Text>Log out</Text>
+        </Button>
+      </View>
+    </ScrollView>
   );
 }
