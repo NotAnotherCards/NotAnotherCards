@@ -1,0 +1,31 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'job', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'default-receiver'
+  routes:
+    - matchers:
+        - severity =~ "critical|warning"
+      receiver: 'slack-notifications'
+      continue: true
+
+receivers:
+  - name: 'default-receiver'
+
+  - name: 'slack-notifications'
+    slack_configs:
+      - channel: '#alerts'
+        api_url_file: '/etc/alertmanager/secrets/slack_webhook'
+        send_resolved: true
+        icon_emoji: ':rotating_light:'
+        title: '{{ if eq .Status "firing" }}:fire: [FIRING:{{ .Alerts.Firing | len }}] {{ .CommonLabels.alertname }}{{ else }}:white_check_mark: [RESOLVED] {{ .CommonLabels.alertname }}{{ end }}'
+        text: >-
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Severity:* `{{ .CommonLabels.severity }}`
+          *Job:* `{{ .CommonLabels.job }}`
+          *Instance:* `{{ .CommonLabels.instance }}`

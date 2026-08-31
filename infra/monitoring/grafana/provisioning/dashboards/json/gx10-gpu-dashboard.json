@@ -1,0 +1,130 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "ASUS Ascent GX10 GPU & Hardware",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "id": 2,
+      "title": "NVIDIA GB10 GPU Utilization",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-gpu-gx10\"} or vector(0)",
+          "legendFormat": "GPU Util %"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 75 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "celsius"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "id": 3,
+      "title": "GPU Temperature",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-gpu-gx10\"} or vector(0)",
+          "legendFormat": "Temp (°C)"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "watt" }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "id": 4,
+      "title": "GPU Power Draw",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm-gpu-gx10\"} or vector(0)",
+          "legendFormat": "Watts"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 5,
+      "title": "LiteLLM AI Gateway Traffic (GX10)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 6,
+      "title": "LiteLLM Request Rate (/sec)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(litellm_requests_metric_total{job=\"litellm-gx10\"}[5m]) or vector(0)",
+          "legendFormat": "Requests/s"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 7,
+      "title": "LiteLLM Response Latency (seconds)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(litellm_deployment_latency_per_output_token_sum{job=\"litellm-gx10\"}[5m]) / rate(litellm_deployment_latency_per_output_token_count{job=\"litellm-gx10\"}[5m]) or vector(0)",
+          "legendFormat": "Latency / token"
+        }
+      ]
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["ai", "gpu", "gx10", "litellm"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "GX10 AI Supercomputer & GPU Health",
+  "uid": "nac-gx10-gpu",
+  "version": 1
+}

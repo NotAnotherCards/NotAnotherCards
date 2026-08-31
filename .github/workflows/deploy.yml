@@ -55,8 +55,8 @@ jobs:
                 -f infra/monitoring/docker-compose.yml \
                 --env-file infra/monitoring/.env \
                 ps
-              curl --fail --silent --show-error --retry 5 --retry-delay 3 http://127.0.0.1:9090/-/healthy
-              curl --fail --silent --show-error --retry 5 --retry-delay 3 http://127.0.0.1:3001/api/health
+              curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:9090/-/healthy
+              curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:3001/api/health
             fi
 
             # 3. Verify Public App Health
@@ -65,5 +65,7 @@ jobs:
               --silent \
               --show-error \
               --retry 5 \
+              --retry-connrefused \
+              --retry-all-errors \
               --retry-delay 3 \
               https://app.notanothercards.com/health

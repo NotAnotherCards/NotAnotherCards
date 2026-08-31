@@ -11,16 +11,18 @@ import {
 export class MetricsService implements OnModuleInit {
   private readonly registry: Registry;
 
-  // HTTP METRICS
+  // HTTP Metrics
   public readonly httpRequestsTotal: Counter<string>;
   public readonly httpRequestDurationSeconds: Histogram<string>;
 
   // AI Queue Metrics
   public readonly aiJobsPending: Gauge<string>;
   public readonly aiJobsProcessing: Gauge<string>;
+  public readonly aiJobsFailed: Gauge<string>;
   public readonly aiJobsCompletedTotal: Counter<string>;
   public readonly aiJobsFailedTotal: Counter<string>;
   public readonly aiTokensConsumedTotal: Counter<string>;
+  public readonly aiJobDurationSeconds: Histogram<string>;
 
   constructor() {
     this.registry = new Registry();
@@ -41,7 +43,7 @@ export class MetricsService implements OnModuleInit {
       registers: [this.registry],
     });
 
-    // 2. AI Queue Metrics
+    // 2. AI Queue Metrics (From Issue #79 & #78)
     this.aiJobsPending = new Gauge({
       name: 'ai_jobs_pending',
       help: 'Current number of AI generation jobs in pending state',
@@ -51,6 +53,12 @@ export class MetricsService implements OnModuleInit {
     this.aiJobsProcessing = new Gauge({
       name: 'ai_jobs_processing',
       help: 'Current number of AI generation jobs currently being processed',
+      registers: [this.registry],
+    });
+
+    this.aiJobsFailed = new Gauge({
+      name: 'ai_jobs_failed',
+      help: 'Current number of AI generation jobs in failed state',
       registers: [this.registry],
     });
 
@@ -72,11 +80,20 @@ export class MetricsService implements OnModuleInit {
       labelNames: ['model'],
       registers: [this.registry],
     });
+
+    this.aiJobDurationSeconds = new Histogram({
+      name: 'ai_job_duration_seconds',
+      help: 'Duration of AI generation job execution in seconds',
+      labelNames: ['model', 'status'],
+      buckets: [1, 2.5, 5, 10, 20, 30, 45, 60, 90, 120],
+      registers: [this.registry],
+    });
   }
 
   private aiQueueDepthProvider?: () => Promise<{
     pending: number;
     processing: number;
+    failed: number;
   }>;
 
   onModuleInit() {
@@ -84,7 +101,11 @@ export class MetricsService implements OnModuleInit {
   }
 
   registerAiQueueDepthProvider(
-    provider: () => Promise<{ pending: number; processing: number }>,
+    provider: () => Promise<{
+      pending: number;
+      processing: number;
+      failed: number;
+    }>,
   ) {
     this.aiQueueDepthProvider = provider;
   }
@@ -104,14 +125,24 @@ export class MetricsService implements OnModuleInit {
     this.httpRequestDurationSeconds.observe(labels, durationSeconds);
   }
 
+  observeAiJobDuration(
+    model: string,
+    status: 'completed' | 'failed',
+    durationSeconds: number,
+  ) {
+    this.aiJobDurationSeconds.observe({ model, status }, durationSeconds);
+  }
+
   async getMetrics(): Promise<string> {
     if (this.aiQueueDepthProvider) {
       try {
-        const { pending, processing } = await this.aiQueueDepthProvider();
+        const { pending, processing, failed } =
+          await this.aiQueueDepthProvider();
         this.aiJobsPending.set(pending);
         this.aiJobsProcessing.set(processing);
+        this.aiJobsFailed.set(failed);
       } catch {
-        // preserves previous gauge values
+        // preserve previous gauge values on error
       }
     }
     return this.registry.metrics();

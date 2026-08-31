@@ -42,26 +42,31 @@ describe('MetricsService & MetricsController', () => {
   it('records AI queue and token consumption metrics', async () => {
     service.aiJobsPending.set(3);
     service.aiJobsProcessing.set(1);
+    service.aiJobsFailed.set(2);
     service.aiJobsCompletedTotal.inc();
     service.aiJobsFailedTotal.inc();
     service.aiTokensConsumedTotal.inc({ model: 'qwen' }, 120);
+    service.observeAiJobDuration('qwen', 'completed', 4.5);
 
     const text = await service.getMetrics();
     expect(text).toContain('ai_jobs_pending 3');
     expect(text).toContain('ai_jobs_processing 1');
+    expect(text).toContain('ai_jobs_failed 2');
     expect(text).toContain('ai_jobs_completed_total 1');
     expect(text).toContain('ai_jobs_failed_total 1');
     expect(text).toContain('ai_tokens_consumed_total{model="qwen"} 120');
+    expect(text).toContain('ai_job_duration_seconds_bucket');
   });
 
   it('refreshes queue gauges from the registered provider at scrape time', async () => {
     service.registerAiQueueDepthProvider(() =>
-      Promise.resolve({ pending: 7, processing: 2 }),
+      Promise.resolve({ pending: 7, processing: 2, failed: 1 }),
     );
 
     const text = await service.getMetrics();
     expect(text).toContain('ai_jobs_pending 7');
     expect(text).toContain('ai_jobs_processing 2');
+    expect(text).toContain('ai_jobs_failed 1');
   });
 
   it('keeps the scrape alive when the queue depth provider fails', async () => {

@@ -26,6 +26,7 @@ describe('AiWorkerService', () => {
       aiJobsCompletedTotal: { inc: jest.fn() },
       aiJobsFailedTotal: { inc: jest.fn() },
       aiTokensConsumedTotal: { inc: jest.fn() },
+      observeAiJobDuration: jest.fn(),
     } as unknown as jest.Mocked<MetricsService>;
   });
 
