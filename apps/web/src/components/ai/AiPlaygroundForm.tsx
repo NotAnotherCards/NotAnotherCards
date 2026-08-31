@@ -130,10 +130,6 @@ export function AiPlaygroundForm({
                 else if (m === 'qwen-next-80b')
                   displayName = 'Qwen Next 80B (Smart)';
                 else if (m === 'mistral-small') displayName = 'Mistral Small';
-                else if (m === 'Qwen/Qwen3.6-35B-A3B')
-                  displayName = 'Qwen 3.6 35B (NanoGPT)';
-                else if (m === 'google/gemma-2-27b-it')
-                  displayName = 'Gemma 2 27B (NanoGPT)';
                 return (
                   <option
                     key={m}
