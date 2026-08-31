@@ -1,3 +1,7 @@
+DELETE FROM "review_events";
+--> statement-breakpoint
+DELETE FROM "user_cards";
+--> statement-breakpoint
 CREATE TABLE "user_note_decks" (
 	"id" text PRIMARY KEY NOT NULL,
 	"rev" bigint NOT NULL,

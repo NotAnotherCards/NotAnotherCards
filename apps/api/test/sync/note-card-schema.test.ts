@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   db,
@@ -92,5 +95,58 @@ describePostgres('note/card PostgreSQL migration', () => {
         'user_note_decks_deck_idx',
       ]),
     );
+  });
+
+  it('discards populated v2 cards and reviews before requiring note IDs', async () => {
+    const migration = await readFile(
+      resolve(process.cwd(), 'drizzle/0010_shocking_roulette.sql'),
+      'utf8',
+    );
+    const statements = migration
+      .split('--> statement-breakpoint')
+      .map((statement) => statement.trim())
+      .filter(Boolean);
+
+    await db.transaction(async (tx) => {
+      await tx.execute(
+        sql.raw('DROP SCHEMA IF EXISTS migration_0010_test CASCADE'),
+      );
+      await tx.execute(sql.raw('CREATE SCHEMA migration_0010_test'));
+      await tx.execute(
+        sql.raw('SET LOCAL search_path TO migration_0010_test, public'),
+      );
+
+      try {
+        await tx.execute(sql.raw(`
+          CREATE TABLE user_cards (
+            id text PRIMARY KEY NOT NULL,
+            deck_id text NOT NULL
+          );
+          CREATE TABLE review_events (
+            id text PRIMARY KEY NOT NULL,
+            user_card_id text NOT NULL
+          );
+          INSERT INTO user_cards (id, deck_id) VALUES ('v2-card', 'v2-deck');
+          INSERT INTO review_events (id, user_card_id)
+          VALUES ('v2-review', 'v2-card');
+        `));
+
+        for (const statement of statements) {
+          await tx.execute(sql.raw(statement));
+        }
+
+        const [{ cards, reviews }] = (
+          await tx.execute<{ cards: string; reviews: string }>(sql.raw(`
+            SELECT
+              (SELECT count(*) FROM user_cards)::text AS cards,
+              (SELECT count(*) FROM review_events)::text AS reviews
+          `))
+        ).rows;
+
+        expect({ cards, reviews }).toEqual({ cards: '0', reviews: '0' });
+      } finally {
+        await tx.execute(sql.raw('DROP SCHEMA migration_0010_test CASCADE'));
+      }
+    });
   });
 });
