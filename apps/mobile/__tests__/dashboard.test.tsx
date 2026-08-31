@@ -37,7 +37,13 @@ describe('Dashboard screen', () => {
 
   it('shows the user when authenticated', () => {
     mockUseSession.mockReturnValue({
-      data: { user: { name: 'Jane Doe', email: 'jane@example.com' } },
+      data: {
+        user: {
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
+      },
       isPending: false,
     });
     const { getByText } = render(<Dashboard />);
@@ -65,7 +71,12 @@ describe('Dashboard screen', () => {
   it('signs out and returns to login', async () => {
     mockUseSession.mockReturnValue({
       data: {
-        user: { id: 'user-a', name: 'Jane Doe', email: 'jane@example.com' },
+        user: {
+          id: 'user-a',
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
       },
       isPending: false,
     });
@@ -75,5 +86,20 @@ describe('Dashboard screen', () => {
 
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
     expect(mockReplace).toHaveBeenCalledWith('/login');
+  });
+
+  it('redirects to onboarding when the profile is unfinished', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: false,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('redirect:/onboarding')).toBeTruthy();
   });
 });

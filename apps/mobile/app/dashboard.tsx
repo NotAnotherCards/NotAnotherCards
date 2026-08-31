@@ -47,6 +47,11 @@ export default function Dashboard() {
     return <Redirect href="/login" />;
   }
 
+  // The server owns onBoardingComplete; unfinished profiles set it false.
+  if (!session.user.onBoardingComplete) {
+    return <Redirect href="/onboarding" />;
+  }
+
   return (
     <View className="flex-1 justify-center gap-2 bg-background p-6">
       <Text className="text-2xl font-semibold">Dashboard</Text>

@@ -22,7 +22,7 @@ const mockSignUp = jest.fn(
 
 // What useSession returns; tests mutate this to simulate the session arriving.
 let mockSession: {
-  data: { user: { name: string } } | null;
+  data: { user: { name: string; onBoardingComplete?: boolean } } | null;
   isPending: boolean;
 };
 
@@ -59,7 +59,10 @@ describe('Register screen', () => {
     // now is the race that bounces users back to /login.
     expect(mockReplace).not.toHaveBeenCalled();
 
-    mockSession = { data: { user: { name: 'Jane Doe' } }, isPending: false };
+    mockSession = {
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    };
     rerender(<Register />);
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
   });
