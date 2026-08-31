@@ -4,16 +4,11 @@ import {
   createTable,
   schemaMigrations,
 } from '@remelondb/core';
-import { syncSchemas } from '@remelondb/core/zod';
 import {
   userDecks,
   userCards,
   reviewEvents,
   userProfiles,
-  UserDeckRow,
-  UserCardRow,
-  ReviewEventRow,
-  UserProfileRow,
 } from './user-dictionary.js';
 
 // encodeURIComponent provides UTF-8 bytes in Hermes without relying on the
@@ -61,12 +56,6 @@ export const migrations = schemaMigrations({
   ],
 });
 
-export const syncWireSchemas = syncSchemas({
-  user_decks: UserDeckRow,
-  user_cards: UserCardRow,
-  review_events: ReviewEventRow,
-  user_profiles: UserProfileRow,
-});
-
 export * from './user-dictionary.js';
+export * from './sync-schemas.js';
 export * from './sync-transport.js';

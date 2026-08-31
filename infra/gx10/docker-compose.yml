@@ -62,7 +62,11 @@ services:
       - "${TAILSCALE_IP}:9100:9100"
     volumes:
       - /:/host:ro,rslave
-    command: ["--path.rootfs=/host"]
+    # cpufreq is off: on the GB10 the CPPC driver's cpuinfo_cur_freq read
+    # blocks, and node-exporter scrapes every collector in one request, so
+    # /metrics hung until the scrape timed out. Every other collector
+    # answers in milliseconds.
+    command: ["--path.rootfs=/host", "--no-collector.cpufreq"]
 
   dcgm-exporter:
     image: nvcr.io/nvidia/k8s/dcgm-exporter:4.8.3
