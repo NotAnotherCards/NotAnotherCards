@@ -14,7 +14,7 @@ import {
   Loader2,
   Plus,
   RefreshCw,
-  Trash2,
+  Unlink,
 } from 'lucide-react';
 import { CardForm } from './CardForm';
 import { CardList } from './CardList';
@@ -30,8 +30,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
-  const [cardToDelete, setCardToDelete] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [noteToRemove, setNoteToRemove] = useState<Card | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
 
   if (store.isTakenOver) {
@@ -99,8 +99,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     );
   }
 
-  // Filter cards belonging to this deck
-  const cards = store.cards.filter((c) => c.deck_id === deckId);
+  const cards = store.getCardsForDeck(deckId);
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
@@ -125,17 +124,17 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     }
   };
 
-  const handleDeleteCard = async () => {
-    if (!cardToDelete) return;
-    setIsDeleting(true);
+  const handleRemoveFromDeck = async () => {
+    if (!noteToRemove) return;
+    setIsRemoving(true);
     setWriteError(null);
     try {
-      await store.deleteCard(cardToDelete);
-      setCardToDelete(null);
+      await store.removeNoteFromDeck(noteToRemove.note_id, deckId);
+      setNoteToRemove(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to delete card'));
+      setWriteError(writeErrorMessage(err, 'Failed to remove note from deck'));
     } finally {
-      setIsDeleting(false);
+      setIsRemoving(false);
     }
   };
 
@@ -178,7 +177,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       <CardList
         cards={cards}
         onEditCard={(card) => setEditingCard(card)}
-        onDeleteCard={(cardId) => setCardToDelete(cardId)}
+        onRemoveFromDeck={(card) => setNoteToRemove(card)}
+        canEditCard={store.isBasicCard}
         onAddCard={() => setShowCreateForm(true)}
         isLoading={!store.ready}
         error={store.error}
@@ -208,10 +208,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         />
       )}
 
-      {/* Delete Card Confirmation */}
-      {cardToDelete && (
+      {/* Remove Note Membership Confirmation */}
+      {noteToRemove && (
         <div
-          onClick={() => setCardToDelete(null)}
+          onClick={() => setNoteToRemove(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
         >
           <UICard
@@ -220,12 +220,13 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           >
             <CardHeader>
               <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
-                <Trash2 className="size-5" />
-                Delete Card?
+                <Unlink className="size-5" />
+                Remove Note from Deck?
               </CardTitle>
               <CardDescription>
-                Are you sure you want to permanently delete this study card from
-                your deck?
+                This removes every study card generated from this note from “
+                {deck.title}”. The note, its cards, schedule, and review history
+                will remain in your personal dictionary.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
@@ -233,18 +234,18 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setCardToDelete(null)}
+                  onClick={() => setNoteToRemove(null)}
                   className="cursor-pointer"
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={handleDeleteCard}
-                  disabled={isDeleting}
+                  onClick={handleRemoveFromDeck}
+                  disabled={isRemoving}
                   className="cursor-pointer"
                 >
-                  Delete
+                  Remove from Deck
                 </Button>
               </div>
             </CardContent>

@@ -1,19 +1,21 @@
 import { Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Eye } from 'lucide-react';
+import { Edit, Unlink, Eye } from 'lucide-react';
 
 interface CardItemProps {
   card: Card;
   onEditCard: (card: Card) => void;
-  onDeleteCard: (cardId: string) => void;
+  onRemoveFromDeck: (card: Card) => void;
   onViewCard: (card: Card) => void;
+  canEdit?: boolean;
 }
 
 export function CardItem({
   card,
   onEditCard,
-  onDeleteCard,
+  onRemoveFromDeck,
   onViewCard,
+  canEdit = true,
 }: CardItemProps) {
   return (
     <tr className="hover:bg-muted/10 transition-colors">
@@ -41,23 +43,25 @@ export function CardItem({
             <Eye className="size-3.5" />
             View
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
-            onClick={() => onEditCard(card)}
-            title="Edit Card"
-          >
-            <Edit className="size-3.5" />
-          </Button>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
+              onClick={() => onEditCard(card)}
+              title="Edit Card"
+            >
+              <Edit className="size-3.5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
             className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            onClick={() => onDeleteCard(card.id)}
-            title="Delete Card"
+            onClick={() => onRemoveFromDeck(card)}
+            title="Remove from Deck"
           >
-            <Trash2 className="size-3.5" />
+            <Unlink className="size-3.5" />
           </Button>
         </div>
       </td>

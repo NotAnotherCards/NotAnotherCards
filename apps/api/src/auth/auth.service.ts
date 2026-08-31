@@ -9,6 +9,7 @@ import { expo } from '@better-auth/expo';
 import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingHttpHeaders } from 'node:http';
 import { sendResetPasswordEmail } from '../email/reset-password-email';
+import { userAdditionalFields } from './auth-fields';
 
 @Injectable()
 export class AuthService {
@@ -78,18 +79,7 @@ export class AuthService {
         },
       },
       user: {
-        additionalFields: {
-          timezone: {
-            type: 'string',
-            required: false,
-            defaultValue: 'UTC',
-          },
-          onBoardingComplete: {
-            type: 'boolean',
-            required: false,
-            defaultValue: false,
-          },
-        },
+        additionalFields: userAdditionalFields,
       },
       plugins: [expo()],
       trustedOrigins: [

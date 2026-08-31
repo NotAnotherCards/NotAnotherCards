@@ -134,20 +134,19 @@ optional free-form Markdown.
 #### `fields_json` validation contract
 
 `fields_json` remains text at the database and sync boundary, but it is not an
-unvalidated escape hatch. Before accepting a note push, the server uses the
-pair `(note_type, fields_version)` to look up a Zod schema in an explicit
-registry, parses the serialized JSON, and validates the result. Malformed JSON,
-unknown type/version pairs, and payloads rejected by the selected schema must
-all reject the note write. This registry is shared with the local/wire row in
-[#160](https://github.com/NotAnotherCards/NotAnotherCards/issues/160) and wired
-into push validation in
-[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+unvalidated escape hatch. The shared local/wire validator uses the pair
+`(note_type, fields_version)` to look up a Zod schema in an explicit registry,
+parses the serialized JSON, and validates the result. Malformed JSON, unknown
+type/version pairs, and payloads rejected by the selected schema are rejected
+by both the wire contract and the server-side sync store.
 
 Known values that may be edited, regenerated, searched, filtered, or reused by
 a template belong in `fields_json`; `additional_content` is only for prose
-without those semantics. In v1, `word` notes require
-`original_language` and `translation_language` in the validated payload even
-when a deck supplies their initial defaults.
+without those semantics. Only the complete `basic@1` contract is currently
+registered. `word@1` remains unsupported until its full stable field and
+template contract is defined; that eventual contract must include
+`original_language` and `translation_language`, even when a deck supplies
+their initial defaults.
 
 ---
 
@@ -163,7 +162,9 @@ the source content; each sibling card owns its own schedule and review history.
 - **`user_cards_note_idx`**: Index on `(note_id)` for finding all sibling cards generated from a note.
 - **`user_cards_user_due_idx`**: Composite index on `(user_id, due_at)` to quickly fetch the user's active due review queue.
 
-- **`id`** (text/UUID, Primary Key): Client-generated unique identifier.
+- **`id`** (text/UUID, Primary Key): Deterministic UUIDv5 derived by the shared
+  `cardId(noteId, templateKey)` helper. Every live pushed row is checked by
+  recomputing this ID; a client-supplied random or stale ID is rejected.
 - **`user_id`** (text/UUID, Foreign Key): Links to `user.id`.
 - **`note_id`** (text, NOT NULL): Links to `user_notes.id`. Ownership is
   validated through the authenticated sync engine rather than a cascading SQL
@@ -175,6 +176,14 @@ the source content; each sibling card owns its own schedule and review history.
   currently enabled. Disabling a mode is soft state, not protocol deletion.
 - **`front` / `back`** (text, NOT NULL): Generic Markdown prompt and answer
   rendered from the source note.
+- **`scheduled_interval_minutes`** (integer, NOT NULL; server default `0`,
+  required on the local/wire row): The card's current interval in whole
+  minutes, constrained to `0..172800`. `0` means the card has never been
+  reviewed; `172800` is the shared 120-day scheduler cap. Both the wire
+  validator and PostgreSQL check constraint enforce this range. The shared
+  scheduler multiplies this value by rating-specific policy constants and
+  updates it together with `due_at`; v1 does not store a scheduler `level` or
+  `status`.
 - **`created_at` / `updated_at` / `due_at`** (double precision): Unix time in milliseconds. `rev` and `deleted_at` have the same server-only semantics as
   `user_decks`.
 
@@ -185,8 +194,10 @@ the source content; each sibling card owns its own schedule and review history.
 Represents note-level membership in a deck. A note can belong to multiple
 decks while retaining one canonical payload and one schedule per sibling card.
 
-- **`id`** (text/UUID, Primary Key): Deterministic client ID derived from
-  `(note_id, deck_id)`.
+- **`id`** (text/UUID, Primary Key): Deterministic UUIDv5 derived by the shared
+  `noteDeckId(noteId, deckId)` helper. Every live pushed row is checked by
+  recomputing this ID; changing either parent without changing the ID is
+  rejected.
 - **`user_id`** (text, Foreign Key): The authenticated sync scope.
 - **`note_id`** (text, NOT NULL): Links to `user_notes.id` through sync-layer
   ownership validation.
@@ -239,16 +250,17 @@ pnpm --filter api sync:gc
 Each run records a checkpoint and garbage-collects through the newest checkpoint
 that is at least 90 days old. The floor never decreases; incremental cursors
 older than it receive `resyncRequired`. Deck titles/descriptions and card fronts
-and backs are scrubbed in the same update that creates their tombstones, before
-the retention window elapses.
+and backs are scrubbed in the same update that creates their tombstones. Note
+`fields_json` and `additional_content` are likewise blanked before the retention
+window elapses.
 
-The target parent-deletion policy follows note ownership rather than deck
+The parent-deletion policy follows note ownership rather than deck
 membership: deleting a note tombstones its cards, note-deck memberships, and
 the cards' review events; deleting a deck tombstones only its note-deck
 memberships and never the note or its learning progress. Deleting a card still
-tombstones its review events. Transactional cascade behavior and contradictory
-same-push handling are updated in epic follow-up
-[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+tombstones its review events. These cascades run transactionally. A parent
+delete submitted in the same push as a valid child create or update is rejected,
+so the accepted child write cannot be immediately erased by that push.
 
 ## Migrations
 
@@ -260,7 +272,7 @@ pnpm db:migrate    # apply pending migrations
 pnpm db:push       # push schema directly, dev only
 ```
 
-Migration `0010_fluffy_meggan` deliberately has no compatibility data rewrite.
+Migration `0010_shocking_roulette` deliberately has no compatibility data rewrite.
 It adds required note fields to `user_cards` and removes `deck_id`, so a local
 database containing the old development cards must be reset before applying
 it. For the Compose development database, remove the development volume and
@@ -270,6 +282,11 @@ recreate the services:
 docker compose down --volumes
 docker compose up --build
 ```
+
+The shared offline schema likewise moves to version 3. Its local migration
+adds `user_notes` and `user_note_decks`, recreates `user_cards` in the new
+shape, and clears the now-orphaned review history. Existing local decks and
+profiles are preserved; legacy development cards and reviews are not.
 
 This destroys local development data. Production-like or otherwise valuable
 databases must not apply this reset-only migration without an explicit data

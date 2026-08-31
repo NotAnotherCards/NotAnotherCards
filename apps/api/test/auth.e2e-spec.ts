@@ -75,6 +75,35 @@ describe('Authentication (e2e)', () => {
       expect(hasSessionCookie).toBe(true);
     });
 
+    it('ignores a client-supplied onBoardingComplete on signup', async () => {
+      const signup = await request(app.getHttpServer())
+        .post('/api/auth/sign-up/email')
+        .set('Origin', frontendOrigin)
+        .send({
+          email: `bypass-${Date.now()}@random.com`,
+          password: testUser.password,
+          name: 'Bypass Attempt',
+          onBoardingComplete: true,
+        })
+        .expect(200);
+
+      // The flag is server-owned (input: false): only the /onboard
+      // transaction may set it, whatever the signup body claims. Assert
+      // on the session, not the signup echo, so an omitted field cannot
+      // mask a stored true.
+      const cookies = (signup.headers['set-cookie'] || []) as string[];
+      const session = await request(app.getHttpServer())
+        .get('/api/auth/get-session')
+        .set('Origin', frontendOrigin)
+        .set('Cookie', cookies.map((c) => c.split(';')[0]).join('; '))
+        .expect(200);
+
+      const body = session.body as {
+        user: { onBoardingComplete?: boolean };
+      };
+      expect(body.user.onBoardingComplete).toBe(false);
+    });
+
     it('should return an error when attempting to register a duplicate email', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-up/email')
@@ -149,7 +178,7 @@ describe('Authentication (e2e)', () => {
         })
         .expect(200);
 
-      userCookie = response.headers['set-cookie'] as string[];
+      userCookie = response.get('Set-Cookie') ?? [];
     });
 
     it('should reject requests without authentication', async () => {
@@ -181,7 +210,7 @@ describe('Authentication (e2e)', () => {
           native_language_id: '00000000-0000-0000-0000-000000000001',
           target_language_id: '00000000-0000-0000-0000-000000000002',
         })
-        .expect(200);
+        .expect(201);
 
       // Checking the same username should return available: true (since the current user owns it)
       const response = await request(app.getHttpServer())
@@ -206,7 +235,7 @@ describe('Authentication (e2e)', () => {
         })
         .expect(200);
 
-      const secondUserCookie = signupResponse.headers['set-cookie'] as string[];
+      const secondUserCookie = signupResponse.get('Set-Cookie') ?? [];
       const sharedUsername = `taken_username_${Date.now()}`;
 
       await request(app.getHttpServer())
@@ -218,7 +247,7 @@ describe('Authentication (e2e)', () => {
           native_language_id: '00000000-0000-0000-0000-000000000001',
           target_language_id: '00000000-0000-0000-0000-000000000002',
         })
-        .expect(200);
+        .expect(201);
 
       // 2. Check the availability of that username from the first user's session
       const response = await request(app.getHttpServer())

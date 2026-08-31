@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, useStore } from '@/hooks/useStore';
+import { calculateReviewIntervalMinutes } from '@repo/offline-db';
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,6 +8,16 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const MINUTES_PER_DAY = 24 * 60;
+
+function formatReviewInterval(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  if (minutes < MINUTES_PER_DAY) {
+    return `${Math.round((minutes / 60) * 10) / 10}h`;
+  }
+  return `${Math.round((minutes / MINUTES_PER_DAY) * 10) / 10}d`;
+}
 
 interface FlashcardModalProps {
   card?: Card;
@@ -60,6 +71,14 @@ export function FlashcardModal({
   }, [currentIndex, modalCards, onClose]);
 
   if (!activeCard) return null;
+
+  const intervalLabel = (rating: number) =>
+    formatReviewInterval(
+      calculateReviewIntervalMinutes(
+        activeCard.scheduled_interval_minutes,
+        rating,
+      ),
+    );
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -169,7 +188,7 @@ export function FlashcardModal({
                 className="cursor-pointer text-[11px] h-7 px-2 border-destructive/30 hover:bg-destructive/10 text-destructive"
                 onClick={(e) => handleReview(1, e)}
               >
-                Again (5m)
+                Again ({intervalLabel(1)})
               </Button>
               <Button
                 size="sm"
@@ -177,7 +196,7 @@ export function FlashcardModal({
                 className="cursor-pointer text-[11px] h-7 px-2 border-orange-500/30 hover:bg-orange-500/10 text-orange-600 dark:text-orange-400"
                 onClick={(e) => handleReview(2, e)}
               >
-                Hard (1d)
+                Hard ({intervalLabel(2)})
               </Button>
               <Button
                 size="sm"
@@ -185,7 +204,7 @@ export function FlashcardModal({
                 className="cursor-pointer text-[11px] h-7 px-2 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 onClick={(e) => handleReview(3, e)}
               >
-                Good (3d)
+                Good ({intervalLabel(3)})
               </Button>
               <Button
                 size="sm"
@@ -194,7 +213,7 @@ export function FlashcardModal({
                 onClick={(e) => handleReview(4, e)}
               >
                 <CheckCircle2 className="size-3 mr-1" />
-                Easy (7d)
+                Easy ({intervalLabel(4)})
               </Button>
             </div>
           </div>

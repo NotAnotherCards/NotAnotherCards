@@ -6,6 +6,13 @@ import type {
   SyncPushArgs,
 } from '@remelondb/core';
 import {
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
+  cardId,
+  noteDeckId,
+} from '@repo/offline-db';
+import {
   accepted,
   pulled,
   registerServerConformance,
@@ -93,48 +100,98 @@ if (hasPostgres) {
   });
 }
 
-const allTablesCreated = (now: number, suffix = '1'): SyncChanges => ({
-  user_decks: {
-    created: [
-      {
-        id: `deck-${suffix}`,
-        title: `Private deck ${suffix}`,
-        description: 'Sensitive description',
-        created_at: now,
-        updated_at: now,
-      },
-    ],
-    updated: [],
-    deleted: [],
-  },
-  user_cards: {
-    created: [
-      {
-        id: `card-${suffix}`,
-        deck_id: `deck-${suffix}`,
-        front: 'secret front',
-        back: 'secret back',
-        due_at: now,
-        created_at: now,
-        updated_at: now,
-      },
-    ],
-    updated: [],
-    deleted: [],
-  },
-  review_events: {
-    created: [
-      {
-        id: `review-${suffix}`,
-        user_card_id: `card-${suffix}`,
-        rating: 3,
-        reviewed_at: now,
-      },
-    ],
-    updated: [],
-    deleted: [],
-  },
-});
+const modelIds = (suffix = '1') => {
+  const deck = `deck-${suffix}`;
+  const note = `note-${suffix}`;
+  return {
+    deck,
+    note,
+    card: cardId(note, BASIC_FRONT_BACK_TEMPLATE_KEY),
+    membership: noteDeckId(note, deck),
+    review: `review-${suffix}`,
+  };
+};
+
+const allTablesCreated = (now: number, suffix = '1'): SyncChanges => {
+  const ids = modelIds(suffix);
+  return {
+    user_decks: {
+      created: [
+        {
+          id: ids.deck,
+          title: `Private deck ${suffix}`,
+          description: 'Sensitive description',
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      updated: [],
+      deleted: [],
+    },
+    user_notes: {
+      created: [
+        {
+          id: ids.note,
+          note_type: BASIC_NOTE_TYPE,
+          fields_version: BASIC_NOTE_FIELDS_VERSION,
+          fields_json: JSON.stringify({
+            front: 'source front',
+            back: 'source back',
+          }),
+          additional_content: 'Sensitive additional content',
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      updated: [],
+      deleted: [],
+    },
+    user_cards: {
+      created: [
+        {
+          id: ids.card,
+          note_id: ids.note,
+          template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+          active: true,
+          front: 'secret front',
+          back: 'secret back',
+          due_at: now,
+          scheduled_interval_minutes: 0,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      updated: [],
+      deleted: [],
+    },
+    user_note_decks: {
+      created: [
+        {
+          id: ids.membership,
+          note_id: ids.note,
+          deck_id: ids.deck,
+          active: true,
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      updated: [],
+      deleted: [],
+    },
+    review_events: {
+      created: [
+        {
+          id: ids.review,
+          user_card_id: ids.card,
+          rating: 3,
+          reviewed_at: now,
+        },
+      ],
+      updated: [],
+      deleted: [],
+    },
+  };
+};
 
 const describePostgres = hasPostgres ? describe : describe.skip;
 
@@ -427,8 +484,14 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       expect(state.changes.user_decks?.updated).toEqual([
         expect.objectContaining({ id: 'deck-1', created_at: now }),
       ]);
+      expect(state.changes.user_notes?.updated).toEqual([
+        expect.objectContaining({ id: 'note-1', created_at: now }),
+      ]);
       expect(state.changes.user_cards?.updated).toEqual([
-        expect.objectContaining({ id: 'card-1', due_at: now }),
+        expect.objectContaining({ id: modelIds().card, due_at: now }),
+      ]);
+      expect(state.changes.user_note_decks?.updated).toEqual([
+        expect.objectContaining({ id: modelIds().membership }),
       ]);
       expect(state.changes.review_events?.updated).toEqual([
         expect.objectContaining({ id: 'review-1', reviewed_at: now }),
@@ -458,11 +521,14 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
             created: [],
             updated: [
               {
-                id: 'card-1',
-                deck_id: 'deck-1',
+                id: modelIds().card,
+                note_id: 'note-1',
+                template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+                active: true,
                 front: 'updated front',
                 back: 'updated back',
                 due_at: now + 10_000,
+                scheduled_interval_minutes: 10,
                 created_at: now + 20_000,
                 updated_at: now + 30_000,
               },
@@ -476,7 +542,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     const incremental = pulled(await handlers.pull(pullArgs(seeded.cursor)));
     expect(incremental.changes.user_cards?.updated).toEqual([
       expect.objectContaining({
-        id: 'card-1',
+        id: modelIds().card,
         front: 'updated front',
         back: 'updated back',
         due_at: now + 10_000,
@@ -488,6 +554,8 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
 
   it.skip('isolates every configured table between two user scopes', async () => {
     const now = Date.now();
+    const idsA = modelIds('a');
+    const idsB = modelIds('b');
     const engine = createAppSyncEngine(createAppSyncStore(db));
     const userA = engine.as('user-a');
     const userB = engine.as('user-b');
@@ -510,22 +578,34 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     const stateA = pulled(await userA.pull(pullArgs(null)));
     const stateB = pulled(await userB.pull(pullArgs(null)));
     expect(stateA.changes.user_decks?.updated.map((row) => row.id)).toEqual([
-      'deck-a',
+      idsA.deck,
+    ]);
+    expect(stateA.changes.user_notes?.updated.map((row) => row.id)).toEqual([
+      idsA.note,
     ]);
     expect(stateA.changes.user_cards?.updated.map((row) => row.id)).toEqual([
-      'card-a',
+      idsA.card,
     ]);
+    expect(
+      stateA.changes.user_note_decks?.updated.map((row) => row.id),
+    ).toEqual([idsA.membership]);
     expect(stateA.changes.review_events?.updated.map((row) => row.id)).toEqual([
-      'review-a',
+      idsA.review,
     ]);
     expect(stateB.changes.user_decks?.updated.map((row) => row.id)).toEqual([
-      'deck-b',
+      idsB.deck,
+    ]);
+    expect(stateB.changes.user_notes?.updated.map((row) => row.id)).toEqual([
+      idsB.note,
     ]);
     expect(stateB.changes.user_cards?.updated.map((row) => row.id)).toEqual([
-      'card-b',
+      idsB.card,
     ]);
+    expect(
+      stateB.changes.user_note_decks?.updated.map((row) => row.id),
+    ).toEqual([idsB.membership]);
     expect(stateB.changes.review_events?.updated.map((row) => row.id)).toEqual([
-      'review-b',
+      idsB.review,
     ]);
 
     const rejected = accepted(
@@ -536,9 +616,27 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
             created: [],
             updated: [
               {
-                id: 'deck-a',
+                id: idsA.deck,
                 title: 'stolen deck',
                 description: null,
+                created_at: now,
+                updated_at: now + 2,
+              },
+            ],
+            deleted: [],
+          },
+          user_notes: {
+            created: [],
+            updated: [
+              {
+                id: idsA.note,
+                note_type: BASIC_NOTE_TYPE,
+                fields_version: BASIC_NOTE_FIELDS_VERSION,
+                fields_json: JSON.stringify({
+                  front: 'stolen source',
+                  back: 'stolen source',
+                }),
+                additional_content: null,
                 created_at: now,
                 updated_at: now + 2,
               },
@@ -549,11 +647,28 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
             created: [],
             updated: [
               {
-                id: 'card-a',
-                deck_id: 'deck-a',
+                id: idsA.card,
+                note_id: idsA.note,
+                template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+                active: true,
                 front: 'stolen front',
                 back: 'stolen back',
                 due_at: now,
+                scheduled_interval_minutes: 0,
+                created_at: now,
+                updated_at: now + 2,
+              },
+            ],
+            deleted: [],
+          },
+          user_note_decks: {
+            created: [],
+            updated: [
+              {
+                id: idsA.membership,
+                note_id: idsA.note,
+                deck_id: idsA.deck,
+                active: false,
                 created_at: now,
                 updated_at: now + 2,
               },
@@ -564,8 +679,8 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
             created: [],
             updated: [
               {
-                id: 'review-a',
-                user_card_id: 'card-a',
+                id: idsA.review,
+                user_card_id: idsA.card,
                 rating: 1,
                 reviewed_at: now,
               },
@@ -576,20 +691,28 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       }),
     );
     expect(rejected.rejected).toEqual({
-      user_decks: ['deck-a'],
-      user_cards: ['card-a'],
-      review_events: ['review-a'],
+      user_decks: [idsA.deck],
+      user_notes: [idsA.note],
+      user_cards: [idsA.card],
+      user_note_decks: [idsA.membership],
+      review_events: [idsA.review],
     });
 
     const unchangedA = pulled(await userA.pull(pullArgs(null)));
     expect(unchangedA.changes.user_decks?.updated[0]).toEqual(
-      expect.objectContaining({ id: 'deck-a', title: 'Private deck a' }),
+      expect.objectContaining({ id: idsA.deck, title: 'Private deck a' }),
+    );
+    expect(unchangedA.changes.user_notes?.updated[0]).toEqual(
+      expect.objectContaining({ id: idsA.note }),
     );
     expect(unchangedA.changes.user_cards?.updated[0]).toEqual(
-      expect.objectContaining({ id: 'card-a', front: 'secret front' }),
+      expect.objectContaining({ id: idsA.card, front: 'secret front' }),
+    );
+    expect(unchangedA.changes.user_note_decks?.updated[0]).toEqual(
+      expect.objectContaining({ id: idsA.membership, active: true }),
     );
     expect(unchangedA.changes.review_events?.updated[0]).toEqual(
-      expect.objectContaining({ id: 'review-a', rating: 3 }),
+      expect.objectContaining({ id: idsA.review, rating: 3 }),
     );
   });
 
@@ -614,7 +737,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
             updated: [
               {
                 id: 'review-1',
-                user_card_id: 'card-1',
+                user_card_id: modelIds().card,
                 rating: 1,
                 reviewed_at: now,
               },
@@ -632,13 +755,206 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     ]);
   });
 
-  it.skip('cascades a deck tombstone to its active cards and reviews', async () => {
+  it('enforces deterministic card and membership ids for every live push', async () => {
+    const now = Date.now();
+    const ids = modelIds();
+    const secondIds = modelIds('2');
+    const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    const seeded = accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(now),
+      }),
+    );
+
+    const card = (id: string, noteId: string, templateKey: string) => ({
+      id,
+      note_id: noteId,
+      template_key: templateKey,
+      active: true,
+      front: 'front',
+      back: 'back',
+      due_at: now,
+      scheduled_interval_minutes: 0,
+      created_at: now,
+      updated_at: now + 1,
+    });
+    const membership = (id: string, noteId: string, deckId: string) => ({
+      id,
+      note_id: noteId,
+      deck_id: deckId,
+      active: true,
+      created_at: now,
+      updated_at: now + 1,
+    });
+    const staleNoteCardId = cardId(ids.note, 'move-template');
+    const staleNoteMembershipId = noteDeckId(ids.note, secondIds.deck);
+
+    const result = accepted(
+      await handlers.push({
+        cursor: seeded.cursor!,
+        changes: {
+          user_decks: {
+            created: [
+              {
+                id: secondIds.deck,
+                title: 'Second deck',
+                description: null,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+          user_notes: {
+            created: [
+              {
+                id: secondIds.note,
+                note_type: BASIC_NOTE_TYPE,
+                fields_version: BASIC_NOTE_FIELDS_VERSION,
+                fields_json: JSON.stringify({
+                  front: 'second',
+                  back: 'second',
+                }),
+                additional_content: null,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+          user_cards: {
+            created: [
+              card(
+                secondIds.card,
+                secondIds.note,
+                BASIC_FRONT_BACK_TEMPLATE_KEY,
+              ),
+              card('random-card-id', ids.note, BASIC_FRONT_BACK_TEMPLATE_KEY),
+              card(staleNoteCardId, secondIds.note, 'move-template'),
+            ],
+            updated: [card(ids.card, ids.note, 'changed-template')],
+            deleted: [],
+          },
+          user_note_decks: {
+            created: [
+              membership(secondIds.membership, secondIds.note, secondIds.deck),
+              membership('random-membership-id', ids.note, ids.deck),
+              membership(staleNoteMembershipId, secondIds.note, secondIds.deck),
+            ],
+            updated: [membership(ids.membership, ids.note, secondIds.deck)],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(result.rejected).toEqual({
+      user_cards: ['random-card-id', staleNoteCardId, ids.card],
+      user_note_decks: [
+        'random-membership-id',
+        staleNoteMembershipId,
+        ids.membership,
+      ],
+    });
+    const state = pulled(await handlers.pull(pullArgs(null)));
+    expect(state.changes.user_cards?.updated.map((row) => row.id)).toContain(
+      secondIds.card,
+    );
+    expect(
+      state.changes.user_note_decks?.updated.map((row) => row.id),
+    ).toContain(secondIds.membership);
+  });
+
+  it("rejects new children that reference another user's parents", async () => {
+    const now = Date.now();
+    const idsA = modelIds('a');
+    const engine = createAppSyncEngine(createAppSyncStore(db));
+    const userA = engine.as('user-a');
+    const userB = engine.as('user-b');
+    const startA = pulled(await userA.pull(pullArgs(null)));
+    accepted(
+      await userA.push({
+        cursor: startA.cursor,
+        changes: allTablesCreated(now, 'a'),
+      }),
+    );
+
+    const foreignCardId = cardId(idsA.note, 'foreign-template');
+    const ownDeckId = 'deck-b';
+    const foreignMembershipId = noteDeckId(idsA.note, ownDeckId);
+    const startB = pulled(await userB.pull(pullArgs(null)));
+    const rejected = accepted(
+      await userB.push({
+        cursor: startB.cursor,
+        changes: {
+          user_decks: {
+            created: [
+              {
+                id: ownDeckId,
+                title: 'User B deck',
+                description: null,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+          user_cards: {
+            created: [
+              {
+                id: foreignCardId,
+                note_id: idsA.note,
+                template_key: 'foreign-template',
+                active: true,
+                front: 'foreign',
+                back: 'foreign',
+                due_at: now,
+                scheduled_interval_minutes: 0,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+          user_note_decks: {
+            created: [
+              {
+                id: foreignMembershipId,
+                note_id: idsA.note,
+                deck_id: ownDeckId,
+                active: true,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(rejected.rejected).toEqual({
+      user_cards: [foreignCardId],
+      user_note_decks: [foreignMembershipId],
+    });
+  });
+
+  it('deleting a deck tombstones only memberships and preserves learning progress', async () => {
+    const ids = modelIds();
+    const now = Date.now();
     const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
     accepted(
       await handlers.push({
         cursor: start.cursor,
-        changes: allTablesCreated(Date.now()),
+        changes: allTablesCreated(now),
       }),
     );
     const seeded = pulled(await handlers.pull(pullArgs(null)));
@@ -652,26 +968,47 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       }),
     );
 
-    expect(result.changes?.user_cards?.deleted).toEqual(['card-1']);
-    expect(result.changes?.review_events?.deleted).toEqual(['review-1']);
-    const rows = await db.execute<{ table_name: string; deleted: boolean }>(`
-      select 'user_decks' as table_name, deleted_at is not null as deleted
-      from user_decks where id = 'deck-1'
-      union all
-      select 'user_cards', deleted_at is not null
-      from user_cards where id = 'card-1'
-      union all
-      select 'review_events', deleted_at is not null
-      from review_events where id = 'review-1'
+    expect(result.changes?.user_note_decks?.deleted).toEqual([ids.membership]);
+    expect(result.changes?.user_notes?.deleted ?? []).toEqual([]);
+    expect(result.changes?.user_cards?.deleted ?? []).toEqual([]);
+    expect(result.changes?.review_events?.deleted ?? []).toEqual([]);
+    const rows = await db.execute<{
+      deck_deleted: boolean;
+      membership_deleted: boolean;
+      note_active: boolean;
+      card_active: boolean;
+      review_active: boolean;
+      due_at: number;
+      scheduled_interval_minutes: number;
+    }>(`
+      select
+        d.deleted_at is not null as deck_deleted,
+        nd.deleted_at is not null as membership_deleted,
+        n.deleted_at is null as note_active,
+        c.deleted_at is null as card_active,
+        r.deleted_at is null as review_active,
+        c.due_at,
+        c.scheduled_interval_minutes
+      from user_decks d
+      join user_note_decks nd on nd.deck_id = d.id
+      join user_notes n on n.id = nd.note_id
+      join user_cards c on c.note_id = n.id
+      join review_events r on r.user_card_id = c.id
+      where d.id = 'deck-1'
     `);
-    expect(rows.rows).toEqual([
-      { table_name: 'user_decks', deleted: true },
-      { table_name: 'user_cards', deleted: true },
-      { table_name: 'review_events', deleted: true },
-    ]);
+    expect(rows.rows[0]).toEqual({
+      deck_deleted: true,
+      membership_deleted: true,
+      note_active: true,
+      card_active: true,
+      review_active: true,
+      due_at: now,
+      scheduled_interval_minutes: 0,
+    });
   });
 
-  it.skip('cascades a card tombstone to its review events', async () => {
+  it('cascades a card tombstone to its review events', async () => {
+    const ids = modelIds();
     const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
     accepted(
@@ -686,7 +1023,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       await handlers.push({
         cursor: seeded.cursor,
         changes: {
-          user_cards: { created: [], updated: [], deleted: ['card-1'] },
+          user_cards: { created: [], updated: [], deleted: [ids.card] },
         },
       }),
     );
@@ -702,7 +1039,8 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
         c.deleted_at is not null as card_deleted,
         r.deleted_at is not null as review_deleted
       from user_decks d
-      join user_cards c on c.deck_id = d.id
+      join user_note_decks nd on nd.deck_id = d.id
+      join user_cards c on c.note_id = nd.note_id
       join review_events r on r.user_card_id = c.id
       where d.id = 'deck-1'
     `);
@@ -715,6 +1053,8 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
 
   it.skip('rejects a parent delete combined with child creates or updates', async () => {
     const now = Date.now();
+    const ids = modelIds();
+    const secondIds = modelIds('2');
     const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
     accepted(
@@ -730,25 +1070,38 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
         cursor: seeded.cursor,
         changes: {
           user_decks: { created: [], updated: [], deleted: ['deck-1'] },
-          user_cards: {
+          user_notes: {
             created: [
               {
-                id: 'card-2',
-                deck_id: 'deck-1',
-                front: 'new front',
-                back: 'new back',
-                due_at: now,
+                id: secondIds.note,
+                note_type: BASIC_NOTE_TYPE,
+                fields_version: BASIC_NOTE_FIELDS_VERSION,
+                fields_json: JSON.stringify({ front: 'new', back: 'new' }),
+                additional_content: null,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            updated: [],
+            deleted: [],
+          },
+          user_note_decks: {
+            created: [
+              {
+                id: noteDeckId(secondIds.note, ids.deck),
+                note_id: secondIds.note,
+                deck_id: ids.deck,
+                active: true,
                 created_at: now,
                 updated_at: now,
               },
             ],
             updated: [
               {
-                id: 'card-1',
-                deck_id: 'deck-1',
-                front: 'updated front',
-                back: 'updated back',
-                due_at: now,
+                id: ids.membership,
+                note_id: ids.note,
+                deck_id: ids.deck,
+                active: false,
                 created_at: now,
                 updated_at: now + 1,
               },
@@ -762,22 +1115,22 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     expect(contradictory.rejected).toEqual({ user_decks: ['deck-1'] });
     const active = await db.execute<{
       deck_active: boolean;
-      active_cards: string;
-      updated_front: string;
+      memberships: string;
+      original_membership_active: boolean;
     }>(`
       select
         d.deleted_at is null as deck_active,
-        count(c.id) filter (where c.deleted_at is null)::text as active_cards,
-        max(c.front) filter (where c.id = 'card-1') as updated_front
+        count(nd.id) filter (where nd.deleted_at is null)::text as memberships,
+        bool_or(nd.active) filter (where nd.id = '${ids.membership}') as original_membership_active
       from user_decks d
-      left join user_cards c on c.deck_id = d.id
+      left join user_note_decks nd on nd.deck_id = d.id
       where d.id = 'deck-1'
       group by d.id
     `);
     expect(active.rows[0]).toEqual({
       deck_active: true,
-      active_cards: '2',
-      updated_front: 'updated front',
+      memberships: '2',
+      original_membership_active: false,
     });
 
     const retry = accepted(
@@ -788,13 +1141,16 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
         },
       }),
     );
-    expect(new Set(retry.changes?.user_cards?.deleted)).toEqual(
-      new Set(['card-1', 'card-2']),
+    expect(new Set(retry.changes?.user_note_decks?.deleted)).toEqual(
+      new Set([ids.membership, noteDeckId(secondIds.note, ids.deck)]),
     );
-    expect(retry.changes?.review_events?.deleted).toEqual(['review-1']);
+    expect(retry.changes?.user_notes?.deleted ?? []).toEqual([]);
+    expect(retry.changes?.user_cards?.deleted ?? []).toEqual([]);
+    expect(retry.changes?.review_events?.deleted ?? []).toEqual([]);
   });
 
-  it.skip('stores deletes as scrubbed tombstones and serves them incrementally', async () => {
+  it('cascades note deletes into scrubbed tombstones and serves them incrementally', async () => {
+    const ids = modelIds();
     const store = createAppSyncStore(db);
     const handlers = createAppSyncEngine(store).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
@@ -809,9 +1165,11 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       table_name: string;
       rev: string;
     }>(`
-      select 'user_decks' as table_name, rev::text from user_decks where id = 'deck-1'
+      select 'user_notes' as table_name, rev::text from user_notes where id = 'note-1'
       union all
-      select 'user_cards', rev::text from user_cards where id = 'card-1'
+      select 'user_cards', rev::text from user_cards where id = '${ids.card}'
+      union all
+      select 'user_note_decks', rev::text from user_note_decks where id = '${ids.membership}'
       union all
       select 'review_events', rev::text from review_events where id = 'review-1'
     `);
@@ -820,50 +1178,52 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       await handlers.push({
         cursor: seeded.cursor,
         changes: {
-          user_decks: { created: [], updated: [], deleted: ['deck-1'] },
-          user_cards: { created: [], updated: [], deleted: ['card-1'] },
-          review_events: {
-            created: [],
-            updated: [],
-            deleted: ['review-1'],
-          },
+          user_notes: { created: [], updated: [], deleted: ['note-1'] },
         },
       }),
     );
 
     const incremental = pulled(await handlers.pull(pullArgs(seeded.cursor)));
-    expect(incremental.changes.user_decks?.deleted).toEqual(['deck-1']);
-    expect(incremental.changes.user_cards?.deleted).toEqual(['card-1']);
+    expect(incremental.changes.user_notes?.deleted).toEqual(['note-1']);
+    expect(incremental.changes.user_cards?.deleted).toEqual([ids.card]);
+    expect(incremental.changes.user_note_decks?.deleted).toEqual([
+      ids.membership,
+    ]);
     expect(incremental.changes.review_events?.deleted).toEqual(['review-1']);
+    expect(incremental.changes.user_decks?.deleted ?? []).toEqual([]);
 
     const rows = await db.execute<{
       table_name: string;
       rev: string;
       deleted_at: Date | null;
-      title: string | null;
-      description: string | null;
+      fields_json: string | null;
+      additional_content: string | null;
       front: string | null;
       back: string | null;
     }>(`
       select
-        'user_decks' as table_name,
+        'user_notes' as table_name,
         rev::text,
         deleted_at,
-        title,
-        description,
+        fields_json,
+        additional_content,
         null::text as front,
         null::text as back
-      from user_decks where id = 'deck-1'
+      from user_notes where id = 'note-1'
       union all
       select
         'user_cards', rev::text, deleted_at, null, null, front, back
-      from user_cards where id = 'card-1'
+      from user_cards where id = '${ids.card}'
+      union all
+      select
+        'user_note_decks', rev::text, deleted_at, null, null, null, null
+      from user_note_decks where id = '${ids.membership}'
       union all
       select
         'review_events', rev::text, deleted_at, null, null, null, null
       from review_events where id = 'review-1'
     `);
-    expect(rows.rows).toHaveLength(3);
+    expect(rows.rows).toHaveLength(4);
     expect(rows.rows.every((row) => row.deleted_at !== null)).toBe(true);
     const previousRevs = new Map(
       revisionsBeforeDelete.rows.map((row) => [
@@ -877,10 +1237,10 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       );
     }
     expect(
-      rows.rows.find((row) => row.table_name === 'user_decks'),
+      rows.rows.find((row) => row.table_name === 'user_notes'),
     ).toMatchObject({
-      title: '',
-      description: null,
+      fields_json: '',
+      additional_content: null,
     });
     expect(
       rows.rows.find((row) => row.table_name === 'user_cards'),
@@ -908,12 +1268,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
         cursor: seeded.cursor,
         changes: {
           user_decks: { created: [], updated: [], deleted: ['deck-1'] },
-          user_cards: { created: [], updated: [], deleted: ['card-1'] },
-          review_events: {
-            created: [],
-            updated: [],
-            deleted: ['review-1'],
-          },
+          user_notes: { created: [], updated: [], deleted: ['note-1'] },
         },
       }),
     );
@@ -945,7 +1300,11 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       from (
         select count(*) from user_decks
         union all
+        select count(*) from user_notes
+        union all
         select count(*) from user_cards
+        union all
+        select count(*) from user_note_decks
         union all
         select count(*) from review_events
       ) synced_rows

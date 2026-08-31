@@ -107,6 +107,37 @@ describe('AiGatewayService', () => {
     expect(sentBody.reasoning_effort).toBe('none');
   });
 
+  it('tolerates a trailing slash in AI_API_BASE', async () => {
+    const mockFetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([{ front: 'Hola', back: 'Hello' }]),
+              },
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+    });
+    global.fetch = mockFetch;
+
+    const config = {
+      get: jest.fn((key: string) => {
+        if (key === 'AI_API_BASE') return 'https://mock-ai.test/v1/';
+        return undefined;
+      }),
+    } as unknown as ConfigService;
+
+    await new AiGatewayService(config).generateCards('sys', 'user', 'qwen', 1);
+
+    const fetchCalls = mockFetch.mock.calls as [string, RequestInit][];
+    expect(fetchCalls[0][0]).toBe('https://mock-ai.test/v1/chat/completions');
+  });
+
   it('strips <think> tags before parsing JSON', async () => {
     const rawContent =
       '<think>Let me reason about 1 card.\nFront: Question, Back: Answer.</think>\n' +

@@ -12,6 +12,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/offline-db';
 import { user } from '../database/schema';
 
 export const remelonRev = pgSequence('remelon_rev');
@@ -75,6 +76,9 @@ export const userCards = pgTable(
     front: text('front').notNull(),
     back: text('back').notNull(),
     dueAt: doublePrecision('due_at').notNull(),
+    scheduledIntervalMinutes: integer('scheduled_interval_minutes')
+      .notNull()
+      .default(0),
     createdAt: doublePrecision('created_at').notNull(),
     updatedAt: doublePrecision('updated_at').notNull(),
   },
@@ -86,6 +90,10 @@ export const userCards = pgTable(
     check(
       'user_cards_due_at_safe_integer_check',
       sql`${table.dueAt} >= 0 and ${table.dueAt} <= 9007199254740991 and ${table.dueAt} = trunc(${table.dueAt})`,
+    ),
+    check(
+      'user_cards_scheduled_interval_minutes_range_check',
+      sql`${table.scheduledIntervalMinutes} between 0 and ${REVIEW_INTERVAL_CAP_MINUTES}`,
     ),
     check(
       'user_cards_created_at_safe_integer_check',

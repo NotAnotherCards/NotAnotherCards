@@ -16,7 +16,7 @@ import { pullChanges, pushChanges } from '../offline/sync';
 const createRunSync = (
   database: Parameters<typeof createSharedRunSync>[0]['database'],
 ) => createSharedRunSync({ database, pullChanges, pushChanges });
-import { createDeck } from '../offline/queries';
+import { createDeck } from '@repo/offline-db';
 
 const emptyChanges = {
   user_decks: { created: [], updated: [], deleted: [] },

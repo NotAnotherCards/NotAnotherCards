@@ -8,7 +8,7 @@ import {
 } from '@remelondb/core/react';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { schema, UserDeck, UserCard, ReviewEvent } from '@repo/offline-db';
-import { getDecksQuery, createDeck } from '@/offline/queries';
+import { getDecksQuery, createDeck } from '@repo/offline-db';
 
 // Helper component that uses the real useQuery hook
 function DecksTestComponent({ db }: { db: Database }) {
