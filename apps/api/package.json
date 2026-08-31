@@ -104,6 +104,7 @@
     },
     "moduleNameMapper": {
       "^@repo/offline-db$": "<rootDir>/../../../packages/offline-db/src/index.ts",
+      "^@repo/schemas$": "<rootDir>/../../../packages/schemas/src/index.ts",
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "transformIgnorePatterns": [],
