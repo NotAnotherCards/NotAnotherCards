@@ -20,7 +20,7 @@ export function RouteErrorComponent({ error }: ErrorComponentProps) {
         <div className="pt-2 w-full">
           <Button
             onClick={() => {
-              router.invalidate();
+              void router.invalidate();
             }}
             variant="default"
             className="w-full sm:w-auto flex items-center justify-center gap-2 mx-auto"

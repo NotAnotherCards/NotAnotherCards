@@ -197,6 +197,8 @@ describe('Auth Guards', () => {
   });
 
   it('renders error component on session fetch failure and allows retry', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const mockError = new Error('Network error');
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
