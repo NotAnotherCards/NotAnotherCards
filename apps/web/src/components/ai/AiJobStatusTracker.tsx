@@ -13,7 +13,6 @@ export function AiJobStatusTracker({
   status,
   error,
 }: AiJobStatusTrackerProps) {
-
   const steps = [
     {
       key: 'pending',

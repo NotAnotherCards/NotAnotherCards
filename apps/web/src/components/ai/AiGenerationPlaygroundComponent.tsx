@@ -5,6 +5,7 @@ import { AiJobStatusTracker, JobStatus } from './AiJobStatusTracker';
 import { AiResultPreview } from './AiResultPreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
+import { writeErrorMessage } from '@/lib/write-error';
 
 export interface Quota {
   used?: number;
@@ -42,6 +43,56 @@ export function AiGenerationPlaygroundComponent() {
 
   // Retrieve local store to get actual decks for dropdown list
   const { decks, createDeck, createCard } = useStore();
+
+  // Parent polling effect watching currentJob id and status
+  useEffect(() => {
+    if (
+      !currentJob ||
+      (currentJob.status !== 'pending' && currentJob.status !== 'processing')
+    ) {
+      return;
+    }
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/ai/jobs/${currentJob.id}`);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          setErrorMessage(
+            (errData.message as string) || 'Failed to poll job status',
+          );
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        const updatedJob = data.job;
+        setCurrentJob(updatedJob);
+
+        if (
+          updatedJob.status === 'completed' ||
+          updatedJob.status === 'failed'
+        ) {
+          setLoading(false);
+          void fetchJobs();
+          void fetchQuota();
+        }
+      } catch (err) {
+        setErrorMessage(
+          err instanceof Error ? err.message : 'Error polling job status',
+        );
+        setLoading(false);
+      }
+    };
+
+    void poll();
+
+    const intervalId = setInterval(() => {
+      void poll();
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [currentJob?.id, currentJob?.status]);
 
   const fetchQuota = async () => {
     try {
@@ -98,32 +149,10 @@ export function AiGenerationPlaygroundComponent() {
     }
   };
 
-  const handlePollJob = async () => {
-    if (!currentJob) return;
-    try {
-      const res = await fetch(`/api/ai/jobs/${currentJob.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        const updatedJob = data.job;
-        setCurrentJob(updatedJob);
-
-        if (
-          updatedJob.status === 'completed' ||
-          updatedJob.status === 'failed'
-        ) {
-          setLoading(false);
-          void fetchJobs();
-          void fetchQuota();
-        }
-      }
-    } catch (err) {
-      console.error('Error polling job:', err);
-    }
-  };
-
   const handleSaveDeck = async (deckIdOrTitle: string, isNew: boolean) => {
     if (!currentJob || !currentJob.result) return;
     setSaving(true);
+    setErrorMessage(null);
     try {
       let targetDeckId = deckIdOrTitle;
       if (isNew) {
@@ -131,13 +160,15 @@ export function AiGenerationPlaygroundComponent() {
         targetDeckId = newDeck.id;
       }
 
-      // Simulate writing user_notes, user_note_decks, and user_cards:
-      // Since local schema changes are deferred, we create standard card rows in user_cards.
-      for (const card of currentJob.result) {
-        await createCard(targetDeckId, card.front, card.back);
-      }
+      await Promise.all(
+        currentJob.result.map((card) =>
+          createCard(targetDeckId, card.front, card.back),
+        ),
+      );
     } catch (err) {
-      console.error('Error saving cards to deck:', err);
+      const msg = writeErrorMessage(err, 'Failed to save cards to deck');
+      setErrorMessage(msg);
+      throw new Error(msg);
     } finally {
       setSaving(false);
     }
@@ -146,7 +177,11 @@ export function AiGenerationPlaygroundComponent() {
   const selectPastJob = (job: Job) => {
     setCurrentJob(job);
     setErrorMessage(null);
-    setLoading(false);
+    if (job.status === 'pending' || job.status === 'processing') {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
   };
 
   return (
@@ -168,7 +203,6 @@ export function AiGenerationPlaygroundComponent() {
             jobId={currentJob.id}
             status={currentJob.status}
             error={currentJob.error}
-            onPoll={handlePollJob}
           />
         ) : (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
