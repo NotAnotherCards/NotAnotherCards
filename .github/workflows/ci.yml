@@ -62,6 +62,9 @@ jobs:
       - name: Check Formatting
         run: pnpm format:check
 
+      - name: Check Import Cycles
+        run: pnpm check:cycles
+
       - name: Run Unit Tests
         run: pnpm test
         env:

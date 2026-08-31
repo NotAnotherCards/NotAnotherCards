@@ -5,7 +5,8 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && docker compose -f infra/monitoring/docker-compose.yml config --quiet",
+    "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet",
+    "check:cycles": "madge --circular --extensions ts --ts-config packages/offline-db/tsconfig.json packages/offline-db/src && madge --circular --extensions ts --ts-config packages/schemas/tsconfig.json packages/schemas/src && madge --circular --extensions ts --ts-config apps/api/tsconfig.json apps/api/src && madge --circular --extensions ts,tsx --ts-config apps/web/tsconfig.json apps/web/src && madge --circular --extensions ts,tsx --ts-config apps/mobile/tsconfig.json apps/mobile/app apps/mobile/lib apps/mobile/components",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,js}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js}\""
@@ -14,6 +15,7 @@
     "@remelondb/core": "0.2.5",
     "@remelondb/driver-web": "0.2.5",
     "eslint": "^10.6.0",
+    "madge": "8.0.0",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4"
   },

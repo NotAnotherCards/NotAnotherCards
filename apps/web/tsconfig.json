@@ -4,6 +4,10 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "strictNullChecks": true,
+    // tsconfig-paths (madge, eslint import resolver) needs this to apply
+    // `paths`; tsc itself stopped requiring it. Vite resolves `@/` via
+    // resolve.alias in vite.config.ts, so runtime is unaffected.
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "zod": ["./node_modules/zod"],
