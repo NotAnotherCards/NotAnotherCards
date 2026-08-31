@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
@@ -7,26 +6,13 @@ interface AiJobStatusTrackerProps {
   jobId: string;
   status: JobStatus;
   error?: string | null;
-  onPoll: () => void;
 }
 
 export function AiJobStatusTracker({
   jobId,
   status,
   error,
-  onPoll,
 }: AiJobStatusTrackerProps) {
-  useEffect(() => {
-    if (status === 'completed' || status === 'failed') return;
-
-    onPoll();
-
-    const interval = setInterval(() => {
-      onPoll();
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [status, onPoll]);
 
   const steps = [
     {
