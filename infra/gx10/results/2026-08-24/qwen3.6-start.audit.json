@@ -1,0 +1,50 @@
+[
+ {
+  "topic": "spanish",
+  "run": 2,
+  "front": "Complete: Tú (comer) _______ una manzana.",
+  "back": "comiste",
+  "verdict": "error",
+  "judgeTail": "abel is provided. Therefore, \"comes\" is the correct expected answer. Without tense specification, the card is ambiguous and fails to teach the appropriate conjugation rule for a neutral context. It should either explicitly indicate the preterite tense or use the default present form.\n\nVERDICT: error"
+ },
+ {
+  "topic": "biology",
+  "run": 2,
+  "front": "Which molecule stores the chemical energy produced in photosynthesis?",
+  "back": "Glucose (C6H12O6) and ATP.",
+  "verdict": "error",
+  "judgeTail": " as a molecule that stores the chemical energy produced by photosynthesis. Because ATP is an intermediate energy currency used and depleted within the photosynthetic pathway rather than a long-term storage product, its inclusion renders the answer factually incorrect in this context.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 2,
+  "front": "When did King Louis XVI execute Louis XVI?",
+  "back": "January 21, 1793",
+  "verdict": "error",
+  "judgeTail": "ice (\"was... executed\"). This makes the question incoherent as written, as it literally asks when he carried out his own execution, which is historically impossible. While the intended answer matches the card, this structural error violates the coherence and well-formedness criteria.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 2,
+  "front": "What event marked the beginning of the Reign of Terror in September 1793?",
+  "back": "Execution of Marie Antoinette and rise of Robespierre's Committee of Public Safety",
+  "verdict": "error",
+  "judgeTail": "rre joined it in July 1793; its dominance developed gradually through the fall and winter of 1793 rather than as a discrete event in September. The card conflates timelines, misattributes causal markers, and fails to align with standard historical records for this specific timeframe.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 3,
+  "front": "What major event occurred on July 14, 1793?",
+  "back": "Execution of King Louis XVI",
+  "verdict": "error",
+  "judgeTail": "rically famous for the Storming of the Bastille on July 14, 1789.\n\nComparison: The card's answer incorrectly pairs a well-known French Revolution event (Louis XVI's execution) with a completely different date and year. This is a clear factual mismatch, not a minor wording difference.\n\nVERDICT: error"
+ },
+ {
+  "topic": "programming",
+  "run": 5,
+  "front": "How does filter() differ from map()?",
+  "back": "filter() creates a new array with elements that pass a test.",
+  "verdict": "error",
+  "judgeTail": " answer. A proper flashcard response should contrast both functions (e.g., \"`map()` transforms every element and returns an array of the same length, while `filter()` only keeps elements that satisfy a condition\"). This omission makes it poorly matched to the specific question asked.\n\nVERDICT: error"
+ }
+]

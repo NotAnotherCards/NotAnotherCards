@@ -58,7 +58,7 @@ describe('AiWorkerService', () => {
         completionTokens: 15,
         totalTokens: 25,
       },
-      model: 'qwen',
+      model: 'gemma4',
     };
 
     mockGateway.generateCards.mockResolvedValue(mockInference);
@@ -93,6 +93,11 @@ describe('AiWorkerService', () => {
     expect(processed).toBe(true);
     expect(mockGateway.generateCards).toHaveBeenCalledTimes(1);
     expect(mockDb.execute).toHaveBeenCalled();
+    // the completion update records the model that answered, so a job
+    // that ran on the default still reports it
+    expect(mockTxExecute).toHaveBeenCalledTimes(1);
+    const [[update]] = mockTxExecute.mock.calls as unknown[][];
+    expect(JSON.stringify(update)).toContain('gemma4');
   });
 
   it('retries job with backoff (status remains pending) if attempt < max_attempts', async () => {

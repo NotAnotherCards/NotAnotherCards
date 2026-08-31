@@ -195,4 +195,36 @@ describe('AiGatewayService', () => {
       }
     }
   });
+
+  it('reports the model the gateway answered with, not the requested alias', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          model: 'qwen3.6',
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([{ front: 'Hola', back: 'Hello' }]),
+              },
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+    });
+    const config = {
+      get: jest.fn((key: string) =>
+        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : undefined,
+      ),
+    } as unknown as ConfigService;
+
+    const result = await new AiGatewayService(config).generateCards(
+      'sys',
+      'user',
+      'gemma4',
+      1,
+    );
+
+    expect(result.model).toBe('qwen3.6');
+  });
 });
