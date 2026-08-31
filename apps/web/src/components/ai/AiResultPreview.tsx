@@ -3,7 +3,7 @@ import { AiCardOutput } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { ArrowRight, BookOpen, Layers, Check, FolderPlus, FileJson } from 'lucide-react';
+import { ArrowRight, BookOpen, Layers, FolderPlus, FileJson, CheckCircle2 } from 'lucide-react';
 
 interface Deck {
   id: string;
@@ -194,19 +194,22 @@ export function AiResultPreview({ cards, decks, onSave, isSaving }: AiResultPrev
         <Button
           onClick={handleSave}
           disabled={isSaving || (deckMode === 'existing' && !selectedDeckId) || (deckMode === 'new' && !newDeckTitle.trim())}
-          className="w-full bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-3xl py-5 shadow-lg shadow-emerald-500/10 font-semibold"
+          className="w-full bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-3xl py-5 shadow-lg shadow-emerald-500/10 font-semibold cursor-pointer"
         >
-          {isSaving ? (
-            'Saving to Deck...'
-          ) : savedSuccess ? (
-            <span className="flex items-center justify-center gap-1">
-              <Check className="size-4" /> Saved Successfully!
-            </span>
-          ) : (
-            'Create Deck & Save'
-          )}
+          {isSaving ? 'Saving to Deck...' : 'Save Cards to Deck'}
         </Button>
       </div>
+
+      {/* Toast Notification */}
+      {savedSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-500/30 transition-all duration-300">
+          <CheckCircle2 className="size-5 shrink-0 text-white" />
+          <div>
+            <h4 className="font-semibold text-sm">Deck Saved!</h4>
+            <p className="text-xs text-emerald-100">Cards have been added to your local library.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

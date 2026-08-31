@@ -175,32 +175,6 @@ export function AiGenerationPlaygroundComponent() {
             />
           </div>
         )}
-      </div>
-
-      {/* Right side: Results Preview & Past Jobs Log */}
-      <div className="lg:col-span-7 space-y-8">
-        {currentJob && currentJob.status === 'completed' && currentJob.result ? (
-          <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
-            <AiResultPreview
-              cards={currentJob.result}
-              decks={decks.map(d => ({ id: d.id, title: d.title }))}
-              onSave={handleSaveDeck}
-              isSaving={saving}
-            />
-          </div>
-        ) : (
-          <div className="bg-card/40 border border-dashed border-border/80 rounded-3xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center space-y-4">
-            <div className="size-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-              <Zap className="size-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">No Results Preview</h3>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                Trigger a generation task or select a completed past job from the log below to view results.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Previous Jobs Log */}
         <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md space-y-4">
@@ -256,6 +230,32 @@ export function AiGenerationPlaygroundComponent() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Right side: Results Preview */}
+      <div className="lg:col-span-7 space-y-8">
+        {currentJob && currentJob.status === 'completed' && currentJob.result ? (
+          <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
+            <AiResultPreview
+              cards={currentJob.result}
+              decks={decks.map(d => ({ id: d.id, title: d.title }))}
+              onSave={handleSaveDeck}
+              isSaving={saving}
+            />
+          </div>
+        ) : (
+          <div className="bg-card/40 border border-dashed border-border/80 rounded-3xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center space-y-4">
+            <div className="size-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+              <Zap className="size-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground text-sm">No Results Preview</h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Trigger a generation task or select a completed past job from the log on the left to view results.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
