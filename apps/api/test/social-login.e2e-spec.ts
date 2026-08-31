@@ -9,6 +9,10 @@ const frontendOrigin = 'http://localhost:5173';
 describe('Redirects and Session Creation (e2e)', () => {
   let app: INestApplication<App>;
   const previousNodeEnv = process.env.NODE_ENV;
+  const previousGoogleId = process.env.GOOGLE_CLIENT_ID;
+  const previousGoogleSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const previousFacebookId = process.env.FACEBOOK_CLIENT_ID;
+  const previousFacebookSecret = process.env.FACEBOOK_CLIENT_SECRET;
 
   const testUser = {
     email: `redirect-tester-${Date.now()}@random.com`,
@@ -18,6 +22,10 @@ describe('Redirects and Session Creation (e2e)', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'production';
+    process.env.GOOGLE_CLIENT_ID = 'dummy-google-client-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'dummy-google-client-secret';
+    process.env.FACEBOOK_CLIENT_ID = 'dummy-facebook-client-id';
+    process.env.FACEBOOK_CLIENT_SECRET = 'dummy-facebook-client-secret';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -29,6 +37,10 @@ describe('Redirects and Session Creation (e2e)', () => {
 
   afterAll(async () => {
     process.env.NODE_ENV = previousNodeEnv;
+    process.env.GOOGLE_CLIENT_ID = previousGoogleId;
+    process.env.GOOGLE_CLIENT_SECRET = previousGoogleSecret;
+    process.env.FACEBOOK_CLIENT_ID = previousFacebookId;
+    process.env.FACEBOOK_CLIENT_SECRET = previousFacebookSecret;
     await app.close();
   });
 
@@ -112,7 +124,7 @@ describe('Redirects and Session Creation (e2e)', () => {
         .expect(200);
 
       const body = response.body as {
-        user: { email: string; name: string; username: string };
+        user: { email: string; name: string };
         session: { userId: string };
       };
 
