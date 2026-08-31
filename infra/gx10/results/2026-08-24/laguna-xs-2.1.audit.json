@@ -1,0 +1,50 @@
+[
+ {
+  "topic": "spanish",
+  "run": 1,
+  "front": "How to form the preterite for -ar verbs?",
+  "back": "Drop -r, add -é, -aste, -ó, -amos, -asteis, -aron.",
+  "verdict": "error",
+  "judgeTail": "is not a valid stem), directly contradicting the standard conjugation rule.\n- While minor wording variations are acceptable in flashcards, misidentifying the morphological boundary required for verb conjugation violates your own accuracy standards and fails to teach the correct rule.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 4,
+  "front": "When do we use the preterite tense?",
+  "back": "For completed past actions with no ongoing effect.",
+  "verdict": "error",
+  "judgeTail": " The defining rule is temporal boundary and completion versus duration/habit/description. Because the card teaches an incorrect and unnecessary condition, it fails to properly convey the grammatical rule. Spelling and wording are otherwise fine, but the pedagogical content is flawed.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 4,
+  "front": "What's the preterite of 'hablar'?",
+  "back": "Hable, hablaste, habló, etc.",
+  "verdict": "error",
+  "judgeTail": " consistently demonstrate the -é, -aste, -ó, -amos, -asteis, -aron pattern for regular -ar verbs. The inclusion of *Hable* misrepresents this fundamental conjugation rule.\n\nThe card contains a tense mismatch, an accent omission, and fails to accurately present the preterite paradigm.\n\nVERDICT: error"
+ },
+ {
+  "topic": "biology",
+  "run": 1,
+  "front": "What are the reactants in photosynthesis?",
+  "back": "Carbon dioxide, water, and sunlight.",
+  "verdict": "error",
+  "judgeTail": " to drive photosynthesis, but it is an energy input, not a chemical reactant. While introductory materials sometimes loosely group sunlight with inputs, listing it as a reactant alongside matter-based substances is scientifically inaccurate regarding standard biochemical terminology.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 3,
+  "front": "What caused the Reign of Terror?",
+  "back": "1793-1794, led by Robespierre to suppress counter-revolutionaries.",
+  "verdict": "error",
+  "judgeTail": "sked. Dates and leaders are not causes, making the response mismatched to the prompt, incoherent as a direct answer, and poorly formed for flashcard use. A proper cause-focused answer would list factors like foreign invasion, civil war, economic crisis, and political power struggles.\n\nVERDICT: error"
+ },
+ {
+  "topic": "programming",
+  "run": 1,
+  "front": "Reduce accumulator starts as what?",
+  "back": "First argument of callback or zero if not specified.",
+  "verdict": "error",
+  "judgeTail": "s. Standard behavior uses the first element as the fallback. Additionally, saying it starts as the \"first argument of callback\" is circular and uninformative, since that parameter *is* the accumulator itself, not its starting value. The card contains a substantive factual inaccuracy.\n\nVERDICT: error"
+ }
+]

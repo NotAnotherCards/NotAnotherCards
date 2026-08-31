@@ -1,0 +1,98 @@
+[
+ {
+  "topic": "spanish",
+  "run": 1,
+  "front": "Which ending is added to -er/-ir verbs for 'nosotros'?",
+  "back": "-imos",
+  "verdict": "error",
+  "judgeTail": "ntended rule was the preterite past tense, the question should explicitly state it. As written, the card teaches an oversimplified and incorrect generalization that will lead to conjugation errors (e.g., students might incorrectly write `comimos` in the present instead of `comemos`).\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 3,
+  "front": "What is the preterite ending for 'nosotros' with -ar verbs?",
+  "back": "-amos (e.g., hablamos, comimos, vivimos)",
+  "verdict": "error",
+  "judgeTail": "e ending for *-er* and *-ir* verbs, not *-ar* verbs. Listing them as examples of an \"-amos\" ending teaches a false pattern and violates the fundamental conjugation rules. A flashcard must keep its stated rule perfectly aligned with its examples, especially at this foundational level.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 4,
+  "front": "Which ending is used for 'yo' in -ar verbs?",
+  "back": "I add '-é' to the stem.",
+  "verdict": "error",
+  "judgeTail": "al tense context (`-é` only applies to the preterite). Presenting it without specifying the tense teaches a misleading rule that will cause learners to incorrectly conjugate present-tense verbs (which take `-o`). A strict flashcard must specify the tense to accurately teach the rule.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 4,
+  "front": "How do you conjugate 'hablar' for 'tú'?",
+  "back": "The form is 'hablaste'.",
+  "verdict": "error",
+  "judgeTail": "e ending *-aste* is derived, violating your constraint that the answer must teach the right rule. While *hablaste* is correctly spelled and uses real words, presenting a specific past-tense form as the universal answer without qualification is pedagogically misleading and incomplete.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 4,
+  "front": "Which irregular verb means 'to go' in preterite?",
+  "back": "The verb is 'fui' (yo) or 'fueron' (they).",
+  "verdict": "error",
+  "judgeTail": "rregular preterite stem + ending combination. A proper flashcard should state the infinitive, note its irregularity, and either provide the full conjugation or clearly specify which form it represents. As written, it misleads learners about how to identify and memorize Spanish verbs.\n\nVERDICT: error"
+ },
+ {
+  "topic": "biology",
+  "run": 3,
+  "front": "What organelle houses the light-dependent reactions?",
+  "back": "Thylakoid membranes.",
+  "verdict": "error",
+  "judgeTail": " the precise subcellular location where the reactions take place, but thylakoids are membrane-bound compartments within an organelle, not an organelle themselves. Because the question explicitly requests an organelle, the card's answer is factually imprecise for this specific prompt.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 4,
+  "front": "When did the King of France take an oath to the Constitution?",
+  "back": "July 9, 1790",
+  "verdict": "error",
+  "judgeTail": "790 was a highly active period in the Revolution (notably the passage of the Civil Constitution of the Clergy on July 12 and the lead-up to the Fête de la Fédération on July 14), it does not correspond to the King's constitutional oath. The date discrepancy makes the card inaccurate.\n\nVERDICT: error"
+ },
+ {
+  "topic": "programming",
+  "run": 1,
+  "front": "How many arguments does reduce() require?",
+  "back": "Two arguments: a callback function and an optional initial value for the accumulator.",
+  "verdict": "error",
+  "judgeTail": "correctly identifies the parameters in JavaScript's `Array.prototype.reduce` signature, it inaccurately frames them as required and fails to clarify that only the callback is mandatory. This is a factual imprecision regarding the term \"require,\" not merely a minor wording difference.\n\nVERDICT: error"
+ },
+ {
+  "topic": "programming",
+  "run": 2,
+  "front": "What is the second parameter of a .reduce() callback?",
+  "back": "The accumulator variable.",
+  "verdict": "error",
+  "judgeTail": "ray). \n\nComparison: The card's answer incorrectly identifies it as \"the accumulator variable.\" In the standard signature (`(accumulator, currentValue, index, array)`), the accumulator is the **first** parameter, not the second. This is a clear factual error regarding parameter order.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 2,
+  "front": "Which interval sounds most like a perfect fifth?",
+  "back": "A perfect fifth is seven semitones wide, often used in open tunings.",
+  "verdict": "error",
+  "judgeTail": "accurate. However, it does not logically respond to the question's phrasing (\"Which interval...?\"), instead providing a definition followed by a tangential application note about open tunings. This structural mismatch makes the Q&A pair incoherent and poorly formed for flashcard use.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 3,
+  "front": "Which common song begins with a leap of a third?",
+  "back": "Twinkle Twinkle Little Star.",
+  "verdict": "error",
+  "judgeTail": " a third.\n\nComparison: The card's answer claims \"Twinkle Twinkle Little Star,\" which directly contradicts the actual interval structure of its melody. While minor wording differences are acceptable, this is a clear factual mismatch regarding music theory and the song's opening notes.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 3,
+  "front": "What type of third consists of two half steps?",
+  "back": "A minor third.",
+  "verdict": "error",
+  "judgeTail": "minor third.\n\nComparison: The card's answer incorrectly states that a minor third corresponds to two half steps. This contradicts established music theory, where a minor third spans three semitones and two semitones define a major second. Therefore, the card contains a factual error.\n\nVERDICT: error"
+ }
+]
