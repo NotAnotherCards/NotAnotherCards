@@ -142,16 +142,6 @@ export function AiGenerationPlaygroundComponent() {
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* Left side: Config Form & Job Status Tracker */}
       <div className="lg:col-span-5 space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-linear-to-r from-violet-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-2">
-            <Sparkles className="size-6 text-violet-500 fill-violet-500/20" />
-            AI Generation Playground
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Test LLM configurations, prompt parameters, and preview how AI note payloads behave prior to persistence.
-          </p>
-        </div>
-
         {errorMessage && (
           <div className="flex gap-2.5 items-start bg-destructive/10 border border-destructive/20 rounded-2xl p-4 text-sm text-destructive">
             <AlertCircle className="size-5 shrink-0 mt-0.5" />

@@ -6,9 +6,10 @@ import { DeckList } from '@/components/deck/DeckList';
 import { DeckDetail } from '@/components/deck/DeckDetail';
 import { Settings } from './settings/Settings';
 import { Overview } from './Overview';
+import { AiGenerationPlaygroundComponent } from '../ai/AiGenerationPlaygroundComponent';
 
 export function DashboardComponent() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'decks' | 'settings'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'decks' | 'settings' | 'playground'>(
     'overview',
   );
   const [subView, setSubView] = useState<{
@@ -57,6 +58,17 @@ export function DashboardComponent() {
           <SettingsIcon className="size-3.5 mr-1.5" />
           Profile & Settings
         </Button>
+        <Button
+          variant={activeTab === 'playground' ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={() => {
+            setActiveTab('playground');
+          }}
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
+        >
+          <BookOpen className="size-3.5 mr-1.5" />
+          Playground
+        </Button>
       </div>
 
       {/* Tab Contents */}
@@ -78,6 +90,7 @@ export function DashboardComponent() {
       )}
 
       {activeTab === 'settings' && <Settings />}
+      {activeTab === 'playground' && <AiGenerationPlaygroundComponent />}
     </PageContainer>
   );
 }

@@ -17,7 +17,6 @@ import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
-import { Route as ProtectedGenerateRouteImport } from './routes/_protected/generate'
 import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
 
 const IndexRoute = IndexRouteImport.update({
@@ -58,11 +57,6 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ProtectedRouteRoute,
 } as any)
-const ProtectedGenerateRoute = ProtectedGenerateRouteImport.update({
-  id: '/generate',
-  path: '/generate',
-  getParentRoute: () => ProtectedRouteRoute,
-} as any)
 const ProtectedOnboardingRoute = ProtectedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -76,7 +70,6 @@ export interface FileRoutesByFullPath {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/dashboard': typeof ProtectedDashboardRoute
-  '/generate': typeof ProtectedGenerateRoute
   '/onboarding': typeof ProtectedOnboardingRoute
 }
 export interface FileRoutesByTo {
@@ -86,7 +79,6 @@ export interface FileRoutesByTo {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/dashboard': typeof ProtectedDashboardRoute
-  '/generate': typeof ProtectedGenerateRoute
   '/onboarding': typeof ProtectedOnboardingRoute
 }
 export interface FileRoutesById {
@@ -99,7 +91,6 @@ export interface FileRoutesById {
   '/_auth/register': typeof AuthRegisterRoute
   '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
-  '/_protected/generate': typeof ProtectedGenerateRoute
   '/_protected/onboarding': typeof ProtectedOnboardingRoute
 }
 export interface FileRouteTypes {
@@ -111,7 +102,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard'
-    | '/generate'
     | '/onboarding'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,7 +111,6 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard'
-    | '/generate'
     | '/onboarding'
   id:
     | '__root__'
@@ -133,7 +122,6 @@ export interface FileRouteTypes {
     | '/_auth/register'
     | '/_auth/reset-password'
     | '/_protected/dashboard'
-    | '/_protected/generate'
     | '/_protected/onboarding'
   fileRoutesById: FileRoutesById
 }
@@ -201,13 +189,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedDashboardRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
-    '/_protected/generate': {
-      id: '/_protected/generate'
-      path: '/generate'
-      fullPath: '/generate'
-      preLoaderRoute: typeof ProtectedGenerateRouteImport
-      parentRoute: typeof ProtectedRouteRoute
-    }
     '/_protected/onboarding': {
       id: '/_protected/onboarding'
       path: '/onboarding'
@@ -238,13 +219,11 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface ProtectedRouteRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
-  ProtectedGenerateRoute: typeof ProtectedGenerateRoute
   ProtectedOnboardingRoute: typeof ProtectedOnboardingRoute
 }
 
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
-  ProtectedGenerateRoute: ProtectedGenerateRoute,
   ProtectedOnboardingRoute: ProtectedOnboardingRoute,
 }
 
