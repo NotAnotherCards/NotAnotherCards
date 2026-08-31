@@ -23,7 +23,8 @@ import { Button } from '../ui/button';
 interface CardListProps {
   cards: Card[];
   onEditCard: (card: Card) => void;
-  onDeleteCard: (cardId: string) => void;
+  onRemoveFromDeck: (card: Card) => void;
+  canEditCard: (card: Card) => boolean;
   onAddCard: () => void;
   isLoading?: boolean;
   error?: string | null;
@@ -32,7 +33,8 @@ interface CardListProps {
 export function CardList({
   cards,
   onEditCard,
-  onDeleteCard,
+  onRemoveFromDeck,
+  canEditCard,
   onAddCard,
   isLoading,
   error,
@@ -168,8 +170,9 @@ export function CardList({
                     key={card.id}
                     card={card}
                     onEditCard={onEditCard}
-                    onDeleteCard={onDeleteCard}
+                    onRemoveFromDeck={onRemoveFromDeck}
                     onViewCard={(c) => setViewingCard(c)}
+                    canEdit={canEditCard(card)}
                   />
                 ))}
               </tbody>

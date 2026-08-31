@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@remelondb/core": "0.2.5",
+    "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

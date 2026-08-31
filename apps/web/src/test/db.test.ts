@@ -107,7 +107,9 @@ describe('authenticated user database configuration', () => {
     expect(call.schema).toBeDefined();
     expect(call.modelClasses!.map((c: { name: string }) => c.name)).toEqual([
       'UserDeck',
+      'UserNote',
       'UserCard',
+      'UserNoteDeck',
       'ReviewEvent',
       'UserProfile',
     ]);
