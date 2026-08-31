@@ -36,11 +36,20 @@ describe('Redirects and Session Creation (e2e)', () => {
   });
 
   afterAll(async () => {
-    process.env.NODE_ENV = previousNodeEnv;
-    process.env.GOOGLE_CLIENT_ID = previousGoogleId;
-    process.env.GOOGLE_CLIENT_SECRET = previousGoogleSecret;
-    process.env.FACEBOOK_CLIENT_ID = previousFacebookId;
-    process.env.FACEBOOK_CLIENT_SECRET = previousFacebookSecret;
+    const restoreEnv = (key: string, value: string | undefined) => {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    };
+
+    restoreEnv('NODE_ENV', previousNodeEnv);
+    restoreEnv('GOOGLE_CLIENT_ID', previousGoogleId);
+    restoreEnv('GOOGLE_CLIENT_SECRET', previousGoogleSecret);
+    restoreEnv('FACEBOOK_CLIENT_ID', previousFacebookId);
+    restoreEnv('FACEBOOK_CLIENT_SECRET', previousFacebookSecret);
+
     await app.close();
   });
 
