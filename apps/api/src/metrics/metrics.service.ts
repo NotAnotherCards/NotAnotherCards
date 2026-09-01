@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   collectDefaultMetrics,
   Counter,
@@ -9,6 +9,7 @@ import {
 
 @Injectable()
 export class MetricsService implements OnModuleInit {
+  private readonly logger = new Logger(MetricsService.name);
   private readonly registry: Registry;
 
   // HTTP Metrics
@@ -141,8 +142,13 @@ export class MetricsService implements OnModuleInit {
         this.aiJobsPending.set(pending);
         this.aiJobsProcessing.set(processing);
         this.aiJobsFailed.set(failed);
-      } catch {
-        // preserve previous gauge values on error
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Failed to scrape AI queue depth metrics: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        this.aiJobsPending.reset();
+        this.aiJobsProcessing.reset();
+        this.aiJobsFailed.reset();
       }
     }
     return this.registry.metrics();

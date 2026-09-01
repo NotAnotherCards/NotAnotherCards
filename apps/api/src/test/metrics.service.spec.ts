@@ -69,15 +69,15 @@ describe('MetricsService & MetricsController', () => {
     expect(text).toContain('ai_jobs_failed 1');
   });
 
-  it('keeps the scrape alive when the queue depth provider fails', async () => {
+  it('keeps the scrape alive and resets gauges when the queue depth provider fails', async () => {
     service.aiJobsPending.set(4);
     service.registerAiQueueDepthProvider(() =>
       Promise.reject(new Error('database down')),
     );
 
-    // Scrape must not throw, and the last known gauge value survives.
+    // Scrape must not throw, and stale gauge values are reset.
     const text = await service.getMetrics();
-    expect(text).toContain('ai_jobs_pending 4');
+    expect(text).toContain('ai_jobs_pending 0');
   });
 
   it('MetricsController responds with metrics text and content type header', async () => {

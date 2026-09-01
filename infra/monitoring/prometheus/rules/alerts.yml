@@ -19,14 +19,32 @@ groups:
           summary: 'PostgreSQL Database exporter is unreachable'
           description: 'Postgres exporter target on the VPS is reporting down.'
 
-      - alert: Gx10Unreachable
+      - alert: LiteLlmGatewayDown
         expr: up{job="litellm-gx10"} == 0
-        for: 3m
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'LiteLLM AI Gateway on GX10 is unreachable'
+          description: 'LiteLLM inference gateway (100.64.0.1:4000) has been unreachable for 5 minutes.'
+
+      - alert: Gx10NodeExporterDown
+        expr: up{job="node-gx10"} == 0
+        for: 15m
         labels:
           severity: warning
         annotations:
-          summary: 'GX10 AI Gateway is unreachable over Tailscale'
-          description: 'LiteLLM gateway on the GX10 (100.64.0.1:4000) has been unreachable for 3 minutes.'
+          summary: 'GX10 Node Exporter is unreachable'
+          description: 'Host system metrics exporter on the GX10 has been down for 15 minutes.'
+
+      - alert: Gx10GpuExporterDown
+        expr: up{job="dcgm-gpu-gx10"} == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'GX10 NVIDIA GPU Exporter is unreachable'
+          description: 'NVIDIA DCGM GPU exporter on the GX10 has been down for 15 minutes.'
 
       - alert: AiQueueDepthHigh
         expr: ai_jobs_pending > 10

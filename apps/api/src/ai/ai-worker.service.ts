@@ -59,6 +59,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           count(*) FILTER (WHERE status = 'processing')::int AS processing,
           count(*) FILTER (WHERE status = 'failed')::int AS failed
         FROM ai_generation_jobs
+        WHERE status IN ('pending', 'processing', 'failed')
       `);
       const row = result.rows[0] as
         { pending: number; processing: number; failed: number } | undefined;
