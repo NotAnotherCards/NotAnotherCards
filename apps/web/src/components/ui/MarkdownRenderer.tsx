@@ -40,8 +40,8 @@ markedInstance.use({
 
       if (isAudioUrl(targetUrl, text)) {
         const audioSrc = cleanAudioUrl(targetUrl);
-        const label = text && !/^audio:/i.test(text) ? text : 'Audio sample';
-        return `<span className="inline-flex items-center my-1"><audio controls preload="none" aria-label="${escapeHtml(label)}"${titleAttr}><source src="${escapeHtml(audioSrc)}" /></audio></span>`;
+        const label = text && !/^audio:/i.test(text) ? text : 'Audio';
+        return `<span class="inline-flex items-center gap-2 my-2 px-3 py-1.5 rounded-2xl bg-muted/50 border border-border/60 text-xs font-medium shadow-xs max-w-full"><audio controls preload="none" aria-label="${escapeHtml(label)}" class="h-4 max-w-32 sm:max-w-40 rounded-xl"><source src="${escapeHtml(audioSrc)}" /></audio></span>`;
       }
 
       return `<a href="${escapeHtml(targetUrl)}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
@@ -50,7 +50,7 @@ markedInstance.use({
       const src = href || '';
       const alt = text || 'Card image';
       const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
-      return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"${titleAttr} className="max-w-full h-auto rounded-lg inline-block my-1" />`;
+      return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"${titleAttr} class="max-w-full h-auto rounded-xl inline-block my-2 shadow-xs border border-border/40" />`;
     },
   },
 });
@@ -141,6 +141,12 @@ export function MarkdownRenderer({
     <Component
       className={`markdown-content ${className}`.trim()}
       data-testid={testId}
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('audio, a, button, input, select')) {
+          e.stopPropagation();
+        }
+      }}
       dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   );
