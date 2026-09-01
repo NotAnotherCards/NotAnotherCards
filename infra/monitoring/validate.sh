@@ -8,6 +8,13 @@ GRAFANA_ADMIN_PASSWORD="ci-test-password" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
 docker compose -f "$SCRIPT_DIR/docker-compose.yml" config --quiet
 
+echo "==> 1b. Validating fail-safe empty password rejection..."
+if (unset GRAFANA_ADMIN_PASSWORD && docker compose -f "$SCRIPT_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env.example" config >/dev/null 2>&1); then
+  echo "ERROR: Compose unexpectedly accepted unedited .env.example with blank GRAFANA_ADMIN_PASSWORD" >&2
+  exit 1
+fi
+echo "  [OK] Compose correctly rejected blank GRAFANA_ADMIN_PASSWORD"
+
 echo "==> 2. Validating Prometheus configuration..."
 docker run --rm \
   --entrypoint /bin/promtool \

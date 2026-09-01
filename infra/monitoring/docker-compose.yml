@@ -49,8 +49,8 @@ services:
         ]
       interval: 5s
       timeout: 3s
-      retries: 5
-      start_period: 10s
+      retries: 10
+      start_period: 45s
     depends_on:
       prometheus:
         condition: service_healthy
@@ -77,8 +77,8 @@ services:
         ]
       interval: 5s
       timeout: 3s
-      retries: 10
-      start_period: 45s
+      retries: 5
+      start_period: 5s
     networks:
       - default
 
