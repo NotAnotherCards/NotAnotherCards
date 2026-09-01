@@ -27,7 +27,11 @@ export async function completeOnboarding(
     throw new Error(apiErrorMessage(err));
   }
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(body.message || apiErrorMessage({ status: res.status }));
+    // A body of null is valid JSON: res.json() resolves, the catch never
+    // runs, and body.message would throw. Read it optionally.
+    const body = (await res.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+    throw new Error(body?.message || apiErrorMessage({ status: res.status }));
   }
 }

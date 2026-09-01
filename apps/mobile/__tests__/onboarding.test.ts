@@ -84,4 +84,18 @@ describe('completeOnboarding', () => {
 
     await expect(completeOnboarding(values)).rejects.toThrow(/HTTP 500/);
   });
+
+  // null is valid JSON, so json() resolves rather than rejects and the
+  // catch above never runs. The old code read body.message off it and threw
+  // a TypeError instead of the fallback.
+  it('falls back when a server error body is literally null', async () => {
+    mockGetCookie.mockReturnValue('session=abc');
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve(null),
+    });
+
+    await expect(completeOnboarding(values)).rejects.toThrow(/HTTP 500/);
+  });
 });
