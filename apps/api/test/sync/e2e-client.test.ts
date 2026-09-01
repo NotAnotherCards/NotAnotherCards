@@ -9,20 +9,23 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { Database, Q, synchronize } from '@remelondb/core';
-import { syncSchemas } from '@remelondb/core/zod';
+import { Database, Q, randomId, synchronize } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import {
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
   ReviewEvent,
-  ReviewEventRow,
   UserCard,
-  UserCardRow,
   UserDeck,
-  UserDeckRow,
+  UserNote,
+  UserNoteDeck,
   UserProfile,
-  UserProfileRow,
+  cardId,
   migrations,
+  noteDeckId,
   schema,
+  syncWireSchemas,
 } from '@repo/offline-db';
 import {
   getTestConnectionString,
@@ -33,12 +36,7 @@ import {
 
 const describePostgres = hasPostgres ? describe : describe.skip;
 
-const wire = syncSchemas({
-  user_decks: UserDeckRow,
-  user_cards: UserCardRow,
-  review_events: ReviewEventRow,
-  user_profiles: UserProfileRow,
-});
+const wire = syncWireSchemas;
 
 describePostgres('client-server sync, end to end', () => {
   let app: INestApplication;
@@ -78,7 +76,14 @@ describePostgres('client-server sync, end to end', () => {
       driver: new NodeSqliteDriver(),
       schema,
       migrations,
-      modelClasses: [UserDeck, UserCard, ReviewEvent, UserProfile],
+      modelClasses: [
+        UserDeck,
+        UserNote,
+        UserCard,
+        UserNoteDeck,
+        ReviewEvent,
+        UserProfile,
+      ],
       name: ':memory:',
     });
 
@@ -124,45 +129,162 @@ describePostgres('client-server sync, end to end', () => {
       },
     });
 
-  const decks = (db: Database) =>
-    db.get(UserDeck).query(Q.sortBy('created_at', Q.desc));
-
-  it('converges two devices and scopes users apart', async () => {
+  it('converges the note model, schedules, cascades, and user scopes', async () => {
     const cookie = await register('a');
     const a = await openClient();
     const b = await openClient();
+    const now = Date.now();
+    const deckId = randomId();
+    const noteId = randomId();
+    const userCardId = cardId(noteId, BASIC_FRONT_BACK_TEMPLATE_KEY);
+    const membershipId = noteDeckId(noteId, deckId);
+    const reviewId = randomId();
 
-    // create offline on A, converge on B
-    const deck = await a.write(() =>
-      a.get(UserDeck).create({
-        user_id: 'local',
-        deleted_at: null,
-        title: 'E2E Spanish',
-        description: 'made on device a',
-        created_at: Date.now(),
-        updated_at: Date.now(),
-      }),
-    );
+    await a.write(async () => {
+      await a.batch([
+        a.get(UserDeck).prepareCreate({
+          id: deckId,
+          title: 'E2E Spanish',
+          description: 'made on device a',
+          created_at: now,
+          updated_at: now,
+        }),
+        a.get(UserNote).prepareCreate({
+          id: noteId,
+          note_type: BASIC_NOTE_TYPE,
+          fields_version: BASIC_NOTE_FIELDS_VERSION,
+          fields_json: JSON.stringify({ front: 'hola', back: 'hello' }),
+          additional_content: 'A complete synced note',
+          created_at: now,
+          updated_at: now,
+        }),
+        a.get(UserCard).prepareCreate({
+          id: userCardId,
+          note_id: noteId,
+          template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+          active: true,
+          front: 'hola',
+          back: 'hello',
+          due_at: now,
+          scheduled_interval_minutes: 30,
+          created_at: now,
+          updated_at: now,
+        }),
+        a.get(UserNoteDeck).prepareCreate({
+          id: membershipId,
+          note_id: noteId,
+          deck_id: deckId,
+          active: true,
+          created_at: now,
+          updated_at: now,
+        }),
+        a.get(ReviewEvent).prepareCreate({
+          id: reviewId,
+          user_card_id: userCardId,
+          rating: 3,
+          reviewed_at: now,
+        }),
+      ]);
+    });
+
     await syncClient(a, cookie);
     await syncClient(b, cookie);
-    const onB = await decks(b).fetch();
-    expect(
-      onB.map((record) => (record as unknown as { title: string }).title),
-    ).toEqual(['E2E Spanish']);
+    expect((await b.get(UserDeck).find(deckId)).title).toBe('E2E Spanish');
+    expect((await b.get(UserNote).find(noteId)).fields_json).toBe(
+      JSON.stringify({ front: 'hola', back: 'hello' }),
+    );
+    expect(await b.get(UserCard).find(userCardId)).toMatchObject({
+      note_id: noteId,
+      scheduled_interval_minutes: 30,
+      due_at: now,
+    });
+    expect(await b.get(UserNoteDeck).find(membershipId)).toMatchObject({
+      note_id: noteId,
+      deck_id: deckId,
+      active: true,
+    });
+    expect(await b.get(ReviewEvent).find(reviewId)).toMatchObject({
+      user_card_id: userCardId,
+      rating: 3,
+    });
 
-    // delete on B, tombstone reaches A
+    const updatedDueAt = now + 90 * 60_000;
     await b.write(async () => {
-      const found = await b.get(UserDeck).find(deck.id);
+      const card = await b.get(UserCard).find(userCardId);
+      await card.update((record) => {
+        record.due_at = updatedDueAt;
+        record.scheduled_interval_minutes = 90;
+        record.updated_at = now + 1;
+      });
+    });
+    await syncClient(b, cookie);
+    await syncClient(a, cookie);
+    expect(await a.get(UserCard).find(userCardId)).toMatchObject({
+      due_at: updatedDueAt,
+      scheduled_interval_minutes: 90,
+    });
+
+    await b.write(async () => {
+      const found = await b.get(UserDeck).find(deckId);
       await found.markAsDeleted();
     });
     await syncClient(b, cookie);
     await syncClient(a, cookie);
-    expect(await decks(a).fetchCount()).toBe(0);
+    for (const client of [a, b]) {
+      expect(
+        await client.get(UserDeck).query(Q.where('id', deckId)).fetchCount(),
+      ).toBe(0);
+      expect(
+        await client
+          .get(UserNoteDeck)
+          .query(Q.where('id', membershipId))
+          .fetchCount(),
+      ).toBe(0);
+      expect(await client.get(UserNote).find(noteId)).toBeDefined();
+      expect(await client.get(UserCard).find(userCardId)).toMatchObject({
+        due_at: updatedDueAt,
+        scheduled_interval_minutes: 90,
+      });
+      expect(await client.get(ReviewEvent).find(reviewId)).toBeDefined();
+    }
 
-    // a second authenticated user pulls nothing
+    await b.write(async () => {
+      const note = await b.get(UserNote).find(noteId);
+      await note.markAsDeleted();
+    });
+    await syncClient(b, cookie);
+    await syncClient(a, cookie);
+    for (const client of [a, b]) {
+      expect(
+        await client.get(UserNote).query(Q.where('id', noteId)).fetchCount(),
+      ).toBe(0);
+      expect(
+        await client
+          .get(UserCard)
+          .query(Q.where('id', userCardId))
+          .fetchCount(),
+      ).toBe(0);
+      expect(
+        await client
+          .get(UserNoteDeck)
+          .query(Q.where('id', membershipId))
+          .fetchCount(),
+      ).toBe(0);
+      expect(
+        await client
+          .get(ReviewEvent)
+          .query(Q.where('id', reviewId))
+          .fetchCount(),
+      ).toBe(0);
+    }
+
     const foreignCookie = await register('other');
     const c = await openClient();
     await syncClient(c, foreignCookie);
-    expect(await decks(c).fetchCount()).toBe(0);
+    expect(await c.get(UserDeck).query().fetchCount()).toBe(0);
+    expect(await c.get(UserNote).query().fetchCount()).toBe(0);
+    expect(await c.get(UserCard).query().fetchCount()).toBe(0);
+    expect(await c.get(UserNoteDeck).query().fetchCount()).toBe(0);
+    expect(await c.get(ReviewEvent).query().fetchCount()).toBe(0);
   }, 60_000);
 });

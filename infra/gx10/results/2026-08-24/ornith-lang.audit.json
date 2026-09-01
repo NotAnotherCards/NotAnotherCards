@@ -1,0 +1,18 @@
+[
+ {
+  "topic": "es-ser-estar",
+  "run": 5,
+  "front": "El libro ___ de María.",
+  "back": "es - origin",
+  "verdict": "error",
+  "judgeTail": "requirement for target-language accuracy and real/standard terminology. A proper card should either state only \"es\" or, if a usage note is required, correctly specify \"posesión\" in Spanish. The explanatory component teaches the wrong rule and introduces confusing foreign terminology.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 2,
+  "front": "anfangen - Wir anfangen um acht Uhr.",
+  "back": "to begin/start - We start at eight o'clock.",
+  "verdict": "error",
+  "judgeTail": "words are real and correctly spelled, but their combination violates fundamental German syntax. A language flashcard must model correct morphology, word order, and grammar to teach accurately; this card actively misleads learners on verb placement and would reinforce incorrect usage.\n\nVERDICT: error"
+ }
+]

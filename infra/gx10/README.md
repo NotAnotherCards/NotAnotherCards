@@ -59,7 +59,7 @@ const client = new OpenAI({
 });
 
 const params: GatewayChatParams = {
-  model: "qwen",
+  model: "gemma4",
   think: false, // ~3 s; leave thinking on for fewer factual errors at ~30 s
   messages: [{
     role: "user",
@@ -88,9 +88,13 @@ Which model for what (measured, see
 
 | model | use it for | notes |
 |---|---|---|
-| `qwen` | default chat and generation | fast with `think: false`; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `gemma4` | default generation | best quality in the v2 run, 3.49 s median for five cards; falls back to `qwen3.6` on failure |
+| `qwen3.6` | low-latency fallback, chat | ~0.8 s faster than `gemma4`, a few more errors; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `qwen` | nothing new | deprecated alias for `qwen3.6`, removed once production sends the new name (#193) |
 | `qwen-next-80b` | best accuracy, no hurry | ~45 s per answer |
-| `mistral-small` | second opinion, dense-model style | |
+| `qwen3.8` | comparison only | 2.5x slower than `qwen3.6` with more errors; send `reasoning_effort: "none"` |
+| `muse-glimmer` | comparison only | quality on par with `gemma4`, ~17 s per set |
+| `mistral-small` | second opinion, dense-model style | older results, rerun pending |
 | `fact-check` | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no |
 | `moderation` | content screening | granite guardian risk prompts |
 | `embeddings` | vectors (bge-m3) | embeddings API, not chat |

@@ -1,6 +1,6 @@
 services:
   ollama:
-    image: ollama/ollama:0.32.5
+    image: ollama/ollama:0.32.15
     restart: unless-stopped
     # reachable from the host for the ollama CLI, never from the tailnet
     ports:

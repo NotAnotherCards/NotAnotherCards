@@ -1,0 +1,50 @@
+[
+ {
+  "topic": "spanish",
+  "run": 4,
+  "front": "What is the ending for '-er' and '-ir' verbs in the 'tú' form?",
+  "back": "Add '-iste' (e.g., comiste).",
+  "verdict": "error",
+  "judgeTail": "t indicative (-es) in standard linguistic practice. This presents a context-dependent rule as if it were universal, which teaches an incomplete and potentially misleading conjugation pattern. Flashcards involving verb endings must explicitly state the tense to be pedagogically sound.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 1,
+  "front": "When did King Louis XVI execute the Reign of Terror begin?",
+  "back": "1793.",
+  "verdict": "error",
+  "judgeTail": "sely attributing the start of the Terror to Louis XVI, and it is grammatically incoherent (\"execute... begin\"). A flashcard with a factually impossible premise cannot be considered correct or well-formed, even if the answer year coincidentally aligns with one of the events mentioned.\n\nVERDICT: error"
+ },
+ {
+  "topic": "history",
+  "run": 3,
+  "front": "In what year did King Louis XVI execute the monarchy?",
+  "back": "January 21, 1793.",
+  "verdict": "error",
+  "judgeTail": "was executed\") while silently accepting the historically impossible active premise (\"execute the monarchy\"). Due to the flawed question phrasing, the mismatch between \"year\" and \"full date,\" and the underlying historical inaccuracy, the card is neither factually correct nor coherent.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 3,
+  "front": "How many scale steps are in a perfect fifth?",
+  "back": "Four scale steps (e.g., C to G).",
+  "verdict": "error",
+  "judgeTail": "steps/degrees spanned is five, not four. Interval naming conventions inherently use an inclusive count (seconds span 2 degrees, thirds span 3, fourths span 4, fifths span 5, etc.). The card is structurally coherent and well-formed in presentation, but its core factual claim is wrong.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 4,
+  "front": "How many notes are in a perfect octave?",
+  "back": "The same note name, but one register higher.",
+  "verdict": "error",
+  "judgeTail": "steps). \n\nThe card's answer describes the pitch relationship that defines an octave (the ending pitch relative to the starting pitch) rather than answering the quantitative question asked. It fails to provide a number or count, making it factually mismatched for this specific prompt.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 5,
+  "front": "How many scale steps are contained within a perfect fifth?",
+  "back": "Four steps (e.g., C to G)",
+  "verdict": "error",
+  "judgeTail": "es five scale steps (e.g., C, D, E, F, G).\n\nComparison: The card incorrectly states four steps. This contradicts the fundamental rule of interval naming/counting in Western music theory. Minor wording variations are acceptable, but stating \"four\" instead of \"five\" is a factual error.\n\nVERDICT: error"
+ }
+]

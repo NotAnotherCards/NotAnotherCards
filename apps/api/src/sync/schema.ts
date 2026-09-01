@@ -1,6 +1,7 @@
 import { relations, sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   check,
   doublePrecision,
   index,
@@ -11,6 +12,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/offline-db';
 import { user } from '../database/schema';
 
 export const remelonRev = pgSequence('remelon_rev');
@@ -68,20 +70,30 @@ export const userCards = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    deckId: text('deck_id').notNull(),
+    noteId: text('note_id').notNull(),
+    templateKey: text('template_key').notNull(),
+    active: boolean('active').notNull().default(true),
     front: text('front').notNull(),
     back: text('back').notNull(),
     dueAt: doublePrecision('due_at').notNull(),
+    scheduledIntervalMinutes: integer('scheduled_interval_minutes')
+      .notNull()
+      .default(0),
     createdAt: doublePrecision('created_at').notNull(),
     updatedAt: doublePrecision('updated_at').notNull(),
   },
   (table) => [
     index('user_cards_user_rev_idx').on(table.userId, table.rev),
     index('user_cards_user_updated_idx').on(table.userId, table.updatedAt),
+    index('user_cards_note_idx').on(table.noteId),
     index('user_cards_user_due_idx').on(table.userId, table.dueAt),
     check(
       'user_cards_due_at_safe_integer_check',
       sql`${table.dueAt} >= 0 and ${table.dueAt} <= 9007199254740991 and ${table.dueAt} = trunc(${table.dueAt})`,
+    ),
+    check(
+      'user_cards_scheduled_interval_minutes_range_check',
+      sql`${table.scheduledIntervalMinutes} between 0 and ${REVIEW_INTERVAL_CAP_MINUTES}`,
     ),
     check(
       'user_cards_created_at_safe_integer_check',
@@ -89,6 +101,67 @@ export const userCards = pgTable(
     ),
     check(
       'user_cards_updated_at_safe_integer_check',
+      sql`${table.updatedAt} >= 0 and ${table.updatedAt} <= 9007199254740991 and ${table.updatedAt} = trunc(${table.updatedAt})`,
+    ),
+  ],
+);
+
+export const userNotes = pgTable(
+  'user_notes',
+  {
+    id: text('id').primaryKey(),
+    rev: bigint('rev', { mode: 'number' }).notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    noteType: text('note_type').notNull(),
+    fieldsVersion: integer('fields_version').notNull(),
+    fieldsJson: text('fields_json').notNull(),
+    additionalContent: text('additional_content'),
+    createdAt: doublePrecision('created_at').notNull(),
+    updatedAt: doublePrecision('updated_at').notNull(),
+  },
+  (table) => [
+    index('user_notes_user_rev_idx').on(table.userId, table.rev),
+    index('user_notes_user_updated_idx').on(table.userId, table.updatedAt),
+    check(
+      'user_notes_created_at_safe_integer_check',
+      sql`${table.createdAt} >= 0 and ${table.createdAt} <= 9007199254740991 and ${table.createdAt} = trunc(${table.createdAt})`,
+    ),
+    check(
+      'user_notes_updated_at_safe_integer_check',
+      sql`${table.updatedAt} >= 0 and ${table.updatedAt} <= 9007199254740991 and ${table.updatedAt} = trunc(${table.updatedAt})`,
+    ),
+  ],
+);
+
+export const userNoteDecks = pgTable(
+  'user_note_decks',
+  {
+    id: text('id').primaryKey(),
+    rev: bigint('rev', { mode: 'number' }).notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    noteId: text('note_id').notNull(),
+    deckId: text('deck_id').notNull(),
+    active: boolean('active').notNull().default(true),
+    createdAt: doublePrecision('created_at').notNull(),
+    updatedAt: doublePrecision('updated_at').notNull(),
+  },
+  (table) => [
+    index('user_note_decks_user_rev_idx').on(table.userId, table.rev),
+    index('user_note_decks_user_updated_idx').on(table.userId, table.updatedAt),
+    index('user_note_decks_note_idx').on(table.noteId),
+    index('user_note_decks_deck_idx').on(table.deckId),
+    check(
+      'user_note_decks_created_at_safe_integer_check',
+      sql`${table.createdAt} >= 0 and ${table.createdAt} <= 9007199254740991 and ${table.createdAt} = trunc(${table.createdAt})`,
+    ),
+    check(
+      'user_note_decks_updated_at_safe_integer_check',
       sql`${table.updatedAt} >= 0 and ${table.updatedAt} <= 9007199254740991 and ${table.updatedAt} = trunc(${table.updatedAt})`,
     ),
   ],
@@ -153,7 +226,31 @@ export const userDecksRelations = relations(userDecks, ({ one, many }) => ({
     fields: [userDecks.userId],
     references: [user.id],
   }),
+  noteDecks: many(userNoteDecks),
+}));
+
+export const userNotesRelations = relations(userNotes, ({ one, many }) => ({
+  user: one(user, {
+    fields: [userNotes.userId],
+    references: [user.id],
+  }),
   cards: many(userCards),
+  noteDecks: many(userNoteDecks),
+}));
+
+export const userNoteDecksRelations = relations(userNoteDecks, ({ one }) => ({
+  user: one(user, {
+    fields: [userNoteDecks.userId],
+    references: [user.id],
+  }),
+  note: one(userNotes, {
+    fields: [userNoteDecks.noteId],
+    references: [userNotes.id],
+  }),
+  deck: one(userDecks, {
+    fields: [userNoteDecks.deckId],
+    references: [userDecks.id],
+  }),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
@@ -168,9 +265,9 @@ export const userCardsRelations = relations(userCards, ({ one, many }) => ({
     fields: [userCards.userId],
     references: [user.id],
   }),
-  deck: one(userDecks, {
-    fields: [userCards.deckId],
-    references: [userDecks.id],
+  note: one(userNotes, {
+    fields: [userCards.noteId],
+    references: [userNotes.id],
   }),
   reviews: many(reviewEvents),
 }));

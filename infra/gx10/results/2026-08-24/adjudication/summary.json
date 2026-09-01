@@ -1,0 +1,2320 @@
+{
+  "cards": 1671,
+  "reviewCards": 204,
+  "opusVerdicts": {
+    "error": 192,
+    "ok": 1477,
+    "uncertain": 2
+  },
+  "finalDispositions": {
+    "major_error": 72,
+    "judge_false_positive": 40,
+    "minor_error": 92,
+    "accepted": 1467
+  },
+  "qwen": {
+    "flagged": 76,
+    "approved": 1595,
+    "flaggedDispositions": {
+      "major_error": 40,
+      "judge_false_positive": 13,
+      "minor_error": 23
+    },
+    "missedDispositions": {
+      "minor_error": 69,
+      "judge_false_positive": 27,
+      "major_error": 32
+    }
+  },
+  "models": [
+    {
+      "model": "gemma4:26b-a4b-it-q4_K_M",
+      "family": "gemma4",
+      "quantization": "Q4_K_M",
+      "parameters": "25.8B",
+      "campaigns": [
+        "gemma4-26b-a4b",
+        "gemma4-lang"
+      ],
+      "sets": 50,
+      "formatOk": 50,
+      "cards": 240,
+      "dispositions": {
+        "major_error": 3,
+        "minor_error": 7,
+        "judge_false_positive": 2,
+        "accepted": 228
+      },
+      "topics": {
+        "history": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "major_error": 2,
+            "minor_error": 3,
+            "accepted": 20
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "uncertain": 2,
+            "error": 2,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "major_error": 1,
+            "accepted": 21
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "accepted": 24
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "minor_error": 1
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "judge_false_positive": 1
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 20
+          },
+          "dispositions": {
+            "accepted": 20
+          }
+        }
+      },
+      "qwenFlags": 6,
+      "opusVerdicts": {
+        "error": 10,
+        "uncertain": 2,
+        "ok": 228
+      },
+      "medianGeneralSeconds": 3.492,
+      "medianLanguageSeconds": 2.014,
+      "medianDecodeTokS": 53
+    },
+    {
+      "model": "laguna-xs-2.1:q4_K_M",
+      "family": "laguna",
+      "quantization": "Q4_K_M",
+      "parameters": "33.4B",
+      "campaigns": [
+        "laguna-lang",
+        "laguna-xs-2.1"
+      ],
+      "sets": 50,
+      "formatOk": 50,
+      "cards": 240,
+      "dispositions": {
+        "major_error": 21,
+        "minor_error": 19,
+        "accepted": 197,
+        "judge_false_positive": 3
+      },
+      "topics": {
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 24
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 3,
+            "minor_error": 1,
+            "accepted": 21
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "minor_error": 2,
+            "accepted": 23
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 20,
+            "minor_error": 4
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 22,
+            "error": 3
+          },
+          "dispositions": {
+            "accepted": 22,
+            "minor_error": 1,
+            "judge_false_positive": 1,
+            "major_error": 1
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "minor_error": 1
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 10,
+            "ok": 15
+          },
+          "dispositions": {
+            "major_error": 6,
+            "minor_error": 4,
+            "accepted": 15
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "ok": 22,
+            "error": 3
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "minor_error": 2,
+            "major_error": 2,
+            "accepted": 20
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 11,
+            "ok": 14
+          },
+          "dispositions": {
+            "major_error": 7,
+            "minor_error": 4,
+            "accepted": 14
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "judge_false_positive": 1
+          }
+        }
+      },
+      "qwenFlags": 13,
+      "opusVerdicts": {
+        "error": 39,
+        "ok": 201
+      },
+      "medianGeneralSeconds": 1.926,
+      "medianLanguageSeconds": 1.641,
+      "medianDecodeTokS": 94.1
+    },
+    {
+      "model": "muse-glimmer:30b-q4_K_M",
+      "family": "muse-glimmer",
+      "quantization": "Q4_K_M",
+      "parameters": "27.9B",
+      "campaigns": [
+        "muse-glimmer",
+        "muse-glimmer-lang"
+      ],
+      "sets": 50,
+      "formatOk": 50,
+      "cards": 240,
+      "dispositions": {
+        "major_error": 5,
+        "minor_error": 6,
+        "accepted": 219,
+        "judge_false_positive": 10
+      },
+      "topics": {
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 4,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "major_error": 4,
+            "accepted": 20,
+            "judge_false_positive": 1
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "accepted": 21,
+            "judge_false_positive": 1
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 23,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 23,
+            "judge_false_positive": 1,
+            "minor_error": 1
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "judge_false_positive": 1
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "minor_error": 1
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 22,
+            "judge_false_positive": 2
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "judge_false_positive": 3,
+            "accepted": 17
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 24
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "judge_false_positive": 1
+          }
+        }
+      },
+      "qwenFlags": 8,
+      "opusVerdicts": {
+        "error": 20,
+        "ok": 220
+      },
+      "medianGeneralSeconds": 17.325,
+      "medianLanguageSeconds": 17.137,
+      "medianDecodeTokS": 12.4
+    },
+    {
+      "model": "nemotron-3.5-lightning:30b-a3b-q4_K_M",
+      "family": "nemotron_h_moe",
+      "quantization": "Q4_K_M",
+      "parameters": "32.9B",
+      "campaigns": [
+        "nemotron-3.5-lightning",
+        "nemotron-lang"
+      ],
+      "sets": 50,
+      "formatOk": 49,
+      "cards": 235,
+      "dispositions": {
+        "judge_false_positive": 9,
+        "minor_error": 25,
+        "major_error": 8,
+        "accepted": 193
+      },
+      "topics": {
+        "music": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "ok": 21,
+            "error": 4
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "major_error": 2,
+            "accepted": 20,
+            "minor_error": 2
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 12,
+            "ok": 13
+          },
+          "dispositions": {
+            "judge_false_positive": 7,
+            "minor_error": 5,
+            "accepted": 13
+          }
+        },
+        "history": {
+          "cards": 20,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 16
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "accepted": 16,
+            "judge_false_positive": 1
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 6,
+          "opusVerdicts": {
+            "error": 9,
+            "ok": 16
+          },
+          "dispositions": {
+            "minor_error": 5,
+            "major_error": 4,
+            "accepted": 16
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 4,
+            "accepted": 21
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 24
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "major_error": 1
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 16,
+            "error": 4
+          },
+          "dispositions": {
+            "accepted": 16,
+            "minor_error": 4
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 18,
+            "major_error": 1,
+            "minor_error": 1
+          }
+        }
+      },
+      "qwenFlags": 16,
+      "opusVerdicts": {
+        "ok": 194,
+        "error": 41
+      },
+      "medianGeneralSeconds": 1.72,
+      "medianLanguageSeconds": 1.465,
+      "medianDecodeTokS": 89.9
+    },
+    {
+      "model": "ornith-1.5:35b",
+      "family": "qwen35moe",
+      "quantization": "Q4_K_M",
+      "parameters": "35.5B",
+      "campaigns": [
+        "ornith-1.5",
+        "ornith-lang"
+      ],
+      "sets": 50,
+      "formatOk": 50,
+      "cards": 240,
+      "dispositions": {
+        "major_error": 16,
+        "minor_error": 14,
+        "accepted": 208,
+        "judge_false_positive": 2
+      },
+      "topics": {
+        "german": {
+          "cards": 20,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 9,
+            "ok": 11
+          },
+          "dispositions": {
+            "major_error": 4,
+            "accepted": 11,
+            "minor_error": 5
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 21,
+            "minor_error": 1
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 2,
+            "accepted": 22,
+            "minor_error": 1
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 22
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 2,
+            "accepted": 21,
+            "judge_false_positive": 2
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 6,
+            "ok": 19
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 19,
+            "minor_error": 3
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 18,
+            "major_error": 1,
+            "minor_error": 1
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "minor_error": 1
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        }
+      },
+      "qwenFlags": 11,
+      "opusVerdicts": {
+        "error": 32,
+        "ok": 208
+      },
+      "medianGeneralSeconds": 2.616,
+      "medianLanguageSeconds": 1.597,
+      "medianDecodeTokS": 77.2
+    },
+    {
+      "model": "qwen3.6:35b",
+      "family": "qwen35moe",
+      "quantization": "Q4_K_M",
+      "parameters": "36.0B",
+      "campaigns": [
+        "qwen3.6-lang",
+        "qwen3.6-start"
+      ],
+      "sets": 50,
+      "formatOk": 49,
+      "cards": 236,
+      "dispositions": {
+        "minor_error": 7,
+        "major_error": 7,
+        "judge_false_positive": 8,
+        "accepted": 214
+      },
+      "topics": {
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "accepted": 20,
+            "judge_false_positive": 1,
+            "major_error": 1
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 22
+          }
+        },
+        "de-cloze": {
+          "cards": 16,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "ok": 14,
+            "error": 2
+          },
+          "dispositions": {
+            "major_error": 2,
+            "judge_false_positive": 1,
+            "accepted": 12,
+            "minor_error": 1
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "accepted": 24
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 2,
+            "ok": 23
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 23,
+            "judge_false_positive": 1
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 2,
+            "ok": 23
+          },
+          "dispositions": {
+            "judge_false_positive": 2,
+            "accepted": 23
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "accepted": 24
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 17,
+            "error": 3
+          },
+          "dispositions": {
+            "accepted": 17,
+            "minor_error": 2,
+            "judge_false_positive": 1
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "major_error": 1
+          }
+        }
+      },
+      "qwenFlags": 10,
+      "opusVerdicts": {
+        "error": 18,
+        "ok": 218
+      },
+      "medianGeneralSeconds": 2.667,
+      "medianLanguageSeconds": 2.126,
+      "medianDecodeTokS": 76
+    },
+    {
+      "model": "qwen3.8:27b",
+      "family": "qwen35",
+      "quantization": "Q4_K_M",
+      "parameters": "27.3B",
+      "campaigns": [
+        "qwen3.8",
+        "qwen3.8-lang"
+      ],
+      "sets": 50,
+      "formatOk": 50,
+      "cards": 240,
+      "dispositions": {
+        "major_error": 12,
+        "judge_false_positive": 6,
+        "minor_error": 14,
+        "accepted": 208
+      },
+      "topics": {
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 1,
+            "minor_error": 1,
+            "accepted": 22,
+            "judge_false_positive": 1
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 5,
+          "opusVerdicts": {
+            "error": 6,
+            "ok": 19
+          },
+          "dispositions": {
+            "judge_false_positive": 4,
+            "minor_error": 2,
+            "accepted": 19
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 8,
+            "ok": 17
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 17,
+            "minor_error": 5
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 24
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 24
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 20
+          },
+          "dispositions": {
+            "accepted": 20
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 21,
+            "error": 4
+          },
+          "dispositions": {
+            "accepted": 21,
+            "major_error": 4
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 18,
+            "minor_error": 1,
+            "judge_false_positive": 1
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 23,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 23,
+            "minor_error": 2
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 20,
+            "error": 5
+          },
+          "dispositions": {
+            "accepted": 20,
+            "minor_error": 2,
+            "major_error": 3
+          }
+        }
+      },
+      "qwenFlags": 12,
+      "opusVerdicts": {
+        "error": 32,
+        "ok": 208
+      },
+      "medianGeneralSeconds": 6.31,
+      "medianLanguageSeconds": 5.248,
+      "medianDecodeTokS": 29.7
+    }
+  ],
+  "campaigns": [
+    {
+      "campaign": "gemma4-26b-a4b",
+      "model": "gemma4:26b-a4b-it-q4_K_M",
+      "suite": "general",
+      "family": "gemma4",
+      "quantization": "Q4_K_M",
+      "parameters": "25.8B",
+      "sets": 30,
+      "formatOk": 30,
+      "cards": 145,
+      "dispositions": {
+        "major_error": 3,
+        "minor_error": 7,
+        "judge_false_positive": 2,
+        "accepted": 133
+      },
+      "topics": {
+        "history": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "major_error": 2,
+            "minor_error": 3,
+            "accepted": 20
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "uncertain": 2,
+            "error": 2,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "major_error": 1,
+            "accepted": 21
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "accepted": 24
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "minor_error": 1
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "judge_false_positive": 1
+          }
+        }
+      },
+      "qwenFlags": 6,
+      "opusVerdicts": {
+        "error": 10,
+        "uncertain": 2,
+        "ok": 133
+      },
+      "medianGeneralSeconds": 3.492,
+      "medianLanguageSeconds": null,
+      "medianDecodeTokS": 53
+    },
+    {
+      "campaign": "gemma4-lang",
+      "model": "gemma4:26b-a4b-it-q4_K_M",
+      "suite": "language",
+      "family": null,
+      "quantization": null,
+      "parameters": null,
+      "sets": 20,
+      "formatOk": 20,
+      "cards": 95,
+      "dispositions": {
+        "accepted": 95
+      },
+      "topics": {
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 20
+          },
+          "dispositions": {
+            "accepted": 20
+          }
+        }
+      },
+      "qwenFlags": 0,
+      "opusVerdicts": {
+        "ok": 95
+      },
+      "medianGeneralSeconds": null,
+      "medianLanguageSeconds": 2.014,
+      "medianDecodeTokS": null
+    },
+    {
+      "campaign": "laguna-lang",
+      "model": "laguna-xs-2.1:q4_K_M",
+      "suite": "language",
+      "family": null,
+      "quantization": null,
+      "parameters": null,
+      "sets": 20,
+      "formatOk": 20,
+      "cards": 95,
+      "dispositions": {
+        "major_error": 15,
+        "judge_false_positive": 2,
+        "minor_error": 10,
+        "accepted": 68
+      },
+      "topics": {
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 10,
+            "ok": 15
+          },
+          "dispositions": {
+            "major_error": 6,
+            "minor_error": 4,
+            "accepted": 15
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "ok": 22,
+            "error": 3
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "minor_error": 2,
+            "major_error": 2,
+            "accepted": 20
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 11,
+            "ok": 14
+          },
+          "dispositions": {
+            "major_error": 7,
+            "minor_error": 4,
+            "accepted": 14
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "judge_false_positive": 1
+          }
+        }
+      },
+      "qwenFlags": 7,
+      "opusVerdicts": {
+        "error": 25,
+        "ok": 70
+      },
+      "medianGeneralSeconds": null,
+      "medianLanguageSeconds": 1.641,
+      "medianDecodeTokS": null
+    },
+    {
+      "campaign": "laguna-xs-2.1",
+      "model": "laguna-xs-2.1:q4_K_M",
+      "suite": "general",
+      "family": "laguna",
+      "quantization": "Q4_K_M",
+      "parameters": "33.4B",
+      "sets": 30,
+      "formatOk": 30,
+      "cards": 145,
+      "dispositions": {
+        "major_error": 6,
+        "minor_error": 9,
+        "accepted": 129,
+        "judge_false_positive": 1
+      },
+      "topics": {
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 24
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 3,
+            "minor_error": 1,
+            "accepted": 21
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "minor_error": 2,
+            "accepted": 23
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 20,
+            "minor_error": 4
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 22,
+            "error": 3
+          },
+          "dispositions": {
+            "accepted": 22,
+            "minor_error": 1,
+            "judge_false_positive": 1,
+            "major_error": 1
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "minor_error": 1
+          }
+        }
+      },
+      "qwenFlags": 6,
+      "opusVerdicts": {
+        "error": 14,
+        "ok": 131
+      },
+      "medianGeneralSeconds": 1.926,
+      "medianLanguageSeconds": null,
+      "medianDecodeTokS": 94.1
+    },
+    {
+      "campaign": "muse-glimmer",
+      "model": "muse-glimmer:30b-q4_K_M",
+      "suite": "general",
+      "family": "muse-glimmer",
+      "quantization": "Q4_K_M",
+      "parameters": "27.9B",
+      "sets": 30,
+      "formatOk": 30,
+      "cards": 145,
+      "dispositions": {
+        "major_error": 4,
+        "minor_error": 5,
+        "accepted": 132,
+        "judge_false_positive": 4
+      },
+      "topics": {
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 4,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "major_error": 4,
+            "accepted": 20,
+            "judge_false_positive": 1
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "accepted": 21,
+            "judge_false_positive": 1
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 23,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 23,
+            "judge_false_positive": 1,
+            "minor_error": 1
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 19,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 19,
+            "judge_false_positive": 1
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "minor_error": 1
+          }
+        }
+      },
+      "qwenFlags": 5,
+      "opusVerdicts": {
+        "error": 13,
+        "ok": 132
+      },
+      "medianGeneralSeconds": 17.325,
+      "medianLanguageSeconds": null,
+      "medianDecodeTokS": 12.4
+    },
+    {
+      "campaign": "muse-glimmer-lang",
+      "model": "muse-glimmer:30b-q4_K_M",
+      "suite": "language",
+      "family": null,
+      "quantization": null,
+      "parameters": null,
+      "sets": 20,
+      "formatOk": 20,
+      "cards": 95,
+      "dispositions": {
+        "minor_error": 1,
+        "judge_false_positive": 6,
+        "major_error": 1,
+        "accepted": 87
+      },
+      "topics": {
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 22,
+            "judge_false_positive": 2
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "judge_false_positive": 3,
+            "accepted": 17
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 24
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "judge_false_positive": 1
+          }
+        }
+      },
+      "qwenFlags": 3,
+      "opusVerdicts": {
+        "error": 7,
+        "ok": 88
+      },
+      "medianGeneralSeconds": null,
+      "medianLanguageSeconds": 17.137,
+      "medianDecodeTokS": null
+    },
+    {
+      "campaign": "nemotron-3.5-lightning",
+      "model": "nemotron-3.5-lightning:30b-a3b-q4_K_M",
+      "suite": "general",
+      "family": "nemotron_h_moe",
+      "quantization": "Q4_K_M",
+      "parameters": "32.9B",
+      "sets": 30,
+      "formatOk": 29,
+      "cards": 140,
+      "dispositions": {
+        "judge_false_positive": 9,
+        "minor_error": 19,
+        "major_error": 2,
+        "accepted": 110
+      },
+      "topics": {
+        "music": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "ok": 21,
+            "error": 4
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "major_error": 2,
+            "accepted": 20,
+            "minor_error": 2
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 12,
+            "ok": 13
+          },
+          "dispositions": {
+            "judge_false_positive": 7,
+            "minor_error": 5,
+            "accepted": 13
+          }
+        },
+        "history": {
+          "cards": 20,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 16
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "accepted": 16,
+            "judge_false_positive": 1
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 4,
+            "accepted": 21
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 24
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 16,
+            "error": 4
+          },
+          "dispositions": {
+            "accepted": 16,
+            "minor_error": 4
+          }
+        }
+      },
+      "qwenFlags": 10,
+      "opusVerdicts": {
+        "ok": 111,
+        "error": 29
+      },
+      "medianGeneralSeconds": 1.72,
+      "medianLanguageSeconds": null,
+      "medianDecodeTokS": 89.9
+    },
+    {
+      "campaign": "nemotron-lang",
+      "model": "nemotron-3.5-lightning:30b-a3b-q4_K_M",
+      "suite": "language",
+      "family": null,
+      "quantization": null,
+      "parameters": null,
+      "sets": 20,
+      "formatOk": 20,
+      "cards": 95,
+      "dispositions": {
+        "minor_error": 6,
+        "major_error": 6,
+        "accepted": 83
+      },
+      "topics": {
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 6,
+          "opusVerdicts": {
+            "error": 9,
+            "ok": 16
+          },
+          "dispositions": {
+            "minor_error": 5,
+            "major_error": 4,
+            "accepted": 16
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "major_error": 1
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 18,
+            "major_error": 1,
+            "minor_error": 1
+          }
+        }
+      },
+      "qwenFlags": 6,
+      "opusVerdicts": {
+        "error": 12,
+        "ok": 83
+      },
+      "medianGeneralSeconds": null,
+      "medianLanguageSeconds": 1.465,
+      "medianDecodeTokS": null
+    },
+    {
+      "campaign": "ornith-1.5",
+      "model": "ornith-1.5:35b",
+      "suite": "general",
+      "family": "qwen35moe",
+      "quantization": "Q4_K_M",
+      "parameters": "35.5B",
+      "sets": 30,
+      "formatOk": 30,
+      "cards": 145,
+      "dispositions": {
+        "major_error": 12,
+        "accepted": 123,
+        "minor_error": 10
+      },
+      "topics": {
+        "german": {
+          "cards": 20,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 9,
+            "ok": 11
+          },
+          "dispositions": {
+            "major_error": 4,
+            "accepted": 11,
+            "minor_error": 5
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 2,
+            "accepted": 22,
+            "minor_error": 1
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 22
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 6,
+            "ok": 19
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 19,
+            "minor_error": 3
+          }
+        },
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "minor_error": 1
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        }
+      },
+      "qwenFlags": 9,
+      "opusVerdicts": {
+        "error": 22,
+        "ok": 123
+      },
+      "medianGeneralSeconds": 2.616,
+      "medianLanguageSeconds": null,
+      "medianDecodeTokS": 77.2
+    },
+    {
+      "campaign": "ornith-lang",
+      "model": "ornith-1.5:35b",
+      "suite": "language",
+      "family": null,
+      "quantization": null,
+      "parameters": null,
+      "sets": 20,
+      "formatOk": 20,
+      "cards": 95,
+      "dispositions": {
+        "major_error": 4,
+        "minor_error": 4,
+        "accepted": 85,
+        "judge_false_positive": 2
+      },
+      "topics": {
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 21,
+            "minor_error": 1
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 4,
+            "ok": 21
+          },
+          "dispositions": {
+            "minor_error": 2,
+            "accepted": 21,
+            "judge_false_positive": 2
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 18,
+            "major_error": 1,
+            "minor_error": 1
+          }
+        }
+      },
+      "qwenFlags": 2,
+      "opusVerdicts": {
+        "error": 10,
+        "ok": 85
+      },
+      "medianGeneralSeconds": null,
+      "medianLanguageSeconds": 1.597,
+      "medianDecodeTokS": null
+    },
+    {
+      "campaign": "qwen3.6-lang",
+      "model": "qwen3.6:35b",
+      "suite": "language",
+      "family": null,
+      "quantization": null,
+      "parameters": null,
+      "sets": 20,
+      "formatOk": 19,
+      "cards": 91,
+      "dispositions": {
+        "major_error": 2,
+        "judge_false_positive": 3,
+        "accepted": 85,
+        "minor_error": 1
+      },
+      "topics": {
+        "de-cloze": {
+          "cards": 16,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "ok": 14,
+            "error": 2
+          },
+          "dispositions": {
+            "major_error": 2,
+            "judge_false_positive": 1,
+            "accepted": 12,
+            "minor_error": 1
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "accepted": 24
+          }
+        },
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "judge_false_positive": 1,
+            "accepted": 24
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 25
+          },
+          "dispositions": {
+            "accepted": 25
+          }
+        }
+      },
+      "qwenFlags": 4,
+      "opusVerdicts": {
+        "ok": 89,
+        "error": 2
+      },
+      "medianGeneralSeconds": null,
+      "medianLanguageSeconds": 2.126,
+      "medianDecodeTokS": null
+    },
+    {
+      "campaign": "qwen3.6-start",
+      "model": "qwen3.6:35b",
+      "suite": "general",
+      "family": "qwen35moe",
+      "quantization": "Q4_K_M",
+      "parameters": "36.0B",
+      "sets": 30,
+      "formatOk": 30,
+      "cards": 145,
+      "dispositions": {
+        "minor_error": 6,
+        "major_error": 5,
+        "judge_false_positive": 5,
+        "accepted": 129
+      },
+      "topics": {
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 5,
+            "ok": 20
+          },
+          "dispositions": {
+            "minor_error": 3,
+            "accepted": 20,
+            "judge_false_positive": 1,
+            "major_error": 1
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 22
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 2,
+            "ok": 23
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 23,
+            "judge_false_positive": 1
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 2,
+            "ok": 23
+          },
+          "dispositions": {
+            "judge_false_positive": 2,
+            "accepted": 23
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 17,
+            "error": 3
+          },
+          "dispositions": {
+            "accepted": 17,
+            "minor_error": 2,
+            "judge_false_positive": 1
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 24,
+            "error": 1
+          },
+          "dispositions": {
+            "accepted": 24,
+            "major_error": 1
+          }
+        }
+      },
+      "qwenFlags": 6,
+      "opusVerdicts": {
+        "error": 16,
+        "ok": 129
+      },
+      "medianGeneralSeconds": 2.667,
+      "medianLanguageSeconds": null,
+      "medianDecodeTokS": 76
+    },
+    {
+      "campaign": "qwen3.8",
+      "model": "qwen3.8:27b",
+      "suite": "general",
+      "family": "qwen35",
+      "quantization": "Q4_K_M",
+      "parameters": "27.3B",
+      "sets": 30,
+      "formatOk": 30,
+      "cards": 145,
+      "dispositions": {
+        "major_error": 5,
+        "judge_false_positive": 5,
+        "minor_error": 9,
+        "accepted": 126
+      },
+      "topics": {
+        "programming": {
+          "cards": 25,
+          "qwenFlags": 2,
+          "opusVerdicts": {
+            "error": 3,
+            "ok": 22
+          },
+          "dispositions": {
+            "major_error": 1,
+            "minor_error": 1,
+            "accepted": 22,
+            "judge_false_positive": 1
+          }
+        },
+        "spanish": {
+          "cards": 25,
+          "qwenFlags": 5,
+          "opusVerdicts": {
+            "error": 6,
+            "ok": 19
+          },
+          "dispositions": {
+            "judge_false_positive": 4,
+            "minor_error": 2,
+            "accepted": 19
+          }
+        },
+        "music": {
+          "cards": 25,
+          "qwenFlags": 3,
+          "opusVerdicts": {
+            "error": 8,
+            "ok": 17
+          },
+          "dispositions": {
+            "major_error": 3,
+            "accepted": 17,
+            "minor_error": 5
+          }
+        },
+        "history": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "major_error": 1,
+            "accepted": 24
+          }
+        },
+        "biology": {
+          "cards": 25,
+          "qwenFlags": 1,
+          "opusVerdicts": {
+            "error": 1,
+            "ok": 24
+          },
+          "dispositions": {
+            "minor_error": 1,
+            "accepted": 24
+          }
+        },
+        "german": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 20
+          },
+          "dispositions": {
+            "accepted": 20
+          }
+        }
+      },
+      "qwenFlags": 12,
+      "opusVerdicts": {
+        "error": 19,
+        "ok": 126
+      },
+      "medianGeneralSeconds": 6.31,
+      "medianLanguageSeconds": null,
+      "medianDecodeTokS": 29.7
+    },
+    {
+      "campaign": "qwen3.8-lang",
+      "model": "qwen3.8:27b",
+      "suite": "language",
+      "family": null,
+      "quantization": null,
+      "parameters": null,
+      "sets": 20,
+      "formatOk": 20,
+      "cards": 95,
+      "dispositions": {
+        "accepted": 82,
+        "minor_error": 5,
+        "major_error": 7,
+        "judge_false_positive": 1
+      },
+      "topics": {
+        "de-articles": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 21,
+            "error": 4
+          },
+          "dispositions": {
+            "accepted": 21,
+            "major_error": 4
+          }
+        },
+        "de-cloze": {
+          "cards": 20,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 18,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 18,
+            "minor_error": 1,
+            "judge_false_positive": 1
+          }
+        },
+        "de-word-cards": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 23,
+            "error": 2
+          },
+          "dispositions": {
+            "accepted": 23,
+            "minor_error": 2
+          }
+        },
+        "es-ser-estar": {
+          "cards": 25,
+          "qwenFlags": 0,
+          "opusVerdicts": {
+            "ok": 20,
+            "error": 5
+          },
+          "dispositions": {
+            "accepted": 20,
+            "minor_error": 2,
+            "major_error": 3
+          }
+        }
+      },
+      "qwenFlags": 0,
+      "opusVerdicts": {
+        "ok": 82,
+        "error": 13
+      },
+      "medianGeneralSeconds": null,
+      "medianLanguageSeconds": 5.248,
+      "medianDecodeTokS": null
+    }
+  ]
+}

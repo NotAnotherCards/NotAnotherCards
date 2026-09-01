@@ -3,10 +3,13 @@ import {
   column,
   createTable,
   schemaMigrations,
+  unsafeExecuteSql,
 } from '@remelondb/core';
 import {
   userDecks,
+  userNotes,
   userCards,
+  userNoteDecks,
   reviewEvents,
   userProfiles,
 } from './user-dictionary.js';
@@ -30,8 +33,15 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 2,
-  tables: [userDecks, userCards, reviewEvents, userProfiles],
+  version: 3,
+  tables: [
+    userDecks,
+    userNotes,
+    userCards,
+    userNoteDecks,
+    reviewEvents,
+    userProfiles,
+  ],
 });
 
 export const migrations = schemaMigrations({
@@ -53,9 +63,66 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 3,
+      steps: [
+        // v2 cards cannot be attached to the new note model. They have a
+        // deck_id but no note_id. These are the immutable v2 physical table
+        // names; future renames must not rewrite this migration history
+        unsafeExecuteSql('drop table "review_events"'),
+        unsafeExecuteSql('drop table "user_cards"'),
+        createTable({
+          name: 'user_notes',
+          columns: {
+            note_type: column.string(),
+            fields_version: column.number(),
+            fields_json: column.string(),
+            additional_content: column.string().optional(),
+            created_at: column.number(),
+            updated_at: column.number().indexed(),
+          },
+        }),
+        createTable({
+          name: 'user_cards',
+          columns: {
+            note_id: column.string().indexed(),
+            template_key: column.string(),
+            active: column.boolean(),
+            front: column.string(),
+            back: column.string(),
+            due_at: column.number().indexed(),
+            scheduled_interval_minutes: column.number(),
+            created_at: column.number(),
+            updated_at: column.number().indexed(),
+          },
+        }),
+        createTable({
+          name: 'user_note_decks',
+          columns: {
+            note_id: column.string().indexed(),
+            deck_id: column.string().indexed(),
+            active: column.boolean(),
+            created_at: column.number(),
+            updated_at: column.number().indexed(),
+          },
+        }),
+        createTable({
+          name: 'review_events',
+          columns: {
+            user_card_id: column.string().indexed(),
+            rating: column.number(),
+            reviewed_at: column.number(),
+          },
+        }),
+      ],
+    },
   ],
 });
 
 export * from './user-dictionary.js';
+export * from './ids.js';
+export * from './note-constants.js';
+export * from './review-scheduler.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
+export * from './queries.js';

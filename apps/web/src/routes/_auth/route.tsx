@@ -1,9 +1,13 @@
+import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import { authClient } from '@/lib/auth-client';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth')({
   beforeLoad: async () => {
-    const { data: session } = await authClient.getSession();
+    const { data: session, error } = await authClient.getSession();
+    if (error) {
+      throw error;
+    }
     if (session) {
       const onboardingComplete = session.user.onBoardingComplete;
       if (!onboardingComplete) {
@@ -12,10 +16,11 @@ export const Route = createFileRoute('/_auth')({
         });
       }
       throw redirect({
-        to: '/app/dashboard',
+        to: '/dashboard',
       });
     }
   },
+  errorComponent: RouteErrorComponent,
   component: AuthLayout,
 });
 

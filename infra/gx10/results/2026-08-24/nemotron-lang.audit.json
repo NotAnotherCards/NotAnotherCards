@@ -1,0 +1,50 @@
+[
+ {
+  "topic": "de-word-cards",
+  "run": 3,
+  "front": "Ich lerne gerne neue Vokabeln.",
+  "back": "to learn / to study",
+  "verdict": "error",
+  "judgeTail": "rson sentence with an English infinitive, obscuring German conjugation patterns and proper sentence-to-sentence correspondence. For this card to be valid, the front should either be just \"lernen\" (to match the infinitive answer) or the back must fully translate the provided sentence.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 3,
+  "front": "Ich muss heute einkaufen gehen.",
+  "back": "to go shopping",
+  "verdict": "error",
+  "judgeTail": "translates the verb phrase \"eikaufen gehen,\" it omits the translation for the subject \"Ich\" (I), the modal auxiliary \"muss\" (have to/must), and the adverb \"heute\" (today). A strict teacher requires a flashcard's answer to correspond fully to the information presented in the question.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 3,
+  "front": "Wir treffen uns um acht Uhr.",
+  "back": "to meet / to arrange",
+  "verdict": "error",
+  "judgeTail": "n the reverse side of a flashcard that presents a complete declarative sentence is structurally inconsistent for vocabulary study. Although English spelling and punctuation are fine, the semantic inaccuracy violates the requirement for factual correctness and proper rule instruction.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 3,
+  "front": "Ich höre gerne Musik.",
+  "back": "to listen / to hear",
+  "verdict": "error",
+  "judgeTail": "ic structure. In strict language pedagogy, flashcard answers must match the scope of the prompt unless explicitly labeled as target-word-only drills (which this is not). Therefore, it is not factually correct in context and does not properly reinforce the intended learning objective.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 4,
+  "front": "Ich kaufe ein Brot.",
+  "back": "I buy a bread.",
+  "verdict": "error",
+  "judgeTail": "le it directly mirrors the German structure \"ein Brot,\" it misleads learners by teaching an incorrect rule about English noun countability. A strict language teacher would reject this because it produces an ungrammatical sentence and fails to teach proper English usage of mass nouns.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 4,
+  "front": "Ich warte am Bus.",
+  "back": "I wait at the bus stop.",
+  "verdict": "error",
+  "judgeTail": "ncorrect preposition rule for *warten* and pairs an ungrammatical source sentence with a mismatched target translation. A proper card should either use \"Ich warte auf den Bus / I am waiting for the bus\" or correct the German to \"Ich warte an der Haltestelle / I wait at the bus stop.\"\n\nVERDICT: error"
+ }
+]

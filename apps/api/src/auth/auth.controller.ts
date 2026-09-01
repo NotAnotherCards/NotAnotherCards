@@ -10,6 +10,7 @@ import {
   BadRequestException,
   Get,
   Query,
+  HttpCode,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { toNodeHandler } from 'better-auth/node';
@@ -53,6 +54,7 @@ export class AuthController {
   }
 
   @Post('onboard')
+  @HttpCode(200)
   async onboard(
     @Req() req: Request,
     @Body()

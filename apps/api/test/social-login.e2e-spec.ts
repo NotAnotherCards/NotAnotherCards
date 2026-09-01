@@ -9,16 +9,23 @@ const frontendOrigin = 'http://localhost:5173';
 describe('Redirects and Session Creation (e2e)', () => {
   let app: INestApplication<App>;
   const previousNodeEnv = process.env.NODE_ENV;
+  const previousGoogleId = process.env.GOOGLE_CLIENT_ID;
+  const previousGoogleSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const previousFacebookId = process.env.FACEBOOK_CLIENT_ID;
+  const previousFacebookSecret = process.env.FACEBOOK_CLIENT_SECRET;
 
   const testUser = {
     email: `redirect-tester-${Date.now()}@random.com`,
     password: 'securePassword123!',
-    username: `redirect_tester_${Date.now()}`,
     name: 'Redirect Tester',
   };
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'production';
+    process.env.GOOGLE_CLIENT_ID = 'dummy-google-client-id';
+    process.env.GOOGLE_CLIENT_SECRET = 'dummy-google-client-secret';
+    process.env.FACEBOOK_CLIENT_ID = 'dummy-facebook-client-id';
+    process.env.FACEBOOK_CLIENT_SECRET = 'dummy-facebook-client-secret';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -29,13 +36,26 @@ describe('Redirects and Session Creation (e2e)', () => {
   });
 
   afterAll(async () => {
-    process.env.NODE_ENV = previousNodeEnv;
+    const restoreEnv = (key: string, value: string | undefined) => {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    };
+
+    restoreEnv('NODE_ENV', previousNodeEnv);
+    restoreEnv('GOOGLE_CLIENT_ID', previousGoogleId);
+    restoreEnv('GOOGLE_CLIENT_SECRET', previousGoogleSecret);
+    restoreEnv('FACEBOOK_CLIENT_ID', previousFacebookId);
+    restoreEnv('FACEBOOK_CLIENT_SECRET', previousFacebookSecret);
+
     await app.close();
   });
 
   describe('OAuth Redirect Responses', () => {
     it('should initiate Google OAuth flow and return the redirect URL', async () => {
-      const callbackURL = `${frontendOrigin}/app/dashboard`;
+      const callbackURL = `${frontendOrigin}/dashboard`;
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-in/social')
         .set('Origin', frontendOrigin)
@@ -60,7 +80,7 @@ describe('Redirects and Session Creation (e2e)', () => {
     });
 
     it('should initiate Facebook OAuth flow and return the redirect URL', async () => {
-      const callbackURL = `${frontendOrigin}/app/dashboard`;
+      const callbackURL = `${frontendOrigin}/dashboard`;
       const response = await request(app.getHttpServer())
         .post('/api/auth/sign-in/social')
         .set('Origin', frontendOrigin)
@@ -93,7 +113,6 @@ describe('Redirects and Session Creation (e2e)', () => {
           email: testUser.email,
           password: testUser.password,
           name: testUser.name,
-          username: testUser.username,
         })
         .expect(200);
 
@@ -114,7 +133,7 @@ describe('Redirects and Session Creation (e2e)', () => {
         .expect(200);
 
       const body = response.body as {
-        user: { email: string; name: string; username: string };
+        user: { email: string; name: string };
         session: { userId: string };
       };
 
@@ -122,7 +141,6 @@ describe('Redirects and Session Creation (e2e)', () => {
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe(testUser.email);
       expect(body.user.name).toBe(testUser.name);
-      expect(body.user.username).toBe(testUser.username);
       expect(body.session).toBeDefined();
     });
 
