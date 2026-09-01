@@ -113,7 +113,7 @@ describe('AiWorkerService', () => {
     expect(mockGateway.generateCards).toHaveBeenCalledTimes(1);
     expect(mockMetrics.aiJobsCompletedTotal.inc).toHaveBeenCalledTimes(1);
     expect(mockMetrics.aiTokensConsumedTotal.inc).toHaveBeenCalledWith(
-      { model: 'qwen' },
+      { model: 'gemma4' },
       25,
     );
     expect(mockDb.execute).toHaveBeenCalled();
