@@ -20,10 +20,19 @@ const secondCard: Card = {
   back: 'to be',
 };
 
-function renderSession(cards: Card[] = [card]) {
+function renderSession(
+  cards: Card[] = [card],
+  onCreateCard = vi.fn().mockResolvedValue(undefined),
+) {
   const onExit = vi.fn();
-  render(<ReviewSession cards={cards} onExit={onExit} />);
-  return { onExit };
+  render(
+    <ReviewSession
+      cards={cards}
+      onExit={onExit}
+      onCreateCard={onCreateCard}
+    />,
+  );
+  return { onCreateCard, onExit };
 }
 
 function revealCard() {
@@ -47,11 +56,99 @@ describe('ReviewSession', () => {
   it('shows the card front first and reveals both sides on click', () => {
     renderSession();
 
-    expect(screen.getByText('gehen')).toBeInTheDocument();
+    expect(screen.getAllByText('gehen')).not.toHaveLength(0);
     revealCard();
 
-    expect(screen.getByText('gehen')).toBeInTheDocument();
+    expect(screen.getAllByText('gehen')).not.toHaveLength(0);
     expect(screen.getByText('to go')).toBeInTheDocument();
+  });
+
+  it('turns one card over in 300 milliseconds when the answer is revealed', () => {
+    renderSession();
+
+    const flip = screen.getByTestId('review-card-flip');
+    expect(flip).toHaveAttribute('data-flipped', 'false');
+    expect(flip).toHaveStyle({ transitionDuration: '300ms' });
+
+    revealCard();
+
+    expect(flip).toHaveAttribute('data-flipped', 'true');
+    expect(flip).toHaveClass('[transform:rotateY(180deg)]');
+  });
+
+  it('keeps a tap target for the card while both faces are present', () => {
+    renderSession();
+
+    expect(screen.getByTestId('review-card')).toBeInTheDocument();
+  });
+
+  it('shows a pronunciation button to the left of the original word', () => {
+    renderSession();
+    revealCard();
+
+    const pronunciationButton = screen.getByRole('button', {
+      name: 'Play word pronunciation',
+    });
+    const originalWord = screen.getAllByText('gehen')[1];
+
+    expect(pronunciationButton.compareDocumentPosition(originalWord)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('adds a card to the current deck without leaving the review session', async () => {
+    const onCreateCard = vi.fn().mockResolvedValue(undefined);
+    renderSession([card], onCreateCard);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add a new card' }));
+    expect(screen.getByText('Add New Card')).toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByLabelText('Front (Question, term, or prompt)'),
+      { target: { value: 'laufen' } },
+    );
+    fireEvent.change(
+      screen.getByLabelText('Back (Answer, definition, or translation)'),
+      { target: { value: 'to run' } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save Card' }));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(onCreateCard).toHaveBeenCalledWith({
+      front: 'laufen',
+      back: 'to run',
+    });
+    expect(screen.getAllByText('gehen')).not.toHaveLength(0);
+  });
+
+  it('aligns dashboard and add-card actions with the outer answer columns', () => {
+    renderSession();
+
+    expect(screen.getByTestId('review-answer-area')).toHaveClass(
+      'mt-6',
+      'min-h-[104px]',
+    );
+    const footerActions = screen.getByTestId('review-footer-actions');
+    expect(footerActions).toHaveClass('grid-cols-3', 'mt-6');
+    expect(screen.getByRole('button', { name: 'Back to dashboard' }).parentElement).toHaveClass(
+      'col-start-1',
+      'justify-start',
+    );
+    expect(screen.getByRole('button', { name: 'Back to dashboard' })).toHaveClass(
+      'size-12',
+    );
+    expect(screen.getByRole('button', { name: 'Add a new card' }).parentElement).toHaveClass(
+      'col-start-3',
+      'justify-end',
+    );
+    expect(screen.getByRole('button', { name: 'Add a new card' })).toHaveClass(
+      'rounded-none',
+      'size-12',
+      'text-black',
+    );
   });
 
   it.each([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'])(
@@ -108,8 +205,11 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(window, { key });
     finishCardExit();
 
-    expect(screen.getByText('sein')).toBeInTheDocument();
-    expect(screen.queryByText('to be')).not.toBeInTheDocument();
+    expect(screen.getAllByText('sein')).not.toHaveLength(0);
+    expect(screen.getByTestId('review-card-flip')).toHaveAttribute(
+      'data-flipped',
+      'false',
+    );
   });
 
   it('moves to the next card after using a visible answer button', () => {
@@ -119,7 +219,7 @@ describe('ReviewSession', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Struggled' }));
     finishCardExit();
 
-    expect(screen.getByText('sein')).toBeInTheDocument();
+    expect(screen.getAllByText('sein')).not.toHaveLength(0);
   });
 
   it('moves to the next card to the right after Knew it', () => {
@@ -133,7 +233,7 @@ describe('ReviewSession', () => {
     });
 
     finishCardExit();
-    expect(screen.getByText('sein')).toBeInTheDocument();
+    expect(screen.getAllByText('sein')).not.toHaveLength(0);
   });
 
   it('shows the matching feedback while dragging the answer side', () => {
@@ -310,7 +410,7 @@ describe('ReviewSession', () => {
       'col-start-2',
       'shadow-none',
     );
-    expect(screen.getByTestId('review-answer-buttons')).toHaveClass('mt-6');
+    expect(screen.getByTestId('review-answer-area')).toHaveClass('mt-6');
   });
 
   it('shows the next card while the answered card exits to the chosen side', () => {
@@ -325,7 +425,7 @@ describe('ReviewSession', () => {
     });
 
     finishCardExit();
-    expect(screen.getByText('sein')).toBeInTheDocument();
+    expect(screen.getAllByText('sein')).not.toHaveLength(0);
   });
 
   it('returns to the dashboard', () => {

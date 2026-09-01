@@ -128,6 +128,9 @@ function DeckReviewRoute() {
       key={deckId}
       cards={dueCards}
       onExit={() => navigate({ to: '/app/dashboard' })}
+      onCreateCard={async (data) => {
+        await store.createCard(deckId, data.front, data.back);
+      }}
     />
   );
 }

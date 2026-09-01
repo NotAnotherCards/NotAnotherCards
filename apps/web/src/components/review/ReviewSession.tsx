@@ -1,10 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/PageContainer';
+import { CardForm } from '@/components/deck/CardForm';
 import { Card } from '@/hooks/useStore';
+import { writeErrorMessage } from '@/lib/write-error';
 import {
   ArrowLeft,
   BookOpen,
   Cog,
+  Plus,
+  Volume2,
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +25,7 @@ type SwipeDirection = Exclude<ReviewAnswer, 'very-easy'> | 'delete';
 type ReviewSessionProps = {
   cards: Card[];
   onExit: () => void;
+  onCreateCard: (data: { front: string; back: string }) => Promise<void>;
   reviewMode?: ReviewMode;
 };
 
@@ -30,6 +35,7 @@ const MAX_DRAG_DISTANCE_X_PX = 96;
 const MAX_DRAG_DISTANCE_Y_PX = 72;
 const MAX_DRAG_ROTATION_DEG = 4;
 const REVIEW_CARD_EXIT_DURATION_MS = 250;
+const REVIEW_CARD_FLIP_DURATION_MS = 300;
 
 const exitTransformByDirection: Record<SwipeDirection, string> = {
   forgot: 'translate3d(-120vw, 0, 0) rotate(-10deg)',
@@ -62,6 +68,7 @@ const swipeFeedback: Record<SwipeDirection, { label: string; className: string }
 export function ReviewSession({
   cards,
   onExit,
+  onCreateCard,
   reviewMode = CURRENT_REVIEW_MODE,
 }: ReviewSessionProps) {
   const [sessionCards] = useState(cards);
@@ -69,6 +76,8 @@ export function ReviewSession({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isWordDetailsOpen, setIsWordDetailsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCreateCardOpen, setIsCreateCardOpen] = useState(false);
+  const [createCardError, setCreateCardError] = useState<string | null>(null);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
   const [isDeletePlaceholderOpen, setIsDeletePlaceholderOpen] = useState(false);
   const [dragDirection, setDragDirection] = useState<SwipeDirection | null>(null);
@@ -91,6 +100,30 @@ export function ReviewSession({
   const revealAnswer = () => setIsFlipped(true);
   const openWordDetails = () => setIsWordDetailsOpen(true);
   const openSettings = () => setIsSettingsOpen(true);
+  const openCreateCardForm = () => {
+    setCreateCardError(null);
+    setIsCreateCardOpen(true);
+  };
+
+  const handleCardClick = () => {
+    if (exitDirection) return;
+    if (didHandleSwipe.current) {
+      didHandleSwipe.current = false;
+      return;
+    }
+    if (isFlipped) openWordDetails();
+    else revealAnswer();
+  };
+
+  const createCard = async (data: { front: string; back: string }) => {
+    setCreateCardError(null);
+    try {
+      await onCreateCard(data);
+      setIsCreateCardOpen(false);
+    } catch (err) {
+      setCreateCardError(writeErrorMessage(err, 'Failed to create card'));
+    }
+  };
 
   const restoreCurrentCard = () => {
     setExitDirection(null);
@@ -238,7 +271,7 @@ export function ReviewSession({
       : 'delete';
   };
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (exitDirection) return;
 
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -252,7 +285,7 @@ export function ReviewSession({
     setIsDragging(isFlipped);
   };
 
-  const handlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (exitDirection || !isFlipped || !pointerStart.current) return;
 
     if (isRecentering) {
@@ -308,7 +341,7 @@ export function ReviewSession({
     setDragDirection(nextDirection);
   };
 
-  const handlePointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     if (exitDirection) return;
 
     const start = pointerStart.current;
@@ -369,6 +402,19 @@ export function ReviewSession({
                 : undefined
             }
             data-testid="review-card-surface"
+            onClick={handleCardClick}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={() => {
+              pointerStart.current = null;
+              pendingPointerPosition.current = null;
+              activeDragDirection.current = null;
+              setDragDirection(null);
+              setDragOffset({ x: 0, y: 0 });
+              setIsRecentering(false);
+              setIsDragging(false);
+            }}
             onTransitionEnd={(event) => {
               if (event.target !== event.currentTarget || !isRecentering) return;
 
@@ -379,48 +425,51 @@ export function ReviewSession({
           >
             <button
               type="button"
-              onClick={() => {
-                if (exitDirection) return;
-                if (didHandleSwipe.current) {
-                  didHandleSwipe.current = false;
-                  return;
-                }
-                if (isFlipped) openWordDetails();
-                else revealAnswer();
-              }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={() => {
-                pointerStart.current = null;
-                pendingPointerPosition.current = null;
-                activeDragDirection.current = null;
-                setDragDirection(null);
-                setDragOffset({ x: 0, y: 0 });
-                setIsRecentering(false);
-                setIsDragging(false);
-              }}
-              className="absolute inset-0 z-0 min-h-[min(52dvh,28rem)] w-full touch-none cursor-pointer rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 shadow-xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80 dark:from-zinc-800 dark:to-zinc-900"
+              className="absolute inset-0 z-0 min-h-[min(52dvh,28rem)] w-full touch-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80"
               aria-pressed={isFlipped}
               aria-label={isFlipped ? 'Show word details' : 'Show answer'}
               data-testid="review-card"
             />
-            <div className="pointer-events-none relative z-10 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center p-5 text-center sm:min-h-80 sm:p-8">
-            {isFlipped ? (
-              <div className="flex w-full max-h-[42svh] flex-col items-center gap-5 overflow-y-auto py-12 sm:max-h-56">
-                <div className="flex max-w-full items-center gap-2 text-xl font-medium text-muted-foreground">
-                  <span className="wrap-break-word">{card.front}</span>
+            <div className="relative min-h-[min(52dvh,28rem)] w-full [perspective:1200px] sm:min-h-80">
+              <div
+                className={`relative z-10 flex min-h-[min(52dvh,28rem)] w-full [transform-style:preserve-3d] transition-transform ease-in-out motion-reduce:transition-none sm:min-h-80 ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
+                data-flipped={isFlipped}
+                data-testid="review-card-flip"
+                style={{ transitionDuration: `${REVIEW_CARD_FLIP_DURATION_MS}ms` }}
+              >
+                <div
+                  aria-hidden={isFlipped}
+                  className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+                >
+                  <span className="max-h-[42svh] overflow-y-auto text-3xl font-bold wrap-break-word sm:max-h-56">
+                    {card.front}
+                  </span>
                 </div>
-                <span className="h-px w-16 shrink-0 bg-border" />
-                <span className="text-3xl font-bold wrap-break-word">
-                  {card.back}
-                </span>
+                <div
+                  aria-hidden={!isFlipped}
+                  className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+                >
+                  <div className="flex max-h-[42svh] w-full flex-col items-center gap-5 overflow-y-auto py-12 sm:max-h-56">
+                    <div className="flex max-w-full items-center gap-2 text-xl font-medium text-muted-foreground">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={(event) => event.stopPropagation()}
+                        className="size-8 shrink-0 cursor-pointer text-muted-foreground hover:bg-transparent hover:text-foreground"
+                        aria-label="Play word pronunciation"
+                      >
+                        <Volume2 className="size-4" />
+                      </Button>
+                      <span className="wrap-break-word">{card.front}</span>
+                    </div>
+                    <span className="h-px w-16 shrink-0 bg-border" />
+                    <span className="text-3xl font-bold wrap-break-word">
+                      {card.back}
+                    </span>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <span className="max-h-[42svh] overflow-y-auto text-3xl font-bold wrap-break-word sm:max-h-56">
-                {card.front}
-              </span>
-            )}
             </div>
 
             {dragDirection && (
@@ -433,11 +482,14 @@ export function ReviewSession({
             )}
 
             {isFlipped && (
-              <div className="absolute bottom-16 left-1/2 flex -translate-x-1/2 items-center gap-2">
+              <div className="absolute bottom-16 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={openWordDetails}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openWordDetails();
+                  }}
                   className="size-11 cursor-pointer text-muted-foreground"
                   aria-label="Open word details"
                 >
@@ -447,7 +499,10 @@ export function ReviewSession({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  onClick={openSettings}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openSettings();
+                  }}
                   className="pointer-events-auto size-11 shrink-0 cursor-pointer text-muted-foreground"
                   aria-label="Open card settings"
                 >
@@ -458,11 +513,15 @@ export function ReviewSession({
           </div>
         </div>
 
-        {isFlipped && (
-          <div
-            className="relative z-0 mt-6 grid grid-cols-3 gap-2 sm:mx-auto sm:w-full sm:max-w-xl"
-            data-testid="review-answer-buttons"
-          >
+        <div
+          className="relative z-0 mt-6 min-h-[104px] sm:mx-auto sm:w-full sm:max-w-xl"
+          data-testid="review-answer-area"
+        >
+          {isFlipped && (
+            <div
+              className="grid grid-cols-3 gap-2"
+              data-testid="review-answer-buttons"
+            >
             <Button
               variant="outline"
               onClick={() => answerCard('forgot')}
@@ -491,18 +550,49 @@ export function ReviewSession({
             >
               {reviewAnswerLabels['very-easy']}
             </Button>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
-        <Button
-          variant="ghost"
-          onClick={onExit}
-          className="mt-6 self-center pb-[max(0.75rem,env(safe-area-inset-bottom))] cursor-pointer gap-1.5 text-muted-foreground"
+        <div
+          className="mt-6 grid grid-cols-3 gap-2 sm:mx-auto sm:w-full sm:max-w-xl"
+          data-testid="review-footer-actions"
         >
-          <ArrowLeft className="size-4" />
-          Back to dashboard
-        </Button>
+          <div className="col-start-1 flex justify-start">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onExit}
+              className="size-12 justify-start rounded-none bg-transparent p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="size-7" />
+            </Button>
+          </div>
+          <div className="col-start-3 flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={openCreateCardForm}
+              className="size-12 justify-end rounded-none bg-transparent p-0 text-black hover:bg-transparent hover:text-black"
+              aria-label="Add a new card"
+            >
+              <Plus className="size-7" />
+            </Button>
+          </div>
+        </div>
       </div>
+
+      {isCreateCardOpen && (
+        <CardForm
+          title="Add New Card"
+          onSubmit={createCard}
+          error={createCardError}
+          onCancel={() => setIsCreateCardOpen(false)}
+        />
+      )}
 
       {isWordDetailsOpen && (
         <WordDetailsDialog
