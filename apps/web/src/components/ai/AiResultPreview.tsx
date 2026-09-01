@@ -10,6 +10,7 @@ import {
   FolderPlus,
   FileJson,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface Deck {
@@ -35,6 +36,7 @@ export function AiResultPreview({
   const [newDeckTitle, setNewDeckTitle] = useState('');
   const [previewTab, setPreviewTab] = useState<'cards' | 'json'>('cards');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedDeckId && decks.length > 0) {
@@ -43,15 +45,21 @@ export function AiResultPreview({
   }, [decks, selectedDeckId]);
 
   const handleSave = async () => {
-    if (deckMode === 'existing') {
-      if (!selectedDeckId) return;
-      await onSave(selectedDeckId, false);
-    } else {
-      if (!newDeckTitle.trim()) return;
-      await onSave(newDeckTitle.trim(), true);
+    setSaveError(null);
+    try {
+      if (deckMode === 'existing') {
+        if (!selectedDeckId) return;
+        await onSave(selectedDeckId, false);
+      } else {
+        if (!newDeckTitle.trim()) return;
+        await onSave(newDeckTitle.trim(), true);
+      }
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save cards';
+      setSaveError(msg);
     }
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
   };
 
   // Structured notes representation for the json tab
@@ -67,16 +75,10 @@ export function AiResultPreview({
       additional_content: `AI Generated Note #${i + 1}`,
       generated_cards: [
         {
-          template_key: 'Recognition',
+          template_key: 'Basic',
           front: c.front,
           back: c.back,
-          id: `uuidv5(note-${i + 1} + 'Recognition')`,
-        },
-        {
-          template_key: 'Recall',
-          front: c.back,
-          back: c.front,
-          id: `uuidv5(note-${i + 1} + 'Recall')`,
+          id: `uuidv5(note-${i + 1} + 'Basic')`,
         },
       ],
     })),
@@ -155,10 +157,17 @@ export function AiResultPreview({
         <div>
           <h3 className="text-lg font-bold tracking-tight">Save to Database</h3>
           <p className="text-sm text-muted-foreground">
-            Choose deck membership. Saving creates independent Recognition &
-            Recall schedules.
+            Choose deck membership. Saving creates flashcards in your selected
+            deck.
           </p>
         </div>
+
+        {saveError && (
+          <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 rounded-2xl p-3 text-xs text-destructive">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{saveError}</span>
+          </div>
+        )}
 
         {/* Deck Mode Toggle */}
         <div className="flex bg-muted/40 p-1 rounded-xl w-fit border border-border/40">

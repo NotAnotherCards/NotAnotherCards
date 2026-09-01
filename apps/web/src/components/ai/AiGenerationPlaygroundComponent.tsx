@@ -5,7 +5,6 @@ import { AiJobStatusTracker, JobStatus } from './AiJobStatusTracker';
 import { AiResultPreview } from './AiResultPreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
-import { writeErrorMessage } from '@/lib/write-error';
 
 export interface Quota {
   used?: number;
@@ -73,13 +72,18 @@ export function AiGenerationPlaygroundComponent() {
           updatedJob.status === 'completed' ||
           updatedJob.status === 'failed'
         ) {
+          if (updatedJob.status === 'failed') {
+            setErrorMessage(
+              'Card generation could not be completed. Please try again with a different topic.',
+            );
+          }
           setLoading(false);
           void fetchJobs();
           void fetchQuota();
         }
-      } catch (err) {
+      } catch {
         setErrorMessage(
-          err instanceof Error ? err.message : 'Error polling job status',
+          'Unable to update job status. Please check your connection.',
         );
         setLoading(false);
       }
@@ -101,8 +105,8 @@ export function AiGenerationPlaygroundComponent() {
         const data = await res.json();
         setQuota(data.quota);
       }
-    } catch (err) {
-      console.error('Failed to fetch quota:', err);
+    } catch {
+      // Background quota fetch failure handled gracefully
     }
   };
 
@@ -113,8 +117,8 @@ export function AiGenerationPlaygroundComponent() {
         const data = await res.json();
         setJobs(data.jobs || []);
       }
-    } catch (err) {
-      console.error('Failed to fetch jobs:', err);
+    } catch {
+      // Background jobs list fetch failure handled gracefully
     }
   };
 
@@ -134,8 +138,11 @@ export function AiGenerationPlaygroundComponent() {
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error((errData.message as string) || 'Failed to submit job');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          (errData.message as string) ||
+            'Unable to start card generation. Please try again.',
+        );
       }
 
       const data = await res.json();
@@ -143,7 +150,9 @@ export function AiGenerationPlaygroundComponent() {
       void fetchQuota();
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : 'Error occurred starting job';
+        err instanceof Error && err.message
+          ? err.message
+          : 'Unable to start generation job. Please try again.';
       setErrorMessage(msg);
       setLoading(false);
     }
@@ -165,8 +174,8 @@ export function AiGenerationPlaygroundComponent() {
           createCard(targetDeckId, card.front, card.back),
         ),
       );
-    } catch (err) {
-      const msg = writeErrorMessage(err, 'Failed to save cards to deck');
+    } catch {
+      const msg = 'Unable to save cards to deck. Please try again.';
       setErrorMessage(msg);
       throw new Error(msg);
     } finally {
@@ -176,7 +185,13 @@ export function AiGenerationPlaygroundComponent() {
 
   const selectPastJob = (job: Job) => {
     setCurrentJob(job);
-    setErrorMessage(null);
+    if (job.status === 'failed') {
+      setErrorMessage(
+        'Card generation could not be completed. Please try again with a different topic.',
+      );
+    } else {
+      setErrorMessage(null);
+    }
     if (job.status === 'pending' || job.status === 'processing') {
       setLoading(true);
     } else {
@@ -188,16 +203,6 @@ export function AiGenerationPlaygroundComponent() {
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* Left side: Config Form & Job Status Tracker */}
       <div className="lg:col-span-5 space-y-6">
-        {errorMessage && (
-          <div className="flex gap-2.5 items-start bg-destructive/10 border border-destructive/20 rounded-2xl p-4 text-sm text-destructive">
-            <AlertCircle className="size-5 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-semibold">Generation Failed</h4>
-              <p className="text-xs text-destructive/80 mt-1">{errorMessage}</p>
-            </div>
-          </div>
-        )}
-
         {loading && currentJob ? (
           <AiJobStatusTracker
             jobId={currentJob.id}
@@ -282,7 +287,7 @@ export function AiGenerationPlaygroundComponent() {
         </div>
       </div>
 
-      {/* Right side: Results Preview */}
+      {/* Right side: Results Preview or Error Message */}
       <div className="lg:col-span-7 space-y-8">
         {currentJob &&
         currentJob.status === 'completed' &&
@@ -294,6 +299,22 @@ export function AiGenerationPlaygroundComponent() {
               onSave={handleSaveDeck}
               isSaving={saving}
             />
+          </div>
+        ) : errorMessage || (currentJob && currentJob.status === 'failed') ? (
+          <div className="bg-card border border-destructive/30 bg-destructive/5 rounded-3xl p-8 shadow-md flex flex-col items-center justify-center text-center space-y-4">
+            <div className="size-12 rounded-2xl bg-destructive/15 text-destructive flex items-center justify-center">
+              <AlertCircle className="size-6" />
+            </div>
+            <div className="space-y-1.5 max-w-md">
+              <h3 className="font-bold text-foreground text-base">
+                Generation Job Failed
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {errorMessage ||
+                  currentJob?.error ||
+                  'Card generation could not be completed. Please try again with a different topic.'}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="bg-card/40 border border-dashed border-border/80 rounded-3xl p-12 text-center text-muted-foreground flex flex-col items-center justify-center space-y-4">

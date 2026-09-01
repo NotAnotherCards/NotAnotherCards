@@ -100,20 +100,12 @@ describe('AI Generation Playground Test Suite', () => {
   });
 
   describe('AiJobStatusTracker Component', () => {
-    it('renders active pending/processing steps and polls periodic status', () => {
-      const handlePoll = vi.fn();
-      render(
-        <AiJobStatusTracker
-          jobId="job-123"
-          status="processing"
-          onPoll={handlePoll}
-        />,
-      );
+    it('renders active pending/processing steps for presentational tracking', () => {
+      render(<AiJobStatusTracker jobId="job-123" status="processing" />);
 
       expect(screen.getByText('Generating Your Deck')).toBeInTheDocument();
       expect(screen.getByText('Job ID: job-123')).toBeInTheDocument();
       expect(screen.getByText('Processing LLM')).toBeInTheDocument();
-      expect(handlePoll).toHaveBeenCalled();
     });
 
     it('renders error message when job status is failed', () => {
@@ -122,7 +114,6 @@ describe('AI Generation Playground Test Suite', () => {
           jobId="job-456"
           status="failed"
           error="Model execution timed out"
-          onPoll={vi.fn()}
         />,
       );
 
