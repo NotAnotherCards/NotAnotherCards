@@ -6,14 +6,16 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet",
+    "check:cycles": "node scripts/check-cycles.mjs",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,js}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js}\""
   },
   "devDependencies": {
-    "@remelondb/core": "0.2.5",
-    "@remelondb/driver-web": "0.2.5",
+    "@remelondb/core": "0.2.6",
+    "@remelondb/driver-web": "0.2.6",
     "eslint": "^10.6.0",
+    "madge": "8.0.0",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4"
   },

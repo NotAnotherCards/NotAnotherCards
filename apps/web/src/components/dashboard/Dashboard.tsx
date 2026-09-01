@@ -77,7 +77,7 @@ export function DashboardComponent() {
             <DeckList
               onSelectDeck={(deckId) => setSubView({ type: 'detail', deckId })}
               onStartReview={(deckId) =>
-                navigate({ to: '/app/deck-review', search: { deckId } })
+                navigate({ to: '/deck-review', search: { deckId } })
               }
             />
           ) : (

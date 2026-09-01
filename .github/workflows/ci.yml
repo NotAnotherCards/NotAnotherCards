@@ -62,6 +62,9 @@ jobs:
       - name: Check Formatting
         run: pnpm format:check
 
+      - name: Check Import Cycles
+        run: pnpm check:cycles
+
       - name: Run Unit Tests
         run: pnpm test
         env:
@@ -74,6 +77,24 @@ jobs:
           GOOGLE_CLIENT_SECRET: dummy-google-client-secret
           FACEBOOK_CLIENT_ID: dummy-facebook-client-id
           FACEBOOK_CLIENT_SECRET: dummy-facebook-client-secret
+   
+      - name: Run API Database Migrations
+        run: pnpm --filter api db:migrate
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
+
+      - name: Run E2E Tests
+        run: pnpm --filter api test:e2e
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
+          TEST_DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
+          BETTER_AUTH_SECRET: ci-only-secret
+          BETTER_AUTH_URL: http://localhost:3000
+          FRONTEND_URL: http://localhost:5173
+          GOOGLE_CLIENT_ID: dummy-google-client-id
+          GOOGLE_CLIENT_SECRET: dummy-google-client-secret
+          FACEBOOK_CLIENT_ID: dummy-facebook-client-id
+          FACEBOOK_CLIENT_SECRET: dummy-facebook-client-secret 
 
       - name: Validate Infrastructure Configs
         run: pnpm test:infra

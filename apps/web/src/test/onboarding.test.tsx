@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { App, router } from '../App';
 import userEvent from '@testing-library/user-event';
 import { authClient } from '@/lib/auth-client';
@@ -37,17 +37,28 @@ vi.mock('@/hooks/useStore', () => ({
   useStore: vi.fn(),
 }));
 
+let mockManager: unknown = { state: { status: 'ready', error: null } };
+
 vi.mock('@remelondb/core/react', () => ({
   useDatabaseState: () => ({ status: 'ready', error: null }),
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
+  // The root provider calls this, and the  layout renders nothing
+  // without a manager. These tests are about routing, not the database
+  // lifecycle, so a stand-in is enough.
+  useSessionDatabase: () => ({
+    manager: mockManager,
+    syncController: null,
+    closeError: null,
+  }),
 }));
 
 describe('Onboarding Flow and Guard Specs', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.mocked(useStore).mockReset();
+    mockManager = { state: { status: 'ready', error: null } };
 
     // Default useStore mock returning base values
     vi.mocked(useStore).mockReturnValue({
@@ -98,7 +109,7 @@ describe('Onboarding Flow and Guard Specs', () => {
 
     // Attempt to navigate to dashboard
     await act(async () => {
-      void router.navigate({ to: '/app/dashboard' });
+      void router.navigate({ to: '/dashboard' });
     });
 
     // Should redirect back to onboarding and render the onboarding page elements
@@ -150,7 +161,7 @@ describe('Onboarding Flow and Guard Specs', () => {
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
-    expect(window.location.pathname).toBe('/app/dashboard');
+    expect(window.location.pathname).toBe('/dashboard');
   });
 
   it('displays validation errors for invalid or empty fields', async () => {
@@ -183,6 +194,34 @@ describe('Onboarding Flow and Guard Specs', () => {
 
   it('submits the form successfully and calls the onboarding API endpoint', async () => {
     const user = userEvent.setup();
+
+    // The onboarded session must arrive because the component asked for
+    // it. getSession() does not update the reactive session the root
+    // database provider reads, so the component has to await refetch();
+    // flipping the mocks by hand after submit would hide it if that
+    // stopped happening. Installed before render, since the component
+    // takes refetch from the session it renders with.
+    const refetch = vi.fn(async () => {
+      vi.mocked(authClient.getSession).mockResolvedValue({
+        data: mockSessionOnboarded,
+        error: null,
+      });
+      vi.mocked(authClient.useSession).mockReturnValue({
+        data: mockSessionOnboarded,
+        isPending: false,
+        isRefetching: false,
+        error: null,
+        refetch,
+      } as unknown as ReturnType<typeof authClient.useSession>);
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch,
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
     render(<App />);
 
     // Fill in the form
@@ -205,23 +244,14 @@ describe('Onboarding Flow and Guard Specs', () => {
       '00000000-0000-0000-0000-000000000002',
     ); // Spanish
 
-    // Submit (flip guard state to true by updating the session mock so dashboard redirection completes successfully)
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSessionOnboarded,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSessionOnboarded,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
     const submitBtn = screen.getByRole('button', {
       name: /Complete Registration/i,
     });
     await user.click(submitBtn);
+
+    // Without this the user lands on  with the provider still
+    // holding onBoardingComplete: false, and the layout renders nothing.
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
 
     // Verify fetch was called with correct endpoint and payload
     expect(global.fetch).toHaveBeenCalledWith(
@@ -244,7 +274,7 @@ describe('Onboarding Flow and Guard Specs', () => {
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
-    expect(window.location.pathname).toBe('/app/dashboard');
+    expect(window.location.pathname).toBe('/dashboard');
   });
 
   it('checks username availability on blur and displays validation error if taken', async () => {
@@ -285,5 +315,18 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByText('Username is already taken'),
     ).toBeInTheDocument();
+  });
+
+  it('allows rendering /onboarding when manager is null (for incomplete user)', async () => {
+    mockManager = null;
+    render(<App />);
+    expect(
+      await screen.findByText(
+        /Choose your username and language preferences/i,
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/onboarding');
   });
 });

@@ -12,18 +12,28 @@ import {
   ReviewEventRow,
   UserCardRow,
   UserDeckRow,
+  UserNoteDeckRow,
+  UserNoteRow,
   UserProfileRow,
 } from '@repo/offline-db';
 import {
   reviewEvents,
   userCards,
   userDecks,
+  userNoteDecks,
+  userNotes,
   userProfiles,
 } from '../../src/sync/schema';
 
 const CASES = [
   { name: 'user_decks', row: UserDeckRow, table: userDecks },
+  { name: 'user_notes', row: UserNoteRow, table: userNotes },
   { name: 'user_cards', row: UserCardRow, table: userCards },
+  {
+    name: 'user_note_decks',
+    row: UserNoteDeckRow,
+    table: userNoteDecks,
+  },
   { name: 'review_events', row: ReviewEventRow, table: reviewEvents },
   { name: 'user_profiles', row: UserProfileRow, table: userProfiles },
 ] as const;

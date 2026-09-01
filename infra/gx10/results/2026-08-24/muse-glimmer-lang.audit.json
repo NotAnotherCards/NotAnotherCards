@@ -1,0 +1,26 @@
+[
+ {
+  "topic": "es-ser-estar",
+  "run": 1,
+  "front": "Madrid _____ la capital de España.",
+  "back": "es - origin",
+  "verdict": "error",
+  "judgeTail": "ests the rule for fixed location/identity, not origin. While the verb itself is correct, the mnemonic tag teaches the wrong sub-rule and will mislead learners about when to apply it. A strict correction would change the tag to \"es - location/identity\" or remove the category entirely.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-word-cards",
+  "run": 5,
+  "front": "abmachen: Ich mache den Termin ab.",
+  "back": "to cancel: I cancel the appointment.",
+  "verdict": "error",
+  "judgeTail": "ight rule/meaning. As a strict language teacher, I must point out that confusing *abmachen* (vereinbaren) with *absagen* (stornieren/kündigen) will actively mislead learners about prefix semantics and everyday usage. The card's answer is therefore factually incorrect in this context.\n\nVERDICT: error"
+ },
+ {
+  "topic": "de-cloze",
+  "run": 5,
+  "front": "Die Großmutter ___ sich immer über Besuch und kocht dann Kaffee.",
+  "back": "freut",
+  "verdict": "grounding",
+  "detail": "No"
+ }
+]

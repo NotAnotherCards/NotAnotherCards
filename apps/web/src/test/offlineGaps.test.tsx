@@ -6,18 +6,28 @@
  * 1. The due-cards list never picks up cards that become due while the app
  *    is open: getDueCardsQuery captures Date.now() once, and useStore only
  *    rebuilds the query when the db instance changes.
- * 2. Deleting a deck soft-deletes its cards but leaves their review events
- *    behind, so the review history keeps rows whose cards no longer exist.
+ * 2. Deleting a deck is a membership-only cascade: its notes, cards, and
+ *    review history must stay in the personal dictionary.
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import {
   Database,
+  Q,
   fetchLocalChanges,
   markLocalChangesAsSynced,
 } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
-import { schema, UserDeck, UserCard, ReviewEvent } from '@repo/offline-db';
+import {
+  schema,
+  UserDeck,
+  UserNote,
+  UserCard,
+  UserNoteDeck,
+  ReviewEvent,
+  cardId as deriveCardId,
+  noteDeckId as deriveNoteDeckId,
+} from '@repo/offline-db';
 import { useStore } from '@/hooks/useStore';
 import { DatabaseProvider } from '@remelondb/core/react';
 import {
@@ -26,27 +36,30 @@ import {
   recordReviewEvent,
   deleteDeck,
   getReviewHistoryQuery,
-} from '@/offline/queries';
+} from '@repo/offline-db';
+
+// `var` is intentional: vitest hoists mock factories above lexical
+// declarations, and the tests need the manager the factory built.
+// eslint-disable-next-line no-var
+var testManager: ReturnType<
+  typeof import('@remelondb/core').createDatabaseManager
+>;
 
 vi.mock('../offline/db', async () => {
   const { createDatabaseManager, Database } = await import('@remelondb/core');
   const { NodeSqliteDriver } = await import('@remelondb/driver-node');
-  const { schema, UserDeck, UserCard, ReviewEvent } =
+  const { schema, UserDeck, UserNote, UserCard, UserNoteDeck, ReviewEvent } =
     await import('@repo/offline-db');
-  const manager = createDatabaseManager({
+  testManager = createDatabaseManager({
     open: () =>
       Database.open({
         driver: new NodeSqliteDriver(),
         schema,
-        modelClasses: [UserDeck, UserCard, ReviewEvent],
+        modelClasses: [UserDeck, UserNote, UserCard, UserNoteDeck, ReviewEvent],
         name: ':memory:',
       }),
   });
-  return {
-    manager,
-    createUserDatabaseManager: () => manager,
-    closeUserDatabase: () => manager.database.driver.close(),
-  };
+  return { createUserDatabaseManager: () => testManager };
 });
 
 describe('due-cards reactivity', () => {
@@ -61,11 +74,12 @@ describe('due-cards reactivity', () => {
   });
 
   it("shows a card again once its 'Again' interval has elapsed", async () => {
-    const { manager } = await import('../offline/db');
-    await manager!.init();
+    const { createUserDatabaseManager } = await import('../offline/db');
+    const manager = createUserDatabaseManager('user-a');
+    await manager.init();
     const { result, rerender } = renderHook(() => useStore(), {
       wrapper: ({ children }) => (
-        <DatabaseProvider manager={manager!}>{children}</DatabaseProvider>
+        <DatabaseProvider manager={manager}>{children}</DatabaseProvider>
       ),
     });
     await waitFor(() => expect(result.current.status).toBe('ready'));
@@ -109,7 +123,7 @@ describe('deck deletion on the wire', () => {
     const db = await Database.open({
       driver: new NodeSqliteDriver(),
       schema,
-      modelClasses: [UserDeck, UserCard, ReviewEvent],
+      modelClasses: [UserDeck, UserNote, UserCard, UserNoteDeck, ReviewEvent],
       name: ':memory:',
     });
 
@@ -136,24 +150,37 @@ describe('deck deletion on the wire', () => {
 });
 
 describe('deck deletion cascade', () => {
-  it("removes the deck's review history along with its cards", async () => {
+  it('removes memberships while preserving notes, cards, and reviews', async () => {
     const db = await Database.open({
       driver: new NodeSqliteDriver(),
       schema,
-      modelClasses: [UserDeck, UserCard, ReviewEvent],
+      modelClasses: [UserDeck, UserNote, UserCard, UserNoteDeck, ReviewEvent],
       name: ':memory:',
     });
 
     const deck = await createDeck(db, 'Deck');
     const card = await createCard(db, deck.id, 'front', 'back');
+    expect(card.id).toBe(deriveCardId(card.note_id, card.template_key));
+    expect(card.scheduled_interval_minutes).toBe(0);
+    const [membership] = await db
+      .get(UserNoteDeck)
+      .query(Q.where('note_id', card.note_id), Q.where('deck_id', deck.id))
+      .fetch();
+    expect(membership?.id).toBe(deriveNoteDeckId(card.note_id, deck.id));
     await recordReviewEvent(db, card.id, 3);
+
+    expect(
+      await db.get(UserNoteDeck).query(Q.where('deck_id', deck.id)).fetch(),
+    ).toHaveLength(1);
 
     await deleteDeck(db, deck.id);
 
-    // Intended behavior: no review events survive whose card was deleted by
-    // the cascade. Currently deleteDeck only touches the deck and its cards,
-    // so the review row stays behind, referencing a deleted card.
-    const orphaned = await getReviewHistoryQuery(db).fetch();
-    expect(orphaned).toHaveLength(0);
+    const reviews = await getReviewHistoryQuery(db).fetch();
+    expect(reviews).toHaveLength(1);
+    expect(await db.get(UserCard).find(card.id)).toBeDefined();
+    expect(await db.get(UserNote).find(card.note_id)).toBeDefined();
+    expect(
+      await db.get(UserNoteDeck).query(Q.where('deck_id', deck.id)).fetch(),
+    ).toEqual([]);
   });
 });

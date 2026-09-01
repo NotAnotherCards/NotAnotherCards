@@ -59,7 +59,7 @@ const client = new OpenAI({
 });
 
 const params: GatewayChatParams = {
-  model: "qwen",
+  model: "gemma4",
   think: false, // ~3 s; leave thinking on for fewer factual errors at ~30 s
   messages: [{
     role: "user",
@@ -88,9 +88,13 @@ Which model for what (measured, see
 
 | model | use it for | notes |
 |---|---|---|
-| `qwen` | default chat and generation | fast with `think: false`; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `gemma4` | default generation | best quality in the v2 run, 3.49 s median for five cards; falls back to `qwen3.6` on failure |
+| `qwen3.6` | low-latency fallback, chat | ~0.8 s faster than `gemma4`, a few more errors; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `qwen` | nothing new | deprecated alias for `qwen3.6`, removed once production sends the new name (#193) |
 | `qwen-next-80b` | best accuracy, no hurry | ~45 s per answer |
-| `mistral-small` | second opinion, dense-model style | |
+| `qwen3.8` | comparison only | 2.5x slower than `qwen3.6` with more errors; send `reasoning_effort: "none"` |
+| `muse-glimmer` | comparison only | quality on par with `gemma4`, ~17 s per set |
+| `mistral-small` | second opinion, dense-model style | older results, rerun pending |
 | `fact-check` | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no |
 | `moderation` | content screening | granite guardian risk prompts |
 | `embeddings` | vectors (bge-m3) | embeddings API, not chat |
@@ -191,10 +195,20 @@ Conventions:
 - Ports: LiteLLM (:4000) and the exporters (:9100, :9400) bind to the
   tailscale IP only. Ollama (:11434) binds to localhost only — clients
   must go through LiteLLM, never around it.
-- Docker must start after tailscaled, or the tailscale-IP port bindings
-  fail. After a reboot, recover with `docker compose down && docker
-  compose up -d` (volumes survive; a plain `up -d` can leave containers
-  split across two networks).
+- Docker and tailscaled race at boot, and Docker usually wins: it tries to
+  bind `100.64.0.1:4000` before the address exists, the bind fails, and
+  Docker never retries a container that failed at daemon start
+  (`restart: unless-stopped` does not cover that). On 2026-08-28 that took
+  the gateway down for 26 hours. The host fix is one sysctl, which lets
+  the bind succeed before the address is up:
+  `echo net.ipv4.ip_nonlocal_bind=1 | sudo tee /etc/sysctl.d/99-tailnet-bind.conf && sudo sysctl --system`.
+  If it still happens, recover with `docker compose up -d --force-recreate
+  litellm dcgm-exporter node-exporter`. A plain `up -d` restarts the same
+  container, which has no network endpoint from its failed start, so
+  litellm crash-loops on "Can't reach database server at litellm-db".
+- node-exporter runs with `--no-collector.cpufreq`. On this box the CPPC
+  cpufreq sysfs read blocks, and one blocked collector hangs the whole
+  `/metrics` scrape. CPU frequency is the only metric lost.
 - Daemon logs: `docker compose logs ollama` (not journalctl — the native
   service is disabled).
 - `OLLAMA_NUM_PARALLEL=2` in the compose: raise it if LiteLLM metrics

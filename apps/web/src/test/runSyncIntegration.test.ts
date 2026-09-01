@@ -8,8 +8,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Database } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { schema, UserDeck, UserCard, ReviewEvent } from '@repo/offline-db';
-import { createRunSync } from '../offline/sync';
-import { createDeck } from '../offline/queries';
+import { createRunSync as createSharedRunSync } from '@remelondb/core';
+import { pullChanges, pushChanges } from '../offline/sync';
+
+// The hook builds this itself in production; here it is assembled the
+// same way so the transport is exercised against the real synchronize.
+const createRunSync = (
+  database: Parameters<typeof createSharedRunSync>[0]['database'],
+) => createSharedRunSync({ database, pullChanges, pushChanges });
+import { createDeck } from '@repo/offline-db';
 
 const emptyChanges = {
   user_decks: { created: [], updated: [], deleted: [] },

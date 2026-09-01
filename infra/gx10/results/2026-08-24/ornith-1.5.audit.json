@@ -1,0 +1,74 @@
+[
+ {
+  "topic": "spanish",
+  "run": 1,
+  "front": "What are the regular preterite endings for -ar verbs?",
+  "back": "Hable, hablaste, habló, hablamos, hablasteis, hablaron",
+  "verdict": "error",
+  "judgeTail": "**Rule Clarity:** By omitting hyphens and presenting full words with one conjugation misspelled, the card misrepresents how preterite formation works in Spanish. A student memorizing this would internalize an incorrect spelling pattern and fail to isolate the actual grammatical rule.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 2,
+  "front": "What are the three irregular preterite verbs known as the 'DOS HACES'?",
+  "back": "Ir (fue), Ser (fue), Ver (vio), Hacer (hizo), Decir (dijo).",
+  "verdict": "error",
+  "judgeTail": "r Spanish accents and represent valid third-person singular preterite forms, the flashcard misrepresents a specific pedagogical tool, conflates separate irregular sets, and fails to teach the correct rule. It also inaccurately implies that five verbs share this single mnemonic label.\n\nVERDICT: error"
+ },
+ {
+  "topic": "spanish",
+  "run": 3,
+  "front": "What are the five irregular preterite verbs known as the 'DOS HAS' group?",
+  "back": "Dar, Ir, Oner (poder), Saber, Haber; plus tener, hacer, querer, estar.",
+  "verdict": "error",
+  "judgeTail": " on third-person plural). The card mashes these categories together, includes a non-standard verb, invents a spelling, and fails to teach the correct conjugation rule. Minor wording differences are acceptable, but invented vocabulary and misgrouping of core grammatical rules are not.\n\nVERDICT: error"
+ },
+ {
+  "topic": "german",
+  "run": 2,
+  "front": "Um wie viel Uhr duftet die Straße nach frischem Brot?",
+  "back": "Um Uhr Uhr.",
+  "verdict": "grounding",
+  "detail": "No"
+ },
+ {
+  "topic": "german",
+  "run": 3,
+  "front": "Um wie viel Uhr duftet die ganze Straße nach frischem Brot?",
+  "back": "Um Uhr Uhr.",
+  "verdict": "grounding",
+  "detail": "No"
+ },
+ {
+  "topic": "german",
+  "run": 5,
+  "front": "Wann duftet die Straße nach frischem Brot?",
+  "back": "Um vier Uhr morgens.",
+  "verdict": "grounding",
+  "detail": "No"
+ },
+ {
+  "topic": "history",
+  "run": 4,
+  "front": "What period began after Robespierre's execution in July 1794?",
+  "back": "The Thermian Reaction, ending the Reign of Terror and shifting power to the Directory.",
+  "verdict": "error",
+  "judgeTail": "dar when Robespierre was overthrown). While the additional context in the card correctly notes the end of the Terror and the shift toward the Directory, the core terminology is factually wrong. This goes beyond a minor wording difference and constitutes a meaningful historical error.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 4,
+  "front": "Name a common song that begins with a perfect fifth interval.",
+  "back": "\"Here Comes the Bride\" or \"Star Wars\" theme begins with a perfect fifth.",
+  "verdict": "error",
+  "judgeTail": "the Bride\"), the first two notes are B up to E (a P4 in its original key of E major), and the famous \"Star Wars\" main title fanfare begins with C up to F (also a P4). Because the card substitutes two well-known perfect-fourth examples for a perfect fifth, it contains a factual error.\n\nVERDICT: error"
+ },
+ {
+  "topic": "music",
+  "run": 5,
+  "front": "Name a common song that begins with a perfect octave interval.",
+  "back": "\"Happy Birthday\" begins with a perfect octave between the first two notes.",
+  "verdict": "error",
+  "judgeTail": " key of C), which constitutes a **perfect unison**, not an octave. While the melody does feature octave leaps later in the phrase structure, the interval between the very first two notes is a unison. The card contains a factual error regarding basic music theory/interval recognition.\n\nVERDICT: error"
+ }
+]

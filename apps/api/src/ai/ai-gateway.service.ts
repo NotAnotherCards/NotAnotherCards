@@ -28,6 +28,7 @@ export class AiParseError extends Error {
 }
 
 interface ChatCompletionResponse {
+  model?: string;
   choices?: Array<{
     message?: {
       content?: string;
@@ -57,14 +58,16 @@ export class AiGatewayService {
     requestedModel?: string,
     requestedCount = 5,
   ): Promise<InferenceResult> {
-    const apiBase = this.config.get<string>('AI_API_BASE');
+    // A trailing slash here produced `POST //chat/completions`, which the
+    // gateway answers with 404, so every job failed until the env was fixed.
+    const apiBase = this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, '');
     const apiKey = this.config.get<string>('AI_API_KEY') ?? '';
     const isMockExplicit =
       this.config.get<string>('AI_MOCK') === '1' ||
       this.config.get<string>('AI_MOCK') === 'true' ||
       process.env.NODE_ENV === 'test';
     const model =
-      requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'qwen';
+      requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'gemma4';
 
     // If no endpoint is configured:
     // When AI_MOCK is explicitly enabled (or in tests), use mock generator.
@@ -96,6 +99,12 @@ export class AiGatewayService {
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.7,
+        // Generation must not reason: with reasoning, a five-card job runs
+        // 26-56s against the 60s timeout (a measured 4s margin on an idle
+        // GPU); without it, ~3s and a tenth of the tokens. Works on the
+        // LiteLLM path and on OpenAI-compatible fallbacks; providers that
+        // ignore it are no worse off.
+        reasoning_effort: 'none',
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -123,7 +132,9 @@ export class AiGatewayService {
     return {
       cards,
       usage,
-      model,
+      // the gateway reports the deployment that answered; on a router
+      // fallback that is not the alias we asked for
+      model: data.model ?? model,
     };
   }
 

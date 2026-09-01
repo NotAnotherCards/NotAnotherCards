@@ -7,7 +7,7 @@ import { DatabaseProvider } from '@remelondb/core/react';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import * as path from 'path';
 import * as fs from 'fs';
-import { createUserDatabaseManager, closeUserDatabase } from '../offline/db';
+import { createUserDatabaseManager } from '../offline/db';
 
 // Use var to hoist variables for Vitest mock factories
 // eslint-disable-next-line no-var
@@ -54,15 +54,29 @@ vi.mock('@remelondb/core', async (importOriginal) => {
   };
 });
 
+// The module no longer keeps "the current manager": the session hook
+// owns each instance, so these tests close the one they created.
+let activeManager: ReturnType<typeof createUserDatabaseManager> | null = null;
+
 function testCreateUserDatabaseManager(userId: string) {
   isClosed = false;
-  return createUserDatabaseManager(userId);
+  activeManager = createUserDatabaseManager(userId);
+  return activeManager;
 }
 
-async function testCloseUserDatabase() {
+function testCloseUserDatabase() {
   isClosed = true;
-  await act(async () => {
-    await closeUserDatabase();
+  const closing = activeManager?.close() ?? Promise.resolve();
+  activeManager = null;
+  return closing;
+}
+
+// Closing the manager re-renders every mounted useStore subscriber, so the
+// tests holding one flush the close inside act(). The delayed-open test
+// can't: it has to resolve the in-flight open before awaiting close.
+function closeUserDatabaseInAct() {
+  return act(async () => {
+    await testCloseUserDatabase();
   });
 }
 
@@ -108,7 +122,7 @@ describe('User Database Isolation integration tests', () => {
     );
 
     // Close Database for User A (simulating logout)
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // 2. Log in as user-b
     const managerB = testCreateUserDatabaseManager('user-b');
@@ -128,7 +142,7 @@ describe('User Database Isolation integration tests', () => {
     expect(storeB.current.decks).toHaveLength(0);
 
     // Close Database for User B
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // 3. Log back in as user-a
     const managerA2 = testCreateUserDatabaseManager('user-a');
@@ -148,7 +162,7 @@ describe('User Database Isolation integration tests', () => {
     expect(storeA2.current.decks[0].title).toBe('Spanish Verbs');
 
     // Clean up
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
   });
 
   it('keeps two non-BMP ids that share a UTF-16 surrogate isolated (db-name collision regression)', async () => {
@@ -177,7 +191,7 @@ describe('User Database Isolation integration tests', () => {
       expect(storeA.current.decks.map((d) => d.id)).toContain(deckId),
     );
 
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // A different id that would collide under the old encoding.
     const managerB = testCreateUserDatabaseManager('😁');
@@ -194,7 +208,7 @@ describe('User Database Isolation integration tests', () => {
     expect(storeB.current.decks.map((d) => d.id)).not.toContain(deckId);
     expect(storeB.current.decks).toHaveLength(0);
 
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
   });
 
   it('prevents further queries/writes through the old manager after logout', async () => {
@@ -209,7 +223,7 @@ describe('User Database Isolation integration tests', () => {
     await waitFor(() => expect(store.current.status).toBe('ready'));
 
     // Logout closes database
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // Attempts to write through the old manager/database should throw/fail
     await expect(store.current.createDeck('Spanish', '')).rejects.toThrow();
@@ -243,9 +257,8 @@ describe('User Database Isolation integration tests', () => {
     // Wait for the initialization promise to finish (it should reject/throw because we closed the manager during init)
     await expect(initPromise).rejects.toThrow();
 
-    // Assert the database connection is closed and manager is null
-    const { manager: currentManager } = await import('../offline/db');
-    expect(currentManager).toBeNull();
+    // The manager returned to idle; nothing it opened is still open.
+    expect(manager.state.status).toBe('idle');
 
     // Reset delay flag
     delayDatabaseOpen = false;
@@ -302,7 +315,7 @@ describe('User Database Isolation integration tests', () => {
     });
 
     // 2. Tab/Session switches user to user-b: close A first
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
 
     // 3. Open user-b's database
     const managerB = testCreateUserDatabaseManager('user-b');
@@ -319,6 +332,6 @@ describe('User Database Isolation integration tests', () => {
     expect(storeB.current.decks.map((d) => d.id)).not.toContain(deckId);
 
     // Clean up
-    await testCloseUserDatabase();
+    await closeUserDatabaseInAct();
   });
 });

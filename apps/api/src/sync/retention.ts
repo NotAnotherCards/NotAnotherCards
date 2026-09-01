@@ -31,8 +31,11 @@ export async function runTombstoneGc({
   const current = await db.execute<{ rev: string | number }>(sql`
     select greatest(
       coalesce((select max(rev) from user_decks), 0),
+      coalesce((select max(rev) from user_notes), 0),
       coalesce((select max(rev) from user_cards), 0),
+      coalesce((select max(rev) from user_note_decks), 0),
       coalesce((select max(rev) from review_events), 0),
+      coalesce((select max(rev) from user_profiles), 0),
       coalesce((select value from remelon_sync_meta where key = 'gc_floor'), 0)
     ) as rev
   `);

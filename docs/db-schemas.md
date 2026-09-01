@@ -20,7 +20,7 @@ timezone            text NULL DEFAULT 'UTC'
 on_boarding_complete boolean NOT NULL DEFAULT false
 ```
 
-#### `session` ([API schema](../apps/api/src/database/schema.ts#L18))
+#### `session` ([API schema](../apps/api/src/database/schema.ts#L19))
 
 ```text
 id                  text PK
@@ -35,7 +35,7 @@ user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
 INDEX(user_id)
 ```
 
-#### `account` ([API schema](../apps/api/src/database/schema.ts#L37))
+#### `account` ([API schema](../apps/api/src/database/schema.ts#L38))
 
 ```text
 id                        text PK
@@ -55,7 +55,7 @@ updated_at                timestamp NOT NULL
 INDEX(user_id)
 ```
 
-#### `verification` ([API schema](../apps/api/src/database/schema.ts#L61))
+#### `verification` ([API schema](../apps/api/src/database/schema.ts#L62))
 
 ```text
 id                  text PK
@@ -70,11 +70,14 @@ INDEX(identifier)
 
 ### Synchronized application tables
 
-The following four logical tables exist on both sides of the offline boundary. The api schema adds `user_id`, `rev`, and `deleted_at` for ownership, revision tracking, and tombstones. RemelonDB supplies its own local record metadata, so those server columns are not declared as application fields in the local Zod tables defined in [`packages/offline-db/src/user-dictionary.ts`](../packages/offline-db/src/user-dictionary.ts).
+The synchronized contract consists of the following six logical tables. The
+API schema adds `user_id`, `rev`, and `deleted_at` for ownership, revision
+tracking, and tombstones. RemelonDB supplies its own local record metadata, so
+those server columns are not application fields in the local Zod tables.
 
 All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `reviewed_at`) are non-negative integer Unix milliseconds and must remain within JavaScript's safe-integer range. PostgreSQL stores them as `double precision`; the wire and local schemas validate them as integers found in [`apps/api/src/sync/schema.ts`](../apps/api/src/sync/schema.ts).
 
-#### `user_decks` ([API schema](../apps/api/src/sync/schema.ts#L34), [local schema](../packages/offline-db/src/user-dictionary.ts#L37))
+#### `user_decks` ([API schema](../apps/api/src/sync/schema.ts#L35), [local schema](../packages/offline-db/src/user-dictionary.ts#L126))
 
 ```text
 id                  text PK
@@ -87,26 +90,80 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 ```
 
-#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L62), [local schema](../packages/offline-db/src/user-dictionary.ts#L41))
+#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L108), [local schema](../packages/offline-db/src/user-dictionary.ts#L134))
 
-Cards deliberately use generic `front` and `back` content.
+The canonical source for a learning item. `fields_json` is serialized JSON;
+`additional_content` is optional Markdown for genuinely free-form material.
 
 ```text
 id                  text PK
 user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
 rev                 bigint NOT NULL                                [server]
 deleted_at          timestamptz NULL                               [server]
-deck_id             text NOT NULL relation -> user_decks.id
-front               text NOT NULL
-back                text NOT NULL
-due_at              number (integer Unix ms) NOT NULL
+note_type           text NOT NULL
+fields_version      integer NOT NULL
+fields_json         text NOT NULL
+additional_content  text NULL
 created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
+
+INDEX(user_id, rev)
 ```
 
-The relation to `user_decks` is declared in Drizzle and RemelonDB. Database-level ownership and parent checks are enforced by the sync layer.
+#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L63), [local schema](../packages/offline-db/src/user-dictionary.ts#L130))
 
-#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L97), [local schema](../packages/offline-db/src/user-dictionary.ts#L45))
+Generated review questions. `front` and `back` deliberately remain generic
+Markdown instead of encoding subject-specific fields in this table. Every
+persisted card belongs to a note and has a stable template key.
+
+```text
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+rev                 bigint NOT NULL                                [server]
+deleted_at          timestamptz NULL                               [server]
+note_id             text NOT NULL relation -> user_notes.id
+template_key        text NOT NULL
+active              boolean NOT NULL DEFAULT true
+front               text (Markdown) NOT NULL
+back                text (Markdown) NOT NULL
+due_at              number (integer Unix ms) NOT NULL
+scheduled_interval_minutes  integer NOT NULL DEFAULT 0 [server] -- required locally; 0 = never reviewed
+created_at          number (integer Unix ms) NOT NULL
+updated_at          number (integer Unix ms) NOT NULL
+
+INDEX(user_id, rev)
+INDEX(note_id)
+INDEX(user_id, due_at)
+```
+
+#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L138), [local schema](../packages/offline-db/src/user-dictionary.ts#L138))
+
+Note-level deck membership. A note can belong to several decks without
+duplicating the note, its generated cards, or their review schedules.
+
+```text
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
+rev                 bigint NOT NULL                                [server]
+deleted_at          timestamptz NULL                               [server]
+note_id             text NOT NULL relation -> user_notes.id
+deck_id             text NOT NULL relation -> user_decks.id
+active              boolean NOT NULL DEFAULT true
+created_at          number (integer Unix ms) NOT NULL
+updated_at          number (integer Unix ms) NOT NULL
+
+INDEX(user_id, rev)
+INDEX(note_id)
+INDEX(deck_id)
+```
+
+The note/card and note/deck relations are declared in Drizzle. As with the
+previous card/deck relationship, authenticated ownership and parent checks are
+sync-layer concerns rather than cascading SQL foreign keys. The
+server ownership checks remain in
+[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+
+#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L169), [local schema](../packages/offline-db/src/user-dictionary.ts#L142))
 
 ```text
 id                  text PK
@@ -120,7 +177,7 @@ reviewed_at         number (integer Unix ms) NOT NULL
 
 Review events are append-only in the sync configuration.
 
-#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L121), [local schema](../packages/offline-db/src/user-dictionary.ts#L49))
+#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L193), [local schema](../packages/offline-db/src/user-dictionary.ts#L146))
 
 Contains app-specific profile data and is separate from Better Auth's `user` table.
 
@@ -143,11 +200,11 @@ The three UUID fields are currently values only; no `files` or `languages` table
 
 These server-only RemelonDB bookkeeping objects were introduced by [migration `0005`](../apps/api/drizzle/0005_remelon-sync-store.sql). They support synchronization and retention and do not contain application data or exist in the local schema.
 
-#### `remelon_rev` ([API schema](../apps/api/src/sync/schema.ts#L16))
+#### `remelon_rev` ([API schema](../apps/api/src/sync/schema.ts#L17))
 
 A PostgreSQL sequence that allocates the global, monotonically increasing revisions stored in synchronized rows' `rev` columns.
 
-#### `remelon_revision_checkpoints` ([API schema](../apps/api/src/sync/schema.ts#L23))
+#### `remelon_revision_checkpoints` ([API schema](../apps/api/src/sync/schema.ts#L24))
 
 ```text
 observed_at         timestamptz PK
@@ -158,7 +215,7 @@ INDEX(observed_at)
 
 Records the highest served revision observed at a point in time. Retention uses these checkpoints to determine which tombstones are old enough to garbage-collect safely.
 
-#### `remelon_sync_meta` ([API schema](../apps/api/src/sync/schema.ts#L18))
+#### `remelon_sync_meta` ([API schema](../apps/api/src/sync/schema.ts#L19))
 
 ```text
 key                 text PK
@@ -167,11 +224,7 @@ value               bigint NOT NULL
 
 Stores persistent sync metadata. It currently records `gc_floor`, the oldest valid incremental-sync cursor after garbage collection.
 
-## Future ideas
-
-Everything in this section is exploratory and is not part of the current database contract.
-
-### Proposed note/card content model
+## Note/card content model
 
 Decided in the discussion on
 [issue #81](https://github.com/NotAnotherCards/NotAnotherCards/issues/81).
@@ -204,6 +257,7 @@ user_cards
   front               text NOT NULL  (Markdown content)
   back                text NOT NULL  (Markdown content)
   due_at              number (integer Unix ms) NOT NULL
+  scheduled_interval_minutes  integer NOT NULL DEFAULT 0 [server] -- required locally; 0 = never reviewed
   created_at          number (integer Unix ms) NOT NULL
   updated_at          number (integer Unix ms) NOT NULL
 
@@ -239,6 +293,11 @@ Key points from the discussion:
   context→translation, sharing `note_id` and each with its own schedule. A
   manual front/back card is a `basic` note with one template and one card,
   not a separate code path.
+- **Cards store their current scheduled interval.** The scheduler calculates
+  the next interval as `previous interval * rating multiplier`, subject to
+  named floor and cap constants in the shared scheduler module. The card stores
+  the rounded result in `scheduled_interval_minutes` while `due_at` remains the
+  absolute queue timestamp. V1 has no `level` or scheduler `status` columns.
 - **Deck membership belongs to the note**, via `user_note_decks`, so one
   note can appear in several decks (e.g. Top 300 and a themed deck) while
   keeping one card and one schedule per review mode. Card activation is
@@ -249,18 +308,49 @@ Key points from the discussion:
   tombstones to dependent rows. A note losing its last active membership
   becomes unfiled rather than deleted, keeping it in the personal
   dictionary.
-- **Deterministic identity.** `user_note_decks` and generated `user_cards`
-  rows use `uuidv5` over `(note_id, deck_id)` and `(note_id, template_key)`
-  respectively, so concurrent offline creation targets the same row instead
-  of leaving duplicate, randomly-keyed rows to reconcile.
+- **Deterministic identity.** Generated `user_cards` and `user_note_decks` rows
+  use the shared `cardId(noteId, templateKey)` and
+  `noteDeckId(noteId, deckId)` helpers. Each applies a table-specific, fixed
+  UUIDv5 namespace to the JSON-serialized argument tuple, so concurrent
+  offline creation targets the same row instead of leaving duplicate,
+  randomly-keyed rows to reconcile. A generated card or note-deck membership
+  is never protocol-deleted while its parents remain live: recreating it would
+  derive the same tombstoned ID, and writes to tombstoned IDs are rejected. Use
+  `active = false` instead.
 
-> No data migration is planned: existing cards are development data and can
-> be discarded when this schema lands, so the API, wire, and local RemelonDB
-> schemas can change together without a compatibility path.
+> No compatibility data migration is provided for the old card shape. Existing
+> API development databases must be reset before applying the new migration;
+> the shared local v3 migration discards incompatible cards and reviews while
+> preserving decks and profiles. Sync-store relationship and ownership
+> enforcement remains in
+> [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+
+### `fields_json` validation
+
+PostgreSQL intentionally stores `fields_json` as text because that is the
+primitive representation synchronized by RemelonDB. It is not accepted as
+arbitrary JSON. The shared offline row and wire validators use
+`(note_type, fields_version)` to select a Zod schema from an explicit registry,
+parse `fields_json`, and validate the parsed value. Unknown note types or
+versions, malformed JSON, and payloads that fail the selected schema are
+rejected. This keeps schema evolution explicit without coupling the database
+table to any one subject. Enforcement of the same contract at the sync-store
+boundary remains in
+[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+
+Only the complete `basic@1` contract is currently registered. `word@1` remains
+unsupported until its full stable field and template contract is defined. That
+eventual contract must include `original_language` and `translation_language`;
+a deck may supply defaults, but deck membership is not the canonical language
+source.
+
+## Future ideas
+
+Everything in this section is exploratory and is not part of the current database contract.
 
 ### Proposed files/upload foundation
 
-The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L131) and [local schema](../packages/offline-db/src/user-dictionary.ts#L30), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
+The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L203) and [local schema](../packages/offline-db/src/user-dictionary.ts#L119), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
 
 #### `files`
 

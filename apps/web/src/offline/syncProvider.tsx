@@ -28,6 +28,7 @@ const NO_SYNC: SyncControllerState = {
   status: 'idle',
   lastSyncAt: null,
   error: null,
+  cause: null,
   lastResult: null,
 };
 

@@ -107,7 +107,9 @@ describe('authenticated user database configuration', () => {
     expect(call.schema).toBeDefined();
     expect(call.modelClasses!.map((c: { name: string }) => c.name)).toEqual([
       'UserDeck',
+      'UserNote',
       'UserCard',
+      'UserNoteDeck',
       'ReviewEvent',
       'UserProfile',
     ]);
@@ -125,20 +127,17 @@ describe('authenticated user database configuration', () => {
     }
   });
 
-  it('forgets the active manager on close: the next login starts fresh', async () => {
+  it('hands out a fresh manager each time, holding none itself', async () => {
     const module = await loadSubject();
     const factory = requireFactory(module);
-    expect(
-      module.closeUserDatabase,
-      'db.ts should export closeUserDatabase()',
-    ).toBeTypeOf('function');
 
-    factory('user-a');
-    await module.closeUserDatabase!();
+    // The module used to keep "the current manager" in a mutable global
+    // and close it on logout. The session hook owns each instance now,
+    // so this is a factory: two calls, two managers, nothing retained.
+    const first = factory('user-a');
+    const second = factory('user-a');
 
-    // same account logging back in must get a new manager, not a stale
-    // reference kept across the logout
-    factory('user-a');
     expect(capturedManagers).toHaveLength(2);
+    expect(first).not.toBe(second);
   });
 });

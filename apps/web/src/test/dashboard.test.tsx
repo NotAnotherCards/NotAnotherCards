@@ -29,12 +29,20 @@ vi.mock('@remelondb/core/react', () => ({
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
+  // The root provider calls this, and the protected layout renders nothing
+  // without a manager. These tests are about routing, not the database
+  // lifecycle, so a stand-in is enough.
+  useSessionDatabase: () => ({
+    manager: { state: { status: 'ready', error: null } },
+    syncController: null,
+    closeError: null,
+  }),
 }));
 
 describe('Dashboard Page Component Specs', () => {
   beforeEach(async () => {
     // Reset router history and path directly to the dashboard
-    window.history.pushState(null, '', '/app/dashboard');
+    window.history.pushState(null, '', '/dashboard');
 
     // Mock logged-in state
     vi.mocked(authClient.getSession).mockResolvedValue({
@@ -55,7 +63,7 @@ describe('Dashboard Page Component Specs', () => {
   it('renders welcome text, user email/name, and placeholder feature sections', async () => {
     render(<App />);
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // 1. Dashboard renders welcome text
@@ -94,7 +102,7 @@ describe('Dashboard Page Component Specs', () => {
     const user = userEvent.setup();
     render(<App />);
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // Click Settings tab on dashboard

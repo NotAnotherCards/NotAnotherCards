@@ -21,6 +21,11 @@ import { LANGUAGES } from '@/lib/languages';
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
+  // The root database provider reads the reactive session, and
+  // getSession() does not update it. Without this refetch the provider
+  // still holds onBoardingComplete: false when the protected layout mounts, and the
+  // layout renders nothing.
+  const { refetch: refetchSession } = authClient.useSession();
   const [apiError, setApiError] = useState<string | null>(null);
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(userProfileFormSchema),
@@ -53,8 +58,8 @@ export function OnBoardingComponent() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || 'Failed to save onboarding data');
       }
-      await authClient.getSession();
-      void navigate({ to: '/app/dashboard' });
+      await refetchSession();
+      void navigate({ to: '/dashboard' });
     } catch (err) {
       setApiError(
         err instanceof Error ? err.message : 'An unexpected error occurred',

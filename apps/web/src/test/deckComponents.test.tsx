@@ -89,10 +89,13 @@ describe('DeckCard Component', () => {
 describe('CardItem Component', () => {
   const mockCard: Card = {
     id: 'card-test-1',
-    deck_id: 'deck-test-1',
+    note_id: 'note-test-1',
+    template_key: 'front-back',
+    active: true,
     front: 'Hola',
     back: 'Hello',
     due_at: Date.now(),
+    scheduled_interval_minutes: 0,
     created_at: Date.now(),
     updated_at: Date.now(),
   };
@@ -104,7 +107,7 @@ describe('CardItem Component', () => {
           <CardItem
             card={mockCard}
             onEditCard={vi.fn()}
-            onDeleteCard={vi.fn()}
+            onRemoveFromDeck={vi.fn()}
             onViewCard={vi.fn()}
           />
         </tbody>
@@ -115,9 +118,9 @@ describe('CardItem Component', () => {
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
 
-  it('triggers callbacks on view, edit, and delete card actions', () => {
+  it('triggers callbacks on view, edit, and remove-from-deck actions', () => {
     const onEditCard = vi.fn();
-    const onDeleteCard = vi.fn();
+    const onRemoveFromDeck = vi.fn();
     const onViewCard = vi.fn();
 
     render(
@@ -126,7 +129,7 @@ describe('CardItem Component', () => {
           <CardItem
             card={mockCard}
             onEditCard={onEditCard}
-            onDeleteCard={onDeleteCard}
+            onRemoveFromDeck={onRemoveFromDeck}
             onViewCard={onViewCard}
           />
         </tbody>
@@ -141,19 +144,41 @@ describe('CardItem Component', () => {
     fireEvent.click(screen.getByTitle('Edit Card'));
     expect(onEditCard).toHaveBeenCalledWith(mockCard);
 
-    // Click Delete button
-    fireEvent.click(screen.getByTitle('Delete Card'));
-    expect(onDeleteCard).toHaveBeenCalledWith('card-test-1');
+    // Click Remove from Deck button
+    fireEvent.click(screen.getByTitle('Remove from Deck'));
+    expect(onRemoveFromDeck).toHaveBeenCalledWith(mockCard);
+  });
+
+  it('hides the basic front/back editor for structured-note cards', () => {
+    render(
+      <table>
+        <tbody>
+          <CardItem
+            card={mockCard}
+            onEditCard={vi.fn()}
+            onRemoveFromDeck={vi.fn()}
+            onViewCard={vi.fn()}
+            canEdit={false}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.queryByTitle('Edit Card')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Remove from Deck')).toBeInTheDocument();
   });
 });
 
 describe('FlashcardModal Component', () => {
   const mockCard: Card = {
     id: 'card-test-1',
-    deck_id: 'deck-test-1',
+    note_id: 'note-test-1',
+    template_key: 'front-back',
+    active: true,
     front: 'Hola',
     back: 'Hello',
     due_at: Date.now(),
+    scheduled_interval_minutes: 0,
     created_at: Date.now(),
     updated_at: Date.now(),
   };
@@ -172,5 +197,25 @@ describe('FlashcardModal Component', () => {
 
     // Renders the Back text
     expect(screen.getByText('Hello')).toBeInTheDocument();
+  });
+
+  it('shows the multiplicative next interval for a reviewed card', async () => {
+    render(
+      <FlashcardModal
+        card={{
+          ...mockCard,
+          scheduled_interval_minutes: 3 * 24 * 60,
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('flashcard-inner'));
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Good (7.5d)' }),
+    ).toBeInTheDocument();
   });
 });

@@ -5,10 +5,13 @@ import type { Card } from '@/hooks/useStore';
 
 const card: Card = {
   id: 'card-1',
-  deck_id: 'deck-1',
+  note_id: 'note-1',
+  template_key: 'basic:front-back',
+  active: true,
   front: 'gehen',
   back: 'to go',
   due_at: Date.now(),
+  scheduled_interval_minutes: 0,
   created_at: Date.now(),
   updated_at: Date.now(),
 };

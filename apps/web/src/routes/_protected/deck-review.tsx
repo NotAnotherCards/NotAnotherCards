@@ -1,8 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { ReviewSession } from '@/components/review/ReviewSession';
 import { useStore } from '@/hooks/useStore';
-import { getDeckDueCardsQuery } from '@/offline/queries';
-import { useQuery } from '@remelondb/core/react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
@@ -13,7 +11,7 @@ type DeckReviewSearch = {
   deckId?: string;
 };
 
-export const Route = createFileRoute('/app/deck-review')({
+export const Route = createFileRoute('/_protected/deck-review')({
   validateSearch: (search: Record<string, unknown>): DeckReviewSearch => ({
     deckId:
       typeof search.deckId === 'string' && search.deckId.trim().length > 0
@@ -28,15 +26,15 @@ function DeckReviewRoute() {
   const store = useStore();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
-  const dueCardsQuery = useMemo(
+  const dueCards = useMemo(
     () =>
-      store.db && deckId
-        ? getDeckDueCardsQuery(store.db, deckId, Date.now())
-        : null,
-    [store.db, deckId],
-  );
-  const { data: dueCards = [], isLoading: dueCardsLoading } = useQuery(
-    dueCardsQuery,
+      deckId
+        ? store
+            .getCardsForDeck(deckId)
+            .filter((card) => card.due_at <= Date.now())
+            .sort((first, second) => first.due_at - second.due_at)
+        : [],
+    [deckId, store.getCardsForDeck],
   );
   const deck = store.decks.find((item) => item.id === deckId);
 
@@ -90,21 +88,6 @@ function DeckReviewRoute() {
     );
   }
 
-  if (dueCardsLoading) {
-    return (
-      <main
-        className="flex min-h-80 flex-col items-center justify-center gap-4 p-4"
-        role="status"
-        aria-live="polite"
-      >
-        <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">
-          Loading cards for review...
-        </p>
-      </main>
-    );
-  }
-
   if (!deck) {
     return (
       <ReviewRecovery
@@ -127,7 +110,7 @@ function DeckReviewRoute() {
     <ReviewSession
       key={deckId}
       cards={dueCards}
-      onExit={() => navigate({ to: '/app/dashboard' })}
+      onExit={() => navigate({ to: '/dashboard' })}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}
@@ -163,7 +146,7 @@ function ReviewRecovery({
         </Button>
       ) : (
         <Button asChild>
-          <Link to="/app/dashboard">Back to dashboard</Link>
+          <Link to="/dashboard">Back to dashboard</Link>
         </Button>
       )}
     </main>

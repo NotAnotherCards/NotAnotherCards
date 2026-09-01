@@ -98,7 +98,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     );
 
     if (lastDeckId && lastDeckStillExists) {
-      void navigate({ to: '/app/deck-review', search: { deckId: lastDeckId } });
+      void navigate({ to: '/deck-review', search: { deckId: lastDeckId } });
       return;
     }
 

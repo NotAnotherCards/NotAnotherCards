@@ -96,6 +96,46 @@ describe('AiGatewayService', () => {
     ]);
     expect(result.usage.totalTokens).toBe(40);
     expect(result.model).toBe('mistral-small');
+
+    // Reasoning must be off: with it, a five-card job runs into the 60s
+    // request timeout (measured 26-56s vs ~3s without).
+    const fetchCalls = mockFetch.mock.calls as [string, RequestInit][];
+    const sentBody = JSON.parse(fetchCalls[0][1].body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(sentBody.reasoning_effort).toBe('none');
+  });
+
+  it('tolerates a trailing slash in AI_API_BASE', async () => {
+    const mockFetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([{ front: 'Hola', back: 'Hello' }]),
+              },
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+    });
+    global.fetch = mockFetch;
+
+    const config = {
+      get: jest.fn((key: string) => {
+        if (key === 'AI_API_BASE') return 'https://mock-ai.test/v1/';
+        return undefined;
+      }),
+    } as unknown as ConfigService;
+
+    await new AiGatewayService(config).generateCards('sys', 'user', 'qwen', 1);
+
+    const fetchCalls = mockFetch.mock.calls as [string, RequestInit][];
+    expect(fetchCalls[0][0]).toBe('https://mock-ai.test/v1/chat/completions');
   });
 
   it('strips <think> tags before parsing JSON', async () => {
@@ -154,5 +194,37 @@ describe('AiGatewayService', () => {
         expect(err.usage.totalTokens).toBe(20);
       }
     }
+  });
+
+  it('reports the model the gateway answered with, not the requested alias', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          model: 'qwen3.6',
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([{ front: 'Hola', back: 'Hello' }]),
+              },
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+    });
+    const config = {
+      get: jest.fn((key: string) =>
+        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : undefined,
+      ),
+    } as unknown as ConfigService;
+
+    const result = await new AiGatewayService(config).generateCards(
+      'sys',
+      'user',
+      'gemma4',
+      1,
+    );
+
+    expect(result.model).toBe('qwen3.6');
   });
 });

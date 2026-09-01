@@ -28,6 +28,14 @@ vi.mock('@remelondb/core/react', () => ({
   useQuery: () => ({ data: [], isLoading: false, error: null }),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
+  // The root provider calls this, and the /app layout renders nothing
+  // without a manager. These tests are about routing, not the database
+  // lifecycle, so a stand-in is enough.
+  useSessionDatabase: () => ({
+    manager: { state: { status: 'ready', error: null } },
+    syncController: null,
+    closeError: null,
+  }),
 }));
 
 describe('Auth Guards', () => {
@@ -36,7 +44,7 @@ describe('Auth Guards', () => {
     window.history.pushState(null, '', '/');
   });
 
-  it('redirects logged-out users from dashboard to home', async () => {
+  it('redirects logged-out users from dashboard to login', async () => {
     // Mock logged-out state
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
@@ -54,14 +62,16 @@ describe('Auth Guards', () => {
 
     // Try to navigate to dashboard
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
-    // Verify user is redirected to the home page (NotAnotherCards)
-    expect(await screen.findByText(/NotAnotherCards/i)).toBeInTheDocument();
+    // Verify user is redirected to the login page (Welcome Back)
+    expect(
+      await screen.findByRole('heading', { name: /Welcome Back/i }),
+    ).toBeInTheDocument();
 
     // Verify the URL is updated to /
-    expect(window.location.pathname).toBe('/');
+    expect(window.location.pathname).toBe('/login');
   }, 15000);
 
   it('allows logged-in users to see the dashboard', async () => {
@@ -82,7 +92,7 @@ describe('Auth Guards', () => {
 
     // Navigate to dashboard
     await act(async () => {
-      await router.navigate({ to: '/app/dashboard' });
+      await router.navigate({ to: '/dashboard' });
     });
 
     // Verify the dashboard route component is rendered
@@ -94,8 +104,8 @@ describe('Auth Guards', () => {
     expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
     expect(screen.getByText(/John Doe/i)).toBeInTheDocument();
 
-    // Verify the URL is /app/dashboard
-    expect(window.location.pathname).toBe('/app/dashboard');
+    // Verify the URL is /dashboard
+    expect(window.location.pathname).toBe('/dashboard');
   }, 15000);
 
   it('redirects logged-in users away from the login page to the dashboard', async () => {
@@ -124,11 +134,11 @@ describe('Auth Guards', () => {
       await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
 
-    // Verify the URL is updated to /app/dashboard
-    expect(window.location.pathname).toBe('/app/dashboard');
+    // Verify the URL is updated to /dashboard
+    expect(window.location.pathname).toBe('/dashboard');
   });
 
-  it('redirects logged-out users from onboarding to home', async () => {
+  it('redirects logged-out users from onboarding to login', async () => {
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: null,
       error: null,
@@ -150,56 +160,94 @@ describe('Auth Guards', () => {
       await router.navigate({ to: '/onboarding' });
     });
 
-    expect(window.location.pathname).toBe('/');
+    expect(window.location.pathname).toBe('/login');
   });
 
-  it('redirects logged-out users from /app to home', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: null,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: null,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    // Set initial route to /login before rendering so that redirect to / is a real route change
-    window.history.pushState(null, '', '/login');
-
+  it('renders 404 for /app without redirecting', async () => {
     render(<App />);
 
     await act(async () => {
-      await router.navigate({ to: '/app' });
+      router.history.push('/app');
     });
 
-    expect(window.location.pathname).toBe('/');
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/app');
   });
 
-  it('redirects logged-in users from /app to dashboard', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue({
-      data: mockSession,
-      error: null,
-    });
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: mockSession,
-      isPending: false,
-      isRefetching: false,
-      error: null,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    // Set initial route to /login before rendering so that redirect to /app/dashboard is a real route change
-    window.history.pushState(null, '', '/login');
-
+  it('renders 404 for /app/dashboard without redirecting', async () => {
     render(<App />);
 
     await act(async () => {
-      await router.navigate({ to: '/app' });
+      router.history.push('/app/dashboard');
     });
 
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
     expect(window.location.pathname).toBe('/app/dashboard');
+  });
+
+  it('renders 404 for /app/onboarding without redirecting', async () => {
+    render(<App />);
+
+    await act(async () => {
+      router.history.push('/app/onboarding');
+    });
+
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/app/onboarding');
+  });
+
+  it('renders error component on session fetch failure and allows retry', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const mockError = new Error('Network error');
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: null,
+      error: mockError,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+      isRefetching: false,
+      error: mockError,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    render(<App />);
+
+    // Try to navigate to dashboard
+    await act(async () => {
+      await router.navigate({ to: '/dashboard' });
+    });
+
+    // Verify error component is rendered and redirect didn't happen
+    expect(await screen.findByText('Network error')).toBeInTheDocument();
+    expect(screen.getByText('Session Error')).toBeInTheDocument();
+    expect(window.location.pathname).not.toBe('/login');
+
+    const retryBtn = screen.getByRole('button', { name: /Retry/i });
+    expect(retryBtn).toBeInTheDocument();
+
+    // Mock next session fetch to succeed
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: mockSession,
+      error: null,
+    });
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    // Click retry
+    await act(async () => {
+      retryBtn.click();
+    });
+
+    // Check we made it to dashboard page
+    expect(
+      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+    ).toBeInTheDocument();
   });
 });
