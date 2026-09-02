@@ -24,10 +24,12 @@ import {
   deleteDeck as dbDeleteDeck,
   createCard as dbCreateCard,
   updateCard as dbUpdateCard,
+  createCardsBatch as dbCreateCardsBatch,
   removeNoteFromDeck as dbRemoveNoteFromDeck,
   recordReviewEvent as dbRecordReview,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
+  CreateCardsBatchOptions,
 } from '@repo/offline-db';
 
 export type Deck = UserDeckRecord;
@@ -252,6 +254,16 @@ export function useStore() {
     [cards, noteDecks],
   );
 
+const createCardsBatch = useCallback(
+  async (options: CreateCardsBatchOptions) => {
+    if (!db) throw new Error('Database not initialized');
+    const result = await dbCreateCardsBatch(db, options);
+    sync?.notifyLocalWrite();
+    return result;
+  },
+  [db, sync],
+);
+
   const reconnect = useCallback(async () => {
     window.location.reload();
   }, []);
@@ -309,6 +321,7 @@ export function useStore() {
     getCardsForDeck,
     createUserProfile,
     updateUserProfile,
+    createCardsBatch,
     profile: (profiles?.[0] || null) as UserProfileRecord | null,
   };
 }
