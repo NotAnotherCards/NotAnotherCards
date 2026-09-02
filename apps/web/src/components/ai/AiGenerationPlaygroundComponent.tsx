@@ -1,21 +1,10 @@
 import { useEffect, useState } from 'react';
-import { CreateAiJobInput, AiCardOutput } from '@repo/schemas';
+import { CreateAiJobInput, AiCardOutput, QuotaStatus } from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
 import { AiJobStatusTracker, JobStatus } from './AiJobStatusTracker';
 import { AiResultPreview } from './AiResultPreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
-
-export interface Quota {
-  used?: number;
-  limit?: number;
-  requestsUsed?: number;
-  maxRequests?: number;
-  usedTokens?: number;
-  maxTokens?: number;
-  activePendingJobs?: number;
-  maxPendingJobs?: number;
-}
 
 interface Job {
   id: string;
@@ -33,7 +22,7 @@ interface Job {
 }
 
 export function AiGenerationPlaygroundComponent() {
-  const [quota, setQuota] = useState<Quota | null>(null);
+  const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJob, setCurrentJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);

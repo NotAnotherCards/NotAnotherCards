@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AiCardOutput } from '@repo/schemas';
+import { cardId, BASIC_FRONT_BACK_TEMPLATE_KEY } from '@repo/offline-db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -66,22 +67,25 @@ export function AiResultPreview({
   const noteRepresentation = {
     note_type: 'basic',
     fields_version: 1,
-    notes: cards.map((c, i) => ({
-      note_id: `note-${i + 1}`,
-      fields_json: JSON.stringify({
-        front: c.front,
-        back: c.back,
-      }),
-      additional_content: `AI Generated Note #${i + 1}`,
-      generated_cards: [
-        {
-          template_key: 'Basic',
+    notes: cards.map((c, i) => {
+      const noteId = `note-${i + 1}`;
+      return {
+        note_id: noteId,
+        fields_json: JSON.stringify({
           front: c.front,
           back: c.back,
-          id: `uuidv5(note-${i + 1} + 'Basic')`,
-        },
-      ],
-    })),
+        }),
+        additional_content: `AI Generated Note #${i + 1}`,
+        generated_cards: [
+          {
+            template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+            front: c.front,
+            back: c.back,
+            id: cardId(noteId, BASIC_FRONT_BACK_TEMPLATE_KEY),
+          },
+        ],
+      };
+    }),
   };
 
   return (

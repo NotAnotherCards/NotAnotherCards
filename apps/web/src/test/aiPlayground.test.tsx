@@ -34,7 +34,14 @@ describe('AI Generation Playground Test Suite', () => {
 
   describe('AiPlaygroundForm Component', () => {
     it('renders quota status indicator and topic field correctly', () => {
-      const quota = { requestsUsed: 5, maxRequests: 25 };
+      const quota = {
+        requestsUsed: 5,
+        maxRequests: 25,
+        usedTokens: 500,
+        maxTokens: 50000,
+        activePendingJobs: 0,
+        maxPendingJobs: 2,
+      };
       render(
         <AiPlaygroundForm
           quota={quota}
@@ -75,7 +82,14 @@ describe('AI Generation Playground Test Suite', () => {
 
       render(
         <AiPlaygroundForm
-          quota={{ requestsUsed: 0, maxRequests: 25 }}
+          quota={{
+            requestsUsed: 0,
+            maxRequests: 25,
+            usedTokens: 0,
+            maxTokens: 50000,
+            activePendingJobs: 0,
+            maxPendingJobs: 2,
+          }}
           onSubmit={handleSubmit}
           isSubmitting={false}
         />,

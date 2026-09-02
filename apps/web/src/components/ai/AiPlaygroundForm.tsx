@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { CreateAiJobInput, AI_MODELS, AiModel } from '@repo/schemas';
+import {
+  CreateAiJobInput,
+  AiModel,
+  MODEL_LABELS,
+  SELECTABLE_AI_MODELS,
+  QuotaStatus,
+} from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,19 +16,8 @@ import {
 } from '@/components/ui/field';
 import { Sparkles } from 'lucide-react';
 
-interface QuotaData {
-  used?: number;
-  limit?: number;
-  requestsUsed?: number;
-  maxRequests?: number;
-  usedTokens?: number;
-  maxTokens?: number;
-  activePendingJobs?: number;
-  maxPendingJobs?: number;
-}
-
 interface AiPlaygroundFormProps {
-  quota: QuotaData | null;
+  quota: QuotaStatus | null;
   onSubmit: (data: CreateAiJobInput) => void;
   isSubmitting: boolean;
 }
@@ -34,7 +29,7 @@ export function AiPlaygroundForm({
 }: AiPlaygroundFormProps) {
   const [topic, setTopic] = useState('');
   const [count, setCount] = useState(5);
-  const [model, setModel] = useState<AiModel>('qwen');
+  const [model, setModel] = useState<AiModel>('gemma4');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,8 +49,8 @@ export function AiPlaygroundForm({
     });
   };
 
-  const usedCount = quota?.requestsUsed ?? quota?.used ?? 0;
-  const limitCount = quota?.maxRequests ?? quota?.limit ?? 25;
+  const usedCount = quota?.requestsUsed ?? 0;
+  const limitCount = quota?.maxRequests ?? 0;
 
   const quotaPercent =
     limitCount > 0 ? Math.min((usedCount / limitCount) * 100, 100) : 0;
@@ -124,22 +119,15 @@ export function AiPlaygroundForm({
               onChange={(e) => setModel(e.target.value as AiModel)}
               className="w-full rounded-3xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
             >
-              {AI_MODELS.map((m) => {
-                let displayName: string = m;
-                if (m === 'qwen') displayName = 'Qwen (Fast)';
-                else if (m === 'qwen-next-80b')
-                  displayName = 'Qwen Next 80B (Smart)';
-                else if (m === 'mistral-small') displayName = 'Mistral Small';
-                return (
-                  <option
-                    key={m}
-                    value={m}
-                    className="bg-background text-foreground"
-                  >
-                    {displayName}
-                  </option>
-                );
-              })}
+              {SELECTABLE_AI_MODELS.map((m) => (
+                <option
+                  key={m}
+                  value={m}
+                  className="bg-background text-foreground"
+                >
+                  {MODEL_LABELS[m]}
+                </option>
+              ))}
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
               ▼
