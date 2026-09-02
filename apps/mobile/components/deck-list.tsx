@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useDecks, type Deck } from '@/lib/decks';
-import { writeErrorMessage } from '@repo/offline-db';
+import { writeErrorMessage } from '@/lib/errors';
 import { Button } from './ui/button';
 import { Text } from './ui/text';
 import { DeckForm } from './deck-form';

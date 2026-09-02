@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { View } from 'react-native';
-import { deckFormSchema, type DeckFormValues } from '@repo/schemas';
+import { deckFormSchema, type DeckFormValues } from '@/lib/deck-schema';
 import { Button } from './ui/button';
 import { FormField } from './ui/form-field';
 import { Text } from './ui/text';
@@ -10,7 +10,7 @@ type DeckFormProps = {
   title: string;
   initialValues?: DeckFormValues;
   error?: string | null;
-  onSubmit: (values: { title: string; description: string }) => Promise<void>;
+  onSubmit: (values: DeckFormValues) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -57,12 +57,7 @@ export function DeckForm({
           loading={formState.isSubmitting}
           // awaited so isSubmitting covers the write, and a failed write
           // keeps the form open with its values
-          onPress={handleSubmit((values) =>
-            onSubmit({
-              title: values.title,
-              description: values.description ?? '',
-            }),
-          )}
+          onPress={handleSubmit((values) => onSubmit(values))}
         />
       </View>
     </View>

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-// Deck title and description limits, shared by the web and mobile forms.
+// Same limits as web's DeckForm. Mobile-local until both clients can adopt one
+// contract: web validates before trimming, so a whitespace-only title passes
+// there and is rejected here.
 export const deckFormSchema = z.object({
   title: z
     .string()
@@ -10,9 +12,7 @@ export const deckFormSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(500, 'Description cannot exceed 500 characters')
-    .optional()
-    .or(z.literal('')),
+    .max(500, 'Description cannot exceed 500 characters'),
 });
 
 export type DeckFormValues = z.infer<typeof deckFormSchema>;
