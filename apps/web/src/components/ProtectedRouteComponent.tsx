@@ -1,9 +1,5 @@
 import { authClient } from '@/lib/auth-client';
-import {
-  Outlet,
-  useLocation,
-  useNavigate,
-} from '@tanstack/react-router';
+import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import { DatabaseBanner } from '@/components/DatabaseBanner';
 import { SyncProvider } from '@/offline/syncProvider';
 import { useSessionDatabase } from '@/offline/sessionDatabase';

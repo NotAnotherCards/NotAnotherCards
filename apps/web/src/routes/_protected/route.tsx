@@ -1,8 +1,5 @@
 import { authClient } from '@/lib/auth-client';
-import {
-  createFileRoute,
-  redirect,
-} from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import { ProtectedLayoutComponent } from '@/components/ProtectedRouteComponent';
 
