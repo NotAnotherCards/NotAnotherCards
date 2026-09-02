@@ -72,7 +72,7 @@ describe('Dashboard Page Component Specs', () => {
     ).toBeInTheDocument();
 
     // 2. Dashboard shows user email/name
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
     expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
 
     // 3. Dashboard has placeholder sections for future features
@@ -105,23 +105,17 @@ describe('Dashboard Page Component Specs', () => {
       await router.navigate({ to: '/dashboard' });
     });
 
-    // Click Settings tab on dashboard
-    const settingsTab = await screen.findByRole('button', {
-      name: /Profile & Settings/i,
+    // Click account menu trigger in protected layout header
+    const accountMenuTrigger = await screen.findByRole('button', {
+      name: /Account menu/i,
     });
-    await user.click(settingsTab);
+    await user.click(accountMenuTrigger);
 
-    // Click Security tab in settings sidebar
-    const securityTab = await screen.findByRole('button', {
-      name: /^Security$/i,
+    // Click Log out menu item
+    const logoutMenuItem = await screen.findByRole('menuitem', {
+      name: /Log out/i,
     });
-    await user.click(securityTab);
-
-    // Find and click the logout button inside Security
-    const logoutButton = await screen.findByRole('button', {
-      name: /^Log Out$/i,
-    });
-    await user.click(logoutButton);
+    await user.click(logoutMenuItem);
 
     // Verify signOut was called
     expect(authClient.signOut).toHaveBeenCalled();
