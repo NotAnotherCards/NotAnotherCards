@@ -30,6 +30,18 @@ describe('MarkdownRenderer', () => {
       expect(img).toHaveAttribute('alt', 'Logo');
     });
 
+    it('preserves scheme-less image and link paths starting with letters', () => {
+      const { container } = render(
+        <MarkdownRenderer content="![Logo](images/logo.png) [Page](page2.html)" />,
+      );
+
+      const img = container.querySelector('img');
+      expect(img).toHaveAttribute('src', 'images/logo.png');
+
+      const a = container.querySelector('a');
+      expect(a).toHaveAttribute('href', 'page2.html');
+    });
+
     it('preserves fragment anchor links', () => {
       render(
         <MarkdownRenderer
@@ -127,6 +139,7 @@ describe('MarkdownRenderer', () => {
         <MarkdownRenderer content='[Malicious Link](javascript:alert("xss"))' />,
       );
 
+      expect(screen.getByText('Malicious Link')).toBeInTheDocument();
       const a = container.querySelector('a');
       const href = a?.getAttribute('href');
       expect(href ?? '').not.toMatch(/^javascript:/i);
@@ -137,6 +150,7 @@ describe('MarkdownRenderer', () => {
         <MarkdownRenderer content="[HTML Data](data:text/html,<script>alert(1)</script>)" />,
       );
 
+      expect(screen.getByText('HTML Data')).toBeInTheDocument();
       const a = container.querySelector('a');
       const href = a?.getAttribute('href');
       expect(href ?? '').not.toMatch(/^data:text\/html/i);
@@ -147,6 +161,7 @@ describe('MarkdownRenderer', () => {
         <MarkdownRenderer content="[VBScript Link](vbscript:msgbox(1))" />,
       );
 
+      expect(screen.getByText('VBScript Link')).toBeInTheDocument();
       const a = container.querySelector('a');
       const href = a?.getAttribute('href');
       expect(href ?? '').not.toMatch(/^vbscript:/i);
