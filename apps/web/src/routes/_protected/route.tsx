@@ -11,13 +11,14 @@ import { SyncProvider } from '@/offline/syncProvider';
 import { useSessionDatabase } from '@/offline/sessionDatabase';
 import { SyncStatus } from '@/components/SyncStatus';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/_protected')({
   beforeLoad: async ({ location }) => {
@@ -56,6 +57,8 @@ function ProtectedLayout() {
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
 
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
   if (!manager && location.pathname !== '/onboarding') {
     return null;
   }
@@ -71,11 +74,23 @@ function ProtectedLayout() {
     : (user?.email?.[0]?.toUpperCase() ?? 'U');
 
   const handleLogout = async () => {
+    setLogoutError(null);
     try {
-      await authClient.signOut();
+      const res = await authClient.signOut();
+      if (res?.error) {
+        setLogoutError(
+          res.error.message || 'Failed to log out. Please try again.',
+        );
+        return;
+      }
       void navigate({ to: '/login' });
     } catch (err) {
       console.error('Logout failed', err);
+      setLogoutError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to log out. Please try again.',
+      );
     }
   };
 
@@ -115,6 +130,28 @@ function ProtectedLayout() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
+
+        {logoutError && (
+          <div className="fixed top-1 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 pointer-events-none select-none animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="bg-background/95 backdrop-blur-xs border border-border/80 rounded-2xl shadow-lg overflow-hidden pointer-events-auto">
+              <div className="bg-destructive/10 border-destructive/20 dark:text-red-400 px-4 py-3.5 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="size-4 text-destructive shrink-0" />
+                  <span>
+                    <strong>Sign-out Error:</strong> {logoutError}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 active:bg-destructive transition-colors text-[10px] cursor-pointer shadow-sm shrink-0"
+                >
+                  <RefreshCw className="size-3" />
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {manager && <DatabaseBanner />}
         <SyncStatus />
