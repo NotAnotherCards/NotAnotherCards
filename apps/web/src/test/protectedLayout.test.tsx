@@ -98,7 +98,7 @@ describe('Protected Layout Guards', () => {
     expect(screen.getAllByText('JD').length).toBeGreaterThan(0);
   });
 
-  it('opens account menu with keyboard Enter/Space and closes with Escape', async () => {
+  it('opens account menu with keyboard Enter and closes with Escape', async () => {
     const user = userEvent.setup();
     render(<App />);
     await act(async () => {
