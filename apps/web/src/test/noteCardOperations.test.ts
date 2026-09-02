@@ -13,6 +13,7 @@ import {
 } from '@repo/offline-db';
 import {
   createCard,
+  createCardsBatch,
   createDeck,
   deleteNote,
   disableCard,
@@ -230,5 +231,64 @@ describe('note, card, and membership operations', () => {
     expect(reviewedAgain.due_at).toBe(
       secondReviewAt + Math.round(3 * 24 * 60 * 2.5) * 60_000,
     );
+  });
+
+  it('atomically creates a new deck and multiple cards in a single batch operation', async () => {
+    const db = await openDatabase();
+    const batchSpy = vi.spyOn(db, 'batch');
+
+    const deckId = await createCardsBatch(db, {
+      deckIdOrTitle: 'AI Generated Spanish Deck',
+      isNew: true,
+      description: 'AI Generated Cards',
+      cards: [
+        { front: 'Hola', back: 'Hello' },
+        { front: 'Gracias', back: 'Thank you' },
+      ],
+    });
+
+    expect(batchSpy).toHaveBeenCalledTimes(1);
+    // 1 deck record + (3 records per card * 2 cards) = 7 records total in batch
+    expect(batchSpy.mock.calls[0][0]).toHaveLength(7);
+
+    const deck = await db.get(UserDeck).find(deckId);
+    expect(deck.title).toBe('AI Generated Spanish Deck');
+    expect(deck.description).toBe('AI Generated Cards');
+
+    const cardsInDb = await getPersonalDictionaryQuery(db).fetch();
+    expect(cardsInDb).toHaveLength(2);
+
+    const notesInDb = await db.get(UserNote).query().fetch();
+    expect(notesInDb).toHaveLength(2);
+
+    const noteDecksInDb = await db.get(UserNoteDeck).query().fetch();
+    expect(noteDecksInDb).toHaveLength(2);
+  });
+
+  it('rolls back completely if batch execution fails', async () => {
+    const db = await openDatabase();
+
+    // Mock db.batch to throw an error simulating database transaction failure midway
+    vi.spyOn(db, 'batch').mockRejectedValueOnce(
+      new Error('Simulated database write failure'),
+    );
+
+    await expect(
+      createCardsBatch(db, {
+        deckIdOrTitle: 'Failed AI Deck',
+        isNew: true,
+        description: 'Should rollback',
+        cards: [
+          { front: 'Failed 1', back: 'F1' },
+          { front: 'Failed 2', back: 'F2' },
+        ],
+      }),
+    ).rejects.toThrow('Simulated database write failure');
+
+    // Verify nothing was persisted to the database
+    expect(await db.get(UserDeck).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(0);
   });
 });
