@@ -41,6 +41,7 @@ function renderSession(
   render(
     <ReviewSession
       cards={cards}
+      deckTitle="German basics"
       onExit={onExit}
       onCreateCard={onCreateCard}
       onRecordReview={onRecordReview}
@@ -83,6 +84,14 @@ describe('ReviewSession', () => {
 
     expect(screen.getAllByText('gehen')).not.toHaveLength(0);
     expect(screen.getByText('to go')).toBeInTheDocument();
+  });
+
+  it('shows the current deck title above the review card', () => {
+    renderSession();
+
+    expect(
+      screen.getByRole('heading', { name: 'German basics' }),
+    ).toBeInTheDocument();
   });
 
   it('turns one card over in 300 milliseconds when the answer is revealed', () => {

@@ -17,6 +17,7 @@ type SwipeDirection = Exclude<ReviewAnswer, 'very-easy'> | 'delete';
 
 type ReviewSessionProps = {
   cards: Card[];
+  deckTitle: string;
   onExit: () => void;
   onCreateCard: (data: { front: string; back: string }) => Promise<void>;
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
@@ -181,6 +182,7 @@ function ReviewAnswerButtons({
 
 export function ReviewSession({
   cards,
+  deckTitle,
   onExit,
   onCreateCard,
   onRecordReview,
@@ -590,6 +592,9 @@ export function ReviewSession({
   return (
     <PageContainer className="max-w-3xl py-4 sm:py-6">
       <div className="flex flex-col items-stretch">
+        <h1 className="mb-3 text-center text-sm font-semibold text-muted-foreground sm:mx-auto sm:w-full sm:max-w-xl">
+          {deckTitle}
+        </h1>
         <div className="relative z-10 w-full sm:max-w-xl sm:self-center">
           {followingCard && (
             <div

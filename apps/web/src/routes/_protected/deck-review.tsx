@@ -106,6 +106,7 @@ function DeckReviewRoute() {
     <ReviewSession
       key={deckId}
       cards={dueCards}
+      deckTitle={deck.title}
       onExit={() => navigate({ to: '/dashboard' })}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
