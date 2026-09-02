@@ -254,15 +254,15 @@ export function useStore() {
     [cards, noteDecks],
   );
 
-const createCardsBatch = useCallback(
-  async (options: CreateCardsBatchOptions) => {
-    if (!db) throw new Error('Database not initialized');
-    const result = await dbCreateCardsBatch(db, options);
-    sync?.notifyLocalWrite();
-    return result;
-  },
-  [db, sync],
-);
+  const createCardsBatch = useCallback(
+    async (options: CreateCardsBatchOptions) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbCreateCardsBatch(db, options);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
 
   const reconnect = useCallback(async () => {
     window.location.reload();

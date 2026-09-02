@@ -218,9 +218,7 @@ describe('AI Generation Playground Test Suite', () => {
       expect(handleSave).toHaveBeenCalledWith('deck-1', false);
 
       await waitFor(() => {
-        expect(
-          screen.getByText('Database write rejected'),
-        ).toBeInTheDocument();
+        expect(screen.getByText('Database write rejected')).toBeInTheDocument();
       });
 
       expect(screen.queryByText('Deck Saved!')).not.toBeInTheDocument();
