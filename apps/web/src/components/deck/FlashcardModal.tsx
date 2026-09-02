@@ -126,6 +126,7 @@ export function FlashcardModal({
       >
         {/* Flip Card Inner Wrapper */}
         <div
+          key={activeCard.id}
           onClick={(e) => {
             e.stopPropagation();
             setIsFlipped(!isFlipped);
