@@ -41,7 +41,7 @@ export function AiGenerationPlaygroundComponent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Retrieve local store to get actual decks for dropdown list
-  const { decks, createDeck, createCard } = useStore();
+  const { decks, createCardsBatch } = useStore();
 
   // Parent polling effect watching currentJob id and status
   useEffect(() => {
@@ -163,17 +163,15 @@ export function AiGenerationPlaygroundComponent() {
     setSaving(true);
     setErrorMessage(null);
     try {
-      let targetDeckId = deckIdOrTitle;
-      if (isNew) {
-        const newDeck = await createDeck(deckIdOrTitle, 'AI Generated Cards');
-        targetDeckId = newDeck.id;
-      }
-
-      await Promise.all(
-        currentJob.result.map((card) =>
-          createCard(targetDeckId, card.front, card.back),
-        ),
-      );
+      await createCardsBatch({
+        deckIdOrTitle,
+        isNew,
+        description: 'AI Generated Cards',
+        cards: currentJob.result.map((card) => ({
+          front: card.front,
+          back: card.back,
+        })),
+      });
     } catch {
       const msg = 'Unable to save cards to deck. Please try again.';
       setErrorMessage(msg);

@@ -11,12 +11,14 @@ const mockCreateDeck = vi
   .fn()
   .mockResolvedValue({ id: 'deck-new-1', title: 'New Test Deck' });
 const mockCreateCard = vi.fn().mockResolvedValue({ id: 'card-1' });
+const mockCreateCardsBatch = vi.fn().mockResolvedValue('deck-1');
 
 vi.mock('@/hooks/useStore', () => ({
   useStore: () => ({
     decks: [{ id: 'deck-1', title: 'Spanish Vocab' }],
     createDeck: mockCreateDeck,
     createCard: mockCreateCard,
+    createCardsBatch: mockCreateCardsBatch,
   }),
 }));
 
