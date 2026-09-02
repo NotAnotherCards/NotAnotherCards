@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { Input } from '@/components/ui/input';
@@ -57,19 +56,10 @@ export function DeckForm({
   const form = useForm<DeckFormData>({
     resolver: zodResolver(deckSchema),
     defaultValues: {
-      title: '',
-      description: '',
+      title: initialData?.title ?? '',
+      description: initialData?.description ?? '',
     },
   });
-
-  useEffect(() => {
-    if (initialData) {
-      form.reset({
-        title: initialData.title,
-        description: initialData.description,
-      });
-    }
-  }, [initialData, form]);
 
   const handleFormSubmit = async (data: DeckFormData) => {
     // awaited so react-hook-form tracks isSubmitting for the write's duration
