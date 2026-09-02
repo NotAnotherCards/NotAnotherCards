@@ -361,7 +361,7 @@ describe('Settings Tab Component Specs', () => {
     expect(screen.queryByText('Settings saved successfully!')).toBeNull();
   });
 
-  it('navigates to Security subtab and renders change password form', async () => {
+  it('navigates to Security subtab and renders change password form without Log Out card', async () => {
     const user = userEvent.setup();
     render(<Settings />);
 
@@ -372,6 +372,9 @@ describe('Settings Tab Component Specs', () => {
     expect(screen.getByLabelText(/Current Password/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^New Password$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Confirm New Password/i)).toBeInTheDocument();
+
+    // Verify Log Out card is no longer rendered inside Security
+    expect(screen.queryByRole('button', { name: /^Log Out$/i })).toBeNull();
   });
 
   it('displays password validation errors for weak or non-matching inputs', async () => {
