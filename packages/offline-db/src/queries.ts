@@ -1,4 +1,4 @@
-import { Database, Q, randomId } from '@remelondb/core';
+import { Database, Q, randomId, type BatchOperation } from '@remelondb/core';
 import {
   ReviewEvent,
   UserCard,
@@ -337,3 +337,89 @@ export async function updateUserProfile(
     });
   });
 }
+
+export interface CreateCardInput {
+  front: string;
+  back: string;
+}
+
+export interface CreateCardsBatchOptions {
+  deckIdOrTitle: string;
+  isNew: boolean;
+  description?: string | null;
+  cards: CreateCardInput[];
+}
+
+export async function createCardsBatch(
+  db: Database,
+  options: CreateCardsBatchOptions,
+) {
+  return await db.write(async () => {
+    const now = Date.now();
+    let targetDeckId: string;
+    const batchOperations: BatchOperation[] = [];
+
+    if (options.isNew) {
+      targetDeckId = randomId();
+      const newDeck = db.get(UserDeck).prepareCreate({
+        id: targetDeckId,
+        title: options.deckIdOrTitle,
+        description: options.description || null,
+        created_at: now,
+        updated_at: now,
+      });
+      batchOperations.push(newDeck);
+    } else {
+      targetDeckId = options.deckIdOrTitle;
+    }
+
+    for (const cardInput of options.cards) {
+      const noteId = randomId();
+      const templateKey = BASIC_FRONT_BACK_TEMPLATE_KEY;
+      const generatedCardId = cardId(noteId, templateKey);
+      const membershipId = noteDeckId(noteId, targetDeckId);
+
+      const note = db.get(UserNote).prepareCreate({
+        id: noteId,
+        note_type: BASIC_NOTE_TYPE,
+        fields_version: BASIC_NOTE_FIELDS_VERSION,
+        fields_json: JSON.stringify({
+          front: cardInput.front,
+          back: cardInput.back,
+        }),
+        additional_content: null,
+        created_at: now,
+        updated_at: now,
+      });
+
+      const card = db.get(UserCard).prepareCreate({
+        id: generatedCardId,
+        note_id: noteId,
+        template_key: templateKey,
+        active: true,
+        front: cardInput.front,
+        back: cardInput.back,
+        due_at: now,
+        scheduled_interval_minutes: 0,
+        created_at: now,
+        updated_at: now,
+      });
+
+      const noteDeck = db.get(UserNoteDeck).prepareCreate({
+        id: membershipId,
+        note_id: noteId,
+        deck_id: targetDeckId,
+        active: true,
+        created_at: now,
+        updated_at: now,
+      });
+
+      batchOperations.push(note, card, noteDeck);
+    }
+
+    await db.batch(batchOperations);
+    return targetDeckId;
+  });
+}
+
+
