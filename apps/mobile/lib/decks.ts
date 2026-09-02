@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 import type { DatabaseManager } from '@remelondb/core';
 import { useDatabase, useQuery } from '@remelondb/core/react';
 import {
@@ -9,6 +9,7 @@ import {
   type UserDeckRecord,
   type UserNoteDeckRecord,
 } from '@repo/offline-db';
+import { countCardsPerDeck } from './card-counts';
 import { deckWrites } from './deck-writes';
 import { useSessionDatabase } from './database-provider';
 
@@ -26,18 +27,12 @@ export function useDecks(manager: DatabaseManager) {
 
   // Active cards whose note is in the deck, the same count web shows. Not
   // the membership count: a note can carry several cards once sibling
-  // templates land (#194), and a deactivated card should not be counted.
-  const cardCount = useCallback(
-    (deckId: string) => {
-      const noteIds = new Set(
-        memberships.data
-          .filter((membership) => membership.deck_id === deckId)
-          .map((membership) => membership.note_id),
-      );
-      return cards.data.filter((card) => noteIds.has(card.note_id)).length;
-    },
+  // templates land (#194), and both queries are already active-only.
+  const cardCounts = useMemo(
+    () => countCardsPerDeck(memberships.data, cards.data),
     [cards.data, memberships.data],
   );
+  const cardCount = (deckId: string) => cardCounts.get(deckId) ?? 0;
 
   return {
     db,
