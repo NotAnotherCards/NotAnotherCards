@@ -152,7 +152,7 @@ export function FlashcardModal({
 
             {/* Front text */}
             <h3 className="text-3xl font-bold tracking-tight text-foreground text-center font-heading max-w-full overflow-y-auto max-h-48 wrap-break-word pr-1">
-              <MarkdownRenderer content={activeCard.front} />
+              <MarkdownRenderer content={activeCard.front} inline/>
             </h3>
 
             {/* Hint footer */}
@@ -178,7 +178,7 @@ export function FlashcardModal({
 
             {/* Back text */}
             <h3 className="text-3xl font-bold tracking-tight text-primary text-center font-heading max-w-full overflow-y-auto max-h-32 wrap-break-word pr-1">
-              <MarkdownRenderer content={activeCard.back} />
+              <MarkdownRenderer content={activeCard.back} inline/>
             </h3>
 
             {/* Review Action Rating Buttons */}

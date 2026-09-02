@@ -75,12 +75,11 @@ export function MarkdownRenderer({
 
     try {
       // 1. Parse Markdown into raw HTML
-      let rawHtml = markedInstance.parse(content, { async: false }) as string;
-
-      // If inline mode requested, strip outer <p>...</p> tags if present
-      if (inline) {
-        rawHtml = rawHtml.replace(/^<p>(.*?)<\/p>\n?$/s, '$1');
-      }
+      const rawHtml = (
+        inline
+          ? markedInstance.parseInline(content, { async: false })
+          : markedInstance.parse(content, { async: false })
+      ) as string;
 
       // 2. Sanitize HTML via DOMPurify to eliminate XSS, scripts, and unsafe attributes
       const purified = DOMPurify.sanitize(rawHtml, {
@@ -125,7 +124,7 @@ export function MarkdownRenderer({
           'type',
         ],
         ALLOWED_URI_REGEXP:
-          /^(?:(?:https?|mailto|blob):|data:(?:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml)|audio\/(?:mp3|wav|ogg|mpeg|aac|m4a));)/i,
+          /^(?:(?:https?|mailto|blob):|data:(?:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml)|audio\/(?:mp3|wav|ogg|mpeg|aac|m4a));|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         ADD_ATTR: ['target', 'rel'],
       });
 
