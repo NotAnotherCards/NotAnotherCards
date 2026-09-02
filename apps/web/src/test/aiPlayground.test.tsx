@@ -180,6 +180,37 @@ describe('AI Generation Playground Test Suite', () => {
         ).toBeInTheDocument();
       });
     });
+
+    it('does not show success toast and displays error message when onSave rejects', async () => {
+      const handleSave = vi
+        .fn()
+        .mockRejectedValue(new Error('Database write rejected'));
+      const user = userEvent.setup();
+
+      render(
+        <AiResultPreview
+          cards={mockCards}
+          decks={[{ id: 'deck-1', title: 'Spanish Vocab' }]}
+          onSave={handleSave}
+          isSaving={false}
+        />,
+      );
+
+      const saveBtn = screen.getByRole('button', {
+        name: /Save Cards to Deck/i,
+      });
+      await user.click(saveBtn);
+
+      expect(handleSave).toHaveBeenCalledWith('deck-1', false);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Database write rejected'),
+        ).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('Deck Saved!')).not.toBeInTheDocument();
+    });
   });
 
   describe('AiGenerationPlaygroundComponent', () => {
@@ -220,6 +251,71 @@ describe('AI Generation Playground Test Suite', () => {
         expect(screen.getByText('Previous Jobs History')).toBeInTheDocument();
         expect(screen.getByText('French Verbs')).toBeInTheDocument();
         expect(screen.getByText('2/25 requests used')).toBeInTheDocument();
+      });
+    });
+
+    it('resumes polling when selecting a pending job from previous history', async () => {
+      let polledJobId = '';
+      const mockJobs = {
+        jobs: [
+          {
+            id: 'job-pending-999',
+            type: 'topic_deck',
+            status: 'processing',
+            payload: { topic: 'German Grammar', count: 5 },
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+        if (String(url).includes('/api/ai/quota')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ quota: {} }), { status: 200 }),
+          );
+        }
+        if (String(url).includes('/api/ai/jobs/job-pending-999')) {
+          polledJobId = 'job-pending-999';
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                job: {
+                  id: 'job-pending-999',
+                  type: 'topic_deck',
+                  status: 'completed',
+                  payload: { topic: 'German Grammar', count: 5 },
+                  result: [{ front: 'Haben', back: 'To have' }],
+                  createdAt: new Date().toISOString(),
+                },
+              }),
+              { status: 200 },
+            ),
+          );
+        }
+        if (String(url).includes('/api/ai/jobs')) {
+          return Promise.resolve(
+            new Response(JSON.stringify(mockJobs), { status: 200 }),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({}), { status: 200 }),
+        );
+      });
+
+      render(<AiGenerationPlaygroundComponent />);
+
+      await waitFor(() => {
+        expect(screen.getByText('German Grammar')).toBeInTheDocument();
+      });
+
+      // Select the pending job from history log
+      fireEvent.click(screen.getByText('German Grammar'));
+
+      // Verify polling is resumed for this pending job and updates job status to completed
+      await waitFor(() => {
+        expect(polledJobId).toBe('job-pending-999');
+        expect(screen.getByText('Generation Results')).toBeInTheDocument();
+        expect(screen.getByText('Haben')).toBeInTheDocument();
       });
     });
 

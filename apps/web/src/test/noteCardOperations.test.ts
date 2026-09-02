@@ -291,4 +291,41 @@ describe('note, card, and membership operations', () => {
     expect(await db.get(UserCard).query().fetch()).toHaveLength(0);
     expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(0);
   });
+
+  it('fails one card creation mid-save and asserts no new deck, notes, or cards remain', async () => {
+    const db = await openDatabase();
+
+    const userCardCollection = db.get(UserCard);
+    let cardCreateCount = 0;
+    const originalPrepareCreate =
+      userCardCollection.prepareCreate.bind(userCardCollection);
+    vi.spyOn(userCardCollection, 'prepareCreate').mockImplementation(
+      (args: Parameters<typeof userCardCollection.prepareCreate>[0]) => {
+        cardCreateCount += 1;
+        if (cardCreateCount === 2) {
+          throw new Error('Mid-save failure on card #2');
+        }
+        return originalPrepareCreate(args);
+      },
+    );
+
+    await expect(
+      createCardsBatch(db, {
+        deckIdOrTitle: 'Mid-Save Failure Deck',
+        isNew: true,
+        description: 'AI Generated Cards',
+        cards: [
+          { front: 'Card 1', back: 'C1' },
+          { front: 'Card 2', back: 'C2' },
+          { front: 'Card 3', back: 'C3' },
+        ],
+      }),
+    ).rejects.toThrow('Mid-save failure on card #2');
+
+    // Assert that NO deck, NO notes, NO cards, and NO noteDecks exist in the database
+    expect(await db.get(UserDeck).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(0);
+  });
 });
