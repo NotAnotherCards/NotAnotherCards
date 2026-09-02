@@ -60,6 +60,9 @@ export function AiGenerationPlaygroundComponent() {
           setErrorMessage(
             (errData.message as string) || 'Failed to poll job status',
           );
+          setCurrentJob((prev) =>
+            prev ? { ...prev, status: 'failed' } : null,
+          );
           setLoading(false);
           return;
         }
@@ -85,6 +88,7 @@ export function AiGenerationPlaygroundComponent() {
         setErrorMessage(
           'Unable to update job status. Please check your connection.',
         );
+        setCurrentJob((prev) => (prev ? { ...prev, status: 'failed' } : null));
         setLoading(false);
       }
     };

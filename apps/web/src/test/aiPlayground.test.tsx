@@ -222,5 +222,68 @@ describe('AI Generation Playground Test Suite', () => {
         expect(screen.getByText('2/25 requests used')).toBeInTheDocument();
       });
     });
+
+    it('stops polling and sets job status to failed when polling encounters an error', async () => {
+      let pollCallCount = 0;
+      vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+        if (String(url).includes('/api/ai/quota')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ quota: {} }), { status: 200 }),
+          );
+        }
+        if (String(url).includes('/api/ai/jobs/job-err-1')) {
+          pollCallCount += 1;
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({ message: 'Internal server error during poll' }),
+              { status: 500 },
+            ),
+          );
+        }
+        if (String(url).includes('/api/ai/jobs')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                jobs: [
+                  {
+                    id: 'job-err-1',
+                    type: 'topic_deck',
+                    status: 'processing',
+                    payload: { topic: 'Testing error path', count: 5 },
+                    createdAt: new Date().toISOString(),
+                  },
+                ],
+              }),
+              { status: 200 },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({}), { status: 200 }),
+        );
+      });
+
+      render(<AiGenerationPlaygroundComponent />);
+
+      // Click on the processing job to select it and trigger polling effect
+      await waitFor(() => {
+        expect(screen.getByText('Testing error path')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Testing error path'));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Internal server error during poll'),
+        ).toBeInTheDocument();
+      });
+
+      const initialPollCount = pollCallCount;
+      // Wait 1.2s (interval is 1s)
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      // Verify polling stopped (pollCallCount did not increase further)
+      expect(pollCallCount).toBe(initialPollCount);
+    });
   });
 });
