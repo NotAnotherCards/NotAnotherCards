@@ -285,6 +285,36 @@ export async function recordReviewEvent(
   });
 }
 
+export async function undoReviewEvent(
+  db: Database,
+  {
+    cardId,
+    reviewEventId,
+    previousDueAt,
+    previousScheduledIntervalMinutes,
+  }: {
+    cardId: string;
+    reviewEventId: string;
+    previousDueAt: number;
+    previousScheduledIntervalMinutes: number;
+  },
+) {
+  return await db.write(async () => {
+    const now = Date.now();
+    const card = await db.get(UserCard).find(cardId);
+    const review = await db.get(ReviewEvent).find(reviewEventId);
+
+    await db.batch([
+      card.prepareUpdate((record) => {
+        record.due_at = previousDueAt;
+        record.scheduled_interval_minutes = previousScheduledIntervalMinutes;
+        record.updated_at = now;
+      }),
+      review.prepareMarkAsDeleted(),
+    ]);
+  });
+}
+
 export async function createUserProfile(
   db: Database,
   profile: {

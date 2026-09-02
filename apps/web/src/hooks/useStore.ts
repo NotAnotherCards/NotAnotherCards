@@ -25,7 +25,9 @@ import {
   createCard as dbCreateCard,
   updateCard as dbUpdateCard,
   removeNoteFromDeck as dbRemoveNoteFromDeck,
+  deleteNote as dbDeleteNote,
   recordReviewEvent as dbRecordReview,
+  undoReviewEvent as dbUndoReview,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
 } from '@repo/offline-db';
@@ -206,6 +208,16 @@ export function useStore() {
     [db, sync],
   );
 
+  const deleteNote = useCallback(
+    async (noteId: string) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteNote(db, noteId);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
   const isBasicCard = useCallback(
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
@@ -222,6 +234,26 @@ export function useStore() {
     async (cardId: string, rating: number) => {
       if (!db) throw new Error('Database not initialized');
       const result = await dbRecordReview(db, cardId, rating);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const undoReview = useCallback(
+    async (
+      cardId: string,
+      reviewEventId: string,
+      previousDueAt: number,
+      previousScheduledIntervalMinutes: number,
+    ) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbUndoReview(db, {
+        cardId,
+        reviewEventId,
+        previousDueAt,
+        previousScheduledIntervalMinutes,
+      });
       sync?.notifyLocalWrite();
       return result;
     },
@@ -303,7 +335,9 @@ export function useStore() {
     createCard,
     updateCard,
     removeNoteFromDeck,
+    deleteNote,
     recordReview,
+    undoReview,
     isBasicCard,
     getCardsCount,
     getCardsForDeck,

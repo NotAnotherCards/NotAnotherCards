@@ -3,14 +3,7 @@ import { PageContainer } from '@/components/PageContainer';
 import { CardForm } from '@/components/deck/CardForm';
 import { Card } from '@/hooks/useStore';
 import { writeErrorMessage } from '@/lib/write-error';
-import {
-  ArrowLeft,
-  BookOpen,
-  Cog,
-  Plus,
-  Volume2,
-  X,
-} from 'lucide-react';
+import { ArrowLeft, BookOpen, Cog, Plus, Volume2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
   CURRENT_REVIEW_MODE,
@@ -26,7 +19,23 @@ type ReviewSessionProps = {
   cards: Card[];
   onExit: () => void;
   onCreateCard: (data: { front: string; back: string }) => Promise<void>;
+  onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
+  onUndoReview: (input: {
+    cardId: string;
+    reviewEventId: string;
+    previousDueAt: number;
+    previousScheduledIntervalMinutes: number;
+  }) => Promise<void>;
+  onDeleteNote: (noteId: string) => Promise<void>;
   reviewMode?: ReviewMode;
+};
+
+type LastReview = {
+  cardId: string;
+  cardIndex: number;
+  reviewEventId: string;
+  previousDueAt: number;
+  previousScheduledIntervalMinutes: number;
 };
 
 const SWIPE_THRESHOLD_PX = 48;
@@ -37,6 +46,13 @@ const MAX_DRAG_ROTATION_DEG = 4;
 const REVIEW_CARD_EXIT_DURATION_MS = 250;
 const REVIEW_CARD_FLIP_DURATION_MS = 300;
 
+const reviewRatingByAnswer: Record<ReviewAnswer, number> = {
+  forgot: 1,
+  hard: 2,
+  remember: 3,
+  'very-easy': 4,
+};
+
 const exitTransformByDirection: Record<SwipeDirection, string> = {
   forgot: 'translate3d(-120vw, 0, 0) rotate(-10deg)',
   remember: 'translate3d(120vw, 0, 0) rotate(10deg)',
@@ -44,15 +60,17 @@ const exitTransformByDirection: Record<SwipeDirection, string> = {
   delete: 'translate3d(0, 120dvh, 0) rotate(0deg)',
 };
 
-const swipeFeedback: Record<SwipeDirection, { label: string; className: string }> = {
+const swipeFeedback: Record<
+  SwipeDirection,
+  { label: string; className: string }
+> = {
   forgot: {
     label: reviewAnswerLabels.forgot,
     className: 'right-5 top-5 text-right text-muted-foreground',
   },
   remember: {
     label: reviewAnswerLabels.remember,
-    className:
-      'left-5 top-5 text-emerald-700 dark:text-emerald-400',
+    className: 'left-5 top-5 text-emerald-700 dark:text-emerald-400',
   },
   hard: {
     label: reviewAnswerLabels.hard,
@@ -65,39 +83,148 @@ const swipeFeedback: Record<SwipeDirection, { label: string; className: string }
   },
 };
 
+function isReviewCardControl(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    target.closest('[data-review-card-control]') !== null
+  );
+}
+
+type ReviewAnswerButtonsProps = {
+  active: boolean;
+  disabled: boolean;
+  onAnswer: (answer: ReviewAnswer) => Promise<void>;
+  onReveal: () => void;
+};
+
+function ReviewAnswerButtons({
+  active,
+  disabled,
+  onAnswer,
+  onReveal,
+}: ReviewAnswerButtonsProps) {
+  const answerButtonClassName = active
+    ? {
+        forgot:
+          'border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground',
+        hard: 'border-amber-500/50 bg-amber-50/80 text-amber-800 shadow-none hover:bg-amber-100 hover:text-amber-900 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300',
+        remember:
+          'border-emerald-500/30 text-emerald-700 shadow-none hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300',
+        'very-easy':
+          'border-blue-500/30 text-blue-700 shadow-none hover:bg-blue-500/10 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300',
+      }
+    : {
+        forgot:
+          'border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground',
+        hard: 'border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground',
+        remember:
+          'border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground',
+        'very-easy':
+          'border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground',
+      };
+
+  const handleAnswer = (answer: ReviewAnswer) => (event: React.MouseEvent) => {
+    if (disabled) return;
+
+    if (!active) {
+      event.stopPropagation();
+      onReveal();
+      return;
+    }
+
+    event.stopPropagation();
+    void onAnswer(answer);
+  };
+
+  return (
+    <div
+      className="grid grid-cols-3 gap-2"
+      data-testid={
+        active ? 'review-answer-buttons' : 'review-front-answer-buttons'
+      }
+    >
+      <Button
+        variant="outline"
+        onClick={handleAnswer('forgot')}
+        disabled={disabled}
+        className={`min-h-12 cursor-pointer ${answerButtonClassName.forgot}`}
+      >
+        {reviewAnswerLabels.forgot}
+      </Button>
+      <Button
+        variant="outline"
+        onClick={handleAnswer('hard')}
+        disabled={disabled}
+        className={`min-h-12 cursor-pointer ${answerButtonClassName.hard}`}
+      >
+        {reviewAnswerLabels.hard}
+      </Button>
+      <Button
+        variant="outline"
+        onClick={handleAnswer('remember')}
+        disabled={disabled}
+        className={`min-h-12 cursor-pointer ${answerButtonClassName.remember}`}
+      >
+        {reviewAnswerLabels.remember}
+      </Button>
+      <Button
+        variant="outline"
+        onClick={handleAnswer('very-easy')}
+        disabled={disabled}
+        className={`col-start-2 min-h-12 cursor-pointer ${answerButtonClassName['very-easy']}`}
+      >
+        {reviewAnswerLabels['very-easy']}
+      </Button>
+    </div>
+  );
+}
+
 export function ReviewSession({
   cards,
   onExit,
   onCreateCard,
+  onRecordReview,
+  onUndoReview,
+  onDeleteNote,
   reviewMode = CURRENT_REVIEW_MODE,
 }: ReviewSessionProps) {
   const [sessionCards] = useState(cards);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isFlipComplete, setIsFlipComplete] = useState(false);
   const [isWordDetailsOpen, setIsWordDetailsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCreateCardOpen, setIsCreateCardOpen] = useState(false);
   const [createCardError, setCreateCardError] = useState<string | null>(null);
-  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
-  const [isDeletePlaceholderOpen, setIsDeletePlaceholderOpen] = useState(false);
-  const [dragDirection, setDragDirection] = useState<SwipeDirection | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [isSavingReview, setIsSavingReview] = useState(false);
+  const [lastReview, setLastReview] = useState<LastReview | null>(null);
+  const [undoError, setUndoError] = useState<string | null>(null);
+  const [isUndoingReview, setIsUndoingReview] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
+    useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeletingNote, setIsDeletingNote] = useState(false);
+  const [dragDirection, setDragDirection] = useState<SwipeDirection | null>(
+    null,
+  );
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [isRecentering, setIsRecentering] = useState(false);
+  const [isSettlingDrag, setIsSettlingDrag] = useState(false);
   const [exitDirection, setExitDirection] = useState<SwipeDirection | null>(
     null,
   );
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  const pendingPointerPosition = useRef<{ x: number; y: number } | null>(
-    null,
-  );
-  const activeDragDirection = useRef<SwipeDirection | null>(null);
   const exitTimer = useRef<number | null>(null);
   const didHandleSwipe = useRef(false);
   const card = sessionCards[currentCardIndex];
   const nextCard = sessionCards[currentCardIndex + 1];
+  const followingCard = sessionCards[currentCardIndex + 2];
 
-  const revealAnswer = () => setIsFlipped(true);
+  const revealAnswer = () => {
+    setIsFlipComplete(false);
+    setIsFlipped(true);
+  };
   const openWordDetails = () => setIsWordDetailsOpen(true);
   const openSettings = () => setIsSettingsOpen(true);
   const openCreateCardForm = () => {
@@ -106,7 +233,7 @@ export function ReviewSession({
   };
 
   const handleCardClick = () => {
-    if (exitDirection) return;
+    if (exitDirection || isSavingReview || isUndoingReview) return;
     if (didHandleSwipe.current) {
       didHandleSwipe.current = false;
       return;
@@ -128,18 +255,40 @@ export function ReviewSession({
   const restoreCurrentCard = () => {
     setExitDirection(null);
     setIsDeleteConfirmationOpen(false);
-    setIsDeletePlaceholderOpen(false);
+    setDeleteError(null);
+  };
+
+  const deleteCurrentNote = async () => {
+    if (isDeletingNote) return;
+
+    setDeleteError(null);
+    setIsDeletingNote(true);
+
+    try {
+      await onDeleteNote(card.note_id);
+    } catch {
+      setDeleteError('Could not delete this word. Try again.');
+      setIsDeletingNote(false);
+      return;
+    }
+
+    setIsDeleteConfirmationOpen(false);
+    setIsDeletingNote(false);
+    setIsFlipped(false);
+    setCurrentCardIndex((index) => index + 1);
+    setExitDirection(null);
   };
 
   const startCardExit = (direction: SwipeDirection) => {
     if (exitDirection) return;
 
-    setDragDirection(null);
-    setDragOffset({ x: 0, y: 0 });
     setIsDragging(false);
-    setIsRecentering(false);
+    setIsSettlingDrag(false);
     setExitDirection(direction);
     exitTimer.current = window.setTimeout(() => {
+      setDragDirection(null);
+      setDragOffset({ x: 0, y: 0 });
+
       if (direction === 'delete') {
         setIsDeleteConfirmationOpen(true);
         return;
@@ -152,9 +301,32 @@ export function ReviewSession({
     }, REVIEW_CARD_EXIT_DURATION_MS);
   };
 
-  const answerCard = (answer: ReviewAnswer) => {
-    // The next step will persist this answer and update due_at before advance.
-    void answer;
+  const answerCard = async (answer: ReviewAnswer) => {
+    if (isSavingReview || isUndoingReview || exitDirection) return;
+
+    setReviewError(null);
+    setUndoError(null);
+    setIsSavingReview(true);
+    const previousReviewState = {
+      cardId: card.id,
+      cardIndex: currentCardIndex,
+      previousDueAt: card.due_at,
+      previousScheduledIntervalMinutes: card.scheduled_interval_minutes,
+    };
+
+    try {
+      const review = await onRecordReview(
+        card.id,
+        reviewRatingByAnswer[answer],
+      );
+      setLastReview({ ...previousReviewState, reviewEventId: review.id });
+    } catch {
+      setReviewError('Could not save your answer. Try again.');
+      setIsSavingReview(false);
+      return;
+    }
+
+    setIsSavingReview(false);
     const directionByAnswer: Record<
       Exclude<ReviewAnswer, 'very-easy'>,
       SwipeDirection
@@ -172,11 +344,45 @@ export function ReviewSession({
     startCardExit(directionByAnswer[answer]);
   };
 
+  const undoLastReview = async () => {
+    if (!lastReview || isSavingReview || isUndoingReview) return;
+
+    setReviewError(null);
+    setUndoError(null);
+    setIsUndoingReview(true);
+
+    try {
+      await onUndoReview(lastReview);
+    } catch {
+      setUndoError('Could not undo your answer. Try again.');
+      setIsUndoingReview(false);
+      return;
+    }
+
+    setCurrentCardIndex(lastReview.cardIndex);
+    setIsFlipped(true);
+    setLastReview(null);
+    setIsUndoingReview(false);
+  };
+
   useEffect(() => {
     return () => {
       if (exitTimer.current) window.clearTimeout(exitTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isFlipped) {
+      setIsFlipComplete(false);
+      return;
+    }
+
+    const flipTimer = window.setTimeout(
+      () => setIsFlipComplete(true),
+      REVIEW_CARD_FLIP_DURATION_MS,
+    );
+    return () => window.clearTimeout(flipTimer);
+  }, [isFlipped]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -195,15 +401,15 @@ export function ReviewSession({
         } else if (event.key === 'ArrowRight') {
           event.preventDefault();
           const answer = getAnswerForReviewGesture(reviewMode, 'right');
-          if (answer) answerCard(answer);
+          if (answer) void answerCard(answer);
         } else if (event.key === 'ArrowLeft') {
           event.preventDefault();
           const answer = getAnswerForReviewGesture(reviewMode, 'left');
-          if (answer) answerCard(answer);
+          if (answer) void answerCard(answer);
         } else if (event.key === 'ArrowUp') {
           event.preventDefault();
           const answer = getAnswerForReviewGesture(reviewMode, 'up');
-          if (answer) answerCard(answer);
+          if (answer) void answerCard(answer);
         }
         return;
       }
@@ -225,15 +431,15 @@ export function ReviewSession({
       if (event.key === 'ArrowRight') {
         event.preventDefault();
         const answer = getAnswerForReviewGesture(reviewMode, 'right');
-        if (answer) answerCard(answer);
+        if (answer) void answerCard(answer);
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
         const answer = getAnswerForReviewGesture(reviewMode, 'left');
-        if (answer) answerCard(answer);
+        if (answer) void answerCard(answer);
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         const answer = getAnswerForReviewGesture(reviewMode, 'up');
-        if (answer) answerCard(answer);
+        if (answer) void answerCard(answer);
       } else if (event.key === 'ArrowDown') {
         event.preventDefault();
         startCardExit('delete');
@@ -245,7 +451,15 @@ export function ReviewSession({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [exitDirection, isFlipped, isSettingsOpen, isWordDetailsOpen, reviewMode]);
+  }, [
+    exitDirection,
+    isFlipped,
+    isSavingReview,
+    isUndoingReview,
+    isSettingsOpen,
+    isWordDetailsOpen,
+    reviewMode,
+  ]);
 
   const getSwipeDirection = (
     horizontalDistance: number,
@@ -271,30 +485,46 @@ export function ReviewSession({
       : 'delete';
   };
 
+  const settleCardAtCenter = () => {
+    setIsDragging(false);
+    setIsSettlingDrag(true);
+    setDragOffset({ x: 0, y: 0 });
+  };
+
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (exitDirection) return;
+    if (exitDirection || isSavingReview || isUndoingReview) return;
+
+    if (isReviewCardControl(event.target)) return;
+
+    event.preventDefault();
+
+    if (!isFlipped) {
+      pointerStart.current = null;
+      didHandleSwipe.current = true;
+      revealAnswer();
+      return;
+    }
 
     event.currentTarget.setPointerCapture?.(event.pointerId);
     pointerStart.current = { x: event.clientX, y: event.clientY };
-    pendingPointerPosition.current = null;
-    activeDragDirection.current = null;
     didHandleSwipe.current = false;
     setDragDirection(null);
     setDragOffset({ x: 0, y: 0 });
-    setIsRecentering(false);
-    setIsDragging(isFlipped);
+    setIsSettlingDrag(false);
+    setIsDragging(true);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (exitDirection || !isFlipped || !pointerStart.current) return;
-
-    if (isRecentering) {
-      pendingPointerPosition.current = {
-        x: event.clientX,
-        y: event.clientY,
-      };
+    if (
+      exitDirection ||
+      isSavingReview ||
+      isUndoingReview ||
+      !isFlipped ||
+      !pointerStart.current
+    )
       return;
-    }
+
+    event.preventDefault();
 
     const horizontalDistance = event.clientX - pointerStart.current.x;
     const verticalDistance = event.clientY - pointerStart.current.y;
@@ -305,23 +535,6 @@ export function ReviewSession({
       verticalDistance,
       SWIPE_FEEDBACK_THRESHOLD_PX,
     );
-
-    if (
-      activeDragDirection.current &&
-      nextDirection &&
-      activeDragDirection.current !== nextDirection
-    ) {
-      pointerStart.current = { x: event.clientX, y: event.clientY };
-      pendingPointerPosition.current = pointerStart.current;
-      activeDragDirection.current = null;
-      setDragDirection(null);
-      setDragOffset({ x: 0, y: 0 });
-      setIsDragging(false);
-      setIsRecentering(true);
-      return;
-    }
-
-    if (nextDirection) activeDragDirection.current = nextDirection;
 
     setDragOffset({
       x: isHorizontalDrag
@@ -338,36 +551,35 @@ export function ReviewSession({
           ),
     });
 
-    setDragDirection(nextDirection);
+    if (nextDirection) setDragDirection(nextDirection);
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (exitDirection) return;
+    if (exitDirection || isSavingReview || isUndoingReview) return;
+    if (isReviewCardControl(event.target)) return;
 
     const start = pointerStart.current;
     pointerStart.current = null;
-    pendingPointerPosition.current = null;
-    activeDragDirection.current = null;
-    setDragDirection(null);
-    setDragOffset({ x: 0, y: 0 });
-    setIsRecentering(false);
     setIsDragging(false);
     if (!start) return;
+
+    event.preventDefault();
 
     const direction = getSwipeDirection(
       event.clientX - start.x,
       event.clientY - start.y,
       SWIPE_THRESHOLD_PX,
     );
-    if (!direction) return;
+    if (!direction) {
+      settleCardAtCenter();
+      return;
+    }
 
     didHandleSwipe.current = true;
-    if (!isFlipped) {
-      revealAnswer();
-    } else if (direction === 'delete') {
+    if (direction === 'delete') {
       startCardExit('delete');
     } else {
-      answerCard(direction);
+      void answerCard(direction);
     }
   };
 
@@ -379,9 +591,16 @@ export function ReviewSession({
     <PageContainer className="max-w-3xl py-4 sm:py-6">
       <div className="flex flex-col items-stretch">
         <div className="relative z-10 w-full sm:max-w-xl sm:self-center">
+          {followingCard && (
+            <div
+              className="pointer-events-none absolute inset-x-0 top-3 z-0 min-h-[min(52dvh,28rem)] w-full rounded-3xl border border-border/80 bg-white shadow-xl sm:min-h-80 dark:bg-zinc-800"
+              data-testid="following-review-card-outline"
+              aria-hidden="true"
+            />
+          )}
           {nextCard && (
             <div
-              className="pointer-events-none absolute inset-x-0 top-3 z-0 flex min-h-[min(52dvh,28rem)] w-full items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+              className="pointer-events-none absolute inset-x-0 top-0 z-1 flex min-h-[min(52dvh,28rem)] w-full items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
               data-testid="next-review-card"
               aria-hidden="true"
             >
@@ -391,41 +610,41 @@ export function ReviewSession({
             </div>
           )}
           <div
-            className={`relative z-10 ${isDragging ? '' : 'transition-[transform,opacity] duration-[250ms] ease-out'} ${exitDirection ? 'opacity-0' : ''}`}
+            key={card.id}
+            className={`relative z-10 ${isDragging ? '' : 'transition-transform duration-[250ms] ease-out'}`}
             style={
               exitDirection
                 ? { transform: exitTransformByDirection[exitDirection] }
                 : isFlipped
-                ? {
-                    transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotate(${(dragOffset.x / MAX_DRAG_DISTANCE_X_PX) * MAX_DRAG_ROTATION_DEG}deg)`,
-                  }
-                : undefined
+                  ? {
+                      transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotate(${(dragOffset.x / MAX_DRAG_DISTANCE_X_PX) * MAX_DRAG_ROTATION_DEG}deg)`,
+                    }
+                  : undefined
             }
             data-testid="review-card-surface"
+            data-card-id={card.id}
             onClick={handleCardClick}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={() => {
+              if (!pointerStart.current) return;
               pointerStart.current = null;
-              pendingPointerPosition.current = null;
-              activeDragDirection.current = null;
-              setDragDirection(null);
-              setDragOffset({ x: 0, y: 0 });
-              setIsRecentering(false);
-              setIsDragging(false);
+              settleCardAtCenter();
             }}
             onTransitionEnd={(event) => {
-              if (event.target !== event.currentTarget || !isRecentering) return;
+              if (event.target !== event.currentTarget) return;
 
-              pointerStart.current = pendingPointerPosition.current;
-              setIsRecentering(false);
-              setIsDragging(true);
+              if (isSettlingDrag) {
+                setDragDirection(null);
+                setIsSettlingDrag(false);
+                return;
+              }
             }}
           >
             <button
               type="button"
-              className="absolute inset-0 z-0 min-h-[min(52dvh,28rem)] w-full touch-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80"
+              className="absolute inset-0 z-20 min-h-[min(52dvh,28rem)] w-full touch-none select-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80"
               aria-pressed={isFlipped}
               aria-label={isFlipped ? 'Show word details' : 'Show answer'}
               data-testid="review-card"
@@ -435,7 +654,9 @@ export function ReviewSession({
                 className={`relative z-10 flex min-h-[min(52dvh,28rem)] w-full [transform-style:preserve-3d] transition-transform ease-in-out motion-reduce:transition-none sm:min-h-80 ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
                 data-flipped={isFlipped}
                 data-testid="review-card-flip"
-                style={{ transitionDuration: `${REVIEW_CARD_FLIP_DURATION_MS}ms` }}
+                style={{
+                  transitionDuration: `${REVIEW_CARD_FLIP_DURATION_MS}ms`,
+                }}
               >
                 <div
                   aria-hidden={isFlipped}
@@ -474,16 +695,17 @@ export function ReviewSession({
 
             {dragDirection && (
               <span
-                className={`pointer-events-none absolute text-sm font-semibold ${swipeFeedback[dragDirection].className}`}
+                className={`pointer-events-none absolute z-30 text-sm font-semibold ${swipeFeedback[dragDirection].className}`}
                 data-testid="swipe-feedback"
               >
                 {swipeFeedback[dragDirection].label}
               </span>
             )}
 
-            {isFlipped && (
-              <div className="absolute bottom-16 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2">
+            {isFlipped && isFlipComplete && (
+              <div className="absolute bottom-8 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2">
                 <Button
+                  data-review-card-control
                   variant="ghost"
                   size="icon"
                   onClick={(event) => {
@@ -496,6 +718,7 @@ export function ReviewSession({
                   <BookOpen className="size-5" />
                 </Button>
                 <Button
+                  data-review-card-control
                   type="button"
                   variant="ghost"
                   size="icon"
@@ -517,40 +740,27 @@ export function ReviewSession({
           className="relative z-0 mt-6 min-h-[104px] sm:mx-auto sm:w-full sm:max-w-xl"
           data-testid="review-answer-area"
         >
-          {isFlipped && (
-            <div
-              className="grid grid-cols-3 gap-2"
-              data-testid="review-answer-buttons"
+          <ReviewAnswerButtons
+            active={isFlipped}
+            disabled={isSavingReview || isUndoingReview}
+            onAnswer={answerCard}
+            onReveal={revealAnswer}
+          />
+          {reviewError && (
+            <p
+              className="mt-2 text-center text-sm text-destructive"
+              role="alert"
             >
-            <Button
-              variant="outline"
-              onClick={() => answerCard('forgot')}
-              className="min-h-12 cursor-pointer border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
+              {reviewError}
+            </p>
+          )}
+          {undoError && (
+            <p
+              className="mt-2 text-center text-sm text-destructive"
+              role="alert"
             >
-              {reviewAnswerLabels.forgot}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => answerCard('hard')}
-              className="min-h-12 cursor-pointer border-amber-500/50 bg-amber-50/80 text-amber-800 shadow-none hover:bg-amber-100 hover:text-amber-900 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300"
-            >
-              {reviewAnswerLabels.hard}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => answerCard('remember')}
-              className="min-h-12 cursor-pointer border-emerald-500/30 text-emerald-700 shadow-none hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
-            >
-              {reviewAnswerLabels.remember}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => answerCard('very-easy')}
-              className="col-start-2 min-h-12 cursor-pointer border-blue-500/30 text-blue-700 shadow-none hover:bg-blue-500/10 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              {reviewAnswerLabels['very-easy']}
-            </Button>
-            </div>
+              {undoError}
+            </p>
           )}
         </div>
 
@@ -569,6 +779,19 @@ export function ReviewSession({
             >
               <ArrowLeft className="size-7" />
             </Button>
+          </div>
+          <div className="col-start-2 flex justify-center">
+            {lastReview && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => void undoLastReview()}
+                disabled={isSavingReview || isUndoingReview}
+                className="cursor-pointer text-muted-foreground hover:bg-transparent hover:text-foreground"
+              >
+                Undo
+              </Button>
+            )}
           </div>
           <div className="col-start-3 flex justify-end">
             <Button
@@ -608,18 +831,10 @@ export function ReviewSession({
 
       {isDeleteConfirmationOpen && (
         <DeleteConfirmationDialog
-          word={card.front}
           onCancel={restoreCurrentCard}
-          onConfirm={() => {
-            setIsDeleteConfirmationOpen(false);
-            setIsDeletePlaceholderOpen(true);
-          }}
-        />
-      )}
-
-      {isDeletePlaceholderOpen && (
-        <DeletePlaceholderDialog
-          onClose={restoreCurrentCard}
+          onConfirm={() => void deleteCurrentNote()}
+          error={deleteError}
+          isDeleting={isDeletingNote}
         />
       )}
     </PageContainer>
@@ -712,22 +927,23 @@ function WordDetailsDialog({
             <X className="size-4" />
           </Button>
         </div>
-
       </div>
     </div>
   );
 }
 
 type DeleteConfirmationDialogProps = {
-  word: string;
   onCancel: () => void;
   onConfirm: () => void;
+  error: string | null;
+  isDeleting: boolean;
 };
 
 function DeleteConfirmationDialog({
-  word,
   onCancel,
   onConfirm,
+  error,
+  isDeleting,
 }: DeleteConfirmationDialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
@@ -735,49 +951,34 @@ function DeleteConfirmationDialog({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="delete-word-title"
-        aria-describedby="delete-word-description"
         className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
       >
         <h2 id="delete-word-title" className="text-xl font-bold">
-          Delete “{word}”?
+          Does permanently delete this word?
         </h2>
-        <p
-          id="delete-word-description"
-          className="mt-2 text-sm text-muted-foreground"
-        >
-          This action will be available after the note model is implemented.
-        </p>
+        {error && (
+          <p className="mt-2 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button variant="outline" onClick={onCancel} className="min-h-12 cursor-pointer">
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="min-h-12 cursor-pointer"
+          >
             No
           </Button>
-          <Button variant="destructive" onClick={onConfirm} className="min-h-12 cursor-pointer">
+          <Button
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="min-h-12 cursor-pointer"
+          >
             Yes
           </Button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function DeletePlaceholderDialog({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-placeholder-title"
-        className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
-      >
-        <h2 id="delete-placeholder-title" className="text-xl font-bold">
-          Deletion is not available yet
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We will add this once deleting a word has a defined note and sibling-card behaviour.
-        </p>
-        <Button onClick={onClose} className="mt-6 min-h-12 w-full cursor-pointer">
-          Close
-        </Button>
       </div>
     </div>
   );
@@ -802,7 +1003,10 @@ function SettingsPlaceholderDialog({ onClose }: { onClose: () => void }) {
         >
           Card settings will be available later.
         </p>
-        <Button onClick={onClose} className="mt-6 min-h-12 w-full cursor-pointer">
+        <Button
+          onClick={onClose}
+          className="mt-6 min-h-12 w-full cursor-pointer"
+        >
           Close
         </Button>
       </div>

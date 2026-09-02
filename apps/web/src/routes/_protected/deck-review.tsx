@@ -3,7 +3,7 @@ import { ReviewSession } from '@/components/review/ReviewSession';
 import { useStore } from '@/hooks/useStore';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { saveLastReviewDeckId } from '@/lib/review-preferences';
 
@@ -26,16 +26,12 @@ function DeckReviewRoute() {
   const store = useStore();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
-  const dueCards = useMemo(
-    () =>
-      deckId
-        ? store
-            .getCardsForDeck(deckId)
-            .filter((card) => card.due_at <= Date.now())
-            .sort((first, second) => first.due_at - second.due_at)
-        : [],
-    [deckId, store.getCardsForDeck],
-  );
+  const dueCards = deckId
+    ? store
+        .getCardsForDeck(deckId)
+        .filter((card) => card.due_at <= Date.now())
+        .sort((first, second) => first.due_at - second.due_at)
+    : [];
   const deck = store.decks.find((item) => item.id === deckId);
 
   useEffect(() => {
@@ -114,6 +110,16 @@ function DeckReviewRoute() {
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}
+      onRecordReview={store.recordReview}
+      onUndoReview={async (input) => {
+        await store.undoReview(
+          input.cardId,
+          input.reviewEventId,
+          input.previousDueAt,
+          input.previousScheduledIntervalMinutes,
+        );
+      }}
+      onDeleteNote={store.deleteNote}
     />
   );
 }
