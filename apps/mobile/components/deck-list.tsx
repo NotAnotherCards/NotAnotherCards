@@ -23,22 +23,38 @@ export function DeckList() {
   return <ActiveDeckList manager={manager} />;
 }
 
+// One action at a time. A union rather than three booleans, so a create
+// cannot overlap an edit, and the pending delete has one owner.
+type DeckAction =
+  | { kind: 'create' }
+  | { kind: 'edit'; deck: Deck }
+  | { kind: 'delete'; deck: Deck };
+
 function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
   const { decks, isLoading, error, cardCount, writes } = useDecks(manager);
-  const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<Deck | null>(null);
-  const [deleting, setDeleting] = useState<Deck | null>(null);
+  const [action, setAction] = useState<DeckAction | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  // Every open and cancel goes through here, so an error never outlives the
+  // action that produced it or leaks into the next one.
+  const open = (next: DeckAction | null) => {
+    setWriteError(null);
+    setPending(false);
+    setAction(next);
+  };
 
   // A form closes only once its write landed, so a failed write is never
   // shown as a success (same rule as web's DeckList).
-  const run = async (write: () => Promise<unknown>, done: () => void) => {
+  const run = async (write: () => Promise<unknown>) => {
     setWriteError(null);
+    setPending(true);
     try {
       await write();
-      done();
+      open(null);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'The write failed'));
+      setPending(false);
     }
   };
 
@@ -58,38 +74,33 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
     );
   }
 
-  if (creating) {
+  if (action?.kind === 'create') {
     return (
       <DeckForm
         title="New deck"
         error={writeError}
         onSubmit={(values) =>
-          run(
-            () => writes.create(values.title, values.description),
-            () => setCreating(false),
-          )
+          run(() => writes.create(values.title, values.description))
         }
-        onCancel={() => setCreating(false)}
+        onCancel={() => open(null)}
       />
     );
   }
 
-  if (editing) {
+  if (action?.kind === 'edit') {
+    const { deck } = action;
     return (
       <DeckForm
         title="Edit deck"
         initialValues={{
-          title: editing.title,
-          description: editing.description ?? '',
+          title: deck.title,
+          description: deck.description ?? '',
         }}
         error={writeError}
         onSubmit={(values) =>
-          run(
-            () => writes.update(editing.id, values.title, values.description),
-            () => setEditing(null),
-          )
+          run(() => writes.update(deck.id, values.title, values.description))
         }
-        onCancel={() => setEditing(null)}
+        onCancel={() => open(null)}
       />
     );
   }
@@ -98,9 +109,8 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <Text className="text-lg font-semibold">My decks</Text>
-        <Button label="New deck" onPress={() => setCreating(true)} />
+        <Button label="New deck" onPress={() => open({ kind: 'create' })} />
       </View>
-      {writeError && <Text className="text-destructive">{writeError}</Text>}
       {decks.length === 0 && (
         <Text className="text-muted-foreground">
           No decks yet. Create your first one.
@@ -120,26 +130,28 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
           <Text className="text-xs text-muted-foreground">
             {cardCount(deck.id)} cards
           </Text>
-          {deleting?.id === deck.id ? (
+          {action?.kind === 'delete' && action.deck.id === deck.id ? (
             <View className="gap-2">
               <Text className="text-sm">
-                Delete this deck? Its cards are kept and stay in review (#212).
+                Delete this deck? Its cards are kept and stay in review.
               </Text>
+              {writeError && (
+                <Text className="text-destructive">{writeError}</Text>
+              )}
               <View className="flex-row gap-2">
                 <Button
                   label="Cancel"
-                  className="flex-1 bg-muted"
-                  onPress={() => setDeleting(null)}
+                  variant="secondary"
+                  className="flex-1"
+                  onPress={() => open(null)}
+                  disabled={pending}
                 />
                 <Button
                   label="Delete deck"
-                  className="flex-1 bg-destructive"
-                  onPress={() =>
-                    run(
-                      () => writes.remove(deck.id),
-                      () => setDeleting(null),
-                    )
-                  }
+                  variant="destructive"
+                  className="flex-1"
+                  loading={pending}
+                  onPress={() => run(() => writes.remove(deck.id))}
                 />
               </View>
             </View>
@@ -148,14 +160,14 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Edit ${deck.title}`}
-                onPress={() => setEditing(deck)}
+                onPress={() => open({ kind: 'edit', deck })}
               >
                 <Text className="text-primary">Edit</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Delete ${deck.title}`}
-                onPress={() => setDeleting(deck)}
+                onPress={() => open({ kind: 'delete', deck })}
               >
                 <Text className="text-destructive">Delete</Text>
               </Pressable>
