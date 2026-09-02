@@ -147,12 +147,12 @@ describe('DeckList action state', () => {
     );
     const { getByLabelText, getByText } = render(<DeckList />);
     fireEvent.press(getByLabelText('Delete Yoga'));
-    fireEvent.press(getByLabelText('Delete deck'));
-    fireEvent.press(getByLabelText('Delete deck'));
+    fireEvent.press(getByText('Delete deck'));
+    fireEvent.press(getByText('Delete deck'));
     expect(mockWrites.remove).toHaveBeenCalledTimes(1);
 
     // Cancel is held too, so the confirmation stays until the write settles.
-    fireEvent.press(getByLabelText('Cancel'));
+    fireEvent.press(getByText('Cancel'));
     expect(getByText(/Delete this deck\?/)).toBeTruthy();
 
     await act(async () => finish());
@@ -162,7 +162,7 @@ describe('DeckList action state', () => {
     mockWrites.remove.mockRejectedValueOnce(new Error('Deck is locked'));
     const { getByLabelText, getByText } = render(<DeckList />);
     fireEvent.press(getByLabelText('Delete Yoga'));
-    fireEvent.press(getByLabelText('Delete deck'));
+    fireEvent.press(getByText('Delete deck'));
     await waitFor(() => getByText('Deck is locked'));
     expect(getByText(/Delete this deck\?/)).toBeTruthy();
   });
