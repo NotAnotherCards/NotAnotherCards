@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface Deck {
   id: string;
@@ -136,7 +137,9 @@ export function AiResultPreview({
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Front
                 </div>
-                <div className="text-sm font-medium">{card.front}</div>
+                <div className="text-sm font-medium">
+                  <MarkdownRenderer content={card.front} inline />
+                </div>
               </div>
               <div className="hidden md:flex items-center text-muted-foreground">
                 <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
@@ -145,7 +148,9 @@ export function AiResultPreview({
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Back
                 </div>
-                <div className="text-sm font-medium">{card.back}</div>
+                <div className="text-sm font-medium">
+                  <MarkdownRenderer content={card.back} inline />
+                </div>
               </div>
             </div>
           ))}
