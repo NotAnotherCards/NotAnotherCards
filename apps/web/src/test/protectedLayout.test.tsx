@@ -160,4 +160,48 @@ describe('Protected Layout Guards', () => {
       await screen.findByRole('heading', { name: /Welcome Back/i }),
     ).toBeInTheDocument();
   });
+
+  it('stays on protected page and shows retryable error banner when sign-out returns an error', async () => {
+    vi.mocked(authClient.signOut).mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Server error during sign out',
+        status: 500,
+        statusText: 'Internal Server Error',
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<App />);
+    await act(async () => {
+      await router.navigate({ to: '/dashboard' });
+    });
+
+    const accountTrigger = await screen.findByRole('button', {
+      name: /Account menu/i,
+    });
+    await user.click(accountTrigger);
+
+    const logoutItem = await screen.findByRole('menuitem', {
+      name: /Log out/i,
+    });
+    await user.click(logoutItem);
+
+    expect(authClient.signOut).toHaveBeenCalledTimes(1);
+
+    // Verify user stays on protected page (dashboard) and error banner is displayed
+    expect(
+      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Server error during sign out/i),
+    ).toBeInTheDocument();
+
+    // Click retry button
+    const retryButton = screen.getByRole('button', { name: /Retry/i });
+    await user.click(retryButton);
+
+    expect(authClient.signOut).toHaveBeenCalledTimes(2);
+  });
 });
