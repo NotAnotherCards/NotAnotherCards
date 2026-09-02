@@ -124,7 +124,7 @@ export function MarkdownRenderer({
           'type',
         ],
         ALLOWED_URI_REGEXP:
-          /^(?:(?:https?|mailto|blob):|data:(?:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml)|audio\/(?:mp3|wav|ogg|mpeg|aac|m4a));|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+          /^(?:(?:https?|mailto|blob):|data:(?:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml)|audio\/(?:mp3|wav|ogg|mpeg|aac|m4a));|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
         ADD_ATTR: ['target', 'rel'],
       });
 
