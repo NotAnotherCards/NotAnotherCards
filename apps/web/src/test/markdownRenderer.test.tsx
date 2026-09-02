@@ -128,11 +128,8 @@ describe('MarkdownRenderer', () => {
       );
 
       const a = container.querySelector('a');
-      if (a) {
-        expect(a.getAttribute('href')).not.toMatch(/^javascript:/i);
-      } else {
-        expect(a).toBeNull();
-      }
+      const href = a?.getAttribute('href');
+      expect(href ?? '').not.toMatch(/^javascript:/i);
     });
 
     it('strips data:text/html URIs from href attributes', () => {
@@ -141,11 +138,8 @@ describe('MarkdownRenderer', () => {
       );
 
       const a = container.querySelector('a');
-      if (a) {
-        expect(a.getAttribute('href')).not.toMatch(/^data:text\/html/i);
-      } else {
-        expect(a).toBeNull();
-      }
+      const href = a?.getAttribute('href');
+      expect(href ?? '').not.toMatch(/^data:text\/html/i);
     });
 
     it('strips vbscript: URIs from href attributes', () => {
@@ -154,11 +148,8 @@ describe('MarkdownRenderer', () => {
       );
 
       const a = container.querySelector('a');
-      if (a) {
-        expect(a.getAttribute('href')).not.toMatch(/^vbscript:/i);
-      } else {
-        expect(a).toBeNull();
-      }
+      const href = a?.getAttribute('href');
+      expect(href ?? '').not.toMatch(/^vbscript:/i);
     });
 
     it('strips inline <script> tags and execution code', () => {
