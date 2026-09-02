@@ -454,9 +454,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     expect(ownerB?.username).toBe('alice');
   });
 
-  // TODO(#160, #161): restore the card-dependent sync tests after the shared
-  // rows and sync-store relationships adopt the note/card model.
-  it.skip('round-trips all tables and persists through a fresh backend instance', async () => {
+  it('round-trips all tables and persists through a fresh backend instance', async () => {
     const now = Date.now();
     const engine = createAppSyncEngine(createAppSyncStore(db));
     const handlers = engine.as('user-a');
@@ -501,7 +499,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     }
   });
 
-  it.skip('round-trips card updates while preserving insert-only creation time', async () => {
+  it('round-trips card updates while preserving insert-only creation time', async () => {
     const now = Date.now();
     const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
@@ -552,7 +550,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     ]);
   });
 
-  it.skip('isolates every configured table between two user scopes', async () => {
+  it('isolates every configured table between two user scopes', async () => {
     const now = Date.now();
     const idsA = modelIds('a');
     const idsB = modelIds('b');
@@ -716,7 +714,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     );
   });
 
-  it.skip('rejects review updates instead of silently ignoring them', async () => {
+  it('rejects review updates instead of silently ignoring them', async () => {
     const now = Date.now();
     const handlers = createAppSyncEngine(createAppSyncStore(db)).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
@@ -1051,7 +1049,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     });
   });
 
-  it.skip('rejects a parent delete combined with child creates or updates', async () => {
+  it('rejects a parent delete combined with child creates or updates', async () => {
     const now = Date.now();
     const ids = modelIds();
     const secondIds = modelIds('2');
@@ -1250,7 +1248,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     });
   });
 
-  it.skip('persists a time-based GC floor and expires older cursors', async () => {
+  it('persists a time-based GC floor and expires older cursors', async () => {
     const { store, crossValidateChanges } = createAppSyncStore(db);
     const handlers = createAppSyncEngine({ store, crossValidateChanges }).as(
       'user-a',
