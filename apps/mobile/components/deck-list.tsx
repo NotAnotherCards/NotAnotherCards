@@ -160,6 +160,8 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Edit ${deck.title}`}
+                className="py-2"
+                hitSlop={8}
                 onPress={() => open({ kind: 'edit', deck })}
               >
                 <Text className="text-primary">Edit</Text>
@@ -167,6 +169,8 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Delete ${deck.title}`}
+                className="py-2"
+                hitSlop={8}
                 onPress={() => open({ kind: 'delete', deck })}
               >
                 <Text className="text-destructive">Delete</Text>
