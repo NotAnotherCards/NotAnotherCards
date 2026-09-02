@@ -55,6 +55,7 @@ const mockSession = {
 // Verify that navigating to a protected route loads the layout along with nested pages like dashboard
 describe('Protected Layout Guards', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, '', '/dashboard');
 
@@ -193,13 +194,13 @@ describe('Protected Layout Guards', () => {
     expect(
       await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(
-      screen.getByText(/Server error during sign out/i),
+      await screen.findByText(/Server error during sign out/i),
     ).toBeInTheDocument();
 
     // Click retry button
-    const retryButton = screen.getByRole('button', { name: /Retry/i });
+    const retryButton = await screen.findByRole('button', { name: /Retry/i });
     await user.click(retryButton);
 
     expect(authClient.signOut).toHaveBeenCalledTimes(2);

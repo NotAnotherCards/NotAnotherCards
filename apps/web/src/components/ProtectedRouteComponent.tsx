@@ -98,7 +98,10 @@ export function ProtectedLayoutComponent() {
         </header>
 
         {logoutError && (
-          <div className="fixed top-1 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 pointer-events-none select-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            role="alert"
+            className="fixed top-1 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 pointer-events-none select-none animate-in fade-in slide-in-from-top-4 duration-300"
+          >
             <div className="bg-background/95 backdrop-blur-xs border border-border/80 rounded-2xl shadow-lg overflow-hidden pointer-events-auto">
               <div className="bg-destructive/10 border-destructive/20 dark:text-red-400 px-4 py-3.5 flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2">
