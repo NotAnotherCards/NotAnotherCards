@@ -37,7 +37,9 @@ export default function Dashboard() {
         <Text className="text-center text-destructive">
           {apiErrorMessage(error)}
         </Text>
-        <Button label="Retry" onPress={() => refetch()} />
+        <Button onPress={() => refetch()}>
+          <Text>Retry</Text>
+        </Button>
       </View>
     );
   }
@@ -62,7 +64,9 @@ export default function Dashboard() {
         Logged in as {session.user.email}
       </Text>
       <ThemeToggle />
-      <Button label="Log out" onPress={onLogout} />
+      <Button onPress={onLogout}>
+        <Text>Log out</Text>
+      </Button>
     </View>
   );
 }

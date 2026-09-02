@@ -5,7 +5,9 @@ import {
   type FieldValues,
 } from 'react-hook-form';
 import { View, type TextInputProps } from 'react-native';
+import { cn } from '@/lib/utils';
 import { Input } from './input';
+import { Label } from './label';
 import { Text } from './text';
 
 type FormFieldProps<T extends FieldValues> = {
@@ -26,13 +28,17 @@ export function FormField<T extends FieldValues>({
       name={name}
       render={({ field: { onChange, onBlur, value }, fieldState }) => (
         <View className="gap-1">
-          <Text className="text-sm font-medium">{label}</Text>
+          <Label>{label}</Label>
           <Input
             value={value}
             onChangeText={onChange}
             onBlur={onBlur}
-            invalid={fieldState.invalid}
+            aria-invalid={fieldState.invalid}
             {...inputProps}
+            className={cn(
+              fieldState.invalid && 'border-destructive',
+              inputProps.className,
+            )}
           />
           {fieldState.error && (
             <Text className="text-sm text-destructive">

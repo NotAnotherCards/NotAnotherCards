@@ -25,12 +25,13 @@ function ActiveDatabaseBanner({ manager }: { manager: DatabaseManager }) {
         Offline database unavailable. Your cards are not saved on this device.
       </Text>
       <Button
-        label="Retry"
-        className="px-3 py-2"
+        size="sm"
         onPress={() => {
           manager.init().catch(() => {});
         }}
-      />
+      >
+        <Text>Retry</Text>
+      </Button>
     </View>
   );
 }
