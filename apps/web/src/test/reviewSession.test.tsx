@@ -19,6 +19,7 @@ const card: Card = {
 const secondCard: Card = {
   ...card,
   id: 'card-2',
+  note_id: 'note-2',
   front: 'sein',
   back: 'to be',
 };
@@ -26,8 +27,17 @@ const secondCard: Card = {
 const thirdCard: Card = {
   ...card,
   id: 'card-3',
+  note_id: 'note-3',
   front: 'haben',
   back: 'to have',
+};
+
+const siblingCard: Card = {
+  ...card,
+  id: 'card-4',
+  template_key: 'word:audio',
+  front: 'gehen pronunciation',
+  back: 'gehen audio',
 };
 
 function renderSession(
@@ -633,10 +643,10 @@ describe('ReviewSession', () => {
     expect(screen.getByText('to go')).toBeInTheDocument();
   });
 
-  it('deletes the current note and continues to the next card', async () => {
+  it('removes every sibling from the session queue after deleting a note', async () => {
     const onDeleteNote = vi.fn().mockResolvedValue(undefined);
     renderSession(
-      [card, secondCard],
+      [card, siblingCard, secondCard],
       undefined,
       undefined,
       undefined,
@@ -663,7 +673,27 @@ describe('ReviewSession', () => {
     });
 
     expect(onDeleteNote).toHaveBeenCalledWith('note-1');
-    expect(screen.getAllByText('sein')).not.toHaveLength(0);
+    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+      'data-card-id',
+      'card-2',
+    );
+    expect(screen.queryByText('gehen pronunciation')).not.toBeInTheDocument();
+  });
+
+  it('completes the session when deleting a note removes the remaining cards', async () => {
+    renderSession([card, siblingCard]);
+    revealCard();
+
+    fireEvent.keyDown(window, { key: 'ArrowDown' });
+    finishCardExit();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.getByRole('heading', { name: 'Review complete' }),
+    ).toBeInTheDocument();
   });
 
   it('keeps the delete confirmation open when deleting the note fails', async () => {

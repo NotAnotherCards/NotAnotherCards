@@ -199,7 +199,7 @@ export function ReviewSession({
   onDeleteNote,
   reviewMode = CURRENT_REVIEW_MODE,
 }: ReviewSessionProps) {
-  const [sessionCards] = useState(cards);
+  const [sessionCards, setSessionCards] = useState(cards);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isFlipComplete, setIsFlipComplete] = useState(false);
@@ -272,11 +272,16 @@ export function ReviewSession({
   const deleteCurrentNote = async () => {
     if (isDeletingNote) return;
 
+    const deletedNoteId = card.note_id;
+    const deletedCardsBeforeCurrent = sessionCards
+      .slice(0, currentCardIndex)
+      .filter((sessionCard) => sessionCard.note_id === deletedNoteId).length;
+
     setDeleteError(null);
     setIsDeletingNote(true);
 
     try {
-      await onDeleteNote(card.note_id);
+      await onDeleteNote(deletedNoteId);
     } catch {
       setDeleteError('Could not delete this word. Try again.');
       setIsDeletingNote(false);
@@ -286,7 +291,10 @@ export function ReviewSession({
     setIsDeleteConfirmationOpen(false);
     setIsDeletingNote(false);
     setIsFlipped(false);
-    setCurrentCardIndex((index) => index + 1);
+    setSessionCards((currentCards) =>
+      currentCards.filter((sessionCard) => sessionCard.note_id !== deletedNoteId),
+    );
+    setCurrentCardIndex(currentCardIndex - deletedCardsBeforeCurrent);
     setExitDirection(null);
   };
 
