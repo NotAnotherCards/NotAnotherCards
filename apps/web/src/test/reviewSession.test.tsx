@@ -307,7 +307,10 @@ describe('ReviewSession', () => {
     });
     finishCardExit();
 
-    expect(screen.getAllByText('sein')).not.toHaveLength(0);
+    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+      'data-card-id',
+      'card-2',
+    );
     expect(screen.getByTestId('review-card-flip')).toHaveAttribute(
       'data-flipped',
       'false',
@@ -328,7 +331,10 @@ describe('ReviewSession', () => {
     expect(onRecordReview).toHaveBeenCalledWith('card-1', 2);
     finishCardExit();
 
-    expect(screen.getAllByText('sein')).not.toHaveLength(0);
+    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+      'data-card-id',
+      'card-2',
+    );
   });
 
   it('keeps the card in place and shows a recoverable error when saving fails', async () => {
@@ -375,7 +381,10 @@ describe('ReviewSession', () => {
     });
 
     finishCardExit();
-    expect(screen.getAllByText('sein')).not.toHaveLength(0);
+    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+      'data-card-id',
+      'card-2',
+    );
   });
 
   it('shows an Undo placeholder after an answer without changing the review queue', async () => {
@@ -417,7 +426,10 @@ describe('ReviewSession', () => {
     });
 
     finishCardExit();
-    expect(screen.getAllByText('sein')).not.toHaveLength(0);
+    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+      'data-card-id',
+      'card-2',
+    );
   });
 
   it('shows the matching feedback while dragging the answer side', () => {
