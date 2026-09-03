@@ -91,20 +91,36 @@ Reusables adoption (#143) closes the gap: the first component that needs
 
 ## Motion and micro-animations
 
-UI transitions enhance feel and feedback without slowing interaction. Animations must be quick, functional, and consistent across components.
+Animations are designed to be fast and functional: they confirm user actions without blocking interactions.
 
-- **Micro-interactions.** Interactive controls (buttons, menu triggers, input fields) use 150ms–200ms color and transform transitions (`transition-colors duration-200`, `active:translate-y-px`, `hover:bg-accent/60`).
-- **Surface & Banner Animations.** Floating banners, dialogs, and alerts enter with `animate-in fade-in slide-in-from-top-4 duration-300` or slide transitions (`duration-200` to `duration-300`).
-- **Reduced Motion.** All CSS animations and transitions must respect user system preferences. Web uses `motion-reduce:animate-none` / `motion-reduce:transition-none` to instantly present final states when reduced motion is requested.
-- **Mobile.** Mobile interactions use native touch feedback (Pressable ripple/opacity) and 150ms–250ms layout transitions.
+- **Micro-interactions.** Web elements transition color and transform over 150ms–200ms
+  (`transition-colors duration-200`, `active:scale-95`). 128 animation and
+  transition utilities are currently in use.
+- **Surfaces.** Floating notification banners, dialog overlays, and alerts enter using
+  `animate-in fade-in slide-in-from-top-4 duration-300`.
+- **Reduced motion.** Target standard. Web currently has no `motion-reduce:` usage
+  (0 of 128). Newly introduced animated surfaces should pair each animation with
+  `motion-reduce:animate-none` / `motion-reduce:transition-none`.
+- **Mobile.** Mobile includes no motion today: 10 Pressables, none using ripple,
+  pressed opacity, or timed transitions, and no `Animated` usage. Touch
+  feedback will arrive with the React Native Reusables adoption (#233); until then
+  its absence is intentional, not an oversight.
 
 ## Responsive breakpoints and layout grid
 
-Both clients use Tailwind's responsive grid and container rules to ensure layouts adapt fluidly across devices.
+Web only. Mobile uses no media query breakpoints, grids, or max-width utilities today,
+and will refrain from doing so until a dedicated tablet layout approach is defined;
+that is a design decision, not a gap to fix.
 
-- **Breakpoints.** Web targets standard Tailwind breakpoints: `sm` (640px), `md` (768px), `lg` (1024px), `xl` (1280px).
-- **Layout Containers.** Main screen content is centered in structured container shells (`max-w-xl` for focused forms and floating notification shells; `max-w-5xl` or `max-w-7xl` for dashboards and deck grids). Horizontal page padding is standard `px-4 sm:px-6`.
-- **Grid Patterns.** Collection layouts (deck cards, study grids) default to single-column on mobile (`grid-cols-1`) and expand dynamically on wider screens (`sm:grid-cols-2 lg:grid-cols-3 gap-4`).
+- **Breakpoints.** Web uses Tailwind defaults: `sm` (640px), `md` (768px), `lg` (1024px),
+  `xl` (1280px).
+- **Containers.** Focused forms use `max-w-md` (11 occurrences) or `max-w-lg` (3).
+  Dashboards use `max-w-7xl` (2). The single `max-w-xl` is reserved for the floating
+  banner container.
+- **Grids.** Collection layouts start single-column and expand:
+  `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6` for deck grids
+  (`DeckList.tsx:193`), and `grid-cols-1 sm:grid-cols-2 gap-4` for summary stat tiles (3
+  occurrences).
 
 ## Icons
 
