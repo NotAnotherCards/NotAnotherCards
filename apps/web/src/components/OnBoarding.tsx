@@ -16,8 +16,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
-import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
-import { LANGUAGES } from '@/lib/languages';
+import {
+  LANGUAGES,
+  ProfileFormValues,
+  userProfileFormSchema,
+} from '@repo/schemas';
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
