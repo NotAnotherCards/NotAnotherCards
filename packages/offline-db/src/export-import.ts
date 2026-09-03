@@ -6,6 +6,7 @@ import {
   UserNoteDeck,
   ReviewEvent,
 } from './user-dictionary.js';
+import { BASIC_NOTE_FIELDS_VERSION, BASIC_NOTE_TYPE } from './note-constants';
 
 interface ExportJsonFormat {
   format: number;
@@ -44,6 +45,20 @@ interface ExportReviewEvent {
   source_card_id: string;
   rating: number;
   reviewed_at: number;
+}
+
+function escapeCsvField(val: unknown): string {
+  if (val === null || val === undefined) return '';
+  const str = String(val);
+  if (
+    str.includes(',') ||
+    str.includes('"') ||
+    str.includes('\n') ||
+    str.includes('\r')
+  ) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
 }
 
 export async function exportDataToJson(
@@ -106,4 +121,68 @@ export async function exportDataToJson(
   };
 }
 
-export function exportDataToCsv(db: Database) {}
+export async function exportDataToCsv(db: Database): Promise<string> {
+  const notes = await db.get(UserNote).query().fetch();
+  const cards = await db.get(UserCard).query().fetch();
+  const noteDecks = await db.get(UserNoteDeck).query().fetch();
+  const decks = await db.get(UserDeck).query().fetch();
+
+  const deckTitleMap = new Map<string, string>();
+  for (const d of decks) {
+    deckTitleMap.set(d.id, d.title);
+  }
+  for (const note of notes) {
+    if (
+      note.note_type !== BASIC_NOTE_TYPE ||
+      note.fields_version !== BASIC_NOTE_FIELDS_VERSION
+    ) {
+      throw new Error('CSV export only supports basic@1 notes');
+    }
+  }
+  const header = [
+    'front',
+    'back',
+    'deck',
+    'active',
+    'due_at',
+    'scheduled_interval_minutes',
+  ];
+  const rows: string[] = [header.join(',')];
+
+  for (const note of notes) {
+    let front = '';
+    let back = '';
+    try {
+      const parsed = JSON.parse(note.fields_json);
+      front = parsed.front ?? '';
+      back = parsed.back ?? '';
+    } catch {
+      front = '';
+      back = '';
+    }
+    const activeDeckIds = noteDecks
+      .filter((nd) => nd.note_id === note.id && nd.active)
+      .map((nd) => nd.deck_id);
+
+    const deckName = activeDeckIds
+      .map((id) => deckTitleMap.get(id))
+      .filter(Boolean)
+      .join('; ');
+
+    const card = cards.find((c) => c.note_id === note.id)
+    const active = card ? card.active : true
+    const dueAt = card ? card.due_at : Date.now()
+    const interval = card ? card.scheduled_interval_minutes : 0;
+
+    const row = [
+      escapeCsvField(front),
+      escapeCsvField(back),
+      escapeCsvField(deckName),
+      escapeCsvField(active),
+      escapeCsvField(dueAt),
+      escapeCsvField(interval),
+    ];
+    rows.push(row.join(','));
+  }
+  return rows.join('\n');
+}
