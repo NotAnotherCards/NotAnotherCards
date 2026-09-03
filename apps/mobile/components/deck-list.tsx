@@ -127,76 +127,78 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
           No decks yet. Create your first one.
         </Text>
       )}
-      {decks.map((deck) => (
-        <Card key={deck.id}>
-          {/* The header opens the deck; edit and delete stay below it, so
+      <View role="list" className="gap-3">
+        {decks.map((deck) => (
+          <Card key={deck.id} role="listitem">
+            {/* The header opens the deck; edit and delete stay below it, so
               the two targets never overlap. */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${deck.title}`}
-            onPress={() => router.push(`/deck/${deck.id}`)}
-          >
-            <CardHeader>
-              <CardTitle>{deck.title}</CardTitle>
-              {deck.description ? (
-                <CardDescription>{deck.description}</CardDescription>
-              ) : null}
-              <Text className="text-xs text-muted-foreground">
-                {cardCount(deck.id)} cards
-              </Text>
-            </CardHeader>
-          </Pressable>
-          <CardContent>
-            {action?.kind === 'delete' && action.deck.id === deck.id ? (
-              <View className="gap-2">
-                <Text className="text-sm">
-                  Delete this deck? Its cards are kept and stay in review.
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${deck.title}`}
+              onPress={() => router.push(`/deck/${deck.id}`)}
+            >
+              <CardHeader>
+                <CardTitle>{deck.title}</CardTitle>
+                {deck.description ? (
+                  <CardDescription>{deck.description}</CardDescription>
+                ) : null}
+                <Text className="text-xs text-muted-foreground">
+                  {cardCount(deck.id)} cards
                 </Text>
-                {writeError && (
-                  <Text className="text-destructive">{writeError}</Text>
-                )}
+              </CardHeader>
+            </Pressable>
+            <CardContent>
+              {action?.kind === 'delete' && action.deck.id === deck.id ? (
+                <View className="gap-2">
+                  <Text className="text-sm">
+                    Delete this deck? Its cards are kept and stay in review.
+                  </Text>
+                  {writeError && (
+                    <Text className="text-destructive">{writeError}</Text>
+                  )}
+                  <View className="flex-row gap-2">
+                    <Button
+                      variant="secondary"
+                      className="flex-1"
+                      onPress={() => open(null)}
+                      disabled={pending}
+                    >
+                      <Text>Cancel</Text>
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      loading={pending}
+                      onPress={() => run(() => writes.remove(deck.id))}
+                    >
+                      <Text>Delete deck</Text>
+                    </Button>
+                  </View>
+                </View>
+              ) : (
                 <View className="flex-row gap-2">
                   <Button
-                    variant="secondary"
-                    className="flex-1"
-                    onPress={() => open(null)}
-                    disabled={pending}
+                    variant="ghost"
+                    size="sm"
+                    accessibilityLabel={`Edit ${deck.title}`}
+                    onPress={() => open({ kind: 'edit', deck })}
                   >
-                    <Text>Cancel</Text>
+                    <Text className="text-primary">Edit</Text>
                   </Button>
                   <Button
-                    variant="destructive"
-                    className="flex-1"
-                    loading={pending}
-                    onPress={() => run(() => writes.remove(deck.id))}
+                    variant="ghost"
+                    size="sm"
+                    accessibilityLabel={`Delete ${deck.title}`}
+                    onPress={() => open({ kind: 'delete', deck })}
                   >
-                    <Text>Delete deck</Text>
+                    <Text className="text-destructive">Delete</Text>
                   </Button>
                 </View>
-              </View>
-            ) : (
-              <View className="flex-row gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  accessibilityLabel={`Edit ${deck.title}`}
-                  onPress={() => open({ kind: 'edit', deck })}
-                >
-                  <Text className="text-primary">Edit</Text>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  accessibilityLabel={`Delete ${deck.title}`}
-                  onPress={() => open({ kind: 'delete', deck })}
-                >
-                  <Text className="text-destructive">Delete</Text>
-                </Button>
-              </View>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </View>
     </View>
   );
 }

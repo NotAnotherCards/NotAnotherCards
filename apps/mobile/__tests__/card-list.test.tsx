@@ -23,6 +23,16 @@ let mockCardsState: {
   canEdit: (card: MockCard) => boolean;
   writes: typeof mockWrites | null;
 };
+const mockScreenOptions = jest.fn();
+jest.mock('expo-router', () => ({
+  Stack: {
+    Screen: ({ options }: { options: unknown }) => {
+      mockScreenOptions(options);
+      return null;
+    },
+  },
+}));
+
 jest.mock('../lib/cards', () => ({
   useCards: () => mockCardsState,
 }));
@@ -46,12 +56,22 @@ beforeEach(() => {
 describe('CardList', () => {
   it('waits for the database manager before rendering', () => {
     mockSessionDb = { manager: null };
-    expect(render(<CardList deckId="d1" />).queryByText('Spanish')).toBeNull();
+    expect(render(<CardList deckId="d1" />).queryByText('Cards')).toBeNull();
   });
 
-  it('shows the deck title and lists the cards with front and back', () => {
-    const { getByText } = render(<CardList deckId="d1" />);
-    expect(getByText('Spanish')).toBeTruthy();
+  it('puts the deck title in the header and lists the cards with front and back', () => {
+    const { getByText, UNSAFE_getAllByProps } = render(
+      <CardList deckId="d1" />,
+    );
+    expect(mockScreenOptions).toHaveBeenLastCalledWith({ title: 'Spanish' });
+    // *ByRole only sees accessibility elements; a list container must not be
+    // one (it would swallow its items), so pin the prop on the host views.
+    const hosts = (role: string) =>
+      UNSAFE_getAllByProps({ role }).filter(
+        (el) => typeof el.type === 'string',
+      );
+    expect(hosts('list')).toHaveLength(1);
+    expect(hosts('listitem')).toHaveLength(2);
     expect(getByText('hola')).toBeTruthy();
     expect(getByText('hello')).toBeTruthy();
     expect(getByText('adiós')).toBeTruthy();
@@ -64,6 +84,14 @@ describe('CardList', () => {
     mockCardsState.deck = null;
     r.rerender(<CardList deckId="d1" />);
     expect(r.getByText('This deck is not on this device.')).toBeTruthy();
+  });
+
+  it('caps a long front in the accessibility labels', () => {
+    mockCardsState.cards = [
+      { id: 'c9', note_id: 'n9', front: 'x'.repeat(100), back: 'y' },
+    ];
+    const { getByLabelText } = render(<CardList deckId="d1" />);
+    expect(getByLabelText(`Edit ${'x'.repeat(40)}…`)).toBeTruthy();
   });
 
   it('offers Edit only for cards the rule allows', () => {

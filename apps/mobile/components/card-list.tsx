@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Stack } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
@@ -25,6 +26,10 @@ export function CardList({ deckId }: { deckId: string }) {
 // One action at a time, same union as DeckList. Two removal scopes, and
 // the confirmation copy is what tells them apart: remove ends this deck's
 // membership and keeps the note, delete takes the note everywhere.
+// Accessibility labels carry the front; a 1000-character front is not a label.
+const short = (text: string) =>
+  text.length > 40 ? `${text.slice(0, 40)}…` : text;
+
 type CardAction =
   | { kind: 'create' }
   | { kind: 'edit'; card: CardRecord }
@@ -124,8 +129,10 @@ function ActiveCardList({
 
   return (
     <View className="gap-3">
+      {/* The deck's title belongs in the header; the route sets a fallback. */}
+      <Stack.Screen options={{ title: deck.title }} />
       <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-semibold">{deck.title}</Text>
+        <Text className="text-lg font-semibold">Cards</Text>
         <Button onPress={() => open({ kind: 'create' })}>
           <Text>New card</Text>
         </Button>
@@ -135,88 +142,92 @@ function ActiveCardList({
           No cards yet. Add your first one.
         </Text>
       )}
-      {cards.map((card) => {
-        const confirm = confirming(card);
-        return (
-          <Card key={card.id}>
-            <CardHeader>
-              <CardTitle>{card.front}</CardTitle>
-              <Text className="text-sm text-muted-foreground">{card.back}</Text>
-            </CardHeader>
-            <CardContent>
-              {confirm ? (
-                <View className="gap-2">
-                  <Text className="text-sm">
-                    {confirm === 'remove'
-                      ? 'Remove this card from the deck? The note stays, and so does any other deck it is in.'
-                      : 'Delete this note? Its cards, deck memberships and review history go with it.'}
-                  </Text>
-                  {writeError && (
-                    <Text className="text-destructive">{writeError}</Text>
-                  )}
-                  <View className="flex-row gap-2">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onPress={() => open(null)}
-                      disabled={pending}
-                    >
-                      <Text>Cancel</Text>
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="flex-1"
-                      loading={pending}
-                      onPress={() =>
-                        run(() =>
-                          confirm === 'remove'
-                            ? writes.removeFromDeck(card.note_id, deckId)
-                            : writes.deleteNote(card.note_id),
-                        )
-                      }
-                    >
-                      <Text>
-                        {confirm === 'remove'
-                          ? 'Remove from deck'
-                          : 'Delete note'}
-                      </Text>
-                    </Button>
+      <View role="list" className="gap-3">
+        {cards.map((card) => {
+          const confirm = confirming(card);
+          return (
+            <Card key={card.id} role="listitem">
+              <CardHeader>
+                <CardTitle>{card.front}</CardTitle>
+                <Text className="text-sm text-muted-foreground">
+                  {card.back}
+                </Text>
+              </CardHeader>
+              <CardContent>
+                {confirm ? (
+                  <View className="gap-2">
+                    <Text className="text-sm">
+                      {confirm === 'remove'
+                        ? 'Remove this card from the deck? The note stays, and so does any other deck it is in.'
+                        : 'Delete this note? Its cards, deck memberships and review history go with it.'}
+                    </Text>
+                    {writeError && (
+                      <Text className="text-destructive">{writeError}</Text>
+                    )}
+                    <View className="flex-row gap-2">
+                      <Button
+                        variant="secondary"
+                        className="flex-1"
+                        onPress={() => open(null)}
+                        disabled={pending}
+                      >
+                        <Text>Cancel</Text>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="flex-1"
+                        loading={pending}
+                        onPress={() =>
+                          run(() =>
+                            confirm === 'remove'
+                              ? writes.removeFromDeck(card.note_id, deckId)
+                              : writes.deleteNote(card.note_id),
+                          )
+                        }
+                      >
+                        <Text>
+                          {confirm === 'remove'
+                            ? 'Remove from deck'
+                            : 'Delete note'}
+                        </Text>
+                      </Button>
+                    </View>
                   </View>
-                </View>
-              ) : (
-                <View className="flex-row gap-2">
-                  {canEdit(card) && (
+                ) : (
+                  <View className="flex-row gap-2">
+                    {canEdit(card) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        accessibilityLabel={`Edit ${short(card.front)}`}
+                        onPress={() => open({ kind: 'edit', card })}
+                      >
+                        <Text className="text-primary">Edit</Text>
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
-                      accessibilityLabel={`Edit ${card.front}`}
-                      onPress={() => open({ kind: 'edit', card })}
+                      accessibilityLabel={`Remove ${short(card.front)} from deck`}
+                      onPress={() => open({ kind: 'remove', card })}
                     >
-                      <Text className="text-primary">Edit</Text>
+                      <Text>Remove</Text>
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    accessibilityLabel={`Remove ${card.front} from deck`}
-                    onPress={() => open({ kind: 'remove', card })}
-                  >
-                    <Text>Remove</Text>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    accessibilityLabel={`Delete note ${card.front}`}
-                    onPress={() => open({ kind: 'delete', card })}
-                  >
-                    <Text className="text-destructive">Delete</Text>
-                  </Button>
-                </View>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      accessibilityLabel={`Delete note ${short(card.front)}`}
+                      onPress={() => open({ kind: 'delete', card })}
+                    >
+                      <Text className="text-destructive">Delete</Text>
+                    </Button>
+                  </View>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </View>
     </View>
   );
 }

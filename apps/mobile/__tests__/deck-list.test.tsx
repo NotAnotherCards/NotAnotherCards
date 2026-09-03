@@ -53,7 +53,12 @@ describe('DeckList', () => {
   });
 
   it('lists decks with their card counts', () => {
-    const { getByText } = render(<DeckList />);
+    const { getByText, UNSAFE_getAllByProps } = render(<DeckList />);
+    expect(
+      UNSAFE_getAllByProps({ role: 'listitem' }).filter(
+        (el) => typeof el.type === 'string',
+      ),
+    ).toHaveLength(2);
     expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('Verbs')).toBeTruthy();
     expect(getByText('12 cards')).toBeTruthy();
