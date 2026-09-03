@@ -125,7 +125,7 @@ function ActiveCardList({
   return (
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-semibold">Cards</Text>
+        <Text className="text-lg font-semibold">{deck.title}</Text>
         <Button onPress={() => open({ kind: 'create' })}>
           <Text>New card</Text>
         </Button>

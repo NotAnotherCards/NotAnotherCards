@@ -46,11 +46,12 @@ beforeEach(() => {
 describe('CardList', () => {
   it('waits for the database manager before rendering', () => {
     mockSessionDb = { manager: null };
-    expect(render(<CardList deckId="d1" />).queryByText('Cards')).toBeNull();
+    expect(render(<CardList deckId="d1" />).queryByText('Spanish')).toBeNull();
   });
 
-  it('lists the cards with front and back', () => {
+  it('shows the deck title and lists the cards with front and back', () => {
     const { getByText } = render(<CardList deckId="d1" />);
+    expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('hola')).toBeTruthy();
     expect(getByText('hello')).toBeTruthy();
     expect(getByText('adiós')).toBeTruthy();
