@@ -94,6 +94,27 @@ describe('ReviewSession', () => {
     expect(screen.getByText('to go')).toBeInTheDocument();
   });
 
+  it('renders Markdown on the current card, answer, and next-card preview', () => {
+    renderSession([
+      {
+        ...card,
+        front: '**gehen**',
+        back: '*to go*\n\n- ich gehe\n- du gehst',
+      },
+      { ...secondCard, front: '## sein' },
+    ]);
+
+    expect(
+      screen.getAllByText('gehen').map((element) => element.tagName),
+    ).toEqual(['STRONG', 'STRONG']);
+    expect(screen.getByText('sein').tagName).toBe('H2');
+
+    revealCard();
+
+    expect(screen.getByText('to go').tagName).toBe('EM');
+    expect(screen.getByRole('list')).toBeInTheDocument();
+  });
+
   it('shows the current deck title above the review card', () => {
     renderSession();
 

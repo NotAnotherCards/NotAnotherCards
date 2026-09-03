@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { PageContainer } from '@/components/PageContainer';
 import { CardForm } from '@/components/deck/CardForm';
 import { Card } from '@/hooks/useStore';
@@ -592,9 +593,10 @@ export function ReviewSession({
               data-testid="next-review-card"
               aria-hidden="true"
             >
-              <span className="max-h-[42svh] overflow-y-auto text-3xl font-bold wrap-break-word sm:max-h-56">
-                {nextCard.front}
-              </span>
+              <MarkdownRenderer
+                content={nextCard.front}
+                className="max-w-full text-3xl font-bold wrap-break-word"
+              />
             </div>
           )}
           <div
@@ -650,15 +652,16 @@ export function ReviewSession({
                   aria-hidden={isFlipped}
                   className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
                 >
-                  <span className="max-h-[42svh] overflow-y-auto text-3xl font-bold wrap-break-word sm:max-h-56">
-                    {card.front}
-                  </span>
+                  <MarkdownRenderer
+                    content={card.front}
+                    className="max-w-full text-3xl font-bold wrap-break-word"
+                  />
                 </div>
                 <div
                   aria-hidden={!isFlipped}
                   className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
                 >
-                  <div className="flex max-h-[42svh] w-full flex-col items-center gap-5 overflow-y-auto py-12 sm:max-h-56">
+                  <div className="flex w-full flex-col items-center gap-5 py-12">
                     <div className="flex max-w-full items-center gap-2 text-xl font-medium text-muted-foreground">
                       <Button
                         type="button"
@@ -670,12 +673,16 @@ export function ReviewSession({
                       >
                         <Volume2 className="size-4" />
                       </Button>
-                      <span className="wrap-break-word">{card.front}</span>
+                      <MarkdownRenderer
+                        content={card.front}
+                        className="max-w-full text-center wrap-break-word"
+                      />
                     </div>
                     <span className="h-px w-16 shrink-0 bg-border" />
-                    <span className="text-3xl font-bold wrap-break-word">
-                      {card.back}
-                    </span>
+                    <MarkdownRenderer
+                      content={card.back}
+                      className="max-w-full text-3xl font-bold text-center wrap-break-word [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
+                    />
                   </div>
                 </div>
               </div>
