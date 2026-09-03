@@ -89,6 +89,23 @@ Reusables adoption (#143) closes the gap: the first component that needs
 `--radius` adds it to `global.css` at web's 0.625rem and maps `borderRadius` in
 `tailwind.config.js`, after which the class names mean the same on both clients.
 
+## Motion and micro-animations
+
+UI transitions enhance feel and feedback without slowing interaction. Animations must be quick, functional, and consistent across components.
+
+- **Micro-interactions.** Interactive controls (buttons, menu triggers, input fields) use 150ms–200ms color and transform transitions (`transition-colors duration-200`, `active:translate-y-px`, `hover:bg-accent/60`).
+- **Surface & Banner Animations.** Floating banners, dialogs, and alerts enter with `animate-in fade-in slide-in-from-top-4 duration-300` or slide transitions (`duration-200` to `duration-300`).
+- **Reduced Motion.** All CSS animations and transitions must respect user system preferences. Web uses `motion-reduce:animate-none` / `motion-reduce:transition-none` to instantly present final states when reduced motion is requested.
+- **Mobile.** Mobile interactions use native touch feedback (Pressable ripple/opacity) and 150ms–250ms layout transitions.
+
+## Responsive breakpoints and layout grid
+
+Both clients use Tailwind's responsive grid and container rules to ensure layouts adapt fluidly across devices.
+
+- **Breakpoints.** Web targets standard Tailwind breakpoints: `sm` (640px), `md` (768px), `lg` (1024px), `xl` (1280px).
+- **Layout Containers.** Main screen content is centered in structured container shells (`max-w-xl` for focused forms and floating notification shells; `max-w-5xl` or `max-w-7xl` for dashboards and deck grids). Horizontal page padding is standard `px-4 sm:px-6`.
+- **Grid Patterns.** Collection layouts (deck cards, study grids) default to single-column on mobile (`grid-cols-1`) and expand dynamically on wider screens (`sm:grid-cols-2 lg:grid-cols-3 gap-4`).
+
 ## Icons
 
 - **Web** uses `lucide-react` for general UI icons. Brand marks are dedicated
