@@ -421,7 +421,9 @@ describe('ReviewSession', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(screen.getByRole('heading', { name: 'Undo' })).toBeInTheDocument();
-    expect(screen.getByText('Undo is still in development.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Undo is still in development.'),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
       'data-card-id',
       'card-2',

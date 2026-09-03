@@ -277,7 +277,9 @@ export function ReviewSession({
     setIsDeletingNote(false);
     setIsFlipped(false);
     setSessionCards((currentCards) =>
-      currentCards.filter((sessionCard) => sessionCard.note_id !== deletedNoteId),
+      currentCards.filter(
+        (sessionCard) => sessionCard.note_id !== deletedNoteId,
+      ),
     );
     setCurrentCardIndex(currentCardIndex - deletedCardsBeforeCurrent);
     setExitDirection(null);
@@ -502,12 +504,7 @@ export function ReviewSession({
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (
-      exitDirection ||
-      isSavingReview ||
-      !isFlipped ||
-      !pointerStart.current
-    )
+    if (exitDirection || isSavingReview || !isFlipped || !pointerStart.current)
       return;
 
     event.preventDefault();
@@ -1026,7 +1023,10 @@ function UndoPlaceholderDialog({ onClose }: { onClose: () => void }) {
         >
           Undo is still in development.
         </p>
-        <Button onClick={onClose} className="mt-6 min-h-12 w-full cursor-pointer">
+        <Button
+          onClick={onClose}
+          className="mt-6 min-h-12 w-full cursor-pointer"
+        >
           Close
         </Button>
       </div>

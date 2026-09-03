@@ -102,7 +102,9 @@ describe('DeckReviewRoute', () => {
 
     render(<DeckReviewPage deckId={deck.id} />);
 
-    expect(screen.getByRole('heading', { name: 'No cards due' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'No cards due' }),
+    ).toBeInTheDocument();
   });
 
   it('passes only due cards from the selected deck into the review session', () => {
