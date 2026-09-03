@@ -46,7 +46,7 @@ function LanguageField({
               accessibilityState={{ selected, disabled }}
               disabled={disabled}
               className={`basis-[48%] rounded-lg border px-3 py-2 ${
-                selected ? 'border-primary bg-primary/10' : 'border-input'
+                selected ? 'border-primary bg-accent' : 'border-input'
               } ${disabled ? 'opacity-40' : ''}`}
               onPress={() => onChange(language.value)}
             >
