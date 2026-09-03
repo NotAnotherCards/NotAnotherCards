@@ -91,6 +91,15 @@ function isReviewCardControl(target: EventTarget | null) {
   );
 }
 
+function isInteractiveKeyboardTarget(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    target.closest(
+      'input, textarea, select, button, a[href], [contenteditable="true"], [role="button"], [role="textbox"]',
+    ) !== null
+  );
+}
+
 type ReviewAnswerButtonsProps = {
   active: boolean;
   disabled: boolean;
@@ -388,6 +397,10 @@ export function ReviewSession({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isCreateCardOpen || isDeleteConfirmationOpen) {
+        return;
+      }
+
       if (isSettingsOpen) {
         if (event.key === 'Escape') {
           event.preventDefault();
@@ -397,6 +410,8 @@ export function ReviewSession({
       }
 
       if (isWordDetailsOpen) {
+        if (isInteractiveKeyboardTarget(event.target)) return;
+
         if (event.key === 'Escape') {
           event.preventDefault();
           setIsWordDetailsOpen(false);
@@ -415,6 +430,8 @@ export function ReviewSession({
         }
         return;
       }
+
+      if (isInteractiveKeyboardTarget(event.target)) return;
 
       if (!isFlipped) {
         if (
@@ -458,6 +475,8 @@ export function ReviewSession({
     isFlipped,
     isSavingReview,
     isUndoingReview,
+    isCreateCardOpen,
+    isDeleteConfirmationOpen,
     isSettingsOpen,
     isWordDetailsOpen,
     reviewMode,
@@ -857,11 +876,11 @@ function WordDetailsDialog({
   onAnswer,
   reviewMode,
 }: WordDetailsDialogProps) {
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    closeButtonRef.current?.focus();
+    dialogRef.current?.focus();
   }, []);
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -897,7 +916,9 @@ function WordDetailsDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby="word-details-title"
         aria-describedby="word-details-description"
@@ -921,7 +942,6 @@ function WordDetailsDialog({
             </p>
           </div>
           <Button
-            ref={closeButtonRef}
             type="button"
             variant="ghost"
             size="icon"

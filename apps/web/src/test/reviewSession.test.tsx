@@ -160,6 +160,40 @@ describe('ReviewSession', () => {
     expect(screen.getAllByText('gehen')).not.toHaveLength(0);
   });
 
+  it.each([
+    ['front', false],
+    ['back', true],
+  ])(
+    'allows typing a multi-word card without triggering review shortcuts on the %s side',
+    (_, revealAnswerFirst) => {
+      const { onRecordReview } = renderSession([card, secondCard]);
+      if (revealAnswerFirst) revealCard();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add a new card' }));
+      const frontInput = screen.getByLabelText(
+        'Front (Question, term, or prompt)',
+      );
+      const spaceEvent = new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Space',
+        key: ' ',
+      });
+
+      frontInput.dispatchEvent(spaceEvent);
+      fireEvent.change(frontInput, { target: { value: 'two words' } });
+      fireEvent.keyDown(frontInput, { key: 'ArrowRight' });
+
+      expect(spaceEvent.defaultPrevented).toBe(false);
+      expect(frontInput).toHaveValue('two words');
+      expect(onRecordReview).not.toHaveBeenCalled();
+      expect(screen.getByTestId('review-card-flip')).toHaveAttribute(
+        'data-flipped',
+        String(revealAnswerFirst),
+      );
+    },
+  );
+
   it('keeps the review answer area stable and aligns footer actions with its outer columns', () => {
     renderSession();
 
