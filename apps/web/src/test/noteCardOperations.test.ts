@@ -13,6 +13,7 @@ import {
 } from '@repo/offline-db';
 import {
   createCard,
+  createCardsBatch,
   createDeck,
   deleteNote,
   disableCard,
@@ -232,4 +233,99 @@ describe('note, card, and membership operations', () => {
     );
   });
 
+  it('atomically creates a new deck and multiple cards in a single batch operation', async () => {
+    const db = await openDatabase();
+    const batchSpy = vi.spyOn(db, 'batch');
+
+    const deckId = await createCardsBatch(db, {
+      deckIdOrTitle: 'AI Generated Spanish Deck',
+      isNew: true,
+      description: 'AI Generated Cards',
+      cards: [
+        { front: 'Hola', back: 'Hello' },
+        { front: 'Gracias', back: 'Thank you' },
+      ],
+    });
+
+    expect(batchSpy).toHaveBeenCalledTimes(1);
+    // 1 deck record + (3 records per card * 2 cards) = 7 records total in batch
+    expect(batchSpy.mock.calls[0][0]).toHaveLength(7);
+
+    const deck = await db.get(UserDeck).find(deckId);
+    expect(deck.title).toBe('AI Generated Spanish Deck');
+    expect(deck.description).toBe('AI Generated Cards');
+
+    const cardsInDb = await getPersonalDictionaryQuery(db).fetch();
+    expect(cardsInDb).toHaveLength(2);
+
+    const notesInDb = await db.get(UserNote).query().fetch();
+    expect(notesInDb).toHaveLength(2);
+
+    const noteDecksInDb = await db.get(UserNoteDeck).query().fetch();
+    expect(noteDecksInDb).toHaveLength(2);
+  });
+
+  it('rolls back completely if batch execution fails', async () => {
+    const db = await openDatabase();
+
+    // Mock db.batch to throw an error simulating database transaction failure midway
+    vi.spyOn(db, 'batch').mockRejectedValueOnce(
+      new Error('Simulated database write failure'),
+    );
+
+    await expect(
+      createCardsBatch(db, {
+        deckIdOrTitle: 'Failed AI Deck',
+        isNew: true,
+        description: 'Should rollback',
+        cards: [
+          { front: 'Failed 1', back: 'F1' },
+          { front: 'Failed 2', back: 'F2' },
+        ],
+      }),
+    ).rejects.toThrow('Simulated database write failure');
+
+    // Verify nothing was persisted to the database
+    expect(await db.get(UserDeck).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(0);
+  });
+
+  it('fails one card creation mid-save and asserts no new deck, notes, or cards remain', async () => {
+    const db = await openDatabase();
+
+    const userCardCollection = db.get(UserCard);
+    let cardCreateCount = 0;
+    const originalPrepareCreate =
+      userCardCollection.prepareCreate.bind(userCardCollection);
+    vi.spyOn(userCardCollection, 'prepareCreate').mockImplementation(
+      (args: Parameters<typeof userCardCollection.prepareCreate>[0]) => {
+        cardCreateCount += 1;
+        if (cardCreateCount === 2) {
+          throw new Error('Mid-save failure on card #2');
+        }
+        return originalPrepareCreate(args);
+      },
+    );
+
+    await expect(
+      createCardsBatch(db, {
+        deckIdOrTitle: 'Mid-Save Failure Deck',
+        isNew: true,
+        description: 'AI Generated Cards',
+        cards: [
+          { front: 'Card 1', back: 'C1' },
+          { front: 'Card 2', back: 'C2' },
+          { front: 'Card 3', back: 'C3' },
+        ],
+      }),
+    ).rejects.toThrow('Mid-save failure on card #2');
+
+    // Assert that NO deck, NO notes, NO cards, and NO noteDecks exist in the database
+    expect(await db.get(UserDeck).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(0);
+  });
 });
