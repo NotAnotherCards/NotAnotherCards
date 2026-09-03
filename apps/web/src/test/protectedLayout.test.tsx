@@ -55,6 +55,7 @@ const mockSession = {
 // Verify that navigating to a protected route loads the layout along with nested pages like dashboard
 describe('Protected Layout Guards', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, '', '/dashboard');
 
@@ -159,5 +160,74 @@ describe('Protected Layout Guards', () => {
     expect(
       await screen.findByRole('heading', { name: /Welcome Back/i }),
     ).toBeInTheDocument();
+  });
+
+  it('stays on protected page and shows retryable error banner when sign-out returns an error', async () => {
+    vi.mocked(authClient.signOut).mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Server error during sign out',
+        status: 500,
+        statusText: 'Internal Server Error',
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<App />);
+    await act(async () => {
+      await router.navigate({ to: '/dashboard' });
+    });
+
+    const navigateSpy = vi.spyOn(router, 'navigate');
+
+    const accountTrigger = await screen.findByRole('button', {
+      name: /Account menu/i,
+    });
+    await user.click(accountTrigger);
+
+    const logoutItem = await screen.findByRole('menuitem', {
+      name: /Log out/i,
+    });
+    await user.click(logoutItem);
+
+    expect(authClient.signOut).toHaveBeenCalledTimes(1);
+
+    // Assert that navigation to /login was NOT attempted after failed sign-out
+    expect(navigateSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ to: '/login' }),
+    );
+
+    // Verify error banner is displayed
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Server error during sign out/i),
+    ).toBeInTheDocument();
+
+    // Mock sign-out success for retry
+    vi.mocked(authClient.signOut).mockImplementation(async () => {
+      vi.mocked(authClient.getSession).mockResolvedValue({
+        data: null,
+        error: null,
+      });
+      vi.mocked(authClient.useSession).mockReturnValue({
+        data: null,
+        isPending: false,
+        isRefetching: false,
+        error: null,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof authClient.useSession>);
+      return { data: null, error: null };
+    });
+
+    // Click retry button
+    const retryButton = await screen.findByRole('button', { name: /Retry/i });
+    await user.click(retryButton);
+
+    expect(authClient.signOut).toHaveBeenCalledTimes(2);
+
+    // Assert navigation to /login IS called once retry succeeds
+    expect(navigateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ to: '/login' }),
+    );
   });
 });
