@@ -2,6 +2,9 @@ import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { DeckList } from '@/components/deck-list';
 
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+
 const manager = { tag: 'manager' };
 let mockSessionDb: { manager: unknown } = { manager };
 jest.mock('../lib/database-provider', () => ({
@@ -111,6 +114,12 @@ describe('DeckList', () => {
         'Verbs',
       ),
     );
+  });
+
+  it('opens the deck from its header', () => {
+    const { getByLabelText } = render(<DeckList />);
+    fireEvent.press(getByLabelText('Open Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
   });
 
   it('asks for confirmation before deleting', async () => {

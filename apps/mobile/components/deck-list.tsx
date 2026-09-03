@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useDecks, type Deck } from '@/lib/decks';
@@ -38,6 +39,7 @@ type DeckAction =
   | { kind: 'delete'; deck: Deck };
 
 function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
+  const router = useRouter();
   const { decks, isLoading, error, cardCount, writes } = useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
@@ -127,15 +129,23 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
       )}
       {decks.map((deck) => (
         <Card key={deck.id}>
-          <CardHeader>
-            <CardTitle>{deck.title}</CardTitle>
-            {deck.description ? (
-              <CardDescription>{deck.description}</CardDescription>
-            ) : null}
-            <Text className="text-xs text-muted-foreground">
-              {cardCount(deck.id)} cards
-            </Text>
-          </CardHeader>
+          {/* The header opens the deck; edit and delete stay below it, so
+              the two targets never overlap. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${deck.title}`}
+            onPress={() => router.push(`/deck/${deck.id}`)}
+          >
+            <CardHeader>
+              <CardTitle>{deck.title}</CardTitle>
+              {deck.description ? (
+                <CardDescription>{deck.description}</CardDescription>
+              ) : null}
+              <Text className="text-xs text-muted-foreground">
+                {cardCount(deck.id)} cards
+              </Text>
+            </CardHeader>
+          </Pressable>
           <CardContent>
             {action?.kind === 'delete' && action.deck.id === deck.id ? (
               <View className="gap-2">
