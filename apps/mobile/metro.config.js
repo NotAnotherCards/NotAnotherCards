@@ -17,4 +17,7 @@ config.resolver.nodeModulesPaths = [
 
 // 16px per rem, as on web. nativewind defaults to 14, which scales every
 // rem-based class down against the web client the screens are meant to match.
-module.exports = withNativeWind(config, { input: './global.css', inlineRem: 16 });
+module.exports = withNativeWind(config, {
+  input: './global.css',
+  inlineRem: 16,
+});
