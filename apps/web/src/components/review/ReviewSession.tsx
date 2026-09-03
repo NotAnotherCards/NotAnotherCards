@@ -21,22 +21,8 @@ type ReviewSessionProps = {
   onExit: () => void;
   onCreateCard: (data: { front: string; back: string }) => Promise<void>;
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
-  onUndoReview: (input: {
-    cardId: string;
-    reviewEventId: string;
-    previousDueAt: number;
-    previousScheduledIntervalMinutes: number;
-  }) => Promise<void>;
   onDeleteNote: (noteId: string) => Promise<void>;
   reviewMode?: ReviewMode;
-};
-
-type LastReview = {
-  cardId: string;
-  cardIndex: number;
-  reviewEventId: string;
-  previousDueAt: number;
-  previousScheduledIntervalMinutes: number;
 };
 
 const SWIPE_THRESHOLD_PX = 48;
@@ -195,7 +181,6 @@ export function ReviewSession({
   onExit,
   onCreateCard,
   onRecordReview,
-  onUndoReview,
   onDeleteNote,
   reviewMode = CURRENT_REVIEW_MODE,
 }: ReviewSessionProps) {
@@ -209,9 +194,8 @@ export function ReviewSession({
   const [createCardError, setCreateCardError] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isSavingReview, setIsSavingReview] = useState(false);
-  const [lastReview, setLastReview] = useState<LastReview | null>(null);
-  const [undoError, setUndoError] = useState<string | null>(null);
-  const [isUndoingReview, setIsUndoingReview] = useState(false);
+  const [hasAnsweredCard, setHasAnsweredCard] = useState(false);
+  const [isUndoPlaceholderOpen, setIsUndoPlaceholderOpen] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -244,7 +228,7 @@ export function ReviewSession({
   };
 
   const handleCardClick = () => {
-    if (exitDirection || isSavingReview || isUndoingReview) return;
+    if (exitDirection || isSavingReview) return;
     if (didHandleSwipe.current) {
       didHandleSwipe.current = false;
       return;
@@ -321,24 +305,14 @@ export function ReviewSession({
   };
 
   const answerCard = async (answer: ReviewAnswer) => {
-    if (isSavingReview || isUndoingReview || exitDirection) return;
+    if (isSavingReview || exitDirection) return;
 
     setReviewError(null);
-    setUndoError(null);
     setIsSavingReview(true);
-    const previousReviewState = {
-      cardId: card.id,
-      cardIndex: currentCardIndex,
-      previousDueAt: card.due_at,
-      previousScheduledIntervalMinutes: card.scheduled_interval_minutes,
-    };
 
     try {
-      const review = await onRecordReview(
-        card.id,
-        reviewRatingByAnswer[answer],
-      );
-      setLastReview({ ...previousReviewState, reviewEventId: review.id });
+      await onRecordReview(card.id, reviewRatingByAnswer[answer]);
+      setHasAnsweredCard(true);
     } catch {
       setReviewError('Could not save your answer. Try again.');
       setIsSavingReview(false);
@@ -363,27 +337,6 @@ export function ReviewSession({
     startCardExit(directionByAnswer[answer]);
   };
 
-  const undoLastReview = async () => {
-    if (!lastReview || isSavingReview || isUndoingReview) return;
-
-    setReviewError(null);
-    setUndoError(null);
-    setIsUndoingReview(true);
-
-    try {
-      await onUndoReview(lastReview);
-    } catch {
-      setUndoError('Could not undo your answer. Try again.');
-      setIsUndoingReview(false);
-      return;
-    }
-
-    setCurrentCardIndex(lastReview.cardIndex);
-    setIsFlipped(true);
-    setLastReview(null);
-    setIsUndoingReview(false);
-  };
-
   useEffect(() => {
     return () => {
       if (exitTimer.current) window.clearTimeout(exitTimer.current);
@@ -405,7 +358,11 @@ export function ReviewSession({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isCreateCardOpen || isDeleteConfirmationOpen) {
+      if (
+        isCreateCardOpen ||
+        isDeleteConfirmationOpen ||
+        isUndoPlaceholderOpen
+      ) {
         return;
       }
 
@@ -482,9 +439,9 @@ export function ReviewSession({
     exitDirection,
     isFlipped,
     isSavingReview,
-    isUndoingReview,
     isCreateCardOpen,
     isDeleteConfirmationOpen,
+    isUndoPlaceholderOpen,
     isSettingsOpen,
     isWordDetailsOpen,
     reviewMode,
@@ -521,7 +478,7 @@ export function ReviewSession({
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (exitDirection || isSavingReview || isUndoingReview) return;
+    if (exitDirection || isSavingReview) return;
 
     if (isReviewCardControl(event.target)) return;
 
@@ -547,7 +504,6 @@ export function ReviewSession({
     if (
       exitDirection ||
       isSavingReview ||
-      isUndoingReview ||
       !isFlipped ||
       !pointerStart.current
     )
@@ -584,7 +540,7 @@ export function ReviewSession({
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (exitDirection || isSavingReview || isUndoingReview) return;
+    if (exitDirection || isSavingReview) return;
     if (isReviewCardControl(event.target)) return;
 
     const start = pointerStart.current;
@@ -774,7 +730,7 @@ export function ReviewSession({
         >
           <ReviewAnswerButtons
             active={isFlipped}
-            disabled={isSavingReview || isUndoingReview}
+            disabled={isSavingReview}
             onAnswer={answerCard}
             onReveal={revealAnswer}
           />
@@ -784,14 +740,6 @@ export function ReviewSession({
               role="alert"
             >
               {reviewError}
-            </p>
-          )}
-          {undoError && (
-            <p
-              className="mt-2 text-center text-sm text-destructive"
-              role="alert"
-            >
-              {undoError}
             </p>
           )}
         </div>
@@ -813,12 +761,11 @@ export function ReviewSession({
             </Button>
           </div>
           <div className="col-start-2 flex justify-center">
-            {lastReview && (
+            {hasAnsweredCard && (
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => void undoLastReview()}
-                disabled={isSavingReview || isUndoingReview}
+                onClick={() => setIsUndoPlaceholderOpen(true)}
                 className="cursor-pointer text-muted-foreground hover:bg-transparent hover:text-foreground"
               >
                 Undo
@@ -859,6 +806,12 @@ export function ReviewSession({
 
       {isSettingsOpen && (
         <SettingsPlaceholderDialog onClose={() => setIsSettingsOpen(false)} />
+      )}
+
+      {isUndoPlaceholderOpen && (
+        <UndoPlaceholderDialog
+          onClose={() => setIsUndoPlaceholderOpen(false)}
+        />
       )}
 
       {isDeleteConfirmationOpen && (
@@ -1040,6 +993,33 @@ function SettingsPlaceholderDialog({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           className="mt-6 min-h-12 w-full cursor-pointer"
         >
+          Close
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function UndoPlaceholderDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="undo-placeholder-title"
+        aria-describedby="undo-placeholder-description"
+        className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
+      >
+        <h2 id="undo-placeholder-title" className="text-xl font-bold">
+          Undo
+        </h2>
+        <p
+          id="undo-placeholder-description"
+          className="mt-2 text-sm text-muted-foreground"
+        >
+          Undo is still in development.
+        </p>
+        <Button onClick={onClose} className="mt-6 min-h-12 w-full cursor-pointer">
           Close
         </Button>
       </div>

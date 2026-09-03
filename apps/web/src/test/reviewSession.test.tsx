@@ -44,7 +44,6 @@ function renderSession(
   cards: Card[] = [card],
   onCreateCard = vi.fn().mockResolvedValue(undefined),
   onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' }),
-  onUndoReview = vi.fn().mockResolvedValue(undefined),
   onDeleteNote = vi.fn().mockResolvedValue(undefined),
 ) {
   const onExit = vi.fn();
@@ -55,11 +54,10 @@ function renderSession(
       onExit={onExit}
       onCreateCard={onCreateCard}
       onRecordReview={onRecordReview}
-      onUndoReview={onUndoReview}
       onDeleteNote={onDeleteNote}
     />,
   );
-  return { onCreateCard, onExit, onRecordReview, onUndoReview, onDeleteNote };
+  return { onCreateCard, onExit, onRecordReview, onDeleteNote };
 }
 
 function revealCard() {
@@ -380,10 +378,9 @@ describe('ReviewSession', () => {
     expect(screen.getAllByText('sein')).not.toHaveLength(0);
   });
 
-  it('undoes the last saved answer and returns to that card on its answer side', async () => {
+  it('shows an Undo placeholder after an answer without changing the review queue', async () => {
     const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-42' });
-    const onUndoReview = vi.fn().mockResolvedValue(undefined);
-    renderSession([card, secondCard], undefined, onRecordReview, onUndoReview);
+    renderSession([card, secondCard], undefined, onRecordReview);
     revealCard();
 
     fireEvent.click(screen.getByRole('button', { name: 'Remembered' }));
@@ -393,55 +390,16 @@ describe('ReviewSession', () => {
     finishCardExit();
 
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(onUndoReview).toHaveBeenCalledWith({
-      cardId: 'card-1',
-      cardIndex: 0,
-      reviewEventId: 'review-42',
-      previousDueAt: card.due_at,
-      previousScheduledIntervalMinutes: 0,
-    });
-    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
-      'data-card-id',
-      'card-1',
-    );
-    expect(screen.getByTestId('review-card-flip')).toHaveAttribute(
-      'data-flipped',
-      'true',
-    );
-    expect(
-      screen.queryByRole('button', { name: 'Undo' }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('keeps Undo available and shows an error when the undo write fails', async () => {
-    const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-42' });
-    const onUndoReview = vi.fn().mockRejectedValue(new Error('write failed'));
-    renderSession([card, secondCard], undefined, onRecordReview, onUndoReview);
-    revealCard();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Forgot' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    finishCardExit();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Could not undo your answer. Try again.',
-    );
-    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
+    expect(screen.getByRole('heading', { name: 'Undo' })).toBeInTheDocument();
+    expect(screen.getByText('Undo is still in development.')).toBeInTheDocument();
     expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
       'data-card-id',
       'card-2',
     );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
   });
 
   it('moves to the next card to the right after Knew it', async () => {
@@ -649,7 +607,6 @@ describe('ReviewSession', () => {
       [card, siblingCard, secondCard],
       undefined,
       undefined,
-      undefined,
       onDeleteNote,
     );
     revealCard();
@@ -698,7 +655,7 @@ describe('ReviewSession', () => {
 
   it('keeps the delete confirmation open when deleting the note fails', async () => {
     const onDeleteNote = vi.fn().mockRejectedValue(new Error('write failed'));
-    renderSession([card], undefined, undefined, undefined, onDeleteNote);
+    renderSession([card], undefined, undefined, onDeleteNote);
     revealCard();
 
     fireEvent.keyDown(window, { key: 'ArrowDown' });

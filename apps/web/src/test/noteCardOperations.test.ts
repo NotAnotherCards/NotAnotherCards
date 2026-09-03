@@ -20,7 +20,6 @@ import {
   getReviewHistoryQuery,
   recordReviewEvent,
   removeNoteFromDeck,
-  undoReviewEvent,
   updateCard,
 } from '@repo/offline-db';
 
@@ -233,23 +232,4 @@ describe('note, card, and membership operations', () => {
     );
   });
 
-  it('restores the previous card schedule and tombstones the review event', async () => {
-    const db = await openDatabase();
-    const deck = await createDeck(db, 'Deck');
-    const card = await createCard(db, deck.id, 'front', 'back');
-    const previousDueAt = card.due_at;
-    const review = await recordReviewEvent(db, card.id, 3);
-
-    await undoReviewEvent(db, {
-      cardId: card.id,
-      reviewEventId: review.id,
-      previousDueAt,
-      previousScheduledIntervalMinutes: 0,
-    });
-
-    const restoredCard = await db.get(UserCard).find(card.id);
-    expect(restoredCard.due_at).toBe(previousDueAt);
-    expect(restoredCard.scheduled_interval_minutes).toBe(0);
-    expect(await getReviewHistoryQuery(db, card.id).fetch()).toHaveLength(0);
-  });
 });

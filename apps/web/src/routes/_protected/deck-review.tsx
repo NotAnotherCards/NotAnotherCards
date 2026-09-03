@@ -112,14 +112,6 @@ function DeckReviewRoute() {
         await store.createCard(deckId, data.front, data.back);
       }}
       onRecordReview={store.recordReview}
-      onUndoReview={async (input) => {
-        await store.undoReview(
-          input.cardId,
-          input.reviewEventId,
-          input.previousDueAt,
-          input.previousScheduledIntervalMinutes,
-        );
-      }}
       onDeleteNote={store.deleteNote}
     />
   );

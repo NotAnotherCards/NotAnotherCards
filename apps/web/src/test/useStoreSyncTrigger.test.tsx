@@ -57,19 +57,13 @@ describe('useStore sync triggers', () => {
       await result.current.updateDeck(deck.id, 'Deck 2', 'desc');
       const card = await result.current.createCard(deck.id, 'front', 'back');
       await result.current.updateCard(card.id, 'front 2', 'back 2');
-      const review = await result.current.recordReview(card.id, 2);
-      await result.current.undoReview(
-        card.id,
-        review.id,
-        card.due_at,
-        card.scheduled_interval_minutes,
-      );
+      await result.current.recordReview(card.id, 2);
       await result.current.removeNoteFromDeck(card.note_id, deck.id);
       await result.current.deleteNote(card.note_id);
       await result.current.deleteDeck(deck.id);
     });
 
-    expect(notifyLocalWrite).toHaveBeenCalledTimes(9);
+    expect(notifyLocalWrite).toHaveBeenCalledTimes(8);
     await db.driver.close();
   });
 });
