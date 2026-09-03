@@ -89,6 +89,39 @@ Reusables adoption (#143) closes the gap: the first component that needs
 `--radius` adds it to `global.css` at web's 0.625rem and maps `borderRadius` in
 `tailwind.config.js`, after which the class names mean the same on both clients.
 
+## Motion and micro-animations
+
+Animations are designed to be fast and functional: they confirm user actions without blocking interactions.
+
+- **Micro-interactions.** Web elements transition color and transform over 150ms–200ms
+  (`transition-colors duration-200`, `active:scale-95`). 128 animation and
+  transition utilities are currently in use.
+- **Surfaces.** Floating notification banners, dialog overlays, and alerts enter using
+  `animate-in fade-in slide-in-from-top-4 duration-300`.
+- **Reduced motion.** Target standard. Web currently has no `motion-reduce:` usage
+  (0 of 128). Newly introduced animated surfaces should pair each animation with
+  `motion-reduce:animate-none` / `motion-reduce:transition-none`.
+- **Mobile.** Mobile includes no motion today: 10 Pressables, none using ripple,
+  pressed opacity, or timed transitions, and no `Animated` usage. Touch
+  feedback will arrive with the React Native Reusables adoption (#233); until then
+  its absence is intentional, not an oversight.
+
+## Responsive breakpoints and layout grid
+
+Web only. Mobile uses no media query breakpoints, grids, or max-width utilities today,
+and will refrain from doing so until a dedicated tablet layout approach is defined;
+that is a design decision, not a gap to fix.
+
+- **Breakpoints.** Web uses Tailwind defaults: `sm` (640px), `md` (768px), `lg` (1024px),
+  `xl` (1280px).
+- **Containers.** Focused forms use `max-w-md` (11 occurrences) or `max-w-lg` (3).
+  Dashboards use `max-w-7xl` (2). The single `max-w-xl` is reserved for the floating
+  banner container.
+- **Grids.** Collection layouts start single-column and expand:
+  `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6` for deck grids
+  (`DeckList.tsx:193`), and `grid-cols-1 sm:grid-cols-2 gap-4` for summary stat tiles (3
+  occurrences).
+
 ## Icons
 
 - **Web** uses `lucide-react` for general UI icons. Brand marks are dedicated
