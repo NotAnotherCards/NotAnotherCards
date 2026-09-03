@@ -178,6 +178,8 @@ describe('Protected Layout Guards', () => {
       await router.navigate({ to: '/dashboard' });
     });
 
+    const navigateSpy = vi.spyOn(router, 'navigate');
+
     const accountTrigger = await screen.findByRole('button', {
       name: /Account menu/i,
     });
@@ -190,19 +192,42 @@ describe('Protected Layout Guards', () => {
 
     expect(authClient.signOut).toHaveBeenCalledTimes(1);
 
-    // Verify user stays on protected page (dashboard) and error banner is displayed
-    expect(
-      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
-    ).toBeInTheDocument();
+    // Assert that navigation to /login was NOT attempted after failed sign-out
+    expect(navigateSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ to: '/login' }),
+    );
+
+    // Verify error banner is displayed
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(
       await screen.findByText(/Server error during sign out/i),
     ).toBeInTheDocument();
+
+    // Mock sign-out success for retry
+    vi.mocked(authClient.signOut).mockImplementation(async () => {
+      vi.mocked(authClient.getSession).mockResolvedValue({
+        data: null,
+        error: null,
+      });
+      vi.mocked(authClient.useSession).mockReturnValue({
+        data: null,
+        isPending: false,
+        isRefetching: false,
+        error: null,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof authClient.useSession>);
+      return { data: null, error: null };
+    });
 
     // Click retry button
     const retryButton = await screen.findByRole('button', { name: /Retry/i });
     await user.click(retryButton);
 
     expect(authClient.signOut).toHaveBeenCalledTimes(2);
+
+    // Assert navigation to /login IS called once retry succeeds
+    expect(navigateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ to: '/login' }),
+    );
   });
 });
