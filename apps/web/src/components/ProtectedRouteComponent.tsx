@@ -11,6 +11,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { FloatingBannerContainer } from '@/components/FloatingBannerContainer';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
 export function ProtectedLayoutComponent() {
@@ -93,32 +96,35 @@ export function ProtectedLayoutComponent() {
           </DropdownMenu>
         </header>
 
-        {logoutError && (
-          <div
-            role="alert"
-            className="fixed top-1 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4 pointer-events-none select-none animate-in fade-in slide-in-from-top-4 duration-300"
-          >
-            <div className="bg-background/95 backdrop-blur-xs border border-border/80 rounded-2xl shadow-lg overflow-hidden pointer-events-auto">
-              <div className="bg-destructive/10 border-destructive/20 dark:text-red-400 px-4 py-3.5 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="size-4 text-destructive shrink-0" />
-                  <span>
-                    <strong>Sign-out Error:</strong> {logoutError}
-                  </span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 active:bg-destructive transition-colors text-[10px] cursor-pointer shadow-sm shrink-0"
-                >
-                  <RefreshCw className="size-3" />
-                  Retry
-                </button>
+        <FloatingBannerContainer>
+          {logoutError && (
+            <Alert
+              variant="destructive"
+              className="bg-background/95 backdrop-blur-xs border-border/80 rounded-2xl shadow-lg overflow-hidden pointer-events-auto flex items-center justify-between gap-3 text-xs py-3.5 px-4"
+            >
+              <div className="flex items-center gap-2">
+                <AlertCircle className="size-4 text-destructive shrink-0" />
+                <AlertDescription className="text-xs text-foreground">
+                  <strong className="text-destructive font-semibold">
+                    Sign-out Error:
+                  </strong>{' '}
+                  {logoutError}
+                </AlertDescription>
               </div>
-            </div>
-          </div>
-        )}
+              <Button
+                size="xs"
+                variant="destructive"
+                onClick={handleLogout}
+                className="gap-1.5 cursor-pointer shadow-xs shrink-0 text-[10px]"
+              >
+                <RefreshCw className="size-3" />
+                Retry
+              </Button>
+            </Alert>
+          )}
 
-        {manager && <DatabaseBanner />}
+          {manager && <DatabaseBanner />}
+        </FloatingBannerContainer>
         <SyncStatus />
         <div className="flex-1 flex flex-col">
           <Outlet />
