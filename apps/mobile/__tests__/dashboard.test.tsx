@@ -90,6 +90,59 @@ describe('Dashboard screen', () => {
     expect(mockReplace).toHaveBeenCalledWith('/login');
   });
 
+  it('tells the truth when sign-out fails, and still returns to login', async () => {
+    const alertSpy = jest
+      .spyOn(require('react-native').Alert, 'alert')
+      .mockImplementation(() => {});
+    mockSignOut.mockResolvedValueOnce({ error: { status: 500 } });
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-a',
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    fireEvent.press(getByText('Log out'));
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/login'));
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Signed out on this device only',
+      expect.stringMatching(/may stay active/),
+    );
+    alertSpy.mockRestore();
+  });
+
+  it('shows no warning when sign-out succeeds', async () => {
+    const alertSpy = jest
+      .spyOn(require('react-native').Alert, 'alert')
+      .mockImplementation(() => {});
+    mockSignOut.mockResolvedValueOnce({ data: { success: true }, error: null });
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-a',
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    fireEvent.press(getByText('Log out'));
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/login'));
+    expect(alertSpy).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
   it('redirects to onboarding when the profile is unfinished', () => {
     mockUseSession.mockReturnValue({
       data: {
