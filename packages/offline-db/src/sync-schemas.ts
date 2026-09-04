@@ -7,8 +7,8 @@ import {
   UserNoteDeckRow,
   UserNoteRow,
   UserProfileRow,
-  validateNoteFieldsJson,
 } from './user-dictionary.js';
+import { validateNoteFieldsJson } from './note-registry.js';
 
 const baseSyncWireSchemas = syncSchemas({
   user_decks: UserDeckRow,
