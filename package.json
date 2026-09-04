@@ -23,5 +23,6 @@
   "engines": {
     "node": ">=24"
   },
-  "name": "with-vite"
+  "name": "with-vite",
+  "license": "MIT"
 }
