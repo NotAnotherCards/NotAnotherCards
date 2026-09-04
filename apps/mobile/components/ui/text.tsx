@@ -57,8 +57,6 @@ const ROLE: Partial<Record<TextVariant, Role>> = {
   h2: 'heading',
   h3: 'heading',
   h4: 'heading',
-  blockquote: Platform.select({ web: 'blockquote' as Role }),
-  code: Platform.select({ web: 'code' as Role }),
 };
 
 const ARIA_LEVEL: Partial<Record<TextVariant, string>> = {
