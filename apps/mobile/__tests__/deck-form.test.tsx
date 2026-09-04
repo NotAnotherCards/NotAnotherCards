@@ -42,4 +42,16 @@ describe('DeckForm', () => {
     expect(getByDisplayValue('Yoga')).toBeTruthy();
     expect(getByDisplayValue('Poses')).toBeTruthy();
   });
+
+  it('associates each label with its input', () => {
+    const { getByLabelText } = render(
+      <DeckForm title="New deck" onSubmit={jest.fn()} onCancel={jest.fn()} />,
+    );
+
+    expect(getByLabelText('Deck title')).toHaveProp(
+      'placeholder',
+      'e.g. Spanish vocabulary',
+    );
+    expect(getByLabelText('Description')).toHaveProp('placeholder', 'Optional');
+  });
 });
