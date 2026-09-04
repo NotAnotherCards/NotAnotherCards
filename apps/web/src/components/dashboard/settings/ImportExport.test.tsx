@@ -36,11 +36,14 @@ describe('ImportExport Component', () => {
     render(<ImportExport />);
     expect(screen.getByText('Export JSON')).toBeInTheDocument();
     expect(screen.getByText('Export CSV')).toBeInTheDocument();
-    expect(screen.getByText('Drop a file or click to browse')).toBeInTheDocument();
+    expect(
+      screen.getByText('Drop a file or click to browse'),
+    ).toBeInTheDocument();
   });
 
   it('triggers JSON export when clicking Export JSON', async () => {
-    const mockExportDataToJson = offlineDb.exportDataToJson as import('vitest').Mock;
+    const mockExportDataToJson =
+      offlineDb.exportDataToJson as import('vitest').Mock;
     mockExportDataToJson.mockResolvedValue({ format: 1, decks: [] });
 
     render(<ImportExport />);
@@ -54,7 +57,8 @@ describe('ImportExport Component', () => {
   });
 
   it('handles validation and previews the import report', async () => {
-    const mockValidateAndImportData = offlineDb.validateAndImportData as import('vitest').Mock;
+    const mockValidateAndImportData =
+      offlineDb.validateAndImportData as import('vitest').Mock;
     mockValidateAndImportData.mockResolvedValue({
       success: true,
       dry_run: true,
@@ -63,17 +67,25 @@ describe('ImportExport Component', () => {
     });
 
     render(<ImportExport />);
-    
+
     // Create a dummy file
-    const file = new File(['{"format": 1}'], 'test.json', { type: 'application/json' });
-    const input = document.getElementById('import-file-input') as HTMLInputElement;
-    
+    const file = new File(['{"format": 1}'], 'test.json', {
+      type: 'application/json',
+    });
+    const input = document.getElementById(
+      'import-file-input',
+    ) as HTMLInputElement;
+
     // Simulate file selection
     fireEvent.change(input, { target: { files: [file] } });
 
     // Should show validation spinner, then the preview counts
     await waitFor(() => {
-      expect(mockValidateAndImportData).toHaveBeenCalledWith(mockDb, '{"format": 1}', { format: 'json', dryRun: true });
+      expect(mockValidateAndImportData).toHaveBeenCalledWith(
+        mockDb,
+        '{"format": 1}',
+        { format: 'json', dryRun: true },
+      );
     });
 
     // Verify preview renders the counts
@@ -84,10 +96,14 @@ describe('ImportExport Component', () => {
   it('shows error if file is unsupported', async () => {
     render(<ImportExport />);
     const file = new File(['some text'], 'test.txt', { type: 'text/plain' });
-    const input = document.getElementById('import-file-input') as HTMLInputElement;
-    
+    const input = document.getElementById(
+      'import-file-input',
+    ) as HTMLInputElement;
+
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(await screen.findByText(/Unsupported file format/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Unsupported file format/i),
+    ).toBeInTheDocument();
   });
 });

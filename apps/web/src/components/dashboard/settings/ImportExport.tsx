@@ -109,7 +109,9 @@ export function ImportExport() {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext === 'json') return 'json';
     if (ext === 'csv') return 'csv';
-    throw new Error('Unsupported file format. Please upload a .json or .csv file.');
+    throw new Error(
+      'Unsupported file format. Please upload a .json or .csv file.',
+    );
   };
 
   const readFileContent = (file: File): Promise<string> =>
@@ -154,7 +156,11 @@ export function ImportExport() {
     try {
       const format = detectFormat(selectedFile);
       const options: ImportOptions = { format, dryRun: false };
-      const report = await validateAndImportData(db, fileContentRef.current, options);
+      const report = await validateAndImportData(
+        db,
+        fileContentRef.current,
+        options,
+      );
       setImportReport(report);
       setImportPhase(report.success ? 'done' : 'previewing');
     } catch (err: unknown) {
@@ -201,14 +207,17 @@ export function ImportExport() {
       const file = e.dataTransfer.files?.[0];
       if (file) {
         handleFileSelected(file).catch((err: unknown) => {
-          setImportError(err instanceof Error ? err.message : 'Unexpected error');
+          setImportError(
+            err instanceof Error ? err.message : 'Unexpected error',
+          );
         });
       }
     },
     [handleFileSelected],
   );
 
-  const isImportBusy = importPhase === 'validating' || importPhase === 'importing';
+  const isImportBusy =
+    importPhase === 'validating' || importPhase === 'importing';
 
   return (
     <div className="space-y-6">
@@ -333,10 +342,14 @@ export function ImportExport() {
                 Import Complete
               </AlertTitle>
               <AlertDescription className="text-xs text-emerald-600/80">
-                Successfully imported {importReport.counts.decks} deck{importReport.counts.decks !== 1 ? 's' : ''},{' '}
-                {importReport.counts.notes} note{importReport.counts.notes !== 1 ? 's' : ''},{' '}
-                {importReport.counts.cards} card{importReport.counts.cards !== 1 ? 's' : ''}, and{' '}
-                {importReport.counts.review_events} review event{importReport.counts.review_events !== 1 ? 's' : ''}.
+                Successfully imported {importReport.counts.decks} deck
+                {importReport.counts.decks !== 1 ? 's' : ''},{' '}
+                {importReport.counts.notes} note
+                {importReport.counts.notes !== 1 ? 's' : ''},{' '}
+                {importReport.counts.cards} card
+                {importReport.counts.cards !== 1 ? 's' : ''}, and{' '}
+                {importReport.counts.review_events} review event
+                {importReport.counts.review_events !== 1 ? 's' : ''}.
               </AlertDescription>
             </Alert>
           )}
@@ -379,7 +392,9 @@ export function ImportExport() {
                   <Upload className="size-6" />
                 </div>
                 <div className="text-sm font-medium">
-                  {isDragging ? 'Drop file here' : 'Drop a file or click to browse'}
+                  {isDragging
+                    ? 'Drop file here'
+                    : 'Drop a file or click to browse'}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Supports .json and .csv files
@@ -427,12 +442,18 @@ export function ImportExport() {
 
                 {/* Counts preview */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {([
-                    ['Decks', importReport.counts.decks, 'text-primary'],
-                    ['Notes', importReport.counts.notes, 'text-violet-500'],
-                    ['Cards', importReport.counts.cards, 'text-emerald-500'],
-                    ['Reviews', importReport.counts.review_events, 'text-amber-500'],
-                  ] as const).map(([label, count, color]) => (
+                  {(
+                    [
+                      ['Decks', importReport.counts.decks, 'text-primary'],
+                      ['Notes', importReport.counts.notes, 'text-violet-500'],
+                      ['Cards', importReport.counts.cards, 'text-emerald-500'],
+                      [
+                        'Reviews',
+                        importReport.counts.review_events,
+                        'text-amber-500',
+                      ],
+                    ] as const
+                  ).map(([label, count, color]) => (
                     <div
                       key={label}
                       className="p-3 rounded-xl border border-border/40 bg-muted/10 text-center"
@@ -447,13 +468,18 @@ export function ImportExport() {
                 {importReport.errors.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs font-bold text-destructive">
-                      {importReport.errors.length} validation error{importReport.errors.length !== 1 ? 's' : ''} found
+                      {importReport.errors.length} validation error
+                      {importReport.errors.length !== 1 ? 's' : ''} found
                     </p>
                     <div className="max-h-40 overflow-y-auto rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-1.5">
                       {importReport.errors.slice(0, 20).map((err, idx) => (
-                        <div key={idx} className="text-xs text-destructive/90 flex gap-2">
+                        <div
+                          key={idx}
+                          className="text-xs text-destructive/90 flex gap-2"
+                        >
                           <span className="font-mono shrink-0 opacity-70">
-                            {err.path ?? (err.row ? `row ${err.row}` : err.code)}
+                            {err.path ??
+                              (err.row ? `row ${err.row}` : err.code)}
                           </span>
                           <span>{err.message}</span>
                         </div>
