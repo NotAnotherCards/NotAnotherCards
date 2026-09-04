@@ -27,6 +27,9 @@ export interface RenderedCard {
  * cardId, so it is a sync protocol constant: changing it re-derives a
  * different card id on every device (see ids.ts).
  *
+ * `render` returns null when the fields cannot yield this card, so
+ * "can this card exist" and "what does it say" cannot drift apart.
+ *
  * The render contract: `front` is the complete question and `back` is the
  * answer content only, never restating the front — the review screen's
  * answer face composes front + divider + back itself, so a back that
@@ -34,8 +37,7 @@ export interface RenderedCard {
  */
 export interface NoteTemplate<Fields> {
   readonly key: string;
-  readonly requires: (fields: Fields) => boolean;
-  readonly render: (fields: Fields) => RenderedCard;
+  readonly render: (fields: Fields) => RenderedCard | null;
 }
 
 export interface RegisteredNoteType {
@@ -98,7 +100,6 @@ export const EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY = 'example-to-translation';
 const wordTemplates: readonly NoteTemplate<WordNoteFields>[] = [
   {
     key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
-    requires: () => true,
     render: (fields) => ({
       front: fields.part_of_speech
         ? `${fields.word} *(${fields.part_of_speech})*`
@@ -110,7 +111,6 @@ const wordTemplates: readonly NoteTemplate<WordNoteFields>[] = [
   },
   {
     key: TRANSLATION_TO_WORD_TEMPLATE_KEY,
-    requires: () => true,
     render: (fields) => ({
       front: fields.translation,
       back: fields.word,
@@ -118,12 +118,10 @@ const wordTemplates: readonly NoteTemplate<WordNoteFields>[] = [
   },
   {
     key: EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY,
-    requires: (fields) =>
-      fields.example !== undefined && fields.example_translation !== undefined,
-    render: (fields) => ({
-      front: fields.example ?? '',
-      back: fields.example_translation ?? '',
-    }),
+    render: (fields) =>
+      fields.example !== undefined && fields.example_translation !== undefined
+        ? { front: fields.example, back: fields.example_translation }
+        : null,
   },
 ];
 
@@ -134,7 +132,6 @@ export const noteTypeRegistry: Readonly<
     [BASIC_NOTE_FIELDS_VERSION]: defineNoteType(BasicNoteFieldsV1, [
       {
         key: BASIC_FRONT_BACK_TEMPLATE_KEY,
-        requires: () => true,
         render: (fields) => ({ front: fields.front, back: fields.back }),
       },
     ]),

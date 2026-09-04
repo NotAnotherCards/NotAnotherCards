@@ -187,3 +187,32 @@ describe('prepareReconcileNoteCards', () => {
     ).rejects.toThrow(/unregistered note type phrase@1/);
   });
 });
+
+describe('internal validation', () => {
+  it('throws on fields of the wrong shape instead of rendering nonsense', async () => {
+    await openDb();
+    await expect(
+      prepareReconcileNoteCards(
+        db,
+        { id: 'n', note_type: 'word', fields_version: 1 },
+        { front: 'a', back: 'b' },
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('canonicalizes fields itself: padded input renders trimmed cards', async () => {
+    await openDb();
+    await createWordNote(word, 'note-2');
+    await db.write(async () => {
+      const ops = await prepareReconcileNoteCards(
+        db,
+        { id: 'note-2', note_type: 'word', fields_version: 1 },
+        { ...word, word: '  laufen  ', translation: ' to run ' },
+      );
+      await db.batch(ops);
+    });
+    const cards = await cardsOf('note-2');
+    const wtt = cards.find((c) => c.template_key === 'word-to-translation')!;
+    expect(wtt.front).toBe('laufen');
+  });
+});

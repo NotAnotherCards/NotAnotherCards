@@ -3,10 +3,10 @@
  * fields. For each template of the note's registered type, by the
  * deterministic cardId(noteId, templateKey):
  *
- * - possible and missing  → create, due now
- * - possible and existing → update front/back in place; if it was
+ * - renders and missing  → create, due now
+ * - renders and existing → update front/back in place; if it was
  *   deactivated, reactivate as due now with its history intact (#157)
- * - impossible and active → deactivate; never delete
+ * - renders null and active → deactivate; never delete
  * - a card whose template key the registry does not know (written by a
  *   newer client) is left strictly alone
  *
@@ -37,6 +37,11 @@ export async function prepareReconcileNoteCards(
     );
   }
 
+  // Parse with the entry's own schema, whatever the caller did: fields of
+  // the wrong type throw here instead of rendering nonsense cards, and
+  // every render sees canonical (trimmed) values.
+  const parsed: unknown = entry.schema.parse(fields);
+
   // All of the note's cards, the deactivated ones included: the reactivate
   // path needs them, and the active-only dashboard queries must not decide
   // what exists here.
@@ -52,10 +57,10 @@ export async function prepareReconcileNoteCards(
   for (const template of entry.templates) {
     const id = cardId(note.id, template.key);
     const card = byId.get(id);
-    const possible = template.requires(fields);
+    const rendered = template.render(parsed);
 
-    if (possible) {
-      const { front, back } = template.render(fields);
+    if (rendered) {
+      const { front, back } = rendered;
       if (!card) {
         operations.push(
           db.get(UserCard).prepareCreate({

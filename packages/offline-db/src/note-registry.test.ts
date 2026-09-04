@@ -71,16 +71,16 @@ describe('word templates', () => {
   });
 
   it('always yields both direction cards, the example card only when complete', () => {
-    expect(byKey['word-to-translation']!.requires(word)).toBe(true);
-    expect(byKey['translation-to-word']!.requires(word)).toBe(true);
-    expect(byKey['example-to-translation']!.requires(word)).toBe(false);
+    expect(byKey['word-to-translation']!.render(word)).not.toBeNull();
+    expect(byKey['translation-to-word']!.render(word)).not.toBeNull();
+    expect(byKey['example-to-translation']!.render(word)).toBeNull();
     expect(
-      byKey['example-to-translation']!.requires({
+      byKey['example-to-translation']!.render({
         ...word,
         example: 'Ich laufe.',
       }),
-    ).toBe(false);
-    expect(byKey['example-to-translation']!.requires(fullWord)).toBe(true);
+    ).toBeNull();
+    expect(byKey['example-to-translation']!.render(fullWord)).not.toBeNull();
   });
 
   it('renders word-to-translation with the part of speech and example', () => {
@@ -107,11 +107,24 @@ describe('word templates', () => {
 
   it('never restates a front at the start of its back (the review screen composes them)', () => {
     for (const template of templates) {
-      if (!template.requires(fullWord)) continue;
-      const { front, back } = template.render(fullWord);
-      expect(back).not.toBe(front);
-      expect(back.startsWith(front)).toBe(false);
+      const rendered = template.render(fullWord);
+      if (!rendered) continue;
+      expect(rendered.back).not.toBe(rendered.front);
+      expect(rendered.back.startsWith(rendered.front)).toBe(false);
     }
+  });
+
+  it('passes field text through as markdown, sanitization is the renderer job', () => {
+    // deliberate: identical to basic cards, DOMPurify guards display (#221)
+    const spicy = WordNoteFieldsV1.parse({
+      ...word,
+      word: '*laufen*',
+      translation: '# to run',
+    });
+    expect(byKey['word-to-translation']!.render(spicy)).toEqual({
+      front: '*laufen*',
+      back: '# to run',
+    });
   });
 });
 
@@ -200,7 +213,6 @@ describe('every word@1 field, one by one', () => {
       });
       const without = WordNoteFieldsV1.parse(fullWord);
       for (const template of noteTypeRegistry['word']![1]!.templates) {
-        if (!template.requires(withField)) continue;
         expect(template.render(withField)).toEqual(template.render(without));
       }
     },
