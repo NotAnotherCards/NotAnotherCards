@@ -81,3 +81,37 @@ export const aiCardOutputSchema = z.object({
 });
 
 export type AiCardOutput = z.infer<typeof aiCardOutputSchema>;
+
+export const aiJobStatusSchema = z.enum([
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+]);
+export type AiJobStatus = z.infer<typeof aiJobStatusSchema>;
+
+/**
+ * The job shape the API returns to clients. Server-side rows carry more
+ * columns (attempts, lock and retry timestamps); parsing strips them, so
+ * this stays the contract the UI reads.
+ */
+export const aiJobSchema = z.object({
+  id: z.string(),
+  type: z.enum(['topic_deck', 'text_cards']),
+  status: aiJobStatusSchema,
+  payload: z.object({
+    topic: z.string().optional(),
+    sourceText: z.string().optional(),
+    count: z.number(),
+    model: z.string().optional(),
+  }),
+  result: z.array(aiCardOutputSchema).nullish(),
+  error: z.string().nullish(),
+  createdAt: z.string(),
+});
+export type AiJob = z.infer<typeof aiJobSchema>;
+
+/** Response envelopes of the AI endpoints, parsed by the clients. */
+export const aiJobResponseSchema = z.object({ job: aiJobSchema });
+export const aiJobsResponseSchema = z.object({ jobs: z.array(aiJobSchema) });
+export const aiQuotaResponseSchema = z.object({ quota: quotaStatusSchema });

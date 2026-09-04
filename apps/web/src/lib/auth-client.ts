@@ -1,3 +1,4 @@
+import { usernameAvailabilitySchema } from '@repo/schemas';
 import { createAuthClient } from 'better-auth/react';
 import { inferAdditionalFields } from 'better-auth/client/plugins';
 
@@ -30,6 +31,9 @@ export async function checkUsernameAvailable(
   if (!res.ok) {
     throw new Error('Failed to check username availability');
   }
-  const data = (await res.json()) as { available: boolean };
-  return data.available;
+  const body = usernameAvailabilitySchema.safeParse(await res.json());
+  if (!body.success) {
+    throw new Error('Failed to check username availability');
+  }
+  return body.data.available;
 }

@@ -1,4 +1,4 @@
-import type { ProfileFormValues } from '@repo/schemas';
+import { apiErrorBodySchema, type ProfileFormValues } from '@repo/schemas';
 import { authClient } from './auth-client';
 import { apiURL } from './api-url';
 import { apiErrorMessage } from './errors';
@@ -27,14 +27,9 @@ export async function completeOnboarding(
     throw new Error(apiErrorMessage(err));
   }
   if (!res.ok) {
-    const body: unknown = await res.json().catch(() => null);
-    const message =
-      typeof body === 'object' &&
-      body !== null &&
-      'message' in body &&
-      typeof body.message === 'string'
-        ? body.message
-        : undefined;
+    const { message } = apiErrorBodySchema.parse(
+      await res.json().catch(() => null),
+    );
     throw new Error(message || apiErrorMessage({ status: res.status }));
   }
 }

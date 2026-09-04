@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { AI_MODELS, aiCardOutputSchema, createAiJobSchema } from './ai';
+import {
+  AI_MODELS,
+  aiCardOutputSchema,
+  aiJobSchema,
+  createAiJobSchema,
+} from './ai';
 
 describe('createAiJobSchema', () => {
   it('validates a valid topic_deck request', () => {
@@ -92,5 +97,29 @@ describe('aiCardOutputSchema', () => {
         back: 'To describe actions that were completed at a specific point in the past.',
       }).success,
     ).toBe(true);
+  });
+});
+
+describe('aiJobSchema', () => {
+  const job = {
+    id: 'j1',
+    type: 'topic_deck',
+    status: 'completed',
+    payload: { topic: 'birds', count: 5 },
+    result: [{ front: 'f', back: 'b' }],
+    error: null,
+    createdAt: '2026-09-04T10:00:00.000Z',
+  };
+
+  it('parses a job and strips server-only columns', () => {
+    expect(aiJobSchema.parse({ ...job, attempts: 2, userId: 'u1' })).toEqual(
+      job,
+    );
+  });
+
+  it('rejects an unknown status', () => {
+    expect(aiJobSchema.safeParse({ ...job, status: 'queued' }).success).toBe(
+      false,
+    );
   });
 });

@@ -227,7 +227,16 @@ describe('AI Generation Playground Test Suite', () => {
 
   describe('AiGenerationPlaygroundComponent', () => {
     it('fetches quota and previous jobs history on mount', async () => {
-      const mockQuota = { quota: { requestsUsed: 2, maxRequests: 25 } };
+      const mockQuota = {
+        quota: {
+          requestsUsed: 2,
+          maxRequests: 25,
+          usedTokens: 100,
+          maxTokens: 50000,
+          activePendingJobs: 0,
+          maxPendingJobs: 2,
+        },
+      };
       const mockJobs = {
         jobs: [
           {

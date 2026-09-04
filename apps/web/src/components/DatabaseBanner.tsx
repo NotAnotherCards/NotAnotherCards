@@ -6,8 +6,9 @@ import { useDatabaseState } from '@remelondb/core/react';
 // typed code; the message fallback covers errors relayed as plain text.
 function isOpfsBlocked(error: Error | null): boolean {
   if (!error) return false;
+  const code = 'code' in error ? error.code : undefined;
   return (
-    (error as { code?: string }).code === 'OPFS_UNAVAILABLE' ||
+    code === 'OPFS_UNAVAILABLE' ||
     /OPFS storage is unavailable/i.test(error.message)
   );
 }

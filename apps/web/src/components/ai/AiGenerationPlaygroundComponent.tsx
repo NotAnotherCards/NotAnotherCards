@@ -1,25 +1,20 @@
 import { useEffect, useState } from 'react';
-import { CreateAiJobInput, AiCardOutput, QuotaStatus } from '@repo/schemas';
+import {
+  aiJobResponseSchema,
+  aiJobsResponseSchema,
+  aiQuotaResponseSchema,
+  apiErrorBodySchema,
+  CreateAiJobInput,
+  QuotaStatus,
+  type AiJob,
+} from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
-import { AiJobStatusTracker, JobStatus } from './AiJobStatusTracker';
+import { AiJobStatusTracker } from './AiJobStatusTracker';
 import { AiResultPreview } from './AiResultPreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 
-interface Job {
-  id: string;
-  type: 'topic_deck' | 'text_cards';
-  status: JobStatus;
-  payload: {
-    topic?: string;
-    sourceText?: string;
-    count: number;
-    model?: string;
-  };
-  result?: AiCardOutput[] | null;
-  error?: string | null;
-  createdAt: string;
-}
+type Job = AiJob;
 
 export function AiGenerationPlaygroundComponent() {
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
@@ -45,10 +40,10 @@ export function AiGenerationPlaygroundComponent() {
       try {
         const res = await fetch(`/api/ai/jobs/${currentJob.id}`);
         if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          setErrorMessage(
-            (errData.message as string) || 'Failed to poll job status',
+          const { message } = apiErrorBodySchema.parse(
+            await res.json().catch(() => null),
           );
+          setErrorMessage(message || 'Failed to poll job status');
           setCurrentJob((prev) =>
             prev ? { ...prev, status: 'failed' } : null,
           );
@@ -56,8 +51,7 @@ export function AiGenerationPlaygroundComponent() {
           return;
         }
 
-        const data = await res.json();
-        const updatedJob = data.job;
+        const { job: updatedJob } = aiJobResponseSchema.parse(await res.json());
         setCurrentJob(updatedJob);
 
         if (
@@ -95,8 +89,8 @@ export function AiGenerationPlaygroundComponent() {
     try {
       const res = await fetch('/api/ai/quota');
       if (res.ok) {
-        const data = await res.json();
-        setQuota(data.quota);
+        const { quota } = aiQuotaResponseSchema.parse(await res.json());
+        setQuota(quota);
       }
     } catch {
       // Background quota fetch failure handled gracefully
@@ -107,8 +101,8 @@ export function AiGenerationPlaygroundComponent() {
     try {
       const res = await fetch('/api/ai/jobs');
       if (res.ok) {
-        const data = await res.json();
-        setJobs(data.jobs || []);
+        const { jobs } = aiJobsResponseSchema.parse(await res.json());
+        setJobs(jobs);
       }
     } catch {
       // Background jobs list fetch failure handled gracefully
@@ -131,15 +125,16 @@ export function AiGenerationPlaygroundComponent() {
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
+        const { message } = apiErrorBodySchema.parse(
+          await res.json().catch(() => null),
+        );
         throw new Error(
-          (errData.message as string) ||
-            'Unable to start card generation. Please try again.',
+          message || 'Unable to start card generation. Please try again.',
         );
       }
 
-      const data = await res.json();
-      setCurrentJob(data.job);
+      const { job } = aiJobResponseSchema.parse(await res.json());
+      setCurrentJob(job);
       void fetchQuota();
     } catch (err: unknown) {
       const msg =
