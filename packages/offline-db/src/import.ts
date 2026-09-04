@@ -190,21 +190,22 @@ async function validateAndImportJson(
           path: cardPath,
         });
       }
-      if (typeof card.due_at !== 'number') {
+      if (typeof card.due_at !== 'number' || !Number.isInteger(card.due_at)) {
         errors.push({
           code: 'INVALID_CARD_DUE',
-          message: 'Card due_at must be a timestamp number',
+          message: 'Card due_at must be an integer timestamp',
           path: cardPath,
         });
       }
       if (
         typeof card.scheduled_interval_minutes !== 'number' ||
+        !Number.isInteger(card.scheduled_interval_minutes) ||
         card.scheduled_interval_minutes < 0
       ) {
         errors.push({
           code: 'INVALID_CARD_INTERVAL',
           message:
-            'Card scheduled_interval_minutes must be a non-negative number',
+            'Card scheduled_interval_minutes must be a non-negative integer',
           path: cardPath,
         });
       }
@@ -244,10 +245,10 @@ async function validateAndImportJson(
         path: rePath,
       });
     }
-    if (typeof re.reviewed_at !== 'number') {
+    if (typeof re.reviewed_at !== 'number' || !Number.isInteger(re.reviewed_at)) {
       errors.push({
         code: 'INVALID_REVIEWED_AT',
-        message: 'invalid reviewed_at timestamp',
+        message: 'reviewed_at must be an integer timestamp',
         path: rePath,
       });
     }
