@@ -97,7 +97,9 @@ describe('DeckReviewRoute', () => {
 
   it('shows an empty state when the selected deck has no due cards', () => {
     routeTestState.store = makeStore({
-      getCardsForDeck: vi.fn(() => [makeCard('future-card', Date.now() + 1)]),
+      getCardsForDeck: vi.fn(() => [
+        makeCard('future-card', Date.now() + 60_000),
+      ]),
     });
 
     render(<DeckReviewPage deckId={deck.id} />);
