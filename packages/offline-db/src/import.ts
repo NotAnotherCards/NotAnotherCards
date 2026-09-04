@@ -226,8 +226,7 @@ async function validateAndImportJson(
       ) {
         errors.push({
           code: 'INVALID_CARD_INTERVAL',
-          message:
-            `Card scheduled_interval_minutes must be a non-negative integer up to ${REVIEW_INTERVAL_CAP_MINUTES}`,
+          message: `Card scheduled_interval_minutes must be a non-negative integer up to ${REVIEW_INTERVAL_CAP_MINUTES}`,
           path: cardPath,
         });
       }
@@ -267,7 +266,10 @@ async function validateAndImportJson(
         path: rePath,
       });
     }
-    if (typeof re.reviewed_at !== 'number' || !Number.isInteger(re.reviewed_at)) {
+    if (
+      typeof re.reviewed_at !== 'number' ||
+      !Number.isInteger(re.reviewed_at)
+    ) {
       errors.push({
         code: 'INVALID_REVIEWED_AT',
         message: 'reviewed_at must be an integer timestamp',
@@ -502,10 +504,18 @@ async function validateAndImportCsv(
       deckIdx !== -1 && row[deckIdx] ? row[deckIdx] : 'Default Deck';
 
     if (!front) {
-      errors.push({ code: 'MISSING_FRONT', message: 'Row is missing front field', row: rowNum });
+      errors.push({
+        code: 'MISSING_FRONT',
+        message: 'Row is missing front field',
+        row: rowNum,
+      });
     }
     if (!back) {
-      errors.push({ code: 'MISSING_BACK', message: 'Row is missing back field', row: rowNum });
+      errors.push({
+        code: 'MISSING_BACK',
+        message: 'Row is missing back field',
+        row: rowNum,
+      });
     }
 
     let active = true;
@@ -514,7 +524,11 @@ async function validateAndImportCsv(
       if (val === 'false' || val === '0') active = false;
       else if (val === 'true' || val === '1') active = true;
       else {
-        errors.push({ code: 'INVALID_ACTIVE', message: 'active column must be true or false', row: rowNum });
+        errors.push({
+          code: 'INVALID_ACTIVE',
+          message: 'active column must be true or false',
+          row: rowNum,
+        });
       }
     }
 
@@ -528,7 +542,11 @@ async function validateAndImportCsv(
         const parsedDate = Date.parse(rawDueAt);
         if (!isNaN(parsedDate)) dueAt = parsedDate;
         else {
-          errors.push({ code: 'INVALID_DUE_AT', message: 'due_at column must be a valid timestamp', row: rowNum });
+          errors.push({
+            code: 'INVALID_DUE_AT',
+            message: 'due_at column must be a valid timestamp',
+            row: rowNum,
+          });
         }
       }
     }
@@ -643,4 +661,3 @@ async function validateAndImportCsv(
     errors: [],
   };
 }
-

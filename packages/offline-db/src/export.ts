@@ -141,7 +141,7 @@ export async function exportDataToCsv(db: Database): Promise<string> {
     }
   }
 
-  const cardsMap = new Map<string, typeof cards[0]>();
+  const cardsMap = new Map<string, (typeof cards)[0]>();
   for (const c of cards) {
     if (!cardsMap.has(c.note_id)) {
       cardsMap.set(c.note_id, c);
