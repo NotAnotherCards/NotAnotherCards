@@ -13,6 +13,8 @@ jest.mock('../lib/auth-client', () => ({
   },
 }));
 
+// The deck list has its own tests; keep this one about the session guard.
+jest.mock('../components/deck-list', () => ({ DeckList: () => null }));
 jest.mock('expo-router', () => {
   const React = require('react');
   const { Text } = require('react-native');

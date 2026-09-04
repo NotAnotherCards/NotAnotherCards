@@ -88,11 +88,12 @@ export function SignupForm() {
       )}
 
       <Button
-        label="Create account"
         loading={isSubmitting}
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
-      />
+      >
+        <Text>Create account</Text>
+      </Button>
     </>
   );
 }

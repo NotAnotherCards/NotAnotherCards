@@ -30,3 +30,10 @@ export function apiErrorMessage(err: unknown): string {
   }
   return message || 'An unexpected error occurred';
 }
+
+// The shared queries surface low-level failures ("Database not initialized").
+// Keep that message, since it is the only clue the user gets, but fall back to
+// something readable when the rejection carries none. Web has the same five
+// lines in its own lib; how a form phrases a failure is each client's call.
+export const writeErrorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error && err.message ? err.message : fallback;

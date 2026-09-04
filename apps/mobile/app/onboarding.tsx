@@ -116,7 +116,9 @@ export default function Onboarding() {
         <Text className="text-center text-destructive">
           {apiErrorMessage(error)}
         </Text>
-        <Button label="Retry" onPress={() => refetch()} />
+        <Button onPress={() => refetch()}>
+          <Text>Retry</Text>
+        </Button>
       </View>
     );
   }
@@ -179,10 +181,11 @@ export default function Onboarding() {
         )}
 
         <Button
-          label="Complete setup"
           loading={formState.isSubmitting}
           onPress={handleSubmit(onSubmit)}
-        />
+        >
+          <Text>Complete setup</Text>
+        </Button>
       </View>
     </ScrollView>
   );
