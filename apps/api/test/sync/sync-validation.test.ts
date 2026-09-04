@@ -18,16 +18,6 @@ const profileRow = (id: string): WireRow => ({
   updated_at: 1,
 });
 
-const validNoteRow = (id: string): WireRow => ({
-  id,
-  note_type: 'basic',
-  fields_version: 1,
-  fields_json: JSON.stringify({ front: 'front', back: 'back' }),
-  additional_content: null,
-  created_at: 1,
-  updated_at: 1,
-});
-
 describe('sync relationship validation scan guards', () => {
   type CrossValidationChanges = Parameters<
     NonNullable<SyncEngineOptions<string>['crossValidateChanges']>

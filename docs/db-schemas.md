@@ -333,11 +333,10 @@ arbitrary JSON. The shared offline row and wire validators use
 `(note_type, fields_version)` to select a Zod schema from an explicit
 registry — a registered pair validates strictly, and an unregistered pair
 passes clients opaquely on pull while the server rejects pushing it —
-parse `fields_json`, and validate the parsed value. Unknown note types or
-versions, malformed JSON, and payloads that fail the selected schema are
-rejected. This keeps schema evolution explicit without coupling the database
-table to any one subject. Enforcement of the same contract at the sync-store
-boundary remains in
+parse `fields_json`, and validate the parsed value. Malformed JSON and payloads
+that fail a registered schema are rejected. This keeps schema evolution
+explicit without coupling the database table to any one subject. Enforcement
+of the same contract at the sync-store boundary remains in
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
 `basic@1` and `word@1` are registered. The word contract (#194) requires
