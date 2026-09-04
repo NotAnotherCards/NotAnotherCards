@@ -195,8 +195,6 @@ export function ReviewSession({
   const [createCardError, setCreateCardError] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isSavingReview, setIsSavingReview] = useState(false);
-  const [hasAnsweredCard, setHasAnsweredCard] = useState(false);
-  const [isUndoPlaceholderOpen, setIsUndoPlaceholderOpen] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -315,7 +313,6 @@ export function ReviewSession({
 
     try {
       await onRecordReview(card.id, reviewRatingByAnswer[answer]);
-      setHasAnsweredCard(true);
     } catch {
       setReviewError('Could not save your answer. Try again.');
       setIsSavingReview(false);
@@ -361,11 +358,7 @@ export function ReviewSession({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        isCreateCardOpen ||
-        isDeleteConfirmationOpen ||
-        isUndoPlaceholderOpen
-      ) {
+      if (isCreateCardOpen || isDeleteConfirmationOpen) {
         return;
       }
 
@@ -444,7 +437,6 @@ export function ReviewSession({
     isSavingReview,
     isCreateCardOpen,
     isDeleteConfirmationOpen,
-    isUndoPlaceholderOpen,
     isSettingsOpen,
     isWordDetailsOpen,
     reviewMode,
@@ -764,18 +756,7 @@ export function ReviewSession({
               <ArrowLeft className="size-7" />
             </Button>
           </div>
-          <div className="col-start-2 flex justify-center">
-            {hasAnsweredCard && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsUndoPlaceholderOpen(true)}
-                className="cursor-pointer text-muted-foreground hover:bg-transparent hover:text-foreground"
-              >
-                Undo
-              </Button>
-            )}
-          </div>
+          <div className="col-start-2" />
           <div className="col-start-3 flex justify-end">
             <Button
               type="button"
@@ -810,12 +791,6 @@ export function ReviewSession({
 
       {isSettingsOpen && (
         <SettingsPlaceholderDialog onClose={() => setIsSettingsOpen(false)} />
-      )}
-
-      {isUndoPlaceholderOpen && (
-        <UndoPlaceholderDialog
-          onClose={() => setIsUndoPlaceholderOpen(false)}
-        />
       )}
 
       {isDeleteConfirmationOpen && (
@@ -992,36 +967,6 @@ function SettingsPlaceholderDialog({ onClose }: { onClose: () => void }) {
           className="mt-2 text-sm text-muted-foreground"
         >
           Card settings will be available later.
-        </p>
-        <Button
-          onClick={onClose}
-          className="mt-6 min-h-12 w-full cursor-pointer"
-        >
-          Close
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function UndoPlaceholderDialog({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="undo-placeholder-title"
-        aria-describedby="undo-placeholder-description"
-        className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
-      >
-        <h2 id="undo-placeholder-title" className="text-xl font-bold">
-          Undo
-        </h2>
-        <p
-          id="undo-placeholder-description"
-          className="mt-2 text-sm text-muted-foreground"
-        >
-          Undo is still in development.
         </p>
         <Button
           onClick={onClose}

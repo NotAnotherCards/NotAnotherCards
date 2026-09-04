@@ -408,7 +408,7 @@ describe('ReviewSession', () => {
     );
   });
 
-  it('shows an Undo placeholder after an answer without changing the review queue', async () => {
+  it('does not show an unavailable Undo control after an answer', async () => {
     const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-42' });
     renderSession([card, secondCard], undefined, onRecordReview);
     revealCard();
@@ -419,19 +419,9 @@ describe('ReviewSession', () => {
     });
     finishCardExit();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(screen.getByRole('heading', { name: 'Undo' })).toBeInTheDocument();
     expect(
-      screen.getByText('Undo is still in development.'),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
-      'data-card-id',
-      'card-2',
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
+      screen.queryByRole('button', { name: 'Undo' }),
+    ).not.toBeInTheDocument();
   });
 
   it('moves to the next card to the right after Knew it', async () => {
