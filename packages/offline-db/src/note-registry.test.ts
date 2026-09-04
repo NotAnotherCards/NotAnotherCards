@@ -138,3 +138,85 @@ describe('the registry feeds validateNoteFieldsJson', () => {
     expect(validateNoteFieldsJson('word', 2, '{}').success).toBe(false);
   });
 });
+
+describe('every word@1 field, one by one', () => {
+  const realisticValues = {
+    example: 'Der Hund schläft im Garten.',
+    example_translation: 'The dog sleeps in the garden.',
+    part_of_speech: 'noun',
+    gender: 'der',
+    pronunciation: 'hʊnt',
+    image: 'a3f8c2d1-media-id',
+    word_audio: 'b7e9d4f2-media-id',
+    notes: 'false friend of *hound*, which is narrower',
+  } as const;
+  const optionalFields = Object.keys(
+    realisticValues,
+  ) as readonly (keyof typeof realisticValues)[];
+
+  it.each(optionalFields)('accepts %s when present and non-empty', (key) => {
+    const parsed = WordNoteFieldsV1.safeParse({
+      ...word,
+      [key]: realisticValues[key],
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data[key]).toBe(realisticValues[key]);
+  });
+
+  it('parses a fully specified noun, gender included', () => {
+    const hund = WordNoteFieldsV1.parse({
+      word: 'Hund',
+      translation: 'dog',
+      native_language_id: 'lang-en',
+      target_language_id: 'lang-de',
+      ...realisticValues,
+    });
+    expect(hund.gender).toBe('der');
+    const templates = noteTypeRegistry['word']![1]!.templates;
+    expect(templates[0]!.render(hund)).toEqual({
+      front: 'Hund *(noun)*',
+      back: 'dog\n\nDer Hund schläft im Garten.',
+    });
+  });
+
+  it.each(optionalFields)('rejects an empty %s', (key) => {
+    expect(WordNoteFieldsV1.safeParse({ ...word, [key]: '' }).success).toBe(
+      false,
+    );
+  });
+
+  it.each(optionalFields)('rejects a non-string %s', (key) => {
+    expect(WordNoteFieldsV1.safeParse({ ...word, [key]: 7 }).success).toBe(
+      false,
+    );
+  });
+
+  it.each(['gender', 'pronunciation', 'notes', 'image', 'word_audio'] as const)(
+    'keeps %s out of every render until its feature exists',
+    (key) => {
+      const withField = WordNoteFieldsV1.parse({
+        ...fullWord,
+        [key]: 'sentinel-value',
+      });
+      const without = WordNoteFieldsV1.parse(fullWord);
+      for (const template of noteTypeRegistry['word']![1]!.templates) {
+        if (!template.requires(withField)) continue;
+        expect(template.render(withField)).toEqual(template.render(without));
+      }
+    },
+  );
+
+  it('trims every text field to its canonical form', () => {
+    const parsed = WordNoteFieldsV1.parse({
+      ...word,
+      translation: '  to run  ',
+      example: '  Ich laufe.  ',
+      example_translation: '  I run.  ',
+      gender: '  neuter  ',
+    });
+    expect(parsed.translation).toBe('to run');
+    expect(parsed.example).toBe('Ich laufe.');
+    expect(parsed.example_translation).toBe('I run.');
+    expect(parsed.gender).toBe('neuter');
+  });
+});
