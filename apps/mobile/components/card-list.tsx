@@ -52,6 +52,9 @@ function ActiveCardList({
   const [pending, setPending] = useState(false);
 
   const open = (next: CardAction | null) => {
+    // A write in flight owns this state: its completion or failure decides
+    // what shows next, so another card's action cannot start or cancel it.
+    if (pending) return;
     setWriteError(null);
     setPending(false);
     setAction(next);
@@ -133,7 +136,7 @@ function ActiveCardList({
       <Stack.Screen options={{ title: deck.title }} />
       <View className="flex-row items-center justify-between">
         <Text className="text-lg font-semibold">Cards</Text>
-        <Button onPress={() => open({ kind: 'create' })}>
+        <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
           <Text>New card</Text>
         </Button>
       </View>
@@ -199,6 +202,7 @@ function ActiveCardList({
                       <Button
                         variant="ghost"
                         size="sm"
+                        disabled={pending}
                         accessibilityLabel={`Edit ${short(card.front)}`}
                         onPress={() => open({ kind: 'edit', card })}
                       >
@@ -208,6 +212,7 @@ function ActiveCardList({
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={pending}
                       accessibilityLabel={`Remove ${short(card.front)} from deck`}
                       onPress={() => open({ kind: 'remove', card })}
                     >
@@ -216,6 +221,7 @@ function ActiveCardList({
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={pending}
                       accessibilityLabel={`Delete note ${short(card.front)}`}
                       onPress={() => open({ kind: 'delete', card })}
                     >

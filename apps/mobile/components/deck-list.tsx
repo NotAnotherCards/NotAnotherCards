@@ -48,6 +48,9 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
   // Every open and cancel goes through here, so an error never outlives the
   // action that produced it or leaks into the next one.
   const open = (next: DeckAction | null) => {
+    // A write in flight owns this state: its completion or failure decides
+    // what shows next, so another deck's action cannot start or cancel it.
+    if (pending) return;
     setWriteError(null);
     setPending(false);
     setAction(next);
@@ -118,7 +121,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <Text className="text-lg font-semibold">My decks</Text>
-        <Button onPress={() => open({ kind: 'create' })}>
+        <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
           <Text>New deck</Text>
         </Button>
       </View>
@@ -180,6 +183,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={pending}
                     accessibilityLabel={`Edit ${deck.title}`}
                     onPress={() => open({ kind: 'edit', deck })}
                   >
@@ -188,6 +192,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={pending}
                     accessibilityLabel={`Delete ${deck.title}`}
                     onPress={() => open({ kind: 'delete', deck })}
                   >

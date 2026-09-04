@@ -171,6 +171,30 @@ describe('CardList', () => {
     await act(async () => finish());
   });
 
+  it('locks every other card action while a write is pending', async () => {
+    let finish!: () => void;
+    mockWrites.deleteNote.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finish = () => resolve(undefined);
+        }),
+    );
+    const { getByLabelText, getByText, queryByText } = render(
+      <CardList deckId="d1" />,
+    );
+    fireEvent.press(getByLabelText('Delete note hola'));
+    fireEvent.press(getByText('Delete note'));
+    // hola's delete is in flight; adiós must not be able to take the state
+    // (c2 is not editable in this fixture, so its Remove action is the probe)
+    fireEvent.press(getByLabelText('Remove adiós from deck'));
+    expect(queryByText(/The note stays/)).toBeNull();
+    expect(getByText(/review history go with it/)).toBeTruthy();
+    await act(async () => finish());
+    // the completed write closes its own dialog and nothing else opened
+    expect(queryByText(/review history go with it/)).toBeNull();
+    expect(queryByText(/The note stays/)).toBeNull();
+  });
+
   it('keeps the form open with the error when a write fails, and cancel clears it', async () => {
     mockWrites.create.mockRejectedValueOnce(
       new Error('Database not initialized'),

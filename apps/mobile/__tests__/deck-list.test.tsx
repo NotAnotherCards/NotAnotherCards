@@ -151,6 +151,27 @@ describe('DeckList action state', () => {
     await waitFor(() => r.getByText(message));
   };
 
+  it('locks every other deck action while a write is pending', async () => {
+    let finish!: () => void;
+    mockWrites.remove.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finish = () => resolve(undefined);
+        }),
+    );
+    const { getByLabelText, getByText, queryByText, queryByPlaceholderText } =
+      render(<DeckList />);
+    fireEvent.press(getByLabelText('Delete Yoga'));
+    fireEvent.press(getByText('Delete deck'));
+    // Yoga's delete is in flight; Spanish must not be able to take the state
+    fireEvent.press(getByLabelText('Edit Spanish'));
+    expect(queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
+    expect(getByText(/Delete this deck\?/)).toBeTruthy();
+    await act(async () => finish());
+    expect(queryByText(/Delete this deck\?/)).toBeNull();
+    expect(queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
+  });
+
   it('does not start a second delete while one is pending', async () => {
     let finish!: () => void;
     mockWrites.remove.mockImplementationOnce(
