@@ -545,7 +545,7 @@ export function ReviewSession({
             >
               <MarkdownRenderer
                 content={nextCard.front}
-                className="max-w-full text-3xl font-bold wrap-break-word"
+                className="max-h-full max-w-full overflow-hidden text-3xl font-bold wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain"
               />
             </div>
           )}
@@ -601,26 +601,28 @@ export function ReviewSession({
               >
                 <div
                   aria-hidden={isFlipped}
-                  className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+                  className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
                 >
                   <MarkdownRenderer
                     content={card.front}
-                    className="max-w-full text-3xl font-bold wrap-break-word"
+                    data-testid="review-card-front-content"
+                    className="max-h-full max-w-full overflow-hidden text-3xl font-bold wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain"
                   />
                 </div>
                 <div
                   aria-hidden={!isFlipped}
-                  className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+                  className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
                 >
-                  <div className="flex w-full flex-col items-center gap-5 py-12">
+                  <div className="flex max-h-full w-full flex-col items-center gap-5 overflow-hidden py-12">
                     <MarkdownRenderer
                       content={card.front}
-                      className="max-w-full text-center text-xl font-medium text-muted-foreground wrap-break-word"
+                      className="max-h-full max-w-full overflow-hidden text-center text-xl font-medium text-muted-foreground wrap-break-word [&_img]:max-h-32 [&_img]:max-w-full [&_img]:object-contain"
                     />
                     <span className="h-px w-16 shrink-0 bg-border" />
                     <MarkdownRenderer
                       content={card.back}
-                      className="max-w-full text-3xl font-bold text-center wrap-break-word [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
+                      data-testid="review-card-back-content"
+                      className="max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
                     />
                   </div>
                 </div>

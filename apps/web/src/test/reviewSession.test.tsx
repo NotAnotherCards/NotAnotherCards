@@ -115,6 +115,24 @@ describe('ReviewSession', () => {
     expect(screen.getByRole('list')).toBeInTheDocument();
   });
 
+  it('keeps long review Markdown inside the card bounds', () => {
+    renderSession([
+      {
+        ...card,
+        front: 'A very long question '.repeat(200),
+        back: 'A very long answer '.repeat(200),
+      },
+    ]);
+
+    const frontContent = screen.getByTestId('review-card-front-content');
+    expect(frontContent).toHaveClass('max-h-full', 'overflow-hidden');
+
+    revealCard();
+
+    const backContent = screen.getByTestId('review-card-back-content');
+    expect(backContent).toHaveClass('max-h-full', 'overflow-hidden');
+  });
+
   it('shows the current deck title above the review card', () => {
     renderSession();
 
