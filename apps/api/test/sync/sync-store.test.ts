@@ -134,9 +134,11 @@ const allTablesCreated = (now: number, suffix = '1'): SyncChanges => {
           id: ids.note,
           note_type: BASIC_NOTE_TYPE,
           fields_version: BASIC_NOTE_FIELDS_VERSION,
+          // the same-push card below must carry exactly these values:
+          // the server rejects a card that contradicts its note (#194)
           fields_json: JSON.stringify({
-            front: 'source front',
-            back: 'source back',
+            front: 'secret front',
+            back: 'secret back',
           }),
           additional_content: 'Sensitive additional content',
           created_at: now,
@@ -812,9 +814,11 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
                 id: secondIds.note,
                 note_type: BASIC_NOTE_TYPE,
                 fields_version: BASIC_NOTE_FIELDS_VERSION,
+                // must match the card() helper's front/back: the server
+                // rejects a same-push card that contradicts its note (#194)
                 fields_json: JSON.stringify({
-                  front: 'second',
-                  back: 'second',
+                  front: 'front',
+                  back: 'back',
                 }),
                 additional_content: null,
                 created_at: now,
