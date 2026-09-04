@@ -173,7 +173,11 @@ export function ImportExport() {
 
   const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleFileSelected(file);
+    if (file) {
+      handleFileSelected(file).catch((err: unknown) => {
+        setImportError(err instanceof Error ? err.message : 'Unexpected error');
+      });
+    }
   };
 
   // ── Drag & Drop handlers ──
@@ -192,7 +196,11 @@ export function ImportExport() {
       e.preventDefault();
       setIsDragging(false);
       const file = e.dataTransfer.files?.[0];
-      if (file) handleFileSelected(file);
+      if (file) {
+        handleFileSelected(file).catch((err: unknown) => {
+          setImportError(err instanceof Error ? err.message : 'Unexpected error');
+        });
+      }
     },
     [handleFileSelected],
   );
