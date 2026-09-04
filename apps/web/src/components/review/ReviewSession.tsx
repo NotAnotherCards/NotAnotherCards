@@ -210,6 +210,7 @@ export function ReviewSession({
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const exitTimer = useRef<number | null>(null);
   const didHandleSwipe = useRef(false);
+  const reviewCardRef = useRef<HTMLButtonElement>(null);
   const card = sessionCards[currentCardIndex];
   const nextCard = sessionCards[currentCardIndex + 1];
   const followingCard = sessionCards[currentCardIndex + 2];
@@ -242,6 +243,7 @@ export function ReviewSession({
   };
 
   const restoreCurrentCard = () => {
+    reviewCardRef.current?.focus();
     setExitDirection(null);
     setIsDeleteConfirmationOpen(false);
     setDeleteError(null);
@@ -351,7 +353,12 @@ export function ReviewSession({
         return;
       }
 
-      if (isInteractiveKeyboardTarget(event.target)) return;
+      if (
+        isInteractiveKeyboardTarget(event.target) &&
+        event.target !== reviewCardRef.current
+      ) {
+        return;
+      }
 
       if (!isFlipped) {
         if (
@@ -576,6 +583,7 @@ export function ReviewSession({
             }}
           >
             <button
+              ref={reviewCardRef}
               type="button"
               className="absolute inset-0 z-20 min-h-[min(52dvh,28rem)] w-full touch-none select-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80"
               aria-pressed={isFlipped}
@@ -716,12 +724,44 @@ function DeleteConfirmationDialog({
   error,
   isDeleting,
 }: DeleteConfirmationDialogProps) {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelButtonRef.current?.focus();
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="delete-word-title"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            onCancel();
+          } else if (event.key === 'Tab') {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const activeElement = document.activeElement;
+            const nextButton =
+              activeElement === cancelButtonRef.current
+                ? confirmButtonRef.current
+                : cancelButtonRef.current;
+            nextButton?.focus();
+          } else if (
+            event.key === 'ArrowLeft' ||
+            event.key === 'ArrowRight' ||
+            event.key === 'ArrowUp' ||
+            event.key === 'ArrowDown'
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
         className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
       >
         <h2 id="delete-word-title" className="text-xl font-bold">
@@ -734,6 +774,7 @@ function DeleteConfirmationDialog({
         )}
         <div className="mt-6 grid grid-cols-2 gap-3">
           <Button
+            ref={cancelButtonRef}
             variant="outline"
             onClick={onCancel}
             disabled={isDeleting}
@@ -742,6 +783,7 @@ function DeleteConfirmationDialog({
             No
           </Button>
           <Button
+            ref={confirmButtonRef}
             variant="destructive"
             onClick={onConfirm}
             disabled={isDeleting}

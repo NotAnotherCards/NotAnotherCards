@@ -614,6 +614,63 @@ describe('ReviewSession', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('keeps review keyboard controls inactive while delete confirmation is open', () => {
+    const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+    renderSession([card], undefined, onRecordReview);
+    revealCard();
+
+    fireEvent.keyDown(window, { key: 'ArrowDown' });
+    finishCardExit();
+
+    const cancelButton = screen.getByRole('button', { name: 'No' });
+    expect(cancelButton).toHaveFocus();
+
+    fireEvent.keyDown(cancelButton, { key: 'ArrowRight' });
+    expect(onRecordReview).not.toHaveBeenCalled();
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  });
+
+  it('cycles keyboard focus between delete confirmation buttons', () => {
+    renderSession();
+    revealCard();
+
+    fireEvent.keyDown(window, { key: 'ArrowDown' });
+    finishCardExit();
+
+    const cancelButton = screen.getByRole('button', { name: 'No' });
+    const confirmButton = screen.getByRole('button', { name: 'Yes' });
+
+    fireEvent.keyDown(cancelButton, { key: 'Tab' });
+    expect(confirmButton).toHaveFocus();
+
+    fireEvent.keyDown(confirmButton, { key: 'Tab' });
+    expect(cancelButton).toHaveFocus();
+
+    fireEvent.keyDown(cancelButton, { key: 'Tab', shiftKey: true });
+    expect(confirmButton).toHaveFocus();
+  });
+
+  it('cancels delete confirmation with Escape and restores card focus', () => {
+    const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+    renderSession([card], undefined, onRecordReview);
+    revealCard();
+
+    fireEvent.keyDown(window, { key: 'ArrowDown' });
+    finishCardExit();
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'No' }), {
+      key: 'Escape',
+    });
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByTestId('review-card')).toHaveFocus();
+
+    fireEvent.keyDown(screen.getByTestId('review-card'), {
+      key: 'ArrowRight',
+    });
+    expect(onRecordReview).toHaveBeenCalledWith('card-1', 3);
+  });
+
   it('removes every sibling from the session queue after deleting a note', async () => {
     const onDeleteNote = vi.fn().mockResolvedValue(undefined);
     renderSession(
