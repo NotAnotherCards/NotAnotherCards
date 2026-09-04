@@ -6,46 +6,17 @@ import {
   UserNoteDeck,
   ReviewEvent,
 } from './user-dictionary.js';
-import { BASIC_NOTE_FIELDS_VERSION, BASIC_NOTE_TYPE } from './note-constants';
-
-interface ExportJsonFormat {
-  format: number;
-  exported_at: string;
-  decks: ExportDeck[];
-  notes: ExportNote[];
-  review_events: ExportReviewEvent[];
-  media: unknown[];
-}
-
-interface ExportDeck {
-  source_id: string;
-  title: string;
-  description: string | null;
-}
-
-interface ExportNote {
-  source_id: string;
-  note_type: string;
-  fields_version: number;
-  fields: Record<string, string>;
-  additional_content: string | null;
-  decks: string[];
-  cards: ExportCard[];
-}
-
-interface ExportCard {
-  source_id: string;
-  template_key: string;
-  active: boolean;
-  due_at: number;
-  scheduled_interval_minutes: number;
-}
-
-interface ExportReviewEvent {
-  source_card_id: string;
-  rating: number;
-  reviewed_at: number;
-}
+import {
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
+} from './note-constants.js';
+import {
+  BackupCard,
+  BackupDeck,
+  BackupJsonFormat,
+  BackupNote,
+  BackupReviewEvent,
+} from './export-import-types.js';
 
 function escapeCsvField(val: unknown): string {
   if (val === null || val === undefined) return '';
@@ -63,24 +34,24 @@ function escapeCsvField(val: unknown): string {
 
 export async function exportDataToJson(
   db: Database,
-): Promise<ExportJsonFormat> {
+): Promise<BackupJsonFormat> {
   const decks = await db.get(UserDeck).query().fetch();
   const notes = await db.get(UserNote).query().fetch();
   const cards = await db.get(UserCard).query().fetch();
   const noteDecks = await db.get(UserNoteDeck).query().fetch();
   const reviewEvents = await db.get(ReviewEvent).query().fetch();
 
-  const exportedDecks: ExportDeck[] = decks.map((deck) => ({
+  const exportedDecks: BackupDeck[] = decks.map((deck) => ({
     source_id: deck.id,
     title: deck.title,
     description: deck.description ?? null,
   }));
 
-  const exportedNotes: ExportNote[] = notes.map((note) => {
+  const exportedNotes: BackupNote[] = notes.map((note) => {
     const activeDeckIds = noteDecks
       .filter((nd) => nd.note_id === note.id && nd.active)
       .map((nd) => nd.deck_id);
-    const noteCards: ExportCard[] = cards
+    const noteCards: BackupCard[] = cards
       .filter((c) => c.note_id === note.id)
       .map((c) => ({
         source_id: c.id,
@@ -106,7 +77,7 @@ export async function exportDataToJson(
     };
   });
 
-  const exportedReviewEvents: ExportReviewEvent[] = reviewEvents.map((re) => ({
+  const exportedReviewEvents: BackupReviewEvent[] = reviewEvents.map((re) => ({
     source_card_id: re.user_card_id,
     rating: re.rating,
     reviewed_at: re.reviewed_at,
@@ -169,9 +140,9 @@ export async function exportDataToCsv(db: Database): Promise<string> {
       .filter(Boolean)
       .join('; ');
 
-    const card = cards.find((c) => c.note_id === note.id)
-    const active = card ? card.active : true
-    const dueAt = card ? card.due_at : Date.now()
+    const card = cards.find((c) => c.note_id === note.id);
+    const active = card ? card.active : true;
+    const dueAt = card ? card.due_at : Date.now();
     const interval = card ? card.scheduled_interval_minutes : 0;
 
     const row = [
