@@ -44,6 +44,12 @@ module.exports = defineConfig([
       // A dropped promise from an async store method reports success the
       // database never agreed to (#122); same risk on mobile.
       '@typescript-eslint/no-floating-promises': 'error',
+      // An any read off res.json() rendered a TypeError instead of the
+      // fallback message (#219); these three keep any at the boundary from
+      // spreading (#220).
+      '@typescript-eslint/no-unsafe-type-assertion': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
     },
   },
   // Tests and mocks are linted too, with the two relaxations they need.
