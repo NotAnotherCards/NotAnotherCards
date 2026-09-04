@@ -8,8 +8,8 @@
     "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet",
     "check:cycles": "node scripts/check-cycles.mjs",
     "test:watch": "turbo run test:watch",
-    "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,js}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js}\""
+    "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\""
   },
   "devDependencies": {
     "@remelondb/core": "0.2.6",
