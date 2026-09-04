@@ -1,26 +1,35 @@
 import { Button } from '@/components/ui/button';
-import { useStore } from '@/hooks/useStore';
+import { type Card, useStore } from '@/hooks/useStore';
 import { authClient } from '@/lib/auth-client';
 import { saveLastReviewDeckId } from '@/lib/review-preferences';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ReviewSession } from './ReviewSession';
 
 type DeckReviewPageProps = {
   deckId?: string;
 };
 
+type ActiveReviewSession = {
+  deckId: string;
+  cards: Card[];
+};
+
+const REVIEW_BATCH_SIZE = 10;
+
 export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const store = useStore();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
-  const dueCards = deckId
-    ? store
-        .getCardsForDeck(deckId)
-        .filter((card) => card.due_at <= Date.now())
-        .sort((first, second) => first.due_at - second.due_at)
-    : [];
+  const [activeSession, setActiveSession] =
+    useState<ActiveReviewSession | null>(null);
+  const getDueCards = (id: string) =>
+    store
+      .getCardsForDeck(id)
+      .filter((card) => card.due_at <= Date.now())
+      .sort((first, second) => first.due_at - second.due_at);
+  const dueCards = deckId ? getDueCards(deckId) : [];
   const deck = store.decks.find((item) => item.id === deckId);
 
   useEffect(() => {
@@ -28,6 +37,24 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       saveLastReviewDeckId(session.user.id, deck.id);
     }
   }, [deck, session?.user.id]);
+
+  useEffect(() => {
+    if (activeSession && activeSession.deckId !== deckId) {
+      setActiveSession(null);
+    }
+  }, [activeSession, deckId]);
+
+  useEffect(() => {
+    if (!deckId || !deck || !store.ready || dueCards.length === 0) return;
+
+    if (activeSession?.deckId === deckId) return;
+
+    setActiveSession({ deckId, cards: dueCards.slice(0, REVIEW_BATCH_SIZE) });
+  }, [activeSession?.deckId, deck, deckId, dueCards, store.ready]);
+
+  const hasActiveSession =
+    activeSession !== null && activeSession.deckId === deckId;
+  const sessionCards = hasActiveSession ? activeSession.cards : dueCards;
 
   if (!deckId) {
     return (
@@ -82,7 +109,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
     );
   }
 
-  if (dueCards.length === 0) {
+  if (!hasActiveSession && dueCards.length === 0) {
     return (
       <ReviewRecovery
         title="No cards due"
@@ -94,7 +121,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   return (
     <ReviewSession
       key={deckId}
-      cards={dueCards}
+      cards={sessionCards}
       deckTitle={deck.title}
       onExit={() => navigate({ to: '/dashboard' })}
       onCreateCard={async (data) => {
@@ -102,6 +129,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       }}
       onRecordReview={store.recordReview}
       onDeleteNote={store.deleteNote}
+      onRequestNextBatch={() => getDueCards(deckId).slice(0, REVIEW_BATCH_SIZE)}
     />
   );
 }

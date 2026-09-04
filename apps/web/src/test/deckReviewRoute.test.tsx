@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Card, Deck } from '@/hooks/useStore';
 
@@ -118,5 +118,50 @@ describe('DeckReviewRoute', () => {
     expect(screen.getByTestId('review-session')).toBeInTheDocument();
     expect(getCardsForDeck).toHaveBeenCalledWith(deck.id);
     expect(routeTestState.reviewSession).toHaveBeenCalledWith([dueCard]);
+  });
+
+  it('starts a review session with at most ten due cards', async () => {
+    const dueCards = Array.from({ length: 12 }, (_, index) =>
+      makeCard(`due-${index}`, Date.now() - index - 1),
+    );
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => dueCards),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+
+    await waitFor(() =>
+      expect(routeTestState.reviewSession).toHaveBeenLastCalledWith(
+        dueCards
+          .slice()
+          .sort((first, second) => first.due_at - second.due_at)
+          .slice(0, 10),
+      ),
+    );
+  });
+
+  it('keeps the initial queue mounted after its last card is no longer due', async () => {
+    const dueCard = makeCard('due-card', Date.now() - 1);
+    let cards = [dueCard];
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => cards),
+    });
+
+    const { rerender } = render(<DeckReviewPage deckId={deck.id} />);
+
+    await waitFor(() =>
+      expect(routeTestState.reviewSession).toHaveBeenCalledWith([dueCard]),
+    );
+
+    cards = [];
+    await act(async () => {
+      rerender(<DeckReviewPage deckId={deck.id} />);
+    });
+
+    expect(screen.getByTestId('review-session')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'No cards due' }),
+    ).not.toBeInTheDocument();
+    expect(routeTestState.reviewSession).toHaveBeenLastCalledWith([dueCard]);
   });
 });

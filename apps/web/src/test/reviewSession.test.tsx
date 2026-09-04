@@ -445,6 +445,34 @@ describe('ReviewSession', () => {
     );
   });
 
+  it('loads a new batch after the current batch is completed', async () => {
+    const onRequestNextBatch = vi.fn(() => [secondCard]);
+    render(
+      <ReviewSession
+        cards={[card]}
+        deckTitle="German basics"
+        onExit={vi.fn()}
+        onCreateCard={vi.fn().mockResolvedValue(undefined)}
+        onRecordReview={vi.fn().mockResolvedValue({ id: 'review-1' })}
+        onDeleteNote={vi.fn().mockResolvedValue(undefined)}
+        onRequestNextBatch={onRequestNextBatch}
+      />,
+    );
+
+    revealCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Remembered' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    finishCardExit();
+
+    expect(onRequestNextBatch).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+      'data-card-id',
+      'card-2',
+    );
+  });
+
   it('shows the matching feedback while dragging the answer side', () => {
     renderSession();
     revealCard();

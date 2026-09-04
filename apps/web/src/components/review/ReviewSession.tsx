@@ -23,6 +23,7 @@ type ReviewSessionProps = {
   onCreateCard: (data: { front: string; back: string }) => Promise<void>;
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
+  onRequestNextBatch?: () => Card[];
   reviewMode?: ReviewMode;
 };
 
@@ -183,6 +184,7 @@ export function ReviewSession({
   onCreateCard,
   onRecordReview,
   onDeleteNote,
+  onRequestNextBatch,
   reviewMode = CURRENT_REVIEW_MODE,
 }: ReviewSessionProps) {
   const [sessionCards, setSessionCards] = useState(cards);
@@ -297,8 +299,16 @@ export function ReviewSession({
       }
 
       setIsWordDetailsOpen(false);
+      const isLastCardInBatch = currentCardIndex === sessionCards.length - 1;
+      const nextBatch = isLastCardInBatch ? onRequestNextBatch?.() : [];
+
       setIsFlipped(false);
-      setCurrentCardIndex((index) => index + 1);
+      if (nextBatch && nextBatch.length > 0) {
+        setSessionCards(nextBatch);
+        setCurrentCardIndex(0);
+      } else {
+        setCurrentCardIndex((index) => index + 1);
+      }
       setExitDirection(null);
     }, REVIEW_CARD_EXIT_DURATION_MS);
   };
@@ -927,7 +937,7 @@ function ReviewComplete({ onExit }: Pick<ReviewSessionProps, 'onExit'>) {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Review complete</h1>
           <p className="text-sm text-muted-foreground">
-            You have reviewed every card in this session.
+            All due cards in this deck are done for now.
           </p>
         </div>
         <Button onClick={onExit} className="cursor-pointer gap-1.5">
