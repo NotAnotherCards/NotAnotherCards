@@ -4,6 +4,7 @@ import type {
   WireRow,
 } from '@remelondb/server';
 import { describe, expect, it, vi } from 'vitest';
+import { cardId } from '@repo/offline-db';
 import { createCrossValidateSyncRelationships } from '../../src/sync/sync-validation';
 
 const profileRow = (id: string): WireRow => ({
@@ -63,4 +64,66 @@ describe('sync relationship validation scan guards', () => {
       );
     },
   );
+});
+
+describe('template-key membership for same-push cards (#194)', () => {
+  const validate = createCrossValidateSyncRelationships(async () =>
+    Promise.resolve(new Map()),
+  );
+  const tx = {
+    changedSince: vi.fn(async () => []),
+  } as unknown as SyncStoreTx<string>;
+
+  const wordNote = (id: string): WireRow => ({
+    id,
+    note_type: 'word',
+    fields_version: 1,
+    fields_json: JSON.stringify({
+      word: 'Hund',
+      translation: 'dog',
+      native_language_id: 'lang-en',
+      target_language_id: 'lang-de',
+    }),
+    additional_content: null,
+    created_at: 1,
+    updated_at: 1,
+  });
+
+  const cardFor = (noteId: string, templateKey: string): WireRow => ({
+    id: cardId(noteId, templateKey),
+    note_id: noteId,
+    template_key: templateKey,
+    active: true,
+    front: 'x',
+    back: 'y',
+    due_at: 1,
+    scheduled_interval_minutes: 0,
+    created_at: 1,
+    updated_at: 1,
+  });
+
+  it('accepts a card whose key belongs to the note type', async () => {
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: { rows: [wordNote('note-a')], deleted: [] },
+      user_cards: {
+        rows: [cardFor('note-a', 'word-to-translation')],
+        deleted: [],
+      },
+    });
+    expect(Object.values(rejected).flat()).toHaveLength(0);
+  });
+
+  it('rejects a fabricated template key even with a matching id', async () => {
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: { rows: [wordNote('note-a')], deleted: [] },
+      user_cards: {
+        rows: [cardFor('note-a', 'invented-template')],
+        deleted: [],
+      },
+    });
+    expect(rejected['user_cards']).toEqual([
+      cardId('note-a', 'invented-template'),
+    ]);
+    expect(rejected['user_notes'] ?? []).toHaveLength(0);
+  });
 });

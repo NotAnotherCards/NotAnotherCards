@@ -6,6 +6,7 @@ import {
   WordNoteFieldsV1,
   type WordNoteFields,
 } from './note-registry.js';
+import { UserNoteRow } from './user-dictionary.js';
 
 const word: WordNoteFields = {
   word: 'laufen',
@@ -230,5 +231,33 @@ describe('every word@1 field, one by one', () => {
     expect(parsed.example).toBe('Ich laufe.');
     expect(parsed.example_translation).toBe('I run.');
     expect(parsed.gender).toBe('neuter');
+  });
+});
+
+describe('unknown note types are opaque to the client row schema', () => {
+  it('passes an unregistered pair instead of failing the pull', () => {
+    expect(
+      UserNoteRow.safeParse({
+        note_type: 'word',
+        fields_version: 9,
+        fields_json: '{"anything":"at all"}',
+        additional_content: null,
+        created_at: 1,
+        updated_at: 1,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('still rejects invalid fields of a registered pair', () => {
+    expect(
+      UserNoteRow.safeParse({
+        note_type: 'word',
+        fields_version: 1,
+        fields_json: '{"word":"alone"}',
+        additional_content: null,
+        created_at: 1,
+        updated_at: 1,
+      }).success,
+    ).toBe(false);
   });
 });

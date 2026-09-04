@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ModelFor, type InferRecord } from '@remelondb/core';
 import { zodTable } from '@remelondb/core/zod';
-import { validateNoteFieldsJson } from './note-registry.js';
+import { noteFieldsSchemas, validateNoteFieldsJson } from './note-registry.js';
 import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
 
 export const UserDeckRow = z.object({
@@ -37,6 +37,14 @@ export const UserNoteRow = z
     updated_at: z.number().int().nonnegative(),
   })
   .superRefine((row, context) => {
+    // An unregistered (type, version) pair passes opaquely: a client older
+    // than the note's writer stores and syncs it without rendering or
+    // editing it (isBasicCard already gates the editors), instead of
+    // rejecting the whole pull. The server stays strict on push through
+    // its own direct validateNoteFieldsJson call.
+    if (!noteFieldsSchemas[row.note_type]?.[row.fields_version]) {
+      return;
+    }
     const result = validateNoteFieldsJson(
       row.note_type,
       row.fields_version,

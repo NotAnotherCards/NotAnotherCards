@@ -5,7 +5,12 @@ import type {
   WireRow,
 } from '@remelondb/server';
 import type { DrizzleStore } from '@remelondb/store-drizzle';
-import { cardId, noteDeckId, validateNoteFieldsJson } from '@repo/offline-db';
+import {
+  cardId,
+  noteDeckId,
+  noteTypeRegistry,
+  validateNoteFieldsJson,
+} from '@repo/offline-db';
 
 const USER_DECKS = 'user_decks';
 const USER_NOTES = 'user_notes';
@@ -216,15 +221,39 @@ export function createCrossValidateSyncRelationships(
 
     const noteDeletes = new Set(noteDeletesRequested);
 
+    // For a card whose note travels in the same push with a registered
+    // type, the template key must belong to that type. Cards of stored
+    // notes are not re-read here (validation stays pure). The unregistered
+    // branch is defensive only: such notes are already rejected above.
+    const templateKeysByNoteId = new Map<string, ReadonlySet<string>>();
+    for (const note of noteRows) {
+      const noteType = stringField(note, 'note_type');
+      const fieldsVersion = note['fields_version'];
+      const entry =
+        noteType !== null && typeof fieldsVersion === 'number'
+          ? noteTypeRegistry[noteType]?.[fieldsVersion]
+          : undefined;
+      if (entry) {
+        templateKeysByNoteId.set(
+          note.id,
+          new Set(entry.templates.map((template) => template.key)),
+        );
+      }
+    }
+
     const rejectedCards = cardRows.filter((card) => {
       const noteId = stringField(card, 'note_id');
       const templateKey = stringField(card, 'template_key');
-      return (
+      if (
         noteId === null ||
         templateKey === null ||
         !ownedNoteIds.has(noteId) ||
         card.id !== cardId(noteId, templateKey)
-      );
+      ) {
+        return true;
+      }
+      const knownKeys = templateKeysByNoteId.get(noteId);
+      return knownKeys !== undefined && !knownKeys.has(templateKey);
     });
     const rejectedCardIds = new Set(rejectedCards.map((card) => card.id));
     const blockedNoteDeletes = new Set<string>();

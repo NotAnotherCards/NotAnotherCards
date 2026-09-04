@@ -347,6 +347,15 @@ fields: `example`, `example_translation`, `part_of_speech`, `gender`,
 the upcoming `note_media` table. Its templates render both directions and,
 when both example fields exist, an example card.
 
+The trust model for derived cards: fronts and backs are client-computed
+renders, and the server validates structure, not derivation — ownership,
+deterministic ids, and (for notes in the same push with a registered
+type) template-key membership. A malformed client can therefore store
+mismatched card content, confined to its own account. Clients treat an
+unregistered `(note_type, fields_version)` pair as opaque: stored and
+synced, never rendered or edited, so a newer client's notes do not break
+an older client's pull.
+
 ## Future ideas
 
 Everything in this section is exploratory and is not part of the current database contract.
