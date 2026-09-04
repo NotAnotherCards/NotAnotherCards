@@ -1,5 +1,5 @@
 import { Redirect, useRouter } from 'expo-router';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, View } from 'react-native';
 import { authClient } from '@/lib/auth-client';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,25 @@ export default function Dashboard() {
 
   // SessionDatabaseProvider closes the offline database when the session
   // goes away; nothing to do here beyond signing out.
+  //
+  // @better-auth/expo clears the stored session while the request is being
+  // built (its init hook), so whatever the server answers, this device is
+  // already logged out and /login is the only coherent destination. What
+  // we owe the user is the truth when the server was not reached: the
+  // server-side session then lives on until it expires (#237).
   const onLogout = async () => {
+    let failed = false;
     try {
-      await authClient.signOut();
+      const result = await authClient.signOut();
+      failed = result?.error != null;
     } catch {
-      // Server unreachable - still drop back to the login screen.
+      failed = true;
+    }
+    if (failed) {
+      Alert.alert(
+        'Signed out on this device only',
+        'The server could not be reached, so your session elsewhere may stay active until it expires.',
+      );
     }
     router.replace('/login');
   };
