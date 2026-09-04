@@ -116,7 +116,12 @@ export function AiPlaygroundForm({
             <select
               id="model"
               value={model}
-              onChange={(e) => setModel(e.target.value as AiModel)}
+              onChange={(e) => {
+                const chosen = SELECTABLE_AI_MODELS.find(
+                  (m) => m === e.target.value,
+                );
+                if (chosen) setModel(chosen);
+              }}
               className="w-full rounded-3xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
             >
               {SELECTABLE_AI_MODELS.map((m) => (

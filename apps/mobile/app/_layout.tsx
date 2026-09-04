@@ -4,6 +4,8 @@
 import * as Crypto from 'expo-crypto';
 
 if (typeof globalThis.crypto?.getRandomValues !== 'function') {
+  // A runtime shim, not a full Crypto: remelonDB only calls getRandomValues.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   globalThis.crypto = { getRandomValues: Crypto.getRandomValues } as Crypto;
 }
 
@@ -41,6 +43,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Log in' }} />
         <Stack.Screen name="register" options={{ title: 'Register' }} />
+        <Stack.Screen name="onboarding" options={{ title: 'Set up profile' }} />
         <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
       </Stack>
       <StatusBar style="auto" />

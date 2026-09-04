@@ -16,8 +16,12 @@ import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
-import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
-import { LANGUAGES } from '@/lib/languages';
+import {
+  apiErrorBodySchema,
+  LANGUAGES,
+  ProfileFormValues,
+  userProfileFormSchema,
+} from '@repo/schemas';
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
@@ -55,8 +59,10 @@ export function OnBoardingComponent() {
         }),
       });
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to save onboarding data');
+        const { message } = apiErrorBodySchema.parse(
+          await res.json().catch(() => null),
+        );
+        throw new Error(message || 'Failed to save onboarding data');
       }
       await refetchSession();
       void navigate({ to: '/dashboard' });

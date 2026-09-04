@@ -16,15 +16,12 @@ const compat = new FlatCompat({
 
 module.exports = defineConfig([
   {
-    ignores: ['src/routeTree.gen.ts'],
-  },
-  {
     extends: compat.extends('@repo/eslint-config/index.js'),
   },
-  // Type-aware rules need the TypeScript program (#121). Scoped to src so
-  // config files stay outside the project service.
+  // Type-aware rules need the TypeScript program, same as web (#121). Scoped
+  // to the source dirs so config files stay outside the project service.
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['{app,components,lib}/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -37,33 +34,36 @@ module.exports = defineConfig([
       'better-tailwindcss': betterTailwindcss,
     },
     settings: {
-      'better-tailwindcss': {
-        entryPoint: 'src/style.css',
-      },
+      'better-tailwindcss': { tailwindConfig: 'tailwind.config.js' },
     },
     rules: {
-      // A dropped promise from an async store method reports success the
-      // database never agreed to (#122); make it an error, not a habit.
-      '@typescript-eslint/no-floating-promises': 'error',
-      // A missing space fuses two utilities into one token Tailwind
-      // cannot match, silently killing both (#123).
+      // A missing space fuses two utilities into one token Tailwind cannot
+      // match, silently killing both (#123). NativeWind cannot report it at
+      // runtime either.
       'better-tailwindcss/no-unknown-classes': 'error',
+      // A dropped promise from an async store method reports success the
+      // database never agreed to (#122); same risk on mobile.
+      '@typescript-eslint/no-floating-promises': 'error',
       // An any read off res.json() rendered a TypeError instead of the
-      // fallback message (#219); these three keep any at the boundary
-      // from spreading (#220).
+      // fallback message (#219); these three keep any at the boundary from
+      // spreading (#220).
       '@typescript-eslint/no-unsafe-type-assertion': 'error',
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'error',
     },
   },
-  // Tests cast mocks as a matter of course; that is not what the unsafe
-  // rules are for (#220).
+  // Tests and mocks are linted too, with the two relaxations they need.
   {
-    files: ['src/test/**/*.{ts,tsx}'],
+    files: ['{__tests__,__mocks__}/**/*.{ts,tsx}'],
     rules: {
-      '@typescript-eslint/no-unsafe-type-assertion': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
+      // jest.mock factories are hoisted above imports, so the module being
+      // mocked has to be pulled in with require() inside the factory.
+      '@typescript-eslint/no-require-imports': 'off',
+      // Parameters kept for signature shape are prefixed with an underscore.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 ]);

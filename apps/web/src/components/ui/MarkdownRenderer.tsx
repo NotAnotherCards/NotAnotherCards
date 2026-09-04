@@ -141,8 +141,10 @@ export function MarkdownRenderer({
       className={`markdown-content ${className}`.trim()}
       data-testid={testId}
       onClick={(e) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('audio, a, button, input, select')) {
+        if (
+          e.target instanceof Element &&
+          e.target.closest('audio, a, button, input, select')
+        ) {
           e.stopPropagation();
         }
       }}

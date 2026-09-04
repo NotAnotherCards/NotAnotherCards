@@ -1,6 +1,8 @@
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
-export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
+import type { AiJobStatus } from '@repo/schemas';
+
+export type JobStatus = AiJobStatus;
 
 interface AiJobStatusTrackerProps {
   jobId: string;
