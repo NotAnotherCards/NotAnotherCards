@@ -39,6 +39,7 @@ export function ImportExport() {
 
   // ── Import state ──
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileContentRef = useRef<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importPhase, setImportPhase] = useState<
@@ -107,7 +108,8 @@ export function ImportExport() {
   const detectFormat = (file: File): 'json' | 'csv' => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext === 'json') return 'json';
-    return 'csv';
+    if (ext === 'csv') return 'csv';
+    throw new Error('Unsupported file format. Please upload a .json or .csv file.');
   };
 
   const readFileContent = (file: File): Promise<string> =>
@@ -128,6 +130,7 @@ export function ImportExport() {
 
       try {
         const content = await readFileContent(file);
+        fileContentRef.current = content;
         const format = detectFormat(file);
         const options: ImportOptions = { format, dryRun: true };
         const report = await validateAndImportData(db, content, options);
@@ -144,15 +147,14 @@ export function ImportExport() {
   );
 
   const handleConfirmImport = async () => {
-    if (!db || !selectedFile) return;
+    if (!db || !selectedFile || !fileContentRef.current) return;
     setImportPhase('importing');
     setImportError(null);
 
     try {
-      const content = await readFileContent(selectedFile);
       const format = detectFormat(selectedFile);
       const options: ImportOptions = { format, dryRun: false };
-      const report = await validateAndImportData(db, content, options);
+      const report = await validateAndImportData(db, fileContentRef.current, options);
       setImportReport(report);
       setImportPhase(report.success ? 'done' : 'previewing');
     } catch (err: unknown) {
@@ -165,6 +167,7 @@ export function ImportExport() {
 
   const handleClearImport = () => {
     setSelectedFile(null);
+    fileContentRef.current = null;
     setImportPhase('idle');
     setImportReport(null);
     setImportError(null);

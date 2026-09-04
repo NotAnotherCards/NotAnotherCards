@@ -47,19 +47,31 @@ export async function exportDataToJson(
     description: deck.description ?? null,
   }));
 
+  const noteDecksMap = new Map<string, string[]>();
+  for (const nd of noteDecks) {
+    if (nd.active) {
+      const list = noteDecksMap.get(nd.note_id) ?? [];
+      list.push(nd.deck_id);
+      noteDecksMap.set(nd.note_id, list);
+    }
+  }
+
+  const cardsMap = new Map<string, typeof cards>();
+  for (const c of cards) {
+    const list = cardsMap.get(c.note_id) ?? [];
+    list.push(c);
+    cardsMap.set(c.note_id, list);
+  }
+
   const exportedNotes: BackupNote[] = notes.map((note) => {
-    const activeDeckIds = noteDecks
-      .filter((nd) => nd.note_id === note.id && nd.active)
-      .map((nd) => nd.deck_id);
-    const noteCards: BackupCard[] = cards
-      .filter((c) => c.note_id === note.id)
-      .map((c) => ({
-        source_id: c.id,
-        template_key: c.template_key,
-        active: c.active,
-        due_at: c.due_at,
-        scheduled_interval_minutes: c.scheduled_interval_minutes,
-      }));
+    const activeDeckIds = noteDecksMap.get(note.id) ?? [];
+    const noteCards: BackupCard[] = (cardsMap.get(note.id) ?? []).map((c) => ({
+      source_id: c.id,
+      template_key: c.template_key,
+      active: c.active,
+      due_at: c.due_at,
+      scheduled_interval_minutes: c.scheduled_interval_minutes,
+    }));
     let parsedFields: Record<string, string> = {};
     try {
       parsedFields = JSON.parse(note.fields_json);
@@ -120,6 +132,22 @@ export async function exportDataToCsv(db: Database): Promise<string> {
   ];
   const rows: string[] = [header.join(',')];
 
+  const noteDecksMap = new Map<string, string[]>();
+  for (const nd of noteDecks) {
+    if (nd.active) {
+      const list = noteDecksMap.get(nd.note_id) ?? [];
+      list.push(nd.deck_id);
+      noteDecksMap.set(nd.note_id, list);
+    }
+  }
+
+  const cardsMap = new Map<string, typeof cards[0]>();
+  for (const c of cards) {
+    if (!cardsMap.has(c.note_id)) {
+      cardsMap.set(c.note_id, c);
+    }
+  }
+
   for (const note of notes) {
     let front = '';
     let back = '';
@@ -131,16 +159,14 @@ export async function exportDataToCsv(db: Database): Promise<string> {
       front = '';
       back = '';
     }
-    const activeDeckIds = noteDecks
-      .filter((nd) => nd.note_id === note.id && nd.active)
-      .map((nd) => nd.deck_id);
+    const activeDeckIds = noteDecksMap.get(note.id) ?? [];
 
     const deckName = activeDeckIds
       .map((id) => deckTitleMap.get(id))
       .filter(Boolean)
       .join('; ');
 
-    const card = cards.find((c) => c.note_id === note.id);
+    const card = cardsMap.get(note.id);
     const active = card ? card.active : true;
     const dueAt = card ? card.due_at : Date.now();
     const interval = card ? card.scheduled_interval_minutes : 0;

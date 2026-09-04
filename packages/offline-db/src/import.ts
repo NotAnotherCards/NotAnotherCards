@@ -85,6 +85,12 @@ async function validateAndImportJson(
       message: 'Unsupported format version',
       path: 'format',
     });
+    return {
+      success: false,
+      dry_run: dryRun,
+      counts: { decks: 0, notes: 0, cards: 0, review_events: 0 },
+      errors,
+    };
   }
 
   // 3. Validate decks
