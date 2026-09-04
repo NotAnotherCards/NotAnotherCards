@@ -66,12 +66,12 @@ describe('sync relationship validation scan guards', () => {
   );
 });
 
-describe('template-key membership for same-push cards (#194)', () => {
+describe('derived-card validation (#194)', () => {
   const validate = createCrossValidateSyncRelationships(async () =>
     Promise.resolve(new Map()),
   );
-  const tx = {
-    changedSince: vi.fn(async () => []),
+  const emptyTx = {
+    changedSince: vi.fn(() => Promise.resolve([])),
   } as unknown as SyncStoreTx<string>;
 
   const wordNote = (id: string): WireRow => ({
@@ -89,41 +89,107 @@ describe('template-key membership for same-push cards (#194)', () => {
     updated_at: 1,
   });
 
-  const cardFor = (noteId: string, templateKey: string): WireRow => ({
+  const cardFor = (
+    noteId: string,
+    templateKey: string,
+    front: string,
+    back: string,
+    active = true,
+  ): WireRow => ({
     id: cardId(noteId, templateKey),
     note_id: noteId,
     template_key: templateKey,
-    active: true,
-    front: 'x',
-    back: 'y',
+    active,
+    front,
+    back,
     due_at: 1,
     scheduled_interval_minutes: 0,
     created_at: 1,
     updated_at: 1,
   });
 
-  it('accepts a card whose key belongs to the note type', async () => {
+  const rejectedIds = async (
+    tx: SyncStoreTx<string>,
+    cards: WireRow[],
+    notes: WireRow[] = [],
+  ) => {
     const rejected = await validate(tx, 'user-a', {
-      user_notes: { rows: [wordNote('note-a')], deleted: [] },
-      user_cards: {
-        rows: [cardFor('note-a', 'word-to-translation')],
-        deleted: [],
-      },
+      ...(notes.length > 0 && {
+        user_notes: { rows: notes, deleted: [] },
+      }),
+      user_cards: { rows: cards, deleted: [] },
     });
-    expect(Object.values(rejected).flat()).toHaveLength(0);
+    return rejected['user_cards'] ?? [];
+  };
+
+  it('accepts a same-push card that matches the compiled render', async () => {
+    expect(
+      await rejectedIds(
+        emptyTx,
+        [cardFor('note-a', 'word-to-translation', 'Hund', 'dog')],
+        [wordNote('note-a')],
+      ),
+    ).toHaveLength(0);
+  });
+
+  it('rejects a same-push card whose content contradicts its note', async () => {
+    expect(
+      await rejectedIds(
+        emptyTx,
+        [cardFor('note-a', 'word-to-translation', 'x', 'y')],
+        [wordNote('note-a')],
+      ),
+    ).toEqual([cardId('note-a', 'word-to-translation')]);
   });
 
   it('rejects a fabricated template key even with a matching id', async () => {
-    const rejected = await validate(tx, 'user-a', {
-      user_notes: { rows: [wordNote('note-a')], deleted: [] },
-      user_cards: {
-        rows: [cardFor('note-a', 'invented-template')],
-        deleted: [],
-      },
+    expect(
+      await rejectedIds(
+        emptyTx,
+        [cardFor('note-a', 'invented-template', 'x', 'y')],
+        [wordNote('note-a')],
+      ),
+    ).toEqual([cardId('note-a', 'invented-template')]);
+  });
+
+  it('requires a card its fields cannot yield to arrive deactivated', async () => {
+    const active = cardFor('note-a', 'example-to-translation', 's', 't');
+    const inactive = cardFor(
+      'note-a',
+      'example-to-translation',
+      's',
+      't',
+      false,
+    );
+    expect(
+      await rejectedIds(emptyTx, [active], [wordNote('note-a')]),
+    ).toHaveLength(1);
+    expect(
+      await rejectedIds(emptyTx, [inactive], [wordNote('note-a')]),
+    ).toHaveLength(0);
+  });
+
+  describe('cards of stored notes', () => {
+    const storedTx = {
+      changedSince: vi.fn(() =>
+        Promise.resolve([{ id: 'note-a', rev: 1, row: wordNote('note-a') }]),
+      ),
+    } as unknown as SyncStoreTx<string>;
+
+    it('accepts stale content on a card-only push (the trust model)', async () => {
+      expect(
+        await rejectedIds(storedTx, [
+          cardFor('note-a', 'word-to-translation', 'stale', 'stale'),
+        ]),
+      ).toHaveLength(0);
     });
-    expect(rejected['user_cards']).toEqual([
-      cardId('note-a', 'invented-template'),
-    ]);
-    expect(rejected['user_notes'] ?? []).toHaveLength(0);
+
+    it('still rejects an invented template key against a stored note', async () => {
+      expect(
+        await rejectedIds(storedTx, [
+          cardFor('note-a', 'invented-template', 'x', 'y'),
+        ]),
+      ).toEqual([cardId('note-a', 'invented-template')]);
+    });
   });
 });

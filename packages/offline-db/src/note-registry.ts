@@ -67,7 +67,7 @@ const requiredText = z.string().trim().min(1);
 const optionalText = z.string().trim().min(1).optional();
 
 /**
- * word@1, fields as agreed on #194: word in the target language,
+ * word@1, fields as proposed on #194: word in the target language,
  * translation in the native one; both language ids required and defaulted
  * from the profile by the forms; image and word_audio are reserved ids
  * into the future note_media table and cannot be filled yet.
@@ -197,6 +197,34 @@ export function compileNote(
     cards,
     templateKeys: entry.templates.map((template) => template.key),
   };
+}
+
+/**
+ * The shared zod refinement for note rows: a registered (type, version)
+ * pair must validate; an unregistered pair passes opaquely, so a client
+ * older than the note's writer stores and syncs it without rendering or
+ * editing it instead of rejecting the whole pull. The server stays
+ * strict on push through its own direct validateNoteFieldsJson call.
+ */
+export function refineNoteFields(
+  row: { note_type: string; fields_version: number; fields_json: string },
+  context: z.RefinementCtx,
+): void {
+  if (!noteFieldsSchemas[row.note_type]?.[row.fields_version]) {
+    return;
+  }
+  const result = validateNoteFieldsJson(
+    row.note_type,
+    row.fields_version,
+    row.fields_json,
+  );
+  if (!result.success) {
+    context.addIssue({
+      code: 'custom',
+      path: ['fields_json'],
+      message: result.error,
+    });
+  }
 }
 
 export type NoteFieldsValidationResult =

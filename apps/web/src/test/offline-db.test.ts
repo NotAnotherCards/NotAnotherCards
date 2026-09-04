@@ -109,6 +109,8 @@ describe('@repo/offline-db wiring on web', () => {
         updated_at: 0,
       }).success,
     ).toBe(false);
+    // An unregistered (type, version) pair passes opaquely (#194): a
+    // client older than the note's writer must not reject the pull.
     expect(
       syncWireSchemas.rows.user_notes.safeParse({
         id: 'note123',
@@ -119,7 +121,7 @@ describe('@repo/offline-db wiring on web', () => {
         created_at: 0,
         updated_at: 0,
       }).success,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       syncWireSchemas.pushArgs.safeParse({
         cursor: '1',

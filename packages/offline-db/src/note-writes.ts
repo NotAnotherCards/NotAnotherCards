@@ -7,7 +7,9 @@
  */
 import { randomId, type BatchOperation, type Database } from '@remelondb/core';
 // TODO(remelondb 0.3): mint through db.randomId() so a configured
-// randomSource covers these ids too and the Hermes crypto shim can go.
+// randomSource covers these ids too. Ordering per the 0.3 adoption plan:
+// the NAC bump PR passes randomSource at Database.open, swaps these two
+// call sites, and deletes the mobile crypto shim, in that one change.
 import { noteDeckId } from './ids.js';
 import {
   prepareCardsForNewNote,

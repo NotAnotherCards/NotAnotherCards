@@ -340,7 +340,8 @@ boundary remains in
 
 `basic@1` and `word@1` are registered. The word contract (#194) requires
 `word`, `translation`, `native_language_id` and `target_language_id` — the
-profile's language names, carrying the original/translation semantics; the
+profile's language id columns (placeholder ids until a languages table
+exists), carrying the original/translation semantics; the
 note is the canonical language source, deck membership is not. Optional
 fields: `example`, `example_translation`, `part_of_speech`, `gender`,
 `pronunciation`, `notes`, and the reserved `image` and `word_audio` ids for

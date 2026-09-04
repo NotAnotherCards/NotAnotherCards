@@ -144,8 +144,9 @@ Known values that may be edited, regenerated, searched, filtered, or reused by
 a template belong in `fields_json`; `additional_content` is only for prose
 without those semantics. `basic@1` and `word@1` are registered
 (#194). The word contract requires `word`, `translation`,
-`native_language_id` and `target_language_id` — the profile's language
-names, carrying the original/translation semantics — and the note, not
+`native_language_id` and `target_language_id` — the profile's language id
+columns, placeholder ids until a languages table exists, carrying the
+original/translation semantics — and the note, not
 deck membership, is the canonical language source.
 
 ---

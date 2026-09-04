@@ -7,6 +7,7 @@ import type {
 import type { DrizzleStore } from '@remelondb/store-drizzle';
 import {
   cardId,
+  compileNote,
   noteDeckId,
   noteTypeRegistry,
   validateNoteFieldsJson,
@@ -221,24 +222,64 @@ export function createCrossValidateSyncRelationships(
 
     const noteDeletes = new Set(noteDeletesRequested);
 
-    // For a card whose note travels in the same push with a registered
-    // type, the template key must belong to that type. Cards of stored
-    // notes are not re-read here (validation stays pure). The unregistered
-    // branch is defensive only: such notes are already rejected above.
+    // Cards of registered note types must use that type's template keys.
+    // The key set comes from the durable rows already loaded above and
+    // from the notes in this push, so a card-only push cannot invent a
+    // key either. For a card whose note travels in the SAME push, the
+    // server goes further and compiles the note: a rendered template's
+    // card must carry exactly the compiled front and back, and a template
+    // its fields cannot yield must arrive deactivated. Cards of stored
+    // notes are not content-checked: a card-only push legitimately
+    // carries stale front/back when another device edited the note (the
+    // documented trust model in docs/db-schemas.md).
     const templateKeysByNoteId = new Map<string, ReadonlySet<string>>();
-    for (const note of noteRows) {
-      const noteType = stringField(note, 'note_type');
-      const fieldsVersion = note['fields_version'];
+    for (const change of noteChanges) {
+      if (change.row === null) continue;
+      const noteType = stringField(change.row, 'note_type');
+      const fieldsVersion = change.row['fields_version'];
       const entry =
         noteType !== null && typeof fieldsVersion === 'number'
           ? noteTypeRegistry[noteType]?.[fieldsVersion]
           : undefined;
       if (entry) {
         templateKeysByNoteId.set(
-          note.id,
+          change.row.id,
           new Set(entry.templates.map((template) => template.key)),
         );
       }
+    }
+    const compiledByNoteId = new Map<
+      string,
+      ReadonlyMap<string, { front: string; back: string }>
+    >();
+    for (const note of noteRows) {
+      if (rejectedNoteIds.has(note.id)) continue;
+      const noteType = stringField(note, 'note_type');
+      const fieldsJson = stringField(note, 'fields_json');
+      const fieldsVersion = note['fields_version'];
+      if (
+        noteType === null ||
+        fieldsJson === null ||
+        typeof fieldsVersion !== 'number' ||
+        !noteTypeRegistry[noteType]?.[fieldsVersion]
+      ) {
+        continue;
+      }
+      const compiled = compileNote(
+        noteType,
+        fieldsVersion,
+        JSON.parse(fieldsJson),
+      );
+      templateKeysByNoteId.set(note.id, new Set(compiled.templateKeys));
+      compiledByNoteId.set(
+        note.id,
+        new Map(
+          compiled.cards.map((card) => [
+            card.templateKey,
+            { front: card.front, back: card.back },
+          ]),
+        ),
+      );
     }
 
     const rejectedCards = cardRows.filter((card) => {
@@ -253,7 +294,18 @@ export function createCrossValidateSyncRelationships(
         return true;
       }
       const knownKeys = templateKeysByNoteId.get(noteId);
-      return knownKeys !== undefined && !knownKeys.has(templateKey);
+      if (knownKeys !== undefined && !knownKeys.has(templateKey)) {
+        return true;
+      }
+      const compiledCards = compiledByNoteId.get(noteId);
+      if (compiledCards === undefined) {
+        return false;
+      }
+      const rendered = compiledCards.get(templateKey);
+      if (rendered === undefined) {
+        return card['active'] === true;
+      }
+      return card['front'] !== rendered.front || card['back'] !== rendered.back;
     });
     const rejectedCardIds = new Set(rejectedCards.map((card) => card.id));
     const blockedNoteDeletes = new Set<string>();
