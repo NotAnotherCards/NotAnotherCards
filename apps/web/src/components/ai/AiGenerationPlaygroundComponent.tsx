@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import z from 'zod';
 import {
-  aiJobSchema,
+  aiJobResponseSchema,
+  aiJobsResponseSchema,
+  aiQuotaResponseSchema,
   apiErrorBodySchema,
   CreateAiJobInput,
   QuotaStatus,
-  quotaStatusSchema,
   type AiJob,
 } from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
@@ -15,10 +15,6 @@ import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 
 type Job = AiJob;
-
-const jobResponseSchema = z.object({ job: aiJobSchema });
-const jobsResponseSchema = z.object({ jobs: z.array(aiJobSchema) });
-const quotaResponseSchema = z.object({ quota: quotaStatusSchema });
 
 export function AiGenerationPlaygroundComponent() {
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
@@ -55,7 +51,7 @@ export function AiGenerationPlaygroundComponent() {
           return;
         }
 
-        const { job: updatedJob } = jobResponseSchema.parse(await res.json());
+        const { job: updatedJob } = aiJobResponseSchema.parse(await res.json());
         setCurrentJob(updatedJob);
 
         if (
@@ -93,7 +89,7 @@ export function AiGenerationPlaygroundComponent() {
     try {
       const res = await fetch('/api/ai/quota');
       if (res.ok) {
-        const { quota } = quotaResponseSchema.parse(await res.json());
+        const { quota } = aiQuotaResponseSchema.parse(await res.json());
         setQuota(quota);
       }
     } catch {
@@ -105,7 +101,7 @@ export function AiGenerationPlaygroundComponent() {
     try {
       const res = await fetch('/api/ai/jobs');
       if (res.ok) {
-        const { jobs } = jobsResponseSchema.parse(await res.json());
+        const { jobs } = aiJobsResponseSchema.parse(await res.json());
         setJobs(jobs);
       }
     } catch {
@@ -137,7 +133,7 @@ export function AiGenerationPlaygroundComponent() {
         );
       }
 
-      const { job } = jobResponseSchema.parse(await res.json());
+      const { job } = aiJobResponseSchema.parse(await res.json());
       setCurrentJob(job);
       void fetchQuota();
     } catch (err: unknown) {

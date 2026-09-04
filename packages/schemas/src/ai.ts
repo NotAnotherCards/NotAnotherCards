@@ -110,3 +110,8 @@ export const aiJobSchema = z.object({
   createdAt: z.string(),
 });
 export type AiJob = z.infer<typeof aiJobSchema>;
+
+/** Response envelopes of the AI endpoints, parsed by the clients. */
+export const aiJobResponseSchema = z.object({ job: aiJobSchema });
+export const aiJobsResponseSchema = z.object({ jobs: z.array(aiJobSchema) });
+export const aiQuotaResponseSchema = z.object({ quota: quotaStatusSchema });
