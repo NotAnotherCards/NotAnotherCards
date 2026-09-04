@@ -4,6 +4,7 @@ import {
   BASIC_NOTE_TYPE,
   BASIC_NOTE_FIELDS_VERSION,
 } from './note-constants.js';
+import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
 import {
   UserDeck,
   UserNote,
@@ -200,12 +201,13 @@ async function validateAndImportJson(
       if (
         typeof card.scheduled_interval_minutes !== 'number' ||
         !Number.isInteger(card.scheduled_interval_minutes) ||
-        card.scheduled_interval_minutes < 0
+        card.scheduled_interval_minutes < 0 ||
+        card.scheduled_interval_minutes > REVIEW_INTERVAL_CAP_MINUTES
       ) {
         errors.push({
           code: 'INVALID_CARD_INTERVAL',
           message:
-            'Card scheduled_interval_minutes must be a non-negative integer',
+            `Card scheduled_interval_minutes must be a non-negative integer up to ${REVIEW_INTERVAL_CAP_MINUTES}`,
           path: cardPath,
         });
       }
