@@ -156,6 +156,49 @@ export const noteFieldsSchemas: Readonly<
   ]),
 );
 
+export interface CompiledCard {
+  readonly templateKey: string;
+  readonly front: string;
+  readonly back: string;
+}
+
+export interface CompiledNote {
+  /** Canonical (trimmed, schema-shaped) fields, ready for fields_json. */
+  readonly fieldsJson: string;
+  /** Every card these fields yield, in template order. */
+  readonly cards: readonly CompiledCard[];
+  /** Every template key of the type, rendered or not — the deactivation set. */
+  readonly templateKeys: readonly string[];
+}
+
+/**
+ * Parse once, render everything: the single step between raw fields and
+ * what gets written. Throws on an unregistered pair or invalid fields.
+ */
+export function compileNote(
+  noteType: string,
+  fieldsVersion: number,
+  fields: unknown,
+): CompiledNote {
+  const entry = noteTypeRegistry[noteType]?.[fieldsVersion];
+  if (!entry) {
+    throw new Error(`Unsupported note type ${noteType}@${fieldsVersion}`);
+  }
+  const parsed: unknown = entry.schema.parse(fields);
+  const cards: CompiledCard[] = [];
+  for (const template of entry.templates) {
+    const rendered = template.render(parsed);
+    if (rendered) {
+      cards.push({ templateKey: template.key, ...rendered });
+    }
+  }
+  return {
+    fieldsJson: JSON.stringify(parsed),
+    cards,
+    templateKeys: entry.templates.map((template) => template.key),
+  };
+}
+
 export type NoteFieldsValidationResult =
   | { readonly success: true; readonly data: unknown }
   | { readonly success: false; readonly error: string };

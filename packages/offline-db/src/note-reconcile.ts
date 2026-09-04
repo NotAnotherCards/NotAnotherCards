@@ -1,12 +1,11 @@
 /**
- * Card reconciliation (#194): keep a note's sibling cards in step with its
- * fields. For each template of the note's registered type, by the
- * deterministic cardId(noteId, templateKey):
+ * Card reconciliation (#194): keep a note's sibling cards in step with a
+ * compiled note. By the deterministic cardId(noteId, templateKey):
  *
- * - renders and missing  → create, due now
- * - renders and existing → update front/back in place; if it was
+ * - compiled and missing  → create, due now
+ * - compiled and existing → update front/back in place; if it was
  *   deactivated, reactivate as due now with its history intact (#157)
- * - renders null and active → deactivate; never delete
+ * - uncompiled and active → deactivate; never delete
  * - a card whose template key the registry does not know (written by a
  *   newer client) is left strictly alone
  *
@@ -16,60 +15,68 @@
  */
 import { Q, type BatchOperation, type Database } from '@remelondb/core';
 import { cardId } from './ids.js';
-import { noteTypeRegistry } from './note-registry.js';
+import type { CompiledNote } from './note-registry.js';
 import { UserCard } from './user-dictionary.js';
 
-export interface ReconcilableNote {
-  readonly id: string;
-  readonly note_type: string;
-  readonly fields_version: number;
+/** Cards for a brand-new note: no queries, nothing can exist yet. */
+export function prepareCardsForNewNote(
+  db: Database,
+  noteId: string,
+  compiled: CompiledNote,
+  now: number,
+): BatchOperation[] {
+  return compiled.cards.map((card) =>
+    db.get(UserCard).prepareCreate({
+      id: cardId(noteId, card.templateKey),
+      note_id: noteId,
+      template_key: card.templateKey,
+      active: true,
+      front: card.front,
+      back: card.back,
+      due_at: now,
+      scheduled_interval_minutes: 0,
+      created_at: now,
+      updated_at: now,
+    }),
+  );
 }
 
+/** Reconcile an existing note's cards against its compiled result. */
 export async function prepareReconcileNoteCards(
   db: Database,
-  note: ReconcilableNote,
-  fields: unknown,
+  noteId: string,
+  compiled: CompiledNote,
 ): Promise<BatchOperation[]> {
-  const entry = noteTypeRegistry[note.note_type]?.[note.fields_version];
-  if (!entry) {
-    throw new Error(
-      `Cannot reconcile cards for unregistered note type ${note.note_type}@${note.fields_version}`,
-    );
-  }
-
-  // Parse with the entry's own schema, whatever the caller did: fields of
-  // the wrong type throw here instead of rendering nonsense cards, and
-  // every render sees canonical (trimmed) values.
-  const parsed: unknown = entry.schema.parse(fields);
-
   // All of the note's cards, the deactivated ones included: the reactivate
   // path needs them, and the active-only dashboard queries must not decide
   // what exists here.
   const existing = await db
     .get(UserCard)
-    .query(Q.where('note_id', note.id))
+    .query(Q.where('note_id', noteId))
     .fetch();
   const byId = new Map(existing.map((card) => [card.id, card]));
+  const rendered = new Map(
+    compiled.cards.map((card) => [cardId(noteId, card.templateKey), card]),
+  );
 
   const now = Date.now();
   const operations: BatchOperation[] = [];
 
-  for (const template of entry.templates) {
-    const id = cardId(note.id, template.key);
+  for (const templateKey of compiled.templateKeys) {
+    const id = cardId(noteId, templateKey);
     const card = byId.get(id);
-    const rendered = template.render(parsed);
+    const wanted = rendered.get(id);
 
-    if (rendered) {
-      const { front, back } = rendered;
+    if (wanted) {
       if (!card) {
         operations.push(
           db.get(UserCard).prepareCreate({
             id,
-            note_id: note.id,
-            template_key: template.key,
+            note_id: noteId,
+            template_key: templateKey,
             active: true,
-            front,
-            back,
+            front: wanted.front,
+            back: wanted.back,
             due_at: now,
             scheduled_interval_minutes: 0,
             created_at: now,
@@ -78,11 +85,15 @@ export async function prepareReconcileNoteCards(
         );
       } else {
         const reactivate = !card.active;
-        if (card.front !== front || card.back !== back || reactivate) {
+        if (
+          card.front !== wanted.front ||
+          card.back !== wanted.back ||
+          reactivate
+        ) {
           operations.push(
             card.prepareUpdate((record) => {
-              record.front = front;
-              record.back = back;
+              record.front = wanted.front;
+              record.back = wanted.back;
               if (reactivate) {
                 // #157's reactivation rule: due now, history kept.
                 record.active = true;

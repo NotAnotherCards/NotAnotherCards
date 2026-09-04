@@ -3,6 +3,7 @@ import { Database } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { cardId } from './ids.js';
 import { prepareReconcileNoteCards } from './note-reconcile.js';
+import { compileNote } from './note-registry.js';
 import { WordNoteFieldsV1, type WordNoteFields } from './note-registry.js';
 import { schema } from './index.js';
 import { UserCard, UserNote } from './user-dictionary.js';
@@ -36,36 +37,28 @@ const openDb = async () => {
 };
 
 const createWordNote = async (fields: WordNoteFields, noteId = 'note-1') => {
-  const parsed = WordNoteFieldsV1.parse(fields);
+  const compiled = compileNote('word', 1, fields);
   await db.write(async () => {
     const now = Date.now();
     const noteOp = db.get(UserNote).prepareCreate({
       id: noteId,
       note_type: 'word',
       fields_version: 1,
-      fields_json: JSON.stringify(parsed),
+      fields_json: compiled.fieldsJson,
       additional_content: null,
       created_at: now,
       updated_at: now,
     });
-    const cardOps = await prepareReconcileNoteCards(
-      db,
-      { id: noteId, note_type: 'word', fields_version: 1 },
-      parsed,
-    );
+    const cardOps = await prepareReconcileNoteCards(db, noteId, compiled);
     await db.batch([noteOp, ...cardOps]);
   });
   return noteId;
 };
 
 const reconcile = async (noteId: string, fields: WordNoteFields) => {
-  const parsed = WordNoteFieldsV1.parse(fields);
+  const compiled = compileNote('word', 1, fields);
   return await db.write(async () => {
-    const ops = await prepareReconcileNoteCards(
-      db,
-      { id: noteId, note_type: 'word', fields_version: 1 },
-      parsed,
-    );
+    const ops = await prepareReconcileNoteCards(db, noteId, compiled);
     await db.batch(ops);
     return ops.length;
   });
@@ -176,43 +169,25 @@ describe('prepareReconcileNoteCards', () => {
     expect(future.front).toBe('f');
   });
 
-  it('throws for an unregistered type instead of guessing', async () => {
-    await openDb();
-    await expect(
-      prepareReconcileNoteCards(
-        db,
-        { id: 'n', note_type: 'phrase', fields_version: 1 },
-        {},
-      ),
-    ).rejects.toThrow(/unregistered note type phrase@1/);
+  it('compileNote throws for an unregistered type instead of guessing', () => {
+    expect(() => compileNote('phrase', 1, {})).toThrow(
+      /Unsupported note type phrase@1/,
+    );
   });
 });
 
-describe('internal validation', () => {
-  it('throws on fields of the wrong shape instead of rendering nonsense', async () => {
-    await openDb();
-    await expect(
-      prepareReconcileNoteCards(
-        db,
-        { id: 'n', note_type: 'word', fields_version: 1 },
-        { front: 'a', back: 'b' },
-      ),
-    ).rejects.toThrow();
+describe('compileNote validation', () => {
+  it('throws on fields of the wrong shape instead of rendering nonsense', () => {
+    expect(() => compileNote('word', 1, { front: 'a', back: 'b' })).toThrow();
   });
 
-  it('canonicalizes fields itself: padded input renders trimmed cards', async () => {
-    await openDb();
-    await createWordNote(word, 'note-2');
-    await db.write(async () => {
-      const ops = await prepareReconcileNoteCards(
-        db,
-        { id: 'note-2', note_type: 'word', fields_version: 1 },
-        { ...word, word: '  laufen  ', translation: ' to run ' },
-      );
-      await db.batch(ops);
+  it('canonicalizes: padded input compiles to trimmed cards and json', () => {
+    const compiled = compileNote('word', 1, {
+      ...word,
+      word: '  laufen  ',
+      translation: ' to run ',
     });
-    const cards = await cardsOf('note-2');
-    const wtt = cards.find((c) => c.template_key === 'word-to-translation')!;
-    expect(wtt.front).toBe('laufen');
+    expect(compiled.cards[0]!.front).toBe('laufen');
+    expect(JSON.parse(compiled.fieldsJson)).toMatchObject({ word: 'laufen' });
   });
 });

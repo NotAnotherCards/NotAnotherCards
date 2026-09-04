@@ -142,11 +142,11 @@ by both the wire contract and the server-side sync store.
 
 Known values that may be edited, regenerated, searched, filtered, or reused by
 a template belong in `fields_json`; `additional_content` is only for prose
-without those semantics. Only the complete `basic@1` contract is currently
-registered. `word@1` remains unsupported until its full stable field and
-template contract is defined; that eventual contract must include
-`original_language` and `translation_language`, even when a deck supplies
-their initial defaults.
+without those semantics. `basic@1` and `word@1` are registered
+(#194). The word contract requires `word`, `translation`,
+`native_language_id` and `target_language_id` — the profile's language
+names, carrying the original/translation semantics — and the note, not
+deck membership, is the canonical language source.
 
 ---
 
