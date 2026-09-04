@@ -39,12 +39,6 @@ describe('sync relationship validation scan guards', () => {
         user_profiles: { rows: [profileRow('user-a')], deleted: [] },
       },
     },
-    {
-      name: 'note-only',
-      changes: {
-        user_notes: { rows: [validNoteRow('note-a')], deleted: [] },
-      },
-    },
   ];
 
   it.each(cases)(
@@ -64,6 +58,62 @@ describe('sync relationship validation scan guards', () => {
       );
     },
   );
+});
+
+describe('note identity immutability (#194)', () => {
+  const validate = createCrossValidateSyncRelationships(async () =>
+    Promise.resolve(new Map()),
+  );
+  const storedBasic = {
+    id: 'note-a',
+    note_type: 'basic',
+    fields_version: 1,
+    fields_json: JSON.stringify({ front: 'f', back: 'b' }),
+    additional_content: null,
+    created_at: 1,
+    updated_at: 1,
+  };
+  const tx = {
+    changedSince: vi.fn(() =>
+      Promise.resolve([{ id: 'note-a', rev: 1, row: storedBasic }]),
+    ),
+  } as unknown as SyncStoreTx<string>;
+
+  it('rejects an update that changes a stored note type', async () => {
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: {
+        rows: [
+          {
+            ...storedBasic,
+            note_type: 'word',
+            fields_json: JSON.stringify({
+              word: 'Hund',
+              translation: 'dog',
+              native_language_id: 'lang-en',
+              target_language_id: 'lang-de',
+            }),
+          },
+        ],
+        deleted: [],
+      },
+    });
+    expect(rejected['user_notes']).toEqual(['note-a']);
+  });
+
+  it('accepts an update that keeps the stored identity', async () => {
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: {
+        rows: [
+          {
+            ...storedBasic,
+            fields_json: JSON.stringify({ front: 'f2', back: 'b2' }),
+          },
+        ],
+        deleted: [],
+      },
+    });
+    expect(rejected['user_notes'] ?? []).toHaveLength(0);
+  });
 });
 
 describe('derived-card validation (#194)', () => {

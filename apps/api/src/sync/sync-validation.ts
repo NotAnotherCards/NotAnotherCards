@@ -194,23 +194,56 @@ export function createCrossValidateSyncRelationships(
     // RemelonDB currently rebuilds table schemas from `.shape`, which drops
     // UserNoteRow's object-level superRefine. Keep this contract at the
     // application cross-validation boundary shared by both engine paths.
+    // Durable notes load whenever notes, cards or memberships are pushed:
+    // ownership needs them for the latter two, and identity immutability
+    // needs them for note updates, which costs note-only pushes the scan
+    // they previously skipped.
+    const noteChanges =
+      cardRows.length === 0 &&
+      membershipRows.length === 0 &&
+      noteRows.length === 0
+        ? []
+        : await tx.changedSince(USER_NOTES, scope, 0);
+
+    // A stored note's identity is immutable: an update claiming a different
+    // (note_type, fields_version) would validate against the submitted
+    // tuple while the insert-only store keeps the original, persisting
+    // fields_json of the wrong contract under the old identity.
+    const durableNoteIdentity = new Map<
+      string,
+      { type: string; version: number }
+    >();
+    for (const change of noteChanges) {
+      if (change.row === null) continue;
+      const noteType = stringField(change.row, 'note_type');
+      const fieldsVersion = change.row['fields_version'];
+      if (noteType !== null && typeof fieldsVersion === 'number') {
+        durableNoteIdentity.set(change.row.id, {
+          type: noteType,
+          version: fieldsVersion,
+        });
+      }
+    }
     const rejectedNotes = noteRows.filter((note) => {
       const noteType = stringField(note, 'note_type');
       const fieldsJson = stringField(note, 'fields_json');
       const fieldsVersion = note['fields_version'];
-      return (
+      if (
         noteType === null ||
         fieldsJson === null ||
         typeof fieldsVersion !== 'number' ||
         !validateNoteFieldsJson(noteType, fieldsVersion, fieldsJson).success
+      ) {
+        return true;
+      }
+      const stored = durableNoteIdentity.get(note.id);
+      return (
+        stored !== undefined &&
+        (stored.type !== noteType || stored.version !== fieldsVersion)
       );
     });
     const rejectedNoteIds = new Set(rejectedNotes.map((note) => note.id));
 
-    const noteChanges =
-      cardRows.length === 0 && membershipRows.length === 0
-        ? []
-        : await tx.changedSince(USER_NOTES, scope, 0);
     const ownedNoteIds = activeIds(noteChanges);
     const deletedNoteIds = tombstoneIds(noteChanges);
 

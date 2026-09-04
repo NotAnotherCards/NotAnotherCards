@@ -330,7 +330,9 @@ Key points from the discussion:
 PostgreSQL intentionally stores `fields_json` as text because that is the
 primitive representation synchronized by RemelonDB. It is not accepted as
 arbitrary JSON. The shared offline row and wire validators use
-`(note_type, fields_version)` to select a Zod schema from an explicit registry,
+`(note_type, fields_version)` to select a Zod schema from an explicit
+registry — a registered pair validates strictly, and an unregistered pair
+passes clients opaquely on pull while the server rejects pushing it —
 parse `fields_json`, and validate the parsed value. Unknown note types or
 versions, malformed JSON, and payloads that fail the selected schema are
 rejected. This keeps schema evolution explicit without coupling the database

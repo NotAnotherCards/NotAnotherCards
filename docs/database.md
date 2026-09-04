@@ -136,8 +136,11 @@ optional free-form Markdown.
 `fields_json` remains text at the database and sync boundary, but it is not an
 unvalidated escape hatch. The shared local/wire validator uses the pair
 `(note_type, fields_version)` to look up a Zod schema in an explicit registry,
-parses the serialized JSON, and validates the result. Malformed JSON, unknown
-type/version pairs, and payloads rejected by the selected schema are rejected
+parses the serialized JSON, and validates the result. Malformed JSON and
+payloads rejected by the selected schema are rejected; an unregistered
+type/version pair passes clients opaquely on pull (stored and synced,
+never rendered or edited) while the server rejects pushing it, so newer
+note versions do not break older clients. Everything else is rejected
 by both the wire contract and the server-side sync store.
 
 Known values that may be edited, regenerated, searched, filtered, or reused by
