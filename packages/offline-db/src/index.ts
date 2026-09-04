@@ -126,3 +126,5 @@ export * from './review-scheduler.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
 export * from './queries.js';
+export * from './export-import-types.js';
+export * from './export.js';
