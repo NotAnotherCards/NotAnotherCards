@@ -250,3 +250,27 @@ an additional reserve outside the 17.
 
 Before any of this: the Privacy Policy and Terms of Service pages, and the
 README. They give 0 points and their absence rejects the project.
+
+## 7. Evaluation dry run
+
+The mechanical checks are becoming CI jobs (#251 fresh-clone start and
+credential scan, #252 browser flows and console, #253 hostile input).
+Until they land they are manual; after, the dry run is green CI plus one
+live rehearsal — CI proves the code, it cannot rehearse a demonstration.
+
+- **Rehearse the opening**: clone into an empty directory, `.env.example`
+  only, `docker compose up` — the evaluation starts with exactly this,
+  so the person driving has done it recently. Read every script the demo
+  touches before running it in front of an evaluator.
+- **Rehearse the demo in real Chrome**: latest stable, DevTools open,
+  console clean, main flows at desktop and phone width, two accounts
+  side by side with isolated data and working sync. CI's chromium is not
+  the subject's "latest stable Google Chrome", so one real pass stays.
+- **People**: all five attend. Each of us can explain and demo what we
+  built and point at the commits. Architecture, stack choices and the
+  work split are explainable by at least two of us. Everyone knows the
+  claimed modules (section 4) and why they qualify.
+- **Modules**: a module counts only if every required part works in the
+  demo — rehearse each, know where it lives and who built it. Recompute
+  section 6's score before the date; 14 points is the floor, and
+  anything above it matters only once section 1 passes.
