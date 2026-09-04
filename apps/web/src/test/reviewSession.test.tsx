@@ -568,44 +568,14 @@ describe('ReviewSession', () => {
     );
   });
 
-  it('shows the settings button only after the card flip completes', () => {
-    renderSession();
-
-    expect(
-      screen.queryByRole('button', { name: 'Open card settings' }),
-    ).not.toBeInTheDocument();
-
-    revealCard();
-
-    expect(
-      screen.queryByRole('button', { name: 'Open card settings' }),
-    ).not.toBeInTheDocument();
-
-    finishCardFlip();
-
-    expect(
-      screen.getByRole('button', { name: 'Open card settings' }).parentElement,
-    ).toHaveClass('bottom-8');
-  });
-
-  it('opens the card settings placeholder and closes it', () => {
+  it('does not render an unavailable card-settings control', () => {
     renderSession();
     revealCard();
     finishCardFlip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open card settings' }));
-
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'Card settings' }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('dialog').parentElement).toHaveClass(
-      'items-center',
-      'justify-center',
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      screen.queryByRole('button', { name: 'Open card settings' }),
+    ).not.toBeInTheDocument();
   });
 
   it('opens word details and returns to the same answer view when closed', () => {

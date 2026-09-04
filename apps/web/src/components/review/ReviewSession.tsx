@@ -4,7 +4,7 @@ import { PageContainer } from '@/components/PageContainer';
 import { CardForm } from '@/components/deck/CardForm';
 import { Card } from '@/hooks/useStore';
 import { writeErrorMessage } from '@/lib/write-error';
-import { ArrowLeft, BookOpen, Cog, Plus, Volume2, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, Plus, Volume2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
   CURRENT_REVIEW_MODE,
@@ -190,7 +190,6 @@ export function ReviewSession({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isFlipComplete, setIsFlipComplete] = useState(false);
   const [isWordDetailsOpen, setIsWordDetailsOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCreateCardOpen, setIsCreateCardOpen] = useState(false);
   const [createCardError, setCreateCardError] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -220,7 +219,6 @@ export function ReviewSession({
     setIsFlipped(true);
   };
   const openWordDetails = () => setIsWordDetailsOpen(true);
-  const openSettings = () => setIsSettingsOpen(true);
   const openCreateCardForm = () => {
     setCreateCardError(null);
     setIsCreateCardOpen(true);
@@ -362,14 +360,6 @@ export function ReviewSession({
         return;
       }
 
-      if (isSettingsOpen) {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          setIsSettingsOpen(false);
-        }
-        return;
-      }
-
       if (isWordDetailsOpen) {
         if (isInteractiveKeyboardTarget(event.target)) return;
 
@@ -437,7 +427,6 @@ export function ReviewSession({
     isSavingReview,
     isCreateCardOpen,
     isDeleteConfirmationOpen,
-    isSettingsOpen,
     isWordDetailsOpen,
     reviewMode,
   ]);
@@ -701,20 +690,6 @@ export function ReviewSession({
                 >
                   <BookOpen className="size-5" />
                 </Button>
-                <Button
-                  data-review-card-control
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openSettings();
-                  }}
-                  className="pointer-events-auto size-11 shrink-0 cursor-pointer text-muted-foreground"
-                  aria-label="Open card settings"
-                >
-                  <Cog className="size-5" />
-                </Button>
               </div>
             )}
           </div>
@@ -787,10 +762,6 @@ export function ReviewSession({
           onAnswer={answerCard}
           reviewMode={reviewMode}
         />
-      )}
-
-      {isSettingsOpen && (
-        <SettingsPlaceholderDialog onClose={() => setIsSettingsOpen(false)} />
       )}
 
       {isDeleteConfirmationOpen && (
@@ -944,36 +915,6 @@ function DeleteConfirmationDialog({
             Yes
           </Button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function SettingsPlaceholderDialog({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settings-placeholder-title"
-        aria-describedby="settings-placeholder-description"
-        className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
-      >
-        <h2 id="settings-placeholder-title" className="text-xl font-bold">
-          Card settings
-        </h2>
-        <p
-          id="settings-placeholder-description"
-          className="mt-2 text-sm text-muted-foreground"
-        >
-          Card settings will be available later.
-        </p>
-        <Button
-          onClick={onClose}
-          className="mt-6 min-h-12 w-full cursor-pointer"
-        >
-          Close
-        </Button>
       </div>
     </div>
   );
