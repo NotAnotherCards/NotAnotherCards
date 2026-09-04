@@ -2,10 +2,12 @@ import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AiWorkerService } from '../ai/ai-worker.service';
 import { AiGatewayService, AiParseError } from '../ai/ai-gateway.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 describe('AiWorkerService', () => {
   let mockGateway: jest.Mocked<AiGatewayService>;
   let mockConfig: ConfigService;
+  let mockMetrics: jest.Mocked<MetricsService>;
 
   beforeEach(() => {
     mockConfig = {
@@ -19,6 +21,13 @@ describe('AiWorkerService', () => {
     mockGateway = {
       generateCards: jest.fn(),
     } as unknown as jest.Mocked<AiGatewayService>;
+
+    mockMetrics = {
+      aiJobsCompletedTotal: { inc: jest.fn() },
+      aiJobsFailedTotal: { inc: jest.fn() },
+      aiTokensConsumedTotal: { inc: jest.fn() },
+      observeAiJobDuration: jest.fn(),
+    } as unknown as jest.Mocked<MetricsService>;
   });
 
   it('returns false when no jobs are pending in queue', async () => {
@@ -29,7 +38,12 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({ rows: [] }), // dequeue query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(false);
@@ -87,11 +101,21 @@ describe('AiWorkerService', () => {
       ),
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
     expect(mockGateway.generateCards).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiJobsCompletedTotal.inc).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiTokensConsumedTotal.inc).toHaveBeenCalledWith(
+      { model: 'gemma4' },
+      25,
+    );
     expect(mockDb.execute).toHaveBeenCalled();
     // the completion update records the model that answered, so a job
     // that ran on the default still reports it
@@ -122,7 +146,12 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({}), // backoff update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
@@ -151,10 +180,16 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({}), // fail update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
+    expect(mockMetrics.aiJobsFailedTotal.inc).toHaveBeenCalledTimes(1);
     expect(mockDb.execute).toHaveBeenCalledTimes(3);
   });
 
@@ -189,7 +224,12 @@ describe('AiWorkerService', () => {
       insert: mockInsert,
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);

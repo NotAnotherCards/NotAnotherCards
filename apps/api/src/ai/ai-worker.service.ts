@@ -4,6 +4,7 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -14,6 +15,7 @@ import { aiUsage, DeckGenerationPayload } from './schema';
 import { AiGatewayService, AiParseError } from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
+import { MetricsService } from '../metrics/metrics.service';
 
 interface ClaimedJobRow {
   id: string;
@@ -37,6 +39,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly db: NodePgDatabase<Record<string, unknown>>,
     private readonly aiGateway: AiGatewayService,
     private readonly config: ConfigService,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {
     this.pollIntervalMs = Number(
       this.config.get<string>('AI_WORKER_POLL_INTERVAL_MS') ?? 2000,
@@ -47,6 +51,25 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
+    // Queue depth is refreshed at scrape time from the database using indexed status query
+    this.metricsService?.registerAiQueueDepthProvider(async () => {
+      const result = await this.db.execute(sql`
+        SELECT
+          count(*) FILTER (WHERE status = 'pending')::int AS pending,
+          count(*) FILTER (WHERE status = 'processing')::int AS processing,
+          count(*) FILTER (WHERE status = 'failed')::int AS failed
+        FROM ai_generation_jobs
+        WHERE status IN ('pending', 'processing', 'failed')
+      `);
+      const row = result.rows[0] as
+        { pending: number; processing: number; failed: number } | undefined;
+      return {
+        pending: Number(row?.pending ?? 0),
+        processing: Number(row?.processing ?? 0),
+        failed: Number(row?.failed ?? 0),
+      };
+    });
+
     if (this.workerEnabled) {
       this.timer = setInterval(() => {
         void this.processNextJob();
@@ -73,15 +96,20 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
 
     try {
       // 1. Recover exhausted stalled jobs: any job stuck in processing with max attempts is marked failed
-      await this.db.execute(sql`
+      const sweepResult = await this.db.execute(sql`
         UPDATE ai_generation_jobs
         SET status = 'failed',
             error = 'Job timed out while processing on final attempt',
             updated_at = NOW()
         WHERE status = 'processing'
           AND locked_at < NOW() - INTERVAL '5 minutes'
-          AND attempts >= max_attempts;
+          AND attempts >= max_attempts
+        RETURNING id;
       `);
+
+      if (sweepResult.rows.length > 0) {
+        this.metricsService?.aiJobsFailedTotal.inc(sweepResult.rows.length);
+      }
 
       // 2. Atomic dequeue with row lock: select and update 1 pending (due for run) or stalled retryable job
       const claimResult = await this.db.execute(sql`
@@ -121,6 +149,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async executeJob(job: ClaimedJobRow) {
+    const startTime = process.hrtime.bigint();
     const payload: DeckGenerationPayload =
       typeof job.payload === 'string'
         ? (JSON.parse(job.payload) as DeckGenerationPayload)
@@ -151,6 +180,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         payload.count,
       );
 
+      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
+
       // Record success and log token usage in a transaction
       await this.db.transaction(async (tx) => {
         await tx.execute(sql`
@@ -175,10 +206,22 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         });
       });
 
+      this.metricsService?.aiJobsCompletedTotal.inc();
+      this.metricsService?.aiTokensConsumedTotal.inc(
+        { model: inference.model },
+        inference.usage.totalTokens,
+      );
+      this.metricsService?.observeAiJobDuration(
+        inference.model,
+        'completed',
+        durationSeconds,
+      );
+
       this.logger.log(
-        `Job ${job.id} completed (${inference.cards.length} cards, ${inference.usage.totalTokens} tokens)`,
+        `Job ${job.id} completed (${inference.cards.length} cards, ${inference.usage.totalTokens} tokens in ${durationSeconds.toFixed(2)}s)`,
       );
     } catch (err: unknown) {
+      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
       const isFinalAttempt = job.attempts >= job.max_attempts;
       const nextStatus = isFinalAttempt ? 'failed' : 'pending';
       const errorMessage =
@@ -202,6 +245,10 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
             completionTokens: err.usage.completionTokens,
             totalTokens: err.usage.totalTokens,
           });
+          this.metricsService?.aiTokensConsumedTotal.inc(
+            { model: err.model },
+            err.usage.totalTokens,
+          );
         } catch (usageErr) {
           this.logger.error(
             'Failed to log token usage on parse error',
@@ -210,7 +257,15 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
+      this.metricsService?.observeAiJobDuration(
+        payload.model || 'unknown',
+        'failed',
+        durationSeconds,
+      );
+
       if (isFinalAttempt) {
+        this.metricsService?.aiJobsFailedTotal.inc();
+
         await this.db.execute(sql`
           UPDATE ai_generation_jobs
           SET status = 'failed',

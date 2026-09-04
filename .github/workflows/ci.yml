@@ -98,6 +98,9 @@ jobs:
 
       - name: Validate Infrastructure Configs
         run: pnpm test:infra
+        env:
+          GRAFANA_ADMIN_PASSWORD: ci-test-password
+          POSTGRES_EXPORTER_DATA_SOURCE_NAME: postgresql://ci:ci@localhost:5432/postgres?sslmode=disable
 
       - name: Build & Verify
         run: pnpm build 

@@ -1,0 +1,65 @@
+groups:
+  - name: notanothercards_alerts
+    rules:
+      - alert: ApiDown
+        expr: up{job="api-vps"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'NestJS API is down on the VPS'
+          description: 'Prometheus cannot scrape api:3000/metrics for more than 1 minute.'
+
+      - alert: PostgresDown
+        expr: up{job="postgres-vps"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'PostgreSQL Database exporter is unreachable'
+          description: 'Postgres exporter target on the VPS is reporting down.'
+
+      - alert: LiteLlmGatewayDown
+        expr: up{job="litellm-gx10"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'LiteLLM AI Gateway on GX10 is unreachable'
+          description: 'LiteLLM inference gateway (100.64.0.1:4000) has been unreachable for 5 minutes.'
+
+      - alert: Gx10NodeExporterDown
+        expr: up{job="node-gx10"} == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'GX10 Node Exporter is unreachable'
+          description: 'Host system metrics exporter on the GX10 has been down for 15 minutes.'
+
+      - alert: Gx10GpuExporterDown
+        expr: up{job="dcgm-gpu-gx10"} == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'GX10 NVIDIA GPU Exporter is unreachable'
+          description: 'NVIDIA DCGM GPU exporter on the GX10 has been down for 15 minutes.'
+
+      - alert: AiQueueDepthHigh
+        expr: ai_jobs_pending > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'AI Generation queue depth is high ({{ $value }} pending jobs)'
+          description: 'More than 10 jobs are waiting in the pending queue for longer than 5 minutes.'
+
+      - alert: DiskFilling
+        expr: (node_filesystem_free_bytes{job="node-vps",mountpoint="/"} / node_filesystem_size_bytes{job="node-vps",mountpoint="/"}) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'VPS Disk space is below 15% free'
+          description: 'Root filesystem free space on the VPS is currently at {{ $value | humanizePercentage }}.'

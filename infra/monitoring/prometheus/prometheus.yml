@@ -1,0 +1,56 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - '/etc/prometheus/rules/*.yml'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  # Self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # NestJS API application metrics (/metrics)
+  # Scraped via Docker internal network (notanothercards_default)
+  - job_name: 'api-vps'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api:3000']
+
+  # VPS host hardware metrics (CPU, RAM, Disk)
+  - job_name: 'node-vps'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # PostgreSQL database metrics
+  - job_name: 'postgres-vps'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # LiteLLM AI Gateway metrics on GX10 (scraped over Tailscale)
+  # Uses trailing slash (/metrics/) because LiteLLM redirects /metrics with 307
+  - job_name: 'litellm-gx10'
+    scheme: https
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['ai.dustyway.org']
+
+  # NVIDIA DCGM GPU exporter on GX10 (GPU utilization, memory, temperature)
+  - job_name: 'dcgm-gpu-gx10'
+    scheme: https
+    metrics_path: '/dcgm/metrics'
+    static_configs:
+      - targets: ['ai.dustyway.org']
+
+  # GX10 host hardware metrics
+  - job_name: 'node-gx10'
+    scheme: https
+    metrics_path: '/node/metrics'
+    static_configs:
+      - targets: ['ai.dustyway.org']

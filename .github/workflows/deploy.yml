@@ -33,18 +33,54 @@ jobs:
             cd /opt/notanothercards
             git fetch origin main
             git reset --hard origin/main
+
+            # 1. Deploy App Bundle
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.production.yml \
               up -d --build --wait
+
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.production.yml \
               ps
+
+            # 2. Deploy Monitoring Stack
+            test -f infra/monitoring/.env || {
+              echo "FATAL: infra/monitoring/.env is missing on VPS" >&2
+              exit 1
+            }
+
+            docker compose \
+              -f infra/monitoring/docker-compose.yml \
+              --env-file infra/monitoring/.env \
+              ps
+
+            # 3. Verify Internal Monitoring Services
+            curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:9090/-/healthy
+            curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:3001/api/health
+            curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:9093/-/healthy
+
+            # 4. Verify Prometheus Scrape Targets
+            curl --fail --silent --show-error http://127.0.0.1:9090/api/v1/targets | grep -q '"health":"up"'
+
+            # 5. Verify Public Endpoints (App + Grafana HTTPS)
             curl \
               --fail \
               --silent \
               --show-error \
               --retry 5 \
+              --retry-connrefused \
+              --retry-all-errors \
               --retry-delay 3 \
               https://app.notanothercards.com/health
+
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --retry 5 \
+              --retry-connrefused \
+              --retry-all-errors \
+              --retry-delay 3 \
+              https://grafana.notanothercards.com/api/health
