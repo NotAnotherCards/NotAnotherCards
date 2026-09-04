@@ -4,7 +4,7 @@ import { PageContainer } from '@/components/PageContainer';
 import { CardForm } from '@/components/deck/CardForm';
 import { Card } from '@/hooks/useStore';
 import { writeErrorMessage } from '@/lib/write-error';
-import { ArrowLeft, BookOpen, Plus, Volume2, X } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
   CURRENT_REVIEW_MODE,
@@ -190,8 +190,6 @@ export function ReviewSession({
   const [sessionCards, setSessionCards] = useState(cards);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isFlipComplete, setIsFlipComplete] = useState(false);
-  const [isWordDetailsOpen, setIsWordDetailsOpen] = useState(false);
   const [isCreateCardOpen, setIsCreateCardOpen] = useState(false);
   const [createCardError, setCreateCardError] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -217,10 +215,8 @@ export function ReviewSession({
   const followingCard = sessionCards[currentCardIndex + 2];
 
   const revealAnswer = () => {
-    setIsFlipComplete(false);
     setIsFlipped(true);
   };
-  const openWordDetails = () => setIsWordDetailsOpen(true);
   const openCreateCardForm = () => {
     setCreateCardError(null);
     setIsCreateCardOpen(true);
@@ -232,8 +228,7 @@ export function ReviewSession({
       didHandleSwipe.current = false;
       return;
     }
-    if (isFlipped) openWordDetails();
-    else revealAnswer();
+    if (!isFlipped) revealAnswer();
   };
 
   const createCard = async (data: { front: string; back: string }) => {
@@ -298,7 +293,6 @@ export function ReviewSession({
         return;
       }
 
-      setIsWordDetailsOpen(false);
       const isLastCardInBatch = currentCardIndex === sessionCards.length - 1;
       const nextBatch = isLastCardInBatch ? onRequestNextBatch?.() : [];
 
@@ -352,43 +346,8 @@ export function ReviewSession({
   }, []);
 
   useEffect(() => {
-    if (!isFlipped) {
-      setIsFlipComplete(false);
-      return;
-    }
-
-    const flipTimer = window.setTimeout(
-      () => setIsFlipComplete(true),
-      REVIEW_CARD_FLIP_DURATION_MS,
-    );
-    return () => window.clearTimeout(flipTimer);
-  }, [isFlipped]);
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isCreateCardOpen || isDeleteConfirmationOpen) {
-        return;
-      }
-
-      if (isWordDetailsOpen) {
-        if (isInteractiveKeyboardTarget(event.target)) return;
-
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          setIsWordDetailsOpen(false);
-        } else if (event.key === 'ArrowRight') {
-          event.preventDefault();
-          const answer = getAnswerForReviewGesture(reviewMode, 'right');
-          if (answer) void answerCard(answer);
-        } else if (event.key === 'ArrowLeft') {
-          event.preventDefault();
-          const answer = getAnswerForReviewGesture(reviewMode, 'left');
-          if (answer) void answerCard(answer);
-        } else if (event.key === 'ArrowUp') {
-          event.preventDefault();
-          const answer = getAnswerForReviewGesture(reviewMode, 'up');
-          if (answer) void answerCard(answer);
-        }
         return;
       }
 
@@ -423,9 +382,6 @@ export function ReviewSession({
       } else if (event.key === 'ArrowDown') {
         event.preventDefault();
         startCardExit('delete');
-      } else if (event.code === 'Space') {
-        event.preventDefault();
-        openWordDetails();
       }
     };
 
@@ -437,7 +393,6 @@ export function ReviewSession({
     isSavingReview,
     isCreateCardOpen,
     isDeleteConfirmationOpen,
-    isWordDetailsOpen,
     reviewMode,
   ]);
 
@@ -624,7 +579,7 @@ export function ReviewSession({
               type="button"
               className="absolute inset-0 z-20 min-h-[min(52dvh,28rem)] w-full touch-none select-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80"
               aria-pressed={isFlipped}
-              aria-label={isFlipped ? 'Show word details' : 'Show answer'}
+              aria-label={isFlipped ? 'Answer is shown' : 'Show answer'}
               data-testid="review-card"
             />
             <div className="relative min-h-[min(52dvh,28rem)] w-full [perspective:1200px] sm:min-h-80">
@@ -650,22 +605,10 @@ export function ReviewSession({
                   className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
                 >
                   <div className="flex w-full flex-col items-center gap-5 py-12">
-                    <div className="flex max-w-full items-center gap-2 text-xl font-medium text-muted-foreground">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={(event) => event.stopPropagation()}
-                        className="size-8 shrink-0 cursor-pointer text-muted-foreground hover:bg-transparent hover:text-foreground"
-                        aria-label="Play word pronunciation"
-                      >
-                        <Volume2 className="size-4" />
-                      </Button>
-                      <MarkdownRenderer
-                        content={card.front}
-                        className="max-w-full text-center wrap-break-word"
-                      />
-                    </div>
+                    <MarkdownRenderer
+                      content={card.front}
+                      className="max-w-full text-center text-xl font-medium text-muted-foreground wrap-break-word"
+                    />
                     <span className="h-px w-16 shrink-0 bg-border" />
                     <MarkdownRenderer
                       content={card.back}
@@ -683,24 +626,6 @@ export function ReviewSession({
               >
                 {swipeFeedback[dragDirection].label}
               </span>
-            )}
-
-            {isFlipped && isFlipComplete && (
-              <div className="absolute bottom-8 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2">
-                <Button
-                  data-review-card-control
-                  variant="ghost"
-                  size="icon"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openWordDetails();
-                  }}
-                  className="size-11 cursor-pointer text-muted-foreground"
-                  aria-label="Open word details"
-                >
-                  <BookOpen className="size-5" />
-                </Button>
-              </div>
             )}
           </div>
         </div>
@@ -766,14 +691,6 @@ export function ReviewSession({
         />
       )}
 
-      {isWordDetailsOpen && (
-        <WordDetailsDialog
-          onClose={() => setIsWordDetailsOpen(false)}
-          onAnswer={answerCard}
-          reviewMode={reviewMode}
-        />
-      )}
-
       {isDeleteConfirmationOpen && (
         <DeleteConfirmationDialog
           onCancel={restoreCurrentCard}
@@ -783,98 +700,6 @@ export function ReviewSession({
         />
       )}
     </PageContainer>
-  );
-}
-
-type WordDetailsDialogProps = {
-  onClose: () => void;
-  onAnswer: (answer: ReviewAnswer) => void;
-  reviewMode: ReviewMode;
-};
-
-function WordDetailsDialog({
-  onClose,
-  onAnswer,
-  reviewMode,
-}: WordDetailsDialogProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const pointerStart = useRef<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    dialogRef.current?.focus();
-  }, []);
-
-  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    const start = pointerStart.current;
-    pointerStart.current = null;
-    if (!start) return;
-
-    const horizontalDistance = event.clientX - start.x;
-    const verticalDistance = event.clientY - start.y;
-    if (
-      Math.max(Math.abs(horizontalDistance), Math.abs(verticalDistance)) <
-      SWIPE_THRESHOLD_PX
-    ) {
-      return;
-    }
-
-    const answer =
-      Math.abs(horizontalDistance) >= Math.abs(verticalDistance)
-        ? getAnswerForReviewGesture(
-            reviewMode,
-            horizontalDistance > 0 ? 'right' : 'left',
-          )
-        : verticalDistance < 0
-          ? getAnswerForReviewGesture(reviewMode, 'up')
-          : null;
-
-    if (answer) onAnswer(answer);
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
-      onClick={onClose}
-    >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        tabIndex={-1}
-        aria-modal="true"
-        aria-labelledby="word-details-title"
-        aria-describedby="word-details-description"
-        onClick={(event) => event.stopPropagation()}
-        onPointerDown={(event) => {
-          pointerStart.current = { x: event.clientX, y: event.clientY };
-        }}
-        onPointerUp={handlePointerUp}
-        className="w-full max-w-lg rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:p-6"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <h2 id="word-details-title" className="text-xl font-bold">
-              Word details
-            </h2>
-            <p
-              id="word-details-description"
-              className="text-sm text-muted-foreground"
-            >
-              Full word data will appear here when the note model is available.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="cursor-pointer"
-            aria-label="Close word details"
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
   );
 }
 

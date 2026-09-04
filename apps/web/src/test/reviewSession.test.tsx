@@ -147,18 +147,16 @@ describe('ReviewSession', () => {
     );
   });
 
-  it('shows a pronunciation button to the left of the original word', () => {
+  it('does not show unavailable word-only controls', () => {
     renderSession();
     revealCard();
 
-    const pronunciationButton = screen.getByRole('button', {
-      name: 'Play word pronunciation',
-    });
-    const originalWord = screen.getAllByText('gehen')[1];
-
-    expect(pronunciationButton.compareDocumentPosition(originalWord)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+    expect(
+      screen.queryByRole('button', { name: 'Play word pronunciation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Open word details' }),
+    ).not.toBeInTheDocument();
   });
 
   it('adds a card to the current deck without leaving the review session', async () => {
@@ -606,22 +604,14 @@ describe('ReviewSession', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('opens word details and returns to the same answer view when closed', () => {
+  it('does not render an unavailable word-details control', () => {
     renderSession();
     revealCard();
     finishCardFlip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open word details' }));
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('dialog').parentElement).toHaveClass(
-      'items-center',
-      'justify-center',
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close word details' }));
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByText('to go')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Open word details' }),
+    ).not.toBeInTheDocument();
   });
 
   it('removes every sibling from the session queue after deleting a note', async () => {
