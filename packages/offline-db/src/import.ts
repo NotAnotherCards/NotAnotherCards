@@ -94,6 +94,13 @@ async function validateAndImportJson(
   for (let i = 0; i < decksData.length; i++) {
     const d = decksData[i];
     if (d && typeof d.source_id === 'string' && d.source_id.trim() !== '') {
+      if (deckSourceIds.has(d.source_id)) {
+        errors.push({
+          code: 'DUPLICATE_DECK_SOURCE_ID',
+          message: `duplicate deck source_id: ${d.source_id}`,
+          path: `decks[${i}]`,
+        });
+      }
       deckSourceIds.add(d.source_id);
     } else {
       errors.push({
@@ -181,6 +188,13 @@ async function validateAndImportJson(
           path: cardPath,
         });
         continue;
+      }
+      if (cardSourceIds.has(card.source_id)) {
+        errors.push({
+          code: 'DUPLICATE_CARD_SOURCE_ID',
+          message: `duplicate card source_id: ${card.source_id}`,
+          path: cardPath,
+        });
       }
       cardSourceIds.add(card.source_id);
 
