@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { CreateAiJobInput, AiCardOutput, QuotaStatus } from '@repo/schemas';
+import {
+  apiErrorBodySchema,
+  CreateAiJobInput,
+  AiCardOutput,
+  QuotaStatus,
+} from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
 import { AiJobStatusTracker, JobStatus } from './AiJobStatusTracker';
 import { AiResultPreview } from './AiResultPreview';
@@ -45,10 +50,10 @@ export function AiGenerationPlaygroundComponent() {
       try {
         const res = await fetch(`/api/ai/jobs/${currentJob.id}`);
         if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          setErrorMessage(
-            (errData.message as string) || 'Failed to poll job status',
+          const { message } = apiErrorBodySchema.parse(
+            await res.json().catch(() => null),
           );
+          setErrorMessage(message || 'Failed to poll job status');
           setCurrentJob((prev) =>
             prev ? { ...prev, status: 'failed' } : null,
           );
@@ -131,10 +136,11 @@ export function AiGenerationPlaygroundComponent() {
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
+        const { message } = apiErrorBodySchema.parse(
+          await res.json().catch(() => null),
+        );
         throw new Error(
-          (errData.message as string) ||
-            'Unable to start card generation. Please try again.',
+          message || 'Unable to start card generation. Please try again.',
         );
       }
 
