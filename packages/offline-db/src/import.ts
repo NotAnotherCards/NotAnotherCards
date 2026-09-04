@@ -513,12 +513,13 @@ async function validateAndImportCsv(
     }
 
     let dueAt = Date.now();
-    if (dueAtIdx !== -1 && row[dueAtIdx]) {
-      const parsedNum = Number(row[dueAtIdx]);
-      if (!isNaN(parsedNum)) {
-        dueAt = parsedNum;
+    if (dueAtIdx !== -1 && row[dueAtIdx]?.trim()) {
+      const rawDueAt = row[dueAtIdx].trim();
+      const parsedNum = Number(rawDueAt);
+      if (!isNaN(parsedNum) && rawDueAt !== '') {
+        dueAt = Math.round(parsedNum);
       } else {
-        const parsedDate = Date.parse(row[dueAtIdx]);
+        const parsedDate = Date.parse(rawDueAt);
         if (!isNaN(parsedDate)) dueAt = parsedDate;
         else {
           errors.push({ code: 'INVALID_DUE_AT', message: 'due_at column must be a valid timestamp', row: rowNum });
@@ -527,10 +528,10 @@ async function validateAndImportCsv(
     }
 
     let interval = 0;
-    if (intervalIdx !== -1 && row[intervalIdx]) {
-      const parsedInterval = Number(row[intervalIdx]);
+    if (intervalIdx !== -1 && row[intervalIdx]?.trim()) {
+      const parsedInterval = Number(row[intervalIdx].trim());
       if (!isNaN(parsedInterval) && parsedInterval >= 0) {
-        interval = parsedInterval;
+        interval = Math.round(parsedInterval);
       } else {
         errors.push({
           code: 'INVALID_INTERVAL',
