@@ -1,30 +1,24 @@
 import { useEffect, useState } from 'react';
+import z from 'zod';
 import {
+  aiJobSchema,
   apiErrorBodySchema,
   CreateAiJobInput,
-  AiCardOutput,
   QuotaStatus,
+  quotaStatusSchema,
+  type AiJob,
 } from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
-import { AiJobStatusTracker, JobStatus } from './AiJobStatusTracker';
+import { AiJobStatusTracker } from './AiJobStatusTracker';
 import { AiResultPreview } from './AiResultPreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 
-interface Job {
-  id: string;
-  type: 'topic_deck' | 'text_cards';
-  status: JobStatus;
-  payload: {
-    topic?: string;
-    sourceText?: string;
-    count: number;
-    model?: string;
-  };
-  result?: AiCardOutput[] | null;
-  error?: string | null;
-  createdAt: string;
-}
+type Job = AiJob;
+
+const jobResponseSchema = z.object({ job: aiJobSchema });
+const jobsResponseSchema = z.object({ jobs: z.array(aiJobSchema) });
+const quotaResponseSchema = z.object({ quota: quotaStatusSchema });
 
 export function AiGenerationPlaygroundComponent() {
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
@@ -61,8 +55,7 @@ export function AiGenerationPlaygroundComponent() {
           return;
         }
 
-        const data = await res.json();
-        const updatedJob = data.job;
+        const { job: updatedJob } = jobResponseSchema.parse(await res.json());
         setCurrentJob(updatedJob);
 
         if (
@@ -100,8 +93,8 @@ export function AiGenerationPlaygroundComponent() {
     try {
       const res = await fetch('/api/ai/quota');
       if (res.ok) {
-        const data = await res.json();
-        setQuota(data.quota);
+        const { quota } = quotaResponseSchema.parse(await res.json());
+        setQuota(quota);
       }
     } catch {
       // Background quota fetch failure handled gracefully
@@ -112,8 +105,8 @@ export function AiGenerationPlaygroundComponent() {
     try {
       const res = await fetch('/api/ai/jobs');
       if (res.ok) {
-        const data = await res.json();
-        setJobs(data.jobs || []);
+        const { jobs } = jobsResponseSchema.parse(await res.json());
+        setJobs(jobs);
       }
     } catch {
       // Background jobs list fetch failure handled gracefully
@@ -144,8 +137,8 @@ export function AiGenerationPlaygroundComponent() {
         );
       }
 
-      const data = await res.json();
-      setCurrentJob(data.job);
+      const { job } = jobResponseSchema.parse(await res.json());
+      setCurrentJob(job);
       void fetchQuota();
     } catch (err: unknown) {
       const msg =
