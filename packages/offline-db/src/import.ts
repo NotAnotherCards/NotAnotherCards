@@ -365,3 +365,258 @@ async function validateAndImportJson(
     errors: [],
   };
 }
+
+// CSV parser that handles quoted fields, commas inside quotes, and line breaks
+function parseCsvRows(text: string): string[][] {
+  const lines: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (nextChar === '"') {
+          field += '"'; // escaped quote
+          i++;
+        } else {
+          inQuotes = false; // closing quote
+        }
+      } else {
+        field += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        row.push(field.trim());
+        field = '';
+      } else if (char === '\n' || char === '\r') {
+        if (char === '\r' && nextChar === '\n') i++;
+        row.push(field.trim());
+        if (row.some((cell) => cell.length > 0)) {
+          lines.push(row);
+        }
+        row = [];
+        field = '';
+      } else {
+        field += char;
+      }
+    }
+  }
+  // Flush the last row
+  if (field || row.length > 0) {
+    row.push(field.trim());
+    if (row.some((cell) => cell.length > 0)) {
+      lines.push(row);
+    }
+  }
+  return lines;
+}
+
+async function validateAndImportCsv(
+  db: Database,
+  content: string,
+  dryRun: boolean,
+): Promise<ImportReport> {
+  const errors: ImportError[] = [];
+  const rows = parseCsvRows(content);
+
+  if (rows.length === 0) {
+    return {
+      success: false,
+      dry_run: dryRun,
+      counts: { decks: 0, notes: 0, cards: 0, review_events: 0 },
+      errors: [{ code: 'EMPTY_CSV', message: 'CSV file is empty' }],
+    };
+  }
+
+  // Read header row and find column indices
+  const header = rows[0].map((cell) => cell.toLowerCase());
+  const frontIdx = header.indexOf('front');
+  const backIdx = header.indexOf('back');
+  const deckIdx = header.indexOf('deck');
+  const activeIdx = header.indexOf('active');
+  const dueAtIdx = header.indexOf('due_at');
+  const intervalIdx = header.indexOf('scheduled_interval_minutes');
+
+  if (frontIdx === -1 || backIdx === -1) {
+    errors.push({
+      code: 'MISSING_CSV_COLUMNS',
+      message: 'CSV must contain at least "front" and "back" header columns',
+      row: 1,
+    });
+  }
+
+  // Look up existing decks so we don't create duplicates
+  const existingDecks = db ? await db.get(UserDeck).query().fetch() : [];
+  const deckTitleToIdMap = new Map<string, string>();
+  for (const d of existingDecks) {
+    deckTitleToIdMap.set(d.title.toLowerCase(), d.id);
+  }
+
+  const newDeckTitles = new Set<string>();
+  const parsedRows: Array<{
+    front: string;
+    back: string;
+    deckTitle: string;
+    active: boolean;
+    dueAt: number;
+    interval: number;
+  }> = [];
+
+  // Validate each data row
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const rowNum = r + 1;
+
+    const front = frontIdx !== -1 && row[frontIdx] ? row[frontIdx] : '';
+    const back = backIdx !== -1 && row[backIdx] ? row[backIdx] : '';
+    const deckTitle =
+      deckIdx !== -1 && row[deckIdx] ? row[deckIdx] : 'Default Deck';
+
+    if (!front) {
+      errors.push({ code: 'MISSING_FRONT', message: 'Row is missing front field', row: rowNum });
+    }
+    if (!back) {
+      errors.push({ code: 'MISSING_BACK', message: 'Row is missing back field', row: rowNum });
+    }
+
+    let active = true;
+    if (activeIdx !== -1 && row[activeIdx]) {
+      const val = row[activeIdx].toLowerCase();
+      if (val === 'false' || val === '0') active = false;
+      else if (val === 'true' || val === '1') active = true;
+      else {
+        errors.push({ code: 'INVALID_ACTIVE', message: 'active column must be true or false', row: rowNum });
+      }
+    }
+
+    let dueAt = Date.now();
+    if (dueAtIdx !== -1 && row[dueAtIdx]) {
+      const parsedNum = Number(row[dueAtIdx]);
+      if (!isNaN(parsedNum)) {
+        dueAt = parsedNum;
+      } else {
+        const parsedDate = Date.parse(row[dueAtIdx]);
+        if (!isNaN(parsedDate)) dueAt = parsedDate;
+        else {
+          errors.push({ code: 'INVALID_DUE_AT', message: 'due_at column must be a valid timestamp', row: rowNum });
+        }
+      }
+    }
+
+    let interval = 0;
+    if (intervalIdx !== -1 && row[intervalIdx]) {
+      const parsedInterval = Number(row[intervalIdx]);
+      if (!isNaN(parsedInterval) && parsedInterval >= 0) {
+        interval = parsedInterval;
+      } else {
+        errors.push({
+          code: 'INVALID_INTERVAL',
+          message: 'scheduled_interval_minutes must be a non-negative number',
+          row: rowNum,
+        });
+      }
+    }
+
+    if (deckTitle && !deckTitleToIdMap.has(deckTitle.toLowerCase())) {
+      newDeckTitles.add(deckTitle);
+    }
+
+    parsedRows.push({ front, back, deckTitle, active, dueAt, interval });
+  }
+
+  const counts: ImportCounts = {
+    decks: newDeckTitles.size,
+    notes: parsedRows.length,
+    cards: parsedRows.length,
+    review_events: 0,
+  };
+
+  if (dryRun || errors.length > 0) {
+    return { success: errors.length === 0, dry_run: dryRun, counts, errors };
+  }
+
+  // Atomic batch write
+  const now = Date.now();
+  const batchOps: BatchOperation[] = [];
+
+  // Create new decks that don't already exist
+  for (const title of newDeckTitles) {
+    const newDeckId = randomId();
+    deckTitleToIdMap.set(title.toLowerCase(), newDeckId);
+    batchOps.push(
+      db.get(UserDeck).prepareCreate({
+        id: newDeckId,
+        title,
+        description: null,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+  }
+
+  // Create a note + card + deck membership per CSV row
+  for (const item of parsedRows) {
+    const noteId = randomId();
+    const targetDeckId =
+      deckTitleToIdMap.get(item.deckTitle.toLowerCase()) ?? randomId();
+    const templateKey = 'front-back';
+    const generatedCardId = cardId(noteId, templateKey);
+    const membershipId = noteDeckId(noteId, targetDeckId);
+
+    batchOps.push(
+      db.get(UserNote).prepareCreate({
+        id: noteId,
+        note_type: BASIC_NOTE_TYPE,
+        fields_version: BASIC_NOTE_FIELDS_VERSION,
+        fields_json: JSON.stringify({ front: item.front, back: item.back }),
+        additional_content: null,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+
+    batchOps.push(
+      db.get(UserCard).prepareCreate({
+        id: generatedCardId,
+        note_id: noteId,
+        template_key: templateKey,
+        active: item.active,
+        front: item.front,
+        back: item.back,
+        due_at: item.dueAt,
+        scheduled_interval_minutes: item.interval,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+
+    batchOps.push(
+      db.get(UserNoteDeck).prepareCreate({
+        id: membershipId,
+        note_id: noteId,
+        deck_id: targetDeckId,
+        active: true,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+  }
+
+  await db.write(async () => {
+    await db.batch(batchOps);
+  });
+
+  return {
+    success: true,
+    dry_run: false,
+    counts,
+    errors: [],
+  };
+}
+
