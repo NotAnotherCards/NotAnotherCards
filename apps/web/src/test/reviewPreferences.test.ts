@@ -42,4 +42,47 @@ describe('review preferences', () => {
 
     expect(getLastReviewDeckId('user-1')).toBeNull();
   });
+
+  it('falls back safely when reading browser storage fails', () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        clear: () => entries.clear(),
+        getItem: () => {
+          throw new Error('Storage access denied');
+        },
+        key: () => null,
+        get length() {
+          return 0;
+        },
+        removeItem: () => undefined,
+        setItem: () => undefined,
+      } satisfies Storage,
+    });
+
+    expect(getLastReviewDeckId('user-1')).toBeNull();
+  });
+
+  it('continues when saving or clearing browser storage fails', () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        clear: () => entries.clear(),
+        getItem: () => null,
+        key: () => null,
+        get length() {
+          return 0;
+        },
+        removeItem: () => {
+          throw new Error('Storage access denied');
+        },
+        setItem: () => {
+          throw new Error('Storage access denied');
+        },
+      } satisfies Storage,
+    });
+
+    expect(() => saveLastReviewDeckId('user-1', 'deck-german')).not.toThrow();
+    expect(() => clearLastReviewDeckId('user-1')).not.toThrow();
+  });
 });

@@ -18,19 +18,31 @@ export function getLastReviewDeckId(userId: string) {
   const storage = getReviewStorage();
   if (!storage) return null;
 
-  return storage.getItem(getLastReviewDeckStorageKey(userId));
+  try {
+    return storage.getItem(getLastReviewDeckStorageKey(userId));
+  } catch {
+    return null;
+  }
 }
 
 export function saveLastReviewDeckId(userId: string, deckId: string) {
   const storage = getReviewStorage();
   if (!storage) return;
 
-  storage.setItem(getLastReviewDeckStorageKey(userId), deckId);
+  try {
+    storage.setItem(getLastReviewDeckStorageKey(userId), deckId);
+  } catch {
+    // Review works without a saved local preference.
+  }
 }
 
 export function clearLastReviewDeckId(userId: string) {
   const storage = getReviewStorage();
   if (!storage) return;
 
-  storage.removeItem(getLastReviewDeckStorageKey(userId));
+  try {
+    storage.removeItem(getLastReviewDeckStorageKey(userId));
+  } catch {
+    // Review works without a saved local preference.
+  }
 }
