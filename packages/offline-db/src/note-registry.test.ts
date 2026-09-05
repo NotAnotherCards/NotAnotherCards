@@ -38,12 +38,29 @@ describe('WordNoteFieldsV1', () => {
     },
   );
 
-  it('rejects a whitespace-only word and canonicalizes padding', () => {
-    expect(WordNoteFieldsV1.safeParse({ ...word, word: '   ' }).success).toBe(
-      false,
-    );
-    const parsed = WordNoteFieldsV1.parse({ ...word, word: '  laufen  ' });
+  // Whitespace is not content. A field that holds only spaces is a field the
+  // user did not fill in, and it must not pass as one they did.
+  it.each(['word', 'translation', 'native_language_id', 'target_language_id'])(
+    'rejects a whitespace-only %s',
+    (key) => {
+      expect(
+        WordNoteFieldsV1.safeParse({ ...word, [key]: '   ' }).success,
+      ).toBe(false);
+    },
+  );
+
+  it('canonicalizes padding on every text field', () => {
+    const parsed = WordNoteFieldsV1.parse({
+      ...word,
+      word: '  laufen  ',
+      native_language_id: '  lang-en  ',
+      example: '  er lauft  ',
+      image: '  file-1  ',
+    });
     expect(parsed.word).toBe('laufen');
+    expect(parsed.native_language_id).toBe('lang-en');
+    expect(parsed.example).toBe('er lauft');
+    expect(parsed.image).toBe('file-1');
   });
 
   it('rejects unknown fields, so word@2 additions cannot masquerade as @1', () => {
@@ -52,11 +69,17 @@ describe('WordNoteFieldsV1', () => {
     ).toBe(false);
   });
 
-  it('rejects a present-but-empty optional field', () => {
-    expect(WordNoteFieldsV1.safeParse({ ...word, example: '' }).success).toBe(
-      false,
-    );
-  });
+  it.each(['example', 'part_of_speech', 'notes', 'image', 'word_audio'])(
+    'rejects a present-but-blank %s',
+    (key) => {
+      expect(WordNoteFieldsV1.safeParse({ ...word, [key]: '' }).success).toBe(
+        false,
+      );
+      expect(WordNoteFieldsV1.safeParse({ ...word, [key]: '  ' }).success).toBe(
+        false,
+      );
+    },
+  );
 });
 
 describe('word templates', () => {

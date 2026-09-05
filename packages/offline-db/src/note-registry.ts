@@ -75,15 +75,15 @@ const optionalText = z.string().trim().min(1).optional();
 export const WordNoteFieldsV1 = z.strictObject({
   word: requiredText,
   translation: requiredText,
-  native_language_id: z.string().min(1),
-  target_language_id: z.string().min(1),
+  native_language_id: requiredText,
+  target_language_id: requiredText,
   example: optionalText,
   example_translation: optionalText,
   part_of_speech: optionalText,
   gender: optionalText,
   pronunciation: optionalText,
-  image: z.string().min(1).optional(),
-  word_audio: z.string().min(1).optional(),
+  image: optionalText,
+  word_audio: optionalText,
   notes: optionalText,
 });
 export type WordNoteFields = z.output<typeof WordNoteFieldsV1>;
