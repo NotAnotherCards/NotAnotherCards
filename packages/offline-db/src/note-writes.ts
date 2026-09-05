@@ -5,11 +5,7 @@
  * all. New notes prepare their cards directly, no queries; updates
  * reconcile against what exists.
  */
-import { randomId, type BatchOperation, type Database } from '@remelondb/core';
-// TODO(remelondb 0.3): mint through db.randomId() so a configured
-// randomSource covers these ids too. Ordering per the 0.3 adoption plan:
-// the NAC bump PR passes randomSource at Database.open, swaps these two
-// call sites, and deletes the mobile crypto shim, in that one change.
+import type { BatchOperation, Database } from '@remelondb/core';
 import { noteDeckId } from './ids.js';
 import {
   prepareCardsForNewNote,
@@ -35,7 +31,7 @@ function prepareNewNote(
     input.fieldsVersion,
     input.fields,
   );
-  const noteId = randomId();
+  const noteId = db.randomId();
   const note = db.get(UserNote).prepareCreate({
     id: noteId,
     note_type: input.noteType,
@@ -125,7 +121,7 @@ export async function createNotesBatch(
     let targetDeckId: string;
 
     if (options.isNew) {
-      targetDeckId = randomId();
+      targetDeckId = db.randomId();
       operations.push(
         db.get(UserDeck).prepareCreate({
           id: targetDeckId,

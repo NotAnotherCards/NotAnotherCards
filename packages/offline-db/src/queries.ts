@@ -1,4 +1,4 @@
-import { Database, Q, randomId } from '@remelondb/core';
+import { Database, Q } from '@remelondb/core';
 import {
   createNote,
   createNotesBatch,
@@ -230,7 +230,7 @@ export async function recordReviewEvent(
       rating,
       now,
     );
-    const reviewId = randomId();
+    const reviewId = db.randomId();
     const cardUpdate = card.prepareUpdate((record) => {
       record.scheduled_interval_minutes = schedule.scheduled_interval_minutes;
       record.due_at = schedule.due_at;
