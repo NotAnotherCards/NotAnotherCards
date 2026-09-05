@@ -1,6 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+  // lib/ too: class names living in a helper there (the rating colours)
+  // are silently dropped if tailwind never scans the file.
+  content: [
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './lib/**/*.{ts,tsx}',
+  ],
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
@@ -24,6 +30,10 @@ module.exports = {
         border: 'rgb(var(--border) / <alpha-value>)',
         input: 'rgb(var(--input) / <alpha-value>)',
         ring: 'rgb(var(--ring) / <alpha-value>)',
+        'rating-again': 'rgb(var(--rating-again) / <alpha-value>)',
+        'rating-hard': 'rgb(var(--rating-hard) / <alpha-value>)',
+        'rating-good': 'rgb(var(--rating-good) / <alpha-value>)',
+        'rating-easy': 'rgb(var(--rating-easy) / <alpha-value>)',
       },
     },
   },

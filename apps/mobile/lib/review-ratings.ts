@@ -11,6 +11,17 @@ export const RATING_LABELS: Readonly<Record<ReviewRating, string>> = {
   4: 'Easy',
 };
 
+// One hue per rating, the same four web's FlashcardModal uses, held as
+// tokens so they follow the colour scheme (see global.css).
+export const RATING_COLORS: Readonly<
+  Record<ReviewRating, { border: string; text: string }>
+> = {
+  1: { border: 'border-rating-again/40', text: 'text-rating-again' },
+  2: { border: 'border-rating-hard/40', text: 'text-rating-hard' },
+  3: { border: 'border-rating-good/40', text: 'text-rating-good' },
+  4: { border: 'border-rating-easy/40', text: 'text-rating-easy' },
+};
+
 export const RATINGS = REVIEW_RATINGS;
 
 // Same rounding as web, so a card previews the same interval on both.

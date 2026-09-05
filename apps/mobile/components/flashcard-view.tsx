@@ -8,9 +8,11 @@ import { useCards, type Card as CardRecord } from '@/lib/cards';
 import { writeErrorMessage } from '@/lib/errors';
 import {
   RATINGS,
+  RATING_COLORS,
   RATING_LABELS,
   formatReviewInterval,
 } from '@/lib/review-ratings';
+import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Text } from './ui/text';
@@ -110,19 +112,27 @@ function ActiveFlashcardView({
     <View className="flex-1 gap-4">
       <Stack.Screen options={{ title: deck.title }} />
 
+      {/* The question fills the screen while it is the only thing to read,
+          and shrinks to its natural size once the answer joins it, so both
+          stay on screen and the question is still there to compare against. */}
       <Pressable
-        className="flex-1"
+        className={cn(!flipped && 'flex-1')}
         accessibilityRole="button"
         accessibilityLabel={flipped ? 'Show the front' : 'Show the answer'}
         onPress={() => setFlipped((f) => !f)}
       >
-        <Card className="flex-1">
-          <CardContent className="flex-1 items-center justify-center gap-3 p-8">
+        <Card className={cn(!flipped && 'flex-1')}>
+          <CardContent
+            className={cn(
+              'items-center justify-center gap-3 p-6',
+              !flipped && 'flex-1',
+            )}
+          >
             <Text className="text-xs uppercase tracking-wider text-muted-foreground">
-              {flipped ? 'Answer' : 'Question'}
+              Question
             </Text>
             <Text className="text-center text-2xl font-semibold">
-              {flipped ? card.back : card.front}
+              {card.front}
             </Text>
             {!flipped && (
               <Text className="text-xs text-muted-foreground">
@@ -132,6 +142,23 @@ function ActiveFlashcardView({
           </CardContent>
         </Card>
       </Pressable>
+
+      {flipped && (
+        <>
+          <Card>
+            <CardContent className="items-center justify-center gap-3 p-6">
+              <Text className="text-xs uppercase tracking-wider text-muted-foreground">
+                Answer
+              </Text>
+              <Text className="text-center text-2xl font-semibold">
+                {card.back}
+              </Text>
+            </CardContent>
+          </Card>
+          {/* the two cards read from the top, the controls stay at the bottom */}
+          <View className="flex-1" />
+        </>
+      )}
 
       {writeError && <Text className="text-destructive">{writeError}</Text>}
 
@@ -180,17 +207,29 @@ function ActiveFlashcardView({
             return (
               <Button
                 key={rating}
-                variant="secondary"
+                variant="outline"
                 // The interval sits under its label: four buttons across a
                 // phone are too narrow for one line, and the size variants
                 // fix the row height, so a wrapped line would be clipped.
-                className="h-auto flex-1 flex-col gap-0.5 px-1 py-2"
+                className={cn(
+                  'h-auto flex-1 flex-col gap-0.5 px-1 py-2',
+                  RATING_COLORS[rating].border,
+                )}
                 loading={pending}
                 accessibilityLabel={`${RATING_LABELS[rating]}, next in ${interval}`}
                 onPress={() => void rate(rating)}
               >
-                <Text>{RATING_LABELS[rating]}</Text>
-                <Text className="text-xs opacity-70">{interval}</Text>
+                <Text className={RATING_COLORS[rating].text}>
+                  {RATING_LABELS[rating]}
+                </Text>
+                <Text
+                  className={cn(
+                    'text-xs opacity-80',
+                    RATING_COLORS[rating].text,
+                  )}
+                >
+                  {interval}
+                </Text>
               </Button>
             );
           })}

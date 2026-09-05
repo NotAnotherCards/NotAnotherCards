@@ -79,6 +79,10 @@ describe('FlashcardView', () => {
     expect(queryByText('hello')).toBeNull();
     fireEvent.press(getByLabelText('Show the answer'));
     expect(getByText('hello')).toBeTruthy();
+    // the question stays, so the answer can be compared against it
+    expect(getByText('hola')).toBeTruthy();
+    expect(getByText('Question')).toBeTruthy();
+    expect(getByText('Answer')).toBeTruthy();
   });
 
   // Rating a card you have not answered is not a review.
