@@ -26,6 +26,7 @@ import {
   updateCard as dbUpdateCard,
   createCardsBatch as dbCreateCardsBatch,
   removeNoteFromDeck as dbRemoveNoteFromDeck,
+  deleteNote as dbDeleteNote,
   recordReviewEvent as dbRecordReview,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
@@ -208,6 +209,16 @@ export function useStore() {
     [db, sync],
   );
 
+  const deleteNote = useCallback(
+    async (noteId: string) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteNote(db, noteId);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
   const isBasicCard = useCallback(
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
@@ -315,6 +326,7 @@ export function useStore() {
     createCard,
     updateCard,
     removeNoteFromDeck,
+    deleteNote,
     recordReview,
     isBasicCard,
     getCardsCount,

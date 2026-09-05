@@ -1,5 +1,5 @@
 /**
- * Every local write in useStore schedules a sync (#52). The seven
+ * Every local write in useStore schedules a sync (#52). The nine
  * write callbacks each call notifyLocalWrite; a refactor that drops
  * one fails the count here.
  */
@@ -21,7 +21,7 @@ import { SyncProvider } from '@/offline/syncProvider';
 import type { SyncController } from '@/offline/syncController';
 
 describe('useStore sync triggers', () => {
-  it('all seven writes call notifyLocalWrite', async () => {
+  it('all nine writes call notifyLocalWrite', async () => {
     const db = await Database.open({
       driver: new NodeSqliteDriver(),
       schema,
@@ -59,10 +59,11 @@ describe('useStore sync triggers', () => {
       await result.current.updateCard(card.id, 'front 2', 'back 2');
       await result.current.recordReview(card.id, 2);
       await result.current.removeNoteFromDeck(card.note_id, deck.id);
+      await result.current.deleteNote(card.note_id);
       await result.current.deleteDeck(deck.id);
     });
 
-    expect(notifyLocalWrite).toHaveBeenCalledTimes(7);
+    expect(notifyLocalWrite).toHaveBeenCalledTimes(8);
     await db.driver.close();
   });
 });
