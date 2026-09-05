@@ -1,0 +1,263 @@
+/**
+ * The note-type registry (#194): one entry per (note_type, fields_version)
+ * pair, carrying the zod schema its fields_json must satisfy and the
+ * templates that turn a note into its sibling cards.
+ *
+ * Everything derives from here: validateNoteFieldsJson (used by client row
+ * validation and by the API's push cross-validation, so registering a type
+ * hardens the sync protocol with no API change), and the reconcile step
+ * that creates, updates and deactivates cards per template.
+ */
+import { z } from 'zod';
+import {
+  BASIC_NOTE_FIELDS_VERSION,
+  BASIC_NOTE_TYPE,
+  WORD_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
+} from './note-constants.js';
+import { BASIC_FRONT_BACK_TEMPLATE_KEY } from './ids.js';
+
+export interface RenderedCard {
+  readonly front: string;
+  readonly back: string;
+}
+
+/**
+ * One sibling card of a note type. `key` is half of the tuple hashed by
+ * cardId, so it is a sync protocol constant: changing it re-derives a
+ * different card id on every device (see ids.ts).
+ *
+ * `render` returns null when the fields cannot yield this card, so
+ * "can this card exist" and "what does it say" cannot drift apart.
+ *
+ * The render contract: `front` is the complete question and `back` is the
+ * answer content only, never restating the front — the review screen's
+ * answer face composes front + divider + back itself, so a back that
+ * repeats the front shows it twice.
+ */
+export interface NoteTemplate<Fields> {
+  readonly key: string;
+  readonly render: (fields: Fields) => RenderedCard | null;
+}
+
+export interface RegisteredNoteType {
+  readonly schema: z.ZodType;
+  readonly templates: readonly NoteTemplate<unknown>[];
+}
+
+function defineNoteType<S extends z.ZodType>(
+  schema: S,
+  templates: readonly NoteTemplate<z.output<S>>[],
+): RegisteredNoteType {
+  // The one erasing cast: every caller parses fields with `schema` before
+  // invoking a template, so what reaches requires/render is z.output<S>.
+  return {
+    schema,
+    templates: templates as readonly NoteTemplate<unknown>[],
+  };
+}
+
+export const BasicNoteFieldsV1 = z.strictObject({
+  front: z.string(),
+  back: z.string(),
+});
+export type BasicNoteFields = z.output<typeof BasicNoteFieldsV1>;
+
+const requiredText = z.string().trim().min(1);
+const optionalText = z.string().trim().min(1).optional();
+
+/**
+ * word@1, fields as proposed on #194: word in the target language,
+ * translation in the native one; both language ids required and defaulted
+ * from the profile by the forms; image and word_audio are reserved ids
+ * into the future note_media table and cannot be filled yet.
+ */
+export const WordNoteFieldsV1 = z.strictObject({
+  word: requiredText,
+  translation: requiredText,
+  native_language_id: requiredText,
+  target_language_id: requiredText,
+  example: optionalText,
+  example_translation: optionalText,
+  part_of_speech: optionalText,
+  gender: optionalText,
+  pronunciation: optionalText,
+  image: optionalText,
+  word_audio: optionalText,
+  notes: optionalText,
+});
+export type WordNoteFields = z.output<typeof WordNoteFieldsV1>;
+
+// Sync protocol constants, like BASIC_FRONT_BACK_TEMPLATE_KEY in ids.ts:
+// each is half of the cardId tuple and must never change. Declared in
+// #157's sibling order (word→translation, translation→word, listen,
+// example) so a progressive-activation policy can later map onto the
+// template list directly; `listen` joins when note_media exists.
+export const WORD_TO_TRANSLATION_TEMPLATE_KEY = 'word-to-translation';
+export const TRANSLATION_TO_WORD_TEMPLATE_KEY = 'translation-to-word';
+export const EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY = 'example-to-translation';
+
+const wordTemplates: readonly NoteTemplate<WordNoteFields>[] = [
+  {
+    key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
+    render: (fields) => ({
+      front: fields.part_of_speech
+        ? `${fields.word} *(${fields.part_of_speech})*`
+        : fields.word,
+      back: fields.example
+        ? `${fields.translation}\n\n${fields.example}`
+        : fields.translation,
+    }),
+  },
+  {
+    key: TRANSLATION_TO_WORD_TEMPLATE_KEY,
+    render: (fields) => ({
+      front: fields.translation,
+      back: fields.word,
+    }),
+  },
+  {
+    key: EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY,
+    render: (fields) =>
+      fields.example !== undefined && fields.example_translation !== undefined
+        ? { front: fields.example, back: fields.example_translation }
+        : null,
+  },
+];
+
+export const noteTypeRegistry: Readonly<
+  Record<string, Readonly<Record<number, RegisteredNoteType>>>
+> = {
+  [BASIC_NOTE_TYPE]: {
+    [BASIC_NOTE_FIELDS_VERSION]: defineNoteType(BasicNoteFieldsV1, [
+      {
+        key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+        render: (fields) => ({ front: fields.front, back: fields.back }),
+      },
+    ]),
+  },
+  [WORD_NOTE_TYPE]: {
+    [WORD_NOTE_FIELDS_VERSION]: defineNoteType(WordNoteFieldsV1, wordTemplates),
+  },
+};
+
+/** The per-type fields validators, derived from the registry. */
+export const noteFieldsSchemas: Readonly<
+  Record<string, Readonly<Record<number, z.ZodType>>>
+> = Object.fromEntries(
+  Object.entries(noteTypeRegistry).map(([type, versions]) => [
+    type,
+    Object.fromEntries(
+      Object.entries(versions).map(([version, entry]) => [
+        version,
+        entry.schema,
+      ]),
+    ),
+  ]),
+);
+
+export interface CompiledCard {
+  readonly templateKey: string;
+  readonly front: string;
+  readonly back: string;
+}
+
+export interface CompiledNote {
+  /** Canonical (trimmed, schema-shaped) fields, ready for fields_json. */
+  readonly fieldsJson: string;
+  /** Every card these fields yield, in template order. */
+  readonly cards: readonly CompiledCard[];
+  /** Every template key of the type, rendered or not — the deactivation set. */
+  readonly templateKeys: readonly string[];
+}
+
+/**
+ * Parse once, render everything: the single step between raw fields and
+ * what gets written. Throws on an unregistered pair or invalid fields.
+ */
+export function compileNote(
+  noteType: string,
+  fieldsVersion: number,
+  fields: unknown,
+): CompiledNote {
+  const entry = noteTypeRegistry[noteType]?.[fieldsVersion];
+  if (!entry) {
+    throw new Error(`Unsupported note type ${noteType}@${fieldsVersion}`);
+  }
+  const parsed: unknown = entry.schema.parse(fields);
+  const cards: CompiledCard[] = [];
+  for (const template of entry.templates) {
+    const rendered = template.render(parsed);
+    if (rendered) {
+      cards.push({ templateKey: template.key, ...rendered });
+    }
+  }
+  return {
+    fieldsJson: JSON.stringify(parsed),
+    cards,
+    templateKeys: entry.templates.map((template) => template.key),
+  };
+}
+
+/**
+ * The shared zod refinement for note rows: a registered (type, version)
+ * pair must validate; an unregistered pair passes opaquely, so a client
+ * older than the note's writer stores and syncs it without rendering or
+ * editing it instead of rejecting the whole pull. The server stays
+ * strict on push through its own direct validateNoteFieldsJson call.
+ */
+export function refineNoteFields(
+  row: { note_type: string; fields_version: number; fields_json: string },
+  context: z.RefinementCtx,
+): void {
+  if (!noteFieldsSchemas[row.note_type]?.[row.fields_version]) {
+    return;
+  }
+  const result = validateNoteFieldsJson(
+    row.note_type,
+    row.fields_version,
+    row.fields_json,
+  );
+  if (!result.success) {
+    context.addIssue({
+      code: 'custom',
+      path: ['fields_json'],
+      message: result.error,
+    });
+  }
+}
+
+export type NoteFieldsValidationResult =
+  | { readonly success: true; readonly data: unknown }
+  | { readonly success: false; readonly error: string };
+
+/** Validate a serialized note payload using its explicit type/version pair. */
+export function validateNoteFieldsJson(
+  noteType: string,
+  fieldsVersion: number,
+  fieldsJson: string,
+): NoteFieldsValidationResult {
+  const fieldsSchema = noteFieldsSchemas[noteType]?.[fieldsVersion];
+  if (!fieldsSchema) {
+    return {
+      success: false,
+      error: `Unsupported note fields schema: ${noteType}@${fieldsVersion}`,
+    };
+  }
+
+  let fields: unknown;
+  try {
+    fields = JSON.parse(fieldsJson) as unknown;
+  } catch {
+    return { success: false, error: 'fields_json must be valid JSON' };
+  }
+
+  const result = fieldsSchema.safeParse(fields);
+  if (!result.success) {
+    return {
+      success: false,
+      error: `fields_json does not match ${noteType}@${fieldsVersion}`,
+    };
+  }
+  return { success: true, data: result.data };
+}

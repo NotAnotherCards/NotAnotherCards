@@ -99,7 +99,10 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
       rev: userNotes.rev,
       deletedAt: userNotes.deletedAt,
       scope: userNotes.userId,
-      insertOnly: ['created_at'],
+      // note_type and fields_version are the note's identity: mutating
+      // them would leave cards derived from a different contract attached
+      // to the note. A version migration is an explicit future operation.
+      insertOnly: ['created_at', 'note_type', 'fields_version'],
       scrub: { fieldsJson: '', additionalContent: null },
     }),
     user_cards: drizzleSyncTable<string, typeof userCards>({

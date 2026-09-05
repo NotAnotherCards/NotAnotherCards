@@ -7,8 +7,8 @@ import {
   UserNoteDeckRow,
   UserNoteRow,
   UserProfileRow,
-  validateNoteFieldsJson,
 } from './user-dictionary.js';
+import { refineNoteFields } from './note-registry.js';
 
 const baseSyncWireSchemas = syncSchemas({
   user_decks: UserDeckRow,
@@ -21,20 +21,7 @@ const baseSyncWireSchemas = syncSchemas({
 
 const UserNoteWireRow = z
   .strictObject({ ...UserNoteRow.shape, id: z.string().min(1) })
-  .superRefine((row, context) => {
-    const result = validateNoteFieldsJson(
-      row.note_type,
-      row.fields_version,
-      row.fields_json,
-    );
-    if (!result.success) {
-      context.addIssue({
-        code: 'custom',
-        path: ['fields_json'],
-        message: result.error,
-      });
-    }
-  });
+  .superRefine(refineNoteFields);
 
 function validateNoteChanges(changes: unknown, context: z.RefinementCtx): void {
   if (typeof changes !== 'object' || changes === null) return;
