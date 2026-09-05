@@ -2,6 +2,7 @@ import type { Database, SyncController } from '@remelondb/core';
 import {
   createCard,
   deleteNote,
+  recordReviewEvent,
   removeNoteFromDeck,
   updateCard,
 } from '@repo/offline-db';
@@ -23,5 +24,9 @@ export function cardWrites(db: Database, sync: SyncController | null) {
     removeFromDeck: (noteId: string, deckId: string) =>
       removeNoteFromDeck(db, noteId, deckId).then(afterWrite),
     deleteNote: (noteId: string) => deleteNote(db, noteId).then(afterWrite),
+    // Rating a card writes the review event and reschedules the card in one
+    // batch; the shared scheduler decides the interval, mobile only reports.
+    recordReview: (cardId: string, rating: number) =>
+      recordReviewEvent(db, cardId, rating).then(afterWrite),
   };
 }

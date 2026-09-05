@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
@@ -43,6 +43,7 @@ function ActiveCardList({
   manager: DatabaseManager;
   deckId: string;
 }) {
+  const router = useRouter();
   const { deck, cards, isLoading, error, canEdit, writes } = useCards(
     manager,
     deckId,
@@ -136,9 +137,22 @@ function ActiveCardList({
       <Stack.Screen options={{ title: deck.title }} />
       <View className="flex-row items-center justify-between">
         <Text className="text-lg font-semibold">Cards</Text>
-        <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
-          <Text>New card</Text>
-        </Button>
+        <View className="flex-row gap-2">
+          {/* Nothing to review in an empty deck, so the entry point is not
+              offered rather than leading to a dead end. */}
+          {cards.length > 0 && (
+            <Button
+              variant="secondary"
+              disabled={pending}
+              onPress={() => router.push(`/deck/${deckId}/review`)}
+            >
+              <Text>Review</Text>
+            </Button>
+          )}
+          <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
+            <Text>New card</Text>
+          </Button>
+        </View>
       </View>
       {cards.length === 0 && (
         <Text className="text-muted-foreground">

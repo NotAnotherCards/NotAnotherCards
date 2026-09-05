@@ -24,6 +24,7 @@ let mockCardsState: {
   writes: typeof mockWrites | null;
 };
 const mockScreenOptions = jest.fn();
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   Stack: {
     Screen: ({ options }: { options: unknown }) => {
@@ -31,6 +32,7 @@ jest.mock('expo-router', () => ({
       return null;
     },
   },
+  useRouter: () => ({ push: mockPush }),
 }));
 
 jest.mock('../lib/cards', () => ({
@@ -51,6 +53,7 @@ beforeEach(() => {
     writes: mockWrites,
   };
   Object.values(mockWrites).forEach((fn) => fn.mockClear());
+  mockPush.mockClear();
 });
 
 describe('CardList', () => {
@@ -213,5 +216,18 @@ describe('CardList', () => {
     expect(r.queryByText('Database not initialized')).toBeNull();
     fireEvent.press(r.getByLabelText('Edit hola'));
     expect(r.queryByText('Database not initialized')).toBeNull();
+  });
+});
+
+describe('CardList review entry point', () => {
+  it('opens the deck review route', () => {
+    const { getByText } = render(<CardList deckId="d1" />);
+    fireEvent.press(getByText('Review'));
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1/review');
+  });
+
+  it('offers no review for an empty deck', () => {
+    mockCardsState.cards = [];
+    expect(render(<CardList deckId="d1" />).queryByText('Review')).toBeNull();
   });
 });
