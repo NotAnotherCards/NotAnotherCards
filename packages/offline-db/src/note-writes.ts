@@ -7,6 +7,7 @@
  */
 import type { BatchOperation, Database } from '@remelondb/core';
 import { noteDeckId } from './ids.js';
+import { BASIC_NOTE_TYPE } from './note-constants.js';
 import {
   prepareCardsForNewNote,
   prepareReconcileNoteCards,
@@ -127,6 +128,11 @@ export async function createNotesBatch(
           id: targetDeckId,
           title: options.deckIdOrTitle,
           description: options.description || null,
+          // This path saves AI-generated basic cards, so the deck it makes
+          // holds basic notes and carries no languages.
+          note_type: BASIC_NOTE_TYPE,
+          native_language_id: null,
+          target_language_id: null,
           created_at: now,
           updated_at: now,
         }),
