@@ -234,6 +234,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         (isWordDeck ? (
           <WordCardForm
             title="Add New Word"
+            targetLanguageId={deck.target_language_id}
             onSubmit={handleCreateWordNote}
             error={writeError}
             onCancel={() => setShowCreateForm(false)}
@@ -253,6 +254,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         (isWordDeck ? (
           <WordCardForm
             title="Edit Word"
+            targetLanguageId={deck.target_language_id}
             initialData={editingWordFields ?? undefined}
             onSubmit={handleEditWordNote}
             error={writeError}

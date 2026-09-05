@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { WordCardForm } from '../components/deck/WordCardForm';
+import { ENGLISH, GERMAN, RUSSIAN, SPANISH } from '@repo/schemas';
 
 // The form owns the fields a person types. Languages are the deck's and the
 // two media ids are file references, so neither appears here — see
@@ -100,6 +101,85 @@ describe('WordCardForm', () => {
     expect(onSubmit.mock.calls[0][0]).toEqual({
       word: 'laufen',
       translation: 'to run',
+    });
+  });
+});
+
+// Gender is a property of the language, not of the form. German and Spanish
+// take the definite article, Russian has genders but no articles, and
+// English has no grammatical gender at all.
+describe('WordCardForm gender', () => {
+  const openDetails = () =>
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+
+  const optionsFor = (targetLanguageId: string) => {
+    render(
+      <WordCardForm
+        title="Add New Word"
+        targetLanguageId={targetLanguageId}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+    openDetails();
+    const select = screen.queryByLabelText(/gender/i);
+    return select
+      ? Array.from((select as HTMLSelectElement).options)
+          .map((option) => option.value)
+          .filter(Boolean)
+      : null;
+  };
+
+  it('offers the definite articles for German', () => {
+    expect(optionsFor(GERMAN)).toEqual(['der', 'die', 'das']);
+  });
+
+  it('offers the definite articles for Spanish', () => {
+    expect(optionsFor(SPANISH)).toEqual(['el', 'la']);
+  });
+
+  it('offers grammatical labels for Russian, which has no articles', () => {
+    expect(optionsFor(RUSSIAN)).toEqual(['masculine', 'feminine', 'neuter']);
+  });
+
+  it('does not ask at all for a language without grammatical gender', () => {
+    expect(optionsFor(ENGLISH)).toBeNull();
+  });
+
+  it('does not ask when the deck has no target language', () => {
+    render(
+      <WordCardForm
+        title="Add New Word"
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+    openDetails();
+    expect(screen.queryByLabelText(/gender/i)).toBeNull();
+  });
+
+  it('submits the chosen gender', async () => {
+    render(
+      <WordCardForm
+        title="Add New Word"
+        targetLanguageId={GERMAN}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+    fill(/^word$/i, 'Hund');
+    fill(/translation/i, 'dog');
+    openDetails();
+    fireEvent.change(screen.getByLabelText(/gender/i), {
+      target: { value: 'der' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0][0]).toEqual({
+      word: 'Hund',
+      translation: 'dog',
+      gender: 'der',
     });
   });
 });
