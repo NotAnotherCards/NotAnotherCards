@@ -2,6 +2,9 @@ import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { DeckList } from '@/components/deck-list';
 
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+
 const manager = { tag: 'manager' };
 let mockSessionDb: { manager: unknown } = { manager };
 jest.mock('../lib/database-provider', () => ({
@@ -50,7 +53,12 @@ describe('DeckList', () => {
   });
 
   it('lists decks with their card counts', () => {
-    const { getByText } = render(<DeckList />);
+    const { getByText, UNSAFE_getAllByProps } = render(<DeckList />);
+    expect(
+      UNSAFE_getAllByProps({ role: 'listitem' }).filter(
+        (el) => typeof el.type === 'string',
+      ),
+    ).toHaveLength(2);
     expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('Verbs')).toBeTruthy();
     expect(getByText('12 cards')).toBeTruthy();
@@ -113,6 +121,12 @@ describe('DeckList', () => {
     );
   });
 
+  it('opens the deck from its header', () => {
+    const { getByLabelText } = render(<DeckList />);
+    fireEvent.press(getByLabelText('Open Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
+  });
+
   it('asks for confirmation before deleting', async () => {
     const { getByLabelText, getByText } = render(<DeckList />);
     fireEvent.press(getByLabelText('Delete Yoga'));
@@ -136,6 +150,27 @@ describe('DeckList action state', () => {
     fireEvent.press(r.getByText('Save'));
     await waitFor(() => r.getByText(message));
   };
+
+  it('locks every other deck action while a write is pending', async () => {
+    let finish!: () => void;
+    mockWrites.remove.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finish = () => resolve(undefined);
+        }),
+    );
+    const { getByLabelText, getByText, queryByText, queryByPlaceholderText } =
+      render(<DeckList />);
+    fireEvent.press(getByLabelText('Delete Yoga'));
+    fireEvent.press(getByText('Delete deck'));
+    // Yoga's delete is in flight; Spanish must not be able to take the state
+    fireEvent.press(getByLabelText('Edit Spanish'));
+    expect(queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
+    expect(getByText(/Delete this deck\?/)).toBeTruthy();
+    await act(async () => finish());
+    expect(queryByText(/Delete this deck\?/)).toBeNull();
+    expect(queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
+  });
 
   it('does not start a second delete while one is pending', async () => {
     let finish!: () => void;
