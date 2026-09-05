@@ -27,6 +27,8 @@ import {
   createCardsBatch as dbCreateCardsBatch,
   removeNoteFromDeck as dbRemoveNoteFromDeck,
   recordReviewEvent as dbRecordReview,
+  createNote as dbCreateNote,
+  updateNoteFields as dbUpdateNoteFields,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
   CreateCardsBatchOptions,
@@ -208,6 +210,43 @@ export function useStore() {
     [db, sync],
   );
 
+  // The note behind a card, so a form can edit the note's own fields rather
+  // than the rendered front and back a template produced from them.
+  const noteForCard = useCallback(
+    (card: UserCardRecord) =>
+      notes.find((candidate) => candidate.id === card.note_id) ?? null,
+    [notes],
+  );
+
+  const createNote = useCallback(
+    async (
+      deckId: string,
+      noteType: string,
+      fieldsVersion: number,
+      fields: unknown,
+    ) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbCreateNote(db, deckId, {
+        noteType,
+        fieldsVersion,
+        fields,
+      });
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const updateNoteFields = useCallback(
+    async (noteId: string, fields: unknown) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbUpdateNoteFields(db, noteId, fields);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
   const isBasicCard = useCallback(
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
@@ -317,6 +356,9 @@ export function useStore() {
     removeNoteFromDeck,
     recordReview,
     isBasicCard,
+    noteForCard,
+    createNote,
+    updateNoteFields,
     getCardsCount,
     getCardsForDeck,
     createUserProfile,
