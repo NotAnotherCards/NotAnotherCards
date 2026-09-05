@@ -21,6 +21,7 @@ let mockDecksState: {
   isLoading: boolean;
   error: Error | null;
   cardCount: (id: string) => number;
+  dueCount: (id: string) => number;
   writes: typeof mockWrites | null;
 };
 jest.mock('../lib/decks', () => ({
@@ -37,6 +38,7 @@ beforeEach(() => {
     isLoading: false,
     error: null,
     cardCount: (id) => (id === 'd1' ? 12 : 0),
+    dueCount: (id) => (id === 'd1' ? 3 : 0),
     writes: mockWrites,
   };
   mockWrites.create.mockClear();
@@ -61,7 +63,8 @@ describe('DeckList', () => {
     ).toHaveLength(2);
     expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('Verbs')).toBeTruthy();
-    expect(getByText('12 cards')).toBeTruthy();
+    expect(getByText('12 cards \u00b7 3 due')).toBeTruthy();
+    // nothing due leaves no dangling separator
     expect(getByText('0 cards')).toBeTruthy();
   });
 

@@ -40,7 +40,8 @@ type DeckAction =
 
 function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
   const router = useRouter();
-  const { decks, isLoading, error, cardCount, writes } = useDecks(manager);
+  const { decks, isLoading, error, cardCount, dueCount, writes } =
+    useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -147,6 +148,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                 ) : null}
                 <Text className="text-xs text-muted-foreground">
                   {cardCount(deck.id)} cards
+                  {dueCount(deck.id) > 0 ? ` · ${dueCount(deck.id)} due` : ''}
                 </Text>
               </CardHeader>
             </Pressable>

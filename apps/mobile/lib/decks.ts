@@ -34,12 +34,27 @@ export function useDecks(manager: DatabaseManager) {
   );
   const cardCount = (deckId: string) => cardCounts.get(deckId) ?? 0;
 
+  // Due now, from the cards already loaded rather than a second
+  // subscription: getDueCardsQuery is getPersonalDictionaryQuery plus this
+  // filter. Read at count time, so it is fresh whenever the data changes;
+  // a card falling due while the screen sits idle waits for the next write.
+  const dueCounts = useMemo(
+    () =>
+      countCardsPerDeck(
+        memberships.data,
+        cards.data.filter((card) => card.due_at <= Date.now()),
+      ),
+    [cards.data, memberships.data],
+  );
+  const dueCount = (deckId: string) => dueCounts.get(deckId) ?? 0;
+
   return {
     db,
     decks: decks.data,
     isLoading: decks.isLoading || memberships.isLoading || cards.isLoading,
     error: decks.error ?? memberships.error ?? cards.error,
     cardCount,
+    dueCount,
     writes: db ? deckWrites(db, syncController) : null,
   };
 }
