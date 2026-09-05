@@ -1,5 +1,6 @@
 import { createDatabaseManager, Database } from '@remelondb/core';
 import { RnSqliteDriver } from '@remelondb/driver-rn';
+import * as Crypto from 'expo-crypto';
 import {
   schema,
   migrations,
@@ -30,6 +31,7 @@ export function createUserDatabaseManager(userId: string) {
           UserProfile,
         ],
         name: userDbName(userId),
+        randomSource: Crypto.getRandomValues,
       }),
   });
 }
