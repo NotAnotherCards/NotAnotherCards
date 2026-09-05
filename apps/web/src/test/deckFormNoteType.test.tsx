@@ -8,7 +8,7 @@ import { LANGUAGES } from '@repo/schemas';
 
 const onSubmit = vi.fn();
 const onCancel = vi.fn();
-const [english, spanish] = LANGUAGES;
+const [english, spanish, german] = LANGUAGES;
 
 beforeEach(() => {
   onSubmit.mockReset();
@@ -80,15 +80,32 @@ describe('DeckForm note type', () => {
     const target = screen.getByLabelText(/learning/i) as HTMLSelectElement;
     expect(target.value).toBe(spanish.value);
     // changeable: the deck's pair is not forced to match the profile
-    fireEvent.change(target, { target: { value: english.value } });
+    fireEvent.change(target, { target: { value: german.value } });
     fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({
       noteType: 'word',
       nativeLanguageId: english.value,
+      targetLanguageId: german.value,
+    });
+  });
+
+  it('will not create a word deck with the same language twice', async () => {
+    renderCreate({
+      nativeLanguageId: english.value,
       targetLanguageId: english.value,
     });
+    fireEvent.change(screen.getByLabelText(/title/i), {
+      target: { value: 'English' },
+    });
+    chooseWords();
+    fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
+
+    expect(
+      await screen.findByText(/choose a different target language/i),
+    ).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('will not create a word deck without both languages', async () => {

@@ -5,9 +5,11 @@ import {
   getDecksQuery,
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
+  getUserProfileQuery,
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
+  type UserProfileRecord,
 } from '@repo/offline-db';
 import { countCardsPerDeck } from './card-counts';
 import { deckWrites } from './deck-writes';
@@ -24,6 +26,7 @@ export function useDecks(manager: DatabaseManager) {
   const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
   const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+  const profiles = useQuery<UserProfileRecord>(db && getUserProfileQuery(db));
 
   // Active cards whose note is in the deck, the same count web shows. Not
   // the membership count: a note can carry several cards once sibling
@@ -37,9 +40,14 @@ export function useDecks(manager: DatabaseManager) {
   return {
     db,
     decks: decks.data,
-    isLoading: decks.isLoading || memberships.isLoading || cards.isLoading,
-    error: decks.error ?? memberships.error ?? cards.error,
+    isLoading:
+      decks.isLoading ||
+      memberships.isLoading ||
+      cards.isLoading ||
+      profiles.isLoading,
+    error: decks.error ?? memberships.error ?? cards.error ?? profiles.error,
     cardCount,
+    profile: profiles.data[0] ?? null,
     writes: db ? deckWrites(db, syncController) : null,
   };
 }

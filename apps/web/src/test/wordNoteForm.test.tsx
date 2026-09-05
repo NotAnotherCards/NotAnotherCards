@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
-import { WordCardForm } from '../components/deck/WordCardForm';
+import { WordNoteForm } from '../components/deck/WordNoteForm';
 import { ENGLISH, GERMAN, RUSSIAN, SPANISH } from '@repo/schemas';
 
 // The form owns the fields a person types. Languages are the deck's and the
@@ -21,7 +21,7 @@ beforeEach(() => {
 
 const renderForm = (initialData?: Record<string, string>) =>
   render(
-    <WordCardForm
+    <WordNoteForm
       title="Add New Word"
       onSubmit={onSubmit}
       onCancel={onCancel}
@@ -29,7 +29,7 @@ const renderForm = (initialData?: Record<string, string>) =>
     />,
   );
 
-describe('WordCardForm', () => {
+describe('WordNoteForm', () => {
   it('asks for the word and its translation, and nothing else up front', () => {
     renderForm();
     expect(screen.getByLabelText(/^word$/i)).toBeTruthy();
@@ -108,13 +108,13 @@ describe('WordCardForm', () => {
 // Gender is a property of the language, not of the form. German and Spanish
 // take the definite article, Russian has genders but no articles, and
 // English has no grammatical gender at all.
-describe('WordCardForm gender', () => {
+describe('WordNoteForm gender', () => {
   const openDetails = () =>
     fireEvent.click(screen.getByRole('button', { name: /more details/i }));
 
   const optionsFor = (targetLanguageId: string) => {
     render(
-      <WordCardForm
+      <WordNoteForm
         title="Add New Word"
         targetLanguageId={targetLanguageId}
         onSubmit={onSubmit}
@@ -148,7 +148,7 @@ describe('WordCardForm gender', () => {
 
   it('does not ask when the deck has no target language', () => {
     render(
-      <WordCardForm
+      <WordNoteForm
         title="Add New Word"
         onSubmit={onSubmit}
         onCancel={onCancel}
@@ -160,7 +160,7 @@ describe('WordCardForm gender', () => {
 
   it('submits the chosen gender', async () => {
     render(
-      <WordCardForm
+      <WordNoteForm
         title="Add New Word"
         targetLanguageId={GERMAN}
         onSubmit={onSubmit}

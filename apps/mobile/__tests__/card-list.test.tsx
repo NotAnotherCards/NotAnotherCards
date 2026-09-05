@@ -10,17 +10,32 @@ jest.mock('../lib/database-provider', () => ({
 
 const mockWrites = {
   create: jest.fn(() => Promise.resolve({})),
+  createWord: jest.fn(() => Promise.resolve({})),
   update: jest.fn(() => Promise.resolve({})),
+  updateWord: jest.fn(() => Promise.resolve({})),
   removeFromDeck: jest.fn(() => Promise.resolve(undefined)),
   deleteNote: jest.fn(() => Promise.resolve(undefined)),
 };
 type MockCard = { id: string; note_id: string; front: string; back: string };
+type MockNote = {
+  id: string;
+  note_type: string;
+  fields_version: number;
+  fields_json: string;
+};
 let mockCardsState: {
-  deck: { id: string; title: string } | null;
+  deck: {
+    id: string;
+    title: string;
+    note_type: string;
+    native_language_id: string | null;
+    target_language_id: string | null;
+  } | null;
   cards: MockCard[];
   isLoading: boolean;
   error: Error | null;
   canEdit: (card: MockCard) => boolean;
+  noteForCard: (card: MockCard) => MockNote | null;
   writes: typeof mockWrites | null;
 };
 const mockScreenOptions = jest.fn();
@@ -40,7 +55,13 @@ jest.mock('../lib/cards', () => ({
 beforeEach(() => {
   mockSessionDb = { manager };
   mockCardsState = {
-    deck: { id: 'd1', title: 'Spanish' },
+    deck: {
+      id: 'd1',
+      title: 'Spanish',
+      note_type: 'basic',
+      native_language_id: null,
+      target_language_id: null,
+    },
     cards: [
       { id: 'c1', note_id: 'n1', front: 'hola', back: 'hello' },
       { id: 'c2', note_id: 'n2', front: 'adiós', back: 'goodbye' },
@@ -48,6 +69,12 @@ beforeEach(() => {
     isLoading: false,
     error: null,
     canEdit: (card) => card.id !== 'c2',
+    noteForCard: (card) => ({
+      id: card.note_id,
+      note_type: 'basic',
+      fields_version: 1,
+      fields_json: JSON.stringify({ front: card.front, back: card.back }),
+    }),
     writes: mockWrites,
   };
   Object.values(mockWrites).forEach((fn) => fn.mockClear());
@@ -98,6 +125,7 @@ describe('CardList', () => {
     const { queryByLabelText } = render(<CardList deckId="d1" />);
     expect(queryByLabelText('Edit hola')).toBeTruthy();
     expect(queryByLabelText('Edit adiós')).toBeNull();
+    expect(queryByLabelText('Delete note adiós')).toBeNull();
   });
 
   it('creates a card in this deck and closes the form once the write landed', async () => {
@@ -128,6 +156,74 @@ describe('CardList', () => {
     await waitFor(() =>
       expect(mockWrites.update).toHaveBeenCalledWith('c1', 'hola!', 'hello'),
     );
+  });
+
+  it('creates and edits word notes without replacing their languages or media', async () => {
+    mockCardsState.deck = {
+      id: 'd1',
+      title: 'German',
+      note_type: 'word',
+      native_language_id: 'deck-native',
+      target_language_id: 'deck-target',
+    };
+    mockCardsState.cards = [
+      { id: 'c1', note_id: 'n1', front: 'Hund', back: 'dog' },
+    ];
+    mockCardsState.noteForCard = () => ({
+      id: 'n1',
+      note_type: 'word',
+      fields_version: 1,
+      fields_json: JSON.stringify({
+        word: 'Hund',
+        translation: 'dog',
+        native_language_id: 'note-native',
+        target_language_id: 'note-target',
+        image: 'image-1',
+        word_audio: 'audio-1',
+      }),
+    });
+    const r = render(<CardList deckId="d1" />);
+
+    fireEvent.press(r.getByText('New word'));
+    fireEvent.changeText(
+      r.getByPlaceholderText('The word you are learning'),
+      'Katze',
+    );
+    fireEvent.changeText(r.getByPlaceholderText('What it means'), 'cat');
+    fireEvent.press(r.getByText('Save'));
+    await waitFor(() =>
+      expect(mockWrites.createWord).toHaveBeenCalledWith('d1', {
+        word: 'Katze',
+        translation: 'cat',
+        native_language_id: 'deck-native',
+        target_language_id: 'deck-target',
+      }),
+    );
+
+    r.rerender(<CardList deckId="d1" />);
+    fireEvent.press(r.getByLabelText('Edit Hund'));
+    fireEvent.changeText(r.getByDisplayValue('Hund'), 'Hunde');
+    fireEvent.press(r.getByText('Save'));
+    await waitFor(() =>
+      expect(mockWrites.updateWord).toHaveBeenCalledWith('n1', {
+        word: 'Hunde',
+        translation: 'dog',
+        native_language_id: 'note-native',
+        target_language_id: 'note-target',
+        image: 'image-1',
+        word_audio: 'audio-1',
+      }),
+    );
+  });
+
+  it('keeps an unknown deck type read-only', () => {
+    mockCardsState.deck!.note_type = 'cloze';
+    const r = render(<CardList deckId="d1" />);
+    expect(r.getByText(/cannot edit yet/i)).toBeTruthy();
+    expect(r.queryByText('New card')).toBeNull();
+    expect(r.queryByLabelText('Edit hola')).toBeNull();
+    expect(r.queryByLabelText('Remove hola from deck')).toBeNull();
+    expect(r.queryByLabelText('Delete note hola')).toBeNull();
   });
 
   it('remove asks first, then ends the membership and not the note', async () => {
