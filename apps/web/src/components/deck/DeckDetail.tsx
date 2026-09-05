@@ -17,6 +17,8 @@ import {
   Unlink,
 } from 'lucide-react';
 import { CardForm } from './CardForm';
+import { WordCardForm, type WordFormValues } from './WordCardForm';
+import { WORD_NOTE_TYPE, WORD_NOTE_FIELDS_VERSION } from '@repo/offline-db';
 import { CardList } from './CardList';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
@@ -87,6 +89,18 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   const deck = store.decks.find((d) => d.id === deckId);
+  const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
+  // The note's own fields, parsed from the note rather than read off the
+  // card, whose front and back are a template's output.
+  const editingWordFields = (() => {
+    if (!editingCard || !isWordDeck) return null;
+    const note = store.noteForCard(editingCard);
+    if (!note) return null;
+    const parsed: unknown = JSON.parse(note.fields_json);
+    return typeof parsed === 'object' && parsed !== null
+      ? (parsed as Partial<WordFormValues>)
+      : null;
+  })();
 
   if (!deck) {
     return (
@@ -110,6 +124,37 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       setShowCreateForm(false);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'Failed to create card'));
+    }
+  };
+
+  const handleCreateWordNote = async (values: WordFormValues) => {
+    if (!deck) return;
+    setWriteError(null);
+    try {
+      // The deck owns the language pair; the form never asks for it.
+      await store.createNote(deckId, WORD_NOTE_TYPE, WORD_NOTE_FIELDS_VERSION, {
+        ...values,
+        native_language_id: deck.native_language_id,
+        target_language_id: deck.target_language_id,
+      });
+      setShowCreateForm(false);
+    } catch (err) {
+      setWriteError(writeErrorMessage(err, 'Failed to create card'));
+    }
+  };
+
+  const handleEditWordNote = async (values: WordFormValues) => {
+    if (!editingCard || !deck) return;
+    setWriteError(null);
+    try {
+      await store.updateNoteFields(editingCard.note_id, {
+        ...values,
+        native_language_id: deck.native_language_id,
+        target_language_id: deck.target_language_id,
+      });
+      setEditingCard(null);
+    } catch (err) {
+      setWriteError(writeErrorMessage(err, 'Failed to update card'));
     }
   };
 
@@ -184,29 +229,47 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         error={store.error}
       />
 
-      {/* Add Card Form */}
-      {showCreateForm && (
-        <CardForm
-          title="Add New Card"
-          onSubmit={handleCreateCard}
-          error={writeError}
-          onCancel={() => setShowCreateForm(false)}
-        />
-      )}
+      {/* Add: the deck's note type decides which form appears */}
+      {showCreateForm &&
+        (isWordDeck ? (
+          <WordCardForm
+            title="Add New Word"
+            onSubmit={handleCreateWordNote}
+            error={writeError}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        ) : (
+          <CardForm
+            title="Add New Card"
+            onSubmit={handleCreateCard}
+            error={writeError}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        ))}
 
-      {/* Edit Card Form */}
-      {editingCard && (
-        <CardForm
-          title="Edit Card"
-          initialData={{
-            front: editingCard.front,
-            back: editingCard.back,
-          }}
-          onSubmit={handleEditCard}
-          error={writeError}
-          onCancel={() => setEditingCard(null)}
-        />
-      )}
+      {/* Edit: a word note is edited through its own fields, not through
+          the front and back a template rendered from them */}
+      {editingCard &&
+        (isWordDeck ? (
+          <WordCardForm
+            title="Edit Word"
+            initialData={editingWordFields ?? undefined}
+            onSubmit={handleEditWordNote}
+            error={writeError}
+            onCancel={() => setEditingCard(null)}
+          />
+        ) : (
+          <CardForm
+            title="Edit Card"
+            initialData={{
+              front: editingCard.front,
+              back: editingCard.back,
+            }}
+            onSubmit={handleEditCard}
+            error={writeError}
+            onCancel={() => setEditingCard(null)}
+          />
+        ))}
 
       {/* Remove Note Membership Confirmation */}
       {noteToRemove && (

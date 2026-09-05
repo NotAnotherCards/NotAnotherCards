@@ -29,6 +29,9 @@ describe('DeckCard Component', () => {
     id: 'deck-test-1',
     title: 'Spanish Verbs',
     description: 'Learn essential conversational Spanish verbs.',
+    note_type: 'basic',
+    native_language_id: null,
+    target_language_id: null,
     created_at: Date.now(),
     updated_at: Date.now(),
   };

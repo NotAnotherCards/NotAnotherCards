@@ -20,6 +20,9 @@ const existingDeck: Deck = {
   id: 'deck-1',
   title: 'Spanish Verbs',
   description: 'Conversational verbs',
+  note_type: 'basic',
+  native_language_id: null,
+  target_language_id: null,
   created_at: Date.now(),
   updated_at: Date.now(),
 };
