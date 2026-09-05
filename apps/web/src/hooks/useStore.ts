@@ -151,9 +151,17 @@ export function useStore() {
 
   // Local Writes
   const createDeck = useCallback(
-    async (title: string, description: string) => {
+    async (
+      title: string,
+      description: string,
+      options?: {
+        noteType?: string;
+        nativeLanguageId?: string | null;
+        targetLanguageId?: string | null;
+      },
+    ) => {
       if (!db) throw new Error('Database not initialized');
-      const result = await dbCreateDeck(db, title, description);
+      const result = await dbCreateDeck(db, title, description, options);
       sync?.notifyLocalWrite();
       return result;
     },
