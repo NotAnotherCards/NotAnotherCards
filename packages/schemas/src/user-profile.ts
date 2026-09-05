@@ -30,10 +30,11 @@ export const RUSSIAN = LANGUAGES[3].value;
 /**
  * What a word's gender can be, per language a word note might be in.
  *
- * German and Spanish take the definite article, which is what a learner
- * actually memorises. Russian has three genders but no articles, so the
- * values are the grammatical labels instead. English has no grammatical
- * gender, so an empty list means the field is not asked for at all.
+ * Each language's own notation. German and Spanish take the definite
+ * article, which is the part a learner actually memorises. Russian has three
+ * genders but no articles, so it takes the dictionary abbreviations a
+ * learner meets there. English has no grammatical gender, so an empty list
+ * means the field is not asked for at all.
  *
  * A language absent from this map is treated as English is: no field. The
  * note's `gender` stays free text in the registry, so this only decides
@@ -44,7 +45,7 @@ export const GENDERS_BY_LANGUAGE: Readonly<Record<string, readonly string[]>> =
     [ENGLISH]: [],
     [SPANISH]: ['el', 'la'],
     [GERMAN]: ['der', 'die', 'das'],
-    [RUSSIAN]: ['masculine', 'feminine', 'neuter'],
+    [RUSSIAN]: ['м.', 'ж.', 'ср.'],
   };
 
 export function gendersFor(languageId: string | null | undefined) {
