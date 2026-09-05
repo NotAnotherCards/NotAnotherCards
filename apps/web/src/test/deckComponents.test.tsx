@@ -199,23 +199,18 @@ describe('FlashcardModal Component', () => {
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
 
-  it('shows the multiplicative next interval for a reviewed card', async () => {
-    render(
-      <FlashcardModal
-        card={{
-          ...mockCard,
-          scheduled_interval_minutes: 3 * 24 * 60,
-        }}
-        onClose={vi.fn()}
-      />,
-    );
+  it('is preview-only and closes with Escape', () => {
+    const onClose = vi.fn();
+    render(<FlashcardModal card={mockCard} onClose={onClose} />);
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('flashcard-inner'));
-    });
+    fireEvent.keyDown(window, { key: 'Escape' });
 
+    expect(onClose).toHaveBeenCalledOnce();
     expect(
-      screen.getByRole('button', { name: 'Good (7.5d)' }),
-    ).toBeInTheDocument();
+      screen.queryByRole('button', { name: /again|hard|good|easy/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /next|prev/i }),
+    ).not.toBeInTheDocument();
   });
 });
