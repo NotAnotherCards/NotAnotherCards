@@ -78,6 +78,13 @@
       "when": 1788028961101,
       "tag": "0010_shocking_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788028961102,
+      "tag": "0011_normal_hex",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,14 @@
 import type { Database, SyncController } from '@remelondb/core';
 import {
   createCard,
+  createNote,
   deleteNote,
   removeNoteFromDeck,
+  type WordNoteFields,
   updateCard,
+  updateNoteFields,
+  WORD_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 
 // The writes are the shared ones from @repo/offline-db; this only adds the
@@ -18,8 +23,16 @@ export function cardWrites(db: Database, sync: SyncController | null) {
   return {
     create: (deckId: string, front: string, back: string) =>
       createCard(db, deckId, front, back).then(afterWrite),
+    createWord: (deckId: string, fields: WordNoteFields) =>
+      createNote(db, deckId, {
+        noteType: WORD_NOTE_TYPE,
+        fieldsVersion: WORD_NOTE_FIELDS_VERSION,
+        fields,
+      }).then(afterWrite),
     update: (cardId: string, front: string, back: string) =>
       updateCard(db, cardId, front, back).then(afterWrite),
+    updateWord: (noteId: string, fields: WordNoteFields) =>
+      updateNoteFields(db, noteId, fields).then(afterWrite),
     removeFromDeck: (noteId: string, deckId: string) =>
       removeNoteFromDeck(db, noteId, deckId).then(afterWrite),
     deleteNote: (noteId: string) => deleteNote(db, noteId).then(afterWrite),

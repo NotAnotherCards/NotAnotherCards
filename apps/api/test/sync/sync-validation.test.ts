@@ -5,6 +5,7 @@ import type {
 } from '@remelondb/server';
 import { describe, expect, it, vi } from 'vitest';
 import { cardId } from '@repo/offline-db';
+import { LANGUAGES } from '@repo/schemas';
 import { createCrossValidateSyncRelationships } from '../../src/sync/sync-validation';
 
 const profileRow = (id: string): WireRow => ({
@@ -48,6 +49,40 @@ describe('sync relationship validation scan guards', () => {
       );
     },
   );
+});
+
+describe('deck language validation', () => {
+  const validate = createCrossValidateSyncRelationships(async () =>
+    Promise.resolve(new Map()),
+  );
+  const tx = {
+    changedSince: vi.fn(() => Promise.resolve([])),
+  } as unknown as SyncStoreTx<string>;
+  const [native, target] = LANGUAGES;
+  const deck = (targetLanguageId: string): WireRow => ({
+    id: 'deck-a',
+    title: 'Words',
+    description: null,
+    note_type: 'word',
+    native_language_id: native.value,
+    target_language_id: targetLanguageId,
+    created_at: 1,
+    updated_at: 1,
+  });
+
+  it('rejects a word deck with the same language twice', async () => {
+    const rejected = await validate(tx, 'user-a', {
+      user_decks: { rows: [deck(native.value)], deleted: [] },
+    });
+    expect(rejected['user_decks']).toEqual(['deck-a']);
+  });
+
+  it('accepts a word deck with two known, different languages', async () => {
+    const rejected = await validate(tx, 'user-a', {
+      user_decks: { rows: [deck(target.value)], deleted: [] },
+    });
+    expect(rejected['user_decks']).toEqual([]);
+  });
 });
 
 describe('note identity immutability (#194)', () => {

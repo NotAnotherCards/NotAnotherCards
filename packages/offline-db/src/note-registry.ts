@@ -72,7 +72,7 @@ const optionalText = z.string().trim().min(1).optional();
  * from the profile by the forms; image and word_audio are reserved ids
  * into the future note_media table and cannot be filled yet.
  */
-export const WordNoteFieldsV1 = z.strictObject({
+const WordNoteFieldsV1Base = z.strictObject({
   word: requiredText,
   translation: requiredText,
   native_language_id: requiredText,
@@ -86,6 +86,21 @@ export const WordNoteFieldsV1 = z.strictObject({
   word_audio: optionalText,
   notes: optionalText,
 });
+
+export const WordNoteEditableFieldsV1 = WordNoteFieldsV1Base.omit({
+  native_language_id: true,
+  target_language_id: true,
+  image: true,
+  word_audio: true,
+});
+
+export const WordNoteFieldsV1 = WordNoteFieldsV1Base.refine(
+  (fields) => fields.native_language_id !== fields.target_language_id,
+  {
+    path: ['target_language_id'],
+    message: 'Native and target languages must differ',
+  },
+);
 export type WordNoteFields = z.output<typeof WordNoteFieldsV1>;
 
 // Sync protocol constants, like BASIC_FRONT_BACK_TEMPLATE_KEY in ids.ts:

@@ -21,6 +21,10 @@ let mockDecksState: {
   isLoading: boolean;
   error: Error | null;
   cardCount: (id: string) => number;
+  profile: {
+    native_language_id: string | null;
+    target_language_id: string | null;
+  } | null;
   writes: typeof mockWrites | null;
 };
 jest.mock('../lib/decks', () => ({
@@ -37,6 +41,7 @@ beforeEach(() => {
     isLoading: false,
     error: null,
     cardCount: (id) => (id === 'd1' ? 12 : 0),
+    profile: null,
     writes: mockWrites,
   };
   mockWrites.create.mockClear();
@@ -82,7 +87,11 @@ describe('DeckList', () => {
     );
     fireEvent.press(getByText('Save'));
     await waitFor(() =>
-      expect(mockWrites.create).toHaveBeenCalledWith('Anatomy', ''),
+      expect(mockWrites.create).toHaveBeenCalledWith('Anatomy', '', {
+        noteType: 'basic',
+        nativeLanguageId: null,
+        targetLanguageId: null,
+      }),
     );
     await act(async () => {});
     expect(queryByText('Save')).toBeNull();
