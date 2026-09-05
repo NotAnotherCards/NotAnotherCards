@@ -11,7 +11,9 @@ import {
   noteDeckId,
   noteTypeRegistry,
   validateNoteFieldsJson,
+  WORD_NOTE_TYPE,
 } from '@repo/offline-db';
+import { LANGUAGES } from '@repo/schemas';
 
 const USER_DECKS = 'user_decks';
 const USER_NOTES = 'user_notes';
@@ -179,7 +181,7 @@ export function createCrossValidateSyncRelationships(
     // Durable parent state is only needed when this push references it. Parent
     // deletes without new/updated children are handled by the cascade wrapper.
     const deckChanges =
-      membershipRows.length === 0
+      membershipRows.length === 0 && deckRows.length === 0
         ? []
         : await tx.changedSince(USER_DECKS, scope, 0);
     const ownedDeckIds = activeIds(deckChanges);
@@ -187,6 +189,51 @@ export function createCrossValidateSyncRelationships(
 
     for (const deck of deckRows) {
       if (!deletedDeckIds.has(deck.id)) ownedDeckIds.add(deck.id);
+    }
+
+    // A deck's note_type is fixed at creation: its notes are compiled
+    // against it. insertOnly stops PostgreSQL writing the column, but on its
+    // own that is a silent no-op the client reads as success, so a mismatch
+    // is rejected here instead.
+    const durableDeckType = new Map<string, string>();
+    for (const change of deckChanges) {
+      if (change.row === null) continue;
+      const noteType = stringField(change.row, 'note_type');
+      if (noteType !== null) durableDeckType.set(change.row.id, noteType);
+    }
+
+    const knownLanguage = new Set<string>(
+      LANGUAGES.map((language) => language.value),
+    );
+    const rejectedDecks = deckRows.filter((deck) => {
+      const noteType = stringField(deck, 'note_type');
+      if (noteType === null || noteTypeRegistry[noteType] === undefined) {
+        return true;
+      }
+      const stored = durableDeckType.get(deck.id);
+      if (stored !== undefined && stored !== noteType) return true;
+      const native = stringField(deck, 'native_language_id');
+      const target = stringField(deck, 'target_language_id');
+      // A word deck carries both languages, any other type carries none. The
+      // column constraint says the same, but raises instead of rejecting
+      // this record and applying the rest of the batch.
+      if (noteType === WORD_NOTE_TYPE) {
+        if (native === null || target === null) return true;
+        // An id nothing can resolve is no better than none: the note form
+        // and the AI worker both look it up.
+        return !knownLanguage.has(native) || !knownLanguage.has(target);
+      }
+      return native !== null || target !== null;
+    });
+    const rejectedDeckIds = new Set(rejectedDecks.map((deck) => deck.id));
+
+    // The type a membership must match: this push's value when the deck
+    // travels with it, the durable one otherwise.
+    const deckTypeById = new Map(durableDeckType);
+    for (const deck of deckRows) {
+      if (rejectedDeckIds.has(deck.id)) continue;
+      const noteType = stringField(deck, 'note_type');
+      if (noteType !== null) deckTypeById.set(deck.id, noteType);
     }
 
     const deckDeletes = new Set(deckDeletesRequested);
@@ -350,15 +397,39 @@ export function createCrossValidateSyncRelationships(
       }
     }
 
+    // A note's type comes from this push when it travels with the
+    // membership, and from the durable row otherwise.
+    const noteTypeById = new Map<string, string>();
+    for (const [id, identity] of durableNoteIdentity) {
+      noteTypeById.set(id, identity.type);
+    }
+    for (const note of noteRows) {
+      if (rejectedNoteIds.has(note.id)) continue;
+      const noteType = stringField(note, 'note_type');
+      if (noteType !== null) noteTypeById.set(note.id, noteType);
+    }
+
     const rejectedMemberships = membershipRows.filter((membership) => {
       const noteId = stringField(membership, 'note_id');
       const deckId = stringField(membership, 'deck_id');
-      return (
+      if (
         noteId === null ||
         deckId === null ||
         !ownedNoteIds.has(noteId) ||
         !ownedDeckIds.has(deckId) ||
         membership.id !== noteDeckId(noteId, deckId)
+      ) {
+        return true;
+      }
+      // Every note in a deck follows the deck's contract, so a membership
+      // cannot put a word note in a basic deck. Unknown on either side means
+      // the pair cannot be checked, and an unverifiable claim is refused.
+      const deckType = deckTypeById.get(deckId);
+      const noteType = noteTypeById.get(noteId);
+      return (
+        deckType === undefined ||
+        noteType === undefined ||
+        deckType !== noteType
       );
     });
     const rejectedMembershipIds = new Set(
@@ -421,7 +492,10 @@ export function createCrossValidateSyncRelationships(
     }
 
     return {
-      [USER_DECKS]: [...blockedDeckDeletes],
+      [USER_DECKS]: [
+        ...rejectedDecks.map((deck) => deck.id),
+        ...blockedDeckDeletes,
+      ],
       [USER_NOTES]: [
         ...rejectedNotes.map((note) => note.id),
         ...blockedNoteDeletes,
