@@ -7,6 +7,15 @@ import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
 export const UserDeckRow = z.object({
   title: z.string().min(1),
   description: z.string().nullable(),
+  // Which note contract this deck's notes follow. Left unrefined on
+  // purpose: a deck type this client does not know is stored and synced
+  // opaquely rather than rejected on pull, the same forward compatibility
+  // #194 gave unknown note types. The known set is checked server-side.
+  note_type: z.string().min(1),
+  // Defaults a word deck's note form starts from. The note stays the
+  // canonical source of its own languages; these only prefill.
+  native_language_id: z.string().nullable(),
+  target_language_id: z.string().nullable(),
   created_at: z.number().int().nonnegative(),
   updated_at: z.number().int().nonnegative(),
 });

@@ -16,6 +16,7 @@ import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
+  WORD_NOTE_TYPE,
 } from './note-constants.js';
 import { calculateReviewSchedule } from './review-scheduler.js';
 
@@ -75,16 +76,37 @@ export function getNoteDecksQuery(db: Database) {
 // LOCAL WRITES
 // ==========================================
 
+/**
+ * Create a deck. `noteType` decides which contract its notes follow and is
+ * immutable afterwards; a word deck carries the language pair its note form
+ * starts from, and the note remains the canonical source of its own.
+ */
 export async function createDeck(
   db: Database,
   title: string,
   description?: string | null,
+  options: {
+    noteType?: string;
+    nativeLanguageId?: string | null;
+    targetLanguageId?: string | null;
+  } = {},
 ) {
+  const noteType = options.noteType ?? BASIC_NOTE_TYPE;
+  const isWord = noteType === WORD_NOTE_TYPE;
+  if (isWord && !(options.nativeLanguageId && options.targetLanguageId)) {
+    throw new Error('A word deck needs both a native and a target language');
+  }
+  if (!isWord && (options.nativeLanguageId || options.targetLanguageId)) {
+    throw new Error('Only a word deck carries languages');
+  }
   return await db.write(async () => {
     const now = Date.now();
     return await db.get(UserDeck).create({
       title,
       description: description || null,
+      note_type: noteType,
+      native_language_id: options.nativeLanguageId ?? null,
+      target_language_id: options.targetLanguageId ?? null,
       created_at: now,
       updated_at: now,
     });
