@@ -88,6 +88,88 @@ sudo -u deploy grep -E '^[A-Z0-9_]+=' /opt/notanothercards/.env \
 
 Expected ownership and mode are `deploy deploy 600`.
 
+## Tailnet access to the GX10
+
+Production reaches the AI gateway and all three GX10 metrics endpoints
+directly over the self-hosted tailnet. `ai.dustyway.org` remains available to
+teammates with personal keys, but it is not in either production request path.
+
+Get a single-use headscale pre-auth key from the tailnet administrator only
+when you are ready to enrol the server. The key is delivered out of band and
+expires 72 hours after it is minted. On the production VPS:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up \
+  --login-server https://headscale.dustyway.org \
+  --authkey HEADSCALE_PRE_AUTH_KEY
+tailscale status
+```
+
+The GX10 must appear as `gx10-536a` at `100.64.0.1`. Check whether the data
+path is direct before changing production traffic:
+
+```bash
+tailscale ping 100.64.0.1
+```
+
+Record the result in issue #193. Output containing `via DERP` means the
+connection is relayed and cancels the latency/path saving; do not describe it
+as direct until the peer-to-peer path works.
+
+Set these values in `/opt/notanothercards/.env`, without changing the existing
+`AI_API_KEY` (`production-worker`):
+
+```dotenv
+AI_API_BASE=http://100.64.0.1:4000/v1
+AI_DEFAULT_MODEL=gemma4
+```
+
+Keep `AI_API_BASE` without a trailing slash. Recreate the api container, then
+submit one generation job through the production application and confirm that
+it completes:
+
+```bash
+cd /opt/notanothercards
+sudo -u deploy docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.production.yml \
+  up -d --no-deps --force-recreate api
+```
+
+Prometheus uses plain HTTP for the three tailnet-encrypted GX10 scrapes. Each
+job keeps `metrics_path: /metrics` and uses its direct host and port:
+
+```yaml
+- job_name: litellm-gx10
+  metrics_path: /metrics
+  static_configs:
+    - targets: [100.64.0.1:4000]
+
+- job_name: node-gx10
+  metrics_path: /metrics
+  static_configs:
+    - targets: [100.64.0.1:9100]
+
+- job_name: dcgm-gpu-gx10
+  metrics_path: /metrics
+  static_configs:
+    - targets: [100.64.0.1:9400]
+```
+
+There is no `scheme: https` and no trailing slash in `metrics_path`. Verify all
+three endpoints from production and confirm their Prometheus targets are up
+before removing the old public scrape proxies:
+
+```bash
+curl --fail http://100.64.0.1:4000/metrics >/dev/null
+curl --fail http://100.64.0.1:9100/metrics >/dev/null
+curl --fail http://100.64.0.1:9400/metrics >/dev/null
+```
+
+No new public firewall rule is required: these services bind only to the GX10
+tailnet address.
+
 ## Production deployments
 
 Production deployment is automated. A merge or direct push to `main` starts

@@ -26,7 +26,8 @@ curl https://ai.dustyway.org/v1/chat/completions \
 
 Any OpenAI client works: set base URL and key. Keys have rate limits; if
 you hit them, ask. The public URL is the VPS's nginx proxying to the box
-over the tailnet (issue #85); on the tailnet,
+over the tailnet (issue #85); production bypasses that proxy and, on the
+tailnet,
 `http://<gx10-tailnet-ip>:4000` works directly.
 
 ### After you have your key
@@ -195,6 +196,14 @@ Conventions:
 - Ports: LiteLLM (:4000) and the exporters (:9100, :9400) bind to the
   tailscale IP only. Ollama (:11434) binds to localhost only — clients
   must go through LiteLLM, never around it.
+- Production connects directly to `http://100.64.0.1:4000/v1`. Its
+  Prometheus scrapes `:4000/metrics`, `:9100/metrics`, and `:9400/metrics`
+  over the same tailnet connection. These endpoints use plain HTTP because
+  the tailnet encrypts the transport.
+- LiteLLM's `/metrics` endpoint is unauthenticated and includes virtual-key
+  aliases and spend. It is tailnet-only: `ai.dustyway.org` remains the
+  public teammate API gateway but does not expose any of the three metrics
+  endpoints.
 - Docker and tailscaled race at boot, and Docker usually wins: it tries to
   bind `100.64.0.1:4000` before the address exists, the bind fails, and
   Docker never retries a container that failed at daemon start
