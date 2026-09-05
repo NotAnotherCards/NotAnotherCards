@@ -138,8 +138,8 @@ describe('WordCardForm gender', () => {
     expect(optionsFor(SPANISH)).toEqual(['el', 'la']);
   });
 
-  it('offers grammatical labels for Russian, which has no articles', () => {
-    expect(optionsFor(RUSSIAN)).toEqual(['masculine', 'feminine', 'neuter']);
+  it('offers the dictionary abbreviations for Russian, which has no articles', () => {
+    expect(optionsFor(RUSSIAN)).toEqual(['м.', 'ж.', 'ср.']);
   });
 
   it('does not ask at all for a language without grammatical gender', () => {
