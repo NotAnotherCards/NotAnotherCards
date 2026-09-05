@@ -94,11 +94,19 @@ describe('FlashcardView', () => {
   it('previews each rating interval from the shared scheduler', () => {
     const { getByLabelText, getByText } = render(<FlashcardView deckId="d1" />);
     fireEvent.press(getByLabelText('Show the answer'));
-    // a fresh card: the scheduler's floors, 5m / 1d / 3d / 7d
-    expect(getByText('Again (5m)')).toBeTruthy();
-    expect(getByText('Hard (1d)')).toBeTruthy();
-    expect(getByText('Good (3d)')).toBeTruthy();
-    expect(getByText('Easy (7d)')).toBeTruthy();
+    // a fresh card: the scheduler's floors, 5m / 1d / 3d / 7d. The interval
+    // is its own line under the label, so assert both are on screen and
+    // that the pair is what the button announces.
+    for (const [label, interval] of [
+      ['Again', '5m'],
+      ['Hard', '1d'],
+      ['Good', '3d'],
+      ['Easy', '7d'],
+    ]) {
+      expect(getByText(label)).toBeTruthy();
+      expect(getByText(interval)).toBeTruthy();
+      expect(getByLabelText(`${label}, next in ${interval}`)).toBeTruthy();
+    }
   });
 
   it('records the rating and advances to the next card, front first', async () => {
@@ -106,7 +114,7 @@ describe('FlashcardView', () => {
       <FlashcardView deckId="d1" />,
     );
     fireEvent.press(getByLabelText('Show the answer'));
-    fireEvent.press(getByText('Good (3d)'));
+    fireEvent.press(getByLabelText('Good, next in 3d'));
     await waitFor(() =>
       expect(mockWrites.recordReview).toHaveBeenCalledWith('c1', 3),
     );
@@ -122,7 +130,7 @@ describe('FlashcardView', () => {
     );
     const { getByLabelText, getByText } = render(<FlashcardView deckId="d1" />);
     fireEvent.press(getByLabelText('Show the answer'));
-    fireEvent.press(getByText('Good (3d)'));
+    fireEvent.press(getByLabelText('Good, next in 3d'));
     await waitFor(() => getByText('Database not initialized'));
     expect(getByText('hello')).toBeTruthy();
   });
@@ -135,10 +143,10 @@ describe('FlashcardView', () => {
           finish = () => resolve({});
         }),
     );
-    const { getByLabelText, getByText } = render(<FlashcardView deckId="d1" />);
+    const { getByLabelText } = render(<FlashcardView deckId="d1" />);
     fireEvent.press(getByLabelText('Show the answer'));
-    fireEvent.press(getByText('Good (3d)'));
-    fireEvent.press(getByText('Easy (7d)'));
+    fireEvent.press(getByLabelText('Good, next in 3d'));
+    fireEvent.press(getByLabelText('Easy, next in 7d'));
     expect(mockWrites.recordReview).toHaveBeenCalledTimes(1);
     await act(async () => finish());
   });
@@ -160,14 +168,27 @@ describe('FlashcardView', () => {
 
   it('leaves the screen after rating the only card in the deck', async () => {
     mockCardsState.cards = [card('c1', 'hola', 'hello')];
-    const { getByLabelText, getByText, queryByText } = render(
+    const { getByLabelText, queryByText } = render(
       <FlashcardView deckId="d1" />,
     );
     // a single card has nothing to navigate between
     expect(queryByText('1 / 1')).toBeNull();
     fireEvent.press(getByLabelText('Show the answer'));
-    fireEvent.press(getByText('Good (3d)'));
+    fireEvent.press(getByLabelText('Good, next in 3d'));
     await waitFor(() => expect(mockBack).toHaveBeenCalled());
+  });
+
+  // Revealing and rating must be the same reach: the ratings take the
+  // reveal button's place rather than sitting somewhere else.
+  it('reveals from the bottom button, which the ratings then replace', () => {
+    const { getByText, queryByText, getByLabelText } = render(
+      <FlashcardView deckId="d1" />,
+    );
+    expect(queryByText('hello')).toBeNull();
+    fireEvent.press(getByText('Show answer'));
+    expect(getByText('hello')).toBeTruthy();
+    expect(queryByText('Show answer')).toBeNull();
+    expect(getByLabelText('Good, next in 3d')).toBeTruthy();
   });
 
   it('shows the empty, missing and failed states', () => {

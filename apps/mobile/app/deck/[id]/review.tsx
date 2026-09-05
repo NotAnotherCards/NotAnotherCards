@@ -9,9 +9,11 @@ export default function DeckReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
     <RequireSession>
+      {/* grow, so the view can push the ratings to the bottom of the screen
+          and still scroll when a card's text is long */}
       <ScrollView
         className="flex-1 bg-background"
-        contentContainerClassName="gap-4 p-6"
+        contentContainerClassName="grow gap-4 p-6"
       >
         <FlashcardView deckId={id} />
       </ScrollView>

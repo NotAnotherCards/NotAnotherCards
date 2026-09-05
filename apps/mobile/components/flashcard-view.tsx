@@ -107,16 +107,17 @@ function ActiveFlashcardView({
   };
 
   return (
-    <View className="gap-4">
+    <View className="flex-1 gap-4">
       <Stack.Screen options={{ title: deck.title }} />
 
       <Pressable
+        className="flex-1"
         accessibilityRole="button"
         accessibilityLabel={flipped ? 'Show the front' : 'Show the answer'}
         onPress={() => setFlipped((f) => !f)}
       >
-        <Card>
-          <CardContent className="min-h-56 items-center justify-center gap-3 p-8">
+        <Card className="flex-1">
+          <CardContent className="flex-1 items-center justify-center gap-3 p-8">
             <Text className="text-xs uppercase tracking-wider text-muted-foreground">
               {flipped ? 'Answer' : 'Question'}
             </Text>
@@ -125,7 +126,7 @@ function ActiveFlashcardView({
             </Text>
             {!flipped && (
               <Text className="text-xs text-muted-foreground">
-                Tap the card to reveal
+                Tap the card, or the button below
               </Text>
             )}
           </CardContent>
@@ -133,39 +134,6 @@ function ActiveFlashcardView({
       </Pressable>
 
       {writeError && <Text className="text-destructive">{writeError}</Text>}
-
-      {/* Ratings only once the answer is visible: rating a card you have not
-          answered is not a review. Each button previews its own interval. */}
-      {flipped && (
-        <View className="flex-row flex-wrap gap-2">
-          {RATINGS.map((rating) => (
-            <Button
-              key={rating}
-              variant="secondary"
-              className="flex-1"
-              loading={pending}
-              accessibilityLabel={`${RATING_LABELS[rating]}, next in ${formatReviewInterval(
-                calculateReviewIntervalMinutes(
-                  card.scheduled_interval_minutes,
-                  rating,
-                ),
-              )}`}
-              onPress={() => void rate(rating)}
-            >
-              <Text>
-                {RATING_LABELS[rating]} (
-                {formatReviewInterval(
-                  calculateReviewIntervalMinutes(
-                    card.scheduled_interval_minutes,
-                    rating,
-                  ),
-                )}
-                )
-              </Text>
-            </Button>
-          ))}
-        </View>
-      )}
 
       {cards.length > 1 && (
         <View className="flex-row items-center justify-between">
@@ -190,6 +158,42 @@ function ActiveFlashcardView({
           >
             <Text>Next</Text>
           </Button>
+        </View>
+      )}
+      {/* One row, two states. Revealing and rating are the same gesture in
+          the same place: rating a card you have not answered is not a
+          review, so the ratings replace the reveal rather than join it. */}
+      {!flipped && (
+        <Button variant="secondary" onPress={() => setFlipped(true)}>
+          <Text>Show answer</Text>
+        </Button>
+      )}
+      {flipped && (
+        <View className="flex-row gap-2">
+          {RATINGS.map((rating) => {
+            const interval = formatReviewInterval(
+              calculateReviewIntervalMinutes(
+                card.scheduled_interval_minutes,
+                rating,
+              ),
+            );
+            return (
+              <Button
+                key={rating}
+                variant="secondary"
+                // The interval sits under its label: four buttons across a
+                // phone are too narrow for one line, and the size variants
+                // fix the row height, so a wrapped line would be clipped.
+                className="h-auto flex-1 flex-col gap-0.5 px-1 py-2"
+                loading={pending}
+                accessibilityLabel={`${RATING_LABELS[rating]}, next in ${interval}`}
+                onPress={() => void rate(rating)}
+              >
+                <Text>{RATING_LABELS[rating]}</Text>
+                <Text className="text-xs opacity-70">{interval}</Text>
+              </Button>
+            );
+          })}
         </View>
       )}
     </View>
