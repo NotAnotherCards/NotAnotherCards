@@ -153,4 +153,69 @@ describePostgres('note/card PostgreSQL migration', () => {
       }
     });
   });
+
+  it('backfills existing decks before making note_type required', async () => {
+    const migration = await readFile(
+      resolve(process.cwd(), 'drizzle/0011_normal_hex.sql'),
+      'utf8',
+    );
+    const statements = migration
+      .split('--> statement-breakpoint')
+      .map((statement) => statement.trim())
+      .filter(Boolean);
+
+    await db.transaction(async (tx) => {
+      await tx.execute(
+        sql.raw('DROP SCHEMA IF EXISTS migration_0011_test CASCADE'),
+      );
+      await tx.execute(sql.raw('CREATE SCHEMA migration_0011_test'));
+      await tx.execute(
+        sql.raw('SET LOCAL search_path TO migration_0011_test, public'),
+      );
+
+      try {
+        await tx.execute(
+          sql.raw(`
+            CREATE TABLE user_decks (id text PRIMARY KEY NOT NULL);
+            INSERT INTO user_decks (id) VALUES ('existing-deck');
+          `),
+        );
+        for (const statement of statements) {
+          await tx.execute(sql.raw(statement));
+        }
+
+        const [deck] = (
+          await tx.execute<{
+            note_type: string;
+            native_language_id: string | null;
+            target_language_id: string | null;
+          }>(sql.raw("SELECT * FROM user_decks WHERE id = 'existing-deck'"))
+        ).rows;
+        expect(deck).toEqual({
+          id: 'existing-deck',
+          note_type: 'basic',
+          native_language_id: null,
+          target_language_id: null,
+        });
+
+        await tx.execute(sql.raw('SAVEPOINT invalid_language_pair'));
+        await expect(
+          tx.execute(
+            sql.raw(`
+              UPDATE user_decks
+              SET note_type = 'word',
+                  native_language_id = '00000000-0000-0000-0000-000000000001',
+                  target_language_id = '00000000-0000-0000-0000-000000000001'
+              WHERE id = 'existing-deck'
+            `),
+          ),
+        ).rejects.toThrow();
+        await tx.execute(
+          sql.raw('ROLLBACK TO SAVEPOINT invalid_language_pair'),
+        );
+      } finally {
+        await tx.execute(sql.raw('DROP SCHEMA migration_0011_test CASCADE'));
+      }
+    });
+  });
 });

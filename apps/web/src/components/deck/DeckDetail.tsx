@@ -17,8 +17,13 @@ import {
   Unlink,
 } from 'lucide-react';
 import { CardForm } from './CardForm';
-import { WordCardForm, type WordFormValues } from './WordCardForm';
-import { WORD_NOTE_TYPE, WORD_NOTE_FIELDS_VERSION } from '@repo/offline-db';
+import { WordNoteForm, type WordFormValues } from './WordNoteForm';
+import {
+  BASIC_NOTE_TYPE,
+  WordNoteFieldsV1,
+  WORD_NOTE_TYPE,
+  WORD_NOTE_FIELDS_VERSION,
+} from '@repo/offline-db';
 import { CardList } from './CardList';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
@@ -89,17 +94,21 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   const deck = store.decks.find((d) => d.id === deckId);
+  const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
   const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
+  const isKnownDeck = isBasicDeck || isWordDeck;
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
   const editingWordFields = (() => {
     if (!editingCard || !isWordDeck) return null;
     const note = store.noteForCard(editingCard);
     if (!note) return null;
-    const parsed: unknown = JSON.parse(note.fields_json);
-    return typeof parsed === 'object' && parsed !== null
-      ? (parsed as Partial<WordFormValues>)
-      : null;
+    try {
+      const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
+      return parsed.success ? parsed.data : null;
+    } catch {
+      return null;
+    }
   })();
 
   if (!deck) {
@@ -144,13 +153,17 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   };
 
   const handleEditWordNote = async (values: WordFormValues) => {
-    if (!editingCard || !deck) return;
+    if (!editingCard || !editingWordFields) return;
     setWriteError(null);
     try {
       await store.updateNoteFields(editingCard.note_id, {
         ...values,
-        native_language_id: deck.native_language_id,
-        target_language_id: deck.target_language_id,
+        native_language_id: editingWordFields.native_language_id,
+        target_language_id: editingWordFields.target_language_id,
+        ...(editingWordFields.image ? { image: editingWordFields.image } : {}),
+        ...(editingWordFields.word_audio
+          ? { word_audio: editingWordFields.word_audio }
+          : {}),
       });
       setEditingCard(null);
     } catch (err) {
@@ -208,14 +221,21 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               {deck.description || 'Manage your library cards below.'}
             </p>
           </div>
-          <Button
-            onClick={() => setShowCreateForm(true)}
-            className="cursor-pointer gap-1.5 self-stretch md:self-auto justify-center"
-          >
-            <Plus className="size-4" />
-            Add Card
-          </Button>
+          {isKnownDeck && (
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="cursor-pointer gap-1.5 self-stretch md:self-auto justify-center"
+            >
+              <Plus className="size-4" />
+              Add Card
+            </Button>
+          )}
         </div>
+        {!isKnownDeck && (
+          <p className="text-sm text-muted-foreground">
+            This deck uses a note type this app cannot edit yet.
+          </p>
+        )}
       </div>
 
       {/* Library View (Search & Card Table via CardList) */}
@@ -223,7 +243,15 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         cards={cards}
         onEditCard={(card) => setEditingCard(card)}
         onRemoveFromDeck={(card) => setNoteToRemove(card)}
-        canEditCard={store.isBasicCard}
+        canEditCard={
+          isWordDeck
+            ? store.isWordCard
+            : isBasicDeck
+              ? store.isBasicCard
+              : () => false
+        }
+        canAddCard={isKnownDeck}
+        canRemoveCard={isKnownDeck}
         onAddCard={() => setShowCreateForm(true)}
         isLoading={!store.ready}
         error={store.error}
@@ -232,35 +260,35 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       {/* Add: the deck's note type decides which form appears */}
       {showCreateForm &&
         (isWordDeck ? (
-          <WordCardForm
+          <WordNoteForm
             title="Add New Word"
             targetLanguageId={deck.target_language_id}
             onSubmit={handleCreateWordNote}
             error={writeError}
             onCancel={() => setShowCreateForm(false)}
           />
-        ) : (
+        ) : isBasicDeck ? (
           <CardForm
             title="Add New Card"
             onSubmit={handleCreateCard}
             error={writeError}
             onCancel={() => setShowCreateForm(false)}
           />
-        ))}
+        ) : null)}
 
       {/* Edit: a word note is edited through its own fields, not through
           the front and back a template rendered from them */}
       {editingCard &&
         (isWordDeck ? (
-          <WordCardForm
+          <WordNoteForm
             title="Edit Word"
-            targetLanguageId={deck.target_language_id}
+            targetLanguageId={editingWordFields?.target_language_id}
             initialData={editingWordFields ?? undefined}
             onSubmit={handleEditWordNote}
             error={writeError}
             onCancel={() => setEditingCard(null)}
           />
-        ) : (
+        ) : isBasicDeck ? (
           <CardForm
             title="Edit Card"
             initialData={{
@@ -271,7 +299,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             error={writeError}
             onCancel={() => setEditingCard(null)}
           />
-        ))}
+        ) : null)}
 
       {/* Remove Note Membership Confirmation */}
       {noteToRemove && (

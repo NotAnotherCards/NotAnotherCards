@@ -7,6 +7,7 @@ import {
   createNotesBatch,
   updateNoteFields,
 } from './note-writes.js';
+import { createDeck } from './queries.js';
 import { schema } from './index.js';
 import {
   UserCard,
@@ -35,10 +36,37 @@ const openDb = async () => {
   });
 };
 
+const createWordDeck = async () =>
+  await createDeck(db, 'Words', null, {
+    noteType: 'word',
+    nativeLanguageId: 'lang-en',
+    targetLanguageId: 'lang-de',
+  });
+
+describe('createDeck', () => {
+  it('rejects unknown note types and identical word languages', async () => {
+    await openDb();
+    await expect(
+      createDeck(db, 'Unknown', null, {
+        noteType: 'cloze' as 'basic',
+      }),
+    ).rejects.toThrow("Unknown deck note type 'cloze'");
+    await expect(
+      createDeck(db, 'English', null, {
+        noteType: 'word',
+        nativeLanguageId: 'lang-en',
+        targetLanguageId: 'lang-en',
+      }),
+    ).rejects.toThrow('needs two different languages');
+    expect(await db.get(UserDeck).query().fetch()).toHaveLength(0);
+  });
+});
+
 describe('createNote', () => {
   it('writes note, membership and sibling cards atomically', async () => {
     await openDb();
-    const note = await createNote(db, 'deck-1', {
+    const deck = await createWordDeck();
+    const note = await createNote(db, deck.id, {
       noteType: 'word',
       fieldsVersion: 1,
       fields: word,
@@ -46,7 +74,7 @@ describe('createNote', () => {
     expect(note.note_type).toBe('word');
     const membership = await db
       .get(UserNoteDeck)
-      .find(noteDeckId(note.id, 'deck-1'));
+      .find(noteDeckId(note.id, deck.id));
     expect(membership.active).toBe(true);
     const cards = (await db.get(UserCard).query().fetch()).filter(
       (c) => c.note_id === note.id,
@@ -56,8 +84,9 @@ describe('createNote', () => {
 
   it('rejects invalid fields before anything is written', async () => {
     await openDb();
+    const deck = await createWordDeck();
     await expect(
-      createNote(db, 'deck-1', {
+      createNote(db, deck.id, {
         noteType: 'word',
         fieldsVersion: 1,
         fields: { word: 'Hund' },
@@ -69,7 +98,8 @@ describe('createNote', () => {
 
   it('stores canonical fields_json', async () => {
     await openDb();
-    const note = await createNote(db, 'deck-1', {
+    const deck = await createWordDeck();
+    const note = await createNote(db, deck.id, {
       noteType: 'word',
       fieldsVersion: 1,
       fields: { ...word, word: '  Hund  ' },
@@ -81,7 +111,8 @@ describe('createNote', () => {
 describe('updateNoteFields', () => {
   it('updates fields and cards in one batch', async () => {
     await openDb();
-    const note = await createNote(db, 'deck-1', {
+    const deck = await createWordDeck();
+    const note = await createNote(db, deck.id, {
       noteType: 'word',
       fieldsVersion: 1,
       fields: word,
@@ -99,13 +130,12 @@ describe('updateNoteFields', () => {
 });
 
 describe('createNotesBatch', () => {
-  it('creates a new deck with mixed note types in one batch', async () => {
+  it('creates a new basic deck and its notes in one batch', async () => {
     await openDb();
     const deckId = await createNotesBatch(db, {
       deckIdOrTitle: 'German A1',
       isNew: true,
       notes: [
-        { noteType: 'word', fieldsVersion: 1, fields: word },
         {
           noteType: 'basic',
           fieldsVersion: 1,
@@ -114,11 +144,41 @@ describe('createNotesBatch', () => {
       ],
     });
     const deck = await db.get(UserDeck).find(deckId);
-    expect(deck.title).toBe('German A1');
-    expect(await db.get(UserNote).query().fetch()).toHaveLength(2);
-    // 2 word siblings + 1 basic card
-    expect(await db.get(UserCard).query().fetch()).toHaveLength(3);
-    expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(2);
+    expect(deck).toMatchObject({
+      title: 'German A1',
+      note_type: 'basic',
+      native_language_id: null,
+      target_language_id: null,
+    });
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(1);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(1);
+    expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(1);
+  });
+
+  it('rejects notes that do not match a new or existing deck', async () => {
+    await openDb();
+    await expect(
+      createNotesBatch(db, {
+        deckIdOrTitle: 'Mixed',
+        isNew: true,
+        notes: [{ noteType: 'word', fieldsVersion: 1, fields: word }],
+      }),
+    ).rejects.toThrow("A 'basic' deck cannot contain a 'word' note");
+
+    const wordDeck = await createWordDeck();
+    await expect(
+      createNotesBatch(db, {
+        deckIdOrTitle: wordDeck.id,
+        isNew: false,
+        notes: [
+          {
+            noteType: 'basic',
+            fieldsVersion: 1,
+            fields: { front: 'Hund', back: 'dog' },
+          },
+        ],
+      }),
+    ).rejects.toThrow("A 'word' deck cannot contain a 'basic' note");
   });
 
   it('one invalid note aborts the whole batch', async () => {
@@ -128,8 +188,12 @@ describe('createNotesBatch', () => {
         deckIdOrTitle: 'Broken',
         isNew: true,
         notes: [
-          { noteType: 'word', fieldsVersion: 1, fields: word },
-          { noteType: 'word', fieldsVersion: 1, fields: { word: 'alone' } },
+          {
+            noteType: 'basic',
+            fieldsVersion: 1,
+            fields: { front: 'Hund', back: 'dog' },
+          },
+          { noteType: 'basic', fieldsVersion: 1, fields: { front: 'alone' } },
         ],
       }),
     ).rejects.toThrow();

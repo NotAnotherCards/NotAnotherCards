@@ -1149,7 +1149,7 @@
       "checkConstraints": {
         "user_decks_languages_match_note_type_check": {
           "name": "user_decks_languages_match_note_type_check",
-          "value": "case when \"user_decks\".\"note_type\" = 'word' then \"user_decks\".\"native_language_id\" is not null and \"user_decks\".\"target_language_id\" is not null else \"user_decks\".\"native_language_id\" is null and \"user_decks\".\"target_language_id\" is null end"
+          "value": "case when \"user_decks\".\"note_type\" = 'word' then \"user_decks\".\"native_language_id\" is not null and \"user_decks\".\"target_language_id\" is not null and \"user_decks\".\"native_language_id\" <> \"user_decks\".\"target_language_id\" else \"user_decks\".\"native_language_id\" is null and \"user_decks\".\"target_language_id\" is null end"
         },
         "user_decks_created_at_safe_integer_check": {
           "name": "user_decks_created_at_safe_integer_check",

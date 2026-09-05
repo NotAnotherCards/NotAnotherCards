@@ -21,6 +21,7 @@ import { DeckForm } from './DeckForm';
 import { DeckCard } from './DeckCard';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import type { DeckNoteType } from '@repo/offline-db';
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -39,7 +40,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
   const handleCreateDeck = async (data: {
     title: string;
     description: string;
-    noteType: string;
+    noteType: DeckNoteType;
     nativeLanguageId: string | null;
     targetLanguageId: string | null;
   }) => {

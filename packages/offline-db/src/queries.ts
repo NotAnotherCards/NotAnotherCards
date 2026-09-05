@@ -16,6 +16,8 @@ import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
+  DECK_NOTE_TYPES,
+  type DeckNoteType,
   WORD_NOTE_TYPE,
 } from './note-constants.js';
 import { calculateReviewSchedule } from './review-scheduler.js';
@@ -86,18 +88,24 @@ export async function createDeck(
   title: string,
   description?: string | null,
   options: {
-    noteType?: string;
+    noteType?: DeckNoteType;
     nativeLanguageId?: string | null;
     targetLanguageId?: string | null;
   } = {},
 ) {
   const noteType = options.noteType ?? BASIC_NOTE_TYPE;
+  if (!DECK_NOTE_TYPES.includes(noteType)) {
+    throw new Error(`Unknown deck note type '${String(noteType)}'`);
+  }
   const isWord = noteType === WORD_NOTE_TYPE;
   if (isWord && !(options.nativeLanguageId && options.targetLanguageId)) {
     throw new Error('A word deck needs both a native and a target language');
   }
   if (!isWord && (options.nativeLanguageId || options.targetLanguageId)) {
     throw new Error('Only a word deck carries languages');
+  }
+  if (isWord && options.nativeLanguageId === options.targetLanguageId) {
+    throw new Error('A word deck needs two different languages');
   }
   return await db.write(async () => {
     const now = Date.now();

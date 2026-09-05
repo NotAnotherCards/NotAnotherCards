@@ -25,6 +25,18 @@ export interface NoteInput {
   readonly fields: unknown;
 }
 
+function assertNoteTypesMatchDeck(
+  deckType: string,
+  notes: readonly NoteInput[],
+): void {
+  const mismatched = notes.find((note) => note.noteType !== deckType);
+  if (mismatched) {
+    throw new Error(
+      `A '${deckType}' deck cannot contain a '${mismatched.noteType}' note`,
+    );
+  }
+}
+
 function prepareNewNote(
   db: Database,
   deckId: string,
@@ -71,6 +83,8 @@ export async function createNote(
   input: NoteInput,
 ) {
   return await db.write(async () => {
+    const deck = await db.get(UserDeck).find(deckId);
+    assertNoteTypesMatchDeck(deck.note_type, [input]);
     const { noteId, operations } = prepareNewNote(
       db,
       deckId,
@@ -114,7 +128,8 @@ export interface CreateNotesBatchOptions {
 /**
  * Create many notes at once, into an existing deck or a new one — the
  * save path for AI generation. Every note compiles before anything is
- * prepared, so one invalid item aborts the whole batch. No reads.
+ * prepared, so one invalid item aborts the whole batch. Existing decks are
+ * read once to enforce their note type; a new batch deck is always basic.
  */
 export async function createNotesBatch(
   db: Database,
@@ -124,9 +139,11 @@ export async function createNotesBatch(
     const now = Date.now();
     const operations: BatchOperation[] = [];
     let targetDeckId: string;
+    let deckType: string;
 
     if (options.isNew) {
       targetDeckId = randomId();
+      deckType = BASIC_NOTE_TYPE;
       operations.push(
         db.get(UserDeck).prepareCreate({
           id: targetDeckId,
@@ -143,7 +160,9 @@ export async function createNotesBatch(
       );
     } else {
       targetDeckId = options.deckIdOrTitle;
+      deckType = (await db.get(UserDeck).find(targetDeckId)).note_type;
     }
+    assertNoteTypesMatchDeck(deckType, options.notes);
 
     for (const input of options.notes) {
       operations.push(

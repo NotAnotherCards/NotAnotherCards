@@ -10,6 +10,10 @@ import {
   BASIC_FRONT_BACK_TEMPLATE_KEY,
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
+  type DeckNoteType,
+  WordNoteFieldsV1,
+  WORD_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 import { useQuery } from '@remelondb/core/react';
 import { useSyncController } from '@/offline/syncProvider';
@@ -155,7 +159,7 @@ export function useStore() {
       title: string,
       description: string,
       options?: {
-        noteType?: string;
+        noteType?: DeckNoteType;
         nativeLanguageId?: string | null;
         targetLanguageId?: string | null;
       },
@@ -267,6 +271,24 @@ export function useStore() {
     [notes],
   );
 
+  const isWordCard = useCallback(
+    (card: UserCardRecord): boolean => {
+      const note = notes.find((candidate) => candidate.id === card.note_id);
+      if (
+        note?.note_type !== WORD_NOTE_TYPE ||
+        note.fields_version !== WORD_NOTE_FIELDS_VERSION
+      ) {
+        return false;
+      }
+      try {
+        return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
+      } catch {
+        return false;
+      }
+    },
+    [notes],
+  );
+
   const recordReview = useCallback(
     async (cardId: string, rating: number) => {
       if (!db) throw new Error('Database not initialized');
@@ -364,6 +386,7 @@ export function useStore() {
     removeNoteFromDeck,
     recordReview,
     isBasicCard,
+    isWordCard,
     noteForCard,
     createNote,
     updateNoteFields,

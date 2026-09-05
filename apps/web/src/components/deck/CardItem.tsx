@@ -9,6 +9,7 @@ interface CardItemProps {
   onRemoveFromDeck: (card: Card) => void;
   onViewCard: (card: Card) => void;
   canEdit?: boolean;
+  canRemove?: boolean;
 }
 
 export function CardItem({
@@ -17,6 +18,7 @@ export function CardItem({
   onRemoveFromDeck,
   onViewCard,
   canEdit = true,
+  canRemove = true,
 }: CardItemProps) {
   return (
     <tr className="hover:bg-muted/10 transition-colors">
@@ -55,15 +57,17 @@ export function CardItem({
               <Edit className="size-3.5" />
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            onClick={() => onRemoveFromDeck(card)}
-            title="Remove from Deck"
-          >
-            <Unlink className="size-3.5" />
-          </Button>
+          {canRemove && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              onClick={() => onRemoveFromDeck(card)}
+              title="Remove from Deck"
+            >
+              <Unlink className="size-3.5" />
+            </Button>
+          )}
         </div>
       </td>
     </tr>

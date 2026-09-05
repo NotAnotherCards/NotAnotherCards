@@ -25,6 +25,8 @@ interface CardListProps {
   onEditCard: (card: Card) => void;
   onRemoveFromDeck: (card: Card) => void;
   canEditCard: (card: Card) => boolean;
+  canAddCard?: boolean;
+  canRemoveCard?: boolean;
   onAddCard: () => void;
   isLoading?: boolean;
   error?: string | null;
@@ -35,6 +37,8 @@ export function CardList({
   onEditCard,
   onRemoveFromDeck,
   canEditCard,
+  canAddCard = true,
+  canRemoveCard = true,
   onAddCard,
   isLoading,
   error,
@@ -144,7 +148,7 @@ export function CardList({
                 ? 'Try refining your search term to find cards in this deck.'
                 : "This deck is empty. Click 'Add Card' above to start building your collection."}
             </p>
-            {!searchTerm && cards.length === 0 ? (
+            {!searchTerm && cards.length === 0 && canAddCard ? (
               <Button
                 onClick={onAddCard}
                 className="cursor-pointer gap-1.5 self-start sm:self-center"
@@ -173,6 +177,7 @@ export function CardList({
                     onRemoveFromDeck={onRemoveFromDeck}
                     onViewCard={(c) => setViewingCard(c)}
                     canEdit={canEditCard(card)}
+                    canRemove={canRemoveCard}
                   />
                 ))}
               </tbody>

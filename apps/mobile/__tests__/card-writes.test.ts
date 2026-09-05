@@ -12,6 +12,8 @@ import {
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
   recordReviewEvent,
+  WORD_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 import { cardWrites } from '@/lib/card-writes';
 
@@ -94,5 +96,33 @@ describe('cardWrites', () => {
     const writes = cardWrites(db, sync as never);
     await expect(writes.update('missing-card', 'x', 'y')).rejects.toThrow();
     expect(sync.notifyLocalWrite).not.toHaveBeenCalled();
+  });
+
+  it('creates and updates a word note through the mobile write adapter', async () => {
+    const deck = await createDeck(db, 'German', null, {
+      noteType: WORD_NOTE_TYPE,
+      nativeLanguageId: 'en',
+      targetLanguageId: 'de',
+    });
+    const writes = cardWrites(db, sync as never);
+    const fields = {
+      word: 'Hund',
+      translation: 'dog',
+      native_language_id: 'en',
+      target_language_id: 'de',
+    };
+
+    const note = await writes.createWord(deck.id, fields);
+    expect(note.note_type).toBe(WORD_NOTE_TYPE);
+    expect(note.fields_version).toBe(WORD_NOTE_FIELDS_VERSION);
+
+    await writes.updateWord(note.id, { ...fields, word: 'Hunde' });
+    expect(
+      JSON.parse((await db.get(UserNote).find(note.id)).fields_json),
+    ).toEqual({
+      ...fields,
+      word: 'Hunde',
+    });
+    expect(sync.notifyLocalWrite).toHaveBeenCalledTimes(2);
   });
 });

@@ -14,7 +14,13 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { LANGUAGES } from '@repo/schemas';
-import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/offline-db';
+import {
+  BASIC_NOTE_TYPE,
+  DECK_NOTE_TYPE_OPTIONS,
+  DECK_NOTE_TYPES,
+  type DeckNoteType,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
 import {
   Field,
   FieldError,
@@ -26,7 +32,7 @@ import {
 // A deck's note type is chosen once, at creation: its notes are compiled
 // against it, so it cannot change under them. The edit form omits it.
 const deckSchema = z.object({
-  noteType: z.enum([BASIC_NOTE_TYPE, WORD_NOTE_TYPE]),
+  noteType: z.enum(DECK_NOTE_TYPES),
   nativeLanguageId: z.string().optional().or(z.literal('')),
   targetLanguageId: z.string().optional().or(z.literal('')),
   title: z
@@ -51,6 +57,13 @@ const deckFormSchema = deckSchema.superRefine((data, ctx) => {
       });
     }
   }
+  if (data.nativeLanguageId === data.targetLanguageId) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['targetLanguageId'],
+      message: 'Choose a different target language',
+    });
+  }
 });
 
 type DeckFormData = z.infer<typeof deckSchema>;
@@ -67,7 +80,7 @@ interface DeckFormProps {
   onSubmit: (data: {
     title: string;
     description: string;
-    noteType: string;
+    noteType: DeckNoteType;
     nativeLanguageId: string | null;
     targetLanguageId: string | null;
   }) => void | Promise<void>;
@@ -196,33 +209,28 @@ export function DeckForm({
                       <Field>
                         <FieldLabel>What goes in this deck</FieldLabel>
                         <div className="grid grid-cols-2 gap-2">
-                          {[
-                            [BASIC_NOTE_TYPE, 'Cards', 'A front and a back'],
-                            [
-                              WORD_NOTE_TYPE,
-                              'Words',
-                              'A word, its translation, and more',
-                            ],
-                          ].map(([value, label, hint]) => (
-                            <button
-                              key={value}
-                              type="button"
-                              onClick={() => field.onChange(value)}
-                              aria-pressed={field.value === value}
-                              className={`rounded-lg border p-3 text-left transition-colors ${
-                                field.value === value
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-input hover:bg-accent/50'
-                              }`}
-                            >
-                              <span className="block text-sm font-medium">
-                                {label}
-                              </span>
-                              <span className="block text-xs text-muted-foreground">
-                                {hint}
-                              </span>
-                            </button>
-                          ))}
+                          {DECK_NOTE_TYPE_OPTIONS.map(
+                            ({ value, label, description }) => (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => field.onChange(value)}
+                                aria-pressed={field.value === value}
+                                className={`rounded-lg border p-3 text-left transition-colors ${
+                                  field.value === value
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-input hover:bg-accent/50'
+                                }`}
+                              >
+                                <span className="block text-sm font-medium">
+                                  {label}
+                                </span>
+                                <span className="block text-xs text-muted-foreground">
+                                  {description}
+                                </span>
+                              </button>
+                            ),
+                          )}
                         </div>
                       </Field>
                     )}
