@@ -60,7 +60,7 @@ export const userDecks = pgTable(
     index('user_decks_user_updated_idx').on(table.userId, table.updatedAt),
     check(
       'user_decks_languages_match_note_type_check',
-      sql`case when ${table.noteType} = 'word' then ${table.nativeLanguageId} is not null and ${table.targetLanguageId} is not null else ${table.nativeLanguageId} is null and ${table.targetLanguageId} is null end`,
+      sql`case when ${table.noteType} = 'word' then ${table.nativeLanguageId} is not null and ${table.targetLanguageId} is not null and ${table.nativeLanguageId} <> ${table.targetLanguageId} else ${table.nativeLanguageId} is null and ${table.targetLanguageId} is null end`,
     ),
     check(
       'user_decks_created_at_safe_integer_check',

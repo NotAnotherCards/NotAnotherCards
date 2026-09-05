@@ -40,7 +40,8 @@ type DeckAction =
 
 function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
   const router = useRouter();
-  const { decks, isLoading, error, cardCount, writes } = useDecks(manager);
+  const { decks, isLoading, error, cardCount, profile, writes } =
+    useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -90,9 +91,22 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
     return (
       <DeckForm
         title="New deck"
+        showNoteType
+        defaultLanguages={{
+          nativeLanguageId: profile?.native_language_id ?? null,
+          targetLanguageId: profile?.target_language_id ?? null,
+        }}
         error={writeError}
         onSubmit={(values) =>
-          run(() => writes.create(values.title, values.description))
+          run(() =>
+            writes.create(values.title, values.description, {
+              noteType: values.noteType,
+              nativeLanguageId:
+                values.noteType === 'word' ? values.nativeLanguageId : null,
+              targetLanguageId:
+                values.noteType === 'word' ? values.targetLanguageId : null,
+            }),
+          )
         }
         onCancel={() => open(null)}
       />

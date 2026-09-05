@@ -13,7 +13,7 @@ import { ChevronDown, Languages } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { WordNoteFieldsV1 } from '@repo/offline-db';
+import { WordNoteEditableFieldsV1 } from '@repo/offline-db';
 import { gendersFor } from '@repo/schemas';
 import {
   Field,
@@ -23,15 +23,7 @@ import {
   FieldSet,
 } from '@/components/ui/field';
 
-// The registry decides what a valid word field is; the form drops the four
-// it does not own. Languages come from the deck, and the two media ids are
-// file references rather than anything typed here.
-const wordFields = WordNoteFieldsV1.omit({
-  native_language_id: true,
-  target_language_id: true,
-  image: true,
-  word_audio: true,
-});
+const wordFields = WordNoteEditableFieldsV1;
 
 export type WordFormValues = z.infer<typeof wordFields>;
 
@@ -63,7 +55,7 @@ const wordFormSchema = wordFields.extend({
 // What the form holds may contain ''; what it submits never does.
 type WordFormFields = z.infer<typeof wordFormSchema>;
 
-interface WordCardFormProps {
+interface WordNoteFormProps {
   initialData?: Partial<WordFormValues>;
   /**
    * The deck's target language. It decides what gender can be: articles in
@@ -77,14 +69,14 @@ interface WordCardFormProps {
   title: string;
 }
 
-export function WordCardForm({
+export function WordNoteForm({
   initialData,
   targetLanguageId,
   onSubmit,
   onCancel,
   title,
   error,
-}: WordCardFormProps) {
+}: WordNoteFormProps) {
   const form = useForm<WordFormFields>({
     resolver: zodResolver(wordFormSchema),
     defaultValues: {
