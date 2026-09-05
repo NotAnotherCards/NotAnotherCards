@@ -14,6 +14,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { WordNoteFieldsV1 } from '@repo/offline-db';
+import { gendersFor } from '@repo/schemas';
 import {
   Field,
   FieldError,
@@ -39,7 +40,6 @@ export type WordFormValues = z.infer<typeof wordFields>;
 // open on request, and open already if the note being edited uses any.
 const DETAIL_FIELDS = [
   ['part_of_speech', 'Part of speech', 'noun, verb, adjective'],
-  ['gender', 'Gender', 'der, die, das'],
   ['pronunciation', 'Pronunciation', 'IPA'],
   ['example', 'Example', 'a sentence using the word'],
   ['example_translation', 'Example translation', ''],
@@ -65,6 +65,12 @@ type WordFormFields = z.infer<typeof wordFormSchema>;
 
 interface WordCardFormProps {
   initialData?: Partial<WordFormValues>;
+  /**
+   * The deck's target language. It decides what gender can be: articles in
+   * German and Spanish, grammatical labels in Russian, and nothing at all in
+   * a language without grammatical gender, where the field is not shown.
+   */
+  targetLanguageId?: string | null;
   onSubmit: (values: WordFormValues) => void | Promise<void>;
   error?: string | null;
   onCancel: () => void;
@@ -73,6 +79,7 @@ interface WordCardFormProps {
 
 export function WordCardForm({
   initialData,
+  targetLanguageId,
   onSubmit,
   onCancel,
   title,
@@ -91,8 +98,10 @@ export function WordCardForm({
       notes: initialData?.notes ?? '',
     },
   });
+  const genders = gendersFor(targetLanguageId);
   const [showDetails, setShowDetails] = useState(
-    DETAIL_FIELDS.some(([name]) => Boolean(initialData?.[name])),
+    DETAIL_FIELDS.some(([name]) => Boolean(initialData?.[name])) ||
+      Boolean(initialData?.gender),
   );
 
   const handleFormSubmit = async (values: WordFormFields) => {
@@ -105,6 +114,9 @@ export function WordCardForm({
       const value = values[name]?.trim();
       if (value) cleaned[name] = value;
     }
+    // gender is offered only where the target language has one
+    const gender = values.gender?.trim();
+    if (gender && genders.length > 0) cleaned.gender = gender;
     // awaited so react-hook-form tracks isSubmitting for the write's duration
     await onSubmit(cleaned);
   };
@@ -219,6 +231,32 @@ export function WordCardForm({
                       )}
                     />
                   ))}
+
+                {showDetails && genders.length > 0 && (
+                  <Controller
+                    name="gender"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={field.name}>Gender</FieldLabel>
+                        <select
+                          {...field}
+                          value={field.value ?? ''}
+                          id={field.name}
+                          className={inputClass(fieldState.invalid)}
+                        >
+                          <option value="">Not set</option>
+                          {genders.map((gender) => (
+                            <option key={gender} value={gender}>
+                              {gender}
+                            </option>
+                          ))}
+                        </select>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                )}
               </FieldGroup>
             </FieldSet>
           </CardContent>
