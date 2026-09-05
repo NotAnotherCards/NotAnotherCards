@@ -1,4 +1,5 @@
 import {
+  addColumns,
   appSchema,
   column,
   createTable,
@@ -13,6 +14,7 @@ import {
   reviewEvents,
   userProfiles,
 } from './user-dictionary.js';
+import { BASIC_NOTE_TYPE } from './note-constants.js';
 
 // encodeURIComponent provides UTF-8 bytes in Hermes without relying on the
 // TextEncoder global that happens to exist in browsers and Node-based tests.
@@ -33,7 +35,7 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     userDecks,
     userNotes,
@@ -114,6 +116,24 @@ export const migrations = schemaMigrations({
             reviewed_at: column.number(),
           },
         }),
+      ],
+    },
+    {
+      toVersion: 4,
+      steps: [
+        addColumns({
+          table: 'user_decks',
+          columns: {
+            note_type: column.string(),
+            native_language_id: column.string().optional(),
+            target_language_id: column.string().optional(),
+          },
+        }),
+        // addColumns fills a required string with '', which matches no note
+        // type. Every deck that existed before this one holds basic notes.
+        unsafeExecuteSql(
+          `update "user_decks" set "note_type" = '${BASIC_NOTE_TYPE}'`,
+        ),
       ],
     },
   ],

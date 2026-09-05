@@ -11,6 +11,7 @@ import { randomId, type BatchOperation, type Database } from '@remelondb/core';
 // the NAC bump PR passes randomSource at Database.open, swaps these two
 // call sites, and deletes the mobile crypto shim, in that one change.
 import { noteDeckId } from './ids.js';
+import { BASIC_NOTE_TYPE } from './note-constants.js';
 import {
   prepareCardsForNewNote,
   prepareReconcileNoteCards,
@@ -131,6 +132,11 @@ export async function createNotesBatch(
           id: targetDeckId,
           title: options.deckIdOrTitle,
           description: options.description || null,
+          // This path saves AI-generated basic cards, so the deck it makes
+          // holds basic notes and carries no languages.
+          note_type: BASIC_NOTE_TYPE,
+          native_language_id: null,
+          target_language_id: null,
           created_at: now,
           updated_at: now,
         }),

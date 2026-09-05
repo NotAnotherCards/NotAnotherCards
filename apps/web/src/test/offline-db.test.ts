@@ -50,9 +50,18 @@ describe('@repo/offline-db wiring on web', () => {
       fieldsVersion: 1,
       templateKey: 'front-back',
     });
-    expect(schema.version).toBe(3);
+    expect(schema.version).toBe(4);
     expect(schema.tables.user_cards).toBeDefined();
     expect(schema.tables.user_decks).toBeDefined();
+    // v4: a deck says which note contract its notes follow, and a word
+    // deck carries the language pair its note form starts from
+    expect(schema.tables.user_decks?.columns['note_type']).toBeDefined();
+    expect(
+      schema.tables.user_decks?.columns['native_language_id'],
+    ).toBeDefined();
+    expect(
+      schema.tables.user_decks?.columns['target_language_id'],
+    ).toBeDefined();
     expect(schema.tables.user_notes).toBeDefined();
     expect(schema.tables.user_note_decks).toBeDefined();
     expect(schema.tables.review_events).toBeDefined();
@@ -159,6 +168,35 @@ describe('@repo/offline-db wiring on web', () => {
       UserDeckRow.safeParse({
         title: 'Test Deck',
         description: 'Deck description',
+        note_type: 'basic',
+        native_language_id: null,
+        target_language_id: null,
+        created_at: 0,
+        updated_at: 0,
+      }).success,
+    ).toBe(true);
+
+    // a deck must say which note contract its notes follow
+    expect(
+      UserDeckRow.safeParse({
+        title: 'Test Deck',
+        description: null,
+        native_language_id: null,
+        target_language_id: null,
+        created_at: 0,
+        updated_at: 0,
+      }).success,
+    ).toBe(false);
+
+    // an unknown type is accepted here on purpose: a deck this client does
+    // not understand syncs opaquely rather than failing the pull
+    expect(
+      UserDeckRow.safeParse({
+        title: 'Test Deck',
+        description: null,
+        note_type: 'cloze',
+        native_language_id: null,
+        target_language_id: null,
         created_at: 0,
         updated_at: 0,
       }).success,
