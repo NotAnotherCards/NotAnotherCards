@@ -26,7 +26,7 @@ groups:
           severity: critical
         annotations:
           summary: 'LiteLLM AI Gateway on GX10 is unreachable'
-          description: 'LiteLLM inference gateway (100.64.0.1:4000) has been unreachable for 5 minutes.'
+          description: 'LiteLLM inference gateway (via the ai.dustyway.org HTTPS proxy, temporary until #193 joins the VPS to the tailnet) has been unreachable for 5 minutes.'
 
       - alert: Gx10NodeExporterDown
         expr: up{job="node-gx10"} == 0
@@ -47,13 +47,24 @@ groups:
           description: 'NVIDIA DCGM GPU exporter on the GX10 has been down for 15 minutes.'
 
       - alert: AiQueueDepthHigh
-        expr: ai_jobs_pending > 10
+        # The scrape-success guard keeps a stale pending value (kept on DB
+        # collection failure) from firing or holding this alert on old data.
+        expr: ai_jobs_pending > 10 and ai_queue_depth_scrape_success == 1
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: 'AI Generation queue depth is high ({{ $value }} pending jobs)'
           description: 'More than 10 jobs are waiting in the pending queue for longer than 5 minutes.'
+
+      - alert: AiQueueDepthScrapeFailed
+        expr: ai_queue_depth_scrape_success == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'AI queue depth metrics are stale'
+          description: 'The API cannot refresh queue depth from the database; dashboards show the last known values.'
 
       - alert: DiskFilling
         expr: (node_filesystem_free_bytes{job="node-vps",mountpoint="/"} / node_filesystem_size_bytes{job="node-vps",mountpoint="/"}) < 0.15

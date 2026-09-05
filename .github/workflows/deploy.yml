@@ -54,6 +54,11 @@ jobs:
             docker compose \
               -f infra/monitoring/docker-compose.yml \
               --env-file infra/monitoring/.env \
+              up -d --wait
+
+            docker compose \
+              -f infra/monitoring/docker-compose.yml \
+              --env-file infra/monitoring/.env \
               ps
 
             # 3. Verify Internal Monitoring Services
@@ -61,10 +66,33 @@ jobs:
             curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:3001/api/health
             curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:9093/-/healthy
 
-            # 4. Verify Prometheus Scrape Targets
-            curl --fail --silent --show-error http://127.0.0.1:9090/api/v1/targets | grep -q '"health":"up"'
+            # 4. Verify the Slack webhook secret is readable by Alertmanager
+            docker compose \
+              -f infra/monitoring/docker-compose.yml \
+              --env-file infra/monitoring/.env \
+              exec -T -u 65534 alertmanager \
+              cat /etc/alertmanager/secrets/slack_webhook >/dev/null || {
+              echo "FATAL: slack_webhook not readable by alertmanager (uid 65534)" >&2
+              exit 1
+            }
 
-            # 5. Verify Public Endpoints (App + Grafana HTTPS)
+            # 5. Verify every named Prometheus scrape target is up
+            for job in prometheus api-vps postgres-vps node-vps litellm-gx10 dcgm-gpu-gx10 node-gx10; do
+              health="missing"
+              for attempt in 1 2 3 4 5 6; do
+                health=$(curl -s http://127.0.0.1:9090/api/v1/targets \
+                  | jq -r --arg j "$job" '[.data.activeTargets[] | select(.labels.job == $j) | .health] | first // "missing"')
+                [ "$health" = "up" ] && break
+                sleep 10
+              done
+              if [ "$health" != "up" ]; then
+                echo "FATAL: Prometheus target '$job' is '$health'" >&2
+                exit 1
+              fi
+              echo "Prometheus target '$job' is up"
+            done
+
+            # 6. Verify Public Endpoints
             curl \
               --fail \
               --silent \

@@ -20,6 +20,7 @@ export class MetricsService implements OnModuleInit {
   public readonly aiJobsPending: Gauge<string>;
   public readonly aiJobsProcessing: Gauge<string>;
   public readonly aiJobsFailed: Gauge<string>;
+  public readonly aiQueueDepthScrapeSuccess: Gauge<string>;
   public readonly aiJobsCompletedTotal: Counter<string>;
   public readonly aiJobsFailedTotal: Counter<string>;
   public readonly aiTokensConsumedTotal: Counter<string>;
@@ -62,6 +63,13 @@ export class MetricsService implements OnModuleInit {
       help: 'Current number of AI generation jobs in failed state',
       registers: [this.registry],
     });
+
+    this.aiQueueDepthScrapeSuccess = new Gauge({
+      name: 'ai_queue_depth_scrape_success',
+      help: 'Whether the last AI queue depth scrape succeeded (1) or failed (0). Queue gauges keep their last known values on failure.',
+      registers: [this.registry],
+    });
+    this.aiQueueDepthScrapeSuccess.set(1);
 
     this.aiJobsCompletedTotal = new Counter({
       name: 'ai_jobs_completed_total',
@@ -142,13 +150,16 @@ export class MetricsService implements OnModuleInit {
         this.aiJobsPending.set(pending);
         this.aiJobsProcessing.set(processing);
         this.aiJobsFailed.set(failed);
+        this.aiQueueDepthScrapeSuccess.set(1);
       } catch (err: unknown) {
         this.logger.warn(
           `Failed to scrape AI queue depth metrics: ${err instanceof Error ? err.message : String(err)}`,
         );
-        this.aiJobsPending.reset();
-        this.aiJobsProcessing.reset();
-        this.aiJobsFailed.reset();
+        // Keep the last known queue depth values: resetting to zero would
+        // report a healthy-looking empty backlog when the backlog is
+        // actually unknown. Consumers must check
+        // ai_queue_depth_scrape_success to tell fresh values from stale ones.
+        this.aiQueueDepthScrapeSuccess.set(0);
       }
     }
     return this.registry.metrics();

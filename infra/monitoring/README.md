@@ -1,6 +1,13 @@
 # Monitoring Stack (Prometheus & Grafana)
 
-The monitoring stack runs as its own standalone Docker Compose project on the VPS, separate from the core application bundle. It monitors VPS health, database metrics, NestJS API performance, and GX10 AI inference over Tailscale.
+The monitoring stack runs as its own standalone Docker Compose project on the VPS, separate from the core application bundle. It monitors VPS health, database metrics, NestJS API performance, and GX10 AI inference.
+
+> **Temporary GX10 scrape path:** the team VPS is not on the tailnet yet
+> (#193), so the three GX10 jobs are scraped through the public HTTPS proxy
+> `ai.dustyway.org` (allow-listed to the production VPS IP, 403 elsewhere).
+> The proxy host is configured via `GX10_METRICS_HOST` in
+> `infra/monitoring/.env`; after #193 it switches back to the tailnet
+> address and the proxy goes away.
 
 Architecture and design rationale are documented in [`docs/deployment.md`](../../docs/deployment.md).
 
@@ -29,17 +36,17 @@ Architecture and design rationale are documented in [`docs/deployment.md`](../..
 │          ├─► postgres-exporter (:9187: DB queries, connections)     │
 │          ├─► node-exporter (:9100: Host CPU, RAM, Disk)             │
 │          │                                                          │
-│          │ Scrapes over Tailscale (WireGuard)                       │
+│          │ Scrapes over HTTPS proxy (ai.dustyway.org, until #193)   │
 │          ▼                                                          │
 └──────────┼──────────────────────────────────────────────────────────┘
            │
            ▼
-┌── GX10 AI Supercomputer (Home Box / Tailnet) ──┐
-│                                                │
-│  ├─► LiteLLM Gateway (:4000/metrics/)          │
-│  ├─► Node Exporter (:9100)                     │
-│  └─► NVIDIA DCGM Exporter (:9400 GPU metrics)  │
-└────────────────────────────────────────────────┘
+┌── GX10 AI Supercomputer (via ai.dustyway.org proxy) ──┐
+│                                                       │
+│  ├─► LiteLLM Gateway (/metrics)                       │
+│  ├─► Node Exporter (/node/metrics)                    │
+│  └─► NVIDIA DCGM Exporter (/dcgm/metrics GPU stats)   │
+└───────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -67,10 +74,11 @@ Architecture and design rationale are documented in [`docs/deployment.md`](../..
 
 - `ApiDown` (critical, 1m) — triggers when API `/metrics` is unreachable for 1m.
 - `PostgresDown` (critical, 1m) — triggers when PostgreSQL database exporter is unreachable for 1m.
-- `LiteLlmGatewayDown` (critical, 5m) — triggers when LiteLLM AI gateway is unreachable over Tailscale for 5m.
+- `LiteLlmGatewayDown` (critical, 5m) — triggers when LiteLLM AI gateway is unreachable (via the ai.dustyway.org proxy until #193) for 5m.
 - `Gx10NodeExporterDown` (warning, 15m) — triggers when GX10 host exporter is unreachable for 15m.
 - `Gx10GpuExporterDown` (warning, 15m) — triggers when GX10 NVIDIA DCGM GPU exporter is unreachable for 15m.
-- `AiQueueDepthHigh` (warning, 5m) — triggers when pending queue depth exceeds 10 jobs for 5m.
+- `AiQueueDepthHigh` (warning, 5m) — triggers when pending queue depth exceeds 10 jobs for 5m (guarded by `ai_queue_depth_scrape_success == 1` so stale values cannot fire it).
+- `AiQueueDepthScrapeFailed` (warning, 2m) — triggers when the API cannot refresh queue depth from the database.
 - `DiskFilling` (warning, 10m) — triggers when VPS root disk space is below 15% free for 10m.
 
 ---
@@ -88,15 +96,32 @@ sudo install -m 600 -o deploy -g deploy \
   /opt/notanothercards/infra/monitoring/.env
 sudo -u deploy nano /opt/notanothercards/infra/monitoring/.env
 
-# 2. Slack Webhook Secret (mode 600)
+# 2. Slack Webhook Secret
 # Note: Alertmanager uses api_url_file because Alertmanager static configuration
 # does not support shell environment variable interpolation.
-sudo install -d -m 700 -o deploy -g deploy /opt/notanothercards/infra/monitoring/secrets
+#
+# The Alertmanager container runs as uid/gid 65534 (nobody/nogroup), so the
+# secret file must be readable by that user or notification delivery fails
+# with "permission denied". Ownership below keeps it minimal:
+#   - directory: deploy manages it, gid 65534 may traverse it, others nothing
+#   - file: only uid 65534 (and root) can read it
+sudo install -d -m 750 -o deploy -g 65534 /opt/notanothercards/infra/monitoring/secrets
 sudo tee /opt/notanothercards/infra/monitoring/secrets/slack_webhook >/dev/null <<'EOF'
 https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
 EOF
-sudo chown deploy:deploy /opt/notanothercards/infra/monitoring/secrets/slack_webhook
-sudo chmod 600 /opt/notanothercards/infra/monitoring/secrets/slack_webhook
+sudo chown 65534:65534 /opt/notanothercards/infra/monitoring/secrets/slack_webhook
+sudo chmod 400 /opt/notanothercards/infra/monitoring/secrets/slack_webhook
+```
+
+Verify the running Alertmanager can actually read the secret (the same check
+runs on every deployment):
+
+```bash
+sudo -u deploy docker compose \
+  -f /opt/notanothercards/infra/monitoring/docker-compose.yml \
+  --env-file /opt/notanothercards/infra/monitoring/.env \
+  exec -T -u 65534 alertmanager cat /etc/alertmanager/secrets/slack_webhook >/dev/null \
+  && echo "OK: secret readable by alertmanager"
 ```
 
 Ensure secure values for:
@@ -146,11 +171,15 @@ sudo certbot --nginx -d grafana.notanothercards.com
 If a persistent Grafana volume has already been initialized, environment variable changes do not reset the existing database credentials. Use the Grafana CLI inside the container:
 
 ```bash
+# The image ships the `grafana` binary with a `cli` subcommand
+# (there is no standalone `grafana-cli` executable in grafana/grafana:13.2.0).
 sudo -u deploy docker compose \
   -f /opt/notanothercards/infra/monitoring/docker-compose.yml \
   --env-file /opt/notanothercards/infra/monitoring/.env \
-  exec grafana grafana-cli admin reset-admin-password <NEW_PASSWORD>
+  exec grafana grafana cli admin reset-admin-password NEW_PASSWORD_HERE
 ```
+
+Afterwards update `GRAFANA_ADMIN_PASSWORD` in `/opt/notanothercards/infra/monitoring/.env` to match.
 
 ---
 

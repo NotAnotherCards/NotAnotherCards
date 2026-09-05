@@ -4,15 +4,23 @@ services:
     restart: unless-stopped
     ports:
       - '127.0.0.1:${PROMETHEUS_PORT:-9090}:9090'
+    environment:
+      GX10_METRICS_HOST: ${GX10_METRICS_HOST:-ai.dustyway.org}
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus.yml.template:/etc/prometheus/prometheus.yml.template:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
+    # Prometheus does not expand environment variables in its config file,
+    # so the entrypoint renders the template before starting the server.
+    entrypoint: ['/bin/sh', '-c']
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
+      - |
+        sed "s|__GX10_METRICS_HOST__|$${GX10_METRICS_HOST}|g" /etc/prometheus/prometheus.yml.template > /prometheus/prometheus.yml
+        exec /bin/prometheus \
+          --config.file=/prometheus/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --storage.tsdb.retention.time=30d \
+          --web.enable-lifecycle
     healthcheck:
       test:
         [

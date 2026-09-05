@@ -33,24 +33,23 @@ scrape_configs:
     static_configs:
       - targets: ['postgres-exporter:9187']
 
-  # LiteLLM AI Gateway metrics on GX10 (scraped over Tailscale)
-  # Uses trailing slash (/metrics/) because LiteLLM redirects /metrics with 307
+  # LiteLLM AI Gateway metrics on GX10
   - job_name: 'litellm-gx10'
     scheme: https
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['ai.dustyway.org']
+      - targets: ['__GX10_METRICS_HOST__']
 
   # NVIDIA DCGM GPU exporter on GX10 (GPU utilization, memory, temperature)
   - job_name: 'dcgm-gpu-gx10'
     scheme: https
     metrics_path: '/dcgm/metrics'
     static_configs:
-      - targets: ['ai.dustyway.org']
+      - targets: ['__GX10_METRICS_HOST__']
 
   # GX10 host hardware metrics
   - job_name: 'node-gx10'
     scheme: https
     metrics_path: '/node/metrics'
     static_configs:
-      - targets: ['ai.dustyway.org']
+      - targets: ['__GX10_METRICS_HOST__']
