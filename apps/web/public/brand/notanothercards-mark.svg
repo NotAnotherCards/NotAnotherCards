@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 30" role="img" aria-labelledby="title desc">
+  <title id="title">NotAnotherCards mark</title>
+  <desc id="desc">Three overlapping cards marked N, A, and C.</desc>
+  <rect x="28" y="3" width="22" height="27" rx="6" fill="#aabbb0" />
+  <text x="40" y="20.5" fill="#27342c" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" text-anchor="middle">C</text>
+  <rect x="14" y="0" width="22" height="27" rx="6" fill="#71858a" />
+  <text x="26" y="17.5" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" text-anchor="middle">A</text>
+  <rect x="0" y="2" width="22" height="27" rx="6" fill="#5865b5" />
+  <text x="11" y="19.5" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" text-anchor="middle">N</text>
+</svg>
