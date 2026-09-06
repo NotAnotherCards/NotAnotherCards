@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ImportExport } from './ImportExport';
+import { ImportExport } from '../components/dashboard/settings/ImportExport';
 import { useStore } from '@/hooks/useStore';
 import * as offlineDb from '@repo/offline-db';
 
