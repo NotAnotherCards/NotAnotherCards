@@ -3,14 +3,18 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DATABASE_CONNECTION } from '../database/database-connection';
-import { aiGenerationJobs, DeckGenerationPayload } from './schema';
+import { aiGenerationJobs, type GenerationPayload } from './schema';
 import { CreateAiJobInput } from './dto/create-generation-job.dto';
 import { AiLimitsService } from './ai-limits.service';
+import { userDecks } from '../sync/schema';
+import { WORD_NOTE_TYPE } from '@repo/offline-db';
+import { languageFor } from '@repo/schemas';
 
 @Injectable()
 export class AiQueueService {
@@ -22,12 +26,6 @@ export class AiQueueService {
 
   async enqueueJob(userId: string, input: CreateAiJobInput) {
     const jobId = randomUUID();
-    const payload: DeckGenerationPayload = {
-      topic: input.topic,
-      sourceText: input.sourceText,
-      count: input.count ?? 5,
-      model: input.model,
-    };
 
     return await this.db.transaction(async (tx) => {
       // 1. Transaction-scoped advisory lock keyed by user id
@@ -35,7 +33,59 @@ export class AiQueueService {
         sql`SELECT pg_advisory_xact_lock(hashtext('ai_user_' || ${userId}))`,
       );
 
-      // 2. Check limits inside the locked transaction
+      let payload: GenerationPayload;
+      if (input.type === 'word_note') {
+        const [deck] = await tx
+          .select({
+            noteType: userDecks.noteType,
+            nativeLanguageId: userDecks.nativeLanguageId,
+            targetLanguageId: userDecks.targetLanguageId,
+          })
+          .from(userDecks)
+          .where(
+            and(
+              eq(userDecks.id, input.deckId),
+              eq(userDecks.userId, userId),
+              isNull(userDecks.deletedAt),
+            ),
+          )
+          .limit(1);
+        if (!deck) throw new NotFoundException('Word deck not found');
+        if (deck.noteType !== WORD_NOTE_TYPE) {
+          throw new BadRequestException('AI word notes require a word deck');
+        }
+        const nativeLanguage = languageFor(deck.nativeLanguageId);
+        const targetLanguage = languageFor(deck.targetLanguageId);
+        if (!nativeLanguage || !targetLanguage) {
+          throw new BadRequestException(
+            'Word deck languages are not supported',
+          );
+        }
+        payload = {
+          deckId: input.deckId,
+          word: input.word,
+          direction: input.direction,
+          nativeLanguageId: nativeLanguage.value,
+          nativeLanguageName: nativeLanguage.name,
+          targetLanguageId: targetLanguage.value,
+          targetLanguageName: targetLanguage.name,
+          model: input.model,
+        };
+      } else if (input.type === 'topic_deck') {
+        payload = {
+          topic: input.topic,
+          count: input.count,
+          model: input.model,
+        };
+      } else {
+        payload = {
+          sourceText: input.sourceText,
+          count: input.count,
+          model: input.model,
+        };
+      }
+
+      // 2. Check limits inside the locked transaction, after authorization
       await this.limitsService.checkUserCanSubmitJob(tx, userId);
 
       // 3. Insert job

@@ -10,7 +10,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DATABASE_CONNECTION } from '../database/database-connection';
-import { aiUsage, DeckGenerationPayload } from './schema';
+import { aiUsage, type GenerationPayload } from './schema';
 import { AiGatewayService, AiParseError } from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
@@ -19,7 +19,7 @@ interface ClaimedJobRow {
   id: string;
   user_id: string;
   type: string;
-  payload: DeckGenerationPayload | string;
+  payload: GenerationPayload | string;
   attempts: number;
   max_attempts: number;
 }
@@ -121,9 +121,9 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async executeJob(job: ClaimedJobRow) {
-    const payload: DeckGenerationPayload =
+    const payload: GenerationPayload =
       typeof job.payload === 'string'
-        ? (JSON.parse(job.payload) as DeckGenerationPayload)
+        ? (JSON.parse(job.payload) as GenerationPayload)
         : job.payload;
 
     try {
@@ -131,12 +131,16 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       let userPrompt: string;
 
       if (job.type === 'topic_deck') {
+        if (!('topic' in payload)) throw new Error('Invalid topic job payload');
         systemPrompt = TOPIC_GENERATION_V1.system;
         userPrompt = TOPIC_GENERATION_V1.buildUserPrompt(
           payload.topic ?? '',
           payload.count,
         );
       } else {
+        if (!('sourceText' in payload)) {
+          throw new Error(`Unsupported AI job type: ${job.type}`);
+        }
         systemPrompt = TEXT_GENERATION_V1.system;
         userPrompt = TEXT_GENERATION_V1.buildUserPrompt(
           payload.sourceText ?? '',
