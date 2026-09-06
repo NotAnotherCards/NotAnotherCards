@@ -24,9 +24,10 @@ import { FormErrorMessage } from '@/components/auth/form-error-message';
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
+  onStartReview: (deckId: string) => void;
 }
 
-export function DeckList({ onSelectDeck }: DeckListProps) {
+export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
@@ -200,6 +201,7 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
                 deck={deck}
                 totalCards={totalCards}
                 onSelectDeck={onSelectDeck}
+                onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}
                 onDeleteDeck={(id) => setDeckToDelete(id)}
               />

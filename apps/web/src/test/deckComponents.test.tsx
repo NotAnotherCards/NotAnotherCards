@@ -39,6 +39,7 @@ describe('DeckCard Component', () => {
         deck={mockDeck}
         totalCards={12}
         onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
       />,
@@ -53,6 +54,7 @@ describe('DeckCard Component', () => {
 
   it('calls action callbacks on click events', () => {
     const onSelectDeck = vi.fn();
+    const onStartReview = vi.fn();
     const onEditDeck = vi.fn();
     const onDeleteDeck = vi.fn();
 
@@ -61,6 +63,7 @@ describe('DeckCard Component', () => {
         deck={mockDeck}
         totalCards={12}
         onSelectDeck={onSelectDeck}
+        onStartReview={onStartReview}
         onEditDeck={onEditDeck}
         onDeleteDeck={onDeleteDeck}
       />,
@@ -77,6 +80,9 @@ describe('DeckCard Component', () => {
     // Click Delete icon button
     fireEvent.click(screen.getByTitle('Delete Deck'));
     expect(onDeleteDeck).toHaveBeenCalledWith('deck-test-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Review' }));
+    expect(onStartReview).toHaveBeenCalledWith('deck-test-1');
   });
 });
 
@@ -193,23 +199,18 @@ describe('FlashcardModal Component', () => {
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
 
-  it('shows the multiplicative next interval for a reviewed card', async () => {
-    render(
-      <FlashcardModal
-        card={{
-          ...mockCard,
-          scheduled_interval_minutes: 3 * 24 * 60,
-        }}
-        onClose={vi.fn()}
-      />,
-    );
+  it('is preview-only and closes with Escape', () => {
+    const onClose = vi.fn();
+    render(<FlashcardModal card={mockCard} onClose={onClose} />);
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('flashcard-inner'));
-    });
+    fireEvent.keyDown(window, { key: 'Escape' });
 
+    expect(onClose).toHaveBeenCalledOnce();
     expect(
-      screen.getByRole('button', { name: 'Good (7.5d)' }),
-    ).toBeInTheDocument();
+      screen.queryByRole('button', { name: /again|hard|good|easy/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /next|prev/i }),
+    ).not.toBeInTheDocument();
   });
 });
