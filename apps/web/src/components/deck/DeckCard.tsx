@@ -1,4 +1,5 @@
 import { Deck } from '@/hooks/useStore';
+import { deckKindClassName, deckKindShort } from './deck-kind';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -41,8 +42,14 @@ export function DeckCard({
           <CardTitle
             className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate max-w-[80%]"
             onClick={() => onSelectDeck(deck.id)}
-            title={deck.title}
+            title={`${deck.title} (${deck.note_type})`}
           >
+            <span
+              className={`${deckKindClassName} mr-2 align-middle font-medium`}
+              data-testid="deck-kind"
+            >
+              {deckKindShort(deck)}
+            </span>
             {deck.title}
           </CardTitle>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
