@@ -52,6 +52,7 @@ The same `docker-compose.yml` runs in three places:
    provider below; it costs cents for a demo and needs no code change.
    Without any endpoint the app still runs and shows jobs as queued, which
    is compliant but not much of a demo.
+
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
    host nginx/certbot serving `app.notanothercards.com` and `AI_API_BASE`
    pointing at the GX10 through the tailnet. The production override removes
@@ -103,6 +104,11 @@ file.
 - Production values stay in `/opt/notanothercards/.env` and the team password
   manager; deployment credentials use GitHub's protected `production`
   environment (subject III.3).
+- `MODERATION_ALLOW_ALL` (api) gates deck publishing while the moderation
+  check (#263) is a stub. Empty, the default, refuses every publish with
+  `moderation unavailable`; `1` lets every deck through. Staging sets `1` so
+  the sharing UI (#289) can be tried; production leaves it empty until #263
+  lands, at which point the variable goes away with the stub.
 
 ## The AI backend
 
@@ -198,12 +204,12 @@ needed for the monitoring module, independent of the AI demo path.
 
 ## Module claims
 
-| Module | Points | Status |
-|---|---|---|
-| AI: Complete LLM system interface (Major) | 2 | already planned (A17) |
-| DevOps: Monitoring with Prometheus and Grafana (Major) | 2 | claimed in the modules plan |
-| DevOps: Health check / status page, backups (Minor) | 1 | under consideration (A20) |
-| Cybersecurity: WAF/ModSecurity + Vault (Major) | 2 | skipped for now |
+| Module                                                 | Points | Status                      |
+| ------------------------------------------------------ | ------ | --------------------------- |
+| AI: Complete LLM system interface (Major)              | 2      | already planned (A17)       |
+| DevOps: Monitoring with Prometheus and Grafana (Major) | 2      | claimed in the modules plan |
+| DevOps: Health check / status page, backups (Minor)    | 1      | under consideration (A20)   |
+| Cybersecurity: WAF/ModSecurity + Vault (Major)         | 2      | skipped for now             |
 
 ### AI: Complete LLM system interface (Major)
 
