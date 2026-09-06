@@ -51,6 +51,38 @@ jobs:
               exit 1
             }
 
+            # One-time migration from the pre-#188 secret-file layout. Keep the
+            # webhook in the required mode-600 monitoring .env from now on.
+            if ! grep -Eq '^SLACK_WEBHOOK_URL=.+$' infra/monitoring/.env; then
+              legacy_slack_secret=infra/monitoring/secrets/slack_webhook
+              if [ ! -s "$legacy_slack_secret" ]; then
+                echo "FATAL: set SLACK_WEBHOOK_URL in infra/monitoring/.env" >&2
+                exit 1
+              fi
+              # The legacy file is owned by Alertmanager's uid with mode 400,
+              # so read it through an isolated root container without placing
+              # the secret on the command line or in container environment.
+              legacy_slack_webhook="$(
+                docker run --rm --network none --read-only --user 0:0 \
+                  --volume "$PWD/$legacy_slack_secret:/run/legacy-slack-webhook:ro" \
+                  --entrypoint /bin/cat \
+                  prom/alertmanager:v0.34.0 \
+                  /run/legacy-slack-webhook | tr -d '\r\n'
+              )"
+              case "$legacy_slack_webhook" in
+                https://hooks.slack.com/services/* | https://hooks.slack-gov.com/services/*) ;;
+                *)
+                  echo "FATAL: legacy Slack webhook has an unexpected URL" >&2
+                  exit 1
+                  ;;
+              esac
+              printf '\nSLACK_WEBHOOK_URL=%s\n' "$legacy_slack_webhook" >> infra/monitoring/.env
+              chmod 600 infra/monitoring/.env
+              unset legacy_slack_webhook
+              echo "Migrated the legacy Slack webhook into infra/monitoring/.env"
+            fi
+            chmod 600 infra/monitoring/.env
+
             docker compose \
               -f infra/monitoring/docker-compose.yml \
               --env-file infra/monitoring/.env \
@@ -66,12 +98,12 @@ jobs:
             curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:3001/api/health
             curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:9093/-/healthy
 
-            # 4. Verify the Slack webhook secret is readable by Alertmanager
+            # 4. Verify the Compose-managed Slack secret is mounted for Alertmanager
             docker compose \
               -f infra/monitoring/docker-compose.yml \
               --env-file infra/monitoring/.env \
               exec -T -u 65534 alertmanager \
-              cat /etc/alertmanager/secrets/slack_webhook >/dev/null || {
+              cat /run/secrets/slack_webhook >/dev/null || {
               echo "FATAL: slack_webhook not readable by alertmanager (uid 65534)" >&2
               exit 1
             }
@@ -92,7 +124,94 @@ jobs:
               echo "Prometheus target '$job' is up"
             done
 
-            # 6. Verify Public Endpoints
+            # 6. Verify production Grafana provisioning and datasource connectivity
+            grafana_api() {
+              local endpoint="$1"
+              docker compose \
+                -f infra/monitoring/docker-compose.yml \
+                --env-file infra/monitoring/.env \
+                exec -T grafana sh -ec '
+                  auth="$(printf "%s" "$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD" | base64 | tr -d "\n")"
+                  wget -qO- --header "Authorization: Basic $auth" "http://localhost:3000/$1"
+                ' sh "$endpoint"
+            }
+
+            grafana_api api/datasources/uid/Prometheus \
+              | jq -e '.uid == "Prometheus" and .type == "prometheus"' >/dev/null || {
+              echo "FATAL: Grafana Prometheus datasource is not provisioned" >&2
+              exit 1
+            }
+            echo "Grafana datasource UID Prometheus is provisioned"
+
+            grafana_api api/datasources/uid/Prometheus/health \
+              | jq -e '.status == "OK"' >/dev/null || {
+              echo "FATAL: Grafana cannot query the Prometheus datasource" >&2
+              exit 1
+            }
+            echo "Grafana Prometheus datasource health is OK"
+
+            dashboards="$(grafana_api 'api/search?type=dash-db')"
+            for uid in nac-ai-queue nac-api-system nac-gx10-gpu; do
+              printf '%s' "$dashboards" | jq -e --arg uid "$uid" 'any(.[]; .uid == $uid)' >/dev/null || {
+                echo "FATAL: Grafana dashboard '$uid' is not provisioned" >&2
+                exit 1
+              }
+              echo "Grafana dashboard '$uid' is provisioned"
+            done
+
+            rules="$(curl --fail --silent --show-error http://127.0.0.1:9090/api/v1/rules)"
+            for alert_name in ApiDown PostgresDown LiteLlmGatewayDown Gx10NodeExporterDown Gx10GpuExporterDown AiQueueDepthHigh AiQueueDepthScrapeFailed DiskFilling; do
+              printf '%s' "$rules" | jq -e --arg name "$alert_name" \
+                'any(.data.groups[].rules[]; .name == $name)' >/dev/null || {
+                echo "FATAL: Prometheus alert '$alert_name' is not loaded" >&2
+                exit 1
+              }
+              echo "Prometheus alert '$alert_name' is loaded"
+            done
+
+            # 7. Send a real notification through Alertmanager and require Slack success
+            alertmanager_metric() {
+              metric_name="$1"
+              curl --fail --silent --show-error http://127.0.0.1:9093/metrics \
+                | awk -v metric="$metric_name" '
+                    index($0, metric "{") == 1 &&
+                    /integration="slack"/ &&
+                    /receiver_name="slack-delivery-smoke"/ { total += $2 }
+                    END { print total + 0 }
+                  '
+            }
+
+            slack_attempted_before="$(alertmanager_metric alertmanager_notifications_total)"
+            slack_failed_before="$(alertmanager_metric alertmanager_notifications_failed_total)"
+            smoke_id="${{ github.sha }}-$(date +%s)"
+
+            curl --fail --silent --show-error \
+              -H 'Content-Type: application/json' \
+              --data "$(jq -nc --arg smoke_id "$smoke_id" \
+                '[{labels:{alertname:"MonitoringDeliverySmokeTest",severity:"info",smoke_id:$smoke_id},annotations:{summary:"Production deployment delivery smoke test"}}]')" \
+              http://127.0.0.1:9093/api/v2/alerts >/dev/null
+
+            slack_delivered=0
+            for attempt in 1 2 3 4 5 6; do
+              slack_attempted_after="$(alertmanager_metric alertmanager_notifications_total)"
+              if awk "BEGIN { exit !($slack_attempted_after > $slack_attempted_before) }"; then
+                sleep 2
+                slack_failed_after="$(alertmanager_metric alertmanager_notifications_failed_total)"
+                if awk "BEGIN { exit !($slack_failed_after == $slack_failed_before) }"; then
+                  slack_delivered=1
+                fi
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$slack_delivered" != "1" ]; then
+              echo "FATAL: Alertmanager did not complete the Slack delivery smoke test" >&2
+              exit 1
+            fi
+            echo "Alertmanager completed the Slack delivery smoke test"
+
+            # 8. Verify Public Endpoints
             curl \
               --fail \
               --silent \

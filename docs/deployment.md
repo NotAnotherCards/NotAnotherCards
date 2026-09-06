@@ -11,14 +11,25 @@ and the AI box is an external backend behind a config value.
 ## Topology
 
 ```
-users ── HTTPS ──> VPS (public)                     GX10 (home box, tailnet only)
-                   ├─ nginx + certbot               ├─ LiteLLM proxy :4000
-                   ├─ web (static build)            ├─ inference server (Ollama or vLLM)
-                   ├─ api (NestJS)                  │    bound to tailscale interface
-                   ├─ postgres ── tailscale ───────>├─ node_exporter + DCGM exporter
-                   ├─ monitoring compose:           └─ tailscaled
-                   │    prometheus + grafana
+users ── HTTPS ──> Production VPS
+                   ├─ nginx + certbot
+                   ├─ web (static build)
+                   ├─ api (NestJS)
+                   ├─ postgres
+                   ├─ monitoring compose: prometheus + grafana
                    └─ node_exporter
+                          │
+                          │ HTTPS (temporary until #193)
+                          ▼
+                   ai.dustyway.org proxy
+                          │ tailnet
+                          ▼
+                   GX10 (home box, tailnet only)
+                   ├─ LiteLLM proxy :4000
+                   ├─ inference server (Ollama or vLLM)
+                   │    bound to tailscale interface
+                   ├─ node_exporter + DCGM exporter
+                   └─ tailscaled
 ```
 
 - The VPS is reachable from the internet over HTTPS only.
@@ -53,9 +64,11 @@ The same `docker-compose.yml` runs in three places:
    Without any endpoint the app still runs and shows jobs as queued, which
    is compliant but not much of a demo.
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
-   host nginx/certbot serving `app.notanothercards.com` and `AI_API_BASE`
-   pointing at the GX10 through the tailnet. The production override removes
-   the postgres host port and binds app diagnostic ports to loopback.
+   host nginx/certbot serving `app.notanothercards.com`. Until #193 enrolls
+   this VPS in the tailnet, `AI_API_BASE` and GX10 monitoring go through the
+   `ai.dustyway.org` HTTPS proxy; that proxy alone crosses the tailnet to the
+   GX10. The production override removes the postgres host port and binds app
+   diagnostic ports to loopback.
 3. **A teammate's machine during AI work**: same compose, `AI_API_BASE`
    pointing at the GX10 with a personal key (see "Access").
 
@@ -118,11 +131,12 @@ The GX10 runs an inference server with LiteLLM in front. LiteLLM gives us:
   satisfies the module's rate-limiting requirement (see "Module claims").
 - **Logs.** Every request is logged with key, model, and token counts, so
   "what is the box actually used for" is a query.
-- **Metrics.** Prometheus metrics are served at
-  `https://ai.dustyway.org/metrics/` (trailing slash; `/metrics` answers a
-  307 to it). The endpoint is unauthenticated and its series carry
-  virtual-key aliases and spend, so the reverse proxy allows only the
-  production VPS and refuses everyone else with a 403.
+- **Metrics.** Until #193, the production VPS scrapes LiteLLM at the exact
+  public path `https://ai.dustyway.org/metrics`. The reverse proxy sends that
+  request to LiteLLM's internal `/metrics/` path so its tailnet-only redirect
+  never leaks to the scraper. The endpoint is unauthenticated and its series
+  carry virtual-key aliases and spend, so the proxy allows only the production
+  VPS and refuses everyone else with a 403.
 
 The models on offer are defined in `litellm-config.yaml` in the repo, so
 trying a new model is a PR.
@@ -183,10 +197,13 @@ being down; on the VPS, that is the alert that works best.
   or drowning" at a glance.
 - postgres-exporter and node_exporter on the VPS (host metrics: disk,
   memory, CPU — the "disk filling" alert needs them).
-- On the GX10, scraped over the tailnet: LiteLLM's built-in prometheus
-  metrics (requests, latency, tokens per key) plus node_exporter and the
-  NVIDIA DCGM exporter (GPU utilization). When the box is offline these
-  targets go dark and the alert fires — which is the point.
+- On the GX10, LiteLLM's built-in Prometheus metrics (requests, latency,
+  tokens per key), node_exporter, and the NVIDIA DCGM exporter (GPU
+  utilization) are temporarily scraped through the allow-listed
+  `ai.dustyway.org` HTTPS proxy. After #193, changing
+  `GX10_METRICS_MODE=tailnet` and `GX10_METRICS_HOST=100.64.0.1` switches all
+  three jobs to their direct HTTP ports. When the box is offline these targets
+  go dark and the alert fires — which is the point.
 - Alerting rules that mean something: queue depth threshold, api down,
   GX10 unreachable, disk filling. Alerts go to the team Slack via webhook.
 - Grafana access is secured (built-in auth, admin password from env), which is
