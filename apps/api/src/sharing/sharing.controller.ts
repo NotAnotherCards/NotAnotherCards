@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Get,
   HttpCode,
@@ -14,9 +13,17 @@ import { z } from 'zod';
 import { AuthService } from '../auth/auth.service';
 import { SharingService } from './sharing.service';
 
+// Paging is clamped, not validated: only a buggy client sends limit=101 or
+// offset=-1, and a page of results serves it better than a 400 nobody reads.
 const browseQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
+  limit: z.coerce
+    .number()
+    .catch(50)
+    .transform((n) => Math.min(Math.max(Math.trunc(n), 1), 100)),
+  offset: z.coerce
+    .number()
+    .catch(0)
+    .transform((n) => Math.max(Math.trunc(n), 0)),
 });
 
 @Controller('api')
@@ -52,14 +59,8 @@ export class SharingController {
   async listShared(@Req() req: Request, @Query() query: unknown) {
     await this.getAuthenticatedUserId(req);
 
-    const page = browseQuerySchema.safeParse(query);
-    if (!page.success) {
-      throw new BadRequestException({
-        message: 'Invalid browse parameters',
-        errors: page.error.flatten().fieldErrors,
-      });
-    }
-    return this.sharingService.listShared(page.data.limit, page.data.offset);
+    const page = browseQuerySchema.parse(query);
+    return this.sharingService.listShared(page.limit, page.offset);
   }
 
   @Get('shared/decks/:id')

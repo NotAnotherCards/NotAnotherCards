@@ -488,8 +488,11 @@ describePostgres('deck sharing endpoints', () => {
       (await browse(userA, '?limit=2&offset=2')).map((deck) => deck.id),
     ).toEqual(['page-0']);
 
-    await get(userA, '/api/shared/decks?limit=101').expect(400);
-    await get(userA, '/api/shared/decks?limit=nope').expect(400);
+    // out-of-range and unparseable paging is clamped, never refused
+    expect(
+      (await browse(userA, '?limit=101&offset=-3')).length,
+    ).toBeGreaterThan(0);
+    expect((await browse(userA, '?limit=nope')).length).toBeGreaterThan(0);
     await request(app.getHttpServer()).get('/api/shared/decks').expect(401);
   });
 

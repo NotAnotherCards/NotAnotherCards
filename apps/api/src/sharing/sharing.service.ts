@@ -40,11 +40,16 @@ const summaryColumns = {
   cardCount: activeCardCount,
   // Left join: a deck published before its owner finished onboarding has no
   // profile row, and dropping it from the list would be the stranger bug.
-  // Inner-joined below on a non-null username: onboarding creates the
-  // profile and sets the username before anything else is reachable, so a
-  // public deck without one cannot exist through the app and is not worth a
-  // nullable field. The column is nullable in the table, so the join's
-  // isNotNull is what backs the type here.
+  // The owner's username comes from user_profiles through the inner join
+  // below, which keeps a deck only when a live profile with a username
+  // exists. A left join would keep every deck and hand back null for the
+  // missing profile, which is what an outer join is for: rows on one side
+  // without a partner on the other. Here that partner always exists, because
+  // onboarding creates the profile and sets the username before a user can
+  // reach anything else, so a public deck without one cannot come out of the
+  // app. Dropping such a row is the right answer and it frees the clients
+  // from a nullable owner. The column itself is nullable in the table, so
+  // the join's isNotNull condition is what makes the string type honest.
   username: sql<string>`${userProfiles.username}`,
 };
 
