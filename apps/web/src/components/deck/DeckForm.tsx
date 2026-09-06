@@ -13,7 +13,7 @@ import { Sparkles } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { LANGUAGES } from '@repo/schemas';
+import { LANGUAGES, languageLabel } from '@repo/schemas';
 import {
   BASIC_NOTE_TYPE,
   DECK_NOTE_TYPE_OPTIONS,
@@ -269,7 +269,7 @@ export function DeckForm({
                                 key={language.value}
                                 value={language.value}
                               >
-                                {language.label}
+                                {languageLabel(language)}
                               </option>
                             ))}
                           </select>
