@@ -7,6 +7,11 @@ import {
   cardId,
   noteDeckId,
 } from '@repo/offline-db';
+import {
+  moderationRefusalSchema,
+  sharedDeckListSchema,
+  sharedDeckPreviewSchema,
+} from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
@@ -205,6 +210,8 @@ describePostgres('deck sharing endpoints', () => {
 
   const browse = async (user: TestUser, query = '') => {
     const response = await get(user, `/api/shared/decks${query}`).expect(200);
+    // Parsing every listing keeps the wire types the web (#289) reads honest.
+    sharedDeckListSchema.parse(response.body);
     return (response.body as { decks: { id: string }[] }).decks;
   };
 
@@ -337,6 +344,7 @@ describePostgres('deck sharing endpoints', () => {
     expect(response.body).toEqual({
       flagged: [{ cardId: cardIds[1], reason: 'slur' }],
     });
+    moderationRefusalSchema.parse(response.body);
 
     expect(check).toHaveBeenCalledWith({
       deckId: 'flagged',
@@ -490,6 +498,7 @@ describePostgres('deck sharing endpoints', () => {
     await seedDeck(userA, 'secret');
 
     const shared = await get(userB, '/api/shared/decks/readable').expect(200);
+    sharedDeckPreviewSchema.parse(shared.body);
     expect(shared.body).toMatchObject({
       deck: {
         id: 'readable',
