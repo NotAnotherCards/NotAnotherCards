@@ -85,35 +85,77 @@ export class AiGatewayService {
     const timeoutMs = Number(
       this.config.get<string>('AI_REQUEST_TIMEOUT_MS') ?? 60000,
     );
+    const maxCompletionTokens = Math.max(
+      1,
+      Number(this.config.get<string>('AI_MAX_COMPLETION_TOKENS')) || 4096,
+    );
 
-    const res = await fetch(`${apiBase}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        // Generation must not reason: with reasoning, a five-card job runs
-        // 26-56s against the 60s timeout (a measured 4s margin on an idle
-        // GPU); without it, ~3s and a tenth of the tokens. Works on the
-        // LiteLLM path and on OpenAI-compatible fallbacks; providers that
-        // ignore it are no worse off.
-        reasoning_effort: 'none',
-      }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-
-    if (!res.ok) {
-      throw new Error(`AI gateway error (${res.status}): ${await res.text()}`);
+    const signal = AbortSignal.timeout(timeoutMs);
+    let res: Response | undefined;
+    let data: ChatCompletionResponse;
+    try {
+      res = await fetch(`${apiBase}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.7,
+          // Bounds what a timed-out request can have generated, see below.
+          max_tokens: maxCompletionTokens,
+          // Generation must not reason: with reasoning, a five-card job runs
+          // 26-56s against the 60s timeout (a measured 4s margin on an idle
+          // GPU); without it, ~3s and a tenth of the tokens. Works on the
+          // LiteLLM path and on OpenAI-compatible fallbacks; providers that
+          // ignore it are no worse off.
+          reasoning_effort: 'none',
+        }),
+        signal,
+      });
+      if (!res.ok) {
+        throw new Error(
+          `AI gateway error (${res.status}): ${await res.text()}`,
+        );
+      }
+      // Fetch resolves at the headers; reading the body can still time out.
+      data = (await res.json()) as ChatCompletionResponse;
+    } catch (err: unknown) {
+      // A timeout aborts our side only; the gateway has generated and billed
+      // by then, so the attempt must count against the user's quota. With no
+      // provider counts, bound it: bytes over-count the prompt, max_tokens
+      // caps the completion. A refused connection or DNS failure never
+      // reached the model and is rethrown as is, so a down gateway does not
+      // drain quota.
+      // AbortSignal.timeout throws a DOMException, which is not an Error in
+      // every realm (Jest's included), so match on the name alone.
+      if (
+        res?.ok !== false &&
+        ((err as { name?: unknown } | null)?.name === 'TimeoutError' ||
+          (signal.aborted &&
+            (signal.reason as { name?: unknown } | undefined)?.name ===
+              'TimeoutError'))
+      ) {
+        const promptTokens =
+          new TextEncoder().encode(systemPrompt + userPrompt).length + 16;
+        throw new AiParseError(
+          `AI gateway timed out after ${timeoutMs}ms`,
+          {
+            promptTokens,
+            completionTokens: maxCompletionTokens,
+            totalTokens: promptTokens + maxCompletionTokens,
+          },
+          model,
+        );
+      }
+      throw err;
     }
 
-    const data = (await res.json()) as ChatCompletionResponse;
     const usage = {
       promptTokens: data.usage?.prompt_tokens ?? 0,
       completionTokens: data.usage?.completion_tokens ?? 0,

@@ -151,29 +151,29 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         payload.count,
       );
 
-      // Record success and log token usage in a transaction
-      await this.db.transaction(async (tx) => {
-        await tx.execute(sql`
-          UPDATE ai_generation_jobs
-          SET status = 'completed',
-              result = ${JSON.stringify(inference.cards)}::jsonb,
-              payload = payload || jsonb_build_object('model', ${inference.model}::text),
-              error = NULL,
-              completed_at = NOW(),
-              updated_at = NOW()
-          WHERE id = ${job.id}
-        `);
-
-        await tx.insert(aiUsage).values({
-          id: randomUUID(),
-          userId: job.user_id,
-          jobId: job.id,
-          model: inference.model,
-          promptTokens: inference.usage.promptTokens,
-          completionTokens: inference.usage.completionTokens,
-          totalTokens: inference.usage.totalTokens,
-        });
+      // Usage first, on its own: the tokens are spent whether or not the
+      // result write below succeeds, and sharing a transaction with it rolled
+      // the usage row back on a failed write, leaving the attempt unmetered.
+      await this.db.insert(aiUsage).values({
+        id: randomUUID(),
+        userId: job.user_id,
+        jobId: job.id,
+        model: inference.model,
+        promptTokens: inference.usage.promptTokens,
+        completionTokens: inference.usage.completionTokens,
+        totalTokens: inference.usage.totalTokens,
       });
+
+      await this.db.execute(sql`
+        UPDATE ai_generation_jobs
+        SET status = 'completed',
+            result = ${JSON.stringify(inference.cards)}::jsonb,
+            payload = payload || jsonb_build_object('model', ${inference.model}::text),
+            error = NULL,
+            completed_at = NOW(),
+            updated_at = NOW()
+        WHERE id = ${job.id}
+      `);
 
       this.logger.log(
         `Job ${job.id} completed (${inference.cards.length} cards, ${inference.usage.totalTokens} tokens)`,

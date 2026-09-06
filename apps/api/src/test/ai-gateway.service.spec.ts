@@ -166,6 +166,110 @@ describe('AiGatewayService', () => {
     expect(result.cards).toEqual([{ front: 'Question 1', back: 'Answer 1' }]);
   });
 
+  describe('accounting for failed requests (#283)', () => {
+    const config = {
+      get: jest.fn((key: string) =>
+        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : undefined,
+      ),
+    } as unknown as ConfigService;
+    const generate = () =>
+      new AiGatewayService(config).generateCards('sys', 'user prompt');
+
+    it('charges a bounded usage when the request times out', async () => {
+      // the gateway has generated and billed by the time our abort fires
+      global.fetch = jest
+        .fn()
+        .mockRejectedValue(new DOMException('aborted', 'TimeoutError'));
+      await expect(generate()).rejects.toMatchObject({
+        name: 'AiParseError',
+        usage: { completionTokens: 4096 },
+      });
+      const err = (await generate().catch((e: unknown) => e)) as AiParseError;
+      expect(err.usage.promptTokens).toBeGreaterThan(0);
+      expect(err.usage.totalTokens).toBe(
+        err.usage.promptTokens + err.usage.completionTokens,
+      );
+    });
+
+    it.each(['TimeoutError', 'AbortError'])(
+      'charges usage when reading the response body times out with %s',
+      async (name) => {
+        const controller = new AbortController();
+        const timeout = jest
+          .spyOn(AbortSignal, 'timeout')
+          .mockReturnValue(controller.signal);
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: true,
+          json: () => {
+            controller.abort(new DOMException('timed out', 'TimeoutError'));
+            return Promise.reject(new DOMException('aborted', name));
+          },
+        });
+        try {
+          await expect(generate()).rejects.toMatchObject({
+            name: 'AiParseError',
+            model: 'gemma4',
+            usage: {
+              promptTokens: 30,
+              completionTokens: 4096,
+              totalTokens: 4126,
+            },
+          });
+        } finally {
+          timeout.mockRestore();
+        }
+      },
+    );
+
+    it('does not charge when an error response body times out', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        text: () => Promise.reject(new DOMException('aborted', 'TimeoutError')),
+      });
+      const err = await generate().catch((e: unknown) => e);
+      expect(err).not.toBeInstanceOf(AiParseError);
+    });
+
+    it('does not charge a refused connection', async () => {
+      // nothing reached the model; a down gateway must not drain quota
+      global.fetch = jest
+        .fn()
+        .mockRejectedValue(new TypeError('fetch failed: ECONNREFUSED'));
+      const err = (await generate().catch((e: unknown) => e)) as Error;
+      expect(err).not.toBeInstanceOf(AiParseError);
+      expect(err.message).toContain('ECONNREFUSED');
+    });
+
+    it('does not charge a gateway error status', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        text: () => Promise.resolve('unavailable'),
+      });
+      const err = (await generate().catch((e: unknown) => e)) as Error;
+      expect(err).not.toBeInstanceOf(AiParseError);
+      expect(err.message).toContain('503');
+    });
+
+    it('sends max_tokens so the completion bound is real', async () => {
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            choices: [{ message: { content: '[{"front":"Q","back":"A"}]' } }],
+            usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+          }),
+      });
+      global.fetch = mockFetch;
+      await generate();
+      const [[, init]] = mockFetch.mock.calls as [string, RequestInit][];
+      expect(JSON.parse(init.body as string)).toMatchObject({
+        max_tokens: 4096,
+      });
+    });
+  });
+
   it('throws AiParseError with usage when JSON parsing fails on valid HTTP response', async () => {
     const mockFetch = jest.fn().mockResolvedValue({
       ok: true,
