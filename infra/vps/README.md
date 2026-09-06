@@ -74,8 +74,9 @@ remain disabled; the account password is used only for `sudo`.
 
 ## Secrets and ownership
 
-- Runtime secrets live in `/opt/notanothercards/.env`, owned by `deploy` with
-  mode `600`.
+- Application secrets live in `/opt/notanothercards/.env`; monitoring secrets
+  live in `/opt/notanothercards/infra/monitoring/.env`. Both are owned by
+  `deploy` with mode `600`.
 - Recovery copies live in the team password manager.
 - `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_USER`, and `SSH_FINGERPRINT` live in
   GitHub's protected `production` environment.
@@ -84,9 +85,13 @@ remain disabled; the account password is used only for `sudo`.
 Check the runtime file without printing its contents:
 
 ```bash
-sudo stat -c '%U %G %a %n' /opt/notanothercards/.env
+sudo stat -c '%U %G %a %n' \
+  /opt/notanothercards/.env \
+  /opt/notanothercards/infra/monitoring/.env
 sudo -u deploy grep -E '^[A-Z0-9_]+=' /opt/notanothercards/.env \
   | cut -d= -f1
+sudo -u deploy grep -E '^[A-Z0-9_]+=' \
+  /opt/notanothercards/infra/monitoring/.env | cut -d= -f1
 ```
 
 Expected ownership and mode are `deploy deploy 600`.
@@ -98,9 +103,11 @@ Production deployment is automated. A merge or direct push to `main` starts
 
 1. connects as `deploy` with host-fingerprint verification;
 2. resets `/opt/notanothercards` to `origin/main`;
-3. builds and starts both Compose files with `--wait`;
-4. prints container status; and
-5. verifies `https://app.notanothercards.com/health`.
+3. builds and starts the application bundle with `--wait`;
+4. starts the independent monitoring Compose stack with `--wait`;
+5. verifies every named scrape target, provisioned dashboard, datasource,
+   alert rule, and an actual Slack delivery; and
+6. verifies both public application and Grafana health endpoints.
 
 Review deployment status under **GitHub → Actions → Continuous Deployment**.
 Reverting a commit on `main` deploys the reverted source state.

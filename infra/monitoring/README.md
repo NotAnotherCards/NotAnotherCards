@@ -5,9 +5,10 @@ The monitoring stack runs as its own standalone Docker Compose project on the VP
 > **Temporary GX10 scrape path:** the team VPS is not on the tailnet yet
 > (#193), so the three GX10 jobs are scraped through the public HTTPS proxy
 > `ai.dustyway.org` (allow-listed to the production VPS IP, 403 elsewhere).
-> The proxy host is configured via `GX10_METRICS_HOST` in
-> `infra/monitoring/.env`; after #193 it switches back to the tailnet
-> address and the proxy goes away.
+> `GX10_METRICS_MODE=proxy` and `GX10_METRICS_HOST=ai.dustyway.org` select
+> this path. After #193, set the mode to `tailnet` and the host to the GX10
+> tailnet IP. The renderer then uses direct HTTP ports 4000, 9400, and 9100
+> with each exporter's native metrics path.
 
 Architecture and design rationale are documented in [`docs/deployment.md`](../../docs/deployment.md).
 
@@ -81,54 +82,67 @@ Architecture and design rationale are documented in [`docs/deployment.md`](../..
 - `AiQueueDepthScrapeFailed` (warning, 2m) — triggers when the API cannot refresh queue depth from the database.
 - `DiskFilling` (warning, 10m) — triggers when VPS root disk space is below 15% free for 10m.
 
+The thresholds reflect impact and scrape cadence: API/PostgreSQL failures page
+after four missed 15-second scrapes; a five-minute LiteLLM outage is critical
+because it blocks generation while tolerating brief restarts; GX10 exporters
+wait 15 minutes because losing telemetry alone is not request-path failure. A
+queue above 10 for five minutes is sustained backlog for the single-job worker,
+and 15% free disk leaves intervention time before writes fail. Queue alerts are
+suppressed while the database-derived gauge is stale, with a separate
+two-minute collection-failure alert instead.
+
 ---
 
 ## Quick Start (VPS Operations)
 
-### 1. Configure Environment & Secrets
+### 1. Configure Environment and Secrets
 
-On the VPS, install the environment file and secrets with mode `600` owned by `deploy:deploy`:
+On the VPS, install the environment file with mode `600` owned by
+`deploy:deploy`:
 
 ```bash
-# 1. Environment variables
 sudo install -m 600 -o deploy -g deploy \
   /opt/notanothercards/infra/monitoring/.env.example \
   /opt/notanothercards/infra/monitoring/.env
 sudo -u deploy nano /opt/notanothercards/infra/monitoring/.env
-
-# 2. Slack Webhook Secret
-# Note: Alertmanager uses api_url_file because Alertmanager static configuration
-# does not support shell environment variable interpolation.
-#
-# The Alertmanager container runs as uid/gid 65534 (nobody/nogroup), so the
-# secret file must be readable by that user or notification delivery fails
-# with "permission denied". Ownership below keeps it minimal:
-#   - directory: deploy manages it, gid 65534 may traverse it, others nothing
-#   - file: only uid 65534 (and root) can read it
-sudo install -d -m 750 -o deploy -g 65534 /opt/notanothercards/infra/monitoring/secrets
-sudo tee /opt/notanothercards/infra/monitoring/secrets/slack_webhook >/dev/null <<'EOF'
-https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
-EOF
-sudo chown 65534:65534 /opt/notanothercards/infra/monitoring/secrets/slack_webhook
-sudo chmod 400 /opt/notanothercards/infra/monitoring/secrets/slack_webhook
 ```
 
-Verify the running Alertmanager can actually read the secret (the same check
-runs on every deployment):
+Set `SLACK_WEBHOOK_URL` in that file to the team Slack Incoming Webhook URL.
+Compose reads it from the mode-600 `.env` and mounts it as
+`/run/secrets/slack_webhook`; it is not placed in the Alertmanager container's
+environment or committed to the repository. An empty value makes Alertmanager
+fail immediately instead of starting with broken notification delivery.
 
-```bash
-sudo -u deploy docker compose \
-  -f /opt/notanothercards/infra/monitoring/docker-compose.yml \
-  --env-file /opt/notanothercards/infra/monitoring/.env \
-  exec -T -u 65534 alertmanager cat /etc/alertmanager/secrets/slack_webhook >/dev/null \
-  && echo "OK: secret readable by alertmanager"
+When upgrading a VPS that still has
+`infra/monitoring/secrets/slack_webhook`, the deployment workflow validates that
+legacy URL and copies it into `.env` once. After a successful deployment, the
+old file can be removed; `.env` is then the only runtime source.
+
+For the current proxy route, keep:
+
+```dotenv
+GX10_METRICS_MODE=proxy
+GX10_METRICS_HOST=ai.dustyway.org
 ```
 
-Ensure secure values for:
+After #193 joins the VPS to the tailnet, switch without editing Prometheus YAML:
+
+```dotenv
+GX10_METRICS_MODE=tailnet
+GX10_METRICS_HOST=100.64.0.1
+```
+
+Ensure valid secure values for:
 
 - `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD` (mandatory)
 - `POSTGRES_EXPORTER_DATA_SOURCE_NAME` (matching credentials in `/opt/notanothercards/.env`)
-- `infra/monitoring/secrets/slack_webhook` (your Slack Incoming Webhook URL)
+- `SLACK_WEBHOOK_URL` (the team Slack Incoming Webhook URL)
+
+Every production deployment submits `MonitoringDeliverySmokeTest` to
+Alertmanager and fails unless the receiver-specific metrics report one
+successful Slack notification. This sends one short smoke-test message to the
+alerts channel. `pnpm test:infra` exercises the same Alertmanager path against a
+local Slack-compatible endpoint, so CI does not contact the real workspace.
 
 ### 2. Start the Monitoring Stack
 
@@ -172,7 +186,7 @@ If a persistent Grafana volume has already been initialized, environment variabl
 
 ```bash
 # The image ships the `grafana` binary with a `cli` subcommand
-# (there is no standalone `grafana-cli` executable in grafana/grafana:13.2.0).
+# (there is no standalone `grafana-cli` executable in grafana/grafana:13.2.1).
 sudo -u deploy docker compose \
   -f /opt/notanothercards/infra/monitoring/docker-compose.yml \
   --env-file /opt/notanothercards/infra/monitoring/.env \
@@ -209,7 +223,18 @@ Afterwards update `GRAFANA_ADMIN_PASSWORD` in `/opt/notanothercards/infra/monito
    curl http://127.0.0.1:9093/-/healthy
    ```
 
-5. **View Monitoring Logs:**
+5. **Verify the Compose Secret Mount:**
+
+   ```bash
+   sudo -u deploy docker compose \
+     -f /opt/notanothercards/infra/monitoring/docker-compose.yml \
+     --env-file /opt/notanothercards/infra/monitoring/.env \
+     exec -T -u 65534 alertmanager \
+     cat /run/secrets/slack_webhook >/dev/null \
+     && echo "OK: Slack webhook secret is readable"
+   ```
+
+6. **View Monitoring Logs:**
    ```bash
    sudo -u deploy docker compose -f /opt/notanothercards/infra/monitoring/docker-compose.yml --env-file /opt/notanothercards/infra/monitoring/.env logs --tail=100 -f
    ```

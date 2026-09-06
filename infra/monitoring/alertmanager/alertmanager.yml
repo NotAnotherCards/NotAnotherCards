@@ -9,6 +9,13 @@ route:
   receiver: 'default-receiver'
   routes:
     - matchers:
+        - alertname = "MonitoringDeliverySmokeTest"
+      receiver: 'slack-delivery-smoke'
+      group_by: ['alertname', 'smoke_id']
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 24h
+    - matchers:
         - severity =~ "critical|warning"
       receiver: 'slack-notifications'
       continue: true
@@ -19,7 +26,7 @@ receivers:
   - name: 'slack-notifications'
     slack_configs:
       - channel: '#alerts'
-        api_url_file: '/etc/alertmanager/secrets/slack_webhook'
+        api_url_file: '/run/secrets/slack_webhook'
         send_resolved: true
         icon_emoji: ':rotating_light:'
         title: '{{ if eq .Status "firing" }}:fire: [FIRING:{{ .Alerts.Firing | len }}] {{ .CommonLabels.alertname }}{{ else }}:white_check_mark: [RESOLVED] {{ .CommonLabels.alertname }}{{ end }}'
@@ -29,3 +36,14 @@ receivers:
           *Severity:* `{{ .CommonLabels.severity }}`
           *Job:* `{{ .CommonLabels.job }}`
           *Instance:* `{{ .CommonLabels.instance }}`
+
+  - name: 'slack-delivery-smoke'
+    slack_configs:
+      - channel: '#alerts'
+        api_url_file: '/run/secrets/slack_webhook'
+        send_resolved: false
+        icon_emoji: ':white_check_mark:'
+        title: 'Monitoring deployment smoke test'
+        text: >-
+          Alertmanager successfully read the Compose-managed webhook secret and
+          delivered this test notification after a NotAnotherCards deployment.
