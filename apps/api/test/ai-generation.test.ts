@@ -82,7 +82,10 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
     expect(completedJob.status).toBe('completed');
     expect(completedJob.result).toBeDefined();
     expect(Array.isArray(completedJob.result)).toBe(true);
-    expect(completedJob.result!.length).toBeGreaterThan(0);
+    if (!Array.isArray(completedJob.result)) {
+      throw new Error('Expected topic deck generation to return a card array');
+    }
+    expect(completedJob.result.length).toBeGreaterThan(0);
     expect(completedJob.completedAt).not.toBeNull();
 
     // 5. Verify usage record was written
