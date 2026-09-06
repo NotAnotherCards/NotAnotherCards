@@ -4,10 +4,13 @@ import {
   BASIC_FRONT_BACK_TEMPLATE_KEY,
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
+  WORD_NOTE_TYPE,
   cardId,
   noteDeckId,
 } from '@repo/offline-db';
 import {
+  ENGLISH,
+  GERMAN,
   moderationRefusalSchema,
   sharedDeckListSchema,
   sharedDeckPreviewSchema,
@@ -125,6 +128,8 @@ describePostgres('deck sharing endpoints', () => {
       deleted?: boolean;
       title?: string;
       updatedAt?: number;
+      /** A word deck carries a language pair; the CHECK requires both. */
+      languages?: { native: string; target: string };
     } = {},
   ) => {
     const { cards = 1, visibility = 'private', deleted = false } = options;
@@ -141,7 +146,9 @@ describePostgres('deck sharing endpoints', () => {
       userId: owner.id,
       title: options.title ?? `Deck ${deckId}`,
       description: 'A deck',
-      noteType: BASIC_NOTE_TYPE,
+      noteType: options.languages ? WORD_NOTE_TYPE : BASIC_NOTE_TYPE,
+      nativeLanguageId: options.languages?.native ?? null,
+      targetLanguageId: options.languages?.target ?? null,
       visibility,
       createdAt: now,
       updatedAt: now,
@@ -472,7 +479,7 @@ describePostgres('deck sharing endpoints', () => {
     expect(await browse(userB)).toEqual([]);
   });
 
-  it('paginates and refuses a limit outside the allowed range', async () => {
+  it('paginates, clamping whatever the query carries', async () => {
     for (const index of [0, 1, 2]) {
       await seedDeck(userA, `page-${index}`, {
         visibility: 'public',
@@ -488,11 +495,14 @@ describePostgres('deck sharing endpoints', () => {
       (await browse(userA, '?limit=2&offset=2')).map((deck) => deck.id),
     ).toEqual(['page-0']);
 
-    // out-of-range and unparseable paging is clamped, never refused
-    expect(
-      (await browse(userA, '?limit=101&offset=-3')).length,
-    ).toBeGreaterThan(0);
-    expect((await browse(userA, '?limit=nope')).length).toBeGreaterThan(0);
+    // out-of-range and unparseable paging is clamped, never refused: a
+    // negative offset is 0, an empty or unparseable limit is the default
+    // (all three decks, where a clamp to 1 would return one), and an
+    // offset past what a bigint holds is a page, not a 500
+    expect((await browse(userA, '?limit=101&offset=-3')).length).toBe(3);
+    expect((await browse(userA, '?limit=')).length).toBe(3);
+    expect((await browse(userA, '?limit=nope')).length).toBe(3);
+    expect(await browse(userA, '?offset=1e21')).toEqual([]);
     await request(app.getHttpServer()).get('/api/shared/decks').expect(401);
   });
 
@@ -541,5 +551,54 @@ describePostgres('deck sharing endpoints', () => {
 
     await get(userB, '/api/shared/decks/buried').expect(404);
     await get(userA, '/api/shared/decks/buried').expect(404);
+  });
+  it('lists a word deck with its language pair', async () => {
+    // the language ids are fixed sentinels, not RFC uuids; the wire schema
+    // must accept them or every word deck fails to parse on the web
+    await seedDeck(userA, 'words', {
+      visibility: 'public',
+      languages: { native: GERMAN, target: ENGLISH },
+    });
+    const [deck] = await browse(userA);
+    expect(deck).toMatchObject({
+      id: 'words',
+      noteType: WORD_NOTE_TYPE,
+      nativeLanguageId: GERMAN,
+      targetLanguageId: ENGLISH,
+    });
+  });
+
+  it('refuses to publish for an account that never finished onboarding', async () => {
+    // signUp alone gives a session but no profile; only onboarding sets a
+    // username, and browse joins on it
+    const userC = await signUp('c');
+    await seedDeck(userC, 'unnamed');
+    const before = await storedDeck('unnamed');
+
+    const response = await post(userC, '/api/decks/unnamed/publish').expect(
+      422,
+    );
+    expect(response.body).toEqual({
+      reason: 'finish onboarding before publishing',
+      flagged: [],
+    });
+    moderationRefusalSchema.parse(response.body);
+    expect(await storedDeck('unnamed')).toEqual(before);
+  });
+
+  it('answers 404 when the deck is tombstoned between the check and the write', async () => {
+    await seedDeck(userA, 'vanishing');
+    vi.spyOn(app.get(ModerationService), 'check').mockImplementation(
+      async () => {
+        await db
+          .update(userDecks)
+          .set({ deletedAt: new Date() })
+          .where(eq(userDecks.id, 'vanishing'));
+        return { ok: true, flagged: [] };
+      },
+    );
+
+    await post(userA, '/api/decks/vanishing/publish').expect(404);
+    expect((await storedDeck('vanishing')).visibility).toBe('private');
   });
 });

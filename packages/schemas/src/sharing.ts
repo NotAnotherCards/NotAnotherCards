@@ -11,8 +11,10 @@ export const sharedDeckSummarySchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
   noteType: z.string(),
-  nativeLanguageId: z.uuid().nullable(),
-  targetLanguageId: z.uuid().nullable(),
+  // Plain strings, as in user-profile.ts: the language ids are fixed
+  // sentinels that z.uuid() rejects.
+  nativeLanguageId: z.string().nullable(),
+  targetLanguageId: z.string().nullable(),
   cardCount: z.number().int().nonnegative(),
   owner: z.object({ username: z.string() }),
   updatedAt: z.number(),

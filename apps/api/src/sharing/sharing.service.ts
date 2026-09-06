@@ -38,18 +38,11 @@ const summaryColumns = {
   targetLanguageId: userDecks.targetLanguageId,
   updatedAt: userDecks.updatedAt,
   cardCount: activeCardCount,
-  // Left join: a deck published before its owner finished onboarding has no
-  // profile row, and dropping it from the list would be the stranger bug.
-  // The owner's username comes from user_profiles through the inner join
-  // below, which keeps a deck only when a live profile with a username
-  // exists. A left join would keep every deck and hand back null for the
-  // missing profile, which is what an outer join is for: rows on one side
-  // without a partner on the other. Here that partner always exists, because
-  // onboarding creates the profile and sets the username before a user can
-  // reach anything else, so a public deck without one cannot come out of the
-  // app. Dropping such a row is the right answer and it frees the clients
-  // from a nullable owner. The column itself is nullable in the table, so
-  // the join's isNotNull condition is what makes the string type honest.
+  // Inner join on a live profile with a username, so a deck is listed only
+  // with a real owner name. Onboarding sets the username before anything
+  // else is reachable, and publish refuses without one, so nothing real is
+  // dropped. The column is nullable in the table; the join's isNotNull is
+  // what makes this string honest.
   username: sql<string>`${userProfiles.username}`,
 };
 
@@ -69,6 +62,15 @@ export class SharingService {
   async publish(userId: string, deckId: string) {
     const visibility = await this.ownedVisibility(userId, deckId);
     if (visibility === 'public') return { visibility };
+    // Browse and preview join on the owner's username, so a deck published
+    // by an account that never finished onboarding would be public and yet
+    // invisible to everyone, its owner included. Refuse instead.
+    if (!(await this.hasUsername(userId))) {
+      throw new UnprocessableEntityException({
+        reason: 'finish onboarding before publishing',
+        flagged: [],
+      });
+    }
 
     const verdict = await this.moderation.check({
       deckId,
@@ -165,6 +167,20 @@ export class SharingService {
     return deck.visibility;
   }
 
+  private async hasUsername(userId: string) {
+    const [profile] = await this.db
+      .select({ username: userProfiles.username })
+      .from(userProfiles)
+      .where(
+        and(
+          eq(userProfiles.userId, userId),
+          isNull(userProfiles.deletedAt),
+          isNotNull(userProfiles.username),
+        ),
+      );
+    return profile !== undefined;
+  }
+
   private async setVisibility(
     userId: string,
     deckId: string,
@@ -176,7 +192,7 @@ export class SharingService {
       await tx.execute(
         sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(userId).toString()})`,
       );
-      await tx
+      const written = await tx
         .update(userDecks)
         .set({
           visibility,
@@ -190,7 +206,11 @@ export class SharingService {
             eq(userDecks.userId, userId),
             isNull(userDecks.deletedAt),
           ),
-        );
+        )
+        .returning({ id: userDecks.id });
+      // The ownership check ran before the lock; the deck can have been
+      // tombstoned by another device in between.
+      if (written.length === 0) throw new NotFoundException('Deck not found');
     });
   }
 
