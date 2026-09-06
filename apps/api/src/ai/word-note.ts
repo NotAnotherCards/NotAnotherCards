@@ -20,7 +20,7 @@ export const wordNoteModelOutputSchema = z.object({
   example: generatedText(1000),
   example_translation: generatedText(1000),
   pronunciation: generatedText(200),
-  gender: generatedText(100).optional(),
+  gender: z.string().nullish(),
 });
 
 export function assembleWordNoteCandidate(
@@ -28,12 +28,10 @@ export function assembleWordNoteCandidate(
   output: unknown,
 ): AiWordNoteCandidate {
   const generated = wordNoteModelOutputSchema.parse(output);
-  if (
-    generated.gender &&
-    !gendersFor(payload.targetLanguageId).includes(generated.gender)
-  ) {
-    throw new Error('Generated gender does not match the target language');
-  }
+  // A gender the target language does not have (or a null for a language
+  // without genders) is dropped, not fatal: the candidate is still useful.
+  const wanted = generated.gender?.trim().toLowerCase();
+  const gender = gendersFor(payload.targetLanguageId).find((g) => g === wanted);
   const fields = WordNoteFieldsV1.parse({
     word: payload.direction === 'target' ? payload.word : generated.word,
     translation:
@@ -44,7 +42,7 @@ export function assembleWordNoteCandidate(
     example: generated.example,
     example_translation: generated.example_translation,
     pronunciation: generated.pronunciation,
-    ...(generated.gender ? { gender: generated.gender } : {}),
+    ...(gender ? { gender } : {}),
   });
 
   return aiWordNoteCandidateSchema.parse({

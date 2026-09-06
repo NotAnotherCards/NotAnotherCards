@@ -67,13 +67,36 @@ describe('word note generation', () => {
     ).toThrow();
   });
 
-  it('rejects a gender outside the target language', () => {
-    expect(() =>
-      assembleWordNoteCandidate(payload('target'), {
+  it('drops a gender the target language does not have', () => {
+    const candidate = assembleWordNoteCandidate(payload('target'), {
+      ...generated,
+      gender: 'la',
+    });
+    expect(candidate.fields.gender).toBeUndefined();
+  });
+
+  it('normalises a usable gender and tolerates null', () => {
+    const upper = assembleWordNoteCandidate(payload('target'), {
+      ...generated,
+      gender: ' Der ',
+    });
+    expect(upper.fields.gender).toBe('der');
+
+    // English has no genders; a model that still emits one must not fail the job
+    const english: WordNotePayload = {
+      ...payload('native'),
+      nativeLanguageId: GERMAN,
+      nativeLanguageName: 'German',
+      targetLanguageId: ENGLISH,
+      targetLanguageName: 'English',
+    };
+    for (const gender of [null, '', 'n/a', 'der']) {
+      const candidate = assembleWordNoteCandidate(english, {
         ...generated,
-        gender: 'la',
-      }),
-    ).toThrow('does not match the target language');
+        gender,
+      });
+      expect(candidate.fields.gender).toBeUndefined();
+    }
   });
 
   it('accepts identical words and translations', () => {
