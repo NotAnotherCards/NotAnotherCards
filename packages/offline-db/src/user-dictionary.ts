@@ -1,63 +1,21 @@
 import { z } from 'zod';
 import { ModelFor, type InferRecord } from '@remelondb/core';
 import { zodTable } from '@remelondb/core/zod';
-import {
-  BASIC_NOTE_FIELDS_VERSION,
-  BASIC_NOTE_TYPE,
-} from './note-constants.js';
+import { refineNoteFields } from './note-registry.js';
 import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
-
-export const BasicNoteFieldsV1 = z.strictObject({
-  front: z.string(),
-  back: z.string(),
-});
-
-export const noteFieldsSchemas: Readonly<
-  Record<string, Readonly<Record<number, z.ZodType>>>
-> = {
-  [BASIC_NOTE_TYPE]: {
-    [BASIC_NOTE_FIELDS_VERSION]: BasicNoteFieldsV1,
-  },
-};
-
-export type NoteFieldsValidationResult =
-  | { readonly success: true; readonly data: unknown }
-  | { readonly success: false; readonly error: string };
-
-/** Validate a serialized note payload using its explicit type/version pair. */
-export function validateNoteFieldsJson(
-  noteType: string,
-  fieldsVersion: number,
-  fieldsJson: string,
-): NoteFieldsValidationResult {
-  const fieldsSchema = noteFieldsSchemas[noteType]?.[fieldsVersion];
-  if (!fieldsSchema) {
-    return {
-      success: false,
-      error: `Unsupported note fields schema: ${noteType}@${fieldsVersion}`,
-    };
-  }
-
-  let fields: unknown;
-  try {
-    fields = JSON.parse(fieldsJson) as unknown;
-  } catch {
-    return { success: false, error: 'fields_json must be valid JSON' };
-  }
-
-  const result = fieldsSchema.safeParse(fields);
-  if (!result.success) {
-    return {
-      success: false,
-      error: `fields_json does not match ${noteType}@${fieldsVersion}`,
-    };
-  }
-  return { success: true, data: result.data };
-}
 
 export const UserDeckRow = z.object({
   title: z.string().min(1),
   description: z.string().nullable(),
+  // Which note contract this deck's notes follow. Left unrefined on
+  // purpose: a deck type this client does not know is stored and synced
+  // opaquely rather than rejected on pull, the same forward compatibility
+  // #194 gave unknown note types. The known set is checked server-side.
+  note_type: z.string().min(1),
+  // Defaults a word deck's note form starts from. The note stays the
+  // canonical source of its own languages; these only prefill.
+  native_language_id: z.string().nullable(),
+  target_language_id: z.string().nullable(),
   created_at: z.number().int().nonnegative(),
   updated_at: z.number().int().nonnegative(),
 });
@@ -87,20 +45,7 @@ export const UserNoteRow = z
     created_at: z.number().int().nonnegative(),
     updated_at: z.number().int().nonnegative(),
   })
-  .superRefine((row, context) => {
-    const result = validateNoteFieldsJson(
-      row.note_type,
-      row.fields_version,
-      row.fields_json,
-    );
-    if (!result.success) {
-      context.addIssue({
-        code: 'custom',
-        path: ['fields_json'],
-        message: result.error,
-      });
-    }
-  });
+  .superRefine(refineNoteFields);
 
 export const UserNoteDeckRow = z.object({
   note_id: z.string().min(1),

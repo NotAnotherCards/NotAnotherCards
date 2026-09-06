@@ -21,6 +21,7 @@ import { DeckForm } from './DeckForm';
 import { DeckCard } from './DeckCard';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import type { DeckNoteType } from '@repo/offline-db';
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -39,10 +40,17 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
   const handleCreateDeck = async (data: {
     title: string;
     description: string;
+    noteType: DeckNoteType;
+    nativeLanguageId: string | null;
+    targetLanguageId: string | null;
   }) => {
     setWriteError(null);
     try {
-      await store.createDeck(data.title, data.description);
+      await store.createDeck(data.title, data.description, {
+        noteType: data.noteType,
+        nativeLanguageId: data.nativeLanguageId,
+        targetLanguageId: data.targetLanguageId,
+      });
       setShowCreateForm(false);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'Failed to create deck'));
@@ -212,6 +220,11 @@ export function DeckList({ onSelectDeck }: DeckListProps) {
       {showCreateForm && (
         <DeckForm
           title="Create New Deck"
+          showNoteType
+          defaultLanguages={{
+            nativeLanguageId: store.profile?.native_language_id ?? null,
+            targetLanguageId: store.profile?.target_language_id ?? null,
+          }}
           onSubmit={handleCreateDeck}
           error={writeError}
           onCancel={() => setShowCreateForm(false)}

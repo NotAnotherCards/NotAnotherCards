@@ -8,6 +8,7 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { Edit, Trash2, FolderOpen } from 'lucide-react';
+import { noteTypeRegistry } from '@repo/offline-db';
 
 interface DeckCardProps {
   deck: Deck;
@@ -24,6 +25,13 @@ export function DeckCard({
   onEditDeck,
   onDeleteDeck,
 }: DeckCardProps) {
+  // A deck whose note type this client does not know is not editable here.
+  // A push sends the client's whole view of a row, so rewriting one a newer
+  // client wrote could drop columns this schema has never heard of. Delete
+  // stays: a tombstone carries ids only, so there is nothing to lose, and it
+  // is the only way to be rid of a deck this client cannot use.
+  const isKnownType = deck.note_type in noteTypeRegistry;
+
   return (
     <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
       <CardHeader className="pb-3">
@@ -36,15 +44,17 @@ export function DeckCard({
             {deck.title}
           </CardTitle>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 rounded-lg cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
-              onClick={() => onEditDeck(deck)}
-              title="Edit Deck Details"
-            >
-              <Edit className="size-3.5" />
-            </Button>
+            {isKnownType && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-lg cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
+                onClick={() => onEditDeck(deck)}
+                title="Edit Deck Details"
+              >
+                <Edit className="size-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

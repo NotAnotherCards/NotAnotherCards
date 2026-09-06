@@ -44,12 +44,24 @@ export const userDecks = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     title: text('title').notNull(),
     description: text('description'),
+    // Which note contract this deck's notes follow. Insert-only, and the
+    // known set is enforced in cross-validation so a client cannot claim
+    // one value while another persists.
+    noteType: text('note_type').notNull(),
+    // Defaults a word deck's note form starts from; the note stays the
+    // canonical source of its own languages.
+    nativeLanguageId: uuid('native_language_id'),
+    targetLanguageId: uuid('target_language_id'),
     createdAt: doublePrecision('created_at').notNull(),
     updatedAt: doublePrecision('updated_at').notNull(),
   },
   (table) => [
     index('user_decks_user_rev_idx').on(table.userId, table.rev),
     index('user_decks_user_updated_idx').on(table.userId, table.updatedAt),
+    check(
+      'user_decks_languages_match_note_type_check',
+      sql`case when ${table.noteType} = 'word' then ${table.nativeLanguageId} is not null and ${table.targetLanguageId} is not null and ${table.nativeLanguageId} <> ${table.targetLanguageId} else ${table.nativeLanguageId} is null and ${table.targetLanguageId} is null end`,
+    ),
     check(
       'user_decks_created_at_safe_integer_check',
       sql`${table.createdAt} >= 0 and ${table.createdAt} <= 9007199254740991 and ${table.createdAt} = trunc(${table.createdAt})`,
@@ -93,7 +105,9 @@ export const userCards = pgTable(
     ),
     check(
       'user_cards_scheduled_interval_minutes_range_check',
-      sql`${table.scheduledIntervalMinutes} between 0 and ${REVIEW_INTERVAL_CAP_MINUTES}`,
+      // sql.raw: a bare JS number becomes a bind parameter, which
+      // drizzle-kit serialises into generated migrations as `$1`
+      sql`${table.scheduledIntervalMinutes} between 0 and ${sql.raw(String(REVIEW_INTERVAL_CAP_MINUTES))}`,
     ),
     check(
       'user_cards_created_at_safe_integer_check',

@@ -29,6 +29,9 @@ describe('DeckCard Component', () => {
     id: 'deck-test-1',
     title: 'Spanish Verbs',
     description: 'Learn essential conversational Spanish verbs.',
+    note_type: 'basic',
+    native_language_id: null,
+    target_language_id: null,
     created_at: Date.now(),
     updated_at: Date.now(),
   };
@@ -49,6 +52,39 @@ describe('DeckCard Component', () => {
       screen.getByText('Learn essential conversational Spanish verbs.'),
     ).toBeInTheDocument();
     expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('12');
+  });
+
+  // A push sends the client's whole view of a row, so an old client
+  // rewriting a deck a newer one wrote could drop columns it never knew
+  // about. Delete is a tombstone and carries no field values, so it stays as
+  // the only way to be rid of a deck this client cannot use.
+  it('hides Edit on a deck whose type it does not know, and keeps Delete', () => {
+    render(
+      <DeckCard
+        deck={{ ...mockDeck, note_type: 'cloze' }}
+        totalCards={0}
+        onSelectDeck={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTitle('Edit Deck Details')).toBeNull();
+    expect(screen.getByTitle('Delete Deck')).toBeInTheDocument();
+  });
+
+  it('offers Edit on a deck whose type it knows', () => {
+    render(
+      <DeckCard
+        deck={mockDeck}
+        totalCards={0}
+        onSelectDeck={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTitle('Edit Deck Details')).toBeInTheDocument();
   });
 
   it('calls action callbacks on click events', () => {

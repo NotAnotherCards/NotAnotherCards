@@ -56,11 +56,12 @@ export function LoginForm() {
       )}
 
       <Button
-        label="Log in"
         loading={isSubmitting}
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
-      />
+      >
+        <Text>Log in</Text>
+      </Button>
     </>
   );
 }

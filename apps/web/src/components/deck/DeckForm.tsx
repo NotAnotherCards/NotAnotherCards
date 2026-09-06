@@ -13,6 +13,14 @@ import { Sparkles } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { LANGUAGES } from '@repo/schemas';
+import {
+  BASIC_NOTE_TYPE,
+  DECK_NOTE_TYPE_OPTIONS,
+  DECK_NOTE_TYPES,
+  type DeckNoteType,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
 import {
   Field,
   FieldError,
@@ -21,7 +29,12 @@ import {
   FieldSet,
 } from '@/components/ui/field';
 
+// A deck's note type is chosen once, at creation: its notes are compiled
+// against it, so it cannot change under them. The edit form omits it.
 const deckSchema = z.object({
+  noteType: z.enum(DECK_NOTE_TYPES),
+  nativeLanguageId: z.string().optional().or(z.literal('')),
+  targetLanguageId: z.string().optional().or(z.literal('')),
   title: z
     .string()
     .min(1, 'Deck title is required')
@@ -33,13 +46,43 @@ const deckSchema = z.object({
     .or(z.literal('')),
 });
 
+const deckFormSchema = deckSchema.superRefine((data, ctx) => {
+  if (data.noteType !== WORD_NOTE_TYPE) return;
+  for (const field of ['nativeLanguageId', 'targetLanguageId'] as const) {
+    if (!data[field]) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [field],
+        message: 'A word deck needs both languages',
+      });
+    }
+  }
+  if (data.nativeLanguageId === data.targetLanguageId) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['targetLanguageId'],
+      message: 'Choose a different target language',
+    });
+  }
+});
+
 type DeckFormData = z.infer<typeof deckSchema>;
 
 interface DeckFormProps {
   initialData?: { title: string; description: string };
+  /** Prefills a word deck's pair; the user can change it before creating. */
+  defaultLanguages?: {
+    nativeLanguageId: string | null;
+    targetLanguageId: string | null;
+  };
+  /** Editing cannot change the note type, so the choice is hidden then. */
+  showNoteType?: boolean;
   onSubmit: (data: {
     title: string;
     description: string;
+    noteType: DeckNoteType;
+    nativeLanguageId: string | null;
+    targetLanguageId: string | null;
   }) => void | Promise<void>;
   error?: string | null;
   onCancel: () => void;
@@ -48,24 +91,40 @@ interface DeckFormProps {
 
 export function DeckForm({
   initialData,
+  defaultLanguages,
+  showNoteType = false,
   onSubmit,
   onCancel,
   title,
   error,
 }: DeckFormProps) {
   const form = useForm<DeckFormData>({
-    resolver: zodResolver(deckSchema),
+    resolver: zodResolver(deckFormSchema),
     defaultValues: {
       title: initialData?.title ?? '',
       description: initialData?.description ?? '',
+      noteType: BASIC_NOTE_TYPE,
+      nativeLanguageId: defaultLanguages?.nativeLanguageId ?? '',
+      targetLanguageId: defaultLanguages?.targetLanguageId ?? '',
     },
   });
+  const noteType = form.watch('noteType');
+  const isWord = noteType === WORD_NOTE_TYPE;
 
   const handleFormSubmit = async (data: DeckFormData) => {
     // awaited so react-hook-form tracks isSubmitting for the write's duration
+    const wordDeck = data.noteType === WORD_NOTE_TYPE;
     await onSubmit({
       title: data.title.trim(),
       description: data.description?.trim() || '',
+      noteType: data.noteType,
+      // Only a word deck carries languages; a basic one must carry none.
+      nativeLanguageId: wordDeck
+        ? (data.nativeLanguageId ?? null) || null
+        : null,
+      targetLanguageId: wordDeck
+        ? (data.targetLanguageId ?? null) || null
+        : null,
     });
   };
 
@@ -141,6 +200,84 @@ export function DeckForm({
                     </Field>
                   )}
                 />
+
+                {showNoteType && (
+                  <Controller
+                    name="noteType"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel>What goes in this deck</FieldLabel>
+                        <div className="grid grid-cols-2 gap-2">
+                          {DECK_NOTE_TYPE_OPTIONS.map(
+                            ({ value, label, description }) => (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => field.onChange(value)}
+                                aria-pressed={field.value === value}
+                                className={`rounded-lg border p-3 text-left transition-colors ${
+                                  field.value === value
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-input hover:bg-accent/50'
+                                }`}
+                              >
+                                <span className="block text-sm font-medium">
+                                  {label}
+                                </span>
+                                <span className="block text-xs text-muted-foreground">
+                                  {description}
+                                </span>
+                              </button>
+                            ),
+                          )}
+                        </div>
+                      </Field>
+                    )}
+                  />
+                )}
+
+                {showNoteType &&
+                  isWord &&
+                  (
+                    [
+                      ['nativeLanguageId', 'Your language'],
+                      ['targetLanguageId', 'Language you are learning'],
+                    ] as const
+                  ).map(([name, label]) => (
+                    <Controller
+                      key={name}
+                      name={name}
+                      control={form.control}
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                          <select
+                            {...field}
+                            value={field.value ?? ''}
+                            id={field.name}
+                            aria-invalid={fieldState.invalid}
+                            className={`w-full flex h-10 rounded-lg border bg-background px-3 py-2 text-sm ${
+                              fieldState.invalid
+                                ? 'border-destructive'
+                                : 'border-input'
+                            }`}
+                          >
+                            <option value="">Choose a language</option>
+                            {LANGUAGES.map((language) => (
+                              <option
+                                key={language.value}
+                                value={language.value}
+                              >
+                                {language.label}
+                              </option>
+                            ))}
+                          </select>
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
+                      )}
+                    />
+                  ))}
               </FieldGroup>
             </FieldSet>
           </CardContent>

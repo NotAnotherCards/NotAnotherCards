@@ -42,6 +42,8 @@ it('enforces nonnegative safe-integer sync timestamps', () => {
   expect(
     getTableConfig(userDecks).checks.map((constraint) => constraint.name),
   ).toEqual([
+    // a word deck carries both languages, any other type carries neither
+    'user_decks_languages_match_note_type_check',
     'user_decks_created_at_safe_integer_check',
     'user_decks_updated_at_safe_integer_check',
   ]);

@@ -17,11 +17,14 @@
   "dependencies": {
     "@better-auth/expo": "^1.6.23",
     "@hookform/resolvers": "^5.4.0",
-    "@remelondb/core": "0.2.6",
-    "@remelondb/driver-rn": "0.2.6",
+    "@remelondb/core": "0.3.0",
+    "@remelondb/driver-rn": "0.3.0",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
+    "@rn-primitives/label": "^1.5.2",
+    "@rn-primitives/slot": "^1.5.2",
     "better-auth": "^1.6.23",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "expo": "~57.0.10",
     "expo-constants": "~57.0.9",
@@ -47,6 +50,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@remelondb/driver-node": "0.3.0",
     "@repo/eslint-config": "workspace:*",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
@@ -61,5 +65,6 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^3.4.19",
     "typescript": "5.9.3"
-  }
+  },
+  "license": "MIT"
 }
