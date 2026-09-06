@@ -8,6 +8,7 @@ import {
   type AiWordNoteCandidate,
 } from '@repo/schemas';
 import { WordNoteFieldsV1 } from '@repo/offline-db';
+import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 
@@ -170,7 +171,6 @@ export function WordNoteGeneration({
     <div className="w-full space-y-2">
       <Button
         type="button"
-        variant="outline"
         disabled={
           disabled || starting || (pending && !pollPaused) || !native || !target
         }
@@ -180,12 +180,21 @@ export function WordNoteGeneration({
             setPollPaused(false);
           } else void generate();
         }}
+        // the same look as the playground's Start Card Generation button
+        className="w-full bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-3xl py-5 shadow-lg shadow-indigo-500/10 font-semibold"
       >
-        {pollPaused
-          ? 'Check generation again'
-          : starting || pending
-            ? 'Filling…'
-            : 'Fill with AI'}
+        <span className="flex items-center justify-center gap-2">
+          {(starting || pending) && !pollPaused ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4 animate-pulse" />
+          )}
+          {pollPaused
+            ? 'Check generation again'
+            : starting || pending
+              ? 'Filling…'
+              : 'Fill with AI'}
+        </span>
       </Button>
       {pending && (
         <p role="status" className="text-sm">
