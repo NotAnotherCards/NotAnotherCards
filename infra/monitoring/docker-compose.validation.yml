@@ -1,0 +1,5 @@
+secrets:
+  slack_webhook:
+    # Tests use an isolated temporary file and never read a developer or VPS
+    # webhook. Production does not load this override.
+    file: ${SLACK_WEBHOOK_FILE:?SLACK_WEBHOOK_FILE is required for validation}

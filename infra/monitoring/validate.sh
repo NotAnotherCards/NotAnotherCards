@@ -25,7 +25,10 @@ cleanup() {
     GX10_METRICS_MODE="proxy" \
     GX10_METRICS_HOST="ai.dustyway.org" \
     PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
-    docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" down -v --remove-orphans >/dev/null 2>&1 || true
+    docker compose --profile validation -p "$E2E_PROJECT" \
+      -f "$SCRIPT_DIR/docker-compose.yml" \
+      -f "$SCRIPT_DIR/docker-compose.validation.yml" \
+      down -v --remove-orphans >/dev/null 2>&1 || true
   fi
   if [ "$E2E_CREATED_NETWORK" = "1" ]; then
     docker network rm notanothercards_default >/dev/null 2>&1 || true
@@ -40,7 +43,10 @@ GRAFANA_ADMIN_PASSWORD="ci-test-password" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
 GX10_METRICS_MODE="proxy" \
 GX10_METRICS_HOST="ai.dustyway.org" \
-docker compose -f "$SCRIPT_DIR/docker-compose.yml" config > "$RENDER_TMP/docker-compose.yml"
+docker compose \
+  -f "$SCRIPT_DIR/docker-compose.yml" \
+  -f "$SCRIPT_DIR/docker-compose.validation.yml" \
+  config > "$RENDER_TMP/docker-compose.yml"
 if grep -Fq "$E2E_SLACK_WEBHOOK_URL" "$RENDER_TMP/docker-compose.yml"; then
   echo "ERROR: rendered Compose configuration exposed the Slack webhook" >&2
   exit 1
@@ -50,7 +56,10 @@ grep -Fq "file: $E2E_SLACK_WEBHOOK_FILE" "$RENDER_TMP/docker-compose.yml" \
 echo "  [OK] Compose references the secret file without exposing its contents"
 
 echo "==> 1b. Validating fail-safe empty password rejection..."
-if (unset GRAFANA_ADMIN_PASSWORD && docker compose -f "$SCRIPT_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env.example" config >/dev/null 2>&1); then
+if (unset GRAFANA_ADMIN_PASSWORD && docker compose \
+  -f "$SCRIPT_DIR/docker-compose.yml" \
+  -f "$SCRIPT_DIR/docker-compose.validation.yml" \
+  --env-file "$SCRIPT_DIR/.env.example" config >/dev/null 2>&1); then
   echo "ERROR: Compose unexpectedly accepted unedited .env.example with blank GRAFANA_ADMIN_PASSWORD" >&2
   exit 1
 fi
@@ -61,7 +70,9 @@ E2E_STACK_UP=1
 if GRAFANA_ADMIN_PASSWORD="ci-test-password" \
   POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
   SLACK_WEBHOOK_FILE="$EMPTY_SLACK_WEBHOOK_FILE" \
-  docker compose -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+  docker compose -p "$E2E_PROJECT" \
+    -f "$SCRIPT_DIR/docker-compose.yml" \
+    -f "$SCRIPT_DIR/docker-compose.validation.yml" \
     run --rm --no-deps alertmanager >/dev/null 2>&1; then
   echo "ERROR: Alertmanager unexpectedly accepted an empty Slack webhook file" >&2
   exit 1
@@ -167,7 +178,10 @@ POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanot
 GX10_METRICS_MODE="proxy" \
 GX10_METRICS_HOST="ai.dustyway.org" \
 PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
-docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" up -d --wait \
+docker compose --profile validation -p "$E2E_PROJECT" \
+  -f "$SCRIPT_DIR/docker-compose.yml" \
+  -f "$SCRIPT_DIR/docker-compose.validation.yml" \
+  up -d --wait \
   prometheus grafana alertmanager postgres-exporter slack-webhook-mock
 
 echo "  [OK] stack is healthy, checking provisioned resources..."
@@ -178,7 +192,9 @@ grafana_api() {
   POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
   GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
   PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
-  docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+  docker compose --profile validation -p "$E2E_PROJECT" \
+    -f "$SCRIPT_DIR/docker-compose.yml" \
+    -f "$SCRIPT_DIR/docker-compose.validation.yml" \
     exec -T grafana sh -ec '
       auth="$(printf "%s" "$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD" | base64 | tr -d "\n")"
       wget -qO- --header "Authorization: Basic $auth" "http://localhost:3000/$1"
@@ -235,7 +251,9 @@ alertmanager_environment="$(
   POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
   GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
   PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
-  docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+  docker compose --profile validation -p "$E2E_PROJECT" \
+    -f "$SCRIPT_DIR/docker-compose.yml" \
+    -f "$SCRIPT_DIR/docker-compose.validation.yml" \
     exec -T alertmanager env
 )"
 if printf '%s\n' "$alertmanager_environment" | grep -Eq 'SLACK_WEBHOOK|hooks\.slack'; then
@@ -250,7 +268,9 @@ mock_value() {
   POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
   GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
   PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
-  docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+  docker compose --profile validation -p "$E2E_PROJECT" \
+    -f "$SCRIPT_DIR/docker-compose.yml" \
+    -f "$SCRIPT_DIR/docker-compose.validation.yml" \
     exec -T slack-webhook-mock wget -qO- "http://127.0.0.1:8080$path"
 }
 
@@ -297,7 +317,9 @@ GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
 GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
 PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
-docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+docker compose --profile validation -p "$E2E_PROJECT" \
+  -f "$SCRIPT_DIR/docker-compose.yml" \
+  -f "$SCRIPT_DIR/docker-compose.validation.yml" \
   up -d --wait --force-recreate --no-deps alertmanager
 
 if SLACK_DELIVERY_MAX_ATTEMPTS=8 \

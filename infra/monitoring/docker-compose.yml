@@ -190,4 +190,4 @@ volumes:
 secrets:
   slack_webhook:
     # Production provisions this ignored file with mode 0400.
-    file: ${SLACK_WEBHOOK_FILE:-./secrets/slack_webhook}
+    file: ./secrets/slack_webhook

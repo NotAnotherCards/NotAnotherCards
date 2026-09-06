@@ -63,11 +63,13 @@ jobs:
             secret_uid="$(stat -c '%u' "$slack_secret")"
             secret_gid="$(stat -c '%g' "$slack_secret")"
             secret_mode="$(stat -c '%a' "$slack_secret")"
+            secret_dir_uid="$(stat -c '%u' "$slack_secret_dir")"
             secret_dir_gid="$(stat -c '%g' "$slack_secret_dir")"
             secret_dir_mode="$(stat -c '%a' "$slack_secret_dir")"
+            deploy_uid="$(id -u)"
             if [ "$secret_uid:$secret_gid:$secret_mode" != "65534:65534:400" ] \
-              || [ "$secret_dir_gid:$secret_dir_mode" != "65534:750" ]; then
-              echo "FATAL: Slack secret permissions must be file 65534:65534 mode 400 and directory group 65534 mode 750" >&2
+              || [ "$secret_dir_uid:$secret_dir_gid:$secret_dir_mode" != "$deploy_uid:65534:750" ]; then
+              echo "FATAL: Slack secret permissions must be file 65534:65534 mode 400 and directory deploy-user:65534 mode 750" >&2
               exit 1
             fi
 

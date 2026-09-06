@@ -111,13 +111,10 @@ sudo -u deploy nano /opt/notanothercards/infra/monitoring/.env
 # can replace the secret; only Alertmanager (and root) can read the file.
 sudo install -d -m 750 -o deploy -g 65534 \
   /opt/notanothercards/infra/monitoring/secrets
-sudo tee /opt/notanothercards/infra/monitoring/secrets/slack_webhook >/dev/null <<'EOF'
+sudo install -m 400 -o 65534 -g 65534 /dev/stdin \
+  /opt/notanothercards/infra/monitoring/secrets/slack_webhook <<'EOF'
 https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
 EOF
-sudo chown 65534:65534 \
-  /opt/notanothercards/infra/monitoring/secrets/slack_webhook
-sudo chmod 400 \
-  /opt/notanothercards/infra/monitoring/secrets/slack_webhook
 ```
 
 Compose mounts that file read-only as `/run/secrets/slack_webhook`, and
