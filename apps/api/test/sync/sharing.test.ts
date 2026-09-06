@@ -119,10 +119,11 @@ describePostgres('deck sharing endpoints', () => {
       visibility?: string;
       deleted?: boolean;
       title?: string;
+      updatedAt?: number;
     } = {},
   ) => {
     const { cards = 1, visibility = 'private', deleted = false } = options;
-    const now = Date.now();
+    const now = options.updatedAt ?? Date.now();
     const noteIds = Array.from(
       { length: cards },
       (_, index) => `${deckId}-note-${index}`,
@@ -198,6 +199,14 @@ describePostgres('deck sharing endpoints', () => {
 
   const post = (user: TestUser, path: string) =>
     request(app.getHttpServer()).post(path).set('Cookie', user.cookie);
+
+  const get = (user: TestUser, path: string) =>
+    request(app.getHttpServer()).get(path).set('Cookie', user.cookie);
+
+  const browse = async (user: TestUser, query = '') => {
+    const response = await get(user, `/api/shared/decks${query}`).expect(200);
+    return (response.body as { decks: { id: string }[] }).decks;
+  };
 
   const pull = async (user: TestUser, cursor: string | null = null) => {
     const response = await request(app.getHttpServer())
@@ -406,5 +415,119 @@ describePostgres('deck sharing endpoints', () => {
       rejected: { user_decks: ['pushed'] },
     });
     expect((await storedDeck('pushed')).visibility).toBe('private');
+  });
+
+  it('lists public decks newest first, with the owner and a card count', async () => {
+    await seedDeck(userA, 'mine', {
+      cards: 2,
+      visibility: 'public',
+      updatedAt: 1000,
+    });
+    await seedDeck(userB, 'theirs', {
+      cards: 1,
+      visibility: 'public',
+      updatedAt: 2000,
+    });
+    await seedDeck(userA, 'secret');
+    await seedDeck(userB, 'gone', { visibility: 'public', deleted: true });
+
+    const decks = await browse(userA);
+    expect(decks).toEqual([
+      {
+        id: 'theirs',
+        title: 'Deck theirs',
+        description: 'A deck',
+        noteType: BASIC_NOTE_TYPE,
+        nativeLanguageId: null,
+        targetLanguageId: null,
+        cardCount: 1,
+        owner: { username: 'user-b' },
+        updatedAt: 2000,
+      },
+      // The caller's own public deck is listed like anyone else's.
+      expect.objectContaining({
+        id: 'mine',
+        cardCount: 2,
+        owner: { username: 'user-a' },
+      }),
+    ]);
+  });
+
+  it('adds a deck to the list on publish and drops it on unpublish', async () => {
+    await seedDeck(userA, 'toggled');
+    expect(await browse(userB)).toEqual([]);
+
+    await post(userA, '/api/decks/toggled/publish').expect(200);
+    expect((await browse(userB)).map((deck) => deck.id)).toEqual(['toggled']);
+
+    await post(userA, '/api/decks/toggled/unpublish').expect(200);
+    expect(await browse(userB)).toEqual([]);
+  });
+
+  it('paginates and refuses a limit outside the allowed range', async () => {
+    for (const index of [0, 1, 2]) {
+      await seedDeck(userA, `page-${index}`, {
+        visibility: 'public',
+        updatedAt: 1000 + index,
+      });
+    }
+
+    expect((await browse(userA, '?limit=2')).map((deck) => deck.id)).toEqual([
+      'page-2',
+      'page-1',
+    ]);
+    expect(
+      (await browse(userA, '?limit=2&offset=2')).map((deck) => deck.id),
+    ).toEqual(['page-0']);
+
+    await get(userA, '/api/shared/decks?limit=101').expect(400);
+    await get(userA, '/api/shared/decks?limit=nope').expect(400);
+    await request(app.getHttpServer()).get('/api/shared/decks').expect(401);
+  });
+
+  it('previews a public deck for a stranger and a private one only for its owner', async () => {
+    await seedDeck(userA, 'readable', { cards: 2, visibility: 'public' });
+    await seedDeck(userA, 'secret');
+
+    const shared = await get(userB, '/api/shared/decks/readable').expect(200);
+    expect(shared.body).toMatchObject({
+      deck: {
+        id: 'readable',
+        cardCount: 2,
+        owner: { username: 'user-a' },
+        cards: [
+          { front: 'front 0', back: 'back 0' },
+          { front: 'front 1', back: 'back 1' },
+        ],
+      },
+    });
+
+    await get(userB, '/api/shared/decks/secret').expect(404);
+    await get(userB, '/api/shared/decks/no-such-deck').expect(404);
+    await get(userA, '/api/shared/decks/secret').expect(200);
+  });
+
+  it('caps a preview at ten cards and exposes nothing but their text', async () => {
+    await seedDeck(userA, 'long', { cards: 12, visibility: 'public' });
+
+    const response = await get(userA, '/api/shared/decks/long').expect(200);
+    const { cards, cardCount } = (
+      response.body as {
+        deck: { cardCount: number; cards: Record<string, string>[] };
+      }
+    ).deck;
+
+    expect(cardCount).toBe(12);
+    expect(cards).toHaveLength(10);
+    expect(cards[0]).toEqual({ front: 'front 0', back: 'back 0' });
+    for (const card of cards)
+      expect(Object.keys(card)).toEqual(['front', 'back']);
+  });
+
+  it('does not preview a tombstoned deck, public or owned', async () => {
+    await seedDeck(userA, 'buried', { visibility: 'public', deleted: true });
+
+    await get(userB, '/api/shared/decks/buried').expect(404);
+    await get(userA, '/api/shared/decks/buried').expect(404);
   });
 });
