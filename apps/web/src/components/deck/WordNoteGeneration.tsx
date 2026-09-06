@@ -54,7 +54,6 @@ export function WordNoteGeneration({
   const startRequest = useRef<AbortController | null>(null);
   const apply = useRef<((candidate: AiWordNoteCandidate) => void) | null>(null);
   const handledJob = useRef<string | null>(null);
-  const [filled, setFilled] = useState(false);
   const pending = job?.status === 'pending' || job?.status === 'processing';
   const jobId = job?.id;
   const native = languageFor(deck.nativeLanguageId);
@@ -115,7 +114,6 @@ export function WordNoteGeneration({
     setStarting(true);
     apply.current = applyResult;
     handledJob.current = null;
-    setFilled(false);
     setError(null);
     setJob(null);
     setPollPaused(false);
@@ -161,7 +159,6 @@ export function WordNoteGeneration({
     }
     try {
       apply.current?.(result);
-      setFilled(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to fill the form.');
     }
@@ -201,11 +198,6 @@ export function WordNoteGeneration({
           {pollPaused
             ? 'Generation may still be running.'
             : 'Filling your word note…'}
-        </p>
-      )}
-      {filled && (
-        <p role="status" className="text-sm">
-          Fields filled. Review and edit them before saving.
         </p>
       )}
       {error && <FormErrorMessage message={error} />}

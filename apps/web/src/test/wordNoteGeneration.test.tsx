@@ -82,7 +82,9 @@ describe('AI autofill in the existing word form', () => {
         />,
       );
       start();
-      await screen.findByText(/Fields filled/);
+      await waitFor(() =>
+        expect(screen.getByLabelText(/^pronunciation/i)).toHaveValue('hʊnt'),
+      );
       expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
         type: 'word_note',
         deckId: 'deck-1',
@@ -136,7 +138,9 @@ describe('AI autofill in the existing word form', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Check generation again' }),
     );
-    await screen.findByText(/Fields filled/);
+    await waitFor(() =>
+      expect(screen.getByLabelText(/^pronunciation/i)).toHaveValue('hʊnt'),
+    );
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       '/api/ai/generate',
       '/api/ai/jobs/job-1',
@@ -155,7 +159,9 @@ describe('AI autofill in the existing word form', () => {
     await screen.findByText(/Generation failed/);
     expect(screen.getByLabelText(/^word( in \w+)?$/i)).toHaveValue('Hund');
     start();
-    await screen.findByText(/Fields filled/);
+    await waitFor(() =>
+      expect(screen.getByLabelText(/^pronunciation/i)).toHaveValue('hʊnt'),
+    );
   });
 
   it('shows quota errors without losing entered fields', async () => {
@@ -244,7 +250,9 @@ describe('AI autofill in the existing word form', () => {
       <WordNoteForm {...formProps} initialData={{ word: 'Hund' }} />,
     );
     start();
-    await screen.findByText(/Fields filled/);
+    await waitFor(() =>
+      expect(screen.getByLabelText(/^pronunciation/i)).toHaveValue('hʊnt'),
+    );
     rerender(
       <WordNoteForm
         {...formProps}
