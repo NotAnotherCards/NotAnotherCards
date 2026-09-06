@@ -39,19 +39,22 @@ export function DeckCard({
     <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
-          <CardTitle
-            className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate max-w-[80%]"
-            onClick={() => onSelectDeck(deck.id)}
-            title={`${deck.title} (${deck.note_type})`}
-          >
+          <div className="flex items-center gap-2 min-w-0 max-w-[80%]">
             <span
-              className={`${deckKindClassName} mr-2 align-middle font-medium`}
+              className={`${deckKindClassName} shrink-0 font-medium`}
               data-testid="deck-kind"
+              title={deck.note_type}
             >
               {deckKindShort(deck)}
             </span>
-            {deck.title}
-          </CardTitle>
+            <CardTitle
+              className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate"
+              onClick={() => onSelectDeck(deck.id)}
+              title={deck.title}
+            >
+              {deck.title}
+            </CardTitle>
+          </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {isKnownType && (
               <Button
