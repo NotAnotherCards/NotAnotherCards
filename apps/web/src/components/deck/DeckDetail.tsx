@@ -24,6 +24,7 @@ import {
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
 } from '@repo/offline-db';
+import { languageFor, languageLabel } from '@repo/schemas';
 import { CardList } from './CardList';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
@@ -97,6 +98,18 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
   const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
+  // What kind of deck this is, since the type is chosen once and decides
+  // which form opens: a word deck names its pair as the learner reads it,
+  // from their language to the one they learn; anything else names its type.
+  const nativeLanguage = languageFor(deck?.native_language_id);
+  const targetLanguage = languageFor(deck?.target_language_id);
+  const deckKind = isWordDeck
+    ? targetLanguage && nativeLanguage
+      ? `${languageLabel(nativeLanguage)} → ${languageLabel(targetLanguage)}`
+      : 'Word deck'
+    : isBasicDeck
+      ? 'Card deck'
+      : `Unknown deck type: ${deck?.note_type ?? ''}`;
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
   const editingWordFields = (() => {
@@ -214,9 +227,17 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground font-heading">
-              {deck.title}
-            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground font-heading">
+                {deck.title}
+              </h2>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40"
+                data-testid="deck-kind"
+              >
+                {deckKind}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               {deck.description || 'Manage your library cards below.'}
             </p>
