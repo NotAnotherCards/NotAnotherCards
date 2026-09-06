@@ -36,7 +36,7 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-gpu-gx10\"} or vector(0)",
+          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-gpu-gx10\"} or on() vector(0)",
           "legendFormat": "GPU Util %"
         }
       ]
@@ -63,7 +63,7 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-gpu-gx10\"} or vector(0)",
+          "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-gpu-gx10\"} or on() vector(0)",
           "legendFormat": "Temp (°C)"
         }
       ]
@@ -79,7 +79,7 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm-gpu-gx10\"} or vector(0)",
+          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm-gpu-gx10\"} or on() vector(0)",
           "legendFormat": "Watts"
         }
       ]
@@ -99,7 +99,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(litellm_requests_metric_total{job=\"litellm-gx10\"}[5m]) or vector(0)",
+          "expr": "rate(litellm_requests_metric_total{job=\"litellm-gx10\"}[5m]) or on() vector(0)",
           "legendFormat": "Requests/s"
         }
       ]
@@ -113,7 +113,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(litellm_deployment_latency_per_output_token_sum{job=\"litellm-gx10\"}[5m]) / rate(litellm_deployment_latency_per_output_token_count{job=\"litellm-gx10\"}[5m]) or vector(0)",
+          "expr": "rate(litellm_deployment_latency_per_output_token_sum{job=\"litellm-gx10\"}[5m]) / rate(litellm_deployment_latency_per_output_token_count{job=\"litellm-gx10\"}[5m]) or on() vector(0)",
           "legendFormat": "Latency / token"
         }
       ]

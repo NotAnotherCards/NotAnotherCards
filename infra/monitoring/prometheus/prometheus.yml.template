@@ -35,21 +35,21 @@ scrape_configs:
 
   # LiteLLM AI Gateway metrics on GX10
   - job_name: 'litellm-gx10'
-    scheme: https
-    metrics_path: '/metrics'
+    scheme: __GX10_LITELLM_SCHEME__
+    metrics_path: '__GX10_LITELLM_PATH__'
     static_configs:
-      - targets: ['__GX10_METRICS_HOST__']
+      - targets: ['__GX10_LITELLM_TARGET__']
 
   # NVIDIA DCGM GPU exporter on GX10 (GPU utilization, memory, temperature)
   - job_name: 'dcgm-gpu-gx10'
-    scheme: https
-    metrics_path: '/dcgm/metrics'
+    scheme: __GX10_DCGM_SCHEME__
+    metrics_path: '__GX10_DCGM_PATH__'
     static_configs:
-      - targets: ['__GX10_METRICS_HOST__']
+      - targets: ['__GX10_DCGM_TARGET__']
 
   # GX10 host hardware metrics
   - job_name: 'node-gx10'
-    scheme: https
-    metrics_path: '/node/metrics'
+    scheme: __GX10_NODE_SCHEME__
+    metrics_path: '__GX10_NODE_PATH__'
     static_configs:
-      - targets: ['__GX10_METRICS_HOST__']
+      - targets: ['__GX10_NODE_TARGET__']
