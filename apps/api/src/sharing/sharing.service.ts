@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import type { AppDatabase } from '../database/database-schema';
 import {
@@ -40,10 +40,15 @@ const summaryColumns = {
   cardCount: activeCardCount,
   // Left join: a deck published before its owner finished onboarding has no
   // profile row, and dropping it from the list would be the stranger bug.
-  username: userProfiles.username,
+  // Inner-joined below on a non-null username: onboarding creates the
+  // profile and sets the username before anything else is reachable, so a
+  // public deck without one cannot exist through the app and is not worth a
+  // nullable field. The column is nullable in the table, so the join's
+  // isNotNull is what backs the type here.
+  username: sql<string>`${userProfiles.username}`,
 };
 
-const toSummary = <T extends { username: string | null }>({
+const toSummary = <T extends { username: string }>({
   username,
   ...deck
 }: T) => ({ ...deck, owner: { username } });
@@ -87,11 +92,12 @@ export class SharingService {
     const decks = await this.db
       .select(summaryColumns)
       .from(userDecks)
-      .leftJoin(
+      .innerJoin(
         userProfiles,
         and(
           eq(userProfiles.userId, userDecks.userId),
           isNull(userProfiles.deletedAt),
+          isNotNull(userProfiles.username),
         ),
       )
       .where(
@@ -101,6 +107,8 @@ export class SharingService {
       .limit(limit)
       .offset(offset);
 
+    // Wrapped like every other controller here ({ job }, { jobs }, { quota })
+    // rather than a bare array: the web parses one envelope shape.
     return { decks: decks.map(toSummary) };
   }
 
@@ -108,11 +116,12 @@ export class SharingService {
     const [deck] = await this.db
       .select(summaryColumns)
       .from(userDecks)
-      .leftJoin(
+      .innerJoin(
         userProfiles,
         and(
           eq(userProfiles.userId, userDecks.userId),
           isNull(userProfiles.deletedAt),
+          isNotNull(userProfiles.username),
         ),
       )
       .where(

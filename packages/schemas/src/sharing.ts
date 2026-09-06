@@ -3,8 +3,8 @@ import { z } from 'zod';
 /**
  * One row of GET /api/shared/decks, and the deck half of a preview.
  *
- * `owner.username` is null when the owner never finished onboarding: the deck
- * is still listed, so the clients need something to show in its place.
+ * `owner.username` is always set: only onboarded users can publish, and
+ * onboarding sets the username.
  */
 export const sharedDeckSummarySchema = z.object({
   id: z.string(),
@@ -14,7 +14,7 @@ export const sharedDeckSummarySchema = z.object({
   nativeLanguageId: z.uuid().nullable(),
   targetLanguageId: z.uuid().nullable(),
   cardCount: z.number().int().nonnegative(),
-  owner: z.object({ username: z.string().nullable() }),
+  owner: z.object({ username: z.string() }),
   updatedAt: z.number(),
 });
 

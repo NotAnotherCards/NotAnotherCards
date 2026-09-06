@@ -21,6 +21,9 @@ export class ModerationService {
   // where someone opted in: staging sets the flag for the #289 demo,
   // production and CI do not. The stub has nothing to await and ignores the
   // cards it is handed, which is what the disabled rules are complaining about.
+  // Kept as a disable rather than reshaped around the linter: any workaround
+  // is more code to delete when #263 replaces this body, and the signature
+  // has to stay as it is for that swap.
   // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
   async check(input: ModerationInput): Promise<ModerationVerdict> {
     if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
