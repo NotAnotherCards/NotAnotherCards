@@ -51,37 +51,33 @@ jobs:
               exit 1
             }
 
-            # One-time migration from the pre-#188 secret-file layout. Keep the
-            # webhook in the required mode-600 monitoring .env from now on.
-            if ! grep -Eq '^SLACK_WEBHOOK_URL=.+$' infra/monitoring/.env; then
-              legacy_slack_secret=infra/monitoring/secrets/slack_webhook
-              if [ ! -s "$legacy_slack_secret" ]; then
-                echo "FATAL: set SLACK_WEBHOOK_URL in infra/monitoring/.env" >&2
-                exit 1
-              fi
-              # The legacy file is owned by Alertmanager's uid with mode 400,
-              # so read it through an isolated root container without placing
-              # the secret on the command line or in container environment.
-              legacy_slack_webhook="$(
-                docker run --rm --network none --read-only --user 0:0 \
-                  --volume "$PWD/$legacy_slack_secret:/run/legacy-slack-webhook:ro" \
-                  --entrypoint /bin/cat \
-                  prom/alertmanager:v0.34.0 \
-                  /run/legacy-slack-webhook | tr -d '\r\n'
-              )"
-              case "$legacy_slack_webhook" in
-                https://hooks.slack.com/services/* | https://hooks.slack-gov.com/services/*) ;;
-                *)
-                  echo "FATAL: legacy Slack webhook has an unexpected URL" >&2
-                  exit 1
-                  ;;
-              esac
-              printf '\nSLACK_WEBHOOK_URL=%s\n' "$legacy_slack_webhook" >> infra/monitoring/.env
-              chmod 600 infra/monitoring/.env
-              unset legacy_slack_webhook
-              echo "Migrated the legacy Slack webhook into infra/monitoring/.env"
-            fi
             chmod 600 infra/monitoring/.env
+
+            slack_secret_dir=infra/monitoring/secrets
+            slack_secret="$slack_secret_dir/slack_webhook"
+            test -s "$slack_secret" || {
+              echo "FATAL: $slack_secret is missing or empty; provision the dedicated webhook file described in infra/monitoring/README.md" >&2
+              exit 1
+            }
+
+            secret_uid="$(stat -c '%u' "$slack_secret")"
+            secret_gid="$(stat -c '%g' "$slack_secret")"
+            secret_mode="$(stat -c '%a' "$slack_secret")"
+            secret_dir_gid="$(stat -c '%g' "$slack_secret_dir")"
+            secret_dir_mode="$(stat -c '%a' "$slack_secret_dir")"
+            if [ "$secret_uid:$secret_gid:$secret_mode" != "65534:65534:400" ] \
+              || [ "$secret_dir_gid:$secret_dir_mode" != "65534:750" ]; then
+              echo "FATAL: Slack secret permissions must be file 65534:65534 mode 400 and directory group 65534 mode 750" >&2
+              exit 1
+            fi
+
+            # Remove the superseded environment-backed copy after the dedicated
+            # file has passed all presence and permission checks.
+            if grep -q '^SLACK_WEBHOOK_URL=' infra/monitoring/.env; then
+              sed -i '/^SLACK_WEBHOOK_URL=/d' infra/monitoring/.env
+              chmod 600 infra/monitoring/.env
+              echo "Removed superseded SLACK_WEBHOOK_URL from infra/monitoring/.env"
+            fi
 
             docker compose \
               -f infra/monitoring/docker-compose.yml \
@@ -98,7 +94,7 @@ jobs:
             curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:3001/api/health
             curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-all-errors --retry-delay 3 http://127.0.0.1:9093/-/healthy
 
-            # 4. Verify the Compose-managed Slack secret is mounted for Alertmanager
+            # 4. Verify the file-backed Compose secret is mounted for Alertmanager
             docker compose \
               -f infra/monitoring/docker-compose.yml \
               --env-file infra/monitoring/.env \

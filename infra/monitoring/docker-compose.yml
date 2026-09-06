@@ -83,7 +83,7 @@ services:
     command:
       - |
         test -s /run/secrets/slack_webhook || {
-          echo 'FATAL: SLACK_WEBHOOK_URL is empty' >&2
+          echo 'FATAL: Slack webhook secret file is empty' >&2
           exit 1
         }
         exec /bin/alertmanager \
@@ -189,4 +189,5 @@ volumes:
 
 secrets:
   slack_webhook:
-    environment: SLACK_WEBHOOK_URL
+    # Production provisions this ignored file with mode 0400.
+    file: ${SLACK_WEBHOOK_FILE:-./secrets/slack_webhook}

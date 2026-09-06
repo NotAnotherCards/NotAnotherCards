@@ -97,26 +97,34 @@ two-minute collection-failure alert instead.
 
 ### 1. Configure Environment and Secrets
 
-On the VPS, install the environment file with mode `600` owned by
-`deploy:deploy`:
+On the VPS, install the environment file and the dedicated Slack secret. The
+webhook deliberately lives in its own ignored file instead of `.env`, keeping
+it out of Compose interpolation and process/container environments:
 
 ```bash
 sudo install -m 600 -o deploy -g deploy \
   /opt/notanothercards/infra/monitoring/.env.example \
   /opt/notanothercards/infra/monitoring/.env
 sudo -u deploy nano /opt/notanothercards/infra/monitoring/.env
+
+# Alertmanager runs as uid/gid 65534. The deploy user owns the directory so it
+# can replace the secret; only Alertmanager (and root) can read the file.
+sudo install -d -m 750 -o deploy -g 65534 \
+  /opt/notanothercards/infra/monitoring/secrets
+sudo tee /opt/notanothercards/infra/monitoring/secrets/slack_webhook >/dev/null <<'EOF'
+https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
+EOF
+sudo chown 65534:65534 \
+  /opt/notanothercards/infra/monitoring/secrets/slack_webhook
+sudo chmod 400 \
+  /opt/notanothercards/infra/monitoring/secrets/slack_webhook
 ```
 
-Set `SLACK_WEBHOOK_URL` in that file to the team Slack Incoming Webhook URL.
-Compose reads it from the mode-600 `.env` and mounts it as
-`/run/secrets/slack_webhook`; it is not placed in the Alertmanager container's
-environment or committed to the repository. An empty value makes Alertmanager
-fail immediately instead of starting with broken notification delivery.
-
-When upgrading a VPS that still has
-`infra/monitoring/secrets/slack_webhook`, the deployment workflow validates that
-legacy URL and copies it into `.env` once. After a successful deployment, the
-old file can be removed; `.env` is then the only runtime source.
+Compose mounts that file read-only as `/run/secrets/slack_webhook`, and
+Alertmanager reads it through `api_url_file`. Both a missing/empty file and
+unsafe ownership or permissions make deployment fail immediately. Remove any
+obsolete `SLACK_WEBHOOK_URL=...` line from `.env`; the deployment also scrubs
+that line after validating the dedicated file.
 
 For the current proxy route, keep:
 
@@ -136,7 +144,7 @@ Ensure valid secure values for:
 
 - `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD` (mandatory)
 - `POSTGRES_EXPORTER_DATA_SOURCE_NAME` (matching credentials in `/opt/notanothercards/.env`)
-- `SLACK_WEBHOOK_URL` (the team Slack Incoming Webhook URL)
+- `infra/monitoring/secrets/slack_webhook` (the team Slack Incoming Webhook URL)
 
 Every production deployment submits `MonitoringDeliverySmokeTest` to
 Alertmanager and fails unless its receiver-specific HTTP request counters prove

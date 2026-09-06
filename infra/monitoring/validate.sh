@@ -11,12 +11,17 @@ E2E_CREATED_NETWORK=0
 E2E_STACK_UP=0
 RENDER_TMP="$(mktemp -d)"
 TEMP_SECRETS_DIR="$(mktemp -d)"
+E2E_SLACK_WEBHOOK_FILE="$TEMP_SECRETS_DIR/slack_webhook"
+EMPTY_SLACK_WEBHOOK_FILE="$TEMP_SECRETS_DIR/empty_slack_webhook"
+printf '%s\n' "$E2E_SLACK_WEBHOOK_URL" > "$E2E_SLACK_WEBHOOK_FILE"
+: > "$EMPTY_SLACK_WEBHOOK_FILE"
+chmod 444 "$E2E_SLACK_WEBHOOK_FILE" "$EMPTY_SLACK_WEBHOOK_FILE"
+export SLACK_WEBHOOK_FILE="$E2E_SLACK_WEBHOOK_FILE"
 
 cleanup() {
   if [ "$E2E_STACK_UP" = "1" ]; then
     GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
     POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-    SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
     GX10_METRICS_MODE="proxy" \
     GX10_METRICS_HOST="ai.dustyway.org" \
     PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
@@ -33,29 +38,35 @@ echo "==> 1. Validating monitoring Docker Compose configuration..."
 /bin/sh -n "$SCRIPT_DIR/verify-slack-delivery.sh"
 GRAFANA_ADMIN_PASSWORD="ci-test-password" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
 GX10_METRICS_MODE="proxy" \
 GX10_METRICS_HOST="ai.dustyway.org" \
-docker compose -f "$SCRIPT_DIR/docker-compose.yml" config --quiet
+docker compose -f "$SCRIPT_DIR/docker-compose.yml" config > "$RENDER_TMP/docker-compose.yml"
+if grep -Fq "$E2E_SLACK_WEBHOOK_URL" "$RENDER_TMP/docker-compose.yml"; then
+  echo "ERROR: rendered Compose configuration exposed the Slack webhook" >&2
+  exit 1
+fi
+grep -Fq "file: $E2E_SLACK_WEBHOOK_FILE" "$RENDER_TMP/docker-compose.yml" \
+  || { echo "ERROR: Compose did not retain the file-backed Slack secret" >&2; exit 1; }
+echo "  [OK] Compose references the secret file without exposing its contents"
 
 echo "==> 1b. Validating fail-safe empty password rejection..."
-if (unset GRAFANA_ADMIN_PASSWORD && SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" docker compose -f "$SCRIPT_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env.example" config >/dev/null 2>&1); then
+if (unset GRAFANA_ADMIN_PASSWORD && docker compose -f "$SCRIPT_DIR/docker-compose.yml" --env-file "$SCRIPT_DIR/.env.example" config >/dev/null 2>&1); then
   echo "ERROR: Compose unexpectedly accepted unedited .env.example with blank GRAFANA_ADMIN_PASSWORD" >&2
   exit 1
 fi
 echo "  [OK] Compose correctly rejected blank GRAFANA_ADMIN_PASSWORD"
 
-echo "==> 1c. Validating fail-safe empty Slack webhook rejection at startup..."
+echo "==> 1c. Validating fail-safe empty Slack webhook file rejection at startup..."
 E2E_STACK_UP=1
 if GRAFANA_ADMIN_PASSWORD="ci-test-password" \
   POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-  SLACK_WEBHOOK_URL= \
+  SLACK_WEBHOOK_FILE="$EMPTY_SLACK_WEBHOOK_FILE" \
   docker compose -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
     run --rm --no-deps alertmanager >/dev/null 2>&1; then
-  echo "ERROR: Alertmanager unexpectedly accepted blank SLACK_WEBHOOK_URL" >&2
+  echo "ERROR: Alertmanager unexpectedly accepted an empty Slack webhook file" >&2
   exit 1
 fi
-echo "  [OK] Alertmanager correctly rejected blank SLACK_WEBHOOK_URL"
+echo "  [OK] Alertmanager correctly rejected an empty Slack webhook file"
 
 echo "==> 2. Validating Prometheus configuration in proxy and tailnet modes..."
 for gx10_mode in proxy tailnet; do
@@ -98,12 +109,10 @@ docker run --rm \
   check rules /etc/prometheus/rules/alerts.yml
 
 echo "==> 4. Validating Alertmanager configuration..."
-echo "https://hooks.slack.com/services/DUMMY/SECRET/WEBHOOK" > "$TEMP_SECRETS_DIR/slack_webhook"
-
 docker run --rm \
   --entrypoint /bin/amtool \
   -v "$SCRIPT_DIR/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
-  -v "$TEMP_SECRETS_DIR/slack_webhook:/run/secrets/slack_webhook:ro" \
+  -v "$E2E_SLACK_WEBHOOK_FILE:/run/secrets/slack_webhook:ro" \
   prom/alertmanager:v0.34.0 \
   check-config /etc/alertmanager/alertmanager.yml
 
@@ -155,7 +164,6 @@ E2E_STACK_UP=1
 # is checked above and production deployment requires its named target up.
 GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
 GX10_METRICS_MODE="proxy" \
 GX10_METRICS_HOST="ai.dustyway.org" \
 PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
@@ -168,7 +176,6 @@ grafana_api() {
   local endpoint="$1"
   GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
   POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-  SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
   GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
   PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
   docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
@@ -223,11 +230,24 @@ curl -sf http://127.0.0.1:9097/-/healthy | grep -q "OK" \
   || { echo "ERROR: Alertmanager not healthy" >&2; exit 1; }
 echo "  [OK] Alertmanager healthy"
 
+alertmanager_environment="$(
+  GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
+  POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
+  GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
+  PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
+  docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+    exec -T alertmanager env
+)"
+if printf '%s\n' "$alertmanager_environment" | grep -Eq 'SLACK_WEBHOOK|hooks\.slack'; then
+  echo "ERROR: Slack webhook leaked into the Alertmanager environment" >&2
+  exit 1
+fi
+echo "  [OK] Slack webhook is absent from the Alertmanager environment"
+
 mock_value() {
   path="$1"
   GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
   POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-  SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
   GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
   PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
   docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
@@ -270,9 +290,11 @@ awk -v total="$request_total" -v failed="$request_failed" \
 echo "  [OK] Alertmanager read the Compose secret and delivered both unique smoke alerts"
 
 echo "==> 8. Proving failed webhook retries cannot pass delivery verification..."
+chmod 644 "$E2E_SLACK_WEBHOOK_FILE"
+printf '%s\n' "$E2E_FAILED_SLACK_WEBHOOK_URL" > "$E2E_SLACK_WEBHOOK_FILE"
+chmod 444 "$E2E_SLACK_WEBHOOK_FILE"
 GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-SLACK_WEBHOOK_URL="$E2E_FAILED_SLACK_WEBHOOK_URL" \
 GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
 PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
 docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
