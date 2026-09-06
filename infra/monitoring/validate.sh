@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 E2E_PROJECT="${MONITORING_VALIDATION_PROJECT:-nac-monitoring-validate}"
 E2E_GRAFANA_PASSWORD="ci-validate-password"
 E2E_SLACK_WEBHOOK_URL="http://slack-webhook-mock:8080/services/test"
+E2E_FAILED_SLACK_WEBHOOK_URL="http://slack-webhook-mock:8080/fail"
 E2E_CREATED_NETWORK=0
 E2E_STACK_UP=0
 RENDER_TMP="$(mktemp -d)"
@@ -29,6 +30,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "==> 1. Validating monitoring Docker Compose configuration..."
+/bin/sh -n "$SCRIPT_DIR/verify-slack-delivery.sh"
 GRAFANA_ADMIN_PASSWORD="ci-test-password" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
 SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
@@ -221,39 +223,91 @@ curl -sf http://127.0.0.1:9097/-/healthy | grep -q "OK" \
   || { echo "ERROR: Alertmanager not healthy" >&2; exit 1; }
 echo "  [OK] Alertmanager healthy"
 
-deliveries=0
+mock_value() {
+  path="$1"
+  GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
+  POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
+  SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
+  GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
+  PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
+  docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+    exec -T slack-webhook-mock wget -qO- "http://127.0.0.1:8080$path"
+}
+
+alertmanager_metric() {
+  metric_name="$1"
+  curl -sf http://127.0.0.1:9097/metrics | awk -v metric="$metric_name" '
+    index($0, metric "{") == 1 &&
+    /integration="slack"/ &&
+    /receiver_name="slack-delivery-smoke"/ { total += $2 }
+    END { print total + 0 }
+  '
+}
+
 echo "==> 7. Sending repeatable alerts through Alertmanager to the Slack-compatible mock..."
 for expected_deliveries in 1 2; do
-  curl -sf \
-    -H 'Content-Type: application/json' \
-    --data "[{\"labels\":{\"alertname\":\"MonitoringDeliverySmokeTest\",\"severity\":\"info\",\"smoke_id\":\"infra-validation-$expected_deliveries\"},\"annotations\":{\"summary\":\"CI delivery smoke test\"}}]" \
-    http://127.0.0.1:9097/api/v2/alerts >/dev/null
-
-  for _ in $(seq 1 30); do
-    deliveries="$(
-      GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
-      POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-      SLACK_WEBHOOK_URL="$E2E_SLACK_WEBHOOK_URL" \
-      GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
-      PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
-      docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
-        exec -T slack-webhook-mock wget -qO- http://127.0.0.1:8080/count
-    )"
-    [ "$deliveries" -ge "$expected_deliveries" ] && break
-    sleep 1
-  done
+  SLACK_DELIVERY_MAX_ATTEMPTS=10 \
+  SLACK_DELIVERY_POLL_SECONDS=1 \
+    /bin/sh "$SCRIPT_DIR/verify-slack-delivery.sh" \
+      http://127.0.0.1:9097 \
+      slack-delivery-smoke \
+      MonitoringDeliverySmokeTest \
+      info \
+      "infra-validation-$expected_deliveries"
 done
 
+deliveries="$(mock_value /count)"
 if [ "$deliveries" -ne 2 ]; then
   echo "ERROR: expected exactly two Slack webhook deliveries, got $deliveries" >&2
   exit 1
 fi
 
-curl -sf http://127.0.0.1:9097/metrics | awk '
-  /^alertmanager_notifications_total\{/ && /integration="slack"/ && /receiver_name="slack-delivery-smoke"/ { attempted += $2 }
-  /^alertmanager_notifications_failed_total\{/ && /integration="slack"/ && /receiver_name="slack-delivery-smoke"/ { failed += $2 }
-  END { if (attempted != 2 || failed != 0) exit 1 }
-' || { echo "ERROR: Alertmanager did not record two successful Slack notifications" >&2; exit 1; }
+request_total="$(alertmanager_metric alertmanager_notification_requests_total)"
+request_failed="$(alertmanager_metric alertmanager_notification_requests_failed_total)"
+awk -v total="$request_total" -v failed="$request_failed" \
+  'BEGIN { exit !(total == 2 && failed == 0) }' \
+  || { echo "ERROR: Alertmanager did not record two successful Slack requests" >&2; exit 1; }
 echo "  [OK] Alertmanager read the Compose secret and delivered both unique smoke alerts"
+
+echo "==> 8. Proving failed webhook retries cannot pass delivery verification..."
+GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD" \
+POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
+SLACK_WEBHOOK_URL="$E2E_FAILED_SLACK_WEBHOOK_URL" \
+GX10_METRICS_MODE="proxy" GX10_METRICS_HOST="ai.dustyway.org" \
+PROMETHEUS_PORT=9099 GRAFANA_PORT=3009 ALERTMANAGER_PORT=9097 NODE_EXPORTER_PORT=9109 POSTGRES_EXPORTER_PORT=9189 \
+docker compose --profile validation -p "$E2E_PROJECT" -f "$SCRIPT_DIR/docker-compose.yml" \
+  up -d --wait --force-recreate --no-deps alertmanager
+
+if SLACK_DELIVERY_MAX_ATTEMPTS=8 \
+  SLACK_DELIVERY_POLL_SECONDS=1 \
+  /bin/sh "$SCRIPT_DIR/verify-slack-delivery.sh" \
+    http://127.0.0.1:9097 \
+    slack-delivery-smoke \
+    MonitoringDeliverySmokeTest \
+    info \
+    infra-validation-must-fail; then
+  echo "ERROR: delivery verification accepted an endpoint that only returns HTTP 503" >&2
+  exit 1
+fi
+
+sleep 1
+request_total="$(alertmanager_metric alertmanager_notification_requests_total)"
+request_failed="$(alertmanager_metric alertmanager_notification_requests_failed_total)"
+rejected_requests="$(mock_value /failed-count)"
+deliveries="$(mock_value /count)"
+
+awk \
+  -v total="$request_total" \
+  -v failed="$request_failed" \
+  -v rejected="$rejected_requests" \
+  -v delivered="$deliveries" '
+    BEGIN {
+      exit !(total > 0 && total == failed && rejected > 0 && delivered == 2)
+    }
+  ' || {
+    echo "ERROR: failed-request regression counters are inconsistent" >&2
+    exit 1
+  }
+echo "  [OK] all HTTP 503 requests were counted as failed and verification stayed failed"
 
 echo "==> All monitoring infrastructure configurations validated successfully!"

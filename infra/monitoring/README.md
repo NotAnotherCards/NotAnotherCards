@@ -139,10 +139,12 @@ Ensure valid secure values for:
 - `SLACK_WEBHOOK_URL` (the team Slack Incoming Webhook URL)
 
 Every production deployment submits `MonitoringDeliverySmokeTest` to
-Alertmanager and fails unless the receiver-specific metrics report one
-successful Slack notification. This sends one short smoke-test message to the
-alerts channel. `pnpm test:infra` exercises the same Alertmanager path against a
-local Slack-compatible endpoint, so CI does not contact the real workspace.
+Alertmanager and fails unless its receiver-specific HTTP request counters prove
+that at least one request completed without failure. This sends one short
+smoke-test message to the alerts channel. `pnpm test:infra` exercises the same
+Alertmanager path against a local Slack-compatible endpoint and also proves an
+endpoint returning only HTTP 503 cannot pass, so CI does not contact the real
+workspace.
 
 ### 2. Start the Monitoring Stack
 

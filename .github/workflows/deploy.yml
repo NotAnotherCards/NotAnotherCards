@@ -170,46 +170,15 @@ jobs:
             done
 
             # 7. Send a real notification through Alertmanager and require Slack success
-            alertmanager_metric() {
-              metric_name="$1"
-              curl --fail --silent --show-error http://127.0.0.1:9093/metrics \
-                | awk -v metric="$metric_name" '
-                    index($0, metric "{") == 1 &&
-                    /integration="slack"/ &&
-                    /receiver_name="slack-delivery-smoke"/ { total += $2 }
-                    END { print total + 0 }
-                  '
-            }
-
-            slack_attempted_before="$(alertmanager_metric alertmanager_notifications_total)"
-            slack_failed_before="$(alertmanager_metric alertmanager_notifications_failed_total)"
             smoke_id="${{ github.sha }}-$(date +%s)"
-
-            curl --fail --silent --show-error \
-              -H 'Content-Type: application/json' \
-              --data "$(jq -nc --arg smoke_id "$smoke_id" \
-                '[{labels:{alertname:"MonitoringDeliverySmokeTest",severity:"info",smoke_id:$smoke_id},annotations:{summary:"Production deployment delivery smoke test"}}]')" \
-              http://127.0.0.1:9093/api/v2/alerts >/dev/null
-
-            slack_delivered=0
-            for attempt in 1 2 3 4 5 6; do
-              slack_attempted_after="$(alertmanager_metric alertmanager_notifications_total)"
-              if awk "BEGIN { exit !($slack_attempted_after > $slack_attempted_before) }"; then
-                sleep 2
-                slack_failed_after="$(alertmanager_metric alertmanager_notifications_failed_total)"
-                if awk "BEGIN { exit !($slack_failed_after == $slack_failed_before) }"; then
-                  slack_delivered=1
-                fi
-                break
-              fi
-              sleep 5
-            done
-
-            if [ "$slack_delivered" != "1" ]; then
-              echo "FATAL: Alertmanager did not complete the Slack delivery smoke test" >&2
-              exit 1
-            fi
-            echo "Alertmanager completed the Slack delivery smoke test"
+            SLACK_DELIVERY_MAX_ATTEMPTS=15 \
+            SLACK_DELIVERY_POLL_SECONDS=2 \
+              /bin/sh infra/monitoring/verify-slack-delivery.sh \
+                http://127.0.0.1:9093 \
+                slack-delivery-smoke \
+                MonitoringDeliverySmokeTest \
+                info \
+                "$smoke_id"
 
             # 8. Verify Public Endpoints
             curl \

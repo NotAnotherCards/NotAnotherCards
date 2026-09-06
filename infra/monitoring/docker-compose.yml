@@ -138,10 +138,17 @@ services:
       - |
         const http = require('http');
         let deliveries = 0;
+        let rejectedRequests = 0;
         http.createServer((req, res) => {
           if (req.method === 'POST') {
             req.resume();
             req.on('end', () => {
+              if (req.url.startsWith('/fail')) {
+                rejectedRequests += 1;
+                res.writeHead(503, { 'content-type': 'text/plain' });
+                res.end('temporarily unavailable');
+                return;
+              }
               deliveries += 1;
               res.writeHead(200, { 'content-type': 'text/plain' });
               res.end('ok');
@@ -151,6 +158,11 @@ services:
           if (req.url === '/count') {
             res.writeHead(200, { 'content-type': 'text/plain' });
             res.end(String(deliveries));
+            return;
+          }
+          if (req.url === '/failed-count') {
+            res.writeHead(200, { 'content-type': 'text/plain' });
+            res.end(String(rejectedRequests));
             return;
           }
           res.writeHead(404);
