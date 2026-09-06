@@ -13,6 +13,31 @@ export const AI_MODELS = [
 ] as const;
 export type AiModel = (typeof AI_MODELS)[number];
 
+export const MODEL_LABELS: Record<AiModel, string> = {
+  gemma4: 'Gemma 4 (Default)',
+  'qwen3.6': 'Qwen 3.6',
+  qwen: 'Qwen (Deprecated)',
+  'qwen-next-80b': 'Qwen Next 80B (Smart)',
+  'qwen3.8': 'Qwen 3.8',
+  'muse-glimmer': 'Muse Glimmer',
+  'mistral-small': 'Mistral Small',
+};
+
+export const SELECTABLE_AI_MODELS = AI_MODELS.filter(
+  (m): m is Exclude<AiModel, 'qwen'> => m !== 'qwen',
+);
+
+export const quotaStatusSchema = z.object({
+  usedTokens: z.number().int().nonnegative(),
+  maxTokens: z.number().int().positive(),
+  requestsUsed: z.number().int().nonnegative(),
+  maxRequests: z.number().int().positive(),
+  activePendingJobs: z.number().int().nonnegative(),
+  maxPendingJobs: z.number().int().positive(),
+});
+
+export type QuotaStatus = z.infer<typeof quotaStatusSchema>;
+
 export const createAiJobSchema = z
   .object({
     type: z.enum(['topic_deck', 'text_cards']),
@@ -56,3 +81,37 @@ export const aiCardOutputSchema = z.object({
 });
 
 export type AiCardOutput = z.infer<typeof aiCardOutputSchema>;
+
+export const aiJobStatusSchema = z.enum([
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+]);
+export type AiJobStatus = z.infer<typeof aiJobStatusSchema>;
+
+/**
+ * The job shape the API returns to clients. Server-side rows carry more
+ * columns (attempts, lock and retry timestamps); parsing strips them, so
+ * this stays the contract the UI reads.
+ */
+export const aiJobSchema = z.object({
+  id: z.string(),
+  type: z.enum(['topic_deck', 'text_cards']),
+  status: aiJobStatusSchema,
+  payload: z.object({
+    topic: z.string().optional(),
+    sourceText: z.string().optional(),
+    count: z.number(),
+    model: z.string().optional(),
+  }),
+  result: z.array(aiCardOutputSchema).nullish(),
+  error: z.string().nullish(),
+  createdAt: z.string(),
+});
+export type AiJob = z.infer<typeof aiJobSchema>;
+
+/** Response envelopes of the AI endpoints, parsed by the clients. */
+export const aiJobResponseSchema = z.object({ job: aiJobSchema });
+export const aiJobsResponseSchema = z.object({ jobs: z.array(aiJobSchema) });
+export const aiQuotaResponseSchema = z.object({ quota: quotaStatusSchema });

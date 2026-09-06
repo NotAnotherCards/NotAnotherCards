@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import {
@@ -52,19 +51,10 @@ export function CardForm({
   const form = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
-      front: '',
-      back: '',
+      front: initialData?.front ?? '',
+      back: initialData?.back ?? '',
     },
   });
-
-  useEffect(() => {
-    if (initialData) {
-      form.reset({
-        front: initialData.front,
-        back: initialData.back,
-      });
-    }
-  }, [initialData, form]);
 
   const handleFormSubmit = async (data: CardFormData) => {
     // awaited so react-hook-form tracks isSubmitting for the write's duration

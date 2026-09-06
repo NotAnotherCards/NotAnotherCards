@@ -21,7 +21,7 @@ import {
 import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
 import { ChevronDown, User, Globe, Save, Check } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
-import { LANGUAGES } from '@/lib/languages';
+import { LANGUAGES } from '@repo/schemas';
 import { useStore } from '@/hooks/useStore';
 import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 

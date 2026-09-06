@@ -28,3 +28,6 @@ export const registerSchema = z
 
 export type SignupFormData = z.infer<typeof registerSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
+
+/** Response of GET /api/auth/check-username, parsed by the clients. */
+export const usernameAvailabilitySchema = z.object({ available: z.boolean() });

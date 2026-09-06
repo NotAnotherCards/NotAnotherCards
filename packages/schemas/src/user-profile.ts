@@ -12,3 +12,12 @@ export const userProfileFormSchema = z.object({
   target_language_id: z.string().min(1, 'Target language is required'),
 });
 export type ProfileFormValues = z.infer<typeof userProfileFormSchema>;
+
+// Placeholder ids until a languages table exists; the ids are what
+// user_profiles stores, so web and mobile must share one list.
+export const LANGUAGES = [
+  { value: '00000000-0000-0000-0000-000000000001', label: '🇺🇸 English' },
+  { value: '00000000-0000-0000-0000-000000000002', label: '🇪🇸 Spanish' },
+  { value: '00000000-0000-0000-0000-000000000003', label: '🇩🇪 German' },
+  { value: '00000000-0000-0000-0000-000000000004', label: '🇷🇺 Russian' },
+] as const;

@@ -7,6 +7,10 @@ model_list:
     litellm_params:
       model: ollama_chat/gemma4:26b-a4b-it-q4_K_M
       api_base: http://ollama:11434
+      # ollama unloads after 5 idle minutes, so the first generation of a
+      # session paid ~8 s of model load and every one after it ~2 s (#228).
+      # 18 GB of 121 to keep it resident.
+      keep_alive: -1
 
   # low-latency fallback for gemma4 (router_settings below): ~0.8 s faster,
   # 14 adjudicated issues in 236 cards against gemma4's 10 in 240; also the
@@ -15,6 +19,9 @@ model_list:
     litellm_params:
       model: ollama_chat/qwen3.6:35b
       api_base: http://ollama:11434
+      # pinned too: a fallback that costs ~10 s to load is not a fallback,
+      # and this is also the thinking-mode reviewer. 24 GB.
+      keep_alive: -1
 
   # deprecated alias for qwen3.6, kept while production still sends "qwen";
   # remove after #193 updates the production env

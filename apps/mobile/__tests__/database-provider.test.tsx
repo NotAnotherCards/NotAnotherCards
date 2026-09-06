@@ -11,7 +11,7 @@ import {
 // which user id reaches the hook, which native pieces it is given, what
 // lands on context, and what renders when a close has failed.
 type SessionState = {
-  data: { user: { id: string } } | null;
+  data: { user: { id: string; onBoardingComplete?: boolean } } | null;
   isPending: boolean;
 };
 
@@ -75,7 +75,10 @@ describe('SessionDatabaseProvider', () => {
   it('passes no user while the session check is still running', () => {
     // useSession keeps the previous user visible while it refetches, so
     // a pending check must not open that user's database.
-    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: true };
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: true,
+    };
     renderProvider();
 
     expect(mockUseSessionDatabase).toHaveBeenCalledWith(
@@ -93,7 +96,10 @@ describe('SessionDatabaseProvider', () => {
   });
 
   it('gives the hook the signed-in user and the native pieces', () => {
-    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: false,
+    };
     const { createUserDatabaseManager } = jest.requireMock('../lib/db');
     renderProvider();
 
@@ -106,7 +112,10 @@ describe('SessionDatabaseProvider', () => {
   });
 
   it('puts the hook’s manager and controller on context', () => {
-    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: false,
+    };
     hookResult = {
       manager: fakeManager,
       syncController: fakeController,
@@ -124,7 +133,10 @@ describe('SessionDatabaseProvider', () => {
   it('mounts children before a manager exists', () => {
     // Blanking here would unmount the navigator, including the
     // signed-out screens, on every authenticated first paint.
-    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: false,
+    };
     renderProvider();
 
     expect(screen.getByText('no-db:no-sync')).toBeTruthy();
@@ -134,7 +146,10 @@ describe('SessionDatabaseProvider', () => {
     // Sticky by design: the database may still be open, so the hook will
     // not open another. There is no database to provide and nothing
     // worth showing without one, so this is not a banner.
-    mockSessionState = { data: { user: { id: 'user-a' } }, isPending: false };
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: false,
+    };
     hookResult = {
       manager: null,
       syncController: null,
@@ -145,5 +160,19 @@ describe('SessionDatabaseProvider', () => {
     expect(screen.getByText('Restart the app')).toBeTruthy();
     expect(screen.getByText('driver refused to close')).toBeTruthy();
     expect(screen.queryByText('no-db:no-sync')).toBeNull();
+  });
+
+  it('passes no user until onboarding completed', () => {
+    // The first pull expects the profile row the /onboard transaction
+    // creates, so the account database stays closed until then.
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: false } },
+      isPending: false,
+    };
+    renderProvider();
+
+    expect(mockUseSessionDatabase).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null }),
+    );
   });
 });

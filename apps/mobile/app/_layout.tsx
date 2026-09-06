@@ -1,12 +1,3 @@
-// Before anything opens a database: remelonDB mints record ids from
-// crypto.getRandomValues, and Hermes has no WebCrypto. expo-crypto ships
-// with the SDK (and inside Expo Go), so no native rebuild is needed.
-import * as Crypto from 'expo-crypto';
-
-if (typeof globalThis.crypto?.getRandomValues !== 'function') {
-  globalThis.crypto = { getRandomValues: Crypto.getRandomValues } as Crypto;
-}
-
 import '../global.css';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -41,6 +32,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Log in' }} />
         <Stack.Screen name="register" options={{ title: 'Register' }} />
+        <Stack.Screen name="onboarding" options={{ title: 'Set up profile' }} />
         <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
       </Stack>
       <StatusBar style="auto" />

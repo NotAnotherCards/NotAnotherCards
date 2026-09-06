@@ -19,10 +19,9 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { authClient } from '@/lib/auth-client';
-import { Save, Check, Shield, LogOut } from 'lucide-react';
+import { Save, Check, Shield } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { z } from 'zod';
-import { useNavigate } from '@tanstack/react-router';
 
 const passwordSchema = z
   .object({
@@ -47,7 +46,6 @@ const passwordSchema = z
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export function Security() {
-  const navigate = useNavigate();
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
 
@@ -87,15 +85,6 @@ export function Security() {
       setSecurityError(
         err instanceof Error ? err.message : 'An unexpected error occurred',
       );
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await authClient.signOut();
-      void navigate({ to: '/login' });
-    } catch (err) {
-      console.error('Logout failed', err);
     }
   };
 
@@ -234,34 +223,6 @@ export function Security() {
           </CardContent>
         </Card>
       </form>
-
-      {/* Log Out Card */}
-      <Card className="border border-destructive/30 shadow-xs rounded-3xl">
-        <CardHeader className="flex flex-row items-center gap-3 pb-4">
-          <div className="p-2 bg-destructive/10 rounded-2xl text-destructive">
-            <LogOut className="size-5" />
-          </div>
-          <div>
-            <CardTitle className="text-base font-bold text-destructive">
-              Log Out
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Log out of your account on this device.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="flex justify-end">
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={handleLogout}
-            className="cursor-pointer gap-2 px-6"
-          >
-            <LogOut className="size-4" />
-            Log Out
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }

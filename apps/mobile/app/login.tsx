@@ -12,7 +12,10 @@ export default function Login() {
   // store updates a moment after the request resolves, and the dashboard
   // bounces to /login if it mounts before then.
   useEffect(() => {
-    if (session) router.replace('/dashboard');
+    if (session)
+      router.replace(
+        session.user.onBoardingComplete ? '/dashboard' : '/onboarding',
+      );
   }, [session, router]);
 
   return (

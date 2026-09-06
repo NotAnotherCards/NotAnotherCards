@@ -102,7 +102,7 @@ describe('Auth Guards', () => {
 
     // Verify welcome message with user name
     expect(screen.getByText(/Welcome/i)).toBeInTheDocument();
-    expect(screen.getByText(/John Doe/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/John Doe/i).length).toBeGreaterThan(0);
 
     // Verify the URL is /dashboard
     expect(window.location.pathname).toBe('/dashboard');

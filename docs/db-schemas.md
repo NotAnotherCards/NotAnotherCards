@@ -330,19 +330,33 @@ Key points from the discussion:
 PostgreSQL intentionally stores `fields_json` as text because that is the
 primitive representation synchronized by RemelonDB. It is not accepted as
 arbitrary JSON. The shared offline row and wire validators use
-`(note_type, fields_version)` to select a Zod schema from an explicit registry,
-parse `fields_json`, and validate the parsed value. Unknown note types or
-versions, malformed JSON, and payloads that fail the selected schema are
-rejected. This keeps schema evolution explicit without coupling the database
-table to any one subject. Enforcement of the same contract at the sync-store
-boundary remains in
+`(note_type, fields_version)` to select a Zod schema from an explicit
+registry — a registered pair validates strictly, and an unregistered pair
+passes clients opaquely on pull while the server rejects pushing it —
+parse `fields_json`, and validate the parsed value. Malformed JSON and payloads
+that fail a registered schema are rejected. This keeps schema evolution
+explicit without coupling the database table to any one subject. Enforcement
+of the same contract at the sync-store boundary remains in
 [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
 
-Only the complete `basic@1` contract is currently registered. `word@1` remains
-unsupported until its full stable field and template contract is defined. That
-eventual contract must include `original_language` and `translation_language`;
-a deck may supply defaults, but deck membership is not the canonical language
-source.
+`basic@1` and `word@1` are registered. The word contract (#194) requires
+`word`, `translation`, `native_language_id` and `target_language_id` — the
+profile's language id columns (placeholder ids until a languages table
+exists), carrying the original/translation semantics; the
+note is the canonical language source, deck membership is not. Optional
+fields: `example`, `example_translation`, `part_of_speech`, `gender`,
+`pronunciation`, `notes`, and the reserved `image` and `word_audio` ids for
+the upcoming `note_media` table. Its templates render both directions and,
+when both example fields exist, an example card.
+
+The trust model for derived cards: fronts and backs are client-computed
+renders, and the server validates structure, not derivation — ownership,
+deterministic ids, and (for notes in the same push with a registered
+type) template-key membership. A malformed client can therefore store
+mismatched card content, confined to its own account. Clients treat an
+unregistered `(note_type, fields_version)` pair as opaque: stored and
+synced, never rendered or edited, so a newer client's notes do not break
+an older client's pull.
 
 ## Future ideas
 
