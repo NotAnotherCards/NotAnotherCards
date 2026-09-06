@@ -17,6 +17,7 @@ import {
   BackupNote,
   BackupReviewEvent,
 } from './export-import-types.js';
+import { compileNote } from './note-registry.js';
 
 function escapeCsvField(val: unknown): string {
   if (val === null || val === undefined) return '';
@@ -45,6 +46,9 @@ export async function exportDataToJson(
     source_id: deck.id,
     title: deck.title,
     description: deck.description ?? null,
+    note_type: deck.note_type,
+    native_language: deck.native_language_id ?? null,
+    target_language: deck.target_language_id ?? null,
   }));
 
   const noteDecksMap = new Map<string, string[]>();
@@ -114,14 +118,7 @@ export async function exportDataToCsv(db: Database): Promise<string> {
   for (const d of decks) {
     deckTitleMap.set(d.id, d.title);
   }
-  for (const note of notes) {
-    if (
-      note.note_type !== BASIC_NOTE_TYPE ||
-      note.fields_version !== BASIC_NOTE_FIELDS_VERSION
-    ) {
-      throw new Error('CSV export only supports basic@1 notes');
-    }
-  }
+
   const header = [
     'front',
     'back',
@@ -141,45 +138,58 @@ export async function exportDataToCsv(db: Database): Promise<string> {
     }
   }
 
-  const cardsMap = new Map<string, (typeof cards)[0]>();
+  const cardsByNote = new Map<string, typeof cards>();
   for (const c of cards) {
-    if (!cardsMap.has(c.note_id)) {
-      cardsMap.set(c.note_id, c);
-    }
+    const list = cardsByNote.get(c.note_id) ?? [];
+    list.push(c);
+    cardsByNote.set(c.note_id, list);
   }
 
   for (const note of notes) {
-    let front = '';
-    let back = '';
-    try {
-      const parsed = JSON.parse(note.fields_json);
-      front = parsed.front ?? '';
-      back = parsed.back ?? '';
-    } catch {
-      front = '';
-      back = '';
-    }
     const activeDeckIds = noteDecksMap.get(note.id) ?? [];
-
     const deckName = activeDeckIds
       .map((id) => deckTitleMap.get(id))
       .filter(Boolean)
       .join('; ');
 
-    const card = cardsMap.get(note.id);
-    const active = card ? card.active : true;
-    const dueAt = card ? card.due_at : Date.now();
-    const interval = card ? card.scheduled_interval_minutes : 0;
+    let compiledCards: readonly {
+      templateKey: string;
+      front: string;
+      back: string;
+    }[] = [];
+    try {
+      let fields: unknown = {};
+      try {
+        fields = JSON.parse(note.fields_json);
+      } catch {
+        fields = {};
+      }
+      compiledCards = compileNote(
+        note.note_type,
+        note.fields_version,
+        fields,
+      ).cards;
+    } catch {
+      continue; // Skip invalid notes
+    }
 
-    const row = [
-      escapeCsvField(front),
-      escapeCsvField(back),
-      escapeCsvField(deckName),
-      escapeCsvField(active),
-      escapeCsvField(dueAt),
-      escapeCsvField(interval),
-    ];
-    rows.push(row.join(','));
+    const compiledMap = new Map(compiledCards.map((c) => [c.templateKey, c]));
+    const noteCards = cardsByNote.get(note.id) ?? [];
+
+    for (const card of noteCards) {
+      const compiledCard = compiledMap.get(card.template_key);
+      if (!compiledCard) continue;
+
+      const row = [
+        escapeCsvField(compiledCard.front),
+        escapeCsvField(compiledCard.back),
+        escapeCsvField(deckName),
+        escapeCsvField(card.active),
+        escapeCsvField(card.due_at),
+        escapeCsvField(card.scheduled_interval_minutes),
+      ];
+      rows.push(row.join(','));
+    }
   }
   return rows.join('\n');
 }

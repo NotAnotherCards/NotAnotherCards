@@ -2,6 +2,9 @@ export interface BackupDeck {
   source_id: string;
   title: string;
   description: string | null;
+  note_type: string;
+  native_language: string | null;
+  target_language: string | null;
 }
 
 export interface BackupCard {

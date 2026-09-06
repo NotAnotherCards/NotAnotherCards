@@ -19,6 +19,11 @@ import type {
   BackupCard,
   BackupReviewEvent,
 } from './export-import-types.js';
+import {
+  noteFieldsSchemas,
+  validateNoteFieldsJson,
+  compileNote,
+} from './note-registry.js';
 
 export interface ImportError {
   row?: number;
@@ -142,29 +147,29 @@ async function validateAndImportJson(
       continue;
     }
 
-    // Note type check
-    const noteType = String(note.note_type ?? '');
-    if (noteType.startsWith('x-')) {
-      errors.push({
-        code: 'CUSTOM_NOTE_TYPE',
-        message: 'custom note types require a newer format',
-        path: `${path}.note_type`,
-      });
-    } else if (noteType !== BASIC_NOTE_TYPE) {
+    // Note type and fields validation
+    const noteType = String(note.note_type ?? BASIC_NOTE_TYPE);
+    const version = note.fields_version ?? BASIC_NOTE_FIELDS_VERSION;
+    if (!noteFieldsSchemas[noteType]?.[version]) {
       errors.push({
         code: 'UNSUPPORTED_NOTE_TYPE',
-        message: 'unsupported note type',
+        message: `unsupported note type or version: ${noteType}@${version}`,
         path: `${path}.note_type`,
       });
-    }
-
-    // Fields version check
-    if (note.fields_version !== BASIC_NOTE_FIELDS_VERSION) {
-      errors.push({
-        code: 'UNSUPPORTED_FIELDS_VERSION',
-        message: 'unsupported fields version',
-        path: `${path}.fields_version`,
-      });
+    } else {
+      const fieldsJson = JSON.stringify(note.fields ?? {});
+      const validationResult = validateNoteFieldsJson(
+        noteType,
+        version,
+        fieldsJson,
+      );
+      if (!validationResult.success) {
+        errors.push({
+          code: 'INVALID_FIELDS',
+          message: validationResult.error,
+          path: `${path}.fields`,
+        });
+      }
     }
 
     // Deck reference check
@@ -304,6 +309,9 @@ async function validateAndImportJson(
         id: newDeckId,
         title: d.title ?? 'Untitled Deck',
         description: d.description ?? null,
+        note_type: d.note_type ?? BASIC_NOTE_TYPE,
+        native_language_id: d.native_language ?? null,
+        target_language_id: d.target_language ?? null,
         created_at: now,
         updated_at: now,
       }),
@@ -341,20 +349,28 @@ async function validateAndImportJson(
       }
     }
     // Cards
+    const noteType = note.note_type ?? BASIC_NOTE_TYPE;
+    const version = note.fields_version ?? BASIC_NOTE_FIELDS_VERSION;
+    const compiled = compileNote(noteType, version, note.fields ?? {});
+    const compiledCardsMap = new Map(
+      compiled.cards.map((c) => [c.templateKey, c]),
+    );
+
     const cardsData: BackupCard[] = Array.isArray(note.cards) ? note.cards : [];
     for (const card of cardsData) {
       const templateKey = card.template_key ?? 'front-back';
+      const compiledCard = compiledCardsMap.get(templateKey);
       const newCardId = cardId(newNoteId, templateKey);
       if (card.source_id) cardIdMap.set(card.source_id, newCardId);
-      const fields = note.fields ?? {};
+
       batchOps.push(
         db.get(UserCard).prepareCreate({
           id: newCardId,
           note_id: newNoteId,
           template_key: templateKey,
           active: card.active ?? true,
-          front: fields.front ?? '',
-          back: fields.back ?? '',
+          front: compiledCard?.front ?? '',
+          back: compiledCard?.back ?? '',
           due_at: card.due_at ?? now,
           scheduled_interval_minutes: card.scheduled_interval_minutes ?? 0,
           created_at: now,
@@ -596,6 +612,9 @@ async function validateAndImportCsv(
         id: newDeckId,
         title,
         description: null,
+        note_type: BASIC_NOTE_TYPE,
+        native_language_id: null,
+        target_language_id: null,
         created_at: now,
         updated_at: now,
       }),
