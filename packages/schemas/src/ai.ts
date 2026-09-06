@@ -167,5 +167,14 @@ export type AiJob = z.infer<typeof aiJobSchema>;
 
 /** Response envelopes of the AI endpoints, parsed by the clients. */
 export const aiJobResponseSchema = z.object({ job: aiJobSchema });
-export const aiJobsResponseSchema = z.object({ jobs: z.array(aiJobSchema) });
+// A job this client cannot read (a type or fields version from a newer
+// server) must not take the whole list down with it: that row is skipped.
+export const aiJobsResponseSchema = z.object({
+  jobs: z.array(z.unknown()).transform((rows) =>
+    rows.flatMap((row) => {
+      const parsed = aiJobSchema.safeParse(row);
+      return parsed.success ? [parsed.data] : [];
+    }),
+  ),
+});
 export const aiQuotaResponseSchema = z.object({ quota: quotaStatusSchema });

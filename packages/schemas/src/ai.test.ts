@@ -3,6 +3,7 @@ import {
   AI_MODELS,
   aiCardOutputSchema,
   aiJobSchema,
+  aiJobsResponseSchema,
   createAiJobSchema,
 } from './ai';
 
@@ -190,5 +191,29 @@ describe('aiJobSchema', () => {
         createdAt: '2026-09-04T10:00:00.000Z',
       }).success,
     ).toBe(true);
+  });
+
+  it('skips a job row this client cannot read instead of failing the list', () => {
+    // a job type or fields version from a newer server
+    const unknownType = { ...job, id: 'j2', type: 'image_note', result: null };
+    const newerVersion = {
+      ...job,
+      id: 'j3',
+      type: 'word_note',
+      payload: {
+        deckId: 'd1',
+        word: 'Hund',
+        direction: 'target',
+        nativeLanguageId: 'n',
+        nativeLanguageName: 'English',
+        targetLanguageId: 't',
+        targetLanguageName: 'German',
+      },
+      result: { noteType: 'word', fieldsVersion: 2, fields: {} },
+    };
+    const { jobs } = aiJobsResponseSchema.parse({
+      jobs: [job, unknownType, newerVersion],
+    });
+    expect(jobs.map((j) => j.id)).toEqual(['j1']);
   });
 });
