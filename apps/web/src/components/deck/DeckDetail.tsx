@@ -267,7 +267,17 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       {showCreateForm &&
         (isWordDeck ? (
           <WordNoteForm
+            key={deckId}
             title="Add New Word"
+            generationDeck={
+              deck.native_language_id && deck.target_language_id
+                ? {
+                    deckId,
+                    nativeLanguageId: deck.native_language_id,
+                    targetLanguageId: deck.target_language_id,
+                  }
+                : undefined
+            }
             targetLanguageId={deck.target_language_id}
             onSubmit={handleCreateWordNote}
             error={writeError}

@@ -22,6 +22,11 @@ import {
   FieldLabel,
   FieldSet,
 } from '@/components/ui/field';
+import {
+  WordNoteGeneration,
+  type WordGenerationDeck,
+} from './WordNoteGeneration';
+import type { AiWordNoteCandidate } from '@repo/schemas';
 
 const wordFields = WordNoteEditableFieldsV1;
 
@@ -56,6 +61,7 @@ const wordFormSchema = wordFields.extend({
 type WordFormFields = z.infer<typeof wordFormSchema>;
 
 interface WordNoteFormProps {
+  generationDeck?: WordGenerationDeck;
   initialData?: Partial<WordFormValues>;
   /**
    * The deck's target language. It decides what gender can be: articles in
@@ -70,6 +76,7 @@ interface WordNoteFormProps {
 }
 
 export function WordNoteForm({
+  generationDeck,
   initialData,
   targetLanguageId,
   onSubmit,
@@ -95,8 +102,69 @@ export function WordNoteForm({
     DETAIL_FIELDS.some(([name]) => Boolean(initialData?.[name])) ||
       Boolean(initialData?.gender),
   );
+  const [candidateLanguages, setCandidateLanguages] = useState<{
+    native: string;
+    target: string;
+  } | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const staleCandidate =
+    candidateLanguages !== null &&
+    (candidateLanguages.native !== generationDeck?.nativeLanguageId ||
+      candidateLanguages.target !== generationDeck?.targetLanguageId);
+
+  const applyCandidate = (candidate: AiWordNoteCandidate) => {
+    const fields = candidate.fields;
+    // Personal notes are never generated.
+    form.reset({
+      word: fields.word,
+      translation: fields.translation,
+      example: fields.example,
+      example_translation: fields.example_translation,
+      part_of_speech: fields.part_of_speech,
+      gender: fields.gender ?? '',
+      pronunciation: fields.pronunciation,
+      notes: form.getValues('notes'),
+    });
+    setCandidateLanguages({
+      native: fields.native_language_id,
+      target: fields.target_language_id,
+    });
+    setShowDetails(true);
+  };
+
+  const beginGeneration = () => {
+    const before = { ...form.getValues() };
+    const direction = before.word.trim()
+      ? ('target' as const)
+      : ('native' as const);
+    return {
+      word: direction === 'target' ? before.word : before.translation,
+      direction,
+      apply: (candidate: AiWordNoteCandidate) => {
+        const current = form.getValues();
+        const generatedKeys = [
+          'word',
+          'translation',
+          'example',
+          'example_translation',
+          'part_of_speech',
+          'gender',
+          'pronunciation',
+        ] as const;
+        const changed = generatedKeys.some(
+          (key) => before[key] !== current[key],
+        );
+        if (changed)
+          throw new Error(
+            'You edited the form while AI was working. Your edits were kept; click Fill with AI to try again.',
+          );
+        applyCandidate(candidate);
+      },
+    };
+  };
 
   const handleFormSubmit = async (values: WordFormFields) => {
+    if (staleCandidate || generating) return;
     // Empty means absent: send the field away rather than as ''.
     const cleaned: WordFormValues = {
       word: values.word,
@@ -254,6 +322,18 @@ export function WordNoteForm({
           </CardContent>
 
           <CardFooter className="flex flex-col gap-3 border-t border-border/40 pt-4">
+            {generationDeck && (
+              <WordNoteGeneration
+                key={generationDeck.deckId}
+                deck={generationDeck}
+                disabled={form.formState.isSubmitting}
+                onBegin={beginGeneration}
+                onBusyChange={setGenerating}
+              />
+            )}
+            {staleCandidate && (
+              <FormErrorMessage message="The deck languages changed. Generate a new candidate or reopen the form before saving." />
+            )}
             {error && <FormErrorMessage message={error} />}
             <div className="flex gap-2 w-full">
               <Button
@@ -268,7 +348,9 @@ export function WordNoteForm({
               <Button
                 type="submit"
                 className="flex-1"
-                disabled={form.formState.isSubmitting}
+                disabled={
+                  form.formState.isSubmitting || staleCandidate || generating
+                }
               >
                 {form.formState.isSubmitting ? 'Saving…' : 'Save'}
               </Button>
