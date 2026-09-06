@@ -1,0 +1,2 @@
+ALTER TABLE "user_decks" ADD COLUMN "visibility" text DEFAULT 'private' NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_decks" ADD CONSTRAINT "user_decks_visibility_check" CHECK ("user_decks"."visibility" in ('private', 'public'));

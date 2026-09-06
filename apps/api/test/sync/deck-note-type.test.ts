@@ -37,6 +37,7 @@ describePostgres("a deck's note type", () => {
   };
   const deckBase = (now: number) => ({
     title: 'Spanish',
+    visibility: 'private',
     description: null,
     created_at: now,
     updated_at: now,

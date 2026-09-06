@@ -24,7 +24,8 @@ export const UserDeckRow = z.object({
   // Whether others may see this deck. It syncs so clients can read it, but
   // only the publish endpoint may set it public: publication is the moment
   // content reaches other people, so it passes moderation first, and the
-  // sync boundary rejects a client push to public. A refined string rather
+  // sync boundary rejects transitions to public (not unchanged public rows).
+  // A refined string rather
   // than an enum, since zodTable accepts only plain z.string().
   visibility: z
     .string()

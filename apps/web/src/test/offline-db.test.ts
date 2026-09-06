@@ -50,7 +50,7 @@ describe('@repo/offline-db wiring on web', () => {
       fieldsVersion: 1,
       templateKey: 'front-back',
     });
-    expect(schema.version).toBe(4);
+    expect(schema.version).toBe(5);
     expect(schema.tables.user_cards).toBeDefined();
     expect(schema.tables.user_decks).toBeDefined();
     // v4: a deck says which note contract its notes follow, and a word
@@ -168,6 +168,7 @@ describe('@repo/offline-db wiring on web', () => {
       UserDeckRow.safeParse({
         title: 'Test Deck',
         description: 'Deck description',
+        visibility: 'private',
         note_type: 'basic',
         native_language_id: null,
         target_language_id: null,
@@ -194,6 +195,7 @@ describe('@repo/offline-db wiring on web', () => {
       UserDeckRow.safeParse({
         title: 'Test Deck',
         description: null,
+        visibility: 'private',
         note_type: 'cloze',
         native_language_id: null,
         target_language_id: null,

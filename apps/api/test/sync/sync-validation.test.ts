@@ -63,6 +63,7 @@ describe('deck language validation', () => {
     id: 'deck-a',
     title: 'Words',
     description: null,
+    visibility: 'private',
     note_type: 'word',
     native_language_id: native.value,
     target_language_id: targetLanguageId,

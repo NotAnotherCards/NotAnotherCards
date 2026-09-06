@@ -38,8 +38,10 @@ export function validateDeckRows(
   const ownedDeckIds = activeIds(deckChanges);
   const deletedDeckIds = tombstoneIds(deckChanges);
   const durableDeckType = new Map<string, string>();
+  const durableVisibility = new Map<string, string | null>();
   for (const change of deckChanges) {
     if (change.row === null) continue;
+    durableVisibility.set(change.id, stringField(change.row, 'visibility'));
     const noteType = stringField(change.row, 'note_type');
     if (noteType !== null) durableDeckType.set(change.row.id, noteType);
   }
@@ -49,6 +51,17 @@ export function validateDeckRows(
   }
 
   const rejectedDecks = deckRows.filter((deck) => {
+    const visibility = stringField(deck, 'visibility');
+    // Sync sends whole rows: preserving public is valid, publishing is not.
+    // deckChanges is read under the push transaction's per-user lock, so
+    // a stale public row cannot undo an unpublish already stored by sync.
+    if (visibility !== 'private' && visibility !== 'public') return true;
+    if (
+      visibility === 'public' &&
+      durableVisibility.get(deck.id) !== 'public'
+    ) {
+      return true;
+    }
     const noteType = stringField(deck, 'note_type');
     if (noteType === null || noteTypeRegistry[noteType] === undefined) {
       return true;

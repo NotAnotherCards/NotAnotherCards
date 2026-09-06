@@ -25,6 +25,7 @@ const store = vi.hoisted(() => {
         id: 'deck-1',
         title: 'Deck One',
         description: null,
+        visibility: 'private',
         note_type: 'basic',
         native_language_id: null as string | null,
         target_language_id: null as string | null,

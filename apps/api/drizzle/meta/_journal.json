@@ -85,6 +85,13 @@
       "when": 1788028961102,
       "tag": "0011_normal_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788713143945,
+      "tag": "0012_abnormal_raider",
+      "breakpoints": true
     }
   ]
 }

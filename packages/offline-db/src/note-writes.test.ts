@@ -146,6 +146,7 @@ describe('createNotesBatch', () => {
     const deck = await db.get(UserDeck).find(deckId);
     expect(deck).toMatchObject({
       title: 'German A1',
+      visibility: 'private',
       note_type: 'basic',
       native_language_id: null,
       target_language_id: null,
