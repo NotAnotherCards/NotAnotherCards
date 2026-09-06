@@ -279,6 +279,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 : undefined
             }
             targetLanguageId={deck.target_language_id}
+            nativeLanguageId={deck.native_language_id}
             onSubmit={handleCreateWordNote}
             error={writeError}
             onCancel={() => setShowCreateForm(false)}
@@ -299,6 +300,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           <WordNoteForm
             title="Edit Word"
             targetLanguageId={editingWordFields?.target_language_id}
+            nativeLanguageId={editingWordFields?.native_language_id}
             initialData={editingWordFields ?? undefined}
             onSubmit={handleEditWordNote}
             error={writeError}

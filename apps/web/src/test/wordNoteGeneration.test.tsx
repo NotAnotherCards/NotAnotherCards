@@ -94,9 +94,9 @@ describe('AI autofill in the existing word form', () => {
         screen.queryByRole('button', { name: 'Use candidate' }),
       ).toBeNull();
       expect(formProps.onSubmit).not.toHaveBeenCalled();
-      expect(screen.getByLabelText(/^word$/i)).toHaveValue('Hund');
+      expect(screen.getByLabelText(/^word( in \w+)?$/i)).toHaveValue('Hund');
       expect(screen.getByLabelText(/^notes$/i)).toHaveValue('Keep me');
-      fireEvent.change(screen.getByLabelText(/^translation$/i), {
+      fireEvent.change(screen.getByLabelText(/^translation( in \w+)?$/i), {
         target: { value: 'a dog' },
       });
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -153,7 +153,7 @@ describe('AI autofill in the existing word form', () => {
     render(<WordNoteForm {...props()} initialData={{ word: 'Hund' }} />);
     start();
     await screen.findByText(/Generation failed/);
-    expect(screen.getByLabelText(/^word$/i)).toHaveValue('Hund');
+    expect(screen.getByLabelText(/^word( in \w+)?$/i)).toHaveValue('Hund');
     start();
     await screen.findByText(/Fields filled/);
   });
@@ -170,7 +170,7 @@ describe('AI autofill in the existing word form', () => {
     render(<WordNoteForm {...props()} initialData={{ word: 'Hund' }} />);
     start();
     await screen.findByText('Active generation cap reached');
-    expect(screen.getByLabelText(/^word$/i)).toHaveValue('Hund');
+    expect(screen.getByLabelText(/^word( in \w+)?$/i)).toHaveValue('Hund');
   });
 
   it('rejects invalid generated fields', async () => {
@@ -183,7 +183,7 @@ describe('AI autofill in the existing word form', () => {
     render(<WordNoteForm {...props()} initialData={{ word: 'Hund' }} />);
     start();
     await screen.findByText(/generated fields are invalid/);
-    expect(screen.getByLabelText(/^translation$/i)).toHaveValue('');
+    expect(screen.getByLabelText(/^translation( in \w+)?$/i)).toHaveValue('');
   });
 
   it('preserves edits made while generation is running', async () => {
@@ -200,13 +200,13 @@ describe('AI autofill in the existing word form', () => {
     render(<WordNoteForm {...props()} initialData={{ word: 'Hund' }} />);
     start();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-    fireEvent.change(screen.getByLabelText(/^word$/i), {
+    fireEvent.change(screen.getByLabelText(/^word( in \w+)?$/i), {
       target: { value: 'Katze' },
     });
     await act(async () => complete(response({ job: job() })));
     await screen.findByText(/Your edits were kept/);
-    expect(screen.getByLabelText(/^word$/i)).toHaveValue('Katze');
-    expect(screen.getByLabelText(/^translation$/i)).toHaveValue('');
+    expect(screen.getByLabelText(/^word( in \w+)?$/i)).toHaveValue('Katze');
+    expect(screen.getByLabelText(/^translation( in \w+)?$/i)).toHaveValue('');
   });
 
   it('rejects a response if the deck languages changed while it was running', async () => {
@@ -234,7 +234,7 @@ describe('AI autofill in the existing word form', () => {
     );
     await act(async () => complete(response({ job: job() })));
     await screen.findByText(/languages no longer match/);
-    expect(screen.getByLabelText(/^translation$/i)).toHaveValue('');
+    expect(screen.getByLabelText(/^translation( in \w+)?$/i)).toHaveValue('');
   });
 
   it('blocks saving filled fields after the deck languages change', async () => {

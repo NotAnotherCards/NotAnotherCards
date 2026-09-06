@@ -14,7 +14,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { WordNoteEditableFieldsV1 } from '@repo/offline-db';
-import { gendersFor } from '@repo/schemas';
+import { gendersFor, languageFor } from '@repo/schemas';
 import {
   Field,
   FieldError,
@@ -69,6 +69,8 @@ interface WordNoteFormProps {
    * a language without grammatical gender, where the field is not shown.
    */
   targetLanguageId?: string | null;
+  /** The deck's native language, named in the translation label. */
+  nativeLanguageId?: string | null;
   onSubmit: (values: WordFormValues) => void | Promise<void>;
   error?: string | null;
   onCancel: () => void;
@@ -79,6 +81,7 @@ export function WordNoteForm({
   generationDeck,
   initialData,
   targetLanguageId,
+  nativeLanguageId,
   onSubmit,
   onCancel,
   title,
@@ -98,6 +101,14 @@ export function WordNoteForm({
     },
   });
   const genders = gendersFor(targetLanguageId);
+  // "Word in German", "Translation in English": the pair is the deck's, and
+  // naming it saves the user guessing which box is which.
+  const targetName = languageFor(targetLanguageId)?.name;
+  const nativeName = languageFor(nativeLanguageId)?.name;
+  const wordLabel = targetName ? `Word in ${targetName}` : 'Word';
+  const translationLabel = nativeName
+    ? `Translation in ${nativeName}`
+    : 'Translation';
   const [showDetails, setShowDetails] = useState(
     DETAIL_FIELDS.some(([name]) => Boolean(initialData?.[name])) ||
       Boolean(initialData?.gender),
@@ -216,7 +227,7 @@ export function WordNoteForm({
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={field.name}>Word</FieldLabel>
+                      <FieldLabel htmlFor={field.name}>{wordLabel}</FieldLabel>
                       <input
                         {...field}
                         id={field.name}
@@ -238,7 +249,9 @@ export function WordNoteForm({
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={field.name}>Translation</FieldLabel>
+                      <FieldLabel htmlFor={field.name}>
+                        {translationLabel}
+                      </FieldLabel>
                       <input
                         {...field}
                         id={field.name}
