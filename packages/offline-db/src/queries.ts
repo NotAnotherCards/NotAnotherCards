@@ -11,6 +11,7 @@ import {
   UserNote,
   UserNoteDeck,
   UserProfile,
+  PRIVATE_DECK,
 } from './user-dictionary.js';
 import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
 import {
@@ -115,6 +116,7 @@ export async function createDeck(
       note_type: noteType,
       native_language_id: options.nativeLanguageId ?? null,
       target_language_id: options.targetLanguageId ?? null,
+      visibility: PRIVATE_DECK,
       created_at: now,
       updated_at: now,
     });
