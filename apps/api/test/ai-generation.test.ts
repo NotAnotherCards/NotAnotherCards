@@ -188,6 +188,22 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
       targetLanguageName: target.name,
       model: undefined,
     });
+
+    await expect(workerService.processNextJob()).resolves.toBe(true);
+    const [completed] = await db
+      .select()
+      .from(aiGenerationJobs)
+      .where(eq(aiGenerationJobs.id, job.id));
+    expect(completed.status).toBe('completed');
+    expect(completed.result).toMatchObject({
+      noteType: 'word',
+      fieldsVersion: 1,
+      fields: {
+        word: 'hola',
+        native_language_id: native.value,
+        target_language_id: target.value,
+      },
+    });
   });
 
   it('rejects unauthorized or unusable word decks before inserting a job', async () => {

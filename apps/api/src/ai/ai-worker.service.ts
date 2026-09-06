@@ -9,19 +9,34 @@ import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import {
+  textCardsPayloadSchema,
+  topicDeckPayloadSchema,
+  wordNotePayloadSchema,
+} from '@repo/schemas';
 import { DATABASE_CONNECTION } from '../database/database-connection';
-import { aiUsage, type GenerationPayload } from './schema';
-import { AiGatewayService, AiParseError } from './ai-gateway.service';
+import { aiUsage, type GenerationResult, type JobType } from './schema';
+import {
+  AiGatewayService,
+  AiParseError,
+  type InferenceResult,
+} from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
+import { WORD_NOTE_V1 } from './prompts/word-note.v1';
+import { assembleWordNoteCandidate } from './word-note';
 
 interface ClaimedJobRow {
   id: string;
   user_id: string;
-  type: string;
-  payload: GenerationPayload | string;
+  type: JobType;
+  payload: unknown;
   attempts: number;
   max_attempts: number;
+}
+
+function unsupportedJobType(type: never): never {
+  throw new Error(`Unsupported AI job type: ${String(type)}`);
 }
 
 @Injectable()
@@ -121,47 +136,78 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async executeJob(job: ClaimedJobRow) {
-    const payload: GenerationPayload =
-      typeof job.payload === 'string'
-        ? (JSON.parse(job.payload) as GenerationPayload)
-        : job.payload;
-
     try {
-      let systemPrompt: string;
-      let userPrompt: string;
+      const rawPayload: unknown =
+        typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
+      let result: GenerationResult;
+      let usage: InferenceResult['usage'];
+      let model: string;
+      let resultLabel: string;
 
-      if (job.type === 'topic_deck') {
-        if (!('topic' in payload)) throw new Error('Invalid topic job payload');
-        systemPrompt = TOPIC_GENERATION_V1.system;
-        userPrompt = TOPIC_GENERATION_V1.buildUserPrompt(
-          payload.topic ?? '',
-          payload.count,
-        );
-      } else {
-        if (!('sourceText' in payload)) {
-          throw new Error(`Unsupported AI job type: ${job.type}`);
+      switch (job.type) {
+        case 'topic_deck': {
+          const payload = topicDeckPayloadSchema.parse(rawPayload);
+          const inference = await this.aiGateway.generateCards(
+            TOPIC_GENERATION_V1.system,
+            TOPIC_GENERATION_V1.buildUserPrompt(payload.topic, payload.count),
+            payload.model,
+            payload.count,
+          );
+          result = inference.cards;
+          usage = inference.usage;
+          model = inference.model;
+          resultLabel = `${result.length} cards`;
+          break;
         }
-        systemPrompt = TEXT_GENERATION_V1.system;
-        userPrompt = TEXT_GENERATION_V1.buildUserPrompt(
-          payload.sourceText ?? '',
-          payload.count,
-        );
+        case 'text_cards': {
+          const payload = textCardsPayloadSchema.parse(rawPayload);
+          const inference = await this.aiGateway.generateCards(
+            TEXT_GENERATION_V1.system,
+            TEXT_GENERATION_V1.buildUserPrompt(
+              payload.sourceText,
+              payload.count,
+            ),
+            payload.model,
+            payload.count,
+          );
+          result = inference.cards;
+          usage = inference.usage;
+          model = inference.model;
+          resultLabel = `${result.length} cards`;
+          break;
+        }
+        case 'word_note': {
+          const payload = wordNotePayloadSchema.parse(rawPayload);
+          const inference = await this.aiGateway.generateObject(
+            WORD_NOTE_V1.system,
+            WORD_NOTE_V1.buildUserPrompt(payload),
+            payload.model,
+          );
+          try {
+            result = assembleWordNoteCandidate(payload, inference.value);
+          } catch (error: unknown) {
+            throw new AiParseError(
+              error instanceof Error ? error.message : String(error),
+              inference.usage,
+              inference.model,
+            );
+          }
+          usage = inference.usage;
+          model = inference.model;
+          resultLabel = '1 word note';
+          break;
+        }
+        default:
+          unsupportedJobType(job.type);
       }
-
-      const inference = await this.aiGateway.generateCards(
-        systemPrompt,
-        userPrompt,
-        payload.model,
-        payload.count,
-      );
 
       // Record success and log token usage in a transaction
       await this.db.transaction(async (tx) => {
         await tx.execute(sql`
           UPDATE ai_generation_jobs
           SET status = 'completed',
-              result = ${JSON.stringify(inference.cards)}::jsonb,
-              payload = payload || jsonb_build_object('model', ${inference.model}::text),
+              result = ${JSON.stringify(result)}::jsonb,
+              payload = payload || jsonb_build_object('model', ${model}::text),
               error = NULL,
               completed_at = NOW(),
               updated_at = NOW()
@@ -172,15 +218,15 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           id: randomUUID(),
           userId: job.user_id,
           jobId: job.id,
-          model: inference.model,
-          promptTokens: inference.usage.promptTokens,
-          completionTokens: inference.usage.completionTokens,
-          totalTokens: inference.usage.totalTokens,
+          model,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
         });
       });
 
       this.logger.log(
-        `Job ${job.id} completed (${inference.cards.length} cards, ${inference.usage.totalTokens} tokens)`,
+        `Job ${job.id} completed (${resultLabel}, ${usage.totalTokens} tokens)`,
       );
     } catch (err: unknown) {
       const isFinalAttempt = job.attempts >= job.max_attempts;
