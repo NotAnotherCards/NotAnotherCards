@@ -5,9 +5,11 @@ services:
     ports:
       - '127.0.0.1:${PROMETHEUS_PORT:-9090}:9090'
     environment:
+      GX10_METRICS_MODE: ${GX10_METRICS_MODE:-proxy}
       GX10_METRICS_HOST: ${GX10_METRICS_HOST:-ai.dustyway.org}
     volumes:
       - ./prometheus/prometheus.yml.template:/etc/prometheus/prometheus.yml.template:ro
+      - ./prometheus/render-config.sh:/usr/local/bin/render-prometheus-config:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
     # Prometheus does not expand environment variables in its config file,
@@ -15,7 +17,9 @@ services:
     entrypoint: ['/bin/sh', '-c']
     command:
       - |
-        sed "s|__GX10_METRICS_HOST__|$${GX10_METRICS_HOST}|g" /etc/prometheus/prometheus.yml.template > /prometheus/prometheus.yml
+        /bin/sh /usr/local/bin/render-prometheus-config \
+          /etc/prometheus/prometheus.yml.template \
+          /prometheus/prometheus.yml
         exec /bin/prometheus \
           --config.file=/prometheus/prometheus.yml \
           --storage.tsdb.path=/prometheus \
@@ -36,7 +40,7 @@ services:
       - app_net
 
   grafana:
-    image: grafana/grafana:13.2.0
+    image: grafana/grafana:13.2.1
     restart: unless-stopped
     ports:
       - '127.0.0.1:${GRAFANA_PORT:-3001}:3000'
@@ -66,17 +70,26 @@ services:
       - default
 
   alertmanager:
-    image: prom/alertmanager:v0.28.1
+    image: prom/alertmanager:v0.34.0
     restart: unless-stopped
     ports:
       - '127.0.0.1:${ALERTMANAGER_PORT:-9093}:9093'
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - ./secrets:/etc/alertmanager/secrets:ro
       - alertmanager-data:/alertmanager
+    secrets:
+      - slack_webhook
+    entrypoint: ['/bin/sh', '-ec']
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+      - |
+        test -s /run/secrets/slack_webhook || {
+          echo 'FATAL: SLACK_WEBHOOK_URL is empty' >&2
+          exit 1
+        }
+        exec /bin/alertmanager \
+          --config.file=/etc/alertmanager/alertmanager.yml \
+          --storage.path=/alertmanager \
+          --enable-feature=receiver-name-in-metrics
     healthcheck:
       test:
         [
@@ -114,6 +127,43 @@ services:
       - default
       - app_net
 
+  # Validation-only Slack-compatible endpoint. It records POSTs in memory so
+  # test:infra proves Alertmanager performed an actual webhook request.
+  slack-webhook-mock:
+    image: node:24-alpine
+    profiles: ['validation']
+    command:
+      - node
+      - -e
+      - |
+        const http = require('http');
+        let deliveries = 0;
+        http.createServer((req, res) => {
+          if (req.method === 'POST') {
+            req.resume();
+            req.on('end', () => {
+              deliveries += 1;
+              res.writeHead(200, { 'content-type': 'text/plain' });
+              res.end('ok');
+            });
+            return;
+          }
+          if (req.url === '/count') {
+            res.writeHead(200, { 'content-type': 'text/plain' });
+            res.end(String(deliveries));
+            return;
+          }
+          res.writeHead(404);
+          res.end('not found');
+        }).listen(8080, '0.0.0.0');
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--spider', 'http://127.0.0.1:8080/count']
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    networks:
+      - default
+
 networks:
   default:
   app_net:
@@ -124,3 +174,7 @@ volumes:
   prometheus-data:
   grafana-data:
   alertmanager-data:
+
+secrets:
+  slack_webhook:
+    environment: SLACK_WEBHOOK_URL
