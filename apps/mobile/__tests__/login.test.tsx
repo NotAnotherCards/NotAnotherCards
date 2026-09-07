@@ -76,7 +76,7 @@ describe('Login screen', () => {
 
   it('renders the card and both fields', () => {
     const { getByText, getByPlaceholderText } = render(<Login />);
-    expect(getByText('Welcome back')).toBeTruthy();
+    expect(getByText('Welcome Back')).toBeTruthy();
     expect(getByPlaceholderText('you@example.com')).toBeTruthy();
     expect(getByPlaceholderText('Your password')).toBeTruthy();
   });

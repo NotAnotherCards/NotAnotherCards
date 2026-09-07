@@ -20,8 +20,8 @@ export default function Register() {
 
   return (
     <AuthCard
-      title="Create account"
-      description="Sign up to get started"
+      title="Create Account"
+      description="Enter your details to create a new profile"
       footerText="Already have an account?"
       footerLinkText="Log in"
       footerLinkTo="/login"
