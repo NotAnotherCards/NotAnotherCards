@@ -29,7 +29,7 @@ const openDb = async () => {
 describe('validateAndImportCsv', () => {
   it('rejects CSV targeting an existing non-basic deck by title', async () => {
     await openDb();
-    
+
     // Seed a word deck titled "Spanish"
     await createDeck(db, 'Spanish', null, {
       noteType: 'word',
@@ -51,7 +51,9 @@ hola,hello,Spanish
       expect.arrayContaining([
         expect.objectContaining({
           code: 'NON_BASIC_DECK_MATCH',
-          message: expect.stringContaining('CSV imports can only target basic decks'),
+          message: expect.stringContaining(
+            'CSV imports can only target basic decks',
+          ),
         }),
       ]),
     );
@@ -62,7 +64,7 @@ hola,hello,Spanish
 
   it('reuses an existing basic deck with a matching title', async () => {
     await openDb();
-    
+
     // Seed a basic deck titled "Spanish"
     const deck = await createDeck(db, 'Spanish', null, {
       noteType: 'basic',
