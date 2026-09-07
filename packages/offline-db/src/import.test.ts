@@ -145,7 +145,7 @@ describe('validateAndImportJson', () => {
     // Verify it created ONLY the "All Words" system deck for Spanish, ignoring the custom deck
     const decks = await db.get(UserDeck).query().fetch();
     expect(decks).toHaveLength(1);
-    expect(decks[0].title).toBe('All Words');
+    expect(decks[0].title).toBe('All Spanish Words');
     expect(decks[0].target_language_id).toBe(
       '00000000-0000-0000-0000-000000000002',
     );

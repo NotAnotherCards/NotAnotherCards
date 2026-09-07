@@ -9,6 +9,7 @@ import type { BatchOperation, Database } from '@remelondb/core';
 import { Q } from '@remelondb/core';
 import { noteDeckId, systemDeckId } from './ids.js';
 import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from './note-constants.js';
+import { languageFor } from '@repo/schemas';
 import {
   prepareCardsForNewNote,
   prepareReconcileNoteCards,
@@ -108,7 +109,13 @@ async function prepareSystemDecksAndMemberships(
         operations.push(
           db.get(UserDeck).prepareCreate({
             id: sId,
-            title: info.type === 'cards' ? 'Cards' : 'All Words',
+            title:
+              info.type === 'cards'
+                ? 'Cards'
+                : `All ${languageFor(info.target)?.name || ''} Words`.replace(
+                    '  ',
+                    ' ',
+                  ),
             description: null,
             note_type: info.noteType,
             native_language_id: info.native,

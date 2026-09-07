@@ -19,8 +19,8 @@ import {
 const word = {
   word: 'Hund',
   translation: 'dog',
-  native_language_id: 'lang-en',
-  target_language_id: 'lang-de',
+  native_language_id: '00000000-0000-0000-0000-000000000001',
+  target_language_id: '00000000-0000-0000-0000-000000000003',
 };
 
 let db: Database;
@@ -39,8 +39,8 @@ const openDb = async () => {
 const createWordDeck = async () =>
   await createDeck(db, 'Words', null, {
     noteType: 'word',
-    nativeLanguageId: 'lang-en',
-    targetLanguageId: 'lang-de',
+    nativeLanguageId: '00000000-0000-0000-0000-000000000001',
+    targetLanguageId: '00000000-0000-0000-0000-000000000003',
   });
 
 describe('createDeck', () => {
@@ -54,8 +54,8 @@ describe('createDeck', () => {
     await expect(
       createDeck(db, 'English', null, {
         noteType: 'word',
-        nativeLanguageId: 'lang-en',
-        targetLanguageId: 'lang-en',
+        nativeLanguageId: '00000000-0000-0000-0000-000000000001',
+        targetLanguageId: '00000000-0000-0000-0000-000000000001',
       }),
     ).rejects.toThrow('needs two different languages');
     expect(await db.get(UserDeck).query().fetch()).toHaveLength(0);
@@ -80,7 +80,7 @@ describe('createNote', () => {
     expect(membership.active).toBe(true);
 
     // Verify automatic system collection assignment (All Words)
-    const sId = systemDeckId('words', 'lang-de');
+    const sId = systemDeckId('words', '00000000-0000-0000-0000-000000000003');
     const sysMembership = await db
       .get(UserNoteDeck)
       .find(noteDeckId(note.id, sId));
@@ -88,8 +88,10 @@ describe('createNote', () => {
 
     // Verify system collection was lazily created
     const sysDeck = await db.get(UserDeck).find(sId);
-    expect(sysDeck.title).toBe('All Words');
-    expect(sysDeck.target_language_id).toBe('lang-de');
+    expect(sysDeck.title).toBe('All German Words');
+    expect(sysDeck.target_language_id).toBe(
+      '00000000-0000-0000-0000-000000000003',
+    );
 
     const cards = (await db.get(UserCard).query().fetch()).filter(
       (c) => c.note_id === note.id,
