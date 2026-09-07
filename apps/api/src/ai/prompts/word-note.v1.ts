@@ -8,11 +8,18 @@ export const WORD_NOTE_V1 = {
     'Pronunciation must be IPA. Include gender only when the user prompt supplies allowed values. ' +
     'Do not include image, word_audio, notes, language ids, or any other fields.',
 
+  // Each JSON field is tied to a language by name. "Complete the note in
+  // those languages" was not enough: given an English word, the model put
+  // it in both fields, since nothing said which key holds the Spanish.
   buildUserPrompt(payload: WordNotePayload): string {
-    const inputSide =
+    const { nativeLanguageName: native, targetLanguageName: target } = payload;
+    const given = JSON.stringify(payload.word);
+    const fields =
       payload.direction === 'target'
-        ? 'target-language word'
-        : 'native-language translation';
+        ? `"word" is the ${target} word ${given}, given. ` +
+          `Put its ${native} translation in "translation". `
+        : `"translation" is the ${native} word ${given}, given. ` +
+          `Put its ${target} translation in "word". `;
     const genders = gendersFor(payload.targetLanguageId);
     const genderInstruction =
       genders.length > 0
@@ -20,10 +27,12 @@ export const WORD_NOTE_V1 = {
         : 'Do not include gender.';
 
     return (
-      `Native language: ${payload.nativeLanguageName}. ` +
-      `Target language: ${payload.targetLanguageName}. ` +
-      `The authoritative ${inputSide} is ${JSON.stringify(payload.word)}. ` +
-      `Complete the note in those languages. ${genderInstruction}`
+      `Native language: ${native}. Target language: ${target}. ` +
+      fields +
+      `"part_of_speech" and "pronunciation" describe "word". ` +
+      `"example" is a ${target} sentence using "word"; ` +
+      `"example_translation" is that sentence in ${native}. ` +
+      genderInstruction
     );
   },
 };

@@ -112,8 +112,16 @@ describe('word note generation', () => {
     const targetPrompt = WORD_NOTE_V1.buildUserPrompt(payload('target'));
     const nativePrompt = WORD_NOTE_V1.buildUserPrompt(payload('native'));
 
-    expect(targetPrompt).toContain('target-language word');
-    expect(nativePrompt).toContain('native-language translation');
+    // each direction names which JSON key holds which language
+    expect(targetPrompt).toContain('"word" is the German word "Hund", given');
+    expect(targetPrompt).toContain('English translation in "translation"');
+    expect(nativePrompt).toContain(
+      '"translation" is the English word "dog", given',
+    );
+    expect(nativePrompt).toContain('German translation in "word"');
+    expect(nativePrompt).toContain(
+      '"example" is a German sentence using "word"',
+    );
     expect(targetPrompt).toContain('Native language: English');
     expect(targetPrompt).toContain('Target language: German');
     expect(targetPrompt).toContain('der, die, das');
