@@ -24,7 +24,7 @@ import {
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
 } from '@repo/offline-db';
-import { deckKind, deckKindClassName } from './deck-kind';
+import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { CardList } from './CardList';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
@@ -215,13 +215,18 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-bold text-foreground font-heading">
+            <div className="flex min-w-0 items-center gap-2">
+              <span
+                className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
+                data-testid="deck-kind"
+                title={deckKind(deck)}
+                aria-label={deckKind(deck)}
+              >
+                {deckKindShort(deck)}
+              </span>
+              <h2 className="truncate text-2xl font-bold text-foreground font-heading">
                 {deck.title}
               </h2>
-              <span className={deckKindClassName} data-testid="deck-kind">
-                {deckKind(deck)}
-              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               {deck.description || 'Manage your library cards below.'}
