@@ -248,8 +248,8 @@ describe('note, card, and membership operations', () => {
     });
 
     expect(batchSpy).toHaveBeenCalledTimes(1);
-    // 1 deck record + (3 records per card * 2 cards) = 7 records total in batch
-    expect(batchSpy.mock.calls[0][0]).toHaveLength(7);
+    // 1 custom deck + 1 system deck + (4 records per card * 2 cards) = 10 records total in batch
+    expect(batchSpy.mock.calls[0][0]).toHaveLength(10);
 
     const deck = await db.get(UserDeck).find(deckId);
     expect(deck.title).toBe('AI Generated Spanish Deck');
@@ -262,7 +262,7 @@ describe('note, card, and membership operations', () => {
     expect(notesInDb).toHaveLength(2);
 
     const noteDecksInDb = await db.get(UserNoteDeck).query().fetch();
-    expect(noteDecksInDb).toHaveLength(2);
+    expect(noteDecksInDb).toHaveLength(4);
   });
 
   it('rolls back completely if batch execution fails', async () => {

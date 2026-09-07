@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { AiPlaygroundForm } from '@/components/ai/AiPlaygroundForm';
@@ -397,7 +397,9 @@ describe('AI Generation Playground Test Suite', () => {
 
       const initialPollCount = pollCallCount;
       // Wait 1.2s (interval is 1s)
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+      });
 
       // Verify polling stopped (pollCallCount did not increase further)
       expect(pollCallCount).toBe(initialPollCount);
