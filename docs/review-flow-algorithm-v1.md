@@ -3,9 +3,9 @@
 ## Purpose and Scope
 
 This document defines the v1 review-session flow for one selected deck. It
-defines when cards are selected, when the selection may change, and when the
-session ends. It does not define the spaced-repetition interval formula or the
-v2 priority policy for choosing cards.
+defines when cards are selected, when the selection may change, when the
+session ends, and how an answer schedules the card's next review. It does not
+define the v2 priority policy for choosing cards.
 
 In this document:
 
@@ -44,9 +44,10 @@ In this document:
      particular, updating the due-card list must not remove it early and leave
      the animation without a card to render.
 
-5. When the user deletes a note, the app removes that note and its cards from
-   the personal dictionary. It also removes every sibling card from the
-   current batch.
+5. When the user deletes a note, the app removes that note and every sibling
+   card from the dictionary currently being reviewed. It also marks every
+   sibling card as inactive, so those cards cannot be selected for a future
+   review batch, and removes them from the current batch.
 
    - If cards before the current position were removed, the current position is
      adjusted so that the next remaining card is shown.
@@ -59,6 +60,29 @@ In this document:
 
 7. The review session finishes only when a fresh read cannot create another
    batch because there are no due cards for the selected deck.
+
+## v1 Scheduling Policy
+
+Each answer creates a review event and updates the card's
+`scheduled_interval_minutes` and `due_at` values. `due_at` is calculated as:
+
+```text
+reviewed_at + scheduled_interval_minutes × 60,000
+```
+
+The interval is stored in whole minutes. A new card has an initial interval of
+`0`; the minimum interval for each successful answer below applies to its first
+review as well.
+
+| Answer | Rating | Next interval |
+| --- | ---: | --- |
+| `Forgot` | 1 | 5 minutes |
+| `Struggled` | 2 | `max(1 day, previous interval × 1.2)` |
+| `Remembered` | 3 | `max(3 days, previous interval × 2.5)` |
+| `Knew it` | 4 | `max(7 days, previous interval × 3.25)` |
+
+The calculated interval is capped at 120 days. For example, a card whose
+previous interval is 10 days receives a 25-day interval after `Remembered`.
 
 ## Batch Lifecycle
 
