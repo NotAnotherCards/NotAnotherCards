@@ -9,9 +9,10 @@ import { FacebookIcon } from '@/components/ui/facebook-icon';
 
 export type SocialProvider = 'google' | 'facebook';
 
+// Labelled like the web's buttons: the provider name alone.
 const LABELS: Record<SocialProvider, string> = {
-  google: 'Continue with Google',
-  facebook: 'Continue with Facebook',
+  google: 'Google',
+  facebook: 'Facebook',
 };
 
 // The Expo auth client does the browser round trip: it opens the provider
@@ -43,7 +44,7 @@ export function SocialLoginButtons() {
     <View className="gap-2">
       <View className="my-1 flex-row items-center gap-3">
         <View className="h-px flex-1 bg-border" />
-        <Text className="text-xs text-muted-foreground">or continue with</Text>
+        <Text className="text-xs text-muted-foreground">Or continue with</Text>
         <View className="h-px flex-1 bg-border" />
       </View>
       {(['google', 'facebook'] as const).map((provider) => (
@@ -53,7 +54,7 @@ export function SocialLoginButtons() {
           loading={busy === provider}
           disabled={busy !== null}
           onPress={() => void signIn(provider)}
-          accessibilityLabel={LABELS[provider]}
+          accessibilityLabel={`Continue with ${LABELS[provider]}`}
         >
           <View className="flex-row items-center gap-2">
             {busy !== provider &&

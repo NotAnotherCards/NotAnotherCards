@@ -133,7 +133,7 @@ describe('Login screen', () => {
   });
   it('starts a social sign-in with the provider and in-app callbacks', async () => {
     const { getByText } = render(<Login />);
-    fireEvent.press(getByText('Continue with Google'));
+    fireEvent.press(getByText('Google'));
     await waitFor(() => expect(mockSocialSignIn).toHaveBeenCalledTimes(1));
     // relative paths: the Expo client turns them into the app's scheme URL
     expect(mockSocialSignIn).toHaveBeenCalledWith({
@@ -150,7 +150,7 @@ describe('Login screen', () => {
       error: { message: 'Provider refused' },
     });
     const { getByText, findByText } = render(<Login />);
-    fireEvent.press(getByText('Continue with Facebook'));
+    fireEvent.press(getByText('Facebook'));
     expect(await findByText('Provider refused')).toBeTruthy();
     expect(mockSocialSignIn).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'facebook' }),
