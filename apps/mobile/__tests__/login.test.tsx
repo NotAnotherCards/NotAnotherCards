@@ -64,6 +64,11 @@ describe('Login screen', () => {
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
   });
 
+  it('offers a way to reset a forgotten password', () => {
+    const { getByText } = render(<Login />);
+    expect(getByText('Reset here!')).toBeTruthy();
+  });
+
   it('renders the card and both fields', () => {
     const { getByText, getByPlaceholderText } = render(<Login />);
     expect(getByText('Welcome back')).toBeTruthy();
