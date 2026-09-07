@@ -30,6 +30,7 @@ import {
   updateCard as dbUpdateCard,
   createCardsBatch as dbCreateCardsBatch,
   removeNoteFromDeck as dbRemoveNoteFromDeck,
+  deleteNote as dbDeleteNote,
   recordReviewEvent as dbRecordReview,
   createNote as dbCreateNote,
   updateNoteFields as dbUpdateNoteFields,
@@ -222,6 +223,16 @@ export function useStore() {
     [db, sync],
   );
 
+  const deleteNote = useCallback(
+    async (noteId: string) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteNote(db, noteId);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
   // The note behind a card, so a form can edit the note's own fields rather
   // than the rendered front and back a template produced from them.
   const noteForCard = useCallback(
@@ -384,6 +395,7 @@ export function useStore() {
     createCard,
     updateCard,
     removeNoteFromDeck,
+    deleteNote,
     recordReview,
     isBasicCard,
     isWordCard,

@@ -7,13 +7,14 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { Edit, Trash2, FolderOpen } from 'lucide-react';
+import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
 import { noteTypeRegistry } from '@repo/offline-db';
 
 interface DeckCardProps {
   deck: Deck;
   totalCards: number;
   onSelectDeck: (deckId: string) => void;
+  onStartReview: (deckId: string) => void;
   onEditDeck: (deck: Deck) => void;
   onDeleteDeck: (deckId: string) => void;
 }
@@ -22,6 +23,7 @@ export function DeckCard({
   deck,
   totalCards,
   onSelectDeck,
+  onStartReview,
   onEditDeck,
   onDeleteDeck,
 }: DeckCardProps) {
@@ -87,7 +89,7 @@ export function DeckCard({
           </div>
         </div>
 
-        <div className="flex pt-2">
+        <div className="flex flex-col gap-2 pt-2">
           <Button
             onClick={() => onSelectDeck(deck.id)}
             className="w-full cursor-pointer gap-1.5"
@@ -95,6 +97,15 @@ export function DeckCard({
           >
             <FolderOpen className="size-3.5" />
             Manage Cards
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onStartReview(deck.id)}
+            className="w-full cursor-pointer gap-1.5"
+            size="sm"
+          >
+            <BookOpen className="size-3.5" />
+            Start Review
           </Button>
         </div>
       </CardContent>
