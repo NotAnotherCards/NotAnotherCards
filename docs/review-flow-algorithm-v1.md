@@ -45,9 +45,10 @@ In this document:
      the animation without a card to render.
 
 5. When the user deletes a note, the app removes that note and every sibling
-   card from the dictionary currently being reviewed. It also marks every
-   sibling card as inactive, so those cards cannot be selected for a future
-   review batch, and removes them from the current batch.
+   card from the dictionary currently being reviewed. The deletion is recorded
+   by setting the server-managed `deleted_at` tombstone field for the note and
+   its sibling cards. Deleted cards cannot be selected for a future review
+   batch and are removed from the current batch.
 
    - If cards before the current position were removed, the current position is
      adjusted so that the next remaining card is shown.
