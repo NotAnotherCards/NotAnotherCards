@@ -1,5 +1,5 @@
-import { Database, randomId, type BatchOperation } from '@remelondb/core';
-import { cardId, noteDeckId } from './ids.js';
+import { Database, randomId, type BatchOperation, Q } from '@remelondb/core';
+import { cardId, noteDeckId, systemDeckId } from './ids.js';
 import {
   BASIC_NOTE_TYPE,
   BASIC_NOTE_FIELDS_VERSION,
@@ -13,6 +13,7 @@ import {
   UserCard,
   UserNoteDeck,
   ReviewEvent,
+  PRIVATE_DECK,
 } from './user-dictionary.js';
 import type {
   BackupJsonFormat,
@@ -350,58 +351,71 @@ async function validateAndImportJson(
   const deckIdMap = new Map<string, string>();
   const cardIdMap = new Map<string, string>();
   const batchOps: BatchOperation[] = [];
-  // Create decks
+  const sysDecksNeeded = new Map<
+    string,
+    {
+      type: 'cards' | 'words';
+      target: string | null;
+      native: string | null;
+      noteType: string;
+    }
+  >();
+  // We no longer create local UserDecks for imported thematic decks.
+  // We only map their source IDs in case we need to track references.
   for (const d of decksData) {
     const newDeckId = randomId();
     if (d.source_id) deckIdMap.set(d.source_id, newDeckId);
-    batchOps.push(
-      db.get(UserDeck).prepareCreate({
-        id: newDeckId,
-        title: d.title ?? 'Untitled Deck',
-        description: d.description ?? null,
-        note_type: d.note_type ?? BASIC_NOTE_TYPE,
-        native_language_id: d.native_language ?? null,
-        target_language_id: d.target_language ?? null,
-        created_at: now,
-        updated_at: now,
-      }),
-    );
   }
   // Create notes, deck memberships, and cards
   for (const note of notesData) {
     const newNoteId = randomId();
+    const noteType = note.note_type ?? BASIC_NOTE_TYPE;
+    const version = note.fields_version ?? BASIC_NOTE_FIELDS_VERSION;
+    const compiled = compileNote(noteType, version, note.fields ?? {});
+
+    // Compute sys deck
+    let target: string | null = null;
+    let native: string | null = null;
+    if (noteType === WORD_NOTE_TYPE) {
+      const f = JSON.parse(compiled.fieldsJson) as {
+        target_language_id?: string;
+        native_language_id?: string;
+      };
+      target = f.target_language_id || null;
+      native = f.native_language_id || null;
+    }
+    const sysType = noteType === BASIC_NOTE_TYPE ? 'cards' : 'words';
+    const sId = systemDeckId(sysType, target || undefined);
+
+    if (!sysDecksNeeded.has(sId)) {
+      sysDecksNeeded.set(sId, { type: sysType, target, native, noteType });
+    }
+
     batchOps.push(
       db.get(UserNote).prepareCreate({
         id: newNoteId,
-        note_type: note.note_type ?? BASIC_NOTE_TYPE,
-        fields_version: note.fields_version ?? BASIC_NOTE_FIELDS_VERSION,
-        fields_json: JSON.stringify(note.fields ?? {}),
+        note_type: noteType,
+        fields_version: version,
+        fields_json: compiled.fieldsJson,
         additional_content: note.additional_content ?? null,
         created_at: now,
         updated_at: now,
       }),
     );
-    // Deck memberships
-    const noteDeckRefs: string[] = Array.isArray(note.decks) ? note.decks : [];
-    for (const deckSourceId of noteDeckRefs) {
-      const newDeckId = deckIdMap.get(deckSourceId);
-      if (newDeckId) {
-        batchOps.push(
-          db.get(UserNoteDeck).prepareCreate({
-            id: noteDeckId(newNoteId, newDeckId),
-            note_id: newNoteId,
-            deck_id: newDeckId,
-            active: true,
-            created_at: now,
-            updated_at: now,
-          }),
-        );
-      }
-    }
+
+    // We only attach imported notes to their automatic system collection.
+    // Thematic deck memberships from the backup are deliberately discarded.
+    batchOps.push(
+      db.get(UserNoteDeck).prepareCreate({
+        id: noteDeckId(newNoteId, sId),
+        note_id: newNoteId,
+        deck_id: sId,
+        active: true,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
     // Cards
-    const noteType = note.note_type ?? BASIC_NOTE_TYPE;
-    const version = note.fields_version ?? BASIC_NOTE_FIELDS_VERSION;
-    const compiled = compileNote(noteType, version, note.fields ?? {});
 
     const cardsData: BackupCard[] = Array.isArray(note.cards) ? note.cards : [];
     const sourceCardByTemplateKey = new Map(
@@ -452,6 +466,31 @@ async function validateAndImportJson(
   }
   // Single atomic transaction
   await db.write(async () => {
+    const sysDeckIds = Array.from(sysDecksNeeded.keys());
+    if (sysDeckIds.length > 0) {
+      const existingSysDecks = await db
+        .get(UserDeck)
+        .query(Q.where('id', Q.oneOf(sysDeckIds)))
+        .fetch();
+      const existingIds = new Set(existingSysDecks.map((d) => d.id));
+      for (const [sId, info] of sysDecksNeeded.entries()) {
+        if (!existingIds.has(sId)) {
+          batchOps.push(
+            db.get(UserDeck).prepareCreate({
+              id: sId,
+              title: info.type === 'cards' ? 'Cards' : 'All Words',
+              description: null,
+              note_type: info.noteType,
+              native_language_id: info.native,
+              target_language_id: info.target,
+              visibility: PRIVATE_DECK,
+              created_at: now,
+              updated_at: now,
+            }),
+          );
+        }
+      }
+    }
     await db.batch(batchOps);
   });
   return {
@@ -673,32 +712,14 @@ async function validateAndImportCsv(
   const now = Date.now();
   const batchOps: BatchOperation[] = [];
 
-  // Create new decks that don't already exist
-  for (const title of newDeckTitles) {
-    const newDeckId = randomId();
-    deckTitleToIdMap.set(title.toLowerCase(), newDeckId);
-    batchOps.push(
-      db.get(UserDeck).prepareCreate({
-        id: newDeckId,
-        title,
-        description: null,
-        note_type: BASIC_NOTE_TYPE,
-        native_language_id: null,
-        target_language_id: null,
-        created_at: now,
-        updated_at: now,
-      }),
-    );
-  }
+  // We no longer create local UserDecks for CSV thematic columns.
 
   // Create a note + card + deck membership per CSV row
   for (const item of parsedRows) {
     const noteId = randomId();
-    const targetDeckId =
-      deckTitleToIdMap.get(item.deckTitle.toLowerCase()) ?? randomId();
     const templateKey = 'front-back';
     const generatedCardId = cardId(noteId, templateKey);
-    const membershipId = noteDeckId(noteId, targetDeckId);
+    const sId = systemDeckId('cards');
 
     batchOps.push(
       db.get(UserNote).prepareCreate({
@@ -729,9 +750,9 @@ async function validateAndImportCsv(
 
     batchOps.push(
       db.get(UserNoteDeck).prepareCreate({
-        id: membershipId,
+        id: noteDeckId(noteId, sId),
         note_id: noteId,
-        deck_id: targetDeckId,
+        deck_id: sId,
         active: true,
         created_at: now,
         updated_at: now,
@@ -740,6 +761,26 @@ async function validateAndImportCsv(
   }
 
   await db.write(async () => {
+    const sId = systemDeckId('cards');
+    const existingSysDecks = await db
+      .get(UserDeck)
+      .query(Q.where('id', sId))
+      .fetch();
+    if (existingSysDecks.length === 0) {
+      batchOps.push(
+        db.get(UserDeck).prepareCreate({
+          id: sId,
+          title: 'Cards',
+          description: null,
+          note_type: BASIC_NOTE_TYPE,
+          native_language_id: null,
+          target_language_id: null,
+          visibility: PRIVATE_DECK,
+          created_at: now,
+          updated_at: now,
+        }),
+      );
+    }
     await db.batch(batchOps);
   });
 
