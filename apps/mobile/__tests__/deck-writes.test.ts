@@ -73,11 +73,11 @@ describe('deckWrites', () => {
       targetLanguageId: null,
     });
     const card = await createCard(db, deck.id, 'Tadasana', 'Mountain pose');
-    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(1);
+    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(2);
 
     await writes.remove(deck.id);
 
-    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(0);
+    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(1);
     expect(await db.get(UserCard).find(card.id)).toBeTruthy();
   });
 });

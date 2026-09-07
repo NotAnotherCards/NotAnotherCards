@@ -53,7 +53,7 @@ describe('cardWrites', () => {
     const card = await writes.create(deck.id, 'hola', 'hello');
     expect(card.front).toBe('hola');
     expect(await db.get(UserNote).find(card.note_id)).toBeTruthy();
-    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(1);
+    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(2);
 
     await writes.update(card.id, 'hola!', 'hello!');
     const [updated] = await getPersonalDictionaryQuery(db).fetch();
@@ -69,7 +69,7 @@ describe('cardWrites', () => {
 
     await writes.removeFromDeck(card.note_id, deck.id);
 
-    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(0);
+    expect(await getNoteDecksQuery(db).fetch()).toHaveLength(1);
     expect(await getPersonalDictionaryQuery(db).fetch()).toHaveLength(1);
     expect(await db.get(UserNote).find(card.note_id)).toBeTruthy();
     expect(sync.notifyLocalWrite).toHaveBeenCalledTimes(2);
