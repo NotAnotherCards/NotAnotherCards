@@ -5,7 +5,7 @@ import {
   BASIC_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
 } from './note-constants.js';
-import { LANGUAGES } from '@repo/schemas';
+import { LANGUAGES, languageFor } from '@repo/schemas';
 import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
 import {
   UserDeck,
@@ -478,7 +478,13 @@ async function validateAndImportJson(
           batchOps.push(
             db.get(UserDeck).prepareCreate({
               id: sId,
-              title: info.type === 'cards' ? 'Cards' : 'All Words',
+              title:
+                info.type === 'cards'
+                  ? 'Cards'
+                  : `All ${languageFor(info.target)?.name || ''} Words`.replace(
+                      '  ',
+                      ' ',
+                    ),
               description: null,
               note_type: info.noteType,
               native_language_id: info.native,

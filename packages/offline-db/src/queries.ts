@@ -31,7 +31,7 @@ export function getDecksQuery(db: Database) {
   return db
     .get(UserDeck)
     .query(
-      Q.where('title', Q.oneOf(['Cards', 'All Words'])),
+      Q.or(Q.where('title', 'Cards'), Q.where('title', Q.like('All%Words'))),
       Q.sortBy('created_at', Q.desc),
     );
 }
