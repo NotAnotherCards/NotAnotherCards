@@ -4,6 +4,8 @@ import { authClient } from '@/lib/auth-client';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { GoogleIcon } from '@/components/ui/google-icon';
+import { FacebookIcon } from '@/components/ui/facebook-icon';
 
 export type SocialProvider = 'google' | 'facebook';
 
@@ -53,7 +55,11 @@ export function SocialLoginButtons() {
           onPress={() => void signIn(provider)}
           accessibilityLabel={LABELS[provider]}
         >
-          <Text>{LABELS[provider]}</Text>
+          <View className="flex-row items-center gap-2">
+            {busy !== provider &&
+              (provider === 'google' ? <GoogleIcon /> : <FacebookIcon />)}
+            <Text>{LABELS[provider]}</Text>
+          </View>
         </Button>
       ))}
       {apiError && (
