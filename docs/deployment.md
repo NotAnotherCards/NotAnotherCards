@@ -1,6 +1,6 @@
 # Deployment and AI infrastructure plan
 
-Status: proposal, to be discussed.
+Status: current deployment architecture.
 
 The subject sets one hard rule that shapes everything here: deployment must use
 containers and run with a single command (III.2, rejection-level). Evaluation
@@ -11,7 +11,7 @@ and the AI box is an external backend behind a config value.
 ## Topology
 
 ```
-users ── HTTPS ──> target production VPS (public + tailnet)
+users ── HTTPS ──> production VPS (public + tailnet)
                    ├─ nginx + certbot
                    ├─ web (static build)
                    ├─ api (NestJS) ───────────────────────┐
@@ -32,12 +32,10 @@ headscale.dustyway.org ──> tailnet coordination only (not the data path)
 ```
 
 - The VPS is reachable from the internet over HTTPS only.
-- This is the target topology for #193, not a statement that the production
-  rollout has completed. Once verified, the production VPS's api and Prometheus
-  will connect to the GX10 through the self-hosted tailnet, without traversing
-  `ai.dustyway.org`. The headscale server remains in the control plane; peer
-  traffic uses the WireGuard data path when Tailscale establishes a direct
-  connection.
+- The production VPS's api and Prometheus connect to the GX10 through the
+  self-hosted tailnet without traversing `ai.dustyway.org`. The headscale server
+  remains in the control plane; peer traffic uses the WireGuard data path when
+  Tailscale establishes a direct connection.
 - The GX10 is an [ASUS Ascent GX10](https://www.asus.com/networking-iot-servers/desktop-ai-supercomputer/ultra-small-ai-supercomputers/asus-ascent-gx10/techspec/):
   NVIDIA GB10 (Blackwell) with 1 PFLOP tensor performance, 20-core Arm CPU,
   128 GB unified memory shared between CPU and GPU, 4 TB NVMe, running NVIDIA
@@ -72,8 +70,7 @@ The same `docker-compose.yml` runs in three places:
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
    host nginx/certbot serving `app.notanothercards.com`. The production
    override removes the postgres host port and binds app diagnostic ports to
-   loopback. As part of the #193 rollout, the non-secret AI settings in
-   `/opt/notanothercards/.env` must become:
+   loopback. The non-secret AI settings in `/opt/notanothercards/.env` are:
 
    ```dotenv
    AI_API_BASE=http://100.64.0.1:4000/v1
@@ -145,12 +142,11 @@ The GX10 runs an inference server with LiteLLM in front. LiteLLM gives us:
   satisfies the module's rate-limiting requirement (see "Module claims").
 - **Logs.** Every request is logged with key, model, and token counts, so
   "what is the box actually used for" is a query.
-- **Metrics.** The checked-in post-rollout configuration makes Prometheus
-  scrape LiteLLM at `http://100.64.0.1:4000/metrics`. The endpoint is
-  unauthenticated and its series carry virtual-key aliases and spend. After
-  the tailnet scrapes are verified and the nginx configuration is deployed,
-  the public gateway will return 404 for `/metrics` and its full subtree. The
-  node and GPU exporters will likewise move to direct ports 9100 and 9400.
+- **Metrics.** Prometheus scrapes LiteLLM directly at
+  `http://100.64.0.1:4000/metrics`. The endpoint is unauthenticated and its
+  series carry virtual-key aliases and spend, so nginx returns 404 for the
+  public `/metrics` endpoint and its full subtree. The node and GPU exporters
+  are scraped directly on ports 9100 and 9400.
 
 The models on offer are defined in `litellm-config.yaml` in the repo, so
 trying a new model is a PR.
@@ -211,12 +207,12 @@ being down; on the VPS, that is the alert that works best.
   or drowning" at a glance.
 - postgres-exporter and node_exporter on the VPS (host metrics: disk,
   memory, CPU — the "disk filling" alert needs them).
-- After #193 is rolled out, the GX10 targets will be scraped directly over the
-  tailnet: LiteLLM at `100.64.0.1:4000/metrics` (requests, latency, tokens per
-  key), node_exporter at `100.64.0.1:9100/metrics`, and the NVIDIA DCGM exporter
-  at `100.64.0.1:9400/metrics` (GPU utilization). All three use plain HTTP
-  inside the encrypted tailnet. When the box is offline these targets go dark
-  and the alert fires — which is the point.
+- The GX10 targets are scraped directly over the tailnet: LiteLLM at
+  `100.64.0.1:4000/metrics` (requests, latency, tokens per key), node_exporter
+  at `100.64.0.1:9100/metrics`, and the NVIDIA DCGM exporter at
+  `100.64.0.1:9400/metrics` (GPU utilization). All three use plain HTTP inside
+  the encrypted tailnet. When the box is offline these targets go dark and the
+  alert fires — which is the point.
 - Alerting rules that mean something: queue depth threshold, api down,
   GX10 unreachable, disk filling. Alerts go to the team Slack via webhook.
 - Grafana access is secured (built-in auth, admin password from env), which is

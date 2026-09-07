@@ -93,10 +93,9 @@ Expected ownership and mode are `deploy deploy 600`.
 
 ## Tailnet access to the GX10
 
-This runbook moves the production AI gateway and all three GX10 metrics paths
-to the self-hosted tailnet. Do not describe the rollout as complete until the
-direct path, a production generation, and all Prometheus targets have been
-verified. `ai.dustyway.org` remains available to teammates with personal keys.
+Production reaches the AI gateway and all three GX10 metrics endpoints directly
+over the self-hosted tailnet. `ai.dustyway.org` remains available to teammates
+with personal keys but is not in either production request path.
 
 Get a single-use headscale pre-auth key from the tailnet administrator only
 when you are ready to enrol the server. The key is delivered out of band and
@@ -121,8 +120,7 @@ Do not treat an initial `via DERP(...)` line as failure: Tailscale starts over
 DERP while attempting to establish a direct path. A successful direct-path
 test stops after a line ending in `via <ip>:<port>`. If all attempts remain on
 DERP and the command ends with `direct connection not established`, the path
-is relayed and cancels the intended saving. Record the full result in issue
-#193 either way. See Tailscale's
+is relayed and cancels the intended saving. See Tailscale's
 [DERP troubleshooting guide](https://tailscale.com/docs/reference/troubleshooting/network-configuration/derp-routing).
 
 Set these values in `/opt/notanothercards/.env`, without changing the existing
@@ -166,8 +164,7 @@ job keeps `metrics_path: /metrics` and uses its direct host and port:
 ```
 
 There is no `scheme: https` and no trailing slash in `metrics_path`. Verify all
-three endpoints from production and confirm their Prometheus targets are up
-before removing the old public scrape proxies:
+three endpoints from production and confirm their Prometheus targets are up:
 
 ```bash
 curl --fail http://100.64.0.1:4000/metrics >/dev/null

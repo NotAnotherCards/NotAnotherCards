@@ -138,10 +138,9 @@ base, and daily challenges — 3 of the 6 listed options.
 
 - Set up Prometheus to collect metrics. **in review**: #162.
 - Configure exporters and integrations. API metrics plus the postgres and VPS
-  node exporters are implemented in #162 and #167. #193 contains the
-  configuration and runbook for moving LiteLLM, DCGM, and node metrics to the
-  GX10's tailnet address. Production rollout and verification are still
-  pending; do not claim that the old public scrape path is retired yet.
+  node exporters are implemented in #162 and #167. LiteLLM, DCGM, and node
+  metrics are scraped directly from the GX10's tailnet address. The old public
+  metrics paths and their subtrees return 404.
 - Make custom Grafana dashboards. **in review**: #162.
 - Set up alerting rules. **in review**: #188.
 - Secure access to Grafana. **in review**: #162.

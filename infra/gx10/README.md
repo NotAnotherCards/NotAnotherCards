@@ -26,8 +26,8 @@ curl https://ai.dustyway.org/v1/chat/completions \
 
 Any OpenAI client works: set base URL and key. Keys have rate limits; if
 you hit them, ask. The public URL is the VPS's nginx proxying to the box
-over the tailnet (issue #85). The #193 target topology makes production bypass
-that proxy; tailnet peers can use `http://<gx10-tailnet-ip>:4000` directly.
+over the tailnet (issue #85). Production bypasses that proxy; tailnet peers can
+use `http://<gx10-tailnet-ip>:4000` directly.
 
 ### After you have your key
 
@@ -90,7 +90,7 @@ Which model for what (measured, see
 |---|---|---|
 | `gemma4` | default generation | best quality in the v2 run, 3.49 s median for five cards; falls back to `qwen3.6` on failure |
 | `qwen3.6` | low-latency fallback, chat | ~0.8 s faster than `gemma4`, a few more errors; thinking mode is slower, more accurate, and doubles as our reviewer |
-| `qwen` | nothing new | deprecated alias for `qwen3.6`, removed once production sends the new name (#193) |
+| `qwen` | nothing new | deprecated alias for `qwen3.6`, removed once all clients send the new name |
 | `qwen-next-80b` | best accuracy, no hurry | ~45 s per answer |
 | `qwen3.8` | comparison only | 2.5x slower than `qwen3.6` with more errors; send `reasoning_effort: "none"` |
 | `muse-glimmer` | comparison only | quality on par with `gemma4`, ~17 s per set |
@@ -195,15 +195,13 @@ Conventions:
 - Ports: LiteLLM (:4000) and the exporters (:9100, :9400) bind to the
   tailscale IP only. Ollama (:11434) binds to localhost only — clients
   must go through LiteLLM, never around it.
-- The #193 target configuration connects production directly to
-  `http://100.64.0.1:4000/v1`. Prometheus then scrapes `:4000/metrics`,
-  `:9100/metrics`, and `:9400/metrics` over the same tailnet connection. These
-  endpoints use plain HTTP because the tailnet encrypts the transport. The
-  production rollout and direct-path verification are tracked separately.
+- Production connects directly to `http://100.64.0.1:4000/v1`. Prometheus
+  scrapes `:4000/metrics`, `:9100/metrics`, and `:9400/metrics` over the same
+  tailnet connection. These endpoints use plain HTTP because the tailnet
+  encrypts the transport.
 - LiteLLM's `/metrics` endpoint is unauthenticated and includes virtual-key
-  aliases and spend. Once the #193 nginx configuration is deployed,
-  `ai.dustyway.org` remains the public teammate API gateway but returns 404 for
-  the retired metrics paths and their subtrees.
+  aliases and spend. `ai.dustyway.org` remains the public teammate API gateway
+  but returns 404 for the retired metrics paths and their subtrees.
 - Docker and tailscaled race at boot, and Docker usually wins: it tries to
   bind `100.64.0.1:4000` before the address exists, the bind fails, and
   Docker never retries a container that failed at daemon start
