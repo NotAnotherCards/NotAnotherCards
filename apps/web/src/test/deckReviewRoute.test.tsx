@@ -42,6 +42,7 @@ const deck: Deck = {
   note_type: 'basic',
   native_language_id: null,
   target_language_id: null,
+  visibility: 'private',
   created_at: 1,
   updated_at: 1,
 };
