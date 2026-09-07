@@ -4,6 +4,8 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      // the web's card and button radius (tailwind v4 ships 4xl; v3 stops at 3xl)
+      borderRadius: { '4xl': '2rem' },
       colors: {
         background: 'rgb(var(--background) / <alpha-value>)',
         foreground: 'rgb(var(--foreground) / <alpha-value>)',
