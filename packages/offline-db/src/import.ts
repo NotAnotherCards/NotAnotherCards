@@ -3,7 +3,9 @@ import { cardId, noteDeckId } from './ids.js';
 import {
   BASIC_NOTE_TYPE,
   BASIC_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
 } from './note-constants.js';
+import { LANGUAGES } from '@repo/schemas';
 import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
 import {
   UserDeck,
@@ -101,6 +103,8 @@ async function validateAndImportJson(
   // 3. Validate decks
   const decksData: BackupDeck[] = Array.isArray(data?.decks) ? data.decks : [];
   const deckSourceIds = new Set<string>();
+  const deckTypes = new Map<string, string>();
+  const validLanguageIds = new Set<string>(LANGUAGES.map((l) => l.value));
 
   for (let i = 0; i < decksData.length; i++) {
     const d = decksData[i];
@@ -113,6 +117,7 @@ async function validateAndImportJson(
         });
       }
       deckSourceIds.add(d.source_id);
+      deckTypes.set(d.source_id, d.note_type ?? BASIC_NOTE_TYPE);
     } else {
       errors.push({
         code: 'INVALID_DECK',
@@ -126,6 +131,42 @@ async function validateAndImportJson(
         message: 'Deck is missing valid title',
         path: `decks[${i}].title`,
       });
+    }
+
+    if (d) {
+      const deckType = d.note_type ?? BASIC_NOTE_TYPE;
+      if (deckType === WORD_NOTE_TYPE) {
+        if (!d.native_language || !d.target_language) {
+          errors.push({
+            code: 'INVALID_DECK_LANGUAGES',
+            message: 'Word deck must have native and target languages',
+            path: `decks[${i}]`,
+          });
+        } else if (d.native_language === d.target_language) {
+          errors.push({
+            code: 'INVALID_DECK_LANGUAGES',
+            message: 'Word deck native and target languages must be distinct',
+            path: `decks[${i}]`,
+          });
+        } else if (
+          !validLanguageIds.has(d.native_language) ||
+          !validLanguageIds.has(d.target_language)
+        ) {
+          errors.push({
+            code: 'INVALID_DECK_LANGUAGES',
+            message: 'Word deck languages must be valid language IDs',
+            path: `decks[${i}]`,
+          });
+        }
+      } else if (deckType === BASIC_NOTE_TYPE) {
+        if (d.native_language || d.target_language) {
+          errors.push({
+            code: 'INVALID_DECK_LANGUAGES',
+            message: 'Basic deck must not have language ids',
+            path: `decks[${i}]`,
+          });
+        }
+      }
     }
   }
 
@@ -181,6 +222,15 @@ async function validateAndImportJson(
           message: `note references unknown deck source_id: ${deckRef}`,
           path: `${path}.decks`,
         });
+      } else {
+        const deckType = deckTypes.get(deckRef);
+        if (deckType && deckType !== noteType) {
+          errors.push({
+            code: 'NOTE_DECK_TYPE_MISMATCH',
+            message: `note type (${noteType}) does not match deck type (${deckType})`,
+            path: `${path}.decks`,
+          });
+        }
       }
     }
 
@@ -352,27 +402,31 @@ async function validateAndImportJson(
     const noteType = note.note_type ?? BASIC_NOTE_TYPE;
     const version = note.fields_version ?? BASIC_NOTE_FIELDS_VERSION;
     const compiled = compileNote(noteType, version, note.fields ?? {});
-    const compiledCardsMap = new Map(
-      compiled.cards.map((c) => [c.templateKey, c]),
-    );
 
     const cardsData: BackupCard[] = Array.isArray(note.cards) ? note.cards : [];
-    for (const card of cardsData) {
-      const templateKey = card.template_key ?? 'front-back';
-      const compiledCard = compiledCardsMap.get(templateKey);
+    const sourceCardByTemplateKey = new Map(
+      cardsData.map((c) => [c.template_key ?? 'front-back', c]),
+    );
+
+    for (const compiledCard of compiled.cards) {
+      const templateKey = compiledCard.templateKey;
+      const sourceCard = sourceCardByTemplateKey.get(templateKey);
       const newCardId = cardId(newNoteId, templateKey);
-      if (card.source_id) cardIdMap.set(card.source_id, newCardId);
+      
+      if (sourceCard?.source_id) {
+        cardIdMap.set(sourceCard.source_id, newCardId);
+      }
 
       batchOps.push(
         db.get(UserCard).prepareCreate({
           id: newCardId,
           note_id: newNoteId,
           template_key: templateKey,
-          active: card.active ?? true,
-          front: compiledCard?.front ?? '',
-          back: compiledCard?.back ?? '',
-          due_at: card.due_at ?? now,
-          scheduled_interval_minutes: card.scheduled_interval_minutes ?? 0,
+          active: sourceCard?.active ?? true,
+          front: compiledCard.front,
+          back: compiledCard.back,
+          due_at: sourceCard?.due_at ?? now,
+          scheduled_interval_minutes: sourceCard?.scheduled_interval_minutes ?? 0,
           created_at: now,
           updated_at: now,
         }),
