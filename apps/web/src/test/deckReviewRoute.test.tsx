@@ -39,6 +39,9 @@ const deck: Deck = {
   id: 'deck-1',
   title: 'German basics',
   description: '',
+  note_type: 'basic',
+  native_language_id: null,
+  target_language_id: null,
   created_at: 1,
   updated_at: 1,
 };

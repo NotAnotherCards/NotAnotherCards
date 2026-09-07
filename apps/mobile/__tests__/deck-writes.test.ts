@@ -47,7 +47,11 @@ describe('deckWrites', () => {
   it('creates, updates and removes a deck, waking sync each time', async () => {
     const writes = deckWrites(db, sync as never);
 
-    const deck = await writes.create('Spanish', '');
+    const deck = await writes.create('Spanish', '', {
+      noteType: 'basic',
+      nativeLanguageId: null,
+      targetLanguageId: null,
+    });
     expect(await getDecksQuery(db).fetch()).toHaveLength(1);
     expect(deck.description).toBeNull();
 
@@ -63,7 +67,11 @@ describe('deckWrites', () => {
 
   it('removing a deck drops its memberships but keeps the cards', async () => {
     const writes = deckWrites(db, sync as never);
-    const deck = await writes.create('Yoga', '');
+    const deck = await writes.create('Yoga', '', {
+      noteType: 'basic',
+      nativeLanguageId: null,
+      targetLanguageId: null,
+    });
     const card = await createCard(db, deck.id, 'Tadasana', 'Mountain pose');
     expect(await getNoteDecksQuery(db).fetch()).toHaveLength(1);
 

@@ -60,6 +60,9 @@ describe('@repo/offline-db wiring on API', () => {
             userDeckValidate: UserDeckRow.safeParse({
               title: 'Test Deck',
               description: 'Deck description',
+              note_type: 'basic',
+              native_language_id: null,
+              target_language_id: null,
               created_at: 0,
               updated_at: 0,
             }).success,
@@ -95,7 +98,7 @@ describe('@repo/offline-db wiring on API', () => {
     );
 
     expect(JSON.parse(output)).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       userCardsTableDefined: true,
       userDecksTableDefined: true,
       userNotesTableDefined: true,
