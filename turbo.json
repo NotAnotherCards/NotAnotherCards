@@ -24,10 +24,12 @@
       "persistent": true
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
     "mobile#dev:mobile": {
+      "dependsOn": ["^build"],
       "with": ["api#dev"],
       "cache": false,
       "persistent": true
