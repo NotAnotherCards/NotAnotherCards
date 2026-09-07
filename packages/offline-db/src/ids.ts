@@ -22,7 +22,10 @@ export function noteDeckId(noteId: string, deckId: string): string {
   return tupleId(USER_NOTE_DECK_NAMESPACE, noteId, deckId);
 }
 
-export function systemDeckId(type: 'cards' | 'words', targetLanguage?: string): string {
+export function systemDeckId(
+  type: 'cards' | 'words',
+  targetLanguage?: string,
+): string {
   if (type === 'words' && !targetLanguage) {
     throw new Error('A words system deck requires a target language');
   }
