@@ -194,6 +194,37 @@ describe('AiWorkerService', () => {
     expect(mockDb.execute).toHaveBeenCalledTimes(3);
   });
 
+  it('does not count a final failure when its database update fails', async () => {
+    const mockJob = {
+      id: 'job-final-update-fails',
+      user_id: 'user-1',
+      type: 'topic_deck',
+      payload: { topic: 'Math', count: 2 },
+      attempts: 3,
+      max_attempts: 3,
+    };
+
+    mockGateway.generateCards.mockRejectedValue(new Error('Model failure'));
+
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] }) // recovery query
+        .mockResolvedValueOnce({ rows: [mockJob] }) // claim query
+        .mockRejectedValueOnce(new Error('Database unavailable')), // failure update query
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const processed = await new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    ).processNextJob();
+
+    expect(processed).toBe(false);
+    expect(mockMetrics.aiJobsFailedTotal.inc).not.toHaveBeenCalled();
+  });
+
   it('logs token consumption when AiParseError occurs on otherwise valid HTTP response', async () => {
     const mockJob = {
       id: 'job-parse-err',

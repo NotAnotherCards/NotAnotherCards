@@ -322,8 +322,6 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       );
 
       if (isFinalAttempt) {
-        this.metricsService?.aiJobsFailedTotal.inc();
-
         await this.db.execute(sql`
           UPDATE ai_generation_jobs
           SET status = 'failed',
@@ -331,6 +329,11 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
               updated_at = NOW()
           WHERE id = ${job.id}
         `);
+
+        // The counter represents durable terminal failures only. If this update
+        // fails, the job remains processing and the stalled-job sweep will own
+        // the eventual transition (and its single metric increment).
+        this.metricsService?.aiJobsFailedTotal.inc();
       } else {
         await this.db.execute(sql`
           UPDATE ai_generation_jobs
