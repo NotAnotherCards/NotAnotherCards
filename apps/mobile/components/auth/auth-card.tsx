@@ -23,8 +23,14 @@ export function AuthCard({
   return (
     <View className="flex-1 justify-center bg-background p-6">
       <View className="gap-3 rounded-xl border border-border bg-card p-6">
-        <Text className="text-2xl font-semibold">{title}</Text>
-        <Text className="mb-2 text-muted-foreground">{description}</Text>
+        <Text className="text-center text-2xl font-semibold">{title}</Text>
+        <Text
+          className="mb-2 text-center text-sm text-muted-foreground"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {description}
+        </Text>
         {children}
         <View className="mt-1 flex-row justify-center">
           <Text className="text-muted-foreground">{footerText} </Text>
