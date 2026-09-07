@@ -36,8 +36,8 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-gpu-gx10\"} or vector(0)",
-          "legendFormat": "GPU Util %"
+          "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-gpu-gx10\"}",
+          "legendFormat": "GPU {{gpu}}"
         }
       ]
     },
@@ -63,8 +63,8 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-gpu-gx10\"} or vector(0)",
-          "legendFormat": "Temp (°C)"
+          "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-gpu-gx10\"}",
+          "legendFormat": "GPU {{gpu}}"
         }
       ]
     },
@@ -79,8 +79,8 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm-gpu-gx10\"} or vector(0)",
-          "legendFormat": "Watts"
+          "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm-gpu-gx10\"}",
+          "legendFormat": "GPU {{gpu}}"
         }
       ]
     },
@@ -99,22 +99,22 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(litellm_requests_metric_total{job=\"litellm-gx10\"}[5m]) or vector(0)",
-          "legendFormat": "Requests/s"
+          "expr": "sum by (model) (rate(litellm_proxy_total_requests_metric_total{job=\"litellm-gx10\"}[5m]))",
+          "legendFormat": "{{model}}"
         }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "s" } },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
       "id": 7,
-      "title": "LiteLLM Response Latency (seconds)",
+      "title": "LiteLLM Token Throughput (/sec)",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(litellm_deployment_latency_per_output_token_sum{job=\"litellm-gx10\"}[5m]) / rate(litellm_deployment_latency_per_output_token_count{job=\"litellm-gx10\"}[5m]) or vector(0)",
-          "legendFormat": "Latency / token"
+          "expr": "sum by (model) (rate(litellm_total_tokens_metric_total{job=\"litellm-gx10\"}[5m]))",
+          "legendFormat": "{{model}}"
         }
       ]
     }
