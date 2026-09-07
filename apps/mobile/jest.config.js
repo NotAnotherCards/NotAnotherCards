@@ -11,7 +11,10 @@ const preset = require('jest-expo/jest-preset');
 // node_modules path segments, and its transform only matches .js/.ts. Whitelist
 // them and send .mjs through the same babel transformer.
 const transformIgnorePatterns = preset.transformIgnorePatterns.map((pattern) =>
-  pattern.replace('(?!(.pnpm|', '(?!(.pnpm|@remelondb|@rn-primitives|uuid|'),
+  pattern.replace(
+    '(?!(.pnpm|',
+    '(?!(.pnpm|@remelondb|@rn-primitives|uuid|lucide-react-native|',
+  ),
 );
 
 module.exports = {

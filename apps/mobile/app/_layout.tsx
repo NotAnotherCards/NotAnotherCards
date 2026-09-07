@@ -33,7 +33,8 @@ export default function RootLayout() {
         <Stack.Screen name="login" options={{ title: 'Log in' }} />
         <Stack.Screen name="register" options={{ title: 'Register' }} />
         <Stack.Screen name="onboarding" options={{ title: 'Set up profile' }} />
-        <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
+        {/* the tab row names the sections; a header would only repeat it */}
+        <Stack.Screen name="dashboard" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </SessionDatabaseProvider>
