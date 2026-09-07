@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Card, Deck } from '@/hooks/useStore';
 
@@ -23,17 +29,32 @@ vi.mock('@/lib/auth-client', () => ({
 }));
 
 vi.mock('@/lib/review-preferences', () => ({
+  clearLastReviewDeckId: vi.fn(),
   saveLastReviewDeckId: vi.fn(),
 }));
 
 vi.mock('@/components/review/ReviewSession', () => ({
-  ReviewSession: ({ cards }: { cards: Card[] }) => {
+  ReviewSession: ({
+    cards,
+    onComplete,
+    onExit,
+  }: {
+    cards: Card[];
+    onComplete?: () => void;
+    onExit: () => void;
+  }) => {
     routeTestState.reviewSession(cards);
-    return <div data-testid="review-session" />;
+    return (
+      <div data-testid="review-session">
+        <button onClick={onExit}>Exit review</button>
+        <button onClick={onComplete}>Complete review</button>
+      </div>
+    );
   },
 }));
 
 import { DeckReviewPage } from '@/components/review/DeckReviewPage';
+import { clearLastReviewDeckId } from '@/lib/review-preferences';
 
 const deck: Deck = {
   id: 'deck-1',
@@ -81,6 +102,7 @@ describe('DeckReviewRoute', () => {
   beforeEach(() => {
     routeTestState.store = makeStore();
     routeTestState.reviewSession.mockReset();
+    vi.mocked(clearLastReviewDeckId).mockReset();
   });
 
   it('asks the user to choose a deck when deckId is missing', () => {
@@ -126,7 +148,7 @@ describe('DeckReviewRoute', () => {
     expect(routeTestState.reviewSession).toHaveBeenCalledWith([dueCard]);
   });
 
-  it('starts a review session with at most ten due cards', async () => {
+  it('passes no more than ten cards to the first review-session render', () => {
     const dueCards = Array.from({ length: 12 }, (_, index) =>
       makeCard(`due-${index}`, Date.now() - index - 1),
     );
@@ -136,14 +158,39 @@ describe('DeckReviewRoute', () => {
 
     render(<DeckReviewPage deckId={deck.id} />);
 
-    await waitFor(() =>
-      expect(routeTestState.reviewSession).toHaveBeenLastCalledWith(
-        dueCards
-          .slice()
-          .sort((first, second) => first.due_at - second.due_at)
-          .slice(0, 10),
-      ),
+    const expectedFirstBatch = dueCards
+      .slice()
+      .sort((first, second) => first.due_at - second.due_at)
+      .slice(0, 10);
+
+    expect(routeTestState.reviewSession).toHaveBeenCalled();
+    expect(routeTestState.reviewSession.mock.calls[0][0]).toEqual(
+      expectedFirstBatch,
     );
+  });
+
+  it('clears the saved deck when the user exits review', () => {
+    const dueCard = makeCard('due-card', Date.now() - 1);
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [dueCard]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
+
+    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+  });
+
+  it('clears the saved deck when the review session completes', () => {
+    const dueCard = makeCard('due-card', Date.now() - 1);
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [dueCard]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
+
+    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
   });
 
   it('keeps the initial queue mounted after its last card is no longer due', async () => {
