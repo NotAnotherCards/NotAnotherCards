@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
-import { User, Settings as SettingsIcon, Shield } from 'lucide-react';
+import { User, Settings as SettingsIcon, Shield, Database } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 import { Profile } from './Profile';
 import { Preferences } from './Preferences';
 import { Security } from './Security';
+import { ImportExport } from './ImportExport';
 
 export function Settings() {
   const { data: session } = authClient.useSession();
   const { profile } = useStore();
   const [activeSubTab, setActiveSubTab] = useState<
-    'profile' | 'preferences' | 'security'
+    'profile' | 'preferences' | 'security' | 'import/export'
   >('profile');
 
   return (
@@ -65,6 +66,15 @@ export function Settings() {
               <Shield className="size-4" />
               Security
             </Button>
+            <Button
+              type="button"
+              variant={activeSubTab === 'import/export' ? 'default' : 'ghost'}
+              onClick={() => setActiveSubTab('import/export')}
+              className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
+            >
+              <Database className="size-4" />
+              Data Import / Export
+            </Button>
           </div>
         </div>
       </div>
@@ -74,6 +84,7 @@ export function Settings() {
         {activeSubTab === 'profile' && <Profile />}
         {activeSubTab === 'preferences' && <Preferences />}
         {activeSubTab === 'security' && <Security />}
+        {activeSubTab === 'import/export' && <ImportExport />}
       </div>
     </div>
   );
