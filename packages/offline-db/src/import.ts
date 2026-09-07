@@ -412,7 +412,7 @@ async function validateAndImportJson(
       const templateKey = compiledCard.templateKey;
       const sourceCard = sourceCardByTemplateKey.get(templateKey);
       const newCardId = cardId(newNoteId, templateKey);
-      
+
       if (sourceCard?.source_id) {
         cardIdMap.set(sourceCard.source_id, newCardId);
       }
@@ -426,7 +426,8 @@ async function validateAndImportJson(
           front: compiledCard.front,
           back: compiledCard.back,
           due_at: sourceCard?.due_at ?? now,
-          scheduled_interval_minutes: sourceCard?.scheduled_interval_minutes ?? 0,
+          scheduled_interval_minutes:
+            sourceCard?.scheduled_interval_minutes ?? 0,
           created_at: now,
           updated_at: now,
         }),
