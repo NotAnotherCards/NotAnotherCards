@@ -15,32 +15,29 @@ Layout:
 ## Prerequisites
 
 - Node and pnpm (`pnpm install` at the root).
-- The API running locally: follow the Setup section in the root README (env
-  files, `docker compose up -d`, `pnpm --filter api db:migrate`). Without it,
-  login and signup fail with "Can't reach the server". You don't need to start
-  it by hand: `pnpm turbo dev:mobile` (from `apps/mobile`) starts the API
-  together with Metro. `pnpm --filter api dev` still works if you want it in
-  its own terminal.
+- A backend to talk to: the API running locally (Setup section in the root
+  README), or a remote one, which needs nothing local: staging at
+  `https://cards.dustyway.org` or production at
+  `https://app.notanothercards.com`.
 - For Android: the Android SDK with an emulator (AVD) and `adb` on your PATH,
-  plus **Java 17–21** for the build; it fails on newer JDKs (Java 26). Set
-  `JAVA_HOME`, e.g. `/usr/lib/jvm/java-21-openjdk` or
-  `/usr/lib/jvm/java-17-openjdk-amd64`.
-- For iOS: a Mac with full Xcode installed. CocoaPods is installed
-  automatically by `expo run:ios` on first build if missing.
+  plus Java 17–21 for the build (`ls /usr/lib/jvm`; newer JDKs fail).
+- For iOS: a Mac with Xcode.
 
 Runs as a native dev build (`expo-dev-client`), not Expo Go.
 
 ## Environment
 
-```sh
-cd apps/mobile
-cp .env.example .env.local
+In `apps/mobile/.env.local` (gitignored):
+
+```
+EXPO_PUBLIC_API_URL=https://cards.dustyway.org
 ```
 
-`.env.local` is gitignored, `.env.example` the committed template.
-`EXPO_PUBLIC_API_URL` is the API base URL: `http://10.0.2.2:3000` for the
-Android emulator, `http://localhost:3000` for an iOS simulator. Defaults to the
-Android value if unset.
+Use `https://app.notanothercards.com` for production (real accounts, and
+the only one with Facebook sign-in and reset mail configured),
+`http://10.0.2.2:3000` for a local API from the Android emulator, or
+`http://localhost:3000` from an iOS simulator. The value is baked into the
+bundle when Metro starts, so change it, restart Metro, reload the app.
 
 ## Running on Android
 
@@ -111,26 +108,15 @@ early and often — after a wipe, re-clone and re-run the script.
 Start the emulator, then from `apps/mobile`:
 
 ```sh
-JAVA_HOME=/path/to/jdk-21 pnpm android
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk npx expo run:android   # native build, installs and launches
+npx expo start --dev-client                                    # Metro; press a to open the app
 ```
 
-JDK paths differ by distribution, so check `ls /usr/lib/jvm` and point
-`JAVA_HOME` at what you actually have (`/usr/lib/jvm/java-21-openjdk` on Arch,
-`/usr/lib/jvm/java-17-openjdk-amd64` on Debian/Ubuntu). Gradle auto-provisions
-its own toolchain under `~/.gradle/jdks` regardless, so this variable only
-decides which JVM launches the build. JDK 26 fails; use 17 or 21.
+The build takes ~10 minutes the first time and a minute or two after; it is
+only needed when a native dependency changes. Day to day, only Metro runs,
+and JS changes hot-reload in about a second.
 
-Build times, so nobody is surprised:
-
-- First build: ~10 minutes. It generates `android/`, downloads the Gradle
-  toolchain and compiles every native module.
-- Later `pnpm android` runs: a minute or two (warm Gradle caches). Only needed
-  when a native dependency changes.
-- Day to day: no rebuild at all. `pnpm turbo dev:mobile` (starts Metro and the
-  API together) and press `a`; JS changes hot-reload in about a second.
-
-Metro defaults to port 8081. If that's already in use, add `--port 8082` (or any
-free port) to the commands above.
+Metro defaults to port 8081; add `--port 8082` if that is taken.
 
 ### Reducing build disk I/O
 
@@ -151,7 +137,8 @@ In order of effect:
    `expo run:android` appears to narrow this to the target device's ABI on its
    own, so the explicit setting mainly matters for direct `./gradlew`
    invocations. Check the build output before assuming it changed anything.
-2. **Don't rebuild for JS.** As above: `pnpm turbo dev:mobile` and hot reload.
+
+2. **Don't rebuild for JS.** As above: `npx expo start --dev-client` and hot reload.
    A Gradle run is only needed when a native dependency changes. Most work is
    pure TypeScript — screens, hooks, database and sync wiring — and needs no
    build at all.
@@ -230,24 +217,22 @@ Pro etc.); `expo run:ios` boots one automatically, no need to start it by hand.
 
 ### Building and starting
 
-Set
-`EXPO_PUBLIC_API_URL=http://localhost:3000` in `.env.local` (the simulator
-shares the host's loopback), then from `apps/mobile`:
+From `apps/mobile` (with `.env.local` set as above; a local API is
+`http://localhost:3000` here, the simulator shares the host's loopback):
 
 ```sh
-pnpm ios
+npx expo run:ios              # native build; add --device "iPhone 17 Pro" to pick one
+npx expo start --dev-client   # Metro; press i to open the app
 ```
 
-This picks a default simulator; add `--device "iPhone 17 Pro"` to choose one.
 First build takes a few minutes (installs CocoaPods if missing, compiles the
-pods, installs on the simulator). After that, `pnpm turbo dev:mobile` and press
-`i`; JS changes hot-reload, only native dependency changes need another
-`pnpm ios`.
+pods, installs on the simulator). After that only Metro runs; JS changes
+hot-reload, and only a native dependency change needs another build.
 Verified working with Xcode 26.6 and the iOS 26.5 simulator runtime.
 
 ### On a real iPhone
 
-The same `pnpm ios` builds and installs the dev build on a plugged-in
+The same `npx expo run:ios` builds and installs the dev build on a plugged-in
 iPhone, and a free Apple ID is enough to sign it onto your own phone.
 
 Without a Mac there is currently no iPhone test path for this project. Expo Go
@@ -287,7 +272,7 @@ frames!` (the emulator being slower than hardware). Also harmless.
 To silence the iOS noise, either filter it:
 
 ```sh
-pnpm ios 2>&1 | grep -v -E 'CHHapticPattern|hapticpatternlibrary|_UIKBFeedbackGenerator'
+npx expo run:ios 2>&1 | grep -v -E 'CHHapticPattern|hapticpatternlibrary|_UIKBFeedbackGenerator'
 ```
 
 or set `OS_ACTIVITY_MODE=disable` in the Xcode scheme's run arguments (mutes
