@@ -93,9 +93,10 @@ Expected ownership and mode are `deploy deploy 600`.
 
 ## Tailnet access to the GX10
 
-Production reaches the AI gateway and all three GX10 metrics endpoints
-directly over the self-hosted tailnet. `ai.dustyway.org` remains available to
-teammates with personal keys, but it is not in either production request path.
+This runbook moves the production AI gateway and all three GX10 metrics paths
+to the self-hosted tailnet. Do not describe the rollout as complete until the
+direct path, a production generation, and all Prometheus targets have been
+verified. `ai.dustyway.org` remains available to teammates with personal keys.
 
 Get a single-use headscale pre-auth key from the tailnet administrator only
 when you are ready to enrol the server. The key is delivered out of band and
@@ -116,9 +117,13 @@ path is direct before changing production traffic:
 tailscale ping 100.64.0.1
 ```
 
-Record the result in issue #193. Output containing `via DERP` means the
-connection is relayed and cancels the latency/path saving; do not describe it
-as direct until the peer-to-peer path works.
+Do not treat an initial `via DERP(...)` line as failure: Tailscale starts over
+DERP while attempting to establish a direct path. A successful direct-path
+test stops after a line ending in `via <ip>:<port>`. If all attempts remain on
+DERP and the command ends with `direct connection not established`, the path
+is relayed and cancels the intended saving. Record the full result in issue
+#193 either way. See Tailscale's
+[DERP troubleshooting guide](https://tailscale.com/docs/reference/troubleshooting/network-configuration/derp-routing).
 
 Set these values in `/opt/notanothercards/.env`, without changing the existing
 `AI_API_KEY` (`production-worker`):

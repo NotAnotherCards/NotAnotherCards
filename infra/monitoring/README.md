@@ -5,6 +5,9 @@ VPS, separate from the core application bundle. It monitors VPS health,
 database metrics, NestJS API performance, and GX10 AI inference. The production
 VPS must be enrolled in the self-hosted tailnet as described in the
 [VPS operations guide](../vps/README.md#tailnet-access-to-the-gx10).
+The topology below is the target state after the #193 production rollout and
+direct-path verification; the checked-in scrape configuration must not be
+deployed before those prerequisites are complete.
 
 Architecture and design rationale are documented in [`docs/deployment.md`](../../docs/deployment.md).
 
