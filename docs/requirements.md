@@ -137,7 +137,10 @@ base, and daily challenges — 3 of the 6 listed options.
 ### 4.12 DevOps: monitoring with Prometheus and Grafana — Major, 2 — in review — 40%
 
 - Set up Prometheus to collect metrics. **in review**: #162.
-- Configure exporters and integrations. **in review**: API metrics, postgres and node exporters (#162, #167). LiteLLM, DCGM and node metrics from the GX10 go through `ai.dustyway.org`, allow-listed to the production IP, until #193 puts the production VPS on the tailnet; the proxy config is in #222. #162 has changes requested; nothing is merged yet.
+- Configure exporters and integrations. API metrics plus the postgres and VPS
+  node exporters are implemented in #162 and #167. LiteLLM, DCGM, and node
+  metrics are scraped directly from the GX10 over the tailnet (#193); they are
+  not exposed through `ai.dustyway.org`.
 - Make custom Grafana dashboards. **in review**: #162.
 - Set up alerting rules. **in review**: #188.
 - Secure access to Grafana. **in review**: #162.

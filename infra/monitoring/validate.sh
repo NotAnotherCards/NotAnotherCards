@@ -17,7 +17,6 @@ chmod 444 "$E2E_SLACK_WEBHOOK_FILE"
 
 export GRAFANA_ADMIN_PASSWORD="$E2E_GRAFANA_PASSWORD"
 export POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable"
-export GX10_METRICS_HOST="ai.dustyway.org"
 export PROMETHEUS_PORT=9099
 export GRAFANA_PORT=3009
 export ALERTMANAGER_PORT=9097
@@ -47,7 +46,6 @@ trap cleanup EXIT
 echo "==> 1. Validating monitoring Docker Compose configuration..."
 GRAFANA_ADMIN_PASSWORD="ci-test-password" \
 POSTGRES_EXPORTER_DATA_SOURCE_NAME="postgresql://test:test@postgres:5432/notanothercards?sslmode=disable" \
-GX10_METRICS_HOST="ai.dustyway.org" \
 docker compose -f "$SCRIPT_DIR/docker-compose.yml" config --quiet
 
 echo "==> 1b. Validating fail-safe empty password rejection..."
@@ -57,15 +55,26 @@ if (unset GRAFANA_ADMIN_PASSWORD && docker compose -f "$SCRIPT_DIR/docker-compos
 fi
 echo "  [OK] Compose correctly rejected blank GRAFANA_ADMIN_PASSWORD"
 
-echo "==> 2. Validating Prometheus configuration (rendered template)..."
-sed "s|__GX10_METRICS_HOST__|ai.dustyway.org|g" \
-  "$SCRIPT_DIR/prometheus/prometheus.yml.template" > "$RENDER_TMP/prometheus.yml"
+echo "==> 2. Validating Prometheus configuration..."
 docker run --rm \
   --entrypoint /bin/promtool \
-  -v "$RENDER_TMP/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+  -v "$SCRIPT_DIR/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
   -v "$SCRIPT_DIR/prometheus/rules:/etc/prometheus/rules:ro" \
   prom/prometheus:v3.14.0 \
   check config /etc/prometheus/prometheus.yml
+
+for target in 100.64.0.1:4000 100.64.0.1:9100 100.64.0.1:9400; do
+  grep -Fq "'$target'" "$SCRIPT_DIR/prometheus/prometheus.yml" || {
+    echo "ERROR: Prometheus is missing direct GX10 target $target" >&2
+    exit 1
+  }
+done
+if grep -Eq 'ai\.dustyway\.org|scheme: https|/dcgm/metrics|/node/metrics' \
+  "$SCRIPT_DIR/prometheus/prometheus.yml"; then
+  echo "ERROR: Prometheus still contains the retired public GX10 scrape path" >&2
+  exit 1
+fi
+echo "  [OK] GX10 targets use direct tailnet addresses"
 
 echo "==> 3. Validating Prometheus Alert Rules..."
 docker run --rm \
