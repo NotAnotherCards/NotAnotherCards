@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { twoFactor } from 'better-auth/plugins';
 import 'dotenv/config';
 import { userAdditionalFields } from './src/auth/auth-fields';
 
@@ -14,4 +15,20 @@ export const auth = betterAuth({
   user: {
     additionalFields: userAdditionalFields,
   },
+  plugins: [
+    twoFactor({
+      issuer: 'NotAnotherCards',
+      skipVerificationOnEnable: false,
+      allowPasswordless: false,
+      accountLockout: {
+        enabled: true,
+        maxFailedAttempts: 5,
+        durationSeconds: 300,
+      },
+      backupCodeOptions: {
+        storeBackupCodes: 'encrypted',
+        amount: 10,
+      },
+    }),
+  ],
 });

@@ -92,6 +92,13 @@
       "when": 1788713143945,
       "tag": "0012_abnormal_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788796070003,
+      "tag": "0013_numerous_ted_forrester",
+      "breakpoints": true
     }
   ]
 }

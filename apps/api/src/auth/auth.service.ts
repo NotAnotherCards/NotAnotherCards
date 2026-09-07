@@ -10,6 +10,7 @@ import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingHttpHeaders } from 'node:http';
 import { sendResetPasswordEmail } from '../email/reset-password-email';
 import { userAdditionalFields } from './auth-fields';
+import { twoFactor } from 'better-auth/plugins';
 
 @Injectable()
 export class AuthService {
@@ -81,7 +82,23 @@ export class AuthService {
       user: {
         additionalFields: userAdditionalFields,
       },
-      plugins: [expo()],
+      plugins: [
+        expo(),
+        twoFactor({
+          issuer: 'NotAnotherCards',
+          skipVerificationOnEnable: false,
+          allowPasswordless: false,
+          accountLockout: {
+            enabled: true,
+            maxFailedAttempts: 5,
+            durationSeconds: 300,
+          },
+          backupCodeOptions: {
+            storeBackupCodes: 'encrypted',
+            amount: 10,
+          },
+        }),
+      ],
       trustedOrigins: [
         this.configService.getOrThrow<string>('FRONTEND_URL'),
         'notanothercards://',
