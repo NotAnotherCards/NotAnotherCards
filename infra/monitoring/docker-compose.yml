@@ -36,7 +36,7 @@ services:
       - app_net
 
   grafana:
-    image: grafana/grafana:13.2.0
+    image: grafana/grafana:13.2.1
     restart: unless-stopped
     ports:
       - '127.0.0.1:${GRAFANA_PORT:-3001}:3000'
@@ -66,7 +66,7 @@ services:
       - default
 
   alertmanager:
-    image: prom/alertmanager:v0.28.1
+    image: prom/alertmanager:v0.34.0
     restart: unless-stopped
     ports:
       - '127.0.0.1:${ALERTMANAGER_PORT:-9093}:9093'

@@ -174,11 +174,12 @@ sudo certbot --nginx -d grafana.notanothercards.com
 ## Maintenance & Password Rotation
 
 ### Rotate Grafana Admin Password
+
 If a persistent Grafana volume has already been initialized, environment variable changes do not reset the existing database credentials. Use the Grafana CLI inside the container:
 
 ```bash
 # The image ships the `grafana` binary with a `cli` subcommand
-# (there is no standalone `grafana-cli` executable in grafana/grafana:13.2.0).
+# (there is no standalone `grafana-cli` executable in grafana/grafana:13.2.1).
 sudo -u deploy docker compose \
   -f /opt/notanothercards/infra/monitoring/docker-compose.yml \
   --env-file /opt/notanothercards/infra/monitoring/.env \
