@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native';
-import { LANGUAGES } from '@repo/schemas';
+import { LANGUAGES, languageLabel } from '@repo/schemas';
 import { Text } from './ui/text';
 
 export function LanguageField({
@@ -26,7 +26,7 @@ export function LanguageField({
             <Pressable
               key={language.value}
               accessibilityRole="radio"
-              accessibilityLabel={`${label}: ${language.label}`}
+              accessibilityLabel={`${label}: ${languageLabel(language)}`}
               accessibilityState={{ selected, disabled }}
               disabled={disabled}
               className={`basis-[48%] rounded-lg border px-3 py-2 ${
@@ -35,7 +35,7 @@ export function LanguageField({
               onPress={() => onChange(language.value)}
             >
               <Text className={selected ? 'font-semibold text-primary' : ''}>
-                {language.label}
+                {languageLabel(language)}
               </Text>
             </Pressable>
           );
