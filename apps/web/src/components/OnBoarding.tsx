@@ -19,6 +19,7 @@ import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
 import {
   apiErrorBodySchema,
   LANGUAGES,
+  languageLabel,
   ProfileFormValues,
   userProfileFormSchema,
 } from '@repo/schemas';
@@ -184,7 +185,7 @@ export function OnBoardingComponent() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {lang.label}
+                            {languageLabel(lang)}
                           </option>
                         ))}
                       </select>
@@ -237,7 +238,7 @@ export function OnBoardingComponent() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {lang.label}
+                            {languageLabel(lang)}
                           </option>
                         ))}
                       </select>

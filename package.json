@@ -5,16 +5,18 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet",
+    "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/monitoring/validate.sh",
     "check:cycles": "node scripts/check-cycles.mjs",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\"",
+    "check:deps": "knip"
   },
   "devDependencies": {
-    "@remelondb/core": "0.2.6",
-    "@remelondb/driver-web": "0.2.6",
+    "@remelondb/core": "0.3.0",
+    "@remelondb/driver-web": "0.3.0",
     "eslint": "^10.6.0",
+    "knip": "^6.34.0",
     "madge": "8.0.0",
     "prettier": "^3.9.4",
     "turbo": "^2.10.4"

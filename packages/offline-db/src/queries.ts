@@ -1,4 +1,9 @@
-import { Database, Q, randomId, type BatchOperation } from '@remelondb/core';
+import { Database, Q } from '@remelondb/core';
+import {
+  createNote,
+  createNotesBatch,
+  updateNoteFields,
+} from './note-writes.js';
 import {
   ReviewEvent,
   UserCard,
@@ -6,11 +11,15 @@ import {
   UserNote,
   UserNoteDeck,
   UserProfile,
+  PRIVATE_DECK,
 } from './user-dictionary.js';
 import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
+  DECK_NOTE_TYPES,
+  type DeckNoteType,
+  WORD_NOTE_TYPE,
 } from './note-constants.js';
 import { calculateReviewSchedule } from './review-scheduler.js';
 
@@ -70,16 +79,44 @@ export function getNoteDecksQuery(db: Database) {
 // LOCAL WRITES
 // ==========================================
 
+/**
+ * Create a deck. `noteType` decides which contract its notes follow and is
+ * immutable afterwards; a word deck carries the language pair its note form
+ * starts from, and the note remains the canonical source of its own.
+ */
 export async function createDeck(
   db: Database,
   title: string,
   description?: string | null,
+  options: {
+    noteType?: DeckNoteType;
+    nativeLanguageId?: string | null;
+    targetLanguageId?: string | null;
+  } = {},
 ) {
+  const noteType = options.noteType ?? BASIC_NOTE_TYPE;
+  if (!DECK_NOTE_TYPES.includes(noteType)) {
+    throw new Error(`Unknown deck note type '${String(noteType)}'`);
+  }
+  const isWord = noteType === WORD_NOTE_TYPE;
+  if (isWord && !(options.nativeLanguageId && options.targetLanguageId)) {
+    throw new Error('A word deck needs both a native and a target language');
+  }
+  if (!isWord && (options.nativeLanguageId || options.targetLanguageId)) {
+    throw new Error('Only a word deck carries languages');
+  }
+  if (isWord && options.nativeLanguageId === options.targetLanguageId) {
+    throw new Error('A word deck needs two different languages');
+  }
   return await db.write(async () => {
     const now = Date.now();
     return await db.get(UserDeck).create({
       title,
       description: description || null,
+      note_type: noteType,
+      native_language_id: options.nativeLanguageId ?? null,
+      target_language_id: options.targetLanguageId ?? null,
+      visibility: PRIVATE_DECK,
       created_at: now,
       updated_at: now,
     });
@@ -123,76 +160,33 @@ export async function createCard(
   front: string,
   back: string,
 ) {
-  return await db.write(async () => {
-    const now = Date.now();
-    const noteId = randomId();
-    const templateKey = BASIC_FRONT_BACK_TEMPLATE_KEY;
-    const generatedCardId = cardId(noteId, templateKey);
-    const membershipId = noteDeckId(noteId, deckId);
-    const note = db.get(UserNote).prepareCreate({
-      id: noteId,
-      note_type: BASIC_NOTE_TYPE,
-      fields_version: BASIC_NOTE_FIELDS_VERSION,
-      fields_json: JSON.stringify({ front, back }),
-      additional_content: null,
-      created_at: now,
-      updated_at: now,
-    });
-    const card = db.get(UserCard).prepareCreate({
-      id: generatedCardId,
-      note_id: noteId,
-      template_key: templateKey,
-      active: true,
-      front,
-      back,
-      due_at: now,
-      scheduled_interval_minutes: 0,
-      created_at: now,
-      updated_at: now,
-    });
-    const noteDeck = db.get(UserNoteDeck).prepareCreate({
-      id: membershipId,
-      note_id: noteId,
-      deck_id: deckId,
-      active: true,
-      created_at: now,
-      updated_at: now,
-    });
-    await db.batch([note, card, noteDeck]);
-    return await db.get(UserCard).find(generatedCardId);
+  const note = await createNote(db, deckId, {
+    noteType: BASIC_NOTE_TYPE,
+    fieldsVersion: BASIC_NOTE_FIELDS_VERSION,
+    fields: { front, back },
   });
+  return await db
+    .get(UserCard)
+    .find(cardId(note.id, BASIC_FRONT_BACK_TEMPLATE_KEY));
 }
 
 export async function updateCard(
   db: Database,
-  cardId: string,
+  cardIdToEdit: string,
   front: string,
   back: string,
 ) {
-  return await db.write(async () => {
-    const now = Date.now();
-    const card = await db.get(UserCard).find(cardId);
-    const note = await db.get(UserNote).find(card.note_id);
-    if (
-      note.note_type !== BASIC_NOTE_TYPE ||
-      note.fields_version !== BASIC_NOTE_FIELDS_VERSION ||
-      card.template_key !== BASIC_FRONT_BACK_TEMPLATE_KEY
-    ) {
-      throw new Error('The front/back editor only supports basic notes');
-    }
-    await db.batch([
-      note.prepareUpdate((record) => {
-        record.fields_json = JSON.stringify({ front, back });
-        record.updated_at = now;
-      }),
-      card.prepareUpdate((record) => {
-        record.front = front;
-        record.back = back;
-        record.updated_at = now;
-      }),
-    ]);
-    return card;
-  });
+  const card = await db.get(UserCard).find(cardIdToEdit);
+  const note = await db.get(UserNote).find(card.note_id);
+  if (
+    note.note_type !== BASIC_NOTE_TYPE ||
+    note.fields_version !== BASIC_NOTE_FIELDS_VERSION ||
+    card.template_key !== BASIC_FRONT_BACK_TEMPLATE_KEY
+  ) {
+    throw new Error('The front/back editor only supports basic notes');
+  }
+  await updateNoteFields(db, card.note_id, { front, back });
+  return card;
 }
 
 export async function removeNoteFromDeck(
@@ -268,7 +262,7 @@ export async function recordReviewEvent(
       rating,
       now,
     );
-    const reviewId = randomId();
+    const reviewId = db.randomId();
     const cardUpdate = card.prepareUpdate((record) => {
       record.scheduled_interval_minutes = schedule.scheduled_interval_minutes;
       record.due_at = schedule.due_at;
@@ -354,70 +348,14 @@ export async function createCardsBatch(
   db: Database,
   options: CreateCardsBatchOptions,
 ) {
-  return await db.write(async () => {
-    const now = Date.now();
-    let targetDeckId: string;
-    const batchOperations: BatchOperation[] = [];
-
-    if (options.isNew) {
-      targetDeckId = randomId();
-      const newDeck = db.get(UserDeck).prepareCreate({
-        id: targetDeckId,
-        title: options.deckIdOrTitle,
-        description: options.description || null,
-        created_at: now,
-        updated_at: now,
-      });
-      batchOperations.push(newDeck);
-    } else {
-      targetDeckId = options.deckIdOrTitle;
-    }
-
-    for (const cardInput of options.cards) {
-      const noteId = randomId();
-      const templateKey = BASIC_FRONT_BACK_TEMPLATE_KEY;
-      const generatedCardId = cardId(noteId, templateKey);
-      const membershipId = noteDeckId(noteId, targetDeckId);
-
-      const note = db.get(UserNote).prepareCreate({
-        id: noteId,
-        note_type: BASIC_NOTE_TYPE,
-        fields_version: BASIC_NOTE_FIELDS_VERSION,
-        fields_json: JSON.stringify({
-          front: cardInput.front,
-          back: cardInput.back,
-        }),
-        additional_content: null,
-        created_at: now,
-        updated_at: now,
-      });
-
-      const card = db.get(UserCard).prepareCreate({
-        id: generatedCardId,
-        note_id: noteId,
-        template_key: templateKey,
-        active: true,
-        front: cardInput.front,
-        back: cardInput.back,
-        due_at: now,
-        scheduled_interval_minutes: 0,
-        created_at: now,
-        updated_at: now,
-      });
-
-      const noteDeck = db.get(UserNoteDeck).prepareCreate({
-        id: membershipId,
-        note_id: noteId,
-        deck_id: targetDeckId,
-        active: true,
-        created_at: now,
-        updated_at: now,
-      });
-
-      batchOperations.push(note, card, noteDeck);
-    }
-
-    await db.batch(batchOperations);
-    return targetDeckId;
+  return await createNotesBatch(db, {
+    deckIdOrTitle: options.deckIdOrTitle,
+    isNew: options.isNew,
+    description: options.description,
+    notes: options.cards.map((card) => ({
+      noteType: BASIC_NOTE_TYPE,
+      fieldsVersion: BASIC_NOTE_FIELDS_VERSION,
+      fields: { front: card.front, back: card.back },
+    })),
   });
 }

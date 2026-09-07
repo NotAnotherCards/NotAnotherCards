@@ -4,24 +4,41 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import {
+  textCardsPayloadSchema,
+  topicDeckPayloadSchema,
+  wordNotePayloadSchema,
+} from '@repo/schemas';
 import { DATABASE_CONNECTION } from '../database/database-connection';
-import { aiUsage, DeckGenerationPayload } from './schema';
-import { AiGatewayService, AiParseError } from './ai-gateway.service';
+import { aiUsage, type GenerationResult, type JobType } from './schema';
+import {
+  AiGatewayService,
+  AiParseError,
+  type InferenceResult,
+} from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
+import { MetricsService } from '../metrics/metrics.service';
+import { WORD_NOTE_V1 } from './prompts/word-note.v1';
+import { assembleWordNoteCandidate } from './word-note';
 
 interface ClaimedJobRow {
   id: string;
   user_id: string;
-  type: string;
-  payload: DeckGenerationPayload | string;
+  type: JobType;
+  payload: unknown;
   attempts: number;
   max_attempts: number;
+}
+
+function unsupportedJobType(type: never): never {
+  throw new Error(`Unsupported AI job type: ${String(type)}`);
 }
 
 @Injectable()
@@ -37,6 +54,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly db: NodePgDatabase<Record<string, unknown>>,
     private readonly aiGateway: AiGatewayService,
     private readonly config: ConfigService,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {
     this.pollIntervalMs = Number(
       this.config.get<string>('AI_WORKER_POLL_INTERVAL_MS') ?? 2000,
@@ -47,6 +66,25 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
+    // Queue depth is refreshed at scrape time from the database using indexed status query
+    this.metricsService?.registerAiQueueDepthProvider(async () => {
+      const result = await this.db.execute(sql`
+        SELECT
+          count(*) FILTER (WHERE status = 'pending')::int AS pending,
+          count(*) FILTER (WHERE status = 'processing')::int AS processing,
+          count(*) FILTER (WHERE status = 'failed')::int AS failed
+        FROM ai_generation_jobs
+        WHERE status IN ('pending', 'processing', 'failed')
+      `);
+      const row = result.rows[0] as
+        { pending: number; processing: number; failed: number } | undefined;
+      return {
+        pending: Number(row?.pending ?? 0),
+        processing: Number(row?.processing ?? 0),
+        failed: Number(row?.failed ?? 0),
+      };
+    });
+
     if (this.workerEnabled) {
       this.timer = setInterval(() => {
         void this.processNextJob();
@@ -73,15 +111,20 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
 
     try {
       // 1. Recover exhausted stalled jobs: any job stuck in processing with max attempts is marked failed
-      await this.db.execute(sql`
+      const sweepResult = await this.db.execute(sql`
         UPDATE ai_generation_jobs
         SET status = 'failed',
             error = 'Job timed out while processing on final attempt',
             updated_at = NOW()
         WHERE status = 'processing'
           AND locked_at < NOW() - INTERVAL '5 minutes'
-          AND attempts >= max_attempts;
+          AND attempts >= max_attempts
+        RETURNING id;
       `);
+
+      if (sweepResult.rows.length > 0) {
+        this.metricsService?.aiJobsFailedTotal.inc(sweepResult.rows.length);
+      }
 
       // 2. Atomic dequeue with row lock: select and update 1 pending (due for run) or stalled retryable job
       const claimResult = await this.db.execute(sql`
@@ -121,43 +164,87 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async executeJob(job: ClaimedJobRow) {
-    const payload: DeckGenerationPayload =
-      typeof job.payload === 'string'
-        ? (JSON.parse(job.payload) as DeckGenerationPayload)
-        : job.payload;
+    const startTime = process.hrtime.bigint();
+    let metricModel = 'unknown';
 
     try {
-      let systemPrompt: string;
-      let userPrompt: string;
+      const rawPayload: unknown =
+        typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
+      let result: GenerationResult;
+      let usage: InferenceResult['usage'];
+      let model: string;
+      let resultLabel: string;
 
-      if (job.type === 'topic_deck') {
-        systemPrompt = TOPIC_GENERATION_V1.system;
-        userPrompt = TOPIC_GENERATION_V1.buildUserPrompt(
-          payload.topic ?? '',
-          payload.count,
-        );
-      } else {
-        systemPrompt = TEXT_GENERATION_V1.system;
-        userPrompt = TEXT_GENERATION_V1.buildUserPrompt(
-          payload.sourceText ?? '',
-          payload.count,
-        );
+      switch (job.type) {
+        case 'topic_deck': {
+          const payload = topicDeckPayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
+          const inference = await this.aiGateway.generateCards(
+            TOPIC_GENERATION_V1.system,
+            TOPIC_GENERATION_V1.buildUserPrompt(payload.topic, payload.count),
+            payload.model,
+            payload.count,
+          );
+          result = inference.cards;
+          usage = inference.usage;
+          model = inference.model;
+          metricModel = model;
+          resultLabel = `${result.length} cards`;
+          break;
+        }
+        case 'text_cards': {
+          const payload = textCardsPayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
+          const inference = await this.aiGateway.generateCards(
+            TEXT_GENERATION_V1.system,
+            TEXT_GENERATION_V1.buildUserPrompt(
+              payload.sourceText,
+              payload.count,
+            ),
+            payload.model,
+            payload.count,
+          );
+          result = inference.cards;
+          usage = inference.usage;
+          model = inference.model;
+          metricModel = model;
+          resultLabel = `${result.length} cards`;
+          break;
+        }
+        case 'word_note': {
+          const payload = wordNotePayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
+          const inference = await this.aiGateway.generateObject(
+            WORD_NOTE_V1.system,
+            WORD_NOTE_V1.buildUserPrompt(payload),
+            payload.model,
+          );
+          try {
+            result = assembleWordNoteCandidate(payload, inference.value);
+          } catch (error: unknown) {
+            throw new AiParseError(
+              error instanceof Error ? error.message : String(error),
+              inference.usage,
+              inference.model,
+            );
+          }
+          usage = inference.usage;
+          model = inference.model;
+          metricModel = model;
+          resultLabel = '1 word note';
+          break;
+        }
+        default:
+          unsupportedJobType(job.type);
       }
-
-      const inference = await this.aiGateway.generateCards(
-        systemPrompt,
-        userPrompt,
-        payload.model,
-        payload.count,
-      );
 
       // Record success and log token usage in a transaction
       await this.db.transaction(async (tx) => {
         await tx.execute(sql`
           UPDATE ai_generation_jobs
           SET status = 'completed',
-              result = ${JSON.stringify(inference.cards)}::jsonb,
-              payload = payload || jsonb_build_object('model', ${inference.model}::text),
+              result = ${JSON.stringify(result)}::jsonb,
+              payload = payload || jsonb_build_object('model', ${model}::text),
               error = NULL,
               completed_at = NOW(),
               updated_at = NOW()
@@ -168,17 +255,30 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           id: randomUUID(),
           userId: job.user_id,
           jobId: job.id,
-          model: inference.model,
-          promptTokens: inference.usage.promptTokens,
-          completionTokens: inference.usage.completionTokens,
-          totalTokens: inference.usage.totalTokens,
+          model,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
         });
       });
 
+      this.metricsService?.aiJobsCompletedTotal.inc();
+      this.metricsService?.aiTokensConsumedTotal.inc(
+        { model },
+        usage.totalTokens,
+      );
+      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
+      this.metricsService?.observeAiJobDuration(
+        model,
+        'completed',
+        durationSeconds,
+      );
+
       this.logger.log(
-        `Job ${job.id} completed (${inference.cards.length} cards, ${inference.usage.totalTokens} tokens)`,
+        `Job ${job.id} completed (${resultLabel}, ${usage.totalTokens} tokens in ${durationSeconds.toFixed(2)}s)`,
       );
     } catch (err: unknown) {
+      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
       const isFinalAttempt = job.attempts >= job.max_attempts;
       const nextStatus = isFinalAttempt ? 'failed' : 'pending';
       const errorMessage =
@@ -192,6 +292,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
 
       // If gateway returned usage before parse failure, log the token usage
       if (err instanceof AiParseError && err.usage) {
+        metricModel = err.model;
         try {
           await this.db.insert(aiUsage).values({
             id: randomUUID(),
@@ -202,6 +303,10 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
             completionTokens: err.usage.completionTokens,
             totalTokens: err.usage.totalTokens,
           });
+          this.metricsService?.aiTokensConsumedTotal.inc(
+            { model: err.model },
+            err.usage.totalTokens,
+          );
         } catch (usageErr) {
           this.logger.error(
             'Failed to log token usage on parse error',
@@ -209,6 +314,12 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           );
         }
       }
+
+      this.metricsService?.observeAiJobDuration(
+        metricModel,
+        'failed',
+        durationSeconds,
+      );
 
       if (isFinalAttempt) {
         await this.db.execute(sql`
@@ -218,6 +329,11 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
               updated_at = NOW()
           WHERE id = ${job.id}
         `);
+
+        // The counter represents durable terminal failures only. If this update
+        // fails, the job remains processing and the stalled-job sweep will own
+        // the eventual transition (and its single metric increment).
+        this.metricsService?.aiJobsFailedTotal.inc();
       } else {
         await this.db.execute(sql`
           UPDATE ai_generation_jobs

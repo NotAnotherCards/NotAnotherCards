@@ -60,6 +60,22 @@ describe('@repo/offline-db wiring on API', () => {
             userDeckValidate: UserDeckRow.safeParse({
               title: 'Test Deck',
               description: 'Deck description',
+              note_type: 'basic',
+              native_language_id: null,
+              target_language_id: null,
+              visibility: 'private',
+              created_at: 0,
+              updated_at: 0,
+            }).success,
+            // #257: visibility is a refined string, so the wire schema
+            // refuses a value that is neither private nor public
+            userDeckRejectsUnknownVisibility: !UserDeckRow.safeParse({
+              title: 'Test Deck',
+              description: null,
+              note_type: 'basic',
+              native_language_id: null,
+              target_language_id: null,
+              visibility: 'friends',
               created_at: 0,
               updated_at: 0,
             }).success,
@@ -95,7 +111,7 @@ describe('@repo/offline-db wiring on API', () => {
     );
 
     expect(JSON.parse(output)).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 5,
       userCardsTableDefined: true,
       userDecksTableDefined: true,
       userNotesTableDefined: true,
@@ -107,6 +123,7 @@ describe('@repo/offline-db wiring on API', () => {
       noteDeckValidate: true,
       modelTables: ['user_notes', 'user_note_decks', 'user_cards'],
       userDeckValidate: true,
+      userDeckRejectsUnknownVisibility: true,
       reviewEventValidate: true,
       syncSchemaDefined: true,
       userDecksSyncSchemaDefined: true,

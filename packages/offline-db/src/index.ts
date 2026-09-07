@@ -1,4 +1,5 @@
 import {
+  addColumns,
   appSchema,
   column,
   createTable,
@@ -13,6 +14,8 @@ import {
   reviewEvents,
   userProfiles,
 } from './user-dictionary.js';
+import { BASIC_NOTE_TYPE } from './note-constants.js';
+import { PRIVATE_DECK } from './user-dictionary.js';
 
 // encodeURIComponent provides UTF-8 bytes in Hermes without relying on the
 // TextEncoder global that happens to exist in browsers and Node-based tests.
@@ -33,7 +36,7 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 3,
+  version: 5,
   tables: [
     userDecks,
     userNotes,
@@ -116,13 +119,51 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 4,
+      steps: [
+        addColumns({
+          table: 'user_decks',
+          columns: {
+            note_type: column.string(),
+            native_language_id: column.string().optional(),
+            target_language_id: column.string().optional(),
+          },
+        }),
+        // addColumns fills a required string with '', which matches no note
+        // type. Every deck that existed before this one holds basic notes.
+        unsafeExecuteSql(
+          `update "user_decks" set "note_type" = '${BASIC_NOTE_TYPE}'`,
+        ),
+      ],
+    },
+    {
+      toVersion: 5,
+      steps: [
+        addColumns({
+          table: 'user_decks',
+          columns: { visibility: column.string() },
+        }),
+        // addColumns fills a required string with ''. Nothing that existed
+        // before this column has been published, so every deck is private.
+        unsafeExecuteSql(
+          `update "user_decks" set "visibility" = '${PRIVATE_DECK}'`,
+        ),
+      ],
+    },
   ],
 });
 
 export * from './user-dictionary.js';
+export * from './note-registry.js';
+export * from './note-reconcile.js';
+export * from './note-writes.js';
 export * from './ids.js';
 export * from './note-constants.js';
 export * from './review-scheduler.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
 export * from './queries.js';
+export * from './export-import-types.js';
+export * from './export.js';
+export * from './import.js';

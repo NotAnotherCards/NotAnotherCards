@@ -2,10 +2,12 @@ import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AiWorkerService } from '../ai/ai-worker.service';
 import { AiGatewayService, AiParseError } from '../ai/ai-gateway.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 describe('AiWorkerService', () => {
   let mockGateway: jest.Mocked<AiGatewayService>;
   let mockConfig: ConfigService;
+  let mockMetrics: jest.Mocked<MetricsService>;
 
   beforeEach(() => {
     mockConfig = {
@@ -18,7 +20,15 @@ describe('AiWorkerService', () => {
 
     mockGateway = {
       generateCards: jest.fn(),
+      generateObject: jest.fn(),
     } as unknown as jest.Mocked<AiGatewayService>;
+
+    mockMetrics = {
+      aiJobsCompletedTotal: { inc: jest.fn() },
+      aiJobsFailedTotal: { inc: jest.fn() },
+      aiTokensConsumedTotal: { inc: jest.fn() },
+      observeAiJobDuration: jest.fn(),
+    } as unknown as jest.Mocked<MetricsService>;
   });
 
   it('returns false when no jobs are pending in queue', async () => {
@@ -29,7 +39,12 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({ rows: [] }), // dequeue query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(false);
@@ -87,11 +102,21 @@ describe('AiWorkerService', () => {
       ),
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
     expect(mockGateway.generateCards).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiJobsCompletedTotal.inc).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiTokensConsumedTotal.inc).toHaveBeenCalledWith(
+      { model: 'gemma4' },
+      25,
+    );
     expect(mockDb.execute).toHaveBeenCalled();
     // the completion update records the model that answered, so a job
     // that ran on the default still reports it
@@ -122,7 +147,12 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({}), // backoff update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
@@ -151,11 +181,48 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({}), // fail update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
+    expect(mockMetrics.aiJobsFailedTotal.inc).toHaveBeenCalledTimes(1);
     expect(mockDb.execute).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not count a final failure when its database update fails', async () => {
+    const mockJob = {
+      id: 'job-final-update-fails',
+      user_id: 'user-1',
+      type: 'topic_deck',
+      payload: { topic: 'Math', count: 2 },
+      attempts: 3,
+      max_attempts: 3,
+    };
+
+    mockGateway.generateCards.mockRejectedValue(new Error('Model failure'));
+
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] }) // recovery query
+        .mockResolvedValueOnce({ rows: [mockJob] }) // claim query
+        .mockRejectedValueOnce(new Error('Database unavailable')), // failure update query
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const processed = await new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    ).processNextJob();
+
+    expect(processed).toBe(false);
+    expect(mockMetrics.aiJobsFailedTotal.inc).not.toHaveBeenCalled();
   });
 
   it('logs token consumption when AiParseError occurs on otherwise valid HTTP response', async () => {
@@ -189,10 +256,175 @@ describe('AiWorkerService', () => {
       insert: mockInsert,
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
     expect(mockInsert).toHaveBeenCalledTimes(1); // logs token usage into ai_usage
+  });
+
+  it('stores one validated word note candidate', async () => {
+    const mockJob = {
+      id: 'job-word',
+      user_id: 'user-1',
+      type: 'word_note',
+      payload: {
+        deckId: 'deck-1',
+        word: 'Hund',
+        direction: 'target',
+        nativeLanguageId: '00000000-0000-0000-0000-000000000001',
+        nativeLanguageName: 'English',
+        targetLanguageId: '00000000-0000-0000-0000-000000000003',
+        targetLanguageName: 'German',
+      },
+      attempts: 1,
+      max_attempts: 3,
+    };
+    mockGateway.generateObject.mockResolvedValue({
+      value: {
+        word: 'model overwrite',
+        translation: 'dog',
+        part_of_speech: 'noun',
+        example: 'Der Hund schläft.',
+        example_translation: 'The dog sleeps.',
+        pronunciation: 'hʊnt',
+      },
+      usage: { promptTokens: 10, completionTokens: 15, totalTokens: 25 },
+      model: 'gemma4',
+    });
+    const mockTxExecute = jest.fn().mockResolvedValue({});
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [mockJob] }),
+      transaction: jest.fn(
+        (
+          cb: (tx: {
+            execute: jest.Mock;
+            insert: jest.Mock;
+          }) => Promise<unknown>,
+        ) =>
+          cb({
+            execute: mockTxExecute,
+            insert: jest.fn().mockReturnValue({
+              values: jest.fn().mockResolvedValue({}),
+            }),
+          }),
+      ),
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const processed = await new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    ).processNextJob();
+
+    expect(processed).toBe(true);
+    expect(mockGateway.generateObject).toHaveBeenCalledTimes(1);
+    const updateCalls = mockTxExecute.mock.calls as unknown[][];
+    const completedUpdate = updateCalls[0]?.[0] as {
+      queryChunks: unknown[];
+    };
+    const resultJson = completedUpdate.queryChunks.find(
+      (chunk): chunk is string =>
+        typeof chunk === 'string' && chunk.startsWith('{"noteType"'),
+    );
+    expect(JSON.parse(resultJson!)).toMatchObject({
+      noteType: 'word',
+      fields: { word: 'Hund' },
+    });
+    expect(resultJson).not.toContain('model overwrite');
+    expect(mockMetrics.aiJobsCompletedTotal.inc).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiTokensConsumedTotal.inc).toHaveBeenCalledWith(
+      { model: 'gemma4' },
+      25,
+    );
+    expect(mockMetrics.observeAiJobDuration).toHaveBeenCalledWith(
+      'gemma4',
+      'completed',
+      expect.any(Number),
+    );
+  });
+
+  it('builds the same word prompt on retry', async () => {
+    const job = {
+      id: 'job-retry-word',
+      user_id: 'user-1',
+      type: 'word_note',
+      payload: {
+        deckId: 'deck-1',
+        word: 'Hund',
+        direction: 'target',
+        nativeLanguageId: '00000000-0000-0000-0000-000000000001',
+        nativeLanguageName: 'English',
+        targetLanguageId: '00000000-0000-0000-0000-000000000003',
+        targetLanguageName: 'German',
+      },
+      attempts: 1,
+      max_attempts: 3,
+    };
+    mockGateway.generateObject.mockRejectedValue(new Error('retry'));
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [job] })
+        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ ...job, attempts: 2 }] })
+        .mockResolvedValueOnce({}),
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+    const worker = new AiWorkerService(mockDb, mockGateway, mockConfig);
+
+    await worker.processNextJob();
+    await worker.processNextJob();
+
+    expect(mockGateway.generateObject).toHaveBeenCalledTimes(2);
+    expect(mockGateway.generateObject.mock.calls[0]).toEqual(
+      mockGateway.generateObject.mock.calls[1],
+    );
+  });
+
+  it('fails an unknown job type without calling the model', async () => {
+    const execute = jest
+      .fn()
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'job-unknown',
+            user_id: 'user-1',
+            type: 'unknown',
+            payload: {},
+            attempts: 3,
+            max_attempts: 3,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({});
+    const mockDb = {
+      execute,
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const processed = await new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+    ).processNextJob();
+
+    expect(processed).toBe(true);
+    expect(mockGateway.generateCards).not.toHaveBeenCalled();
+    expect(mockGateway.generateObject).not.toHaveBeenCalled();
+    const executeCalls = execute.mock.calls as unknown[][];
+    expect(JSON.stringify(executeCalls[2]?.[0])).toContain(
+      'Unsupported AI job type: unknown',
+    );
   });
 });

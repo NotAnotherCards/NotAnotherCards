@@ -31,6 +31,16 @@ describe('AiGatewayService', () => {
     expect(result.model).toContain('mock');
   });
 
+  it('generates a mock object when AI_MOCK=1 is active', async () => {
+    const result = await service.generateObject('System prompt', 'One word');
+
+    expect(typeof result.value.word).toBe('string');
+    expect(typeof result.value.translation).toBe('string');
+    expect(typeof result.value.pronunciation).toBe('string');
+    expect(result.usage.totalTokens).toBeGreaterThan(0);
+    expect(result.model).toContain('mock');
+  });
+
   it('throws when AI_API_BASE is unset and AI_MOCK is not enabled', async () => {
     const unconfiguredConfig = {
       get: jest.fn(() => undefined),
@@ -164,6 +174,38 @@ describe('AiGatewayService', () => {
     const result = await gateway.generateCards('sys', 'user');
 
     expect(result.cards).toEqual([{ front: 'Question 1', back: 'Answer 1' }]);
+  });
+
+  it('extracts one JSON object from thinking and prose', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          choices: [
+            {
+              message: {
+                content:
+                  '<think>work it out</think>Here is the note:\n' +
+                  '{"word":"Hund","translation":"dog"}\nDone.',
+              },
+            },
+          ],
+          usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 },
+        }),
+    });
+    const config = {
+      get: jest.fn((key: string) =>
+        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : undefined,
+      ),
+    } as unknown as ConfigService;
+
+    const result = await new AiGatewayService(config).generateObject(
+      'sys',
+      'user',
+    );
+
+    expect(result.value).toEqual({ word: 'Hund', translation: 'dog' });
+    expect(result.usage.totalTokens).toBe(7);
   });
 
   it('throws AiParseError with usage when JSON parsing fails on valid HTTP response', async () => {

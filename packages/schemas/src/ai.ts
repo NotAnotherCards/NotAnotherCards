@@ -38,40 +38,38 @@ export const quotaStatusSchema = z.object({
 
 export type QuotaStatus = z.infer<typeof quotaStatusSchema>;
 
-export const createAiJobSchema = z
-  .object({
-    type: z.enum(['topic_deck', 'text_cards']),
+const model = z.enum(AI_MODELS).optional();
+const count = z.number().int().min(1).max(20).default(5);
+
+export const createAiJobSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('topic_deck'),
     topic: z
       .string()
       .trim()
       .min(1, 'Topic cannot be empty')
-      .max(300, 'Topic is too long')
-      .optional(),
+      .max(300, 'Topic is too long'),
+    count,
+    model,
+  }),
+  z.object({
+    type: z.literal('text_cards'),
     sourceText: z
       .string()
       .trim()
       .min(1, 'Source text cannot be empty')
-      .max(10000, 'Source text cannot exceed 10000 characters')
-      .optional(),
-    count: z.number().int().min(1).max(20).default(5),
-    model: z.enum(AI_MODELS).optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.type === 'topic_deck' && !data.topic) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Topic is required for topic_deck generation',
-        path: ['topic'],
-      });
-    }
-    if (data.type === 'text_cards' && !data.sourceText) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Source text is required for text_cards generation',
-        path: ['sourceText'],
-      });
-    }
-  });
+      .max(10000, 'Source text cannot exceed 10000 characters'),
+    count,
+    model,
+  }),
+  z.object({
+    type: z.literal('word_note'),
+    deckId: z.string(),
+    word: z.string().trim().min(1).max(100),
+    direction: z.enum(['target', 'native']),
+    model,
+  }),
+]);
 
 export type CreateAiJobInput = z.infer<typeof createAiJobSchema>;
 
@@ -81,6 +79,49 @@ export const aiCardOutputSchema = z.object({
 });
 
 export type AiCardOutput = z.infer<typeof aiCardOutputSchema>;
+
+export const aiWordNoteCandidateSchema = z.object({
+  noteType: z.literal('word'),
+  fieldsVersion: z.literal(1),
+  fields: z.object({
+    word: z.string(),
+    translation: z.string(),
+    native_language_id: z.string(),
+    target_language_id: z.string(),
+    part_of_speech: z.string(),
+    example: z.string(),
+    example_translation: z.string(),
+    pronunciation: z.string(),
+    gender: z.string().optional(),
+  }),
+});
+export type AiWordNoteCandidate = z.infer<typeof aiWordNoteCandidateSchema>;
+
+export const topicDeckPayloadSchema = z.object({
+  topic: z.string(),
+  count: z.number(),
+  model: z.string().optional(),
+});
+export type TopicDeckPayload = z.infer<typeof topicDeckPayloadSchema>;
+
+export const textCardsPayloadSchema = z.object({
+  sourceText: z.string(),
+  count: z.number(),
+  model: z.string().optional(),
+});
+export type TextCardsPayload = z.infer<typeof textCardsPayloadSchema>;
+
+export const wordNotePayloadSchema = z.object({
+  deckId: z.string(),
+  word: z.string(),
+  direction: z.enum(['target', 'native']),
+  nativeLanguageId: z.string(),
+  nativeLanguageName: z.string(),
+  targetLanguageId: z.string(),
+  targetLanguageName: z.string(),
+  model: z.string().optional(),
+});
+export type WordNotePayload = z.infer<typeof wordNotePayloadSchema>;
 
 export const aiJobStatusSchema = z.enum([
   'pending',
@@ -95,23 +136,45 @@ export type AiJobStatus = z.infer<typeof aiJobStatusSchema>;
  * columns (attempts, lock and retry timestamps); parsing strips them, so
  * this stays the contract the UI reads.
  */
-export const aiJobSchema = z.object({
+const aiJobFields = {
   id: z.string(),
-  type: z.enum(['topic_deck', 'text_cards']),
   status: aiJobStatusSchema,
-  payload: z.object({
-    topic: z.string().optional(),
-    sourceText: z.string().optional(),
-    count: z.number(),
-    model: z.string().optional(),
-  }),
-  result: z.array(aiCardOutputSchema).nullish(),
   error: z.string().nullish(),
   createdAt: z.string(),
-});
+};
+
+export const aiJobSchema = z.discriminatedUnion('type', [
+  z.object({
+    ...aiJobFields,
+    type: z.literal('topic_deck'),
+    payload: topicDeckPayloadSchema,
+    result: z.array(aiCardOutputSchema).nullish(),
+  }),
+  z.object({
+    ...aiJobFields,
+    type: z.literal('text_cards'),
+    payload: textCardsPayloadSchema,
+    result: z.array(aiCardOutputSchema).nullish(),
+  }),
+  z.object({
+    ...aiJobFields,
+    type: z.literal('word_note'),
+    payload: wordNotePayloadSchema,
+    result: aiWordNoteCandidateSchema.nullish(),
+  }),
+]);
 export type AiJob = z.infer<typeof aiJobSchema>;
 
 /** Response envelopes of the AI endpoints, parsed by the clients. */
 export const aiJobResponseSchema = z.object({ job: aiJobSchema });
-export const aiJobsResponseSchema = z.object({ jobs: z.array(aiJobSchema) });
+// A job this client cannot read (a type or fields version from a newer
+// server) must not take the whole list down with it: that row is skipped.
+export const aiJobsResponseSchema = z.object({
+  jobs: z.array(z.unknown()).transform((rows) =>
+    rows.flatMap((row) => {
+      const parsed = aiJobSchema.safeParse(row);
+      return parsed.success ? [parsed.data] : [];
+    }),
+  ),
+});
 export const aiQuotaResponseSchema = z.object({ quota: quotaStatusSchema });
