@@ -109,7 +109,7 @@ describe('validateAndImportJson', () => {
           note_type: 'word',
           native_language: '00000000-0000-0000-0000-000000000001',
           target_language: '00000000-0000-0000-0000-000000000002',
-        }
+        },
       ],
       notes: [
         {
@@ -119,7 +119,7 @@ describe('validateAndImportJson', () => {
             word: 'hola',
             translation: 'hello',
             native_language_id: '00000000-0000-0000-0000-000000000001',
-            target_language_id: '00000000-0000-0000-0000-000000000002'
+            target_language_id: '00000000-0000-0000-0000-000000000002',
           },
           decks: ['deck-1'],
           cards: [
@@ -128,11 +128,11 @@ describe('validateAndImportJson', () => {
               template_key: 'word-to-translation',
               active: true,
               due_at: 0,
-              scheduled_interval_minutes: 0
-            }
-          ]
-        }
-      ]
+              scheduled_interval_minutes: 0,
+            },
+          ],
+        },
+      ],
     });
 
     const report = await validateAndImportData(db, jsonContent, {
@@ -146,8 +146,12 @@ describe('validateAndImportJson', () => {
     const decks = await db.get(UserDeck).query().fetch();
     expect(decks).toHaveLength(1);
     expect(decks[0].title).toBe('All Words');
-    expect(decks[0].target_language_id).toBe('00000000-0000-0000-0000-000000000002');
-    expect(decks[0].id).toBe(systemDeckId('words', '00000000-0000-0000-0000-000000000002'));
+    expect(decks[0].target_language_id).toBe(
+      '00000000-0000-0000-0000-000000000002',
+    );
+    expect(decks[0].id).toBe(
+      systemDeckId('words', '00000000-0000-0000-0000-000000000002'),
+    );
 
     // Verify membership connects ONLY to the system collection
     const memberships = await db.get(UserNoteDeck).query().fetch();

@@ -72,7 +72,7 @@ describe('createNote', () => {
       fields: word,
     });
     expect(note.note_type).toBe('word');
-    
+
     // Verify thematic deck membership
     const membership = await db
       .get(UserNoteDeck)
@@ -85,7 +85,7 @@ describe('createNote', () => {
       .get(UserNoteDeck)
       .find(noteDeckId(note.id, sId));
     expect(sysMembership.active).toBe(true);
-    
+
     // Verify system collection was lazily created
     const sysDeck = await db.get(UserDeck).find(sId);
     expect(sysDeck.title).toBe('All Words');
@@ -169,15 +169,15 @@ describe('createNotesBatch', () => {
     const notes = await db.get(UserNote).query().fetch();
     expect(notes).toHaveLength(1);
     expect(await db.get(UserCard).query().fetch()).toHaveLength(1);
-    
+
     // Verify memberships: German A1 + Cards
     const memberships = await db.get(UserNoteDeck).query().fetch();
     expect(memberships).toHaveLength(2);
-    
+
     const sId = systemDeckId('cards');
-    expect(memberships.some(m => m.deck_id === deckId)).toBe(true);
-    expect(memberships.some(m => m.deck_id === sId)).toBe(true);
-    
+    expect(memberships.some((m) => m.deck_id === deckId)).toBe(true);
+    expect(memberships.some((m) => m.deck_id === sId)).toBe(true);
+
     // Verify Cards system deck lazily created
     const sysDeck = await db.get(UserDeck).find(sId);
     expect(sysDeck.title).toBe('Cards');
