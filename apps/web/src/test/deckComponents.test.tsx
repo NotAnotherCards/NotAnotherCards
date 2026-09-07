@@ -67,6 +67,7 @@ describe('DeckCard Component', () => {
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
+        onStartReview={vi.fn()}
       />,
     );
 
@@ -82,6 +83,7 @@ describe('DeckCard Component', () => {
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
+        onStartReview={vi.fn()}
       />,
     );
 
