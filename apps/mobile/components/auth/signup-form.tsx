@@ -7,6 +7,7 @@ import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
+import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 // Hermes' Intl support is partial; if timezone detection fails the field
 // stays unset and the server defaults to UTC.
@@ -94,6 +95,8 @@ export function SignupForm() {
       >
         <Text>Create account</Text>
       </Button>
+
+      <SocialLoginButtons />
     </>
   );
 }

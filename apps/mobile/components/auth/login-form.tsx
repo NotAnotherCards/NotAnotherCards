@@ -7,6 +7,7 @@ import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
+import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 export function LoginForm() {
   const [apiError, setApiError] = useState<string | null>(null);
@@ -62,6 +63,8 @@ export function LoginForm() {
       >
         <Text>Log in</Text>
       </Button>
+
+      <SocialLoginButtons />
     </>
   );
 }

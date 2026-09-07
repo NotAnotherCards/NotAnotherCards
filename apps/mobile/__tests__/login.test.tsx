@@ -28,9 +28,18 @@ let mockSession: {
   isPending: boolean;
 };
 
+const mockSocialSignIn = jest.fn(
+  async (_input: unknown): Promise<{ error: { message?: string } | null }> => ({
+    error: null,
+  }),
+);
+
 jest.mock('../lib/auth-client', () => ({
   authClient: {
-    signIn: { email: () => mockSignIn() },
+    signIn: {
+      email: () => mockSignIn(),
+      social: (input: unknown) => mockSocialSignIn(input),
+    },
     useSession: () => mockSession,
   },
 }));
@@ -38,6 +47,7 @@ jest.mock('../lib/auth-client', () => ({
 beforeEach(() => {
   mockSession = { data: null, isPending: false };
   mockReplace.mockClear();
+  mockSocialSignIn.mockClear();
 });
 
 describe('Login screen', () => {
@@ -119,6 +129,31 @@ describe('Login screen', () => {
     render(<Login />);
     await waitFor(() =>
       expect(mockReplace).toHaveBeenCalledWith('/onboarding'),
+    );
+  });
+  it('starts a social sign-in with the provider and in-app callbacks', async () => {
+    const { getByText } = render(<Login />);
+    fireEvent.press(getByText('Continue with Google'));
+    await waitFor(() => expect(mockSocialSignIn).toHaveBeenCalledTimes(1));
+    // relative paths: the Expo client turns them into the app's scheme URL
+    expect(mockSocialSignIn).toHaveBeenCalledWith({
+      provider: 'google',
+      callbackURL: '/dashboard',
+      errorCallbackURL: '/login',
+    });
+    // navigation still waits for the session, as with email
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('shows the message when a social sign-in fails', async () => {
+    mockSocialSignIn.mockResolvedValueOnce({
+      error: { message: 'Provider refused' },
+    });
+    const { getByText, findByText } = render(<Login />);
+    fireEvent.press(getByText('Continue with Facebook'));
+    expect(await findByText('Provider refused')).toBeTruthy();
+    expect(mockSocialSignIn).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'facebook' }),
     );
   });
 });
