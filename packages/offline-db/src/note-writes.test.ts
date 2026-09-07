@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Database } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
-import { cardId, noteDeckId } from './ids.js';
+import { cardId, noteDeckId, systemDeckId } from './ids.js';
 import {
   createNote,
   createNotesBatch,
@@ -72,10 +72,25 @@ describe('createNote', () => {
       fields: word,
     });
     expect(note.note_type).toBe('word');
+    
+    // Verify thematic deck membership
     const membership = await db
       .get(UserNoteDeck)
       .find(noteDeckId(note.id, deck.id));
     expect(membership.active).toBe(true);
+
+    // Verify automatic system collection assignment (All Words)
+    const sId = systemDeckId('words', 'lang-de');
+    const sysMembership = await db
+      .get(UserNoteDeck)
+      .find(noteDeckId(note.id, sId));
+    expect(sysMembership.active).toBe(true);
+    
+    // Verify system collection was lazily created
+    const sysDeck = await db.get(UserDeck).find(sId);
+    expect(sysDeck.title).toBe('All Words');
+    expect(sysDeck.target_language_id).toBe('lang-de');
+
     const cards = (await db.get(UserCard).query().fetch()).filter(
       (c) => c.note_id === note.id,
     );
@@ -151,9 +166,22 @@ describe('createNotesBatch', () => {
       native_language_id: null,
       target_language_id: null,
     });
-    expect(await db.get(UserNote).query().fetch()).toHaveLength(1);
+    const notes = await db.get(UserNote).query().fetch();
+    expect(notes).toHaveLength(1);
     expect(await db.get(UserCard).query().fetch()).toHaveLength(1);
-    expect(await db.get(UserNoteDeck).query().fetch()).toHaveLength(1);
+    
+    // Verify memberships: German A1 + Cards
+    const memberships = await db.get(UserNoteDeck).query().fetch();
+    expect(memberships).toHaveLength(2);
+    
+    const sId = systemDeckId('cards');
+    expect(memberships.some(m => m.deck_id === deckId)).toBe(true);
+    expect(memberships.some(m => m.deck_id === sId)).toBe(true);
+    
+    // Verify Cards system deck lazily created
+    const sysDeck = await db.get(UserDeck).find(sId);
+    expect(sysDeck.title).toBe('Cards');
+    expect(sysDeck.note_type).toBe('basic');
   });
 
   it('rejects notes that do not match a new or existing deck', async () => {
