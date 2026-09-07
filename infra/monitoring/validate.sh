@@ -79,7 +79,7 @@ docker run --rm \
   --entrypoint /bin/amtool \
   -v "$SCRIPT_DIR/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro" \
   -v "$E2E_SLACK_WEBHOOK_FILE:/etc/alertmanager/secrets/slack_webhook:ro" \
-  prom/alertmanager:v0.28.1 \
+  prom/alertmanager:v0.34.0 \
   check-config /etc/alertmanager/alertmanager.yml
 
 echo "==> 5. Validating Grafana Provisioned Dashboards JSON..."
@@ -89,6 +89,19 @@ for dashboard in "$SCRIPT_DIR"/grafana/provisioning/dashboards/json/*.json; do
     echo "  [OK] $(basename "$dashboard")"
   fi
 done
+
+node -e '
+const fs = require("fs");
+const dashboard = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+const targets = dashboard.panels.flatMap((panel) => panel.targets || []);
+if (targets.some((target) => target.expr.includes("vector(0)"))) {
+  throw new Error("GX10 dashboard must show missing exporter data as no data, not a synthetic zero");
+}
+if (!targets.some((target) => target.expr.includes("litellm_total_tokens_metric_total"))) {
+  throw new Error("GX10 dashboard is missing LiteLLM token throughput");
+}
+' "$SCRIPT_DIR/grafana/provisioning/dashboards/json/gx10-gpu-dashboard.json"
+echo "  [OK] GX10 dashboard has no synthetic zero series and includes token throughput"
 
 echo "==> 5b. Validating dashboard datasource UIDs match the provisioned datasource..."
 node -e "
