@@ -550,8 +550,14 @@ async function validateAndImportCsv(
   // Look up existing decks so we don't create duplicates
   const existingDecks = db ? await db.get(UserDeck).query().fetch() : [];
   const deckTitleToIdMap = new Map<string, string>();
+  const nonBasicDeckTitles = new Map<string, string>();
   for (const d of existingDecks) {
-    deckTitleToIdMap.set(d.title.toLowerCase(), d.id);
+    const lowerTitle = d.title.toLowerCase();
+    if (d.note_type === BASIC_NOTE_TYPE) {
+      deckTitleToIdMap.set(lowerTitle, d.id);
+    } else {
+      nonBasicDeckTitles.set(lowerTitle, d.note_type);
+    }
   }
 
   const newDeckTitles = new Set<string>();
@@ -636,8 +642,17 @@ async function validateAndImportCsv(
       }
     }
 
-    if (deckTitle && !deckTitleToIdMap.has(deckTitle.toLowerCase())) {
-      newDeckTitles.add(deckTitle);
+    if (deckTitle) {
+      const lowerDeckTitle = deckTitle.toLowerCase();
+      if (nonBasicDeckTitles.has(lowerDeckTitle)) {
+        errors.push({
+          code: 'NON_BASIC_DECK_MATCH',
+          message: `CSV row targets deck "${deckTitle}", but it is a ${nonBasicDeckTitles.get(lowerDeckTitle)} deck. CSV imports can only target basic decks.`,
+          row: rowNum,
+        });
+      } else if (!deckTitleToIdMap.has(lowerDeckTitle)) {
+        newDeckTitles.add(deckTitle);
+      }
     }
 
     parsedRows.push({ front, back, deckTitle, active, dueAt, interval });
