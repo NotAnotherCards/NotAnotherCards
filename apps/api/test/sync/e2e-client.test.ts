@@ -146,6 +146,7 @@ describePostgres('client-server sync, end to end', () => {
           id: deckId,
           title: 'E2E Spanish',
           description: 'made on device a',
+          visibility: 'private',
           note_type: BASIC_NOTE_TYPE,
           native_language_id: null,
           target_language_id: null,

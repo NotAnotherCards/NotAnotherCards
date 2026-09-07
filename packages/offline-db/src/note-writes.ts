@@ -13,7 +13,12 @@ import {
   prepareReconcileNoteCards,
 } from './note-reconcile.js';
 import { compileNote } from './note-registry.js';
-import { UserDeck, UserNote, UserNoteDeck } from './user-dictionary.js';
+import {
+  UserDeck,
+  UserNote,
+  UserNoteDeck,
+  PRIVATE_DECK,
+} from './user-dictionary.js';
 
 export interface NoteInput {
   readonly noteType: string;
@@ -150,6 +155,7 @@ export async function createNotesBatch(
           note_type: BASIC_NOTE_TYPE,
           native_language_id: null,
           target_language_id: null,
+          visibility: PRIVATE_DECK,
           created_at: now,
           updated_at: now,
         }),

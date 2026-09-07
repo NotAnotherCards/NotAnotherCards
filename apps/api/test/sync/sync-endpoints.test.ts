@@ -53,6 +53,7 @@ const modelChanges = (now: number, suffix: string) => {
           id: ids.deck,
           title: `Endpoint deck ${suffix}`,
           description: null,
+          visibility: 'private',
           note_type: 'basic',
           native_language_id: null,
           target_language_id: null,

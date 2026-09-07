@@ -52,12 +52,17 @@ export const userDecks = pgTable(
     // canonical source of its own languages.
     nativeLanguageId: uuid('native_language_id'),
     targetLanguageId: uuid('target_language_id'),
+    visibility: text('visibility').notNull().default('private'),
     createdAt: doublePrecision('created_at').notNull(),
     updatedAt: doublePrecision('updated_at').notNull(),
   },
   (table) => [
     index('user_decks_user_rev_idx').on(table.userId, table.rev),
     index('user_decks_user_updated_idx').on(table.userId, table.updatedAt),
+    check(
+      'user_decks_visibility_check',
+      sql`${table.visibility} in ('private', 'public')`,
+    ),
     check(
       'user_decks_languages_match_note_type_check',
       sql`case when ${table.noteType} = 'word' then ${table.nativeLanguageId} is not null and ${table.targetLanguageId} is not null and ${table.nativeLanguageId} <> ${table.targetLanguageId} else ${table.nativeLanguageId} is null and ${table.targetLanguageId} is null end`,
