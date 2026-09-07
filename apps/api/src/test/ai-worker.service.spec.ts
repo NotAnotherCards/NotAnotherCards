@@ -292,6 +292,7 @@ describe('AiWorkerService', () => {
       mockDb,
       mockGateway,
       mockConfig,
+      mockMetrics,
     ).processNextJob();
 
     expect(processed).toBe(true);
@@ -309,6 +310,16 @@ describe('AiWorkerService', () => {
       fields: { word: 'Hund' },
     });
     expect(resultJson).not.toContain('model overwrite');
+    expect(mockMetrics.aiJobsCompletedTotal.inc).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiTokensConsumedTotal.inc).toHaveBeenCalledWith(
+      { model: 'gemma4' },
+      25,
+    );
+    expect(mockMetrics.observeAiJobDuration).toHaveBeenCalledWith(
+      'gemma4',
+      'completed',
+      expect.any(Number),
+    );
   });
 
   it('builds the same word prompt on retry', async () => {

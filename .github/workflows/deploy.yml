@@ -76,7 +76,46 @@ jobs:
               exit 1
             }
 
-            # 5. Verify every named Prometheus scrape target is up
+            # 5. Send a real notification through Alertmanager and require a
+            # completed, successful Slack HTTP request.
+            alertmanager_slack_metric() {
+              metric_name="$1"
+              curl --fail --silent --show-error http://127.0.0.1:9093/metrics \
+                | awk -v sample="${metric_name}{integration=\"slack\"}" \
+                  '$1 == sample { print $2; found = 1 } END { if (!found) print 0 }'
+            }
+
+            SLACK_REQUESTS_BEFORE="$(alertmanager_slack_metric alertmanager_notification_requests_total)"
+            SLACK_FAILURES_BEFORE="$(alertmanager_slack_metric alertmanager_notification_requests_failed_total)"
+            SMOKE_STARTS_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            SMOKE_ENDS_AT="$(date -u -d '+5 minutes' +'%Y-%m-%dT%H:%M:%SZ')"
+
+            curl --fail --silent --show-error \
+              -H 'Content-Type: application/json' \
+              --data "[{\"labels\":{\"alertname\":\"DeploymentSlackSmokeTest\",\"severity\":\"warning\",\"job\":\"deployment-${{ github.sha }}\",\"instance\":\"production-vps\"},\"annotations\":{\"summary\":\"Monitoring deployment Slack smoke test\",\"description\":\"Alertmanager successfully reached the production Slack webhook after deployment ${{ github.sha }}.\"},\"startsAt\":\"$SMOKE_STARTS_AT\",\"endsAt\":\"$SMOKE_ENDS_AT\"}]" \
+              http://127.0.0.1:9093/api/v2/alerts >/dev/null
+
+            SLACK_SMOKE_DELIVERED=0
+            for attempt in $(seq 1 50); do
+              SLACK_REQUESTS_AFTER="$(alertmanager_slack_metric alertmanager_notification_requests_total)"
+              SLACK_FAILURES_AFTER="$(alertmanager_slack_metric alertmanager_notification_requests_failed_total)"
+              if [ "$SLACK_FAILURES_AFTER" -gt "$SLACK_FAILURES_BEFORE" ]; then
+                echo "FATAL: Alertmanager's Slack smoke-test request failed" >&2
+                exit 1
+              fi
+              if [ "$SLACK_REQUESTS_AFTER" -gt "$SLACK_REQUESTS_BEFORE" ]; then
+                SLACK_SMOKE_DELIVERED=1
+                break
+              fi
+              sleep 1
+            done
+            if [ "$SLACK_SMOKE_DELIVERED" != "1" ]; then
+              echo "FATAL: Alertmanager did not complete the Slack smoke-test request" >&2
+              exit 1
+            fi
+            echo "Alertmanager delivered the production Slack smoke-test notification"
+
+            # 6. Verify every named Prometheus scrape target is up
             for job in prometheus api-vps postgres-vps node-vps litellm-gx10 dcgm-gpu-gx10 node-gx10; do
               health="missing"
               for attempt in 1 2 3 4 5 6; do
@@ -92,7 +131,7 @@ jobs:
               echo "Prometheus target '$job' is up"
             done
 
-            # 6. Verify Public Endpoints
+            # 7. Verify Public Endpoints
             curl \
               --fail \
               --silent \

@@ -124,6 +124,12 @@ sudo -u deploy docker compose \
   && echo "OK: secret readable by alertmanager"
 ```
 
+Every production deployment also submits a short-lived smoke-test alert through
+Alertmanager and fails unless the Slack integration completes an HTTP request
+without incrementing its failed-request counter. `pnpm test:infra` exercises
+the same route against an isolated Slack-compatible receiver, including a 503
+response that must be recorded as failed.
+
 Ensure secure values for:
 
 - `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD` (mandatory)

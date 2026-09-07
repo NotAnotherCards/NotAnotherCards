@@ -72,7 +72,7 @@ services:
       - '127.0.0.1:${ALERTMANAGER_PORT:-9093}:9093'
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - ./secrets:/etc/alertmanager/secrets:ro
+      - ./secrets/slack_webhook:/etc/alertmanager/secrets/slack_webhook:ro
       - alertmanager-data:/alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
