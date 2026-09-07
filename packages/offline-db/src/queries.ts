@@ -28,7 +28,12 @@ import { calculateReviewSchedule } from './review-scheduler.js';
 // ==========================================
 
 export function getDecksQuery(db: Database) {
-  return db.get(UserDeck).query(Q.sortBy('created_at', Q.desc));
+  return db
+    .get(UserDeck)
+    .query(
+      Q.where('title', Q.oneOf(['Cards', 'All Words'])),
+      Q.sortBy('created_at', Q.desc),
+    );
 }
 
 export function getPersonalDictionaryQuery(db: Database) {
