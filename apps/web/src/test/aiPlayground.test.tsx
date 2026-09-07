@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { AiPlaygroundForm } from '@/components/ai/AiPlaygroundForm';
