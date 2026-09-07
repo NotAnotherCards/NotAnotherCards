@@ -1,4 +1,5 @@
 import { Deck } from '@/hooks/useStore';
+import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -36,16 +37,26 @@ export function DeckCard({
 
   return (
     <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <CardTitle
-            className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate max-w-[80%]"
-            onClick={() => onSelectDeck(deck.id)}
-            title={deck.title}
-          >
-            {deck.title}
-          </CardTitle>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <CardHeader className="min-w-0 pb-3">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="flex flex-1 items-center gap-2 min-w-0">
+            <span
+              className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
+              data-testid="deck-kind"
+              title={deckKind(deck)}
+              aria-label={deckKind(deck)}
+            >
+              {deckKindShort(deck)}
+            </span>
+            <CardTitle
+              className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate"
+              onClick={() => onSelectDeck(deck.id)}
+              title={deck.title}
+            >
+              {deck.title}
+            </CardTitle>
+          </div>
+          <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
             {isKnownType && (
               <Button
                 variant="ghost"

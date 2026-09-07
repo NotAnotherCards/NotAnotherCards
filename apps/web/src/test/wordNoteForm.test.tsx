@@ -32,7 +32,7 @@ const renderForm = (initialData?: Record<string, string>) =>
 describe('WordNoteForm', () => {
   it('asks for the word and its translation, and nothing else up front', () => {
     renderForm();
-    expect(screen.getByLabelText(/^word$/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^word( in \w+)?$/i)).toBeTruthy();
     expect(screen.getByLabelText(/translation/i)).toBeTruthy();
     // the optional fields stay behind the disclosure
     expect(screen.queryByLabelText(/part of speech/i)).toBeNull();
@@ -48,7 +48,7 @@ describe('WordNoteForm', () => {
 
   it('submits only the fields that were filled in', async () => {
     renderForm();
-    fill(/^word$/i, '  laufen  ');
+    fill(/^word( in \w+)?$/i, '  laufen  ');
     fill(/translation/i, 'to run');
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
@@ -63,7 +63,7 @@ describe('WordNoteForm', () => {
 
   it('carries the optional fields when they are filled', async () => {
     renderForm();
-    fill(/^word$/i, 'laufen');
+    fill(/^word( in \w+)?$/i, 'laufen');
     fill(/translation/i, 'to run');
     fireEvent.click(screen.getByRole('button', { name: /more details/i }));
     fill(/part of speech/i, 'verb');
@@ -167,7 +167,7 @@ describe('WordNoteForm gender', () => {
         onCancel={onCancel}
       />,
     );
-    fill(/^word$/i, 'Hund');
+    fill(/^word( in \w+)?$/i, 'Hund');
     fill(/translation/i, 'dog');
     openDetails();
     fireEvent.change(screen.getByLabelText(/gender/i), {

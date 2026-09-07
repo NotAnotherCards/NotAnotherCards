@@ -13,6 +13,8 @@ import { AiQueueService } from '../src/ai/ai-queue.service';
 import { AiWorkerService } from '../src/ai/ai-worker.service';
 import { AiGatewayService } from '../src/ai/ai-gateway.service';
 import { aiGenerationJobs, aiUsage } from '../src/ai/schema';
+import { userDecks } from '../src/sync/schema';
+import { LANGUAGES } from '@repo/schemas';
 
 const describePostgres = hasPostgres ? describe : describe.skip;
 
@@ -80,7 +82,10 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
     expect(completedJob.status).toBe('completed');
     expect(completedJob.result).toBeDefined();
     expect(Array.isArray(completedJob.result)).toBe(true);
-    expect(completedJob.result!.length).toBeGreaterThan(0);
+    if (!Array.isArray(completedJob.result)) {
+      throw new Error('Expected topic deck generation to return a card array');
+    }
+    expect(completedJob.result.length).toBeGreaterThan(0);
     expect(completedJob.completedAt).not.toBeNull();
 
     // 5. Verify usage record was written
@@ -152,5 +157,129 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
     expect(updatedQuota.usedTokens).toBeGreaterThan(0);
     expect(updatedQuota.requestsUsed).toBe(1);
     expect(updatedQuota.activePendingJobs).toBe(0);
+  });
+
+  it('authorizes a word deck and snapshots its language names', async () => {
+    const [native, target] = LANGUAGES;
+    await db.insert(userDecks).values({
+      id: 'word-deck',
+      rev: 1,
+      userId: 'user-a',
+      title: 'Spanish',
+      description: null,
+      noteType: 'word',
+      nativeLanguageId: native.value,
+      targetLanguageId: target.value,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+
+    const job = await queueService.enqueueJob('user-a', {
+      type: 'word_note',
+      deckId: 'word-deck',
+      word: 'hola',
+      direction: 'target',
+    });
+
+    expect(job.payload).toEqual({
+      deckId: 'word-deck',
+      word: 'hola',
+      direction: 'target',
+      nativeLanguageId: native.value,
+      nativeLanguageName: native.name,
+      targetLanguageId: target.value,
+      targetLanguageName: target.name,
+      model: undefined,
+    });
+
+    await expect(workerService.processNextJob()).resolves.toBe(true);
+    const [completed] = await db
+      .select()
+      .from(aiGenerationJobs)
+      .where(eq(aiGenerationJobs.id, job.id));
+    expect(completed.status).toBe('completed');
+    expect(completed.result).toMatchObject({
+      noteType: 'word',
+      fieldsVersion: 1,
+      fields: {
+        word: 'hola',
+        native_language_id: native.value,
+        target_language_id: target.value,
+      },
+    });
+  });
+
+  it('rejects unauthorized or unusable word decks before inserting a job', async () => {
+    const [native, target] = LANGUAGES;
+    await db.insert(userDecks).values([
+      {
+        id: 'foreign-word-deck',
+        rev: 1,
+        userId: 'user-b',
+        title: 'Foreign',
+        description: null,
+        noteType: 'word',
+        nativeLanguageId: native.value,
+        targetLanguageId: target.value,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        id: 'basic-deck',
+        rev: 2,
+        userId: 'user-a',
+        title: 'Basic',
+        description: null,
+        noteType: 'basic',
+        nativeLanguageId: null,
+        targetLanguageId: null,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        id: 'deleted-word-deck',
+        rev: 3,
+        deletedAt: new Date(),
+        userId: 'user-a',
+        title: 'Deleted',
+        description: null,
+        noteType: 'word',
+        nativeLanguageId: native.value,
+        targetLanguageId: target.value,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        id: 'unknown-language-deck',
+        rev: 4,
+        userId: 'user-a',
+        title: 'Unknown language',
+        description: null,
+        noteType: 'word',
+        nativeLanguageId: native.value,
+        targetLanguageId: '00000000-0000-0000-0000-0000000000ff',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ]);
+
+    for (const deckId of [
+      'foreign-word-deck',
+      'basic-deck',
+      'deleted-word-deck',
+      'unknown-language-deck',
+    ]) {
+      await expect(
+        queueService.enqueueJob('user-a', {
+          type: 'word_note',
+          deckId,
+          word: 'hola',
+          direction: 'target',
+        }),
+      ).rejects.toThrow();
+    }
+
+    expect(await db.select().from(aiGenerationJobs)).toHaveLength(0);
+    expect(await db.select().from(aiUsage)).toHaveLength(0);
   });
 });

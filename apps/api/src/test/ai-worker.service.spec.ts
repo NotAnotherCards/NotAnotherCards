@@ -18,6 +18,7 @@ describe('AiWorkerService', () => {
 
     mockGateway = {
       generateCards: jest.fn(),
+      generateObject: jest.fn(),
     } as unknown as jest.Mocked<AiGatewayService>;
   });
 
@@ -194,5 +195,154 @@ describe('AiWorkerService', () => {
 
     expect(processed).toBe(true);
     expect(mockInsert).toHaveBeenCalledTimes(1); // logs token usage into ai_usage
+  });
+
+  it('stores one validated word note candidate', async () => {
+    const mockJob = {
+      id: 'job-word',
+      user_id: 'user-1',
+      type: 'word_note',
+      payload: {
+        deckId: 'deck-1',
+        word: 'Hund',
+        direction: 'target',
+        nativeLanguageId: '00000000-0000-0000-0000-000000000001',
+        nativeLanguageName: 'English',
+        targetLanguageId: '00000000-0000-0000-0000-000000000003',
+        targetLanguageName: 'German',
+      },
+      attempts: 1,
+      max_attempts: 3,
+    };
+    mockGateway.generateObject.mockResolvedValue({
+      value: {
+        word: 'model overwrite',
+        translation: 'dog',
+        part_of_speech: 'noun',
+        example: 'Der Hund schläft.',
+        example_translation: 'The dog sleeps.',
+        pronunciation: 'hʊnt',
+      },
+      usage: { promptTokens: 10, completionTokens: 15, totalTokens: 25 },
+      model: 'gemma4',
+    });
+    const mockTxExecute = jest.fn().mockResolvedValue({});
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [mockJob] }),
+      transaction: jest.fn(
+        (
+          cb: (tx: {
+            execute: jest.Mock;
+            insert: jest.Mock;
+          }) => Promise<unknown>,
+        ) =>
+          cb({
+            execute: mockTxExecute,
+            insert: jest.fn().mockReturnValue({
+              values: jest.fn().mockResolvedValue({}),
+            }),
+          }),
+      ),
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const processed = await new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+    ).processNextJob();
+
+    expect(processed).toBe(true);
+    expect(mockGateway.generateObject).toHaveBeenCalledTimes(1);
+    const updateCalls = mockTxExecute.mock.calls as unknown[][];
+    const completedUpdate = updateCalls[0]?.[0] as {
+      queryChunks: unknown[];
+    };
+    const resultJson = completedUpdate.queryChunks.find(
+      (chunk): chunk is string =>
+        typeof chunk === 'string' && chunk.startsWith('{"noteType"'),
+    );
+    expect(JSON.parse(resultJson!)).toMatchObject({
+      noteType: 'word',
+      fields: { word: 'Hund' },
+    });
+    expect(resultJson).not.toContain('model overwrite');
+  });
+
+  it('builds the same word prompt on retry', async () => {
+    const job = {
+      id: 'job-retry-word',
+      user_id: 'user-1',
+      type: 'word_note',
+      payload: {
+        deckId: 'deck-1',
+        word: 'Hund',
+        direction: 'target',
+        nativeLanguageId: '00000000-0000-0000-0000-000000000001',
+        nativeLanguageName: 'English',
+        targetLanguageId: '00000000-0000-0000-0000-000000000003',
+        targetLanguageName: 'German',
+      },
+      attempts: 1,
+      max_attempts: 3,
+    };
+    mockGateway.generateObject.mockRejectedValue(new Error('retry'));
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [job] })
+        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ ...job, attempts: 2 }] })
+        .mockResolvedValueOnce({}),
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+    const worker = new AiWorkerService(mockDb, mockGateway, mockConfig);
+
+    await worker.processNextJob();
+    await worker.processNextJob();
+
+    expect(mockGateway.generateObject).toHaveBeenCalledTimes(2);
+    expect(mockGateway.generateObject.mock.calls[0]).toEqual(
+      mockGateway.generateObject.mock.calls[1],
+    );
+  });
+
+  it('fails an unknown job type without calling the model', async () => {
+    const execute = jest
+      .fn()
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'job-unknown',
+            user_id: 'user-1',
+            type: 'unknown',
+            payload: {},
+            attempts: 3,
+            max_attempts: 3,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({});
+    const mockDb = {
+      execute,
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const processed = await new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+    ).processNextJob();
+
+    expect(processed).toBe(true);
+    expect(mockGateway.generateCards).not.toHaveBeenCalled();
+    expect(mockGateway.generateObject).not.toHaveBeenCalled();
+    const executeCalls = execute.mock.calls as unknown[][];
+    expect(JSON.stringify(executeCalls[2]?.[0])).toContain(
+      'Unsupported AI job type: unknown',
+    );
   });
 });

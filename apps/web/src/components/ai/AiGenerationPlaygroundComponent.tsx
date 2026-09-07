@@ -147,7 +147,7 @@ export function AiGenerationPlaygroundComponent() {
   };
 
   const handleSaveDeck = async (deckIdOrTitle: string, isNew: boolean) => {
-    if (!currentJob || !currentJob.result) return;
+    if (!currentJob || !Array.isArray(currentJob.result)) return;
     setSaving(true);
     setErrorMessage(null);
     try {
@@ -238,7 +238,9 @@ export function AiGenerationPlaygroundComponent() {
                       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         {job.type === 'topic_deck'
                           ? 'Topic'
-                          : 'Source Paragraph'}
+                          : job.type === 'text_cards'
+                            ? 'Source Paragraph'
+                            : 'Word'}
                       </span>
                       <span className="text-[10px] text-muted-foreground/60">
                         •
@@ -248,9 +250,11 @@ export function AiGenerationPlaygroundComponent() {
                       </span>
                     </div>
                     <p className="text-sm font-semibold truncate text-foreground/90">
-                      {job.payload.topic ||
-                        job.payload.sourceText ||
-                        'Untitled job'}
+                      {job.type === 'topic_deck'
+                        ? job.payload.topic
+                        : job.type === 'text_cards'
+                          ? job.payload.sourceText
+                          : job.payload.word}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -277,7 +281,7 @@ export function AiGenerationPlaygroundComponent() {
       <div className="lg:col-span-7 space-y-8">
         {currentJob &&
         currentJob.status === 'completed' &&
-        currentJob.result ? (
+        Array.isArray(currentJob.result) ? (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
             <AiResultPreview
               cards={currentJob.result}

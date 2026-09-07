@@ -24,6 +24,7 @@ import {
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
 } from '@repo/offline-db';
+import { deckKind, deckKindClassName } from './deck-kind';
 import { CardList } from './CardList';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
@@ -214,9 +215,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground font-heading">
-              {deck.title}
-            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground font-heading">
+                {deck.title}
+              </h2>
+              <span className={deckKindClassName} data-testid="deck-kind">
+                {deckKind(deck)}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               {deck.description || 'Manage your library cards below.'}
             </p>
@@ -261,8 +267,19 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       {showCreateForm &&
         (isWordDeck ? (
           <WordNoteForm
+            key={deckId}
             title="Add New Word"
+            generationDeck={
+              deck.native_language_id && deck.target_language_id
+                ? {
+                    deckId,
+                    nativeLanguageId: deck.native_language_id,
+                    targetLanguageId: deck.target_language_id,
+                  }
+                : undefined
+            }
             targetLanguageId={deck.target_language_id}
+            nativeLanguageId={deck.native_language_id}
             onSubmit={handleCreateWordNote}
             error={writeError}
             onCancel={() => setShowCreateForm(false)}
@@ -283,6 +300,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           <WordNoteForm
             title="Edit Word"
             targetLanguageId={editingWordFields?.target_language_id}
+            nativeLanguageId={editingWordFields?.native_language_id}
             initialData={editingWordFields ?? undefined}
             onSubmit={handleEditWordNote}
             error={writeError}
