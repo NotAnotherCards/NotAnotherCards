@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'expo-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '@repo/schemas';
@@ -65,6 +66,13 @@ export function LoginForm() {
       </Button>
 
       <SocialLoginButtons />
+
+      <Text className="mt-1 text-center text-muted-foreground">
+        Forgot your password?{' '}
+        <Link href="/forgot-password" asChild>
+          <Text className="font-semibold text-foreground">Reset here!</Text>
+        </Link>
+      </Text>
     </>
   );
 }
