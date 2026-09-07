@@ -17,6 +17,7 @@ import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
+import { Route as ProtectedDeckReviewRouteImport } from './routes/_protected/deck-review'
 import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
 
 const IndexRoute = IndexRouteImport.update({
@@ -57,6 +58,11 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ProtectedRouteRoute,
 } as any)
+const ProtectedDeckReviewRoute = ProtectedDeckReviewRouteImport.update({
+  id: '/deck-review',
+  path: '/deck-review',
+  getParentRoute: () => ProtectedRouteRoute,
+} as any)
 const ProtectedOnboardingRoute = ProtectedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/deck-review': typeof ProtectedDeckReviewRoute
   '/onboarding': typeof ProtectedOnboardingRoute
 }
 export interface FileRoutesByTo {
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/deck-review': typeof ProtectedDeckReviewRoute
   '/onboarding': typeof ProtectedOnboardingRoute
 }
 export interface FileRoutesById {
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/_auth/register': typeof AuthRegisterRoute
   '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
+  '/_protected/deck-review': typeof ProtectedDeckReviewRoute
   '/_protected/onboarding': typeof ProtectedOnboardingRoute
 }
 export interface FileRouteTypes {
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard'
+    | '/deck-review'
     | '/onboarding'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard'
+    | '/deck-review'
     | '/onboarding'
   id:
     | '__root__'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/_auth/register'
     | '/_auth/reset-password'
     | '/_protected/dashboard'
+    | '/_protected/deck-review'
     | '/_protected/onboarding'
   fileRoutesById: FileRoutesById
 }
@@ -189,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedDashboardRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
+    '/_protected/deck-review': {
+      id: '/_protected/deck-review'
+      path: '/deck-review'
+      fullPath: '/deck-review'
+      preLoaderRoute: typeof ProtectedDeckReviewRouteImport
+      parentRoute: typeof ProtectedRouteRoute
+    }
     '/_protected/onboarding': {
       id: '/_protected/onboarding'
       path: '/onboarding'
@@ -219,11 +238,13 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface ProtectedRouteRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
+  ProtectedDeckReviewRoute: typeof ProtectedDeckReviewRoute
   ProtectedOnboardingRoute: typeof ProtectedOnboardingRoute
 }
 
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
+  ProtectedDeckReviewRoute: ProtectedDeckReviewRoute,
   ProtectedOnboardingRoute: ProtectedOnboardingRoute,
 }
 

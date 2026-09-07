@@ -8,21 +8,21 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { user } from '../database/schema';
+import type {
+  AiCardOutput,
+  AiWordNoteCandidate,
+  TextCardsPayload,
+  TopicDeckPayload,
+  WordNotePayload,
+} from '@repo/schemas';
 
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type JobType = 'topic_deck' | 'text_cards';
+export type JobType = 'topic_deck' | 'text_cards' | 'word_note';
 
-export interface CardOutput {
-  front: string;
-  back: string;
-}
-
-export interface DeckGenerationPayload {
-  topic?: string;
-  sourceText?: string;
-  count: number;
-  model?: string;
-}
+export type CardOutput = AiCardOutput;
+export type DeckGenerationPayload = TopicDeckPayload | TextCardsPayload;
+export type GenerationPayload = DeckGenerationPayload | WordNotePayload;
+export type GenerationResult = CardOutput[] | AiWordNoteCandidate;
 
 export const aiGenerationJobs = pgTable(
   'ai_generation_jobs',
@@ -33,8 +33,8 @@ export const aiGenerationJobs = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     type: text('type').$type<JobType>().notNull(),
     status: text('status').$type<JobStatus>().default('pending').notNull(),
-    payload: jsonb('payload').$type<DeckGenerationPayload>().notNull(),
-    result: jsonb('result').$type<CardOutput[]>(),
+    payload: jsonb('payload').$type<GenerationPayload>().notNull(),
+    result: jsonb('result').$type<GenerationResult>(),
     error: text('error'),
     attempts: integer('attempts').default(0).notNull(),
     maxAttempts: integer('max_attempts').default(3).notNull(),

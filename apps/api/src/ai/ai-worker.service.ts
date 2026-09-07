@@ -10,20 +10,35 @@ import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import {
+  textCardsPayloadSchema,
+  topicDeckPayloadSchema,
+  wordNotePayloadSchema,
+} from '@repo/schemas';
 import { DATABASE_CONNECTION } from '../database/database-connection';
-import { aiUsage, DeckGenerationPayload } from './schema';
-import { AiGatewayService, AiParseError } from './ai-gateway.service';
+import { aiUsage, type GenerationResult, type JobType } from './schema';
+import {
+  AiGatewayService,
+  AiParseError,
+  type InferenceResult,
+} from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
 import { MetricsService } from '../metrics/metrics.service';
+import { WORD_NOTE_V1 } from './prompts/word-note.v1';
+import { assembleWordNoteCandidate } from './word-note';
 
 interface ClaimedJobRow {
   id: string;
   user_id: string;
-  type: string;
-  payload: DeckGenerationPayload | string;
+  type: JobType;
+  payload: unknown;
   attempts: number;
   max_attempts: number;
+}
+
+function unsupportedJobType(type: never): never {
+  throw new Error(`Unsupported AI job type: ${String(type)}`);
 }
 
 @Injectable()
@@ -150,45 +165,86 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
 
   private async executeJob(job: ClaimedJobRow) {
     const startTime = process.hrtime.bigint();
-    const payload: DeckGenerationPayload =
-      typeof job.payload === 'string'
-        ? (JSON.parse(job.payload) as DeckGenerationPayload)
-        : job.payload;
+    let metricModel = 'unknown';
 
     try {
-      let systemPrompt: string;
-      let userPrompt: string;
+      const rawPayload: unknown =
+        typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
+      let result: GenerationResult;
+      let usage: InferenceResult['usage'];
+      let model: string;
+      let resultLabel: string;
 
-      if (job.type === 'topic_deck') {
-        systemPrompt = TOPIC_GENERATION_V1.system;
-        userPrompt = TOPIC_GENERATION_V1.buildUserPrompt(
-          payload.topic ?? '',
-          payload.count,
-        );
-      } else {
-        systemPrompt = TEXT_GENERATION_V1.system;
-        userPrompt = TEXT_GENERATION_V1.buildUserPrompt(
-          payload.sourceText ?? '',
-          payload.count,
-        );
+      switch (job.type) {
+        case 'topic_deck': {
+          const payload = topicDeckPayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
+          const inference = await this.aiGateway.generateCards(
+            TOPIC_GENERATION_V1.system,
+            TOPIC_GENERATION_V1.buildUserPrompt(payload.topic, payload.count),
+            payload.model,
+            payload.count,
+          );
+          result = inference.cards;
+          usage = inference.usage;
+          model = inference.model;
+          metricModel = model;
+          resultLabel = `${result.length} cards`;
+          break;
+        }
+        case 'text_cards': {
+          const payload = textCardsPayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
+          const inference = await this.aiGateway.generateCards(
+            TEXT_GENERATION_V1.system,
+            TEXT_GENERATION_V1.buildUserPrompt(
+              payload.sourceText,
+              payload.count,
+            ),
+            payload.model,
+            payload.count,
+          );
+          result = inference.cards;
+          usage = inference.usage;
+          model = inference.model;
+          metricModel = model;
+          resultLabel = `${result.length} cards`;
+          break;
+        }
+        case 'word_note': {
+          const payload = wordNotePayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
+          const inference = await this.aiGateway.generateObject(
+            WORD_NOTE_V1.system,
+            WORD_NOTE_V1.buildUserPrompt(payload),
+            payload.model,
+          );
+          try {
+            result = assembleWordNoteCandidate(payload, inference.value);
+          } catch (error: unknown) {
+            throw new AiParseError(
+              error instanceof Error ? error.message : String(error),
+              inference.usage,
+              inference.model,
+            );
+          }
+          usage = inference.usage;
+          model = inference.model;
+          metricModel = model;
+          resultLabel = '1 word note';
+          break;
+        }
+        default:
+          unsupportedJobType(job.type);
       }
-
-      const inference = await this.aiGateway.generateCards(
-        systemPrompt,
-        userPrompt,
-        payload.model,
-        payload.count,
-      );
-
-      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
 
       // Record success and log token usage in a transaction
       await this.db.transaction(async (tx) => {
         await tx.execute(sql`
           UPDATE ai_generation_jobs
           SET status = 'completed',
-              result = ${JSON.stringify(inference.cards)}::jsonb,
-              payload = payload || jsonb_build_object('model', ${inference.model}::text),
+              result = ${JSON.stringify(result)}::jsonb,
+              payload = payload || jsonb_build_object('model', ${model}::text),
               error = NULL,
               completed_at = NOW(),
               updated_at = NOW()
@@ -199,26 +255,27 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           id: randomUUID(),
           userId: job.user_id,
           jobId: job.id,
-          model: inference.model,
-          promptTokens: inference.usage.promptTokens,
-          completionTokens: inference.usage.completionTokens,
-          totalTokens: inference.usage.totalTokens,
+          model,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
         });
       });
 
       this.metricsService?.aiJobsCompletedTotal.inc();
       this.metricsService?.aiTokensConsumedTotal.inc(
-        { model: inference.model },
-        inference.usage.totalTokens,
+        { model },
+        usage.totalTokens,
       );
+      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
       this.metricsService?.observeAiJobDuration(
-        inference.model,
+        model,
         'completed',
         durationSeconds,
       );
 
       this.logger.log(
-        `Job ${job.id} completed (${inference.cards.length} cards, ${inference.usage.totalTokens} tokens in ${durationSeconds.toFixed(2)}s)`,
+        `Job ${job.id} completed (${resultLabel}, ${usage.totalTokens} tokens in ${durationSeconds.toFixed(2)}s)`,
       );
     } catch (err: unknown) {
       const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
@@ -235,6 +292,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
 
       // If gateway returned usage before parse failure, log the token usage
       if (err instanceof AiParseError && err.usage) {
+        metricModel = err.model;
         try {
           await this.db.insert(aiUsage).values({
             id: randomUUID(),
@@ -258,7 +316,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       }
 
       this.metricsService?.observeAiJobDuration(
-        payload.model || 'unknown',
+        metricModel,
         'failed',
         durationSeconds,
       );

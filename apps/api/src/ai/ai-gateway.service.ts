@@ -12,6 +12,12 @@ export interface InferenceResult {
   model: string;
 }
 
+export interface ObjectInferenceResult {
+  value: Record<string, unknown>;
+  usage: InferenceResult['usage'];
+  model: string;
+}
+
 export class AiParseError extends Error {
   constructor(
     message: string,
@@ -46,6 +52,19 @@ interface RawCardItem {
   back?: unknown;
 }
 
+interface GatewaySettings {
+  apiBase: string | undefined;
+  apiKey: string;
+  isMock: boolean;
+  model: string;
+}
+
+interface Completion {
+  rawContent: string;
+  usage: InferenceResult['usage'];
+  model: string;
+}
+
 @Injectable()
 export class AiGatewayService {
   private readonly logger = new Logger(AiGatewayService.name);
@@ -58,42 +77,102 @@ export class AiGatewayService {
     requestedModel?: string,
     requestedCount = 5,
   ): Promise<InferenceResult> {
-    // A trailing slash here produced `POST //chat/completions`, which the
-    // gateway answers with 404, so every job failed until the env was fixed.
-    const apiBase = this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, '');
-    const apiKey = this.config.get<string>('AI_API_KEY') ?? '';
-    const isMockExplicit =
-      this.config.get<string>('AI_MOCK') === '1' ||
-      this.config.get<string>('AI_MOCK') === 'true' ||
-      process.env.NODE_ENV === 'test';
-    const model =
-      requestedModel || this.config.get<string>('AI_DEFAULT_MODEL') || 'gemma4';
+    const settings = this.gatewaySettings(requestedModel);
 
-    // If no endpoint is configured:
-    // When AI_MOCK is explicitly enabled (or in tests), use mock generator.
-    // Otherwise, throw an error so the job stays visibly queued in pending per docs/deployment.md.
-    if (!apiBase) {
-      if (isMockExplicit) {
+    if (!settings.apiBase) {
+      if (settings.isMock) {
         this.logger.log('AI_MOCK is active. Using mock generator.');
-        return this.mockGeneration(userPrompt, model, requestedCount);
+        return this.mockGeneration(userPrompt, settings.model, requestedCount);
       }
       throw new Error(
         'AI gateway is not configured (AI_API_BASE is unset). Jobs remain queued.',
       );
     }
 
+    const completion = await this.requestCompletion(
+      systemPrompt,
+      userPrompt,
+      settings,
+    );
+    let cards: CardOutput[];
+    try {
+      cards = this.parseCardsFromJson(completion.rawContent, requestedCount);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new AiParseError(msg, completion.usage, completion.model);
+    }
+
+    return { cards, usage: completion.usage, model: completion.model };
+  }
+
+  async generateObject(
+    systemPrompt: string,
+    userPrompt: string,
+    requestedModel?: string,
+  ): Promise<ObjectInferenceResult> {
+    const settings = this.gatewaySettings(requestedModel);
+    if (!settings.apiBase) {
+      if (settings.isMock) {
+        this.logger.log('AI_MOCK is active. Using mock generator.');
+        return this.mockObjectGeneration(settings.model);
+      }
+      throw new Error(
+        'AI gateway is not configured (AI_API_BASE is unset). Jobs remain queued.',
+      );
+    }
+
+    const completion = await this.requestCompletion(
+      systemPrompt,
+      userPrompt,
+      settings,
+    );
+    try {
+      return {
+        value: this.parseObjectFromJson(completion.rawContent),
+        usage: completion.usage,
+        model: completion.model,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new AiParseError(msg, completion.usage, completion.model);
+    }
+  }
+
+  private gatewaySettings(requestedModel?: string): GatewaySettings {
+    const mock = this.config.get<string>('AI_MOCK');
+    return {
+      // A trailing slash produced `POST //chat/completions`, which gateways
+      // answer with 404.
+      apiBase: this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, ''),
+      apiKey: this.config.get<string>('AI_API_KEY') ?? '',
+      isMock:
+        mock === '1' || mock === 'true' || process.env.NODE_ENV === 'test',
+      model:
+        requestedModel ||
+        this.config.get<string>('AI_DEFAULT_MODEL') ||
+        'gemma4',
+    };
+  }
+
+  private async requestCompletion(
+    systemPrompt: string,
+    userPrompt: string,
+    settings: GatewaySettings,
+  ): Promise<Completion> {
+    if (!settings.apiBase) throw new Error('AI gateway is not configured');
     const timeoutMs = Number(
       this.config.get<string>('AI_REQUEST_TIMEOUT_MS') ?? 60000,
     );
-
-    const res = await fetch(`${apiBase}/chat/completions`, {
+    const res = await fetch(`${settings.apiBase}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        ...(settings.apiKey
+          ? { Authorization: `Bearer ${settings.apiKey}` }
+          : {}),
       },
       body: JSON.stringify({
-        model,
+        model: settings.model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -121,20 +200,12 @@ export class AiGatewayService {
     };
 
     const rawContent: string = data.choices?.[0]?.message?.content ?? '';
-    let cards: CardOutput[];
-    try {
-      cards = this.parseCardsFromJson(rawContent, requestedCount);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      throw new AiParseError(msg, usage, model);
-    }
-
     return {
-      cards,
+      rawContent,
       usage,
       // the gateway reports the deployment that answered; on a router
       // fallback that is not the alias we asked for
-      model: data.model ?? model,
+      model: data.model ?? settings.model,
     };
   }
 
@@ -142,8 +213,7 @@ export class AiGatewayService {
     raw: string,
     requestedCount: number,
   ): CardOutput[] {
-    // 1. Strip reasoning thoughts if model produced thinking tokens
-    const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    const cleaned = this.stripThinking(raw);
     // 2. Extract JSON bracket boundaries [ ... ]
     const start = cleaned.indexOf('[');
     const end = cleaned.lastIndexOf(']');
@@ -177,6 +247,29 @@ export class AiGatewayService {
     });
   }
 
+  private parseObjectFromJson(raw: string): Record<string, unknown> {
+    const cleaned = this.stripThinking(raw);
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start === -1 || end === -1 || end <= start) {
+      throw new Error('AI response did not contain a valid JSON object');
+    }
+
+    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as unknown;
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      throw new Error('Parsed AI output is not an object');
+    }
+    return parsed as Record<string, unknown>;
+  }
+
+  private stripThinking(raw: string): string {
+    return raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  }
+
   private mockGeneration(
     prompt: string,
     model: string,
@@ -198,6 +291,25 @@ export class AiGatewayService {
         promptTokens: 20 + count * 5,
         completionTokens: 25 + count * 10,
         totalTokens: 45 + count * 15,
+      },
+      model: `${model}-mock`,
+    };
+  }
+
+  private mockObjectGeneration(model: string): ObjectInferenceResult {
+    return {
+      value: {
+        word: 'Wort',
+        translation: 'word',
+        part_of_speech: 'noun',
+        example: 'Das Wort steht in einem Satz.',
+        example_translation: 'The word appears in a sentence.',
+        pronunciation: 'vɔʁt',
+      },
+      usage: {
+        promptTokens: 25,
+        completionTokens: 35,
+        totalTokens: 60,
       },
       model: `${model}-mock`,
     };

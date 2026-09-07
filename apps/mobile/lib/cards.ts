@@ -10,6 +10,9 @@ import {
   type UserDeckRecord,
   type UserNoteDeckRecord,
   type UserNoteRecord,
+  WordNoteFieldsV1,
+  WORD_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 import { cardWrites } from './card-writes';
 import { cardsForDeck, isBasicCard } from './cards-in-deck';
@@ -39,7 +42,23 @@ export function useCards(manager: DatabaseManager, deckId: string) {
     () => new Map(notes.data.map((note) => [note.id, note])),
     [notes.data],
   );
-  const canEdit = (card: UserCardRecord) => isBasicCard(card, notesById);
+  const noteForCard = (card: UserCardRecord) =>
+    notesById.get(card.note_id) ?? null;
+  const canEdit = (card: UserCardRecord) => {
+    const note = noteForCard(card);
+    if (isBasicCard(card, notesById)) return true;
+    if (
+      note?.note_type !== WORD_NOTE_TYPE ||
+      note.fields_version !== WORD_NOTE_FIELDS_VERSION
+    ) {
+      return false;
+    }
+    try {
+      return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
+    } catch {
+      return false;
+    }
+  };
 
   return {
     db,
@@ -52,6 +71,7 @@ export function useCards(manager: DatabaseManager, deckId: string) {
       notes.isLoading,
     error: decks.error ?? memberships.error ?? cards.error ?? notes.error,
     canEdit,
+    noteForCard,
     writes: db ? cardWrites(db, syncController) : null,
   };
 }

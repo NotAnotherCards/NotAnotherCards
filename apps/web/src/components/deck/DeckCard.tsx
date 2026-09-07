@@ -1,4 +1,5 @@
 import { Deck } from '@/hooks/useStore';
+import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -7,12 +8,14 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { Edit, Trash2, FolderOpen } from 'lucide-react';
+import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
+import { noteTypeRegistry } from '@repo/offline-db';
 
 interface DeckCardProps {
   deck: Deck;
   totalCards: number;
   onSelectDeck: (deckId: string) => void;
+  onStartReview: (deckId: string) => void;
   onEditDeck: (deck: Deck) => void;
   onDeleteDeck: (deckId: string) => void;
 }
@@ -21,30 +24,50 @@ export function DeckCard({
   deck,
   totalCards,
   onSelectDeck,
+  onStartReview,
   onEditDeck,
   onDeleteDeck,
 }: DeckCardProps) {
+  // A deck whose note type this client does not know is not editable here.
+  // A push sends the client's whole view of a row, so rewriting one a newer
+  // client wrote could drop columns this schema has never heard of. Delete
+  // stays: a tombstone carries ids only, so there is nothing to lose, and it
+  // is the only way to be rid of a deck this client cannot use.
+  const isKnownType = deck.note_type in noteTypeRegistry;
+
   return (
     <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <CardTitle
-            className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate max-w-[80%]"
-            onClick={() => onSelectDeck(deck.id)}
-            title={deck.title}
-          >
-            {deck.title}
-          </CardTitle>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 rounded-lg cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
-              onClick={() => onEditDeck(deck)}
-              title="Edit Deck Details"
+      <CardHeader className="min-w-0 pb-3">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="flex flex-1 items-center gap-2 min-w-0">
+            <span
+              className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
+              data-testid="deck-kind"
+              title={deckKind(deck)}
+              aria-label={deckKind(deck)}
             >
-              <Edit className="size-3.5" />
-            </Button>
+              {deckKindShort(deck)}
+            </span>
+            <CardTitle
+              className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate"
+              onClick={() => onSelectDeck(deck.id)}
+              title={deck.title}
+            >
+              {deck.title}
+            </CardTitle>
+          </div>
+          <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+            {isKnownType && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-lg cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
+                onClick={() => onEditDeck(deck)}
+                title="Edit Deck Details"
+              >
+                <Edit className="size-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -77,7 +100,7 @@ export function DeckCard({
           </div>
         </div>
 
-        <div className="flex pt-2">
+        <div className="flex flex-col gap-2 pt-2">
           <Button
             onClick={() => onSelectDeck(deck.id)}
             className="w-full cursor-pointer gap-1.5"
@@ -85,6 +108,15 @@ export function DeckCard({
           >
             <FolderOpen className="size-3.5" />
             Manage Cards
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onStartReview(deck.id)}
+            className="w-full cursor-pointer gap-1.5"
+            size="sm"
+          >
+            <BookOpen className="size-3.5" />
+            Start Review
           </Button>
         </div>
       </CardContent>

@@ -10,6 +10,10 @@ import {
   BASIC_FRONT_BACK_TEMPLATE_KEY,
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
+  type DeckNoteType,
+  WordNoteFieldsV1,
+  WORD_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 import { useQuery } from '@remelondb/core/react';
 import { useSyncController } from '@/offline/syncProvider';
@@ -26,7 +30,10 @@ import {
   updateCard as dbUpdateCard,
   createCardsBatch as dbCreateCardsBatch,
   removeNoteFromDeck as dbRemoveNoteFromDeck,
+  deleteNote as dbDeleteNote,
   recordReviewEvent as dbRecordReview,
+  createNote as dbCreateNote,
+  updateNoteFields as dbUpdateNoteFields,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
   CreateCardsBatchOptions,
@@ -149,9 +156,17 @@ export function useStore() {
 
   // Local Writes
   const createDeck = useCallback(
-    async (title: string, description: string) => {
+    async (
+      title: string,
+      description: string,
+      options?: {
+        noteType?: DeckNoteType;
+        nativeLanguageId?: string | null;
+        targetLanguageId?: string | null;
+      },
+    ) => {
       if (!db) throw new Error('Database not initialized');
-      const result = await dbCreateDeck(db, title, description);
+      const result = await dbCreateDeck(db, title, description, options);
       sync?.notifyLocalWrite();
       return result;
     },
@@ -208,6 +223,53 @@ export function useStore() {
     [db, sync],
   );
 
+  const deleteNote = useCallback(
+    async (noteId: string) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteNote(db, noteId);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  // The note behind a card, so a form can edit the note's own fields rather
+  // than the rendered front and back a template produced from them.
+  const noteForCard = useCallback(
+    (card: UserCardRecord) =>
+      notes.find((candidate) => candidate.id === card.note_id) ?? null,
+    [notes],
+  );
+
+  const createNote = useCallback(
+    async (
+      deckId: string,
+      noteType: string,
+      fieldsVersion: number,
+      fields: unknown,
+    ) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbCreateNote(db, deckId, {
+        noteType,
+        fieldsVersion,
+        fields,
+      });
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const updateNoteFields = useCallback(
+    async (noteId: string, fields: unknown) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbUpdateNoteFields(db, noteId, fields);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
   const isBasicCard = useCallback(
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
@@ -216,6 +278,24 @@ export function useStore() {
         note.fields_version === BASIC_NOTE_FIELDS_VERSION &&
         card.template_key === BASIC_FRONT_BACK_TEMPLATE_KEY
       );
+    },
+    [notes],
+  );
+
+  const isWordCard = useCallback(
+    (card: UserCardRecord): boolean => {
+      const note = notes.find((candidate) => candidate.id === card.note_id);
+      if (
+        note?.note_type !== WORD_NOTE_TYPE ||
+        note.fields_version !== WORD_NOTE_FIELDS_VERSION
+      ) {
+        return false;
+      }
+      try {
+        return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
+      } catch {
+        return false;
+      }
     },
     [notes],
   );
@@ -315,8 +395,13 @@ export function useStore() {
     createCard,
     updateCard,
     removeNoteFromDeck,
+    deleteNote,
     recordReview,
     isBasicCard,
+    isWordCard,
+    noteForCard,
+    createNote,
+    updateNoteFields,
     getCardsCount,
     getCardsForDeck,
     createUserProfile,

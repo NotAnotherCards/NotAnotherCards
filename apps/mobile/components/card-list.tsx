@@ -9,6 +9,12 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
 import { CardForm } from './card-form';
+import { WordNoteForm, type WordFormValues } from './word-note-form';
+import {
+  BASIC_NOTE_TYPE,
+  WordNoteFieldsV1,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
 
 // Readiness gate, as DeckList: no manager yet means no database to query.
 export function CardList({ deckId }: { deckId: string }) {
@@ -43,10 +49,8 @@ function ActiveCardList({
   manager: DatabaseManager;
   deckId: string;
 }) {
-  const { deck, cards, isLoading, error, canEdit, writes } = useCards(
-    manager,
-    deckId,
-  );
+  const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
+    useCards(manager, deckId);
   const [action, setAction] = useState<CardAction | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -96,7 +100,39 @@ function ActiveCardList({
     );
   }
 
+  const isBasicDeck = deck.note_type === BASIC_NOTE_TYPE;
+  const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
+  const isKnownDeck = isBasicDeck || isWordDeck;
+
   if (action?.kind === 'create') {
+    const nativeLanguageId = deck.native_language_id;
+    const targetLanguageId = deck.target_language_id;
+    if (isWordDeck) {
+      if (!(nativeLanguageId && targetLanguageId)) {
+        return (
+          <Text className="text-destructive">
+            This word deck does not have a valid language pair.
+          </Text>
+        );
+      }
+      return (
+        <WordNoteForm
+          title="New word"
+          targetLanguageId={targetLanguageId}
+          error={writeError}
+          onSubmit={(values) =>
+            run(() =>
+              writes.createWord(deckId, {
+                ...values,
+                native_language_id: nativeLanguageId,
+                target_language_id: targetLanguageId,
+              }),
+            )
+          }
+          onCancel={() => open(null)}
+        />
+      );
+    }
     return (
       <CardForm
         title="New card"
@@ -111,6 +147,37 @@ function ActiveCardList({
 
   if (action?.kind === 'edit') {
     const { card } = action;
+    const note = noteForCard(card);
+    if (note?.note_type === WORD_NOTE_TYPE) {
+      let parsed: ReturnType<typeof WordNoteFieldsV1.safeParse> | null = null;
+      try {
+        parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
+      } catch {
+        // Invalid synced payloads remain visible but cannot be edited.
+      }
+      if (!parsed?.success) return null;
+      const fields = parsed.data;
+      const updateWord = (values: WordFormValues) =>
+        run(() =>
+          writes.updateWord(note.id, {
+            ...values,
+            native_language_id: fields.native_language_id,
+            target_language_id: fields.target_language_id,
+            ...(fields.image ? { image: fields.image } : {}),
+            ...(fields.word_audio ? { word_audio: fields.word_audio } : {}),
+          }),
+        );
+      return (
+        <WordNoteForm
+          title="Edit word"
+          initialValues={fields}
+          targetLanguageId={fields.target_language_id}
+          error={writeError}
+          onSubmit={updateWord}
+          onCancel={() => open(null)}
+        />
+      );
+    }
     return (
       <CardForm
         title="Edit card"
@@ -136,10 +203,17 @@ function ActiveCardList({
       <Stack.Screen options={{ title: deck.title }} />
       <View className="flex-row items-center justify-between">
         <Text className="text-lg font-semibold">Cards</Text>
-        <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
-          <Text>New card</Text>
-        </Button>
+        {isKnownDeck && (
+          <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
+            <Text>{isWordDeck ? 'New word' : 'New card'}</Text>
+          </Button>
+        )}
       </View>
+      {!isKnownDeck && (
+        <Text className="text-muted-foreground">
+          This deck uses a note type this app cannot edit yet.
+        </Text>
+      )}
       {cards.length === 0 && (
         <Text className="text-muted-foreground">
           No cards yet. Add your first one.
@@ -198,7 +272,7 @@ function ActiveCardList({
                   </View>
                 ) : (
                   <View className="flex-row gap-2">
-                    {canEdit(card) && (
+                    {isKnownDeck && canEdit(card) && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -209,24 +283,30 @@ function ActiveCardList({
                         <Text className="text-primary">Edit</Text>
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={pending}
-                      accessibilityLabel={`Remove ${short(card.front)} from deck`}
-                      onPress={() => open({ kind: 'remove', card })}
-                    >
-                      <Text>Remove</Text>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={pending}
-                      accessibilityLabel={`Delete note ${short(card.front)}`}
-                      onPress={() => open({ kind: 'delete', card })}
-                    >
-                      <Text className="text-destructive">Delete</Text>
-                    </Button>
+                    {isKnownDeck && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={pending}
+                          accessibilityLabel={`Remove ${short(card.front)} from deck`}
+                          onPress={() => open({ kind: 'remove', card })}
+                        >
+                          <Text>Remove</Text>
+                        </Button>
+                        {canEdit(card) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={pending}
+                            accessibilityLabel={`Delete note ${short(card.front)}`}
+                            onPress={() => open({ kind: 'delete', card })}
+                          >
+                            <Text className="text-destructive">Delete</Text>
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </View>
                 )}
               </CardContent>

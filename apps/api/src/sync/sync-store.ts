@@ -90,7 +90,11 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
       rev: userDecks.rev,
       deletedAt: userDecks.deletedAt,
       scope: userDecks.userId,
-      insertOnly: ['created_at'],
+      // note_type is fixed at creation: a deck's notes are compiled
+      // against it, so changing it later has no coherent meaning.
+      // Cross-validation rejects a push that tries, since insertOnly
+      // alone would silently keep the durable value.
+      insertOnly: ['created_at', 'note_type'],
       scrub: { title: '', description: null },
     }),
     user_notes: drizzleSyncTable<string, typeof userNotes>({

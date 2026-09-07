@@ -26,6 +26,15 @@ const fullWord: WordNoteFields = {
 };
 
 describe('WordNoteFieldsV1', () => {
+  it('rejects identical native and target languages', () => {
+    expect(
+      WordNoteFieldsV1.safeParse({
+        ...word,
+        target_language_id: word.native_language_id,
+      }).success,
+    ).toBe(false);
+  });
+
   it('accepts the minimal note: word, translation, both languages', () => {
     expect(WordNoteFieldsV1.safeParse(word).success).toBe(true);
   });

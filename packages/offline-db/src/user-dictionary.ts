@@ -4,9 +4,37 @@ import { zodTable } from '@remelondb/core/zod';
 import { refineNoteFields } from './note-registry.js';
 import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
 
+export const DECK_VISIBILITIES = ['private', 'public'] as const;
+export type DeckVisibility = (typeof DECK_VISIBILITIES)[number];
+export const PRIVATE_DECK: DeckVisibility = 'private';
+export const PUBLIC_DECK: DeckVisibility = 'public';
+
 export const UserDeckRow = z.object({
   title: z.string().min(1),
   description: z.string().nullable(),
+  // Which note contract this deck's notes follow. Left unrefined on
+  // purpose: a deck type this client does not know is stored and synced
+  // opaquely rather than rejected on pull, the same forward compatibility
+  // #194 gave unknown note types. The known set is checked server-side.
+  note_type: z.string().min(1),
+  // Defaults a word deck's note form starts from. The note stays the
+  // canonical source of its own languages; these only prefill.
+  native_language_id: z.string().nullable(),
+  target_language_id: z.string().nullable(),
+  // Whether others may see this deck. It syncs so clients can read it, but
+  // only the publish endpoint may set it public: publication is the moment
+  // content reaches other people, so it passes moderation first, and the
+  // sync boundary rejects transitions to public (not unchanged public rows).
+  // A refined string rather
+  // than an enum, since zodTable accepts only plain z.string().
+  visibility: z
+    .string()
+    .refine(
+      (value) => (DECK_VISIBILITIES as readonly string[]).includes(value),
+      {
+        message: 'visibility must be private or public',
+      },
+    ),
   created_at: z.number().int().nonnegative(),
   updated_at: z.number().int().nonnegative(),
 });

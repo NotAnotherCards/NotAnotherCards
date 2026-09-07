@@ -7,17 +7,35 @@
  */
 import type { BatchOperation, Database } from '@remelondb/core';
 import { noteDeckId } from './ids.js';
+import { BASIC_NOTE_TYPE } from './note-constants.js';
 import {
   prepareCardsForNewNote,
   prepareReconcileNoteCards,
 } from './note-reconcile.js';
 import { compileNote } from './note-registry.js';
-import { UserDeck, UserNote, UserNoteDeck } from './user-dictionary.js';
+import {
+  UserDeck,
+  UserNote,
+  UserNoteDeck,
+  PRIVATE_DECK,
+} from './user-dictionary.js';
 
 export interface NoteInput {
   readonly noteType: string;
   readonly fieldsVersion: number;
   readonly fields: unknown;
+}
+
+function assertNoteTypesMatchDeck(
+  deckType: string,
+  notes: readonly NoteInput[],
+): void {
+  const mismatched = notes.find((note) => note.noteType !== deckType);
+  if (mismatched) {
+    throw new Error(
+      `A '${deckType}' deck cannot contain a '${mismatched.noteType}' note`,
+    );
+  }
 }
 
 function prepareNewNote(
@@ -66,6 +84,8 @@ export async function createNote(
   input: NoteInput,
 ) {
   return await db.write(async () => {
+    const deck = await db.get(UserDeck).find(deckId);
+    assertNoteTypesMatchDeck(deck.note_type, [input]);
     const { noteId, operations } = prepareNewNote(
       db,
       deckId,
@@ -109,7 +129,8 @@ export interface CreateNotesBatchOptions {
 /**
  * Create many notes at once, into an existing deck or a new one — the
  * save path for AI generation. Every note compiles before anything is
- * prepared, so one invalid item aborts the whole batch. No reads.
+ * prepared, so one invalid item aborts the whole batch. Existing decks are
+ * read once to enforce their note type; a new batch deck is always basic.
  */
 export async function createNotesBatch(
   db: Database,
@@ -119,21 +140,31 @@ export async function createNotesBatch(
     const now = Date.now();
     const operations: BatchOperation[] = [];
     let targetDeckId: string;
+    let deckType: string;
 
     if (options.isNew) {
       targetDeckId = db.randomId();
+      deckType = BASIC_NOTE_TYPE;
       operations.push(
         db.get(UserDeck).prepareCreate({
           id: targetDeckId,
           title: options.deckIdOrTitle,
           description: options.description || null,
+          // This path saves AI-generated basic cards, so the deck it makes
+          // holds basic notes and carries no languages.
+          note_type: BASIC_NOTE_TYPE,
+          native_language_id: null,
+          target_language_id: null,
+          visibility: PRIVATE_DECK,
           created_at: now,
           updated_at: now,
         }),
       );
     } else {
       targetDeckId = options.deckIdOrTitle;
+      deckType = (await db.get(UserDeck).find(targetDeckId)).note_type;
     }
+    assertNoteTypesMatchDeck(deckType, options.notes);
 
     for (const input of options.notes) {
       operations.push(

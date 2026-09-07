@@ -3,6 +3,7 @@ import {
   AI_MODELS,
   aiCardOutputSchema,
   aiJobSchema,
+  aiJobsResponseSchema,
   createAiJobSchema,
 } from './ai';
 
@@ -87,6 +88,40 @@ describe('createAiJobSchema', () => {
       ).toBe(true);
     }
   });
+
+  it('validates a word note request and trims its word', () => {
+    expect(
+      createAiJobSchema.parse({
+        type: 'word_note',
+        deckId: 'deck-1',
+        word: '  Hund  ',
+        direction: 'target',
+      }),
+    ).toEqual({
+      type: 'word_note',
+      deckId: 'deck-1',
+      word: 'Hund',
+      direction: 'target',
+    });
+  });
+
+  it('rejects an incomplete word note request', () => {
+    expect(
+      createAiJobSchema.safeParse({
+        type: 'word_note',
+        word: 'Hund',
+        direction: 'target',
+      }).success,
+    ).toBe(false);
+    expect(
+      createAiJobSchema.safeParse({
+        type: 'word_note',
+        deckId: 'deck-1',
+        word: 'Hund',
+        direction: 'sideways',
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe('aiCardOutputSchema', () => {
@@ -121,5 +156,64 @@ describe('aiJobSchema', () => {
     expect(aiJobSchema.safeParse({ ...job, status: 'queued' }).success).toBe(
       false,
     );
+  });
+
+  it('parses a versioned word note candidate', () => {
+    expect(
+      aiJobSchema.safeParse({
+        id: 'j2',
+        type: 'word_note',
+        status: 'completed',
+        payload: {
+          deckId: 'deck-1',
+          word: 'Hund',
+          direction: 'target',
+          nativeLanguageId: 'en',
+          nativeLanguageName: 'English',
+          targetLanguageId: 'de',
+          targetLanguageName: 'German',
+        },
+        result: {
+          noteType: 'word',
+          fieldsVersion: 1,
+          fields: {
+            word: 'Hund',
+            translation: 'dog',
+            native_language_id: 'en',
+            target_language_id: 'de',
+            part_of_speech: 'noun',
+            example: 'Der Hund schläft.',
+            example_translation: 'The dog sleeps.',
+            pronunciation: 'hʊnt',
+          },
+        },
+        error: null,
+        createdAt: '2026-09-04T10:00:00.000Z',
+      }).success,
+    ).toBe(true);
+  });
+
+  it('skips a job row this client cannot read instead of failing the list', () => {
+    // a job type or fields version from a newer server
+    const unknownType = { ...job, id: 'j2', type: 'image_note', result: null };
+    const newerVersion = {
+      ...job,
+      id: 'j3',
+      type: 'word_note',
+      payload: {
+        deckId: 'd1',
+        word: 'Hund',
+        direction: 'target',
+        nativeLanguageId: 'n',
+        nativeLanguageName: 'English',
+        targetLanguageId: 't',
+        targetLanguageName: 'German',
+      },
+      result: { noteType: 'word', fieldsVersion: 2, fields: {} },
+    };
+    const { jobs } = aiJobsResponseSchema.parse({
+      jobs: [job, unknownType, newerVersion],
+    });
+    expect(jobs.map((j) => j.id)).toEqual(['j1']);
   });
 });
