@@ -26,7 +26,7 @@ export function AuthCard({
         <Text className="text-center text-2xl font-semibold">{title}</Text>
         <Text
           className="mb-2 text-center text-sm text-muted-foreground"
-          numberOfLines={1}
+          numberOfLines={2}
           adjustsFontSizeToFit
         >
           {description}

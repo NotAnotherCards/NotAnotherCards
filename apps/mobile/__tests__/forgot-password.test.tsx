@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import ForgotPassword from '@/app/forgot-password';
 
 jest.mock('expo-router', () => {
@@ -35,7 +35,7 @@ describe('Forgot password screen', () => {
       getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.press(getByText('Send reset email'));
+    fireEvent.press(getByText('Send Reset Link'));
 
     expect(await findByText('Check your email')).toBeTruthy();
     // the reset page is the web's; the API builds the link itself
@@ -55,7 +55,7 @@ describe('Forgot password screen', () => {
       getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.press(getByText('Send reset email'));
+    fireEvent.press(getByText('Send Reset Link'));
 
     expect(await findByText('Too many requests')).toBeTruthy();
     expect(queryByText('Check your email')).toBeNull();
@@ -66,9 +66,39 @@ describe('Forgot password screen', () => {
       <ForgotPassword />,
     );
     fireEvent.changeText(getByPlaceholderText('name@example.com'), 'nope');
-    fireEvent.press(getByText('Send reset email'));
+    fireEvent.press(getByText('Send Reset Link'));
 
     expect(await findByText('Please enter a valid email address')).toBeTruthy();
     await waitFor(() => expect(mockRequestReset).not.toHaveBeenCalled());
+  });
+
+  it('names the inbox and lets the email be resent after the cooldown', async () => {
+    jest.useFakeTimers();
+    try {
+      const { getByPlaceholderText, getByText, findByText } = render(
+        <ForgotPassword />,
+      );
+      fireEvent.changeText(
+        getByPlaceholderText('name@example.com'),
+        'jane@example.com',
+      );
+      fireEvent.press(getByText('Send Reset Link'));
+      expect(await findByText('jane@example.com')).toBeTruthy();
+      expect(getByText('Resend email in 30s')).toBeTruthy();
+
+      // each tick arms the next second's timer, so step through them
+      for (let second = 0; second < 30; second++) {
+        await act(async () => {
+          jest.advanceTimersByTime(1000);
+        });
+      }
+      fireEvent.press(getByText('Resend email'));
+      expect(
+        await findByText('Password reset email resent successfully!'),
+      ).toBeTruthy();
+      expect(mockRequestReset).toHaveBeenCalledTimes(2);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
