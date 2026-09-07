@@ -138,7 +138,7 @@ export function MarkdownRenderer({
 
   return (
     <Component
-      className={`markdown-content ${className}`.trim()}
+      className={`markdown-content [&_p]:my-0 [&_p+p]:mt-2 [&_h1]:text-4xl [&_h1]:font-bold [&_h2]:text-3xl [&_h2]:font-bold [&_h3]:text-2xl [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li+li]:mt-1 ${className}`.trim()}
       data-testid={testId}
       onClick={(e) => {
         if (
