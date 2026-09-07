@@ -1,24 +1,23 @@
 import { useState } from 'react';
 import { AuthCard } from '@/components/auth/auth-card';
-import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
-import { Text } from '@/components/ui/text';
+import {
+  ForgotPasswordForm,
+  ResetEmailSent,
+} from '@/components/auth/forgot-password-form';
 
 export default function ForgotPassword() {
-  const [sent, setSent] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
-  if (sent) {
+  if (sentTo) {
     return (
       <AuthCard
         title="Check your email"
         description="We've sent a password reset link to your email"
-        footerText="Done?"
+        footerText=""
         footerLinkText="Back to login"
         footerLinkTo="/login"
       >
-        <Text className="text-center text-muted-foreground">
-          Open the link on any device to choose a new password, then log in
-          here.
-        </Text>
+        <ResetEmailSent email={sentTo} />
       </AuthCard>
     );
   }
@@ -27,11 +26,11 @@ export default function ForgotPassword() {
     <AuthCard
       title="Forgotten Password"
       description="Enter your email below and we will send you a password reset email"
-      footerText="Remembered it?"
+      footerText=""
       footerLinkText="Back to login"
       footerLinkTo="/login"
     >
-      <ForgotPasswordForm onSent={() => setSent(true)} />
+      <ForgotPasswordForm onSent={setSentTo} />
     </AuthCard>
   );
 }
