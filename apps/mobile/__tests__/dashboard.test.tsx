@@ -84,6 +84,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
+    fireEvent.press(getByText('Profile & Settings'));
     fireEvent.press(getByText('Log out'));
 
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
@@ -103,5 +104,33 @@ describe('Dashboard screen', () => {
     });
     const { getByText } = render(<Dashboard />);
     expect(getByText('redirect:/onboarding')).toBeTruthy();
+  });
+
+  it('switches between overview, library and settings without navigating', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText, getByRole } = render(<Dashboard />);
+    // overview first: the welcome, no settings controls
+    expect(getByText('Jane Doe')).toBeTruthy();
+    expect(queryByText('Log out')).toBeNull();
+
+    fireEvent.press(getByText('Profile & Settings'));
+    expect(getByText('Log out')).toBeTruthy();
+    expect(queryByText(/jane@example.com/)).toBeNull();
+    expect(
+      getByRole('tab', { name: 'Profile & Settings', selected: true }),
+    ).toBeTruthy();
+
+    fireEvent.press(getByText('Overview'));
+    expect(getByText('Jane Doe')).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });
