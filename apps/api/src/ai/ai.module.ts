@@ -7,6 +7,7 @@ import { AiLimitsService } from './ai-limits.service';
 import { AiQueueService } from './ai-queue.service';
 import { AiWorkerService } from './ai-worker.service';
 import { AiController } from './ai.controller';
+import { AiPlaygroundService } from './ai-playground.service';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, AuthModule],
@@ -16,6 +17,7 @@ import { AiController } from './ai.controller';
     AiLimitsService,
     AiQueueService,
     AiWorkerService,
+    AiPlaygroundService,
   ],
   exports: [AiGatewayService, AiLimitsService, AiQueueService, AiWorkerService],
 })

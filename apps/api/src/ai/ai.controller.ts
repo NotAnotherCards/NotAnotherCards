@@ -3,12 +3,15 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   Post,
   Req,
+  Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+import { AiPlaygroundService } from './ai-playground.service';
 import { AuthService } from '../auth/auth.service';
 import { AiLimitsService } from './ai-limits.service';
 import { AiQueueService } from './ai-queue.service';
@@ -20,6 +23,7 @@ export class AiController {
     private readonly authService: AuthService,
     private readonly limitsService: AiLimitsService,
     private readonly queueService: AiQueueService,
+    private readonly playgroundService: AiPlaygroundService,
   ) {}
 
   private async getAuthenticatedUserId(req: Request): Promise<string> {
@@ -47,6 +51,21 @@ export class AiController {
       validationResult.data,
     );
     return { job };
+  }
+
+  @Post('playground/stream')
+  @HttpCode(200)
+  async streamPlayground(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body: unknown,
+  ) {
+    const userId = await this.getAuthenticatedUserId(req);
+    const parsed = createAiJobSchema.safeParse(body);
+    if (!parsed.success || parsed.data.type !== 'topic_deck') {
+      throw new BadRequestException('Invalid playground generation parameters');
+    }
+    await this.playgroundService.stream(userId, parsed.data, res);
   }
 
   @Get('jobs/:id')
