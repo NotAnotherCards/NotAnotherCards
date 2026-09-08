@@ -315,6 +315,22 @@ describe('ReviewSession', () => {
     expect(reviewCard).toHaveAttribute('tabindex', '-1');
   });
 
+  it('accepts an arrow-key answer when a visible answer button has focus', async () => {
+    const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+    renderSession([card, secondCard], undefined, onRecordReview);
+    revealCard();
+
+    const againButton = screen.getByRole('button', { name: 'Again' });
+    expect(againButton).toHaveFocus();
+
+    fireEvent.keyDown(againButton, { key: 'ArrowRight' });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(onRecordReview).toHaveBeenCalledWith('card-1', 3);
+  });
+
   it.each(['keyboard', 'swipe'] as const)(
     'does not record a rating when %s reveals the answer',
     (interaction) => {

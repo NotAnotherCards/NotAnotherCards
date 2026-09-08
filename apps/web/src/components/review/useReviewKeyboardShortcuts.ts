@@ -24,6 +24,13 @@ function isInteractiveKeyboardTarget(target: EventTarget | null) {
   );
 }
 
+function isReviewAnswerButton(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    target.closest('[data-review-answer-button]') !== null
+  );
+}
+
 export function useReviewKeyboardShortcuts({
   isFlipped,
   isBlocked,
@@ -38,7 +45,8 @@ export function useReviewKeyboardShortcuts({
       if (isBlocked) return;
       if (
         isInteractiveKeyboardTarget(event.target) &&
-        event.target !== reviewCardElement
+        event.target !== reviewCardElement &&
+        !isReviewAnswerButton(event.target)
       ) {
         return;
       }

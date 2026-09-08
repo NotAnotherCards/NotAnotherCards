@@ -86,6 +86,7 @@ export function ReviewAnswerButtons({
                 key={answer}
                 ref={answer === answers[0] ? firstAnswerButtonRef : undefined}
                 variant="outline"
+                data-review-answer-button
                 onClick={() => void onAnswer(answer)}
                 disabled={disabled}
                 className={`min-h-12 min-w-0 cursor-pointer flex-col gap-0 whitespace-normal ${answerButtonClassName[answer]}`}
