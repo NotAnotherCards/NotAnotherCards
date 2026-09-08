@@ -152,6 +152,29 @@ describe('Settings Tab Component Specs', () => {
     expect(screen.getByText(/Profile Details/i)).toBeInTheDocument();
   });
 
+  it('lets the user choose Extended review mode and show next-review intervals', async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+
+    await user.click(screen.getByRole('button', { name: /^Preferences$/i }));
+    await user.click(screen.getByRole('button', { name: 'Extended' }));
+    await user.click(
+      screen.getByRole('switch', { name: 'Show next review interval' }),
+    );
+
+    expect(screen.getByRole('button', { name: 'Extended' })).toHaveAttribute(
+      'data-variant',
+      'default',
+    );
+    expect(screen.getByRole('button', { name: 'Extended' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(
+      screen.getByRole('switch', { name: 'Show next review interval' }),
+    ).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('filters selected native language from target language options', async () => {
     const user = userEvent.setup();
     render(<Settings />);

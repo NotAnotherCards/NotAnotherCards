@@ -9,6 +9,24 @@ export const reviewAnswerLabels: Record<ReviewAnswer, string> = {
   'very-easy': 'Knew it',
 };
 
+export const extendedReviewAnswerLabels: Record<ReviewAnswer, string> = {
+  forgot: 'Again',
+  hard: 'Hard',
+  remember: 'Good',
+  'very-easy': 'Easy',
+};
+
+export function formatReviewInterval(minutes: number) {
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 24 * 60) {
+    const hours = Math.round(minutes / 60);
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  }
+
+  const days = Math.round(minutes / (24 * 60));
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
+}
+
 type GestureReviewAnswer = Exclude<ReviewAnswer, 'very-easy'>;
 
 export const CURRENT_REVIEW_MODE: ReviewMode = 'four';

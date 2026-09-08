@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Card, Deck } from '@/hooks/useStore';
 
 const routeTestState = vi.hoisted(() => ({
+  reviewPreferences: {
+    reviewMode: 'basic' as 'basic' | 'extended',
+    showNextReviewInterval: false,
+  },
   reviewSession: vi.fn(),
+  reviewSessionProps: null as Record<string, unknown> | null,
   store: null as Record<string, unknown> | null,
 }));
 
@@ -23,12 +28,14 @@ vi.mock('@/lib/auth-client', () => ({
 }));
 
 vi.mock('@/lib/review-preferences', () => ({
+  getReviewPreferences: () => routeTestState.reviewPreferences,
   saveLastReviewDeckId: vi.fn(),
 }));
 
 vi.mock('@/components/review/ReviewSession', () => ({
-  ReviewSession: ({ cards }: { cards: Card[] }) => {
-    routeTestState.reviewSession(cards);
+  ReviewSession: (props: { cards: Card[] }) => {
+    routeTestState.reviewSession(props.cards);
+    routeTestState.reviewSessionProps = props;
     return <div data-testid="review-session" />;
   },
 }));
@@ -80,7 +87,12 @@ function makeStore(overrides: Record<string, unknown> = {}) {
 describe('DeckReviewRoute', () => {
   beforeEach(() => {
     routeTestState.store = makeStore();
+    routeTestState.reviewPreferences = {
+      reviewMode: 'basic',
+      showNextReviewInterval: false,
+    };
     routeTestState.reviewSession.mockReset();
+    routeTestState.reviewSessionProps = null;
   });
 
   it('asks the user to choose a deck when deckId is missing', () => {
@@ -124,6 +136,23 @@ describe('DeckReviewRoute', () => {
     expect(screen.getByTestId('review-session')).toBeInTheDocument();
     expect(getCardsForDeck).toHaveBeenCalledWith(deck.id);
     expect(routeTestState.reviewSession).toHaveBeenCalledWith([dueCard]);
+  });
+
+  it('applies a saved review preference to the review session', () => {
+    routeTestState.reviewPreferences = {
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    };
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [makeCard('due-card', Date.now() - 1)]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+
+    expect(routeTestState.reviewSessionProps).toMatchObject({
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
   });
 
   it('starts a review session with at most ten due cards', async () => {

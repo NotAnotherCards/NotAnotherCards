@@ -5,11 +5,7 @@ import { Card } from '@/hooks/useStore';
 import { writeErrorMessage } from '@/lib/write-error';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import {
-  CURRENT_REVIEW_MODE,
-  type ReviewAnswer,
-  type ReviewMode,
-} from './review-controls';
+import { type ReviewAnswer } from './review-controls';
 import { ReviewAnswerButtons } from './ReviewAnswerButtons';
 import { ReviewCard, type ReviewCardExitDirection } from './ReviewCard';
 import { DeleteConfirmationDialog, ReviewComplete } from './ReviewDialogs';
@@ -24,7 +20,8 @@ type ReviewSessionProps = {
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
   onRequestNextBatch?: () => Card[];
-  reviewMode?: ReviewMode;
+  reviewMode?: 'basic' | 'extended';
+  showNextReviewInterval?: boolean;
 };
 
 const REVIEW_CARD_EXIT_DURATION_MS = 250;
@@ -44,7 +41,8 @@ export function ReviewSession({
   onRecordReview,
   onDeleteNote,
   onRequestNextBatch,
-  reviewMode = CURRENT_REVIEW_MODE,
+  reviewMode = 'basic',
+  showNextReviewInterval = false,
 }: ReviewSessionProps) {
   const [sessionCards, setSessionCards] = useState(cards);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -61,6 +59,7 @@ export function ReviewSession({
     useState<ReviewCardExitDirection | null>(null);
   const exitTimer = useRef<number | null>(null);
   const reviewCardRef = useRef<HTMLButtonElement>(null);
+  const firstAnswerButtonRef = useRef<HTMLButtonElement>(null);
   const card = sessionCards[currentCardIndex];
   const nextCard = sessionCards[currentCardIndex + 1];
   const followingCard = sessionCards[currentCardIndex + 2];
@@ -148,7 +147,7 @@ export function ReviewSession({
   };
 
   const answerCard = async (answer: ReviewAnswer) => {
-    if (isSavingReview || exitDirection) return;
+    if (!isFlipped || isSavingReview || exitDirection) return;
 
     setReviewError(null);
     setIsSavingReview(true);
@@ -185,10 +184,14 @@ export function ReviewSession({
     };
   }, []);
 
+  useEffect(() => {
+    if (isFlipped) firstAnswerButtonRef.current?.focus();
+  }, [isFlipped]);
+
   const cardInteraction = useReviewCardInteraction({
     isFlipped,
     isBlocked: Boolean(exitDirection) || isSavingReview,
-    reviewMode,
+    reviewMode: reviewMode === 'basic' ? 'two' : 'four',
     onReveal: revealAnswer,
     onAnswer: (answer) => void answerCard(answer),
     onDelete: () => startCardExit('delete'),
@@ -201,7 +204,7 @@ export function ReviewSession({
       isSavingReview ||
       isCreateCardOpen ||
       isDeleteConfirmationOpen,
-    reviewMode,
+    reviewMode: reviewMode === 'basic' ? 'two' : 'four',
     reviewCardElement: reviewCardRef.current,
     onReveal: revealAnswer,
     onAnswer: (answer) => void answerCard(answer),
@@ -223,6 +226,7 @@ export function ReviewSession({
           nextCard={nextCard}
           followingCard={followingCard}
           isFlipped={isFlipped}
+          reviewMode={reviewMode}
           isDragging={cardInteraction.isDragging}
           isSettlingDrag={cardInteraction.isSettlingDrag}
           dragOffset={cardInteraction.dragOffset}
@@ -244,6 +248,10 @@ export function ReviewSession({
           <ReviewAnswerButtons
             active={isFlipped}
             disabled={isSavingReview}
+            reviewMode={reviewMode}
+            showNextReviewInterval={showNextReviewInterval}
+            previousIntervalMinutes={card.scheduled_interval_minutes}
+            firstAnswerButtonRef={firstAnswerButtonRef}
             onAnswer={answerCard}
             onReveal={revealAnswer}
           />
