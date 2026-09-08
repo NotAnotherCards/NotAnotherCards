@@ -14,17 +14,22 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "test": "vitest run"
+    "test": "pnpm test:unit && pnpm test:runtime-contract",
+    "test:unit": "vitest run",
+    "test:runtime-contract": "node scripts/runtime-contract.mjs"
   },
   "dependencies": {
     "@remelondb/core": "0.3.0",
     "@repo/schemas": "workspace:*",
+    "moment-timezone": "0.6.3",
     "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@remelondb/driver-node": "0.3.0",
     "@repo/typescript-config": "workspace:*",
+    "esbuild": "0.28.2",
+    "hermes-engine-cli": "0.12.0",
     "typescript": "5.9.3",
     "vitest": "^4.1.10"
   },
