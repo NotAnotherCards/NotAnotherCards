@@ -103,17 +103,28 @@ ln -s /goinfre/$USER/NotAnotherCards ~/Code/NotAnotherCards
 goinfre is wiped regularly and never leaves the machine, so commit and push
 early and often — after a wipe, re-clone and re-run the script.
 
-### Building and starting
+### First build and launch
 
 Start the emulator, then from `apps/mobile`:
 
 ```sh
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk npx expo run:android   # native build, installs and launches
-npx expo start --dev-client                                    # Metro; press a to open the app
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk npx expo run:android
 ```
 
-The build takes ~10 minutes the first time and a minute or two after; it is
-only needed when a native dependency changes. Day to day, only Metro runs,
+This builds the app, installs it on the emulator, starts Metro and opens the
+app. Leave it running. The build takes ~10 minutes the first time and a minute
+or two after; it is only needed when a native dependency changes.
+
+### Later app starts
+
+With the app already installed and no Metro running:
+
+```sh
+npx expo start --dev-client   # press a to open the app
+```
+
+Don't run this alongside `expo run:android`: that command starts Metro itself,
+and a second one fails with a port 8081 conflict. Day to day only Metro runs,
 and JS changes hot-reload in about a second.
 
 Metro defaults to port 8081; add `--port 8082` if that is taken.
@@ -215,20 +226,31 @@ The runtime can also be installed from **Xcode → Settings → Components**.
 `xcrun simctl list devices available` should then list simulators (iPhone 17
 Pro etc.); `expo run:ios` boots one automatically, no need to start it by hand.
 
-### Building and starting
+### First build and launch
 
 From `apps/mobile` (with `.env.local` set as above; a local API is
 `http://localhost:3000` here, the simulator shares the host's loopback):
 
 ```sh
-npx expo run:ios              # native build; add --device "iPhone 17 Pro" to pick one
-npx expo start --dev-client   # Metro; press i to open the app
+npx expo run:ios              # add --device "iPhone 17 Pro" to pick a simulator
 ```
 
-First build takes a few minutes (installs CocoaPods if missing, compiles the
-pods, installs on the simulator). After that only Metro runs; JS changes
-hot-reload, and only a native dependency change needs another build.
-Verified working with Xcode 26.6 and the iOS 26.5 simulator runtime.
+This builds the app, boots a simulator, starts Metro and opens the app. Leave
+it running. The first build takes a few minutes (installs CocoaPods if missing,
+compiles the pods, installs on the simulator).
+
+### Later app starts
+
+With the app already installed and no Metro running:
+
+```sh
+npx expo start --dev-client   # press i to open the app
+```
+
+Don't run this alongside `expo run:ios`: that command starts Metro itself, and
+a second one fails with a port 8081 conflict. After the first build only Metro
+runs; JS changes hot-reload, and only a native dependency change needs another
+build. Verified working with Xcode 26.6 and the iOS 26.5 simulator runtime.
 
 ### On a real iPhone
 
