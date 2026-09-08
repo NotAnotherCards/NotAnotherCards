@@ -161,6 +161,7 @@ export * from './note-writes.js';
 export * from './ids.js';
 export * from './note-constants.js';
 export * from './review-scheduler.js';
+export * from './activity.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
 export * from './queries.js';
