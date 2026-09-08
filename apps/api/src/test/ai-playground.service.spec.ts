@@ -29,6 +29,7 @@ import { AiController } from '../ai/ai.controller';
 import { AiPlaygroundService } from '../ai/ai-playground.service';
 import { AiGatewayService, AiStreamError } from '../ai/ai-gateway.service';
 import { AiLimitsService } from '../ai/ai-limits.service';
+import { DATABASE_CONNECTION } from '../database/database-connection';
 import { AiQueueService } from '../ai/ai-queue.service';
 import { AuthService } from '../auth/auth.service';
 
@@ -46,6 +47,8 @@ describe('playground streaming HTTP boundary', () => {
     reservePlaygroundUsage: jest.fn(),
     completePlaygroundUsage: jest.fn(),
   };
+  const jobInsert = jest.fn().mockResolvedValue(undefined);
+  const db = { insert: jest.fn(() => ({ values: jobInsert })) };
   const input = {
     type: 'topic_deck',
     topic: 'Spanish',
@@ -61,6 +64,8 @@ describe('playground streaming HTTP boundary', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    jobInsert.mockResolvedValue(undefined);
+    db.insert.mockImplementation(() => ({ values: jobInsert }));
     auth.userIdFromHeaders.mockResolvedValue('user-1');
     limits.reservePlaygroundUsage.mockResolvedValue('usage-1');
     limits.completePlaygroundUsage.mockResolvedValue(undefined);
@@ -78,6 +83,7 @@ describe('playground streaming HTTP boundary', () => {
         { provide: AiGatewayService, useValue: gateway },
         { provide: AiLimitsService, useValue: limits },
         { provide: AiQueueService, useValue: {} },
+        { provide: DATABASE_CONNECTION, useValue: db },
         { provide: ConfigService, useValue: { get: () => undefined } },
       ],
     }).compile();
@@ -115,6 +121,25 @@ describe('playground streaming HTTP boundary', () => {
       'usage-1',
       'served',
       usage,
+      expect.any(String),
+    );
+    // the run lands in history as a job born completed
+    expect(jobInsert).toHaveBeenCalledTimes(1);
+    expect(jobInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'topic_deck',
+        status: 'completed',
+        result: result.cards,
+        error: null,
+        payload: { topic: 'Spanish', count: 1, model: 'served' },
+      }),
+    );
+    const [{ id: jobId }] = jobInsert.mock.calls[0] as [{ id: string }];
+    expect(limits.completePlaygroundUsage).toHaveBeenCalledWith(
+      'usage-1',
+      'served',
+      usage,
+      jobId,
     );
   });
 
@@ -168,6 +193,10 @@ describe('playground streaming HTTP boundary', () => {
         knownUsage
           ? usage
           : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        expect.any(String),
+      );
+      expect(jobInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'failed', result: null }),
       );
     },
   );
@@ -198,6 +227,7 @@ describe('playground streaming HTTP boundary', () => {
     const res = response();
     res.write.mockReturnValue(false);
     const timed = new AiPlaygroundService(
+      db as unknown as ConstructorParameters<typeof AiPlaygroundService>[0],
       gateway as unknown as AiGatewayService,
       limits as unknown as AiLimitsService,
       new ConfigService({ AI_REQUEST_TIMEOUT_MS: '20' }),

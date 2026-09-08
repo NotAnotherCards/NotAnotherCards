@@ -109,10 +109,11 @@ export class AiLimitsService {
     id: string,
     model: string,
     usage: InferenceResult['usage'],
+    jobId?: string,
   ): Promise<void> {
     await this.db
       .update(aiUsage)
-      .set({ model, ...usage })
+      .set({ model, jobId, ...usage })
       .where(eq(aiUsage.id, id));
   }
 

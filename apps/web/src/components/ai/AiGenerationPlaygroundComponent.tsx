@@ -180,6 +180,7 @@ export function AiGenerationPlaygroundComponent() {
       if (!request.signal.aborted) {
         setLoading(false);
         void fetchQuota();
+        void fetchJobs();
       }
       if (streamRequest.current === request) streamRequest.current = null;
     }

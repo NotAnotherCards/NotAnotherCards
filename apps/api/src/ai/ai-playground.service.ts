@@ -1,6 +1,8 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { once } from 'node:events';
+import { randomUUID } from 'node:crypto';
 import type { Response } from 'express';
 import type { AiPlaygroundEvent, CreateAiJobInput } from '@repo/schemas';
 import {
@@ -10,6 +12,8 @@ import {
   type InferenceResult,
 } from './ai-gateway.service';
 import { AiLimitsService } from './ai-limits.service';
+import { DATABASE_CONNECTION } from '../database/database-connection';
+import { aiGenerationJobs } from './schema';
 import { MetricsService } from '../metrics/metrics.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 
@@ -18,6 +22,8 @@ export class AiPlaygroundService {
   private readonly logger = new Logger(AiPlaygroundService.name);
 
   constructor(
+    @Inject(DATABASE_CONNECTION)
+    private readonly db: NodePgDatabase<Record<string, unknown>>,
     private readonly gateway: AiGatewayService,
     private readonly limits: AiLimitsService,
     private readonly config: ConfigService,
@@ -97,9 +103,23 @@ export class AiPlaygroundService {
         };
       }
 
-      // Finalize the reserved row before allowing the browser to report success.
+      // Finalize before allowing the browser to report success. The job row
+      // is born completed (or failed), so the worker never picks it up; it
+      // exists so the run shows in the playground's history like any other.
       try {
-        await this.limits.completePlaygroundUsage(usageId, model, usage);
+        const jobId = randomUUID();
+        await this.db.insert(aiGenerationJobs).values({
+          id: jobId,
+          userId,
+          type: 'topic_deck',
+          status: terminal.type === 'result' ? 'completed' : 'failed',
+          payload: { topic: input.topic, count: input.count, model },
+          result: terminal.type === 'result' ? terminal.cards : null,
+          error: terminal.type === 'error' ? terminal.message : null,
+          attempts: 1,
+          completedAt: new Date(),
+        });
+        await this.limits.completePlaygroundUsage(usageId, model, usage, jobId);
         this.metrics?.aiTokensConsumedTotal.inc({ model }, usage.totalTokens);
       } catch (error) {
         this.logger.error('Failed to record playground usage', error);
