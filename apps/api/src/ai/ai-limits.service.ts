@@ -110,8 +110,9 @@ export class AiLimitsService {
     model: string,
     usage: InferenceResult['usage'],
     jobId?: string,
+    executor: NodePgDatabase<Record<string, unknown>> = this.db,
   ): Promise<void> {
-    await this.db
+    await executor
       .update(aiUsage)
       .set({ model, jobId, ...usage })
       .where(eq(aiUsage.id, id));

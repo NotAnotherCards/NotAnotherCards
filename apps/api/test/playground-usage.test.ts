@@ -1,8 +1,21 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { EventEmitter } from 'node:events';
+import type { Response } from 'express';
+import { sql } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import { HttpException } from '@nestjs/common';
 import { AiLimitsService } from '../src/ai/ai-limits.service';
-import { aiUsage } from '../src/ai/schema';
+import { AiPlaygroundService } from '../src/ai/ai-playground.service';
+import { AiGatewayService } from '../src/ai/ai-gateway.service';
+import { aiGenerationJobs, aiUsage } from '../src/ai/schema';
 import {
   db,
   hasPostgres,
@@ -78,5 +91,81 @@ describe.skipIf(!hasPostgres)(
       expect(rows).toHaveLength(2);
       expect(rows.every((row) => row.totalTokens === 0)).toBe(true);
     });
+
+    it.each([false, true])(
+      'commits history and usage together (usage update fails: %s)',
+      async (failUpdate) => {
+        // Only this isolated test database has the constraint. Reservations
+        // still succeed at zero; finalizing nonzero usage fails in PostgreSQL.
+        if (failUpdate)
+          await db.execute(sql`
+          ALTER TABLE ai_usage ADD CONSTRAINT test_usage_update_failure
+          CHECK (total_tokens = 0)
+        `);
+        try {
+          const result = {
+            cards: [{ front: 'Hola', back: 'Hello' }],
+            usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 },
+            model: 'gemma4',
+          };
+          const gateway = {
+            generateCards: vi
+              .fn<AiGatewayService['generateCards']>()
+              .mockResolvedValue(result),
+          };
+          const res = Object.assign(new EventEmitter(), {
+            writableEnded: false,
+            destroyed: false,
+            setHeader: vi.fn(),
+            flushHeaders: vi.fn(),
+            write: vi.fn().mockReturnValue(true),
+            end: vi.fn(),
+          });
+          const service = new AiPlaygroundService(
+            db,
+            gateway as unknown as AiGatewayService,
+            limits(),
+            new ConfigService(),
+          );
+          await service.stream(
+            'user-a',
+            { type: 'topic_deck', topic: 'Spanish', count: 1, model: 'gemma4' },
+            res as unknown as Response,
+          );
+
+          const jobs = await db.select().from(aiGenerationJobs);
+          const usageRows = await db.select().from(aiUsage);
+          expect(usageRows).toHaveLength(1);
+          if (failUpdate) {
+            expect(jobs).toEqual([]);
+            expect(usageRows[0]).toMatchObject({ jobId: null, totalTokens: 0 });
+            expect(res.end).toHaveBeenCalledWith(
+              expect.stringContaining('Unable to record generation usage'),
+            );
+            expect(res.end).not.toHaveBeenCalledWith(
+              expect.stringContaining('"type":"result"'),
+            );
+          } else {
+            expect(jobs).toHaveLength(1);
+            expect(jobs[0]).toMatchObject({
+              status: 'completed',
+              result: result.cards,
+            });
+            expect(usageRows[0]).toMatchObject({
+              jobId: jobs[0].id,
+              ...result.usage,
+            });
+            expect(res.end).toHaveBeenCalledWith(
+              expect.stringContaining('"type":"result"'),
+            );
+          }
+        } finally {
+          if (failUpdate)
+            await db.execute(sql`
+            ALTER TABLE ai_usage DROP CONSTRAINT test_usage_update_failure
+          `);
+        }
+      },
+    );
   },
 );

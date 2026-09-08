@@ -37,7 +37,6 @@ export class AiPlaygroundService {
   ): Promise<void> {
     let model =
       input.model ?? this.config.get<string>('AI_DEFAULT_MODEL') ?? 'gemma4';
-    const usageId = await this.limits.reservePlaygroundUsage(userId, model);
     const disconnect = new AbortController();
     const signal = AbortSignal.any([
       disconnect.signal,
@@ -58,12 +57,17 @@ export class AiPlaygroundService {
     };
     let terminal: AiPlaygroundEvent;
     try {
+      // Reservation is part of the deadline, but quota failures must still
+      // return HTTP 429 before opening the SSE response.
+      const usageId = await this.limits.reservePlaygroundUsage(userId, model);
       try {
+        if (!res.destroyed && !res.writableEnded) {
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('X-Accel-Buffering', 'no');
+          res.flushHeaders();
+        }
         signal.throwIfAborted();
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('X-Accel-Buffering', 'no');
-        res.flushHeaders();
         const result = await this.gateway.generateCards(
           TOPIC_GENERATION_V1.system,
           TOPIC_GENERATION_V1.buildUserPrompt(input.topic, input.count),
@@ -85,6 +89,7 @@ export class AiPlaygroundService {
         );
         usage = result.usage;
         model = result.model;
+        signal.throwIfAborted();
         terminal = { type: 'result', cards: result.cards };
       } catch (error) {
         if (error instanceof AiParseError || error instanceof AiStreamError) {
@@ -108,24 +113,40 @@ export class AiPlaygroundService {
       // exists so the run shows in the playground's history like any other.
       try {
         const jobId = randomUUID();
-        await this.db.insert(aiGenerationJobs).values({
-          id: jobId,
-          userId,
-          type: 'topic_deck',
-          status: terminal.type === 'result' ? 'completed' : 'failed',
-          payload: { topic: input.topic, count: input.count, model },
-          result: terminal.type === 'result' ? terminal.cards : null,
-          error: terminal.type === 'error' ? terminal.message : null,
-          attempts: 1,
-          completedAt: new Date(),
+        await this.db.transaction(async (tx) => {
+          await tx.insert(aiGenerationJobs).values({
+            id: jobId,
+            userId,
+            type: 'topic_deck',
+            status: terminal.type === 'result' ? 'completed' : 'failed',
+            payload: { topic: input.topic, count: input.count, model },
+            result: terminal.type === 'result' ? terminal.cards : null,
+            error: terminal.type === 'error' ? terminal.message : null,
+            attempts: 1,
+            completedAt: new Date(),
+          });
+          await this.limits.completePlaygroundUsage(
+            usageId,
+            model,
+            usage,
+            jobId,
+            tx,
+          );
         });
-        await this.limits.completePlaygroundUsage(usageId, model, usage, jobId);
         this.metrics?.aiTokensConsumedTotal.inc({ model }, usage.totalTokens);
       } catch (error) {
         this.logger.error('Failed to record playground usage', error);
         terminal = {
           type: 'error',
           message: 'Unable to record generation usage. Please try again later.',
+        };
+      }
+      // Database accounting may outlive the deadline. Keep known
+      // usage, but never send late success; add DB cancellation only if needed.
+      if (signal.aborted && !disconnect.signal.aborted) {
+        terminal = {
+          type: 'error',
+          message: 'Card generation timed out. Please try again.',
         };
       }
       if (!res.destroyed && !res.writableEnded) {

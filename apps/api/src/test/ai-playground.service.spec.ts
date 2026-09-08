@@ -48,7 +48,13 @@ describe('playground streaming HTTP boundary', () => {
     completePlaygroundUsage: jest.fn(),
   };
   const jobInsert = jest.fn().mockResolvedValue(undefined);
-  const db = { insert: jest.fn(() => ({ values: jobInsert })) };
+  const tx = { insert: jest.fn(() => ({ values: jobInsert })) };
+  const db = {
+    transaction: jest.fn<
+      Promise<void>,
+      [(executor: typeof tx) => Promise<void>]
+    >(),
+  };
   const input = {
     type: 'topic_deck',
     topic: 'Spanish',
@@ -65,7 +71,8 @@ describe('playground streaming HTTP boundary', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
     jobInsert.mockResolvedValue(undefined);
-    db.insert.mockImplementation(() => ({ values: jobInsert }));
+    tx.insert.mockImplementation(() => ({ values: jobInsert }));
+    db.transaction.mockImplementation((run) => run(tx));
     auth.userIdFromHeaders.mockResolvedValue('user-1');
     limits.reservePlaygroundUsage.mockResolvedValue('usage-1');
     limits.completePlaygroundUsage.mockResolvedValue(undefined);
@@ -92,6 +99,7 @@ describe('playground streaming HTTP boundary', () => {
     await app.init();
   });
   afterEach(async () => {
+    jest.restoreAllMocks();
     await app.close();
   });
 
@@ -122,6 +130,7 @@ describe('playground streaming HTTP boundary', () => {
       'served',
       usage,
       expect.any(String),
+      tx,
     );
     // the run lands in history as a job born completed
     expect(jobInsert).toHaveBeenCalledTimes(1);
@@ -140,6 +149,7 @@ describe('playground streaming HTTP boundary', () => {
       'served',
       usage,
       jobId,
+      tx,
     );
   });
 
@@ -194,6 +204,7 @@ describe('playground streaming HTTP boundary', () => {
           ? usage
           : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         expect.any(String),
+        tx,
       );
       expect(jobInsert).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'failed', result: null }),
@@ -222,6 +233,66 @@ describe('playground streaming HTTP boundary', () => {
       write: jest.fn().mockReturnValue(true),
       end: jest.fn(),
     });
+
+  it.each(['reservation', 'generation', 'finalization'] as const)(
+    'does not send success when the deadline expires during %s',
+    async (phase) => {
+      const timeout = new AbortController();
+      const createTimeout = jest
+        .spyOn(AbortSignal, 'timeout')
+        .mockReturnValueOnce(timeout.signal);
+      const expire = () =>
+        timeout.abort(new DOMException('Timed out', 'TimeoutError'));
+      if (phase === 'reservation') {
+        limits.reservePlaygroundUsage.mockImplementation(() => {
+          expire();
+          return Promise.resolve('usage-1');
+        });
+      } else if (phase === 'generation') {
+        gateway.generateCards.mockImplementation(() => {
+          expire();
+          return Promise.resolve(result);
+        });
+      } else {
+        limits.completePlaygroundUsage.mockImplementation(() => {
+          expire();
+          return Promise.resolve();
+        });
+      }
+
+      const res = response();
+      await service.stream(
+        'user-1',
+        { ...input, type: 'topic_deck', model: 'gemma4' },
+        res as unknown as Response,
+      );
+      expect(createTimeout.mock.invocationCallOrder[0]).toBeLessThan(
+        limits.reservePlaygroundUsage.mock.invocationCallOrder[0],
+      );
+      expect(res.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/event-stream',
+      );
+      expect(res.end).toHaveBeenCalledWith(
+        expect.stringContaining('timed out'),
+      );
+      expect(res.end).not.toHaveBeenCalledWith(
+        expect.stringContaining('"type":"result"'),
+      );
+      expect(limits.completePlaygroundUsage).toHaveBeenCalledWith(
+        'usage-1',
+        phase === 'reservation' ? 'gemma4' : 'served',
+        phase === 'reservation'
+          ? { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+          : usage,
+        expect.any(String),
+        tx,
+      );
+      if (phase === 'reservation')
+        expect(gateway.generateCards).not.toHaveBeenCalled();
+      expect(res.listenerCount('close')).toBe(0);
+    },
+  );
 
   it('times out while waiting for a slow browser to drain', async () => {
     const res = response();

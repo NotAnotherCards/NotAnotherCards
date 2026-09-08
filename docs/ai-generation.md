@@ -55,12 +55,18 @@ Each run follows a fixed order. Reserve one usage row under the per-user
 lock; that reservation is the quota check. Stream, then parse. Write a job
 row born `completed` or `failed`, so the run shows in history and the
 worker never sees it. Finalize the usage row with the tokens from the
-stream's final chunk, or zero if it never arrived. Only then report the
-result.
+stream's final chunk, or zero if it never arrived. These two writes share
+one transaction: a failed usage update cannot leave a completed history job.
+Only after commit may the response report success.
 
 The response sets `X-Accel-Buffering: no` so nginx does not buffer the
 stream. A browser disconnect aborts the gateway request.
-`AI_REQUEST_TIMEOUT_MS` bounds the whole stream.
+`AI_REQUEST_TIMEOUT_MS` starts before quota reservation and is checked before
+generation and before reporting success. Database operations are not cancelled:
+reservation or accounting can delay the timeout response beyond the deadline.
+Known usage is still recorded, but the browser never receives a late success.
+If the deadline expires during finalization, the completed, accounted result
+may still be available in history even though the stream reports a timeout.
 
 ## Errors
 
