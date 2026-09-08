@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
@@ -72,10 +73,16 @@ export class SharingService {
       });
     }
 
-    const verdict = await this.moderation.check({
-      deckId,
-      cards: await this.deckCards(deckId),
-    });
+    // Read the fingerprint and cards from one snapshot, but release the
+    // transaction before moderation: a model call must not block sync.
+    const { fingerprint, cards } = await this.db.transaction(
+      async (tx) => ({
+        fingerprint: await this.deckFingerprint(userId, deckId, tx),
+        cards: await this.deckCards(deckId, undefined, tx),
+      }),
+      { isolationLevel: 'repeatable read', accessMode: 'read only' },
+    );
+    const verdict = await this.moderation.check({ deckId, cards });
     if (!verdict.ok) {
       throw new UnprocessableEntityException({
         reason: verdict.reason,
@@ -83,7 +90,7 @@ export class SharingService {
       });
     }
 
-    await this.setVisibility(userId, deckId, 'public');
+    await this.setVisibility(userId, deckId, 'public', fingerprint);
     return { visibility: 'public' as const };
   }
 
@@ -185,6 +192,7 @@ export class SharingService {
     userId: string,
     deckId: string,
     visibility: 'public' | 'private',
+    checkedFingerprint?: string,
   ) {
     await this.db.transaction(async (tx) => {
       // The same lock push takes, so a visibility write cannot interleave
@@ -192,6 +200,12 @@ export class SharingService {
       await tx.execute(
         sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(userId).toString()})`,
       );
+      if (
+        checkedFingerprint !== undefined &&
+        (await this.deckFingerprint(userId, deckId, tx)) !== checkedFingerprint
+      ) {
+        throw new ConflictException('Deck changed, publish again');
+      }
       const written = await tx
         .update(userDecks)
         .set({
@@ -214,9 +228,47 @@ export class SharingService {
     });
   }
 
+  private async deckFingerprint(
+    userId: string,
+    deckId: string,
+    db: Pick<AppDatabase, 'select'>,
+  ) {
+    // Sync revisions increase under the owner's scope lock. Include inactive
+    // rows and tombstones so removal cannot hide a change behind an older max.
+    // ponytail: scheduling-only changes also require a retry; compare content
+    // versions instead if those conservative conflicts become disruptive.
+    const [deck] = await db
+      .select({
+        fingerprint: sql<string>`greatest(
+          ${userDecks.rev},
+          coalesce(max(${userNoteDecks.rev}), 0),
+          coalesce(max(${userNotes.rev}), 0),
+          coalesce(max(${userCards.rev}), 0)
+        )::text`,
+      })
+      .from(userDecks)
+      .leftJoin(userNoteDecks, eq(userNoteDecks.deckId, userDecks.id))
+      .leftJoin(userNotes, eq(userNotes.id, userNoteDecks.noteId))
+      .leftJoin(userCards, eq(userCards.noteId, userNotes.id))
+      .where(
+        and(
+          eq(userDecks.id, deckId),
+          eq(userDecks.userId, userId),
+          isNull(userDecks.deletedAt),
+        ),
+      )
+      .groupBy(userDecks.id);
+    if (!deck) throw new NotFoundException('Deck not found');
+    return deck.fingerprint;
+  }
+
   /** The deck's active cards, already rendered by the client that pushed them. */
-  private async deckCards(deckId: string, limit?: number) {
-    const query = this.db
+  private async deckCards(
+    deckId: string,
+    limit?: number,
+    db: Pick<AppDatabase, 'select'> = this.db,
+  ) {
+    const query = db
       .select({
         id: userCards.id,
         front: userCards.front,

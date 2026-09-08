@@ -601,4 +601,131 @@ describePostgres('deck sharing endpoints', () => {
     await post(userA, '/api/decks/vanishing/publish').expect(404);
     expect((await storedDeck('vanishing')).visibility).toBe('private');
   });
+
+  it.each(['deck', 'note', 'card', 'membership'] as const)(
+    'refuses publication when a %s syncs during moderation, then allows retry',
+    async (changed) => {
+      const { noteIds, cardIds } = await seedDeck(userA, 'racing');
+      const cursor = (await pull(userA)).cursor;
+      const now = Date.now();
+      const edits = {
+        deck: {
+          table: 'user_decks',
+          row: deckWire('racing', 'private', 'Changed title'),
+        },
+        note: {
+          table: 'user_notes',
+          row: {
+            id: noteIds[0],
+            note_type: BASIC_NOTE_TYPE,
+            fields_version: BASIC_NOTE_FIELDS_VERSION,
+            fields_json: JSON.stringify({ front: 'edited', back: 'back 0' }),
+            additional_content: null,
+            created_at: now,
+            updated_at: now,
+          },
+        },
+        card: {
+          table: 'user_cards',
+          row: {
+            id: cardIds[0],
+            note_id: noteIds[0],
+            template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+            active: true,
+            front: 'not checked',
+            back: 'back 0',
+            due_at: now,
+            scheduled_interval_minutes: 0,
+            created_at: now,
+            updated_at: now,
+          },
+        },
+        membership: {
+          table: 'user_note_decks',
+          row: {
+            id: noteDeckId(noteIds[0], 'racing'),
+            note_id: noteIds[0],
+            deck_id: 'racing',
+            active: false,
+            created_at: now,
+            updated_at: now,
+          },
+        },
+      };
+      let afterPush = await storedDeck('racing');
+      vi.spyOn(app.get(ModerationService), 'check').mockImplementationOnce(
+        async ({ cards }) => {
+          expect(cards[0].front).toBe('front 0');
+          const { table, row } = edits[changed];
+          // A real push must finish while moderation is in progress. Holding
+          // the owner's scope lock across the check would deadlock this test.
+          const response = await post(userA, '/sync/push')
+            .send({
+              cursor,
+              changes: {
+                [table]: { created: [], updated: [row], deleted: [] },
+              },
+            })
+            .expect(200);
+          const body = response.body as { rejected?: Record<string, string[]> };
+          expect(body.rejected ?? {}).toEqual({});
+          afterPush = await storedDeck('racing');
+          return { ok: true, flagged: [] };
+        },
+      );
+
+      const response = await post(userA, '/api/decks/racing/publish').expect(
+        409,
+      );
+      expect(response.body).toMatchObject({
+        message: 'Deck changed, publish again',
+      });
+      expect(await storedDeck('racing')).toEqual(afterPush);
+      expect(afterPush.visibility).toBe('private');
+      expect(await browse(userB)).toEqual([]);
+
+      await post(userA, '/api/decks/racing/publish').expect(200);
+      expect((await storedDeck('racing')).visibility).toBe('public');
+    },
+  );
+
+  it('refuses an unchecked membership added to an empty deck during moderation', async () => {
+    await seedDeck(userA, 'empty', { cards: 0 });
+    const { noteIds } = await seedDeck(userA, 'source');
+    const before = await storedDeck('empty');
+    const cursor = (await pull(userA)).cursor;
+    vi.spyOn(app.get(ModerationService), 'check').mockImplementationOnce(
+      async ({ cards }) => {
+        expect(cards).toEqual([]);
+        const now = Date.now();
+        const response = await post(userA, '/sync/push')
+          .send({
+            cursor,
+            changes: {
+              user_note_decks: {
+                created: [
+                  {
+                    id: noteDeckId(noteIds[0], 'empty'),
+                    note_id: noteIds[0],
+                    deck_id: 'empty',
+                    active: true,
+                    created_at: now,
+                    updated_at: now,
+                  },
+                ],
+                updated: [],
+                deleted: [],
+              },
+            },
+          })
+          .expect(200);
+        const body = response.body as { rejected?: Record<string, string[]> };
+        expect(body.rejected ?? {}).toEqual({});
+        return { ok: true, flagged: [] };
+      },
+    );
+
+    await post(userA, '/api/decks/empty/publish').expect(409);
+    expect(await storedDeck('empty')).toEqual(before);
+  });
 });
