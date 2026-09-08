@@ -29,6 +29,7 @@ export function AiGenerationPlaygroundComponent() {
   const [streamText, setStreamText] = useState('');
   const [streamResult, setStreamResult] = useState<AiCardOutput[] | null>(null);
   const streamRequest = useRef<AbortController | null>(null);
+  const liveOutput = useRef<HTMLPreElement>(null);
   const cards =
     streamResult ??
     (currentJob?.status === 'completed' && Array.isArray(currentJob.result)
@@ -36,6 +37,11 @@ export function AiGenerationPlaygroundComponent() {
       : null);
 
   useEffect(() => () => streamRequest.current?.abort(), []);
+
+  useEffect(() => {
+    if (liveOutput.current)
+      liveOutput.current.scrollTop = liveOutput.current.scrollHeight;
+  }, [streamText]);
 
   // Retrieve local store to get actual decks for dropdown list
   const { decks, createCardsBatch } = useStore();
@@ -231,7 +237,6 @@ export function AiGenerationPlaygroundComponent() {
             jobId={currentJob?.id}
             status={currentJob?.status ?? 'processing'}
             error={currentJob?.error}
-            streamText={currentJob ? undefined : streamText}
           />
         ) : (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
@@ -315,9 +320,20 @@ export function AiGenerationPlaygroundComponent() {
         </div>
       </div>
 
-      {/* Right side: Results Preview or Error Message */}
+      {/* Right side: Live Output, Results Preview or Error Message */}
       <div className="lg:col-span-7 space-y-8">
-        {cards ? (
+        {loading && !currentJob ? (
+          <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md space-y-3">
+            <h3 className="text-base font-bold tracking-tight">Live Output</h3>
+            <pre
+              ref={liveOutput}
+              aria-label="Live generation output"
+              className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground"
+            >
+              {streamText || 'Waiting for the first text…'}
+            </pre>
+          </div>
+        ) : cards ? (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
             <AiResultPreview
               cards={cards}

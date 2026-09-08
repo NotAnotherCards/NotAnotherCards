@@ -1,5 +1,4 @@
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 
 import type { AiJobStatus } from '@repo/schemas';
 
@@ -7,7 +6,6 @@ export type JobStatus = AiJobStatus;
 
 interface AiJobStatusTrackerProps {
   jobId?: string;
-  streamText?: string;
   status: JobStatus;
   error?: string | null;
 }
@@ -16,12 +14,7 @@ export function AiJobStatusTracker({
   jobId,
   status,
   error,
-  streamText,
 }: AiJobStatusTrackerProps) {
-  const output = useRef<HTMLPreElement>(null);
-  useEffect(() => {
-    if (output.current) output.current.scrollTop = output.current.scrollHeight;
-  }, [streamText]);
   const steps = [
     {
       key: 'pending',
@@ -123,16 +116,6 @@ export function AiJobStatusTracker({
           );
         })}
       </div>
-
-      {streamText !== undefined && (
-        <pre
-          ref={output}
-          aria-label="Live generation output"
-          className="max-h-80 overflow-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground"
-        >
-          {streamText || 'Waiting for the first text…'}
-        </pre>
-      )}
 
       {status === 'failed' && error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 text-xs text-destructive text-center font-medium">
