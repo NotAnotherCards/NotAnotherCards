@@ -95,6 +95,25 @@ if (!hermes) {
 
 const directory = await mkdtemp(join(tmpdir(), 'nac-activity-contract-'));
 try {
+  const mainEntrypointBundle = await build({
+    entryPoints: [join(packageRoot, 'src', 'index.ts')],
+    outfile: join(directory, 'offline-db.js'),
+    bundle: true,
+    format: 'esm',
+    platform: 'browser',
+    packages: 'external',
+    metafile: true,
+    write: false,
+  });
+  const bundledSources = Object.keys(mainEntrypointBundle.metafile.inputs);
+  if (
+    bundledSources.some((path) => /(^|[/\\])src[/\\]activity\.ts$/.test(path))
+  ) {
+    throw new Error(
+      'The main @repo/offline-db entrypoint must not bundle activity rules; import them from @repo/offline-db/activity',
+    );
+  }
+
   const bundle = join(directory, 'activity-contract.js');
   await build({
     entryPoints: [
