@@ -3,7 +3,8 @@
  *
  * - Reviews award their rating in points (Again 1, Hard 2, Good 3, Easy 4)
  * - A review event is counted once, by id
- * - A note is learned after a successful rating (2-4) on an active card,
+ * - A note is learned after a successful rating (2-4) on one of its retained
+ *   cards; later deactivating that card does not erase learning history, and
  *   reviewing sibling cards still learns one note
  * - A learning day has at least one review in the user's calendar day
  * - A current streak may finish today or yesterday
@@ -21,6 +22,8 @@
  * UI dependencies. Callers must pass `now`; this keeps browser, mobile, and
  * API results reproducible for the same records, timestamp, and timezone.
  */
+
+import moment from 'moment-timezone';
 
 export const REVIEW_POINTS_BY_RATING = {
   1: 1,
@@ -75,7 +78,8 @@ export interface ActivityReviewEvent {
 export interface ActivityCard {
   readonly id: string;
   readonly note_id: string;
-  readonly active: boolean;
+  // Current presentation state; historical learning does not depend on it
+  readonly active?: boolean;
 }
 
 export interface ActivityNote {
@@ -171,43 +175,17 @@ function uniqueReviewEvents(
   return uniqueById(reviewEvents);
 }
 
-// Invalid, absent, and empty IANA timezone names consistently fall back to UTC
+// Moment Timezone carries the IANA data, so resolving and converting calendar
+// dates does not depend on a runtime's partial or platform-specific Intl build
 export function resolveActivityTimeZone(timeZone?: string | null): string {
-  if (!timeZone) return UTC;
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone }).format(0);
-    return timeZone;
-  } catch {
-    return UTC;
-  }
+  return timeZone && moment.tz.zone(timeZone) ? timeZone : UTC;
 }
 
-function createDayFormatter(timeZone: string): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat('en-US-u-ca-gregory-nu-latn', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-}
-
-function localDayAt(
-  timestamp: number,
-  formatter: Intl.DateTimeFormat,
-): LocalDay {
-  const dateParts: Partial<Record<'year' | 'month' | 'day', string>> = {};
-  for (const part of formatter.formatToParts(timestamp)) {
-    if (part.type === 'year' || part.type === 'month' || part.type === 'day') {
-      dateParts[part.type] = part.value;
-    }
-  }
-
-  const year = Number(dateParts.year);
-  const month = Number(dateParts.month);
-  const day = Number(dateParts.day);
-  if (!(year && month && day)) {
-    throw new Error('Unable to determine the local calendar date');
-  }
+function localDayAt(timestamp: number, timeZone: string): LocalDay {
+  const local = moment.tz(timestamp, timeZone);
+  const year = local.year();
+  const month = local.month() + 1;
+  const day = local.date();
 
   return {
     key: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
@@ -253,16 +231,16 @@ function learnedNoteCountFromUniqueRecords(
   notes: readonly ActivityNote[],
 ): number {
   const existingNoteIds = new Set(uniqueById(notes).map((note) => note.id));
-  const activeCardNoteIds = new Map(
+  const cardNoteIds = new Map(
     uniqueById(cards)
-      .filter((card) => card.active && existingNoteIds.has(card.note_id))
+      .filter((card) => existingNoteIds.has(card.note_id))
       .map((card) => [card.id, card.note_id]),
   );
   const learnedNoteIds = new Set<string>();
 
   for (const event of reviewEvents) {
     if (event.rating < SUCCESSFUL_REVIEW_RATING_MIN) continue;
-    const noteId = activeCardNoteIds.get(event.user_card_id);
+    const noteId = cardNoteIds.get(event.user_card_id);
     if (noteId) learnedNoteIds.add(noteId);
   }
 
@@ -284,13 +262,13 @@ export function selectLearnedNoteCount(
 function streaksFromUniqueEvents(
   reviewEvents: readonly ActivityReviewEvent[],
   now: number,
-  formatter: Intl.DateTimeFormat,
+  timeZone: string,
 ): StreakActivity {
-  const todayOrdinal = localDayAt(now, formatter).ordinal;
+  const todayOrdinal = localDayAt(now, timeZone).ordinal;
   const learningDayOrdinals = [
     ...new Set(
       reviewEvents
-        .map((event) => localDayAt(event.reviewed_at, formatter).ordinal)
+        .map((event) => localDayAt(event.reviewed_at, timeZone).ordinal)
         .filter((ordinal) => ordinal <= todayOrdinal),
     ),
   ].sort((left, right) => left - right);
@@ -328,7 +306,7 @@ export function selectStreakActivity(
   return streaksFromUniqueEvents(
     uniqueReviewEvents(reviewEvents),
     now,
-    createDayFormatter(resolvedTimeZone),
+    resolvedTimeZone,
   );
 }
 
@@ -345,15 +323,14 @@ function todayChallengeActivityFromUniqueRecords(
   notes: readonly ActivityNote[],
   now: number,
   timeZone: string,
-  formatter: Intl.DateTimeFormat,
 ): TodayChallengeActivity {
-  const today = localDayAt(now, formatter);
+  const today = localDayAt(now, timeZone);
   const reviewCount = reviewEvents.filter(
-    (event) => localDayAt(event.reviewed_at, formatter).key === today.key,
+    (event) => localDayAt(event.reviewed_at, timeZone).key === today.key,
   ).length;
   const newNoteCount = uniqueById(notes).filter((note) => {
     assertTimestamp(note.created_at, 'Note creation timestamp');
-    return localDayAt(note.created_at, formatter).key === today.key;
+    return localDayAt(note.created_at, timeZone).key === today.key;
   }).length;
 
   return {
@@ -379,7 +356,6 @@ export function selectTodayChallengeActivity(
     notes,
     now,
     resolvedTimeZone,
-    createDayFormatter(resolvedTimeZone),
   );
 }
 
@@ -402,20 +378,18 @@ export function selectActivitySummary(
 ): ActivitySummary {
   assertTimestamp(input.now, 'Now');
   const timeZone = resolveActivityTimeZone(input.timeZone);
-  const formatter = createDayFormatter(timeZone);
   const reviewEvents = uniqueReviewEvents(input.reviewEvents);
   const reviewActivity = reviewActivityFromUniqueEvents(reviewEvents);
   const streakActivity = streaksFromUniqueEvents(
     reviewEvents,
     input.now,
-    formatter,
+    timeZone,
   );
   const today = todayChallengeActivityFromUniqueRecords(
     reviewEvents,
     input.notes,
     input.now,
     timeZone,
-    formatter,
   );
 
   return {

@@ -155,6 +155,28 @@ describe('shared activity and gamification rules', () => {
     ]);
   });
 
+  it('retains learned-note history when a reviewed card is deactivated', () => {
+    const reviewEvents = [
+      review('successful', '2026-09-08T10:00:00.000Z', 3, 'optional-sibling'),
+    ];
+    const notes = [note('note-1', '2026-09-01T09:00:00.000Z')];
+
+    expect(
+      summary({
+        reviewEvents,
+        cards: [card('optional-sibling', 'note-1', true)],
+        notes,
+      }).learnedNoteCount,
+    ).toBe(1);
+    expect(
+      summary({
+        reviewEvents,
+        cards: [card('optional-sibling', 'note-1', false)],
+        notes,
+      }).learnedNoteCount,
+    ).toBe(1);
+  });
+
   it('uses calendar dates rather than 24-hour periods across DST', () => {
     const result = summary({
       timeZone: 'Europe/Berlin',
