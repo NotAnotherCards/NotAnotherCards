@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Card, Deck } from '@/hooks/useStore';
 
 const routeTestState = vi.hoisted(() => ({
+  requestNextBatch: null as (() => Card[]) | null,
   reviewSession: vi.fn(),
   store: null as Record<string, unknown> | null,
 }));
@@ -38,11 +39,14 @@ vi.mock('@/components/review/ReviewSession', () => ({
     cards,
     onComplete,
     onExit,
+    onRequestNextBatch,
   }: {
     cards: Card[];
     onComplete?: () => void;
     onExit: () => void;
+    onRequestNextBatch?: () => Card[];
   }) => {
+    routeTestState.requestNextBatch = onRequestNextBatch ?? null;
     routeTestState.reviewSession(cards);
     return (
       <div data-testid="review-session">
@@ -100,6 +104,7 @@ function makeStore(overrides: Record<string, unknown> = {}) {
 
 describe('DeckReviewRoute', () => {
   beforeEach(() => {
+    routeTestState.requestNextBatch = null;
     routeTestState.store = makeStore();
     routeTestState.reviewSession.mockReset();
     vi.mocked(clearLastReviewDeckId).mockReset();
@@ -191,6 +196,59 @@ describe('DeckReviewRoute', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
 
     expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+
+  it('keeps sibling cards out of the first review batch', async () => {
+    const now = Date.now();
+    const firstSibling = {
+      ...makeCard('sibling-first', now - 20),
+      note_id: 'shared-note',
+    };
+    const secondSibling = {
+      ...makeCard('sibling-second', now - 19),
+      note_id: 'shared-note',
+    };
+    const otherCards = Array.from({ length: 10 }, (_, index) =>
+      makeCard(`other-${index}`, now - 18 + index),
+    );
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [
+        firstSibling,
+        secondSibling,
+        ...otherCards,
+      ]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+
+    await waitFor(() =>
+      expect(routeTestState.reviewSession).toHaveBeenLastCalledWith([
+        firstSibling,
+        ...otherCards.slice(0, 9),
+      ]),
+    );
+  });
+
+  it('applies the sibling rule when requesting the next review batch', () => {
+    const now = Date.now();
+    const firstSibling = {
+      ...makeCard('sibling-first', now - 3),
+      note_id: 'shared-note',
+    };
+    const secondSibling = {
+      ...makeCard('sibling-second', now - 2),
+      note_id: 'shared-note',
+    };
+    const otherCard = makeCard('other', now - 1);
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [firstSibling, secondSibling, otherCard]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+
+    expect(routeTestState.requestNextBatch?.()).toEqual([
+      firstSibling,
+      otherCard,
+    ]);
   });
 
   it('keeps the initial queue mounted after its last card is no longer due', async () => {

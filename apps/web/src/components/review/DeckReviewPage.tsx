@@ -5,6 +5,7 @@ import {
   clearLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
+import { selectReviewBatch } from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -18,8 +19,6 @@ type ActiveReviewSession = {
   deckId: string;
   cards: Card[];
 };
-
-const REVIEW_BATCH_SIZE = 10;
 
 export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const store = useStore();
@@ -52,14 +51,15 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
     if (activeSession?.deckId === deckId) return;
 
-    setActiveSession({ deckId, cards: dueCards.slice(0, REVIEW_BATCH_SIZE) });
+    setActiveSession({ deckId, cards: selectReviewBatch(dueCards) });
   }, [activeSession?.deckId, deck, deckId, dueCards, store.ready]);
 
   const hasActiveSession =
     activeSession !== null && activeSession.deckId === deckId;
+
   const sessionCards = hasActiveSession
     ? activeSession.cards
-    : dueCards.slice(0, REVIEW_BATCH_SIZE);
+    : selectReviewBatch(dueCards);
 
   const clearSavedDeckPreference = () => {
     if (session?.user.id) clearLastReviewDeckId(session.user.id);
@@ -144,7 +144,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       }}
       onRecordReview={store.recordReview}
       onDeleteNote={store.deleteNote}
-      onRequestNextBatch={() => getDueCards(deckId).slice(0, REVIEW_BATCH_SIZE)}
+      onRequestNextBatch={() => selectReviewBatch(getDueCards(deckId))}
     />
   );
 }
