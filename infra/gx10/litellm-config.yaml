@@ -24,7 +24,7 @@ model_list:
       keep_alive: -1
 
   # deprecated alias for qwen3.6, kept while production still sends "qwen";
-  # remove after #193 updates the production env
+  # remove after all clients stop sending the legacy alias
   - model_name: qwen
     litellm_params:
       model: ollama_chat/qwen3.6:35b

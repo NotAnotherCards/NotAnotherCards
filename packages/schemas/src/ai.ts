@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Gateway aliases (infra/gx10/litellm-config.yaml). 'qwen' is the deprecated
-// name for 'qwen3.6', kept until production sends the new one (#193).
+// name for 'qwen3.6', kept for clients that still send the legacy alias.
 export const AI_MODELS = [
   'gemma4',
   'qwen3.6',
