@@ -5,7 +5,7 @@ import type { AiJobStatus } from '@repo/schemas';
 export type JobStatus = AiJobStatus;
 
 interface AiJobStatusTrackerProps {
-  jobId: string;
+  jobId?: string;
   status: JobStatus;
   error?: string | null;
 }
@@ -27,7 +27,7 @@ export function AiJobStatusTracker({
       desc: 'Querying model and formatting structured output',
     },
     { key: 'completed', label: 'Done', desc: 'Cards generated successfully' },
-  ];
+  ].filter((step) => jobId || step.key !== 'pending');
 
   const getStepState = (stepKey: string) => {
     if (status === 'failed' && stepKey === 'completed') return 'failed';
@@ -49,9 +49,11 @@ export function AiJobStatusTracker({
         <h3 className="text-lg font-semibold tracking-tight">
           Generating Your Deck
         </h3>
-        <p className="text-xs text-muted-foreground font-mono">
-          Job ID: {jobId}
-        </p>
+        {jobId && (
+          <p className="text-xs text-muted-foreground font-mono">
+            Job ID: {jobId}
+          </p>
+        )}
       </div>
 
       <div className="flex justify-center py-4">

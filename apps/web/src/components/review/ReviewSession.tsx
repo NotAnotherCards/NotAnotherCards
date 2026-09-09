@@ -24,6 +24,7 @@ type ReviewSessionProps = {
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
   onRequestNextBatch?: () => Card[];
+  onComplete?: () => void;
   reviewMode?: ReviewMode;
 };
 
@@ -44,6 +45,7 @@ export function ReviewSession({
   onRecordReview,
   onDeleteNote,
   onRequestNextBatch,
+  onComplete,
   reviewMode = CURRENT_REVIEW_MODE,
 }: ReviewSessionProps) {
   const [sessionCards, setSessionCards] = useState(cards);
@@ -184,6 +186,10 @@ export function ReviewSession({
       if (exitTimer.current) window.clearTimeout(exitTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!card) onComplete?.();
+  }, [card, onComplete]);
 
   const cardInteraction = useReviewCardInteraction({
     isFlipped,

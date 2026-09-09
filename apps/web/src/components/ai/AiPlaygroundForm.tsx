@@ -82,7 +82,10 @@ export function AiPlaygroundForm({
           />
         </div>
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          Quotas reset daily. Use the playground to test card generation.
+          {quota
+            ? `${quota.usedTokens.toLocaleString()} of ${quota.maxTokens.toLocaleString()} tokens used. `
+            : ''}
+          Quotas reset daily.
         </p>
       </div>
 

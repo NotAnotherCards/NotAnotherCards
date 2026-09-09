@@ -2,6 +2,8 @@ import { Inject, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { and, eq, gte, inArray, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+import type { InferenceResult } from './ai-gateway.service';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import { aiGenerationJobs, aiUsage } from './schema';
 
@@ -87,6 +89,33 @@ export class AiLimitsService {
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
+  }
+
+  // Reserve one request using the same short per-user lock as enqueueJob.
+  // This counts active streams towards daily requests, not the queued-job cap.
+  async reservePlaygroundUsage(userId: string, model: string): Promise<string> {
+    const id = randomUUID();
+    await this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext('ai_user_' || ${userId}))`,
+      );
+      await this.checkUserCanSubmitJob(tx, userId);
+      await tx.insert(aiUsage).values({ id, userId, model });
+    });
+    return id;
+  }
+
+  async completePlaygroundUsage(
+    id: string,
+    model: string,
+    usage: InferenceResult['usage'],
+    jobId?: string,
+    executor: NodePgDatabase<Record<string, unknown>> = this.db,
+  ): Promise<void> {
+    await executor
+      .update(aiUsage)
+      .set({ model, jobId, ...usage })
+      .where(eq(aiUsage.id, id));
   }
 
   async getQuotaStatus(userId: string): Promise<QuotaStatus> {
