@@ -4,7 +4,11 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { createOTP } from '@better-auth/utils/otp';
 import { base32 } from '@better-auth/utils/base32';
+import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import { AppModule } from '../src/app.module';
+import { twoFactor, user } from '../src/database/schema';
 import {
   createFakeOAuthProvider,
   type FakeOAuthProvider,
@@ -332,6 +336,86 @@ describe('OAuth second-factor enforcement (e2e)', () => {
     );
     expect(recovered.status).toBe(200);
     expect(hasSessionCookie(cookiesOf(recovered))).toBe(true);
+  }, 90_000);
+
+  it('stores secrets encrypted and leaves 2FA unusable before verification', async () => {
+    await paceTwoFactor();
+    const email = uniqueEmail('atrest');
+
+    const sessionCookies = await signUp(email);
+    const me = await request(app.getHttpServer())
+      .get('/api/auth/get-session')
+      .set('Origin', frontendOrigin)
+      .set('Cookie', sessionCookies)
+      .expect(200);
+    const userId = (me.body as { user: { id: string } }).user.id;
+
+    const { totpUri, backupCodes } = await enableTwoFactor(sessionCookies);
+    const rawSecret = secretFromTotpUri(totpUri);
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    try {
+      const rows = await drizzle(pool)
+        .select()
+        .from(twoFactor)
+        .where(eq(twoFactor.userId, userId));
+      expect(rows).toHaveLength(1);
+      // Encrypted at rest: neither the raw secret nor any plaintext backup
+      // code may appear in the stored row.
+      expect(rows[0].secret).not.toContain(rawSecret);
+      for (const code of backupCodes) {
+        expect(rows[0].backupCodes).not.toContain(code);
+      }
+      // Not usable until verified: flag off and row unverified.
+      expect(rows[0].verified).toBe(false);
+      const [dbUser] = await drizzle(pool)
+        .select({ twoFactorEnabled: user.twoFactorEnabled })
+        .from(user)
+        .where(eq(user.id, userId));
+      expect(dbUser.twoFactorEnabled).toBe(false);
+    } finally {
+      await pool.end();
+    }
+
+    // Positive control: completing verification flips both markers, proving
+    // the assertions above test the transition rather than a dead state.
+    const enrolled = await verifyTotp(
+      sessionCookies,
+      await createOTP(rawSecret).totp(),
+    );
+    expect(enrolled.status).toBe(200);
+  }, 60_000);
+
+  it('rejects an expired-window TOTP during an OAuth challenge', async () => {
+    await paceTwoFactor();
+    const email = uniqueEmail('expired');
+    stub.setProfile({ email, name: 'OAuth 2FA Tester' });
+
+    const signupCookies = await signUp(email);
+    await linkTestProvider(signupCookies, email);
+    await signOut(signupCookies);
+
+    const sessionCookies = await signIn(email);
+    const { totpUri } = await enableTwoFactor(sessionCookies);
+    const secret = secretFromTotpUri(totpUri);
+    const enrolled = await verifyTotp(
+      sessionCookies,
+      await createOTP(secret).totp(),
+    );
+    expect(enrolled.status).toBe(200);
+    await signOut(cookiesOf(enrolled));
+
+    const callback = await driveOAuthFlow('/api/auth/sign-in/social');
+    const challengeCookies = cookiesOf(callback);
+    expect(hasLiveSessionCookie(challengeCookies)).toBe(false);
+
+    // Five periods back is safely outside the server's ±1 verify window.
+    const counter = Math.floor(Date.now() / 30_000);
+    const stale = await verifyTotp(
+      challengeCookies,
+      await createOTP(secret).hotp(counter - 5),
+    );
+    expect(stale.status).not.toBe(200);
   }, 90_000);
 
   it('refuses 2FA enrollment for social-only accounts with a clear error', async () => {
