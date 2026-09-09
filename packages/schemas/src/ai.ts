@@ -178,3 +178,11 @@ export const aiJobsResponseSchema = z.object({
   ),
 });
 export const aiQuotaResponseSchema = z.object({ quota: quotaStatusSchema });
+
+/** Playground transport reuses the same card contract as completed jobs. */
+export const aiPlaygroundEventSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('delta'), delta: z.string() }),
+  z.object({ type: z.literal('result'), cards: z.array(aiCardOutputSchema) }),
+  z.object({ type: z.literal('error'), message: z.string() }),
+]);
+export type AiPlaygroundEvent = z.infer<typeof aiPlaygroundEventSchema>;

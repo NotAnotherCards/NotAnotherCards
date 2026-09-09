@@ -104,10 +104,10 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 - Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google and Facebook in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
 
-### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — in progress — 65%
+### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — done — 100%
 
 - Generate text or images from user input. **done**: card generation jobs, `apps/api/src/ai`; gemma4 is the default and the benchmarked models are selectable through one shared `AI_MODELS` list (#197, merged 2026-08-31). A web playground is in review (#217).
-- Handle streaming responses correctly. **not started**: no streaming in `apps/api/src/ai` (#80).
+- Handle streaming responses correctly. **done**: the playground streams generation (`POST /api/ai/playground/stream`, #80); usage recorded per run. `docs/ai-generation.md` describes the whole path.
 - Implement error handling and rate limiting. **done**: job quotas (`AI_MAX_*`), gateway errors mapped, LiteLLM per-key limits.
 
 ### 4.8 Data and Analytics: data export and import — Minor, 1 — in review — 90%
