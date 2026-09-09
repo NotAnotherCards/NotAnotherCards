@@ -760,7 +760,7 @@ describe('ReviewSession', () => {
     expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Again');
 
     fireEvent.pointerMove(reviewCard, { clientX: 200, clientY: 200 });
-    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Again');
+    expect(screen.queryByTestId('swipe-feedback')).not.toBeInTheDocument();
     expect(cardSurface).toHaveStyle({
       transform: 'translate3d(0px, 0px, 0) rotate(0deg)',
     });
@@ -770,6 +770,23 @@ describe('ReviewSession', () => {
     expect(cardSurface).toHaveStyle({
       transform: 'translate3d(60px, 0px, 0) rotate(2.5deg)',
     });
+  });
+
+  it('clears swipe feedback when an unsupported Basic swipe moves upward', () => {
+    renderSession([card], undefined, undefined, undefined, {
+      reviewMode: 'basic',
+    });
+    revealCard();
+    const reviewCard = screen.getByTestId('review-card');
+
+    fireEvent.pointerDown(reviewCard, { clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(reviewCard, { clientX: 260, clientY: 200 });
+    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent(
+      'Remembered',
+    );
+
+    fireEvent.pointerMove(reviewCard, { clientX: 200, clientY: 140 });
+    expect(screen.queryByTestId('swipe-feedback')).not.toBeInTheDocument();
   });
 
   it('turns the front side over as soon as it is touched', () => {
