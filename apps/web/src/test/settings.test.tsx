@@ -173,6 +173,9 @@ describe('Settings Tab Component Specs', () => {
     expect(
       screen.getByRole('switch', { name: 'Show next review interval' }),
     ).toHaveAttribute('aria-checked', 'true');
+    expect(
+      screen.getByRole('switch', { name: 'Show next review interval' }),
+    ).toHaveAttribute('data-slot', 'switch');
   });
 
   it('filters selected native language from target language options', async () => {

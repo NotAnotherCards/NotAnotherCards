@@ -8,6 +8,7 @@ import {
 import { Settings as SettingsIcon } from 'lucide-react';
 import { ThemeChanger } from '@/components/ThemeChanger';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { authClient } from '@/lib/auth-client';
 import {
   getReviewPreferences,
@@ -115,25 +116,17 @@ export function Preferences() {
                 Show when each answer schedules the card next
               </span>
             </div>
-            <button
+            <Switch
               id="show-next-review-interval"
-              type="button"
-              role="switch"
-              aria-checked={reviewPreferences.showNextReviewInterval}
-              onClick={() =>
+              checked={reviewPreferences.showNextReviewInterval}
+              onCheckedChange={(showNextReviewInterval) =>
                 updateReviewPreferences({
                   ...reviewPreferences,
-                  showNextReviewInterval:
-                    !reviewPreferences.showNextReviewInterval,
+                  showNextReviewInterval,
                 })
               }
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ${reviewPreferences.showNextReviewInterval ? 'bg-primary' : 'bg-muted'}`}
-            >
-              <span
-                className={`block size-5 translate-y-0.5 rounded-full bg-background shadow-sm transition-transform ${reviewPreferences.showNextReviewInterval ? 'translate-x-5' : 'translate-x-0.5'}`}
-              />
-              <span className="sr-only">Show next review interval</span>
-            </button>
+              aria-label="Show next review interval"
+            />
           </div>
         </CardContent>
       </Card>
