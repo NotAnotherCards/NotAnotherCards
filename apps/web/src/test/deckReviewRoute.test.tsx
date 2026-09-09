@@ -109,16 +109,16 @@ function makeStore(overrides: Record<string, unknown> = {}) {
 
 describe('DeckReviewRoute', () => {
   beforeEach(() => {
-  routeTestState.requestNextBatch = null;
-  routeTestState.store = makeStore();
-  routeTestState.reviewPreferences = {
-    reviewMode: 'basic',
-    showNextReviewInterval: false,
-  };
-  routeTestState.reviewSession.mockReset();
-  routeTestState.reviewSessionProps = null;
-  vi.mocked(clearLastReviewDeckId).mockReset();
-});
+    routeTestState.requestNextBatch = null;
+    routeTestState.store = makeStore();
+    routeTestState.reviewPreferences = {
+      reviewMode: 'basic',
+      showNextReviewInterval: false,
+    };
+    routeTestState.reviewSession.mockReset();
+    routeTestState.reviewSessionProps = null;
+    vi.mocked(clearLastReviewDeckId).mockReset();
+  });
 
   it('asks the user to choose a deck when deckId is missing', () => {
     render(<DeckReviewPage />);
@@ -164,24 +164,23 @@ describe('DeckReviewRoute', () => {
   });
 
   it('applies a saved review preference to the review session', () => {
-  routeTestState.reviewPreferences = {
-    reviewMode: 'extended',
-    showNextReviewInterval: true,
-  };
-  routeTestState.store = makeStore({
-    getCardsForDeck: vi.fn(() => [makeCard('due-card', Date.now() - 1)]),
-  });
+    routeTestState.reviewPreferences = {
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    };
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [makeCard('due-card', Date.now() - 1)]),
+    });
 
-  render(<DeckReviewPage deckId={deck.id} />);
+    render(<DeckReviewPage deckId={deck.id} />);
 
-  expect(routeTestState.reviewSessionProps).toMatchObject({
-    reviewMode: 'extended',
-    showNextReviewInterval: true,
+    expect(routeTestState.reviewSessionProps).toMatchObject({
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
   });
-});
 
   it('passes no more than ten cards to the first review-session render', () => {
-
     const dueCards = Array.from({ length: 12 }, (_, index) =>
       makeCard(`due-${index}`, Date.now() - index - 1),
     );
