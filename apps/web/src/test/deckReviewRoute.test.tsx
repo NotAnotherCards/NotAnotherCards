@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Card, Deck } from '@/hooks/useStore';
 
@@ -7,6 +13,7 @@ const routeTestState = vi.hoisted(() => ({
     reviewMode: 'basic' as 'basic' | 'extended',
     showNextReviewInterval: false,
   },
+  requestNextBatch: null as (() => Card[]) | null,
   reviewSession: vi.fn(),
   reviewSessionProps: null as Record<string, unknown> | null,
   store: null as Record<string, unknown> | null,
@@ -29,18 +36,34 @@ vi.mock('@/lib/auth-client', () => ({
 
 vi.mock('@/lib/review-preferences', () => ({
   getReviewPreferences: () => routeTestState.reviewPreferences,
+  clearLastReviewDeckId: vi.fn(),
   saveLastReviewDeckId: vi.fn(),
 }));
 
 vi.mock('@/components/review/ReviewSession', () => ({
-  ReviewSession: (props: { cards: Card[] }) => {
-    routeTestState.reviewSession(props.cards);
+  ReviewSession: (props: {
+    cards: Card[];
+    onComplete?: () => void;
+    onExit: () => void;
+    onRequestNextBatch?: () => Card[];
+  }) => {
+    const { cards, onComplete, onExit, onRequestNextBatch } = props;
+
+    routeTestState.requestNextBatch = onRequestNextBatch ?? null;
+    routeTestState.reviewSession(cards);
     routeTestState.reviewSessionProps = props;
-    return <div data-testid="review-session" />;
+
+    return (
+      <div data-testid="review-session">
+        <button onClick={onExit}>Exit review</button>
+        <button onClick={onComplete}>Complete review</button>
+      </div>
+    );
   },
 }));
 
 import { DeckReviewPage } from '@/components/review/DeckReviewPage';
+import { clearLastReviewDeckId } from '@/lib/review-preferences';
 
 const deck: Deck = {
   id: 'deck-1',
@@ -86,14 +109,16 @@ function makeStore(overrides: Record<string, unknown> = {}) {
 
 describe('DeckReviewRoute', () => {
   beforeEach(() => {
-    routeTestState.store = makeStore();
-    routeTestState.reviewPreferences = {
-      reviewMode: 'basic',
-      showNextReviewInterval: false,
-    };
-    routeTestState.reviewSession.mockReset();
-    routeTestState.reviewSessionProps = null;
-  });
+  routeTestState.requestNextBatch = null;
+  routeTestState.store = makeStore();
+  routeTestState.reviewPreferences = {
+    reviewMode: 'basic',
+    showNextReviewInterval: false,
+  };
+  routeTestState.reviewSession.mockReset();
+  routeTestState.reviewSessionProps = null;
+  vi.mocked(clearLastReviewDeckId).mockReset();
+});
 
   it('asks the user to choose a deck when deckId is missing', () => {
     render(<DeckReviewPage />);
@@ -139,23 +164,24 @@ describe('DeckReviewRoute', () => {
   });
 
   it('applies a saved review preference to the review session', () => {
-    routeTestState.reviewPreferences = {
-      reviewMode: 'extended',
-      showNextReviewInterval: true,
-    };
-    routeTestState.store = makeStore({
-      getCardsForDeck: vi.fn(() => [makeCard('due-card', Date.now() - 1)]),
-    });
-
-    render(<DeckReviewPage deckId={deck.id} />);
-
-    expect(routeTestState.reviewSessionProps).toMatchObject({
-      reviewMode: 'extended',
-      showNextReviewInterval: true,
-    });
+  routeTestState.reviewPreferences = {
+    reviewMode: 'extended',
+    showNextReviewInterval: true,
+  };
+  routeTestState.store = makeStore({
+    getCardsForDeck: vi.fn(() => [makeCard('due-card', Date.now() - 1)]),
   });
 
-  it('starts a review session with at most ten due cards', async () => {
+  render(<DeckReviewPage deckId={deck.id} />);
+
+  expect(routeTestState.reviewSessionProps).toMatchObject({
+    reviewMode: 'extended',
+    showNextReviewInterval: true,
+  });
+});
+
+  it('passes no more than ten cards to the first review-session render', () => {
+
     const dueCards = Array.from({ length: 12 }, (_, index) =>
       makeCard(`due-${index}`, Date.now() - index - 1),
     );
@@ -165,14 +191,93 @@ describe('DeckReviewRoute', () => {
 
     render(<DeckReviewPage deckId={deck.id} />);
 
-    await waitFor(() =>
-      expect(routeTestState.reviewSession).toHaveBeenLastCalledWith(
-        dueCards
-          .slice()
-          .sort((first, second) => first.due_at - second.due_at)
-          .slice(0, 10),
-      ),
+    const expectedFirstBatch = dueCards
+      .slice()
+      .sort((first, second) => first.due_at - second.due_at)
+      .slice(0, 10);
+
+    expect(routeTestState.reviewSession).toHaveBeenCalled();
+    expect(routeTestState.reviewSession.mock.calls[0][0]).toEqual(
+      expectedFirstBatch,
     );
+  });
+
+  it('clears the saved deck when the user exits review', () => {
+    const dueCard = makeCard('due-card', Date.now() - 1);
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [dueCard]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
+
+    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+  });
+
+  it('clears the saved deck when the review session completes', () => {
+    const dueCard = makeCard('due-card', Date.now() - 1);
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [dueCard]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
+
+    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+  });
+
+  it('keeps sibling cards out of the first review batch', async () => {
+    const now = Date.now();
+    const firstSibling = {
+      ...makeCard('sibling-first', now - 20),
+      note_id: 'shared-note',
+    };
+    const secondSibling = {
+      ...makeCard('sibling-second', now - 19),
+      note_id: 'shared-note',
+    };
+    const otherCards = Array.from({ length: 10 }, (_, index) =>
+      makeCard(`other-${index}`, now - 18 + index),
+    );
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [
+        firstSibling,
+        secondSibling,
+        ...otherCards,
+      ]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+
+    await waitFor(() =>
+      expect(routeTestState.reviewSession).toHaveBeenLastCalledWith([
+        firstSibling,
+        ...otherCards.slice(0, 9),
+      ]),
+    );
+  });
+
+  it('applies the sibling rule when requesting the next review batch', () => {
+    const now = Date.now();
+    const firstSibling = {
+      ...makeCard('sibling-first', now - 3),
+      note_id: 'shared-note',
+    };
+    const secondSibling = {
+      ...makeCard('sibling-second', now - 2),
+      note_id: 'shared-note',
+    };
+    const otherCard = makeCard('other', now - 1);
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [firstSibling, secondSibling, otherCard]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+
+    expect(routeTestState.requestNextBatch?.()).toEqual([
+      firstSibling,
+      otherCard,
+    ]);
   });
 
   it('keeps the initial queue mounted after its last card is no longer due', async () => {

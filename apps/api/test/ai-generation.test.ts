@@ -13,6 +13,7 @@ import { AiQueueService } from '../src/ai/ai-queue.service';
 import { AiWorkerService } from '../src/ai/ai-worker.service';
 import { AiGatewayService } from '../src/ai/ai-gateway.service';
 import { aiGenerationJobs, aiUsage } from '../src/ai/schema';
+import { MetricsService } from '../src/metrics/metrics.service';
 import { userDecks } from '../src/sync/schema';
 import { LANGUAGES } from '@repo/schemas';
 
@@ -24,6 +25,7 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
   let workerService: AiWorkerService;
   let gatewayService: AiGatewayService;
   let configService: ConfigService;
+  let metricsService: MetricsService;
 
   beforeAll(async () => {
     await setUpPostgres();
@@ -36,10 +38,16 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
       AI_MOCK: '1',
     });
 
+    metricsService = new MetricsService();
     limitsService = new AiLimitsService(db, configService);
     queueService = new AiQueueService(db, limitsService);
     gatewayService = new AiGatewayService(configService);
-    workerService = new AiWorkerService(db, gatewayService, configService);
+    workerService = new AiWorkerService(
+      db,
+      gatewayService,
+      configService,
+      metricsService,
+    );
   });
 
   beforeEach(async () => {

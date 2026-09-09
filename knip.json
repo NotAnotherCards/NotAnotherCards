@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "include": ["unlisted", "unresolved"],
+  "ignoreDependencies": ["@eslint/js", "@eslint/eslintrc"],
+  "workspaces": {
+    "apps/mobile": {
+      "ignoreDependencies": [
+        "expo-updates",
+        "expo-system-ui",
+        "@expo/vector-icons",
+        "babel-jest"
+      ],
+      "metro": false
+    }
+  }
+}

@@ -8,18 +8,21 @@ in [`docs/deployment.md`](../../docs/deployment.md).
 
 ## Environment inventory
 
-| Item                 | Value                                                     |
-| -------------------- | --------------------------------------------------------- |
-| Public application   | `https://app.notanothercards.com`                         |
-| VPS IPv4             | `169.58.127.208`                                          |
-| VPS IPv6             | `2a02:c207:3020:2790::1`                                  |
-| Production checkout  | `/opt/notanothercards`                                    |
-| Runtime environment  | `/opt/notanothercards/.env`                               |
-| Host Nginx site      | `/etc/nginx/sites-available/app.notanothercards.com.conf` |
-| Compose files        | `docker-compose.yml` and `docker-compose.production.yml`  |
-| Deployment account   | `deploy` (non-human, key-only)                            |
-| GitHub environment   | `production`                                              |
-| Public inbound ports | TCP 22, 80, and 443 only                                  |
+| Item                 | Value                                                         |
+| -------------------- | ------------------------------------------------------------- |
+| Public application   | `https://app.notanothercards.com`                             |
+| Monitoring Grafana   | `https://grafana.notanothercards.com`                         |
+| VPS IPv4             | `169.58.127.208`                                              |
+| VPS IPv6             | `2a02:c207:3020:2790::1`                                      |
+| Production checkout  | `/opt/notanothercards`                                        |
+| Runtime environment  | `/opt/notanothercards/.env`                                   |
+| Host Nginx site      | `/etc/nginx/sites-available/app.notanothercards.com.conf`     |
+| Host Nginx Grafana   | `/etc/nginx/sites-available/grafana.notanothercards.com.conf` |
+| Compose files        | `docker-compose.yml` and `docker-compose.production.yml`      |
+| Monitoring Compose   | `infra/monitoring/docker-compose.yml`                         |
+| Deployment account   | `deploy` (non-human, key-only)                                |
+| GitHub environment   | `production`                                                  |
+| Public inbound ports | TCP 22, 80, and 443 only                                      |
 
 PostgreSQL is reachable only inside its Compose network. The API and web
 diagnostic ports bind to `127.0.0.1`; host Nginx is the only public application
@@ -87,6 +90,90 @@ sudo -u deploy grep -E '^[A-Z0-9_]+=' /opt/notanothercards/.env \
 ```
 
 Expected ownership and mode are `deploy deploy 600`.
+
+## Tailnet access to the GX10
+
+Production reaches the AI gateway and all three GX10 metrics endpoints directly
+over the self-hosted tailnet. `ai.dustyway.org` remains available to teammates
+with personal keys but is not in either production request path.
+
+Get a single-use headscale pre-auth key from the tailnet administrator only
+when you are ready to enrol the server. The key is delivered out of band and
+expires 72 hours after it is minted. On the production VPS:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up \
+  --login-server https://headscale.dustyway.org \
+  --authkey HEADSCALE_PRE_AUTH_KEY
+tailscale status
+```
+
+The GX10 must appear as `gx10-536a` at `100.64.0.1`. Check whether the data
+path is direct before changing production traffic:
+
+```bash
+tailscale ping 100.64.0.1
+```
+
+Do not treat an initial `via DERP(...)` line as failure: Tailscale starts over
+DERP while attempting to establish a direct path. A successful direct-path
+test stops after a line ending in `via <ip>:<port>`. If all attempts remain on
+DERP and the command ends with `direct connection not established`, the path
+is relayed and cancels the intended saving. See Tailscale's
+[DERP troubleshooting guide](https://tailscale.com/docs/reference/troubleshooting/network-configuration/derp-routing).
+
+Set these values in `/opt/notanothercards/.env`, without changing the existing
+`AI_API_KEY` (`production-worker`):
+
+```dotenv
+AI_API_BASE=http://100.64.0.1:4000/v1
+AI_DEFAULT_MODEL=gemma4
+```
+
+Keep `AI_API_BASE` without a trailing slash. Recreate the api container, then
+submit one generation job through the production application and confirm that
+it completes:
+
+```bash
+cd /opt/notanothercards
+sudo -u deploy docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.production.yml \
+  up -d --no-deps --force-recreate api
+```
+
+Prometheus uses plain HTTP for the three tailnet-encrypted GX10 scrapes. Each
+job keeps `metrics_path: /metrics` and uses its direct host and port:
+
+```yaml
+- job_name: litellm-gx10
+  metrics_path: /metrics
+  static_configs:
+    - targets: [100.64.0.1:4000]
+
+- job_name: node-gx10
+  metrics_path: /metrics
+  static_configs:
+    - targets: [100.64.0.1:9100]
+
+- job_name: dcgm-gpu-gx10
+  metrics_path: /metrics
+  static_configs:
+    - targets: [100.64.0.1:9400]
+```
+
+There is no `scheme: https` and no trailing slash in `metrics_path`. Verify all
+three endpoints from production and confirm their Prometheus targets are up:
+
+```bash
+curl --fail http://100.64.0.1:4000/metrics >/dev/null
+curl --fail http://100.64.0.1:9100/metrics >/dev/null
+curl --fail http://100.64.0.1:9400/metrics >/dev/null
+```
+
+No new public firewall rule is required: these services bind only to the GX10
+tailnet address.
 
 ## Production deployments
 

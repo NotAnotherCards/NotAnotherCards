@@ -2,10 +2,12 @@ import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AiWorkerService } from '../ai/ai-worker.service';
 import { AiGatewayService, AiParseError } from '../ai/ai-gateway.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 describe('AiWorkerService', () => {
   let mockGateway: jest.Mocked<AiGatewayService>;
   let mockConfig: ConfigService;
+  let mockMetrics: jest.Mocked<MetricsService>;
 
   beforeEach(() => {
     mockConfig = {
@@ -20,6 +22,13 @@ describe('AiWorkerService', () => {
       generateCards: jest.fn(),
       generateObject: jest.fn(),
     } as unknown as jest.Mocked<AiGatewayService>;
+
+    mockMetrics = {
+      aiJobsCompletedTotal: { inc: jest.fn() },
+      aiJobsFailedTotal: { inc: jest.fn() },
+      aiTokensConsumedTotal: { inc: jest.fn() },
+      observeAiJobDuration: jest.fn(),
+    } as unknown as jest.Mocked<MetricsService>;
   });
 
   it('returns false when no jobs are pending in queue', async () => {
@@ -30,7 +39,12 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({ rows: [] }), // dequeue query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(false);
@@ -88,11 +102,21 @@ describe('AiWorkerService', () => {
       ),
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
     expect(mockGateway.generateCards).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiJobsCompletedTotal.inc).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiTokensConsumedTotal.inc).toHaveBeenCalledWith(
+      { model: 'gemma4' },
+      25,
+    );
     expect(mockDb.execute).toHaveBeenCalled();
     // the completion update records the model that answered, so a job
     // that ran on the default still reports it
@@ -123,7 +147,12 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({}), // backoff update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
@@ -152,11 +181,48 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({}), // fail update query
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
+    expect(mockMetrics.aiJobsFailedTotal.inc).toHaveBeenCalledTimes(1);
     expect(mockDb.execute).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not count a final failure when its database update fails', async () => {
+    const mockJob = {
+      id: 'job-final-update-fails',
+      user_id: 'user-1',
+      type: 'topic_deck',
+      payload: { topic: 'Math', count: 2 },
+      attempts: 3,
+      max_attempts: 3,
+    };
+
+    mockGateway.generateCards.mockRejectedValue(new Error('Model failure'));
+
+    const mockDb = {
+      execute: jest
+        .fn()
+        .mockResolvedValueOnce({ rows: [] }) // recovery query
+        .mockResolvedValueOnce({ rows: [mockJob] }) // claim query
+        .mockRejectedValueOnce(new Error('Database unavailable')), // failure update query
+    } as unknown as NodePgDatabase<Record<string, unknown>>;
+
+    const processed = await new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    ).processNextJob();
+
+    expect(processed).toBe(false);
+    expect(mockMetrics.aiJobsFailedTotal.inc).not.toHaveBeenCalled();
   });
 
   it('logs token consumption when AiParseError occurs on otherwise valid HTTP response', async () => {
@@ -190,7 +256,12 @@ describe('AiWorkerService', () => {
       insert: mockInsert,
     } as unknown as NodePgDatabase<Record<string, unknown>>;
 
-    const workerService = new AiWorkerService(mockDb, mockGateway, mockConfig);
+    const workerService = new AiWorkerService(
+      mockDb,
+      mockGateway,
+      mockConfig,
+      mockMetrics,
+    );
     const processed = await workerService.processNextJob();
 
     expect(processed).toBe(true);
@@ -252,6 +323,7 @@ describe('AiWorkerService', () => {
       mockDb,
       mockGateway,
       mockConfig,
+      mockMetrics,
     ).processNextJob();
 
     expect(processed).toBe(true);
@@ -269,6 +341,16 @@ describe('AiWorkerService', () => {
       fields: { word: 'Hund' },
     });
     expect(resultJson).not.toContain('model overwrite');
+    expect(mockMetrics.aiJobsCompletedTotal.inc).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.aiTokensConsumedTotal.inc).toHaveBeenCalledWith(
+      { model: 'gemma4' },
+      25,
+    );
+    expect(mockMetrics.observeAiJobDuration).toHaveBeenCalledWith(
+      'gemma4',
+      'completed',
+      expect.any(Number),
+    );
   });
 
   it('builds the same word prompt on retry', async () => {

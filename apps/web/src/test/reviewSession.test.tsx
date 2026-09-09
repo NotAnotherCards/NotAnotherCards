@@ -49,6 +49,7 @@ function renderSession(
     reviewMode?: 'basic' | 'extended';
     showNextReviewInterval?: boolean;
   } = {},
+  onComplete = vi.fn(),
 ) {
   const { reviewMode, showNextReviewInterval } = reviewPreferences;
   const onExit = vi.fn();
@@ -62,9 +63,10 @@ function renderSession(
       onDeleteNote={onDeleteNote}
       reviewMode={reviewMode ?? 'extended'}
       showNextReviewInterval={showNextReviewInterval}
+      onComplete={onComplete}
     />,
   );
-  return { onCreateCard, onExit, onRecordReview, onDeleteNote };
+  return { onComplete, onCreateCard, onExit, onRecordReview, onDeleteNote };
 }
 
 function revealCard() {
@@ -1062,10 +1064,25 @@ describe('ReviewSession', () => {
   });
 
   it('shows the completed-session state when the session has no cards', () => {
-    renderSession([]);
+    const { onComplete } = renderSession([]);
 
     expect(
       screen.getByRole('heading', { name: 'Review complete' }),
     ).toBeInTheDocument();
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it('notifies its parent when the final card is completed', async () => {
+    const onComplete = vi.fn();
+    renderSession([card], undefined, undefined, undefined, {}, onComplete);
+    revealCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    finishCardExit();
+
+    expect(onComplete).toHaveBeenCalledOnce();
   });
 });

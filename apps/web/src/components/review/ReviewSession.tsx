@@ -20,6 +20,7 @@ type ReviewSessionProps = {
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
   onRequestNextBatch?: () => Card[];
+  onComplete?: () => void;
   reviewMode?: 'basic' | 'extended';
   showNextReviewInterval?: boolean;
 };
@@ -41,6 +42,7 @@ export function ReviewSession({
   onRecordReview,
   onDeleteNote,
   onRequestNextBatch,
+  onComplete,
   reviewMode = 'basic',
   showNextReviewInterval = false,
 }: ReviewSessionProps) {
@@ -183,6 +185,10 @@ export function ReviewSession({
       if (exitTimer.current) window.clearTimeout(exitTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!card) onComplete?.();
+  }, [card, onComplete]);
 
   useEffect(() => {
     if (isFlipped) firstAnswerButtonRef.current?.focus();

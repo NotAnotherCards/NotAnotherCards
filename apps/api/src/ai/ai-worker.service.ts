@@ -4,6 +4,7 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -23,6 +24,7 @@ import {
 } from './ai-gateway.service';
 import { TOPIC_GENERATION_V1 } from './prompts/topic-generation.v1';
 import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
+import { MetricsService } from '../metrics/metrics.service';
 import { WORD_NOTE_V1 } from './prompts/word-note.v1';
 import { assembleWordNoteCandidate } from './word-note';
 
@@ -52,6 +54,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly db: NodePgDatabase<Record<string, unknown>>,
     private readonly aiGateway: AiGatewayService,
     private readonly config: ConfigService,
+    @Optional()
+    private readonly metricsService?: MetricsService,
   ) {
     this.pollIntervalMs = Number(
       this.config.get<string>('AI_WORKER_POLL_INTERVAL_MS') ?? 2000,
@@ -62,6 +66,25 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
+    // Queue depth is refreshed at scrape time from the database using indexed status query
+    this.metricsService?.registerAiQueueDepthProvider(async () => {
+      const result = await this.db.execute(sql`
+        SELECT
+          count(*) FILTER (WHERE status = 'pending')::int AS pending,
+          count(*) FILTER (WHERE status = 'processing')::int AS processing,
+          count(*) FILTER (WHERE status = 'failed')::int AS failed
+        FROM ai_generation_jobs
+        WHERE status IN ('pending', 'processing', 'failed')
+      `);
+      const row = result.rows[0] as
+        { pending: number; processing: number; failed: number } | undefined;
+      return {
+        pending: Number(row?.pending ?? 0),
+        processing: Number(row?.processing ?? 0),
+        failed: Number(row?.failed ?? 0),
+      };
+    });
+
     if (this.workerEnabled) {
       this.timer = setInterval(() => {
         void this.processNextJob();
@@ -88,15 +111,20 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
 
     try {
       // 1. Recover exhausted stalled jobs: any job stuck in processing with max attempts is marked failed
-      await this.db.execute(sql`
+      const sweepResult = await this.db.execute(sql`
         UPDATE ai_generation_jobs
         SET status = 'failed',
             error = 'Job timed out while processing on final attempt',
             updated_at = NOW()
         WHERE status = 'processing'
           AND locked_at < NOW() - INTERVAL '5 minutes'
-          AND attempts >= max_attempts;
+          AND attempts >= max_attempts
+        RETURNING id;
       `);
+
+      if (sweepResult.rows.length > 0) {
+        this.metricsService?.aiJobsFailedTotal.inc(sweepResult.rows.length);
+      }
 
       // 2. Atomic dequeue with row lock: select and update 1 pending (due for run) or stalled retryable job
       const claimResult = await this.db.execute(sql`
@@ -136,6 +164,9 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async executeJob(job: ClaimedJobRow) {
+    const startTime = process.hrtime.bigint();
+    let metricModel = 'unknown';
+
     try {
       const rawPayload: unknown =
         typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
@@ -147,6 +178,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       switch (job.type) {
         case 'topic_deck': {
           const payload = topicDeckPayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
           const inference = await this.aiGateway.generateCards(
             TOPIC_GENERATION_V1.system,
             TOPIC_GENERATION_V1.buildUserPrompt(payload.topic, payload.count),
@@ -156,11 +188,13 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           result = inference.cards;
           usage = inference.usage;
           model = inference.model;
+          metricModel = model;
           resultLabel = `${result.length} cards`;
           break;
         }
         case 'text_cards': {
           const payload = textCardsPayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
           const inference = await this.aiGateway.generateCards(
             TEXT_GENERATION_V1.system,
             TEXT_GENERATION_V1.buildUserPrompt(
@@ -173,11 +207,13 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           result = inference.cards;
           usage = inference.usage;
           model = inference.model;
+          metricModel = model;
           resultLabel = `${result.length} cards`;
           break;
         }
         case 'word_note': {
           const payload = wordNotePayloadSchema.parse(rawPayload);
+          metricModel = payload.model ?? metricModel;
           const inference = await this.aiGateway.generateObject(
             WORD_NOTE_V1.system,
             WORD_NOTE_V1.buildUserPrompt(payload),
@@ -194,6 +230,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           }
           usage = inference.usage;
           model = inference.model;
+          metricModel = model;
           resultLabel = '1 word note';
           break;
         }
@@ -225,10 +262,23 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         });
       });
 
+      this.metricsService?.aiJobsCompletedTotal.inc();
+      this.metricsService?.aiTokensConsumedTotal.inc(
+        { model },
+        usage.totalTokens,
+      );
+      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
+      this.metricsService?.observeAiJobDuration(
+        model,
+        'completed',
+        durationSeconds,
+      );
+
       this.logger.log(
-        `Job ${job.id} completed (${resultLabel}, ${usage.totalTokens} tokens)`,
+        `Job ${job.id} completed (${resultLabel}, ${usage.totalTokens} tokens in ${durationSeconds.toFixed(2)}s)`,
       );
     } catch (err: unknown) {
+      const durationSeconds = Number(process.hrtime.bigint() - startTime) / 1e9;
       const isFinalAttempt = job.attempts >= job.max_attempts;
       const nextStatus = isFinalAttempt ? 'failed' : 'pending';
       const errorMessage =
@@ -242,6 +292,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
 
       // If gateway returned usage before parse failure, log the token usage
       if (err instanceof AiParseError && err.usage) {
+        metricModel = err.model;
         try {
           await this.db.insert(aiUsage).values({
             id: randomUUID(),
@@ -252,6 +303,10 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
             completionTokens: err.usage.completionTokens,
             totalTokens: err.usage.totalTokens,
           });
+          this.metricsService?.aiTokensConsumedTotal.inc(
+            { model: err.model },
+            err.usage.totalTokens,
+          );
         } catch (usageErr) {
           this.logger.error(
             'Failed to log token usage on parse error',
@@ -259,6 +314,12 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           );
         }
       }
+
+      this.metricsService?.observeAiJobDuration(
+        metricModel,
+        'failed',
+        durationSeconds,
+      );
 
       if (isFinalAttempt) {
         await this.db.execute(sql`
@@ -268,6 +329,11 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
               updated_at = NOW()
           WHERE id = ${job.id}
         `);
+
+        // The counter represents durable terminal failures only. If this update
+        // fails, the job remains processing and the stalled-job sweep will own
+        // the eventual transition (and its single metric increment).
+        this.metricsService?.aiJobsFailedTotal.inc();
       } else {
         await this.db.execute(sql`
           UPDATE ai_generation_jobs
