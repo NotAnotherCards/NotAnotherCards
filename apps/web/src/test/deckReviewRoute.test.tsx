@@ -196,7 +196,8 @@ describe('DeckReviewRoute', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
 
     expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
-
+  });
+    
   it('keeps sibling cards out of the first review batch', async () => {
     const now = Date.now();
     const firstSibling = {
