@@ -45,6 +45,7 @@ function renderSession(
   onCreateCard = vi.fn().mockResolvedValue(undefined),
   onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' }),
   onDeleteNote = vi.fn().mockResolvedValue(undefined),
+  onComplete = vi.fn(),
 ) {
   const onExit = vi.fn();
   render(
@@ -55,9 +56,10 @@ function renderSession(
       onCreateCard={onCreateCard}
       onRecordReview={onRecordReview}
       onDeleteNote={onDeleteNote}
+      onComplete={onComplete}
     />,
   );
-  return { onCreateCard, onExit, onRecordReview, onDeleteNote };
+  return { onComplete, onCreateCard, onExit, onRecordReview, onDeleteNote };
 }
 
 function revealCard() {
@@ -823,10 +825,25 @@ describe('ReviewSession', () => {
   });
 
   it('shows the completed-session state when the session has no cards', () => {
-    renderSession([]);
+    const { onComplete } = renderSession([]);
 
     expect(
       screen.getByRole('heading', { name: 'Review complete' }),
     ).toBeInTheDocument();
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it('notifies its parent when the final card is completed', async () => {
+    const onComplete = vi.fn();
+    renderSession([card], undefined, undefined, undefined, onComplete);
+    revealCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Remembered' }));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    finishCardExit();
+
+    expect(onComplete).toHaveBeenCalledOnce();
   });
 });

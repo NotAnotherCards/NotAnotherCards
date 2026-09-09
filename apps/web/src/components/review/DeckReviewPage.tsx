@@ -1,7 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { type Card, useStore } from '@/hooks/useStore';
 import { authClient } from '@/lib/auth-client';
-import { saveLastReviewDeckId } from '@/lib/review-preferences';
+import {
+  clearLastReviewDeckId,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
 import { selectReviewBatch } from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
@@ -53,9 +56,19 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
   const hasActiveSession =
     activeSession !== null && activeSession.deckId === deckId;
+
   const sessionCards = hasActiveSession
     ? activeSession.cards
     : selectReviewBatch(dueCards);
+
+  const clearSavedDeckPreference = () => {
+    if (session?.user.id) clearLastReviewDeckId(session.user.id);
+  };
+
+  const exitReview = () => {
+    clearSavedDeckPreference();
+    void navigate({ to: '/dashboard' });
+  };
 
   if (!deckId) {
     return (
@@ -124,7 +137,8 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       key={deckId}
       cards={sessionCards}
       deckTitle={deck.title}
-      onExit={() => navigate({ to: '/dashboard' })}
+      onExit={exitReview}
+      onComplete={clearSavedDeckPreference}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}
