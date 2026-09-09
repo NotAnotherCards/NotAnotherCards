@@ -277,15 +277,22 @@ describe('ReviewSession', () => {
     );
   });
 
-  it.each([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'])(
-    'reveals the answer with %s on the card front',
-    (key) => {
-      renderSession();
+  it.each([
+    ' ',
+    '1',
+    '2',
+    '3',
+    '4',
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowUp',
+    'ArrowDown',
+  ])('reveals the answer with %s on the card front', (key) => {
+    renderSession();
 
-      fireEvent.keyDown(window, { key, code: key === ' ' ? 'Space' : key });
-      expect(screen.getByText('to go')).toBeInTheDocument();
-    },
-  );
+    fireEvent.keyDown(window, { key, code: key === ' ' ? 'Space' : key });
+    expect(screen.getByText('to go')).toBeInTheDocument();
+  });
 
   it('uses Show answer only to reveal the answer', () => {
     renderSession();
@@ -330,6 +337,48 @@ describe('ReviewSession', () => {
 
     expect(onRecordReview).toHaveBeenCalledWith('card-1', 3);
   });
+
+  it.each([
+    [1, '1'],
+    [2, '2'],
+    [3, '3'],
+    [4, '4'],
+  ])(
+    'records Extended rating %s with keyboard shortcut %s',
+    async (rating, key) => {
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      renderSession([card, secondCard], undefined, onRecordReview);
+      revealCard();
+
+      fireEvent.keyDown(window, { key });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRecordReview).toHaveBeenCalledWith('card-1', rating);
+    },
+  );
+
+  it.each([
+    [1, '1'],
+    [3, '2'],
+  ])(
+    'records Basic rating %s with keyboard shortcut %s',
+    async (rating, key) => {
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      renderSession([card, secondCard], undefined, onRecordReview, undefined, {
+        reviewMode: 'basic',
+      });
+      revealCard();
+
+      fireEvent.keyDown(window, { key });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRecordReview).toHaveBeenCalledWith('card-1', rating);
+    },
+  );
 
   it.each(['keyboard', 'swipe'] as const)(
     'does not record a rating when %s reveals the answer',

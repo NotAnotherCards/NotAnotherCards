@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+  getAnswerForReviewKeyboardShortcut,
   getAnswerForReviewGesture,
   type ReviewAnswer,
   type ReviewMode,
@@ -54,6 +55,10 @@ export function useReviewKeyboardShortcuts({
       if (!isFlipped) {
         if (
           event.code === 'Space' ||
+          event.key === '1' ||
+          event.key === '2' ||
+          event.key === '3' ||
+          event.key === '4' ||
           event.key === 'ArrowLeft' ||
           event.key === 'ArrowRight' ||
           event.key === 'ArrowUp' ||
@@ -62,6 +67,16 @@ export function useReviewKeyboardShortcuts({
           event.preventDefault();
           onReveal();
         }
+        return;
+      }
+
+      const keyboardAnswer = getAnswerForReviewKeyboardShortcut(
+        reviewMode,
+        event.key,
+      );
+      if (keyboardAnswer) {
+        event.preventDefault();
+        onAnswer(keyboardAnswer);
         return;
       }
 

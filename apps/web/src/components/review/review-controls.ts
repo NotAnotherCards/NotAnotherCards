@@ -51,9 +51,37 @@ const answersByGesture: Record<
   },
 };
 
+const answersByKeyboardShortcut: Record<
+  ReviewMode,
+  Partial<Record<string, ReviewAnswer>>
+> = {
+  two: {
+    1: 'forgot',
+    2: 'remember',
+  },
+  three: {
+    1: 'forgot',
+    2: 'hard',
+    3: 'remember',
+  },
+  four: {
+    1: 'forgot',
+    2: 'hard',
+    3: 'remember',
+    4: 'very-easy',
+  },
+};
+
 export function getAnswerForReviewGesture(
   mode: ReviewMode,
   gesture: ReviewGesture,
 ) {
   return answersByGesture[mode][gesture] ?? null;
+}
+
+export function getAnswerForReviewKeyboardShortcut(
+  mode: ReviewMode,
+  key: string,
+) {
+  return answersByKeyboardShortcut[mode][key] ?? null;
 }
