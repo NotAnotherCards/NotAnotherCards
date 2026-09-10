@@ -294,7 +294,7 @@ export function ReviewSession({
               variant="ghost"
               size="icon"
               onClick={openCreateCardForm}
-              className="size-12 justify-end rounded-none bg-transparent p-0 text-black hover:bg-transparent hover:text-black"
+              className="size-12 justify-end rounded-none bg-transparent p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
               aria-label="Add a new card"
             >
               <Plus className="size-7" />

@@ -254,9 +254,7 @@ describe('ReviewSession', () => {
     expect(screen.getByTestId('review-front-answer-buttons')).toHaveTextContent(
       'Show answer',
     );
-    expect(screen.getByTestId('review-card-flip')).toHaveClass(
-      'min-h-[min(52dvh,28rem)]',
-    );
+    expect(screen.getByTestId('review-card-flip')).toHaveClass('h-full');
     expect(screen.getByTestId('review-answer-area')).toHaveClass(
       'mt-6',
       'min-h-[104px]',
@@ -275,7 +273,8 @@ describe('ReviewSession', () => {
     expect(screen.getByRole('button', { name: 'Add a new card' })).toHaveClass(
       'rounded-none',
       'size-12',
-      'text-black',
+      'text-muted-foreground',
+      'hover:text-foreground',
     );
   });
 
@@ -1020,8 +1019,12 @@ describe('ReviewSession', () => {
     expect(screen.getByTestId('review-answer-area')).toHaveClass('mt-6');
   });
 
-  it('shows the next card while the answered card exits to the chosen side', async () => {
-    renderSession([card, secondCard, thirdCard]);
+  it('keeps a long next card inside the stable stack while the current card exits', async () => {
+    const longNextCard = {
+      ...secondCard,
+      front: 'A long next-card prompt '.repeat(200),
+    };
+    renderSession([card, longNextCard, thirdCard]);
     revealCard();
 
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
@@ -1030,18 +1033,29 @@ describe('ReviewSession', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByTestId('next-review-card')).toHaveTextContent('sein');
+    expect(screen.getByTestId('next-review-card')).toHaveTextContent(
+      'A long next-card prompt',
+    );
     expect(screen.getByTestId('next-review-card')).toHaveClass('top-0', 'z-1');
+    expect(screen.getByTestId('next-review-card')).toHaveClass(
+      'h-[min(52dvh,28rem)]',
+      'overflow-hidden',
+      'sm:h-80',
+    );
     expect(screen.getByTestId('following-review-card-outline')).toHaveClass(
       'top-3',
       'z-0',
+      'h-[min(52dvh,28rem)]',
+      'sm:h-80',
     );
     expect(screen.getByTestId('review-card-surface')).toHaveStyle({
       transform: 'translate3d(-120vw, 0, 0) rotate(-10deg)',
     });
 
     finishCardExit();
-    expect(screen.getAllByText('sein')).not.toHaveLength(0);
+    expect(screen.getByTestId('review-card-front-content')).toHaveTextContent(
+      'A long next-card prompt',
+    );
     expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
       'data-card-id',
       'card-2',
