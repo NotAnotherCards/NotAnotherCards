@@ -10,6 +10,7 @@ type ReviewCardProps = {
   nextCard?: Card;
   followingCard?: Card;
   isFlipped: boolean;
+  reviewMode: 'basic' | 'extended';
   isDragging: boolean;
   isSettlingDrag: boolean;
   dragOffset: { x: number; y: number };
@@ -35,28 +36,36 @@ const exitTransformByDirection: Record<ReviewCardExitDirection, string> = {
   delete: 'translate3d(0, 120dvh, 0) rotate(0deg)',
 };
 
-const swipeFeedback: Record<
-  ReviewCardSwipeDirection,
-  { label: string; className: string }
-> = {
+const swipeFeedback: Record<ReviewCardSwipeDirection, { className: string }> = {
   forgot: {
-    label: 'Forgot',
     className: 'right-5 top-5 text-right text-muted-foreground',
   },
   remember: {
-    label: 'Remembered',
     className: 'left-5 top-5 text-emerald-700 dark:text-emerald-400',
   },
   hard: {
-    label: 'Struggled',
     className:
       'bottom-5 left-1/2 -translate-x-1/2 text-amber-700 dark:text-amber-400',
   },
   delete: {
-    label: 'Delete word',
     className: 'left-1/2 top-5 -translate-x-1/2 text-destructive',
   },
 };
+
+const swipeFeedbackLabels = {
+  basic: {
+    forgot: 'Forgot',
+    remember: 'Remembered',
+    hard: 'Struggled',
+    delete: 'Delete word',
+  },
+  extended: {
+    forgot: 'Again',
+    remember: 'Good',
+    hard: 'Hard',
+    delete: 'Delete word',
+  },
+} as const;
 
 /** Visual card stack and animation surface for deck review. */
 export function ReviewCard({
@@ -64,6 +73,7 @@ export function ReviewCard({
   nextCard,
   followingCard,
   isFlipped,
+  reviewMode,
   isDragging,
   isSettlingDrag,
   dragOffset,
@@ -128,7 +138,9 @@ export function ReviewCard({
           type="button"
           className="absolute inset-0 z-20 min-h-[min(52dvh,28rem)] w-full touch-none select-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80"
           aria-pressed={isFlipped}
-          aria-label={isFlipped ? 'Answer is shown' : 'Show answer'}
+          aria-label={isFlipped ? 'Answer is shown' : 'Review card'}
+          aria-hidden={isFlipped}
+          tabIndex={isFlipped ? -1 : 0}
           data-testid="review-card"
         />
         <div className="relative min-h-[min(52dvh,28rem)] w-full [perspective:1200px] sm:min-h-80">
@@ -140,6 +152,7 @@ export function ReviewCard({
           >
             <div
               aria-hidden={isFlipped}
+              inert={isFlipped}
               className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
             >
               <MarkdownRenderer
@@ -150,6 +163,7 @@ export function ReviewCard({
             </div>
             <div
               aria-hidden={!isFlipped}
+              inert={!isFlipped}
               className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
             >
               <div className="flex max-h-full w-full flex-col items-center gap-5 overflow-hidden py-12">
@@ -172,7 +186,7 @@ export function ReviewCard({
             className={`pointer-events-none absolute z-30 text-sm font-semibold ${swipeFeedback[dragDirection].className}`}
             data-testid="swipe-feedback"
           >
-            {swipeFeedback[dragDirection].label}
+            {swipeFeedbackLabels[reviewMode][dragDirection]}
           </span>
         )}
       </div>

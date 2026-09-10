@@ -9,8 +9,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Card, Deck } from '@/hooks/useStore';
 
 const routeTestState = vi.hoisted(() => ({
+  reviewPreferences: {
+    reviewMode: 'basic' as 'basic' | 'extended',
+    showNextReviewInterval: false,
+  },
   requestNextBatch: null as (() => Card[]) | null,
   reviewSession: vi.fn(),
+  reviewSessionProps: null as Record<string, unknown> | null,
   store: null as Record<string, unknown> | null,
 }));
 
@@ -30,24 +35,24 @@ vi.mock('@/lib/auth-client', () => ({
 }));
 
 vi.mock('@/lib/review-preferences', () => ({
+  getReviewPreferences: () => routeTestState.reviewPreferences,
   clearLastReviewDeckId: vi.fn(),
   saveLastReviewDeckId: vi.fn(),
 }));
 
 vi.mock('@/components/review/ReviewSession', () => ({
-  ReviewSession: ({
-    cards,
-    onComplete,
-    onExit,
-    onRequestNextBatch,
-  }: {
+  ReviewSession: (props: {
     cards: Card[];
     onComplete?: () => void;
     onExit: () => void;
     onRequestNextBatch?: () => Card[];
   }) => {
+    const { cards, onComplete, onExit, onRequestNextBatch } = props;
+
     routeTestState.requestNextBatch = onRequestNextBatch ?? null;
     routeTestState.reviewSession(cards);
+    routeTestState.reviewSessionProps = props;
+
     return (
       <div data-testid="review-session">
         <button onClick={onExit}>Exit review</button>
@@ -106,7 +111,12 @@ describe('DeckReviewRoute', () => {
   beforeEach(() => {
     routeTestState.requestNextBatch = null;
     routeTestState.store = makeStore();
+    routeTestState.reviewPreferences = {
+      reviewMode: 'basic',
+      showNextReviewInterval: false,
+    };
     routeTestState.reviewSession.mockReset();
+    routeTestState.reviewSessionProps = null;
     vi.mocked(clearLastReviewDeckId).mockReset();
   });
 
@@ -151,6 +161,23 @@ describe('DeckReviewRoute', () => {
     expect(screen.getByTestId('review-session')).toBeInTheDocument();
     expect(getCardsForDeck).toHaveBeenCalledWith(deck.id);
     expect(routeTestState.reviewSession).toHaveBeenCalledWith([dueCard]);
+  });
+
+  it('applies a saved review preference to the review session', () => {
+    routeTestState.reviewPreferences = {
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    };
+    routeTestState.store = makeStore({
+      getCardsForDeck: vi.fn(() => [makeCard('due-card', Date.now() - 1)]),
+    });
+
+    render(<DeckReviewPage deckId={deck.id} />);
+
+    expect(routeTestState.reviewSessionProps).toMatchObject({
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
   });
 
   it('passes no more than ten cards to the first review-session render', () => {

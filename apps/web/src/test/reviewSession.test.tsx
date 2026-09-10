@@ -45,8 +45,13 @@ function renderSession(
   onCreateCard = vi.fn().mockResolvedValue(undefined),
   onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' }),
   onDeleteNote = vi.fn().mockResolvedValue(undefined),
+  reviewPreferences: {
+    reviewMode?: 'basic' | 'extended';
+    showNextReviewInterval?: boolean;
+  } = {},
   onComplete = vi.fn(),
 ) {
+  const { reviewMode, showNextReviewInterval } = reviewPreferences;
   const onExit = vi.fn();
   render(
     <ReviewSession
@@ -56,6 +61,8 @@ function renderSession(
       onCreateCard={onCreateCard}
       onRecordReview={onRecordReview}
       onDeleteNote={onDeleteNote}
+      reviewMode={reviewMode ?? 'extended'}
+      showNextReviewInterval={showNextReviewInterval}
       onComplete={onComplete}
     />,
   );
@@ -244,8 +251,8 @@ describe('ReviewSession', () => {
   it('keeps the review answer area stable and aligns footer actions with its outer columns', () => {
     renderSession();
 
-    expect(screen.getByTestId('review-front-answer-buttons')).toHaveClass(
-      'grid-cols-3',
+    expect(screen.getByTestId('review-front-answer-buttons')).toHaveTextContent(
+      'Show answer',
     );
     expect(screen.getByTestId('review-card-flip')).toHaveClass(
       'min-h-[min(52dvh,28rem)]',
@@ -272,31 +279,248 @@ describe('ReviewSession', () => {
     );
   });
 
-  it.each([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'])(
-    'reveals the answer with %s on the card front',
-    (key) => {
-      renderSession();
-
-      fireEvent.keyDown(window, { key, code: key === ' ' ? 'Space' : key });
-      expect(screen.getByText('to go')).toBeInTheDocument();
-    },
-  );
-
-  it('uses a gray front-side answer button only to reveal the answer', () => {
+  it.each([
+    ' ',
+    '1',
+    '2',
+    '3',
+    '4',
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowUp',
+    'ArrowDown',
+  ])('reveals the answer with %s on the card front', (key) => {
     renderSession();
 
-    const rememberButton = screen.getByRole('button', {
-      name: 'Remembered',
-    });
-    expect(rememberButton).toHaveClass('bg-muted/40', 'shadow-none');
+    fireEvent.keyDown(window, { key, code: key === ' ' ? 'Space' : key });
+    expect(screen.getByText('to go')).toBeInTheDocument();
+  });
 
-    fireEvent.click(rememberButton);
+  it('uses Show answer only to reveal the answer', () => {
+    renderSession();
+
+    const showAnswerButton = screen.getByRole('button', {
+      name: 'Show answer',
+    });
+    expect(showAnswerButton).toHaveClass('bg-muted/40', 'shadow-none');
+
+    fireEvent.click(showAnswerButton);
 
     expect(screen.getByTestId('review-card-flip')).toHaveAttribute(
       'data-flipped',
       'true',
     );
     expect(screen.getByText('to go')).toBeInTheDocument();
+  });
+
+  it('moves keyboard focus to the first visible answer after revealing', () => {
+    renderSession();
+    const reviewCard = screen.getByTestId('review-card');
+    reviewCard.focus();
+
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+
+    expect(screen.getByRole('button', { name: 'Again' })).toHaveFocus();
+    expect(reviewCard).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('accepts an arrow-key answer when a visible answer button has focus', async () => {
+    const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+    renderSession([card, secondCard], undefined, onRecordReview);
+    revealCard();
+
+    const againButton = screen.getByRole('button', { name: 'Again' });
+    expect(againButton).toHaveFocus();
+
+    fireEvent.keyDown(againButton, { key: 'ArrowRight' });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(onRecordReview).toHaveBeenCalledWith('card-1', 3);
+  });
+
+  it.each([
+    [1, '1'],
+    [2, '2'],
+    [3, '3'],
+    [4, '4'],
+  ])(
+    'records Extended rating %s with keyboard shortcut %s',
+    async (rating, key) => {
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      renderSession([card, secondCard], undefined, onRecordReview);
+      revealCard();
+
+      fireEvent.keyDown(window, { key });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRecordReview).toHaveBeenCalledWith('card-1', rating);
+    },
+  );
+
+  it.each([
+    [1, '1'],
+    [3, '2'],
+  ])(
+    'records Basic rating %s with keyboard shortcut %s',
+    async (rating, key) => {
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      renderSession([card, secondCard], undefined, onRecordReview, undefined, {
+        reviewMode: 'basic',
+      });
+      revealCard();
+
+      fireEvent.keyDown(window, { key });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRecordReview).toHaveBeenCalledWith('card-1', rating);
+    },
+  );
+
+  it.each(['keyboard', 'swipe'] as const)(
+    'does not record a rating when %s reveals the answer',
+    (interaction) => {
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      renderSession([card], undefined, onRecordReview);
+
+      if (interaction === 'keyboard') {
+        fireEvent.keyDown(window, { key: 'ArrowRight' });
+      } else {
+        fireEvent.pointerDown(screen.getByTestId('review-card'), {
+          clientX: 200,
+          clientY: 200,
+        });
+      }
+
+      expect(screen.getByTestId('review-card-flip')).toHaveAttribute(
+        'data-flipped',
+        'true',
+      );
+      expect(onRecordReview).not.toHaveBeenCalled();
+    },
+  );
+
+  it('shows two existing Basic ratings after revealing the answer', () => {
+    renderSession([card], undefined, undefined, undefined, {
+      reviewMode: 'basic',
+    });
+
+    expect(screen.getByRole('button', { name: 'Show answer' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Forgot' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+
+    expect(screen.getByRole('button', { name: 'Forgot' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Remembered' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Struggled' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Knew it' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows scheduler intervals for the same existing ratings used by Basic and Extended', () => {
+    renderSession(
+      [{ ...card, scheduled_interval_minutes: 3 * 24 * 60 }],
+      undefined,
+      undefined,
+      undefined,
+      { reviewMode: 'basic', showNextReviewInterval: true },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+
+    expect(screen.getByRole('button', { name: /Forgot.*5 min/ })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: /Remembered.*8 days/ }),
+    ).toBeVisible();
+  });
+
+  it('shows all Extended intervals from the existing scheduler ratings', () => {
+    renderSession(
+      [{ ...card, scheduled_interval_minutes: 3 * 24 * 60 }],
+      undefined,
+      undefined,
+      undefined,
+      { reviewMode: 'extended', showNextReviewInterval: true },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+
+    expect(screen.getByRole('button', { name: /Again.*5 min/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Hard.*4 days/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Good.*8 days/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Easy.*10 days/ })).toBeVisible();
+  });
+
+  it('keeps four Extended buttons in one grid row when intervals are shown', () => {
+    renderSession(
+      [{ ...card, scheduled_interval_minutes: 3 * 24 * 60 }],
+      undefined,
+      undefined,
+      undefined,
+      { reviewMode: 'extended', showNextReviewInterval: true },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+
+    const answerGrid = screen.getByRole('button', {
+      name: /Again.*5 min/,
+    }).parentElement;
+    expect(answerGrid).toHaveClass('grid-cols-4');
+    expect(screen.getByRole('button', { name: /Again.*5 min/ })).toHaveClass(
+      'min-w-0',
+    );
+  });
+
+  it.each([
+    ['Again', /Again.*5 min/, 1],
+    ['Hard', /Hard.*4 days/, 2],
+    ['Good', /Good.*8 days/, 3],
+    ['Easy', /Easy.*10 days/, 4],
+  ])(
+    'maps the Extended %s button to its existing rating and interval',
+    async (label, accessibleName, expectedRating) => {
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      renderSession(
+        [{ ...card, scheduled_interval_minutes: 3 * 24 * 60 }],
+        undefined,
+        onRecordReview,
+        undefined,
+        { reviewMode: 'extended', showNextReviewInterval: true },
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+      fireEvent.click(screen.getByRole('button', { name: accessibleName }));
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRecordReview).toHaveBeenCalledWith('card-1', expectedRating);
+      expect(
+        screen.getByRole('button', { name: accessibleName }),
+      ).toHaveTextContent(label);
+    },
+  );
+
+  it('keeps the hidden card control out of Tab navigation after revealing the answer', () => {
+    renderSession();
+
+    const cardControl = screen.getByTestId('review-card');
+    expect(cardControl).toHaveAttribute('tabindex', '0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+
+    expect(cardControl).toHaveAttribute('tabindex', '-1');
   });
 
   it('reveals the answer after an upward swipe on the card front', () => {
@@ -361,7 +585,7 @@ describe('ReviewSession', () => {
     renderSession([card, secondCard], undefined, onRecordReview);
     revealCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Struggled' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hard' }));
 
     await act(async () => {
       await Promise.resolve();
@@ -381,7 +605,7 @@ describe('ReviewSession', () => {
     renderSession([card, secondCard], undefined, onRecordReview);
     revealCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remembered' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
 
     await act(async () => {
       await Promise.resolve();
@@ -408,10 +632,10 @@ describe('ReviewSession', () => {
     renderSession([card, secondCard], undefined, onRecordReview);
     revealCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Forgot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Again' }));
 
-    expect(screen.getByRole('button', { name: 'Forgot' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Struggled' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Again' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Hard' })).toBeDisabled();
     expect(onRecordReview).toHaveBeenCalledTimes(1);
 
     await act(async () => {
@@ -431,7 +655,7 @@ describe('ReviewSession', () => {
     renderSession([card, secondCard], undefined, onRecordReview);
     revealCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remembered' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -442,11 +666,11 @@ describe('ReviewSession', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('moves to the next card to the right after Knew it', async () => {
+  it('moves to the next card to the right after Easy', async () => {
     renderSession([card, secondCard]);
     revealCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Knew it' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Easy' }));
 
     await act(async () => {
       await Promise.resolve();
@@ -474,11 +698,12 @@ describe('ReviewSession', () => {
         onRecordReview={vi.fn().mockResolvedValue({ id: 'review-1' })}
         onDeleteNote={vi.fn().mockResolvedValue(undefined)}
         onRequestNextBatch={onRequestNextBatch}
+        reviewMode="extended"
       />,
     );
 
     revealCard();
-    fireEvent.click(screen.getByRole('button', { name: 'Remembered' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -499,7 +724,7 @@ describe('ReviewSession', () => {
     fireEvent.pointerDown(reviewCard, { clientX: 200, clientY: 200 });
     fireEvent.pointerMove(reviewCard, { clientX: 140, clientY: 200 });
 
-    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Forgot');
+    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Again');
     expect(screen.getByTestId('swipe-feedback')).toHaveClass(
       'text-muted-foreground',
       'z-30',
@@ -509,7 +734,7 @@ describe('ReviewSession', () => {
     });
 
     fireEvent.pointerCancel(reviewCard);
-    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Forgot');
+    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Again');
     expect(screen.getByTestId('review-card-surface')).toHaveStyle({
       transform: 'translate3d(0px, 0px, 0) rotate(0deg)',
     });
@@ -531,7 +756,7 @@ describe('ReviewSession', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Forgot');
+    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Again');
     expect(screen.getByTestId('review-card-surface')).toHaveStyle({
       transform: 'translate3d(-120vw, 0, 0) rotate(-10deg)',
     });
@@ -583,21 +808,36 @@ describe('ReviewSession', () => {
     expect(cardSurface).toHaveStyle({
       transform: 'translate3d(-60px, 0px, 0) rotate(-2.5deg)',
     });
-    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Forgot');
+    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Again');
 
     fireEvent.pointerMove(reviewCard, { clientX: 200, clientY: 200 });
-    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Forgot');
+    expect(screen.queryByTestId('swipe-feedback')).not.toBeInTheDocument();
     expect(cardSurface).toHaveStyle({
       transform: 'translate3d(0px, 0px, 0) rotate(0deg)',
     });
 
     fireEvent.pointerMove(reviewCard, { clientX: 260, clientY: 200 });
-    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent(
-      'Remembered',
-    );
+    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Good');
     expect(cardSurface).toHaveStyle({
       transform: 'translate3d(60px, 0px, 0) rotate(2.5deg)',
     });
+  });
+
+  it('clears swipe feedback when an unsupported Basic swipe moves upward', () => {
+    renderSession([card], undefined, undefined, undefined, {
+      reviewMode: 'basic',
+    });
+    revealCard();
+    const reviewCard = screen.getByTestId('review-card');
+
+    fireEvent.pointerDown(reviewCard, { clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(reviewCard, { clientX: 260, clientY: 200 });
+    expect(screen.getByTestId('swipe-feedback')).toHaveTextContent(
+      'Remembered',
+    );
+
+    fireEvent.pointerMove(reviewCard, { clientX: 200, clientY: 140 });
+    expect(screen.queryByTestId('swipe-feedback')).not.toBeInTheDocument();
   });
 
   it('turns the front side over as soon as it is touched', () => {
@@ -765,17 +1005,16 @@ describe('ReviewSession', () => {
     renderSession();
     revealCard();
 
-    expect(screen.getByRole('button', { name: 'Forgot' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Again' })).toHaveClass(
       'shadow-none',
     );
-    expect(screen.getByRole('button', { name: 'Struggled' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Hard' })).toHaveClass(
       'shadow-none',
     );
-    expect(screen.getByRole('button', { name: 'Remembered' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Good' })).toHaveClass(
       'shadow-none',
     );
-    expect(screen.getByRole('button', { name: 'Knew it' })).toHaveClass(
-      'col-start-2',
+    expect(screen.getByRole('button', { name: 'Easy' })).toHaveClass(
       'shadow-none',
     );
     expect(screen.getByTestId('review-answer-area')).toHaveClass('mt-6');
@@ -835,9 +1074,9 @@ describe('ReviewSession', () => {
 
   it('notifies its parent when the final card is completed', async () => {
     const onComplete = vi.fn();
-    renderSession([card], undefined, undefined, undefined, onComplete);
+    renderSession([card], undefined, undefined, undefined, {}, onComplete);
     revealCard();
-    fireEvent.click(screen.getByRole('button', { name: 'Remembered' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
 
     await act(async () => {
       await Promise.resolve();

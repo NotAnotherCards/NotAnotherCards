@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   clearLastReviewDeckId,
+  DEFAULT_REVIEW_PREFERENCES,
   getLastReviewDeckId,
+  getReviewPreferences,
   saveLastReviewDeckId,
+  saveReviewPreferences,
 } from '@/lib/review-preferences';
 
 describe('review preferences', () => {
@@ -41,6 +44,36 @@ describe('review preferences', () => {
     clearLastReviewDeckId('user-1');
 
     expect(getLastReviewDeckId('user-1')).toBeNull();
+  });
+
+  it('uses Basic mode with intervals hidden when review preferences are missing', () => {
+    expect(getReviewPreferences('user-1')).toEqual(DEFAULT_REVIEW_PREFERENCES);
+  });
+
+  it('keeps review preferences separate for each user', () => {
+    saveReviewPreferences('user-1', {
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
+    saveReviewPreferences('user-2', {
+      reviewMode: 'basic',
+      showNextReviewInterval: true,
+    });
+
+    expect(getReviewPreferences('user-1')).toEqual({
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
+    expect(getReviewPreferences('user-2')).toEqual({
+      reviewMode: 'basic',
+      showNextReviewInterval: true,
+    });
+  });
+
+  it('falls back to defaults for malformed saved review preferences', () => {
+    entries.set('not-another-cards:review-preferences:user-1', '{bad json');
+
+    expect(getReviewPreferences('user-1')).toEqual(DEFAULT_REVIEW_PREFERENCES);
   });
 
   it('falls back safely when reading browser storage fails', () => {
