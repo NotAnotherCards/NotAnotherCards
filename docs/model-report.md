@@ -357,10 +357,8 @@ integrated and doubles as a groundedness checker; there is no measured
 reason to switch. Sensitivity on actually harmful content remains untested
 for all of them.
 
-Superseded 2026-09-10: [model-report-moderation.md](model-report-moderation.md)
-measures sensitivity. qwen3guard-8b caught 100 of 100 harmful items,
-guardian 43 of 50 at forty times the latency; qwen3guard is the recommended
-gate.
+Moderation has its own report since 2026-09-10:
+[model-report-moderation.md](model-report-moderation.md).
 
 ## Recommendations
 
