@@ -83,7 +83,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const controller = useSyncController();
-  const { decks: sharedDecks, isLoading: isSharedDecksLoading } = useSharedDecks();
+  const { decks: sharedDecks, isLoading: isSharedDecksLoading } =
+    useSharedDecks();
   const { importDeck, importingIds } = useImportDeck();
 
   const user = session?.user || {
@@ -267,7 +268,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               Community Decks
             </CardTitle>
             <CardDescription>
-              Browse and study ready-made vocabulary sets shared by the community.
+              Browse and study ready-made vocabulary sets shared by the
+              community.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -301,8 +303,12 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                             {deck.owner.username.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="truncate">{deck.title || 'Untitled'}</span>
-                            <span className="text-[10px] text-muted-foreground font-normal truncate">by @{deck.owner.username}</span>
+                            <span className="truncate">
+                              {deck.title || 'Untitled'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-normal truncate">
+                              by @{deck.owner.username}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-3.5 text-muted-foreground max-w-50 truncate">
@@ -314,9 +320,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                           </span>
                         </td>
                         <td className="px-6 py-3.5 text-right">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="cursor-pointer min-w-17.5"
                             disabled={importingIds.has(deck.id)}
                             onClick={async () => {

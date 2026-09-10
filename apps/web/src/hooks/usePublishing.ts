@@ -15,7 +15,10 @@ export function usePublishing() {
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const [error, setError] = useState<ModerationError | null>(null);
 
-  const publish = async (deckId: string, onSync?: () => Promise<void>): Promise<boolean> => {
+  const publish = async (
+    deckId: string,
+    onSync?: () => Promise<void>,
+  ): Promise<boolean> => {
     setIsPublishing(true);
     setError(null);
     try {
@@ -49,7 +52,10 @@ export function usePublishing() {
     }
   };
 
-  const unpublish = async (deckId: string, onSync?: () => Promise<void>): Promise<boolean> => {
+  const unpublish = async (
+    deckId: string,
+    onSync?: () => Promise<void>,
+  ): Promise<boolean> => {
     setIsUnpublishing(true);
     setError(null);
     try {

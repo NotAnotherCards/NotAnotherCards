@@ -43,7 +43,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [noteToRemove, setNoteToRemove] = useState<Card | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
-  const { publish, unpublish, isPublishing, isUnpublishing, error, setError } = usePublishing();
+  const { publish, unpublish, isPublishing, isUnpublishing, error, setError } =
+    usePublishing();
   const controller = useSyncController();
 
   if (store.isTakenOver) {
@@ -244,7 +245,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 disabled={isUnpublishing}
                 onClick={async () => {
                   await controller?.syncNow();
-                  await unpublish(deckId, () => controller?.syncNow() || Promise.resolve());
+                  await unpublish(
+                    deckId,
+                    () => controller?.syncNow() || Promise.resolve(),
+                  );
                 }}
                 className="cursor-pointer gap-1.5 justify-center"
               >
@@ -256,7 +260,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 disabled={isPublishing}
                 onClick={async () => {
                   await controller?.syncNow();
-                  await publish(deckId, () => controller?.syncNow() || Promise.resolve());
+                  await publish(
+                    deckId,
+                    () => controller?.syncNow() || Promise.resolve(),
+                  );
                 }}
                 className="cursor-pointer gap-1.5 justify-center"
               >
@@ -414,17 +421,21 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             className="w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200"
           >
             <CardHeader>
-              <CardTitle id="moderation-error-title" className="text-lg font-bold flex items-center gap-2">
+              <CardTitle
+                id="moderation-error-title"
+                className="text-lg font-bold flex items-center gap-2"
+              >
                 <AlertCircle className="size-5 text-destructive" />
                 Could Not Publish Deck
               </CardTitle>
               <CardDescription>
-                The deck was refused by our automated moderation system. Please review the flagged content before trying again.
+                The deck was refused by our automated moderation system. Please
+                review the flagged content before trying again.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">
               <FormErrorMessage message={error.reason} />
-              
+
               {error.flagged && error.flagged.length > 0 && (
                 <div className="bg-muted/50 rounded-lg p-4 border border-border text-sm max-h-48 overflow-y-auto">
                   <p className="font-semibold mb-2">Flagged Cards:</p>

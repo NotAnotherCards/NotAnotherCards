@@ -32,7 +32,8 @@ const STARTER_DECKS = [
   {
     id: randomUUID(),
     title: 'Top 100 Spanish Words',
-    description: 'A curated list of the 100 most common Spanish words for beginners.',
+    description:
+      'A curated list of the 100 most common Spanish words for beginners.',
     visibility: 'public' as const,
     noteType: BASIC_NOTE_TYPE,
     cards: [
@@ -85,7 +86,7 @@ const STARTER_DECKS = [
       { front: 'werden', back: 'to become' },
       { front: 'sie', back: 'she, they' },
     ],
-  }
+  },
 ];
 
 async function main() {
@@ -100,7 +101,7 @@ async function main() {
 
   try {
     console.log('Ensuring admin user exists...');
-    
+
     // 1. Ensure the underlying user account exists
     await db
       .insert(user)
@@ -129,7 +130,7 @@ async function main() {
 
     for (const deck of STARTER_DECKS) {
       console.log(`Seeding deck: ${deck.title}`);
-      
+
       // 3. Create the Deck, marked as 'public' so it appears in the shared feed
       await db.insert(userDecks).values({
         id: deck.id,
