@@ -106,13 +106,13 @@ describe('ReviewSession', () => {
       { ...secondCard, front: '## sein' },
     ]);
 
-    expect(
-      screen.getAllByText('gehen').map((element) => element.tagName),
-    ).toEqual(['STRONG', 'STRONG']);
+    // The front is rendered once: the answer side shows only the back.
+    expect(screen.getByText('gehen').tagName).toBe('STRONG');
     expect(screen.getByText('sein').tagName).toBe('H2');
 
     revealCard();
 
+    expect(screen.getByText('gehen').tagName).toBe('STRONG');
     expect(screen.getByText('to go').tagName).toBe('EM');
     expect(screen.getByRole('list')).toBeInTheDocument();
   });

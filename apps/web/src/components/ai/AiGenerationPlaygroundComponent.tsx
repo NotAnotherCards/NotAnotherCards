@@ -200,8 +200,11 @@ export function AiGenerationPlaygroundComponent() {
           back: card.back,
         })),
       });
-    } catch {
-      const msg = 'Unable to save cards to deck. Please try again.';
+    } catch (err) {
+      const detail = err instanceof Error && err.message ? err.message : '';
+      const msg = detail
+        ? `Unable to save cards to deck: ${detail}`
+        : 'Unable to save cards to deck. Please try again.';
       setErrorMessage(msg);
       throw new Error(msg);
     } finally {

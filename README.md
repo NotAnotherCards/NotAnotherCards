@@ -130,8 +130,9 @@ its own Postgres service. It runs for pull requests and pushes to `main`, from
 the Actions **Run workflow** button, and every day at 04:00 Europe/Berlin. It
 currently uses API + Vite preview; Compose/nginx coverage remains with #251.
 #318's browser regression creates long-front, long-back, both-long prose, and
-six-item Markdown list cards at the 250-character-per-face limit. That base
-heuristic keeps both compact answer-side cards readable at 360×640. The test
-verifies the cards do not overlap or overflow and that every rating remains
-inside the phone viewport. Agents can explore this disposable environment and
+six-item Markdown list cards at the 250-character-per-face limit. The card
+keeps its size when it flips and the answer side shows only the back. The test
+verifies that the text fits inside the card, that the flipped card has the
+same size as the front, and that every rating remains inside the phone
+viewport. Agents can explore this disposable environment and
 propose regression tests; CI executes reviewed, fixed assertions.

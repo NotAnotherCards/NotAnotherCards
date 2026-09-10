@@ -148,9 +148,18 @@ test('long front and back content stays readable after the card flips', async ({
   await page.getByRole('button', { name: 'Start Review', exact: true }).click();
 
   for (const card of cards) {
-    await expect(page.getByTestId('review-card-front-content')).toHaveText(
-      card.front.replaceAll('**', ''),
+    const frontContent = page.getByTestId('review-card-front-content');
+    await expect(frontContent).toHaveText(card.front.replaceAll('**', ''));
+    const frontFace = frontContent.locator(
+      'xpath=ancestor::*[@aria-hidden="false"][1]',
     );
+    await expectContained(frontContent, frontFace);
+    if (card.frontMarker) {
+      await expectMarkerInsideViewport(frontFace, card.frontMarker);
+    }
+    const frontBox = await frontFace.boundingBox();
+    expect(frontBox).not.toBeNull();
+
     await page
       .getByRole('button', { name: 'Show answer', exact: true })
       .click();
@@ -160,40 +169,24 @@ test('long front and back content stays readable after the card flips', async ({
       );
     });
 
+    // The answer side is one card of the same size, showing only the back.
     const backContent = page.getByTestId('review-card-back-content');
     const answerFace = backContent.locator(
       'xpath=ancestor::*[@aria-hidden="false"][1]',
     );
-    const answerContents = answerFace.locator('.markdown-content');
-    await expect(answerContents).toHaveCount(2);
-    await expectNoOverflow(answerContents.first());
-    await expectNoOverflow(backContent);
+    await expect(answerFace.locator('.markdown-content')).toHaveCount(1);
+    await expectContained(backContent, answerFace);
 
-    const question = page.getByRole('region', { name: 'Question' });
-    const answer = page.getByRole('region', { name: 'Answer' });
-    await expect(question).toBeVisible();
-    await expect(answer).toBeVisible();
-    await expectContained(
-      page.getByTestId('review-card-answer-front-content'),
-      question,
-    );
-    await expectContained(backContent, answer);
-
-    const [questionBox, answerBox] = await Promise.all([
-      question.boundingBox(),
-      answer.boundingBox(),
-    ]);
-    expect(questionBox).not.toBeNull();
+    const answerBox = await answerFace.boundingBox();
     expect(answerBox).not.toBeNull();
-    expect(questionBox!.y + questionBox!.height).toBeLessThanOrEqual(
-      answerBox!.y,
-    );
-
-    if (card.frontMarker) {
-      await expectMarkerInsideViewport(question, card.frontMarker);
+    for (const side of ['x', 'y', 'width', 'height'] as const) {
+      expect(Math.abs(answerBox![side] - frontBox![side])).toBeLessThanOrEqual(
+        1,
+      );
     }
+
     if (card.backMarker) {
-      await expectMarkerInsideViewport(answer, card.backMarker);
+      await expectMarkerInsideViewport(answerFace, card.backMarker);
     }
 
     const answerButtons = page
