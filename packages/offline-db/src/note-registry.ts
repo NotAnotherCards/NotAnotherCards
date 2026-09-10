@@ -31,9 +31,9 @@ export interface RenderedCard {
  * "can this card exist" and "what does it say" cannot drift apart.
  *
  * The render contract: `front` is the complete question and `back` is the
- * answer content only, never restating the front — the review screen's
- * answer face composes front + divider + back itself, so a back that
- * repeats the front shows it twice.
+ * answer content only, never restating the front. The review screen shows
+ * one face at a time in one fixed box, the back alone after the flip, so
+ * a back that repeats the front wastes the space the answer needs.
  */
 export interface NoteTemplate<Fields> {
   readonly key: string;
