@@ -106,7 +106,7 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 ### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — done — 100%
 
-- Generate text or images from user input. **done**: card generation jobs, `apps/api/src/ai`; gemma4 is the default and the benchmarked models are selectable through one shared `AI_MODELS` list (#197, merged 2026-08-31). A web playground is in review (#217).
+- Generate text or images from user input. **done**: card generation jobs, `apps/api/src/ai`; gemma4 is the default and the benchmarked models are selectable through one shared `AI_MODELS` list (#197, merged 2026-08-31). The web playground merged as #312.
 - Handle streaming responses correctly. **done**: the playground streams generation (`POST /api/ai/playground/stream`, #80); usage recorded per run. `docs/ai-generation.md` describes the whole path.
 - Implement error handling and rate limiting. **done**: job quotas (`AI_MAX_*`), gateway errors mapped, LiteLLM per-key limits.
 
@@ -130,7 +130,7 @@ base, and daily challenges — 3 of the 6 listed options.
 
 ### 4.11 Modules of choice: mobile app — Major, 2 — in progress — 25%
 
-- The module must be substantial and show technical complexity. **in progress, about 50% parity with web**: measured against #143's checklist, 8.75 of 17 items. Done: per-account offline database and sync (#151, #177), and sync now runs on Hermes after remelonDB 0.2.6 (#216, verified on a device against staging 2026-08-31 including a deck push); shared deck, card and review queries live in `@repo/offline-db` (#204, #211). In review: onboarding and route guards (#210). Built, PR pending: deck list with create, edit and delete (#68, first slice). Not started: deck detail and card CRUD, the flashcard viewer, settings, social sign-in, password recovery and change.
+- The module must be substantial and show technical complexity. **in progress, about 50% parity with web**: measured against #143's checklist, 8.75 of 17 items. Done: per-account offline database and sync (#151, #177), and sync now runs on Hermes after remelonDB 0.2.6 (#216, verified on a device against staging 2026-08-31 including a deck push); shared deck, card and review queries live in `@repo/offline-db` (#204, #211). Merged: onboarding and route guards (#210), deck list with create, edit and delete (#240), deck detail with card CRUD (#242). Not started: the flashcard viewer, settings, social sign-in (#293 open, blocked on #319), password recovery and change.
 - The README must justify: why this module, which technical challenges it addresses, how it adds value, and why it deserves Major status. **not started**: not in the README. This bullet is half the module's score, hence 25%.
 - Trivial features or shortcuts cause rejection of the module. Note for the README.
 
