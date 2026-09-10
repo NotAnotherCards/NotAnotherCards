@@ -84,7 +84,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const isOnline = useOnlineStatus();
   const controller = useSyncController();
   const { decks: sharedDecks, isLoading: isSharedDecksLoading } = useSharedDecks();
-  const { importDeck, isImporting } = useImportDeck();
+  const { importDeck, importingIds } = useImportDeck();
 
   const user = session?.user || {
     name: 'Legendary Learner',
@@ -317,8 +317,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="cursor-pointer"
-                            disabled={isImporting}
+                            className="cursor-pointer min-w-17.5"
+                            disabled={importingIds.has(deck.id)}
                             onClick={async () => {
                               const result = await importDeck(deck.id);
                               if (result) {
@@ -326,7 +326,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                               }
                             }}
                           >
-                            Import
+                            {importingIds.has(deck.id) ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              'Import'
+                            )}
                           </Button>
                         </td>
                       </tr>

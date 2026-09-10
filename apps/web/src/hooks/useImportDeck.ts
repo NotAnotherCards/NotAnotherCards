@@ -1,13 +1,17 @@
 import { useState } from 'react';
 
 export function useImportDeck() {
-  const [isImporting, setIsImporting] = useState(false);
+  const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   const importDeck = async (
     deckId: string,
   ): Promise<{ deckId: string } | null> => {
-    setIsImporting(true);
+    setImportingIds((prev) => {
+      const next = new Set(prev);
+      next.add(deckId);
+      return next;
+    });
     setError(null);
     try {
       const res = await fetch(
@@ -26,9 +30,13 @@ export function useImportDeck() {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
       return null;
     } finally {
-      setIsImporting(false);
+      setImportingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(deckId);
+        return next;
+      });
     }
   };
 
-  return { importDeck, isImporting, error };
+  return { importDeck, importingIds, error };
 }
