@@ -1,4 +1,10 @@
-import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  act,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react';
 import { App, router } from '../App';
 import { authClient } from '@/lib/auth-client';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
@@ -105,23 +111,33 @@ describe('Shared Decks Dashboard Feed', () => {
     });
 
     expect(await screen.findByText('Community Decks')).toBeInTheDocument();
-    expect(await screen.findByText('No community decks available yet.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('No community decks available yet.'),
+    ).toBeInTheDocument();
   });
 
   it('handles importing a deck successfully', async () => {
     let completeImport!: (value: Response) => void;
-    
-    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-      if (url.includes('/api/shared/decks') && (!init || init.method === 'GET')) {
-        return Promise.resolve(response({ decks: mockDecks }));
-      }
-      if (url.includes('/api/shared/decks/deck-1/import') && init?.method === 'POST') {
-        return new Promise<Response>((resolve) => {
-          completeImport = resolve;
-        });
-      }
-      return Promise.reject(new Error(`unmocked request: ${url}`));
-    });
+
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string, init?: RequestInit) => {
+        if (
+          url.includes('/api/shared/decks') &&
+          (!init || init.method === 'GET')
+        ) {
+          return Promise.resolve(response({ decks: mockDecks }));
+        }
+        if (
+          url.includes('/api/shared/decks/deck-1/import') &&
+          init?.method === 'POST'
+        ) {
+          return new Promise<Response>((resolve) => {
+            completeImport = resolve;
+          });
+        }
+        return Promise.reject(new Error(`unmocked request: ${url}`));
+      });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<App />);
