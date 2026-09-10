@@ -169,7 +169,7 @@ export function ReviewCard({
               <MarkdownRenderer
                 content={card.back}
                 data-testid="review-card-back-content"
-                className="max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
+                className="max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_p+p]:!mt-4 [&_p+p]:text-xl [&_p+p]:font-normal [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
               />
             </div>
           </div>
