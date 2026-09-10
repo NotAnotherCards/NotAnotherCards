@@ -40,7 +40,19 @@ export const moderationRefusalSchema = z.object({
   flagged: z.array(z.object({ cardId: z.string(), reason: z.string() })),
 });
 
+export const moderationWarningSchema = z.object({
+  cardId: z.string(),
+  reason: z.string(),
+});
+
+export const publishResponseSchema = z.object({
+  visibility: z.literal('public'),
+  warnings: z.array(moderationWarningSchema),
+});
+
 export type SharedDeckSummary = z.infer<typeof sharedDeckSummarySchema>;
 export type SharedDeckList = z.infer<typeof sharedDeckListSchema>;
 export type SharedDeckPreview = z.infer<typeof sharedDeckPreviewSchema>;
 export type ModerationRefusal = z.infer<typeof moderationRefusalSchema>;
+export type ModerationWarning = z.infer<typeof moderationWarningSchema>;
+export type PublishResponse = z.infer<typeof publishResponseSchema>;

@@ -117,7 +117,7 @@ export class SharingService {
     }
 
     await this.setVisibility(userId, deckId, 'public', snapshot);
-    return { visibility: 'public' as const };
+    return { visibility: 'public' as const, warnings: verdict.warnings };
   }
 
   async unpublish(userId: string, deckId: string) {

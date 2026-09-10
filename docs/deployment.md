@@ -104,13 +104,11 @@ file.
 - Production values stay in `/opt/notanothercards/.env` and the team password
   manager; deployment credentials use GitHub's protected `production`
   environment (subject III.3).
-- `MODERATION_ALLOW_ALL` (api) gates deck publishing while the moderation
-  check (#263) is a stub. Empty, the default, refuses every publish with
-  `moderation unavailable`; `1` lets every deck through. Staging sets `1` so
-  the sharing UI (#289) can be tried; production leaves it empty until #263
-  lands, at which point the variable goes away with the stub. Publish snapshots
-  the content; edits never unpublish it, and republishing replaces the snapshot.
-  Existing public decks without a snapshot must be republished to appear.
+- `MODERATION_ALLOW_ALL` (api) bypasses the deck-publishing classifier when set
+  to `1`; use it only for tests and demos. Staging must unset it when the
+  moderation gate deploys, or every deck passes. Publish snapshots the content;
+  edits never unpublish it, and republishing replaces the snapshot. Existing
+  public decks without a snapshot must be republished to appear.
 
 ## The AI backend
 

@@ -64,10 +64,11 @@ model_list:
       model: ollama_chat/bespoke-minicheck:7b
       api_base: http://ollama:11434
 
-  # content moderation screen (granite guardian risk prompts)
+  # the model's chat template supplies the moderation prompt; verdicts are
+  # Safety: Safe|Unsafe|Controversial plus Categories:
   - model_name: moderation
     litellm_params:
-      model: ollama_chat/granite4.1-guardian:8b
+      model: ollama_chat/qwen3guard-8b:latest
       api_base: http://ollama:11434
 
   - model_name: embeddings

@@ -96,7 +96,7 @@ Which model for what (measured, see
 | `muse-glimmer` | comparison only | quality on par with `gemma4`, ~17 s per set |
 | `mistral-small` | second opinion, dense-model style | older results, rerun pending |
 | `fact-check` | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no |
-| `moderation` | content screening | granite guardian risk prompts |
+| `moderation` | content screening | qwen3guard verdicts: Safe, Unsafe, or Controversial, plus categories |
 | `embeddings` | vectors (bge-m3) | embeddings API, not chat |
 
 Good to know:
