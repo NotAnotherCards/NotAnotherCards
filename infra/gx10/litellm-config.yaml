@@ -70,6 +70,9 @@ model_list:
     litellm_params:
       model: ollama_chat/qwen3guard-8b:latest
       api_base: http://ollama:11434
+      # pinned: ollama unloads after 5 idle minutes and the first publish
+      # after that paid ~3.4 s of model load. 7.3 GB resident.
+      keep_alive: -1
 
   - model_name: embeddings
     litellm_params:
