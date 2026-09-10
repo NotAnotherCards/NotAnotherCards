@@ -10,6 +10,9 @@ import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingHttpHeaders } from 'node:http';
 import { sendResetPasswordEmail } from '../email/reset-password-email';
 import { userAdditionalFields } from './auth-fields';
+import { twoFactor } from 'better-auth/plugins';
+import { genericOAuth } from 'better-auth/plugins/generic-oauth';
+import { twoFactorOAuthChallengeHook } from './two-factor-oauth.hook';
 
 @Injectable()
 export class AuthService {
@@ -81,13 +84,70 @@ export class AuthService {
       user: {
         additionalFields: userAdditionalFields,
       },
-      plugins: [expo()],
+      plugins: [
+        expo(),
+        twoFactor({
+          issuer: 'NotAnotherCards',
+          skipVerificationOnEnable: false,
+          allowPasswordless: false,
+          accountLockout: {
+            enabled: true,
+            maxFailedAttempts: 5,
+            durationSeconds: 300,
+          },
+          backupCodeOptions: {
+            storeBackupCodes: 'encrypted',
+            amount: 10,
+          },
+        }),
+        // Test-only OAuth provider for the OAuth-2FA regression test.
+        // Registered ONLY when OAUTH_TEST_PROVIDER_BASE_URL is set, which
+        // happens exclusively in the e2e harness (real OAuth cannot run in
+        // CI). Points at a loopback stub so the test drives a genuine
+        // OAuth round-trip without touching Google/Facebook.
+        ...(this.configService.get<string>('OAUTH_TEST_PROVIDER_BASE_URL')
+          ? [
+              genericOAuth({
+                config: [
+                  {
+                    providerId: 'test-oauth',
+                    clientId: 'test-oauth-client',
+                    clientSecret: 'test-oauth-secret',
+                    authorizationUrl: `${this.configService.getOrThrow<string>('OAUTH_TEST_PROVIDER_BASE_URL')}/authorize`,
+                    tokenUrl: `${this.configService.getOrThrow<string>('OAUTH_TEST_PROVIDER_BASE_URL')}/token`,
+                    // The stub issues access tokens as
+                    // `fake-token-<base64url(email)>`, so the profile is
+                    // decoded from the token — no userinfo HTTP call is made.
+                    getUserInfo: (tokens) => {
+                      if (!tokens.accessToken) return Promise.resolve(null);
+                      const email = Buffer.from(
+                        tokens.accessToken.replace('fake-token-', ''),
+                        'base64url',
+                      ).toString('utf8');
+                      return Promise.resolve({
+                        id: `test-oauth-${email}`,
+                        email,
+                        name: email.split('@')[0] || email,
+                        emailVerified: true,
+                      });
+                    },
+                  },
+                ],
+              }),
+            ]
+          : []),
+      ],
       trustedOrigins: [
         this.configService.getOrThrow<string>('FRONTEND_URL'),
         'notanothercards://',
         'exp://',
         'exp://**',
       ],
+      hooks: {
+        after: twoFactorOAuthChallengeHook(
+          this.configService.getOrThrow<string>('FRONTEND_URL'),
+        ),
+      },
       secret: this.configService.getOrThrow<string>('BETTER_AUTH_SECRET'),
       baseURL: this.configService.getOrThrow<string>('BETTER_AUTH_URL'),
     });

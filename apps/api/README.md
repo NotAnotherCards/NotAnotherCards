@@ -112,6 +112,25 @@ npx @better-auth/cli generate --config auth-config.ts --output src/database/sche
 Other tables (decks, cards, ...) can be added as `schema.ts` files in their
 module folder, drizzle picks up everything matching `src/**/schema.ts`.
 
+## Two-factor authentication (TOTP + backup codes)
+
+Server-side 2FA uses Better Auth's `twoFactor` plugin (`issuer:
+'NotAnotherCards'`, verification required on enable, passwordless disabled,
+5-failure / 5-minute account lockout, 10 encrypted backup codes). Secrets and
+backup codes are encrypted at rest; they are returned once at enrollment and
+never logged.
+
+The plugin only intercepts credential sign-ins in better-auth 1.6.26, so
+`src/auth/two-factor-oauth.hook.ts` extends the identical pending-challenge
+treatment to OAuth sign-ins (`/callback/:id`,
+`/oauth2/callback/:providerId`, `/sign-in/social` idToken flow): a linked
+provider never mints a usable session for a 2FA-enabled account — the user
+completes the same TOTP/backup-code challenge instead. The hook uses only
+public `better-auth/*` imports except the `two_factor` challenge-cookie name,
+which has no public export; `test/two-factor-oauth.e2e-spec.ts` (fake
+loopback OAuth provider, no real Google/Facebook traffic) is the upgrade
+tripwire for that coupling.
+
 After any schema change, regenerate the migration and commit it together with
 the schema. Don't edit the SQL files in `drizzle/` by hand.
 
