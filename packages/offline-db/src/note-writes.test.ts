@@ -9,6 +9,7 @@ import {
 } from './note-writes.js';
 import { createDeck } from './queries.js';
 import { schema } from './index.js';
+import { CARD_FACE_MAX_LENGTH } from '@repo/schemas';
 import {
   UserCard,
   UserDeck,
@@ -130,6 +131,31 @@ describe('updateNoteFields', () => {
 });
 
 describe('createNotesBatch', () => {
+  it('rejects card faces above the shared review limit atomically', async () => {
+    await openDb();
+    await expect(
+      createNotesBatch(db, {
+        deckIdOrTitle: 'Too long',
+        isNew: true,
+        notes: [
+          {
+            noteType: 'basic',
+            fieldsVersion: 1,
+            fields: {
+              front: 'x'.repeat(CARD_FACE_MAX_LENGTH + 1),
+              back: 'answer',
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow(
+      `Card content cannot exceed ${CARD_FACE_MAX_LENGTH} characters per face`,
+    );
+    expect(await db.get(UserDeck).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(0);
+  });
+
   it('creates a new basic deck and its notes in one batch', async () => {
     await openDb();
     const deckId = await createNotesBatch(db, {

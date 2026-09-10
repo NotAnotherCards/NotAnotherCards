@@ -9,6 +9,7 @@
  * that creates, updates and deactivates cards per template.
  */
 import { z } from 'zod';
+import { CARD_FACE_MAX_LENGTH } from '@repo/schemas';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
@@ -20,6 +21,21 @@ import { BASIC_FRONT_BACK_TEMPLATE_KEY } from './ids.js';
 export interface RenderedCard {
   readonly front: string;
   readonly back: string;
+}
+
+export function isReviewSafeCard(card: RenderedCard): boolean {
+  return (
+    card.front.length <= CARD_FACE_MAX_LENGTH &&
+    card.back.length <= CARD_FACE_MAX_LENGTH
+  );
+}
+
+export function assertReviewSafeCards(cards: readonly RenderedCard[]): void {
+  if (cards.some((card) => !isReviewSafeCard(card))) {
+    throw new Error(
+      `Card content cannot exceed ${CARD_FACE_MAX_LENGTH} characters per face`,
+    );
+  }
 }
 
 /**

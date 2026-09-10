@@ -12,7 +12,7 @@ import {
   prepareCardsForNewNote,
   prepareReconcileNoteCards,
 } from './note-reconcile.js';
-import { compileNote } from './note-registry.js';
+import { assertReviewSafeCards, compileNote } from './note-registry.js';
 import {
   UserDeck,
   UserNote,
@@ -49,6 +49,7 @@ function prepareNewNote(
     input.fieldsVersion,
     input.fields,
   );
+  assertReviewSafeCards(compiled.cards);
   const noteId = db.randomId();
   const note = db.get(UserNote).prepareCreate({
     id: noteId,
@@ -107,6 +108,7 @@ export async function updateNoteFields(
     const now = Date.now();
     const note = await db.get(UserNote).find(noteId);
     const compiled = compileNote(note.note_type, note.fields_version, fields);
+    assertReviewSafeCards(compiled.cards);
     const cards = await prepareReconcileNoteCards(db, note.id, compiled);
     await db.batch([
       note.prepareUpdate((record) => {

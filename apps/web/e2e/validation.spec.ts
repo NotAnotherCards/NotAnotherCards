@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { CARD_FACE_MAX_LENGTH } from '@repo/schemas';
 import { test, expect, expectDashboardReady } from './fixtures.js';
 import { registerAndOnboard } from './helpers.js';
 
@@ -157,25 +158,23 @@ test('deck and card validation recover, and persisted Markdown cannot execute an
   await expect(
     page.getByText('Back content is required', { exact: true }),
   ).toBeVisible();
-  await front.fill('x'.repeat(1001));
-  await back.fill('x'.repeat(1001));
+  await front.fill('x'.repeat(CARD_FACE_MAX_LENGTH + 1));
+  await back.fill('x'.repeat(CARD_FACE_MAX_LENGTH + 1));
   await saveCard.click();
   await expect(
-    page
-      .getByRole('alert')
-      .filter({ hasText: 'Content cannot exceed 1000 characters' }),
+    page.getByRole('alert').filter({
+      hasText: `Content cannot exceed ${CARD_FACE_MAX_LENGTH} characters`,
+    }),
   ).toHaveCount(2);
   await expect(front).toHaveAttribute('aria-invalid', 'true');
   await expect(back).toHaveAttribute('aria-invalid', 'true');
 
   // A valid image fires load without a failed network request. If sanitization
   // regresses, this handler leaves evidence without throwing a console error.
-  await page.addInitScript(() =>
-    Reflect.set(window, '__e2eXssExecuted', false),
-  );
-  await page.evaluate(() => Reflect.set(window, '__e2eXssExecuted', false));
+  await page.addInitScript(() => Reflect.set(window, 'x', false));
+  await page.evaluate(() => Reflect.set(window, 'x', false));
   const payload =
-    '<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="window.__e2eXssExecuted=true" alt="XSS probe"> **Safe card text**';
+    '<img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" onload="x=1" alt="XSS probe"> **Safe card text**';
   await front.fill(payload);
   await back.fill('Safe answer');
   await saveCard.click();
@@ -189,9 +188,7 @@ test('deck and card validation recover, and persisted Markdown cannot execute an
         ),
     )
     .toBe(true);
-  expect(
-    await page.evaluate(() => Reflect.get(window, '__e2eXssExecuted')),
-  ).toBe(false);
+  expect(await page.evaluate(() => Reflect.get(window, 'x'))).toBe(false);
   await expect(page.getByTestId('sync-status')).toHaveText('Synced');
 
   await page.reload();
@@ -215,9 +212,7 @@ test('deck and card validation recover, and persisted Markdown cannot execute an
         ),
     )
     .toBe(true);
-  expect(
-    await page.evaluate(() => Reflect.get(window, '__e2eXssExecuted')),
-  ).toBe(false);
+  expect(await page.evaluate(() => Reflect.get(window, 'x'))).toBe(false);
   await page.keyboard.press('Escape');
 
   // Confirm the hostile input was stored, rather than silently discarded.

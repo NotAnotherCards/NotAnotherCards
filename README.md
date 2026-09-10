@@ -75,7 +75,9 @@ edits, review ratings and due-time boundaries, isolation and sync across three
 browser contexts, account switching, word-note validation and optional-field
 removal, and persisted Markdown XSS input. Playwright
 runs the production web bundle in stable Google Chrome at desktop and phone
-widths. Warnings, console errors, and uncaught browser exceptions fail the test.
+widths. The long-card layout also runs at 360×640, below the regular 390×844
+phone viewport. Warnings, console errors, and uncaught browser exceptions fail
+the test.
 
 The scheduling scenario creates a card and reviews it, then uses Playwright's
 browser clock to cross the five-minute and three-day due boundaries. It checks
@@ -127,6 +129,9 @@ The `Browser tests` workflow runs independently of the unit/API suites, using
 its own Postgres service. It runs for pull requests and pushes to `main`, from
 the Actions **Run workflow** button, and every day at 04:00 Europe/Berlin. It
 currently uses API + Vite preview; Compose/nginx coverage remains with #251.
-#318's long-content assertions await the product decision. Agents can explore
-this disposable environment and propose regression tests; CI executes reviewed,
-fixed assertions.
+#318's browser regression creates long-front, long-back, both-long prose, and
+six-item Markdown list cards at the 250-character-per-face limit. That base
+heuristic keeps both compact answer-side cards readable at 360×640. The test
+verifies the cards do not overlap or overflow and that every rating remains
+inside the phone viewport. Agents can explore this disposable environment and
+propose regression tests; CI executes reviewed, fixed assertions.

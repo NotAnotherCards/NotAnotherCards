@@ -1,4 +1,5 @@
 import { cardFormSchema } from '@/lib/card-schema';
+import { CARD_FACE_MAX_LENGTH } from '@repo/schemas';
 
 describe('cardFormSchema', () => {
   it('trims both sides and accepts them', () => {
@@ -19,8 +20,8 @@ describe('cardFormSchema', () => {
     ).toBe(false);
   });
 
-  it('enforces the 1000-character limit on each side', () => {
-    const max = 'a'.repeat(1000);
+  it('enforces the review-safe limit on each side', () => {
+    const max = 'a'.repeat(CARD_FACE_MAX_LENGTH);
     expect(cardFormSchema.safeParse({ front: max, back: max }).success).toBe(
       true,
     );

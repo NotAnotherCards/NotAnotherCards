@@ -393,8 +393,8 @@ export class AiGatewayService {
         throw new Error(`Card at index ${idx} is missing front or back string`);
       }
       return {
-        front: item.front.slice(0, 1000),
-        back: item.back.slice(0, 1000),
+        front: item.front,
+        back: item.back,
       };
     });
   }

@@ -20,8 +20,17 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
+    {
+      name: 'desktop',
+      testIgnore: ['**/live/**', '**/long-card-layout.spec.ts'],
+      use: { viewport: { width: 1440, height: 900 } },
+    },
     { name: 'phone', use: { viewport: { width: 390, height: 844 } } },
+    {
+      name: 'small-phone',
+      testMatch: '**/long-card-layout.spec.ts',
+      use: { viewport: { width: 360, height: 640 } },
+    },
   ],
   webServer: [
     {

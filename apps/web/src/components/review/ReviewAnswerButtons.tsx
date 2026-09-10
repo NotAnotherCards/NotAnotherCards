@@ -49,7 +49,7 @@ export function ReviewAnswerButtons({
 
   return (
     <div
-      className="grid grid-cols-3 gap-2"
+      className="grid grid-cols-4 gap-1 sm:gap-2"
       data-testid={
         active ? 'review-answer-buttons' : 'review-front-answer-buttons'
       }
@@ -58,7 +58,7 @@ export function ReviewAnswerButtons({
         variant="outline"
         onClick={handleAnswer('forgot')}
         disabled={disabled}
-        className={`min-h-12 cursor-pointer ${answerButtonClassName.forgot}`}
+        className={`min-h-12 min-w-0 cursor-pointer px-1 text-xs sm:px-3 sm:text-sm ${answerButtonClassName.forgot}`}
       >
         {reviewAnswerLabels.forgot}
       </Button>
@@ -66,7 +66,7 @@ export function ReviewAnswerButtons({
         variant="outline"
         onClick={handleAnswer('hard')}
         disabled={disabled}
-        className={`min-h-12 cursor-pointer ${answerButtonClassName.hard}`}
+        className={`min-h-12 min-w-0 cursor-pointer px-1 text-xs sm:px-3 sm:text-sm ${answerButtonClassName.hard}`}
       >
         {reviewAnswerLabels.hard}
       </Button>
@@ -74,7 +74,7 @@ export function ReviewAnswerButtons({
         variant="outline"
         onClick={handleAnswer('remember')}
         disabled={disabled}
-        className={`min-h-12 cursor-pointer ${answerButtonClassName.remember}`}
+        className={`min-h-12 min-w-0 cursor-pointer px-1 text-xs sm:px-3 sm:text-sm ${answerButtonClassName.remember}`}
       >
         {reviewAnswerLabels.remember}
       </Button>
@@ -82,7 +82,7 @@ export function ReviewAnswerButtons({
         variant="outline"
         onClick={handleAnswer('very-easy')}
         disabled={disabled}
-        className={`col-start-2 min-h-12 cursor-pointer ${answerButtonClassName['very-easy']}`}
+        className={`min-h-12 min-w-0 cursor-pointer px-1 text-xs sm:px-3 sm:text-sm ${answerButtonClassName['very-easy']}`}
       >
         {reviewAnswerLabels['very-easy']}
       </Button>

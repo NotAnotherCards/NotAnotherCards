@@ -357,7 +357,7 @@ describe('AiGatewayService', () => {
       expect(pieces.join('')).toBe(raw);
       expect(streamed).toEqual(buffered);
       expect(streamed.cards).toEqual([
-        { front: 'café', back: 'x'.repeat(1000) },
+        { front: 'café', back: 'x'.repeat(1100) },
       ]);
       const init = fetchMock.mock.calls[0][1]!;
       expect(JSON.parse(init.body as string)).toMatchObject({

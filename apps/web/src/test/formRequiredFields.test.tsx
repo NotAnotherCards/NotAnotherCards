@@ -1,9 +1,31 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { CardForm } from '../components/deck/CardForm';
+import { CardForm, cardSchema } from '../components/deck/CardForm';
 import { DeckForm } from '../components/deck/DeckForm';
+import { CARD_FACE_MAX_LENGTH } from '@repo/schemas';
 
 describe('Required deck and card fields', () => {
+  it('limits card faces to the review-safe content length', () => {
+    expect(
+      cardSchema.safeParse({
+        front: 'f'.repeat(CARD_FACE_MAX_LENGTH),
+        back: 'b'.repeat(CARD_FACE_MAX_LENGTH),
+      }).success,
+    ).toBe(true);
+
+    const result = cardSchema.safeParse({
+      front: 'f'.repeat(CARD_FACE_MAX_LENGTH + 1),
+      back: 'b'.repeat(CARD_FACE_MAX_LENGTH + 1),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors).toEqual({
+        front: [`Content cannot exceed ${CARD_FACE_MAX_LENGTH} characters`],
+        back: [`Content cannot exceed ${CARD_FACE_MAX_LENGTH} characters`],
+      });
+    }
+  });
+
   it('rejects a whitespace-only deck title and accepts a corrected title', async () => {
     const onSubmit = vi.fn();
     render(

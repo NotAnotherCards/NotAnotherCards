@@ -12,6 +12,7 @@ import { Layers } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { CARD_FACE_MAX_LENGTH } from '@repo/schemas';
 import {
   Field,
   FieldError,
@@ -20,17 +21,23 @@ import {
   FieldSet,
 } from '@/components/ui/field';
 
-const cardSchema = z.object({
+export const cardSchema = z.object({
   front: z
     .string()
     .trim()
     .min(1, 'Front content is required')
-    .max(1000, 'Content cannot exceed 1000 characters'),
+    .max(
+      CARD_FACE_MAX_LENGTH,
+      `Content cannot exceed ${CARD_FACE_MAX_LENGTH} characters`,
+    ),
   back: z
     .string()
     .trim()
     .min(1, 'Back content is required')
-    .max(1000, 'Content cannot exceed 1000 characters'),
+    .max(
+      CARD_FACE_MAX_LENGTH,
+      `Content cannot exceed ${CARD_FACE_MAX_LENGTH} characters`,
+    ),
 });
 
 type CardFormData = z.infer<typeof cardSchema>;

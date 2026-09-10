@@ -140,30 +140,38 @@ export function ReviewCard({
           >
             <div
               aria-hidden={isFlipped}
-              className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+              className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
             >
               <MarkdownRenderer
                 content={card.front}
                 data-testid="review-card-front-content"
-                className="max-h-full max-w-full overflow-hidden text-3xl font-bold wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain"
+                className="max-w-full text-xl font-bold wrap-break-word sm:text-3xl [&_img]:max-h-32 [&_img]:max-w-full [&_img]:object-contain sm:[&_img]:max-h-48"
               />
             </div>
             <div
               aria-hidden={!isFlipped}
-              className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+              className="absolute inset-0 grid min-h-[min(52dvh,28rem)] w-full grid-rows-2 gap-2 [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:gap-3"
             >
-              <div className="flex max-h-full w-full flex-col items-center gap-5 overflow-hidden py-12">
+              <section
+                aria-label="Question"
+                className="flex min-h-0 items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-3 text-center shadow-xl dark:from-zinc-800 dark:to-zinc-900"
+              >
                 <MarkdownRenderer
                   content={card.front}
-                  className="max-h-full max-w-full overflow-hidden text-center text-xl font-medium text-muted-foreground wrap-break-word [&_img]:max-h-32 [&_img]:max-w-full [&_img]:object-contain"
+                  data-testid="review-card-answer-front-content"
+                  className="max-w-full text-center text-sm leading-5 font-medium text-muted-foreground wrap-break-word [&_h1]:!text-base [&_h2]:!text-base [&_h3]:!text-base [&_h4]:!text-sm [&_h5]:!text-sm [&_h6]:!text-sm [&_img]:max-h-10 [&_img]:max-w-full [&_img]:object-contain [&_li+li]:!mt-0 [&_p+p]:!mt-1"
                 />
-                <span className="h-px w-16 shrink-0 bg-border" />
+              </section>
+              <section
+                aria-label="Answer"
+                className="flex min-h-0 items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-3 text-center shadow-xl dark:from-zinc-800 dark:to-zinc-900"
+              >
                 <MarkdownRenderer
                   content={card.back}
                   data-testid="review-card-back-content"
-                  className="max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
+                  className="max-w-full text-center text-sm leading-5 font-bold wrap-break-word [&_h1]:!text-base [&_h2]:!text-base [&_h3]:!text-base [&_h4]:!text-sm [&_h5]:!text-sm [&_h6]:!text-sm [&_img]:max-h-10 [&_img]:max-w-full [&_img]:object-contain [&_li+li]:!mt-0 [&_p+p]:!mt-1 [&_ul]:!mt-0 [&_ul]:font-normal"
                 />
-              </div>
+              </section>
             </div>
           </div>
         </div>
