@@ -5,6 +5,11 @@ interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
 }
 
+// Healthy moderation takes ~0.25 s/card, so 60 s covers a 200-card deck.
+const MODERATION_DECK_DEADLINE_MS = 60_000;
+// Cap one stalled card at 30 s, well below nginx's 300 s API timeout.
+const MODERATION_CARD_TIMEOUT_MS = 30_000;
+
 export interface ModerationVerdict {
   ok: boolean;
   /** Why the deck was refused when no individual card was flagged. */
@@ -41,8 +46,13 @@ export class ModerationService {
 
     const flagged: ModerationVerdict['flagged'] = [];
     const warnings: ModerationVerdict['warnings'] = [];
+    const startedAt = Date.now();
+    const deadline = startedAt + MODERATION_DECK_DEADLINE_MS;
     try {
       for (const card of input.cards) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw new Error('Moderation deadline exceeded');
+
         const response = await fetch(`${apiBase}/chat/completions`, {
           method: 'POST',
           headers: {
@@ -57,7 +67,9 @@ export class ModerationService {
               { role: 'user', content: `${card.front}\n${card.back}` },
             ],
           }),
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(
+            Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
+          ),
         });
         if (!response.ok) throw new Error('Moderation gateway error');
 
@@ -77,8 +89,16 @@ export class ModerationService {
           warnings.push({ cardId: card.id, reason });
       }
     } catch (error: unknown) {
-      const name = error instanceof Error ? error.name : 'UnknownError';
-      this.logger.warn(`Moderation failed for deck ${input.deckId}: ${name}`);
+      const name =
+        typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        typeof error.name === 'string'
+          ? error.name
+          : 'UnknownError';
+      this.logger.warn(
+        `Moderation failed for deck ${input.deckId} after ${Date.now() - startedAt}ms: ${name}`,
+      );
       return unavailable();
     }
 

@@ -22,6 +22,32 @@ describe('ModerationService', () => {
       json: () => Promise.resolve({ choices: [{ message: { content } }] }),
     }) as Response;
 
+  const fakeAbortTimeouts = () =>
+    jest.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), milliseconds);
+      return controller.signal;
+    });
+
+  const delayedSafeFetch = (milliseconds: number) =>
+    jest.mocked(global.fetch).mockImplementation(
+      (_input, init) =>
+        new Promise<Response>((resolve, reject) => {
+          const timer = setTimeout(
+            () => resolve(response('Safety: Safe')),
+            milliseconds,
+          );
+          init?.signal?.addEventListener(
+            'abort',
+            () => {
+              clearTimeout(timer);
+              reject(new DOMException('Aborted', 'AbortError'));
+            },
+            { once: true },
+          );
+        }),
+    );
+
   beforeEach(() => {
     global.fetch = jest.fn();
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
@@ -29,6 +55,7 @@ describe('ModerationService', () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
@@ -158,5 +185,81 @@ describe('ModerationService', () => {
       stream: false,
       messages: [{ role: 'user', content: 'front 1\nback 1' }],
     });
+  });
+
+  it('fails a hung gateway at the per-card cap within the deck budget', async () => {
+    jest.useFakeTimers({ doNotFake: [] });
+    jest.setSystemTime(0);
+    fakeAbortTimeouts();
+    jest.mocked(global.fetch).mockImplementation(
+      (_input, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            'abort',
+            () => reject(new DOMException('Aborted', 'AbortError')),
+            { once: true },
+          );
+        }),
+    );
+
+    const check = serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+    }).check(input);
+    await jest.advanceTimersByTimeAsync(30_000);
+
+    await expect(check).resolves.toEqual({
+      ok: false,
+      reason: 'moderation unavailable',
+      flagged: [],
+      warnings: [],
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(Logger.prototype.warn).toHaveBeenCalledWith(
+      'Moderation failed for deck deck-1 after 30000ms: AbortError',
+    );
+  });
+
+  it('fails cumulative slow requests at the deck deadline', async () => {
+    jest.useFakeTimers({ doNotFake: [] });
+    jest.setSystemTime(0);
+    fakeAbortTimeouts();
+    const mockFetch = delayedSafeFetch(20_001);
+
+    const check = serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+    }).check(input);
+    await jest.advanceTimersByTimeAsync(60_000);
+
+    await expect(check).resolves.toEqual({
+      ok: false,
+      reason: 'moderation unavailable',
+      flagged: [],
+      warnings: [],
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('passes twenty slow-but-healthy cards within the deck budget', async () => {
+    jest.useFakeTimers({ doNotFake: [] });
+    jest.setSystemTime(0);
+    fakeAbortTimeouts();
+    const mockFetch = delayedSafeFetch(100);
+    const slowCards = Array.from({ length: 20 }, (_, index) => ({
+      id: `card-${index}`,
+      front: `front ${index}`,
+      back: `back ${index}`,
+    }));
+
+    const check = serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+    }).check({ deckId: 'deck-1', cards: slowCards });
+    await jest.advanceTimersByTimeAsync(2_000);
+
+    await expect(check).resolves.toEqual({
+      ok: true,
+      flagged: [],
+      warnings: [],
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(20);
   });
 });

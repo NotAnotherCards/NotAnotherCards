@@ -87,5 +87,6 @@ go through `AiGatewayService`. The classifier grades each card `Safe`,
 card and its category in the 422 body; a controversial card is returned as a
 warning on the successful response. An unreachable gateway, a timeout or an
 unparsable verdict refuses publication with `moderation unavailable`; there
-is no allow-on-error path. Private decks are never checked.
+is no allow-on-error path. A deck check has a 60 s budget and fails closed when
+that budget runs out. Private decks are never checked.
 `MODERATION_ALLOW_ALL=1` bypasses the classifier, for tests and demos only.
