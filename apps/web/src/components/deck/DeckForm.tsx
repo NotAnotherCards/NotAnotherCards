@@ -42,6 +42,7 @@ const deckSchema = z.object({
     .max(100, 'Deck title cannot exceed 100 characters'),
   description: z
     .string()
+    .trim()
     .max(500, 'Description cannot exceed 500 characters')
     .optional()
     .or(z.literal('')),
