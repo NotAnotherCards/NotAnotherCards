@@ -37,6 +37,9 @@ const mockDecks = [
     noteType: 'basic',
     cardCount: 50,
     owner: { username: 'polyglot99' },
+    nativeLanguageId: null,
+    targetLanguageId: null,
+    updatedAt: Date.now(),
   },
 ];
 

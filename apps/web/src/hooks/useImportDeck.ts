@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { apiErrorBodySchema } from '@repo/schemas';
+import { z } from 'zod';
+
+const importSuccessSchema = z.object({ deckId: z.string() });
 
 export function useImportDeck() {
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
@@ -21,11 +25,12 @@ export function useImportDeck() {
         },
       );
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.message || 'Failed to import deck');
+        const json: unknown = await res.json().catch(() => null);
+        const errorBody = apiErrorBodySchema.parse(json);
+        throw new Error(errorBody.message || 'Failed to import deck');
       }
-      const data = await res.json();
-      return data;
+      const json: unknown = await res.json();
+      return importSuccessSchema.parse(json);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
       return null;

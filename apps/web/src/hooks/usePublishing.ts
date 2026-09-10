@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { moderationRefusalSchema, apiErrorBodySchema } from '@repo/schemas';
 
 export interface FlaggedCard {
   cardId: string;
@@ -29,15 +30,19 @@ export function usePublishing() {
         },
       );
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        if (res.status === 422 && body) {
-          setError({
-            reason: body.reason || 'Moderation failed',
-            flagged: body.flagged || [],
-          });
-          return false;
+        const json: unknown = await res.json().catch(() => null);
+        if (res.status === 422) {
+          const body = moderationRefusalSchema.safeParse(json);
+          if (body.success) {
+            setError({
+              reason: body.data.reason || 'Moderation failed',
+              flagged: body.data.flagged || [],
+            });
+            return false;
+          }
         }
-        throw new Error(body?.message || 'Failed to publish deck');
+        const errorBody = apiErrorBodySchema.parse(json);
+        throw new Error(errorBody.message || 'Failed to publish deck');
       }
       if (onSync) await onSync();
       return true;
@@ -66,8 +71,9 @@ export function usePublishing() {
         },
       );
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.message || 'Failed to unpublish deck');
+        const json: unknown = await res.json().catch(() => null);
+        const errorBody = apiErrorBodySchema.parse(json);
+        throw new Error(errorBody.message || 'Failed to unpublish deck');
       }
       if (onSync) await onSync();
       return true;

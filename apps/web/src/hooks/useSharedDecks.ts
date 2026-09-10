@@ -1,16 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-
-export interface SharedDeckSummary {
-  id: string;
-  title: string | null;
-  description: string | null;
-  noteType: string;
-  nativeLanguageId: string | null;
-  targetLanguageId: string | null;
-  updatedAt: number;
-  cardCount: number;
-  owner: { username: string };
-}
+import { sharedDeckListSchema, type SharedDeckSummary } from '@repo/schemas';
 
 export function useSharedDecks() {
   const [decks, setDecks] = useState<SharedDeckSummary[]>([]);
@@ -25,7 +14,8 @@ export function useSharedDecks() {
       if (!response.ok) {
         throw new Error('Failed to fetch shared decks');
       }
-      const data = await response.json();
+      const json: unknown = await response.json();
+      const data = sharedDeckListSchema.parse(json);
       setDecks(data.decks || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
