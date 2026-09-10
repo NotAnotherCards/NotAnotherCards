@@ -74,10 +74,16 @@ export function MarkdownRenderer({
     if (!content) return '';
 
     try {
-      // 1. Parse Markdown into raw HTML
+      // 1. Parse Markdown into raw HTML. parseInline ignores block structure,
+      // so a paragraph break (blank line) would collapse into a space; keep
+      // it as a line break so "translation, blank line, example" stays two
+      // lines in the card list and previews.
       const rawHtml = (
         inline
-          ? markedInstance.parseInline(content, { async: false })
+          ? markedInstance.parseInline(
+              content.replace(/\r?\n(?:[ \t]*\r?\n)+/g, '<br>'),
+              { async: false },
+            )
           : markedInstance.parse(content, { async: false })
       ) as string;
 

@@ -131,6 +131,21 @@ describe('MarkdownRenderer', () => {
       expect(wrapper.textContent).toContain('one');
       expect(wrapper.textContent).toContain('two');
     });
+
+    it('keeps a paragraph break as a line break in inline mode', () => {
+      // A word card's back is "translation, blank line, example".
+      const { container } = render(
+        <MarkdownRenderer
+          content={'alt\n\nMi abuelo es un hombre muy viejo pero fuerte.'}
+          inline
+          data-testid="inline-break"
+        />,
+      );
+
+      const wrapper = screen.getByTestId('inline-break');
+      expect(container.querySelector('p')).toBeNull();
+      expect(wrapper.innerHTML).toMatch(/alt<br>Mi abuelo/);
+    });
   });
 
   describe('DOMPurify Sanitization & Security Protection', () => {
