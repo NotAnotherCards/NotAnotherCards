@@ -15,7 +15,7 @@ export function usePublishing() {
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const [error, setError] = useState<ModerationError | null>(null);
 
-  const publish = async (deckId: string): Promise<boolean> => {
+  const publish = async (deckId: string, onSync?: () => Promise<void>): Promise<boolean> => {
     setIsPublishing(true);
     setError(null);
     try {
@@ -36,6 +36,7 @@ export function usePublishing() {
         }
         throw new Error(body?.message || 'Failed to publish deck');
       }
+      if (onSync) await onSync();
       return true;
     } catch (err) {
       setError({
@@ -48,7 +49,7 @@ export function usePublishing() {
     }
   };
 
-  const unpublish = async (deckId: string): Promise<boolean> => {
+  const unpublish = async (deckId: string, onSync?: () => Promise<void>): Promise<boolean> => {
     setIsUnpublishing(true);
     setError(null);
     try {
@@ -62,6 +63,7 @@ export function usePublishing() {
         const body = await res.json().catch(() => null);
         throw new Error(body?.message || 'Failed to unpublish deck');
       }
+      if (onSync) await onSync();
       return true;
     } catch (err) {
       setError({

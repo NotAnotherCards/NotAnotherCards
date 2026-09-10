@@ -28,6 +28,8 @@ import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { CardList } from './CardList';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { usePublishing } from '@/hooks/usePublishing';
+import { useSyncController } from '@/offline/syncProvider';
 
 interface DeckDetailProps {
   deckId: string;
@@ -41,6 +43,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [noteToRemove, setNoteToRemove] = useState<Card | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
+  const { publish, unpublish, isPublishing, isUnpublishing, error, setError } = usePublishing();
+  const controller = useSyncController();
 
   if (store.isTakenOver) {
     return (
@@ -98,6 +102,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
   const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
+  const isPublic = deck?.visibility === 'public';
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
   const editingWordFields = (() => {
@@ -232,15 +237,42 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               {deck.description || 'Manage your library cards below.'}
             </p>
           </div>
-          {isKnownDeck && (
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              className="cursor-pointer gap-1.5 self-stretch md:self-auto justify-center"
-            >
-              <Plus className="size-4" />
-              Add Card
-            </Button>
-          )}
+          <div className="flex flex-col sm:flex-row gap-2 self-stretch md:self-auto">
+            {isPublic ? (
+              <Button
+                variant="outline"
+                disabled={isUnpublishing}
+                onClick={async () => {
+                  await controller?.syncNow();
+                  await unpublish(deckId, () => controller?.syncNow() || Promise.resolve());
+                }}
+                className="cursor-pointer gap-1.5 justify-center"
+              >
+                Unpublish
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                disabled={isPublishing}
+                onClick={async () => {
+                  await controller?.syncNow();
+                  await publish(deckId, () => controller?.syncNow() || Promise.resolve());
+                }}
+                className="cursor-pointer gap-1.5 justify-center"
+              >
+                Publish
+              </Button>
+            )}
+            {isKnownDeck && (
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="cursor-pointer gap-1.5 justify-center"
+              >
+                <Plus className="size-4" />
+                Add Card
+              </Button>
+            )}
+          </div>
         </div>
         {!isKnownDeck && (
           <p className="text-sm text-muted-foreground">
@@ -362,6 +394,59 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   className="cursor-pointer"
                 >
                   Remove from Deck
+                </Button>
+              </div>
+            </CardContent>
+          </UICard>
+        </div>
+      )}
+      {/* Moderation Error Feedback */}
+      {error && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="moderation-error-title"
+          onClick={() => setError(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+        >
+          <UICard
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200"
+          >
+            <CardHeader>
+              <CardTitle id="moderation-error-title" className="text-lg font-bold flex items-center gap-2">
+                <AlertCircle className="size-5 text-destructive" />
+                Could Not Publish Deck
+              </CardTitle>
+              <CardDescription>
+                The deck was refused by our automated moderation system. Please review the flagged content before trying again.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              <FormErrorMessage message={error.reason} />
+              
+              {error.flagged && error.flagged.length > 0 && (
+                <div className="bg-muted/50 rounded-lg p-4 border border-border text-sm max-h-48 overflow-y-auto">
+                  <p className="font-semibold mb-2">Flagged Cards:</p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    {error.flagged.map((flag, idx) => (
+                      <li key={idx}>
+                        <span className="font-mono bg-background px-1.5 py-0.5 rounded text-muted-foreground mr-1.5 border border-border/50">
+                          {flag.cardId.slice(0, 8)}
+                        </span>
+                        <span className="text-foreground">{flag.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="flex justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setError(null)}
+                  className="cursor-pointer"
+                >
+                  Close
                 </Button>
               </div>
             </CardContent>
