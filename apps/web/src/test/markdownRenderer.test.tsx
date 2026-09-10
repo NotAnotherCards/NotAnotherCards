@@ -90,23 +90,8 @@ describe('MarkdownRenderer', () => {
     });
   });
 
-  describe('Inline Mode Behavior', () => {
-    it('renders a <span> element when inline is true and does not wrap in <p>', () => {
-      const { container } = render(
-        <MarkdownRenderer
-          content="Hello World"
-          inline
-          data-testid="inline-md"
-        />,
-      );
-
-      const wrapper = screen.getByTestId('inline-md');
-      expect(wrapper.tagName.toLowerCase()).toBe('span');
-      expect(container.querySelector('p')).toBeNull();
-      expect(wrapper).toHaveTextContent('Hello World');
-    });
-
-    it('renders a <div> element when inline is false and wraps blocks in <p>', () => {
+  describe('Block structure', () => {
+    it('renders a div with paragraph elements', () => {
       const { container } = render(
         <MarkdownRenderer content="Hello World" data-testid="block-md" />,
       );
@@ -116,20 +101,15 @@ describe('MarkdownRenderer', () => {
       expect(container.querySelector('p')).toBeInTheDocument();
     });
 
-    it('parses multi-line inline content without block elements using parseInline', () => {
+    it('keeps paragraph breaks as separate paragraphs', () => {
       const { container } = render(
-        <MarkdownRenderer
-          content={'one\n\ntwo'}
-          inline
-          data-testid="multi-inline"
-        />,
+        <MarkdownRenderer content={'one\n\ntwo'} data-testid="paragraphs" />,
       );
 
-      const wrapper = screen.getByTestId('multi-inline');
-      expect(wrapper.tagName.toLowerCase()).toBe('span');
-      expect(container.querySelector('p')).toBeNull();
-      expect(wrapper.textContent).toContain('one');
-      expect(wrapper.textContent).toContain('two');
+      const paragraphs = container.querySelectorAll('p');
+      expect(paragraphs).toHaveLength(2);
+      expect(paragraphs[0]).toHaveTextContent('one');
+      expect(paragraphs[1]).toHaveTextContent('two');
     });
   });
 

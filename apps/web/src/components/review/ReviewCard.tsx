@@ -1,5 +1,6 @@
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import type { Card } from '@/hooks/useStore';
+import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import type { ReviewCardSwipeDirection } from './useReviewCardInteraction';
 
@@ -175,7 +176,11 @@ export function ReviewCard({
                 <MarkdownRenderer
                   content={card.back}
                   data-testid="review-card-back-content"
-                  className="max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
+                  className={`max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal ${
+                    card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY
+                      ? '[&_p+p]:!mt-4 [&_p+p]:text-xl [&_p+p]:font-normal'
+                      : ''
+                  }`}
                 />
               </div>
             </div>

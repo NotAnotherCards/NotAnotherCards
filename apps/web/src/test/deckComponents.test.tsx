@@ -4,6 +4,7 @@ import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
+import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 
 vi.mock('@/offline/db', () => {
   const manager = {
@@ -155,6 +156,48 @@ describe('CardItem Component', () => {
 
     expect(screen.getByText('Hola')).toBeInTheDocument();
     expect(screen.getByText('Hello')).toBeInTheDocument();
+  });
+
+  it('keeps word examples as a smaller second paragraph without restyling basic cards', () => {
+    const { rerender } = render(
+      <table>
+        <tbody>
+          <CardItem
+            card={{
+              ...mockCard,
+              template_key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
+              back: 'old\n\nAn old house',
+            }}
+            onEditCard={vi.fn()}
+            onRemoveFromDeck={vi.fn()}
+            onViewCard={vi.fn()}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const wordBack = screen
+      .getByText('An old house')
+      .closest('.markdown-content');
+    expect(wordBack?.querySelectorAll('p')).toHaveLength(2);
+    expect(wordBack).toHaveClass('[&_p+p]:text-xs');
+
+    rerender(
+      <table>
+        <tbody>
+          <CardItem
+            card={{ ...mockCard, back: 'answer\n\nMore detail' }}
+            onEditCard={vi.fn()}
+            onRemoveFromDeck={vi.fn()}
+            onViewCard={vi.fn()}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(
+      screen.getByText('More detail').closest('.markdown-content'),
+    ).not.toHaveClass('[&_p+p]:text-xs');
   });
 
   it('triggers callbacks on view, edit, and remove-from-deck actions', () => {
