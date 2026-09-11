@@ -5,10 +5,22 @@ interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
 }
 
-// Healthy moderation takes ~0.25 s/card, so 60 s covers a 200-card deck.
-const MODERATION_DECK_DEADLINE_MS = 60_000;
+// The deck deadline scales with the deck: healthy moderation takes ~0.25 s
+// per card, so 1 s per card is a 4x margin, and 5 s covers the first
+// round trip. A fixed budget would cap deck size instead of catching a
+// slow gateway. 240 s stays under nginx's 300 s API timeout.
+const MODERATION_BASE_DEADLINE_MS = 5_000;
+const MODERATION_PER_CARD_MS = 1_000;
+const MODERATION_MAX_DEADLINE_MS = 240_000;
 // Cap one stalled card at 30 s, well below nginx's 300 s API timeout.
 const MODERATION_CARD_TIMEOUT_MS = 30_000;
+
+export function moderationDeadlineMs(cardCount: number): number {
+  return Math.min(
+    MODERATION_BASE_DEADLINE_MS + MODERATION_PER_CARD_MS * cardCount,
+    MODERATION_MAX_DEADLINE_MS,
+  );
+}
 
 export interface ModerationVerdict {
   ok: boolean;
@@ -47,7 +59,7 @@ export class ModerationService {
     const flagged: ModerationVerdict['flagged'] = [];
     const warnings: ModerationVerdict['warnings'] = [];
     const startedAt = Date.now();
-    const deadline = startedAt + MODERATION_DECK_DEADLINE_MS;
+    const deadline = startedAt + moderationDeadlineMs(input.cards.length);
     try {
       for (const card of input.cards) {
         const remaining = deadline - Date.now();

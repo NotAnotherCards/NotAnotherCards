@@ -1,6 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ModerationService } from '../sharing/moderation.service';
+import {
+  ModerationService,
+  moderationDeadlineMs,
+} from '../sharing/moderation.service';
 
 describe('ModerationService', () => {
   const cards = [
@@ -9,6 +12,12 @@ describe('ModerationService', () => {
     { id: 'card-3', front: 'front 3', back: 'back 3' },
   ];
   const input = { deckId: 'deck-1', cards };
+  const manyCards = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      id: `card-${index}`,
+      front: `front ${index}`,
+      back: `back ${index}`,
+    }));
   const originalFetch = global.fetch;
 
   const serviceWith = (values: Record<string, string | undefined>) =>
@@ -187,6 +196,12 @@ describe('ModerationService', () => {
     });
   });
 
+  it('scales the deck budget with the card count, capped under nginx', () => {
+    expect(moderationDeadlineMs(0)).toBe(5_000);
+    expect(moderationDeadlineMs(200)).toBe(205_000);
+    expect(moderationDeadlineMs(500)).toBe(240_000);
+  });
+
   it('fails a hung gateway at the per-card cap within the deck budget', async () => {
     jest.useFakeTimers({ doNotFake: [] });
     jest.setSystemTime(0);
@@ -202,9 +217,10 @@ describe('ModerationService', () => {
         }),
     );
 
+    // Forty cards give a 45 s deck budget, so the 30 s per-card cap fires first.
     const check = serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-    }).check(input);
+    }).check({ deckId: 'deck-1', cards: manyCards(40) });
     await jest.advanceTimersByTimeAsync(30_000);
 
     await expect(check).resolves.toEqual({
@@ -223,12 +239,13 @@ describe('ModerationService', () => {
     jest.useFakeTimers({ doNotFake: [] });
     jest.setSystemTime(0);
     fakeAbortTimeouts();
-    const mockFetch = delayedSafeFetch(20_001);
+    // Three cards give an 8 s deck budget; the third call runs out of it.
+    const mockFetch = delayedSafeFetch(3_001);
 
     const check = serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
     }).check(input);
-    await jest.advanceTimersByTimeAsync(60_000);
+    await jest.advanceTimersByTimeAsync(8_000);
 
     await expect(check).resolves.toEqual({
       ok: false,
@@ -244,15 +261,10 @@ describe('ModerationService', () => {
     jest.setSystemTime(0);
     fakeAbortTimeouts();
     const mockFetch = delayedSafeFetch(100);
-    const slowCards = Array.from({ length: 20 }, (_, index) => ({
-      id: `card-${index}`,
-      front: `front ${index}`,
-      back: `back ${index}`,
-    }));
 
     const check = serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-    }).check({ deckId: 'deck-1', cards: slowCards });
+    }).check({ deckId: 'deck-1', cards: manyCards(20) });
     await jest.advanceTimersByTimeAsync(2_000);
 
     await expect(check).resolves.toEqual({
