@@ -32,15 +32,17 @@ export function AiGenerationPlaygroundComponent() {
   const [streamResult, setStreamResult] = useState<AiCardOutput[] | null>(null);
   const streamRequest = useRef<AbortController | null>(null);
   const liveOutput = useRef<HTMLPreElement>(null);
-  
+
   const cards =
     streamResult ??
     (currentJob?.status === 'completed' && Array.isArray(currentJob.result)
       ? currentJob.result
       : null);
 
-  const wordNoteCandidate = 
-    currentJob?.status === 'completed' && currentJob.result && !Array.isArray(currentJob.result)
+  const wordNoteCandidate =
+    currentJob?.status === 'completed' &&
+    currentJob.result &&
+    !Array.isArray(currentJob.result)
       ? (currentJob.result as AiWordNoteCandidate)
       : null;
 
@@ -66,7 +68,7 @@ export function AiGenerationPlaygroundComponent() {
 
     const poll = async () => {
       if (disposed) return;
-      
+
       let terminalStateReached = false;
 
       try {
@@ -248,7 +250,8 @@ export function AiGenerationPlaygroundComponent() {
   };
 
   const handleSaveWordNote = async () => {
-    if (!wordNoteCandidate || !currentJob || currentJob.type !== 'word_note') return;
+    if (!wordNoteCandidate || !currentJob || currentJob.type !== 'word_note')
+      return;
     setSaving(true);
     setErrorMessage(null);
     try {
@@ -256,7 +259,7 @@ export function AiGenerationPlaygroundComponent() {
         currentJob.payload.deckId,
         wordNoteCandidate.noteType,
         wordNoteCandidate.fieldsVersion,
-        wordNoteCandidate.fields
+        wordNoteCandidate.fields,
       );
     } catch {
       const msg = 'Unable to save word note to deck. Please try again.';
@@ -288,13 +291,16 @@ export function AiGenerationPlaygroundComponent() {
   };
 
   const getTargetDeckName = (deckId: string) => {
-    return decks.find(d => d.id === deckId)?.title || 'Selected Deck';
+    return decks.find((d) => d.id === deckId)?.title || 'Selected Deck';
   };
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       <div className="lg:col-span-5 space-y-6">
-        {loading && (currentJob?.status === 'pending' || currentJob?.status === 'processing' || !currentJob) ? (
+        {loading &&
+        (currentJob?.status === 'pending' ||
+          currentJob?.status === 'processing' ||
+          !currentJob) ? (
           <AiJobStatusTracker
             jobId={currentJob?.id}
             status={currentJob?.status ?? 'processing'}
@@ -306,7 +312,11 @@ export function AiGenerationPlaygroundComponent() {
               quota={quota}
               onSubmit={handleStartGeneration}
               isSubmitting={loading}
-              decks={decks.map(d => ({ id: d.id, title: d.title, note_type: d.note_type }))}
+              decks={decks.map((d) => ({
+                id: d.id,
+                title: d.title,
+                note_type: d.note_type,
+              }))}
               createDeck={createDeck}
             />
           </div>
@@ -384,7 +394,12 @@ export function AiGenerationPlaygroundComponent() {
       </div>
 
       <div className="lg:col-span-7 space-y-8">
-        {loading && (!currentJob || currentJob?.status === 'processing' || currentJob?.status === 'pending') && !cards && !wordNoteCandidate ? (
+        {loading &&
+        (!currentJob ||
+          currentJob?.status === 'processing' ||
+          currentJob?.status === 'pending') &&
+        !cards &&
+        !wordNoteCandidate ? (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md space-y-3">
             <h3 className="text-base font-bold tracking-tight">Live Output</h3>
             <pre

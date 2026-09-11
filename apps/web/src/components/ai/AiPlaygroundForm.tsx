@@ -16,7 +16,14 @@ import {
   FieldDescription,
   FieldError,
 } from '@/components/ui/field';
-import { Sparkles, Layers, Type, BookOpen, FolderPlus, ArrowRightLeft } from 'lucide-react';
+import {
+  Sparkles,
+  Layers,
+  Type,
+  BookOpen,
+  FolderPlus,
+  ArrowRightLeft,
+} from 'lucide-react';
 import type { DeckNoteType } from '@repo/offline-db';
 
 interface Deck {
@@ -48,33 +55,44 @@ export function AiPlaygroundForm({
   decks,
   createDeck,
 }: AiPlaygroundFormProps) {
-  const [mode, setMode] = useState<'topic_deck' | 'text_cards' | 'word_note'>('topic_deck');
-  
+  const [mode, setMode] = useState<'topic_deck' | 'text_cards' | 'word_note'>(
+    'topic_deck',
+  );
+
   // Topic / Text Fields
   const [topic, setTopic] = useState('');
   const [sourceText, setSourceText] = useState('');
-  
+
   // Word Note Fields
   const [word, setWord] = useState('');
   const [direction, setDirection] = useState<'target' | 'native'>('target');
-  
+
   // Deck Selection for Word Note
   const [deckMode, setDeckMode] = useState<'existing' | 'new'>('existing');
   const [selectedDeckId, setSelectedDeckId] = useState('');
   const [newDeckTitle, setNewDeckTitle] = useState('');
-  const [nativeLanguageId, setNativeLanguageId] = useState<string>(LANGUAGES[0].value);
-  const [targetLanguageId, setTargetLanguageId] = useState<string>(LANGUAGES[1].value);
+  const [nativeLanguageId, setNativeLanguageId] = useState<string>(
+    LANGUAGES[0].value,
+  );
+  const [targetLanguageId, setTargetLanguageId] = useState<string>(
+    LANGUAGES[1].value,
+  );
 
   const [count, setCount] = useState(5);
   const [model, setModel] = useState<AiModel>('gemma4');
   const [error, setError] = useState<string | null>(null);
 
-  const wordDecks = decks.filter(d => d.note_type === 'word');
+  const wordDecks = decks.filter((d) => d.note_type === 'word');
 
   const effectiveDeckMode = wordDecks.length === 0 ? 'new' : deckMode;
 
   useEffect(() => {
-    if (mode === 'word_note' && effectiveDeckMode === 'existing' && wordDecks.length > 0 && !selectedDeckId) {
+    if (
+      mode === 'word_note' &&
+      effectiveDeckMode === 'existing' &&
+      wordDecks.length > 0 &&
+      !selectedDeckId
+    ) {
       setSelectedDeckId(wordDecks[0].id);
     }
   }, [mode, wordDecks, selectedDeckId, effectiveDeckMode]);
@@ -89,19 +107,29 @@ export function AiPlaygroundForm({
         onSubmit({ type: 'topic_deck', topic: topic.trim(), count, model });
       } else if (mode === 'text_cards') {
         if (!sourceText.trim()) return setError('Source text cannot be empty');
-        onSubmit({ type: 'text_cards', sourceText: sourceText.trim(), count, model });
+        onSubmit({
+          type: 'text_cards',
+          sourceText: sourceText.trim(),
+          count,
+          model,
+        });
       } else if (mode === 'word_note') {
         if (!word.trim()) return setError('Word cannot be empty');
-        
+
         let deckId = selectedDeckId;
-        
+
         if (effectiveDeckMode === 'new') {
-          if (!newDeckTitle.trim()) return setError('Deck Name cannot be empty');
-          const newDeck = await createDeck(newDeckTitle.trim(), 'AI Generated Word Deck', {
-            noteType: 'word' as DeckNoteType,
-            nativeLanguageId,
-            targetLanguageId,
-          });
+          if (!newDeckTitle.trim())
+            return setError('Deck Name cannot be empty');
+          const newDeck = await createDeck(
+            newDeckTitle.trim(),
+            'AI Generated Word Deck',
+            {
+              noteType: 'word' as DeckNoteType,
+              nativeLanguageId,
+              targetLanguageId,
+            },
+          );
           deckId = newDeck.id;
           // After creating, we might want to switch back to existing to keep it selected
           // but we are about to submit, so it's fine.
@@ -112,7 +140,8 @@ export function AiPlaygroundForm({
         const nativeLang = languageFor(nativeLanguageId);
         const targetLang = languageFor(targetLanguageId);
 
-        if (!nativeLang || !targetLang) return setError('Invalid languages selected');
+        if (!nativeLang || !targetLang)
+          return setError('Invalid languages selected');
 
         onSubmit({
           type: 'word_note',
@@ -129,7 +158,8 @@ export function AiPlaygroundForm({
 
   const usedCount = quota?.requestsUsed ?? 0;
   const limitCount = quota?.maxRequests ?? 0;
-  const quotaPercent = limitCount > 0 ? Math.min((usedCount / limitCount) * 100, 100) : 0;
+  const quotaPercent =
+    limitCount > 0 ? Math.min((usedCount / limitCount) * 100, 100) : 0;
   const isQuotaExceeded = limitCount > 0 ? usedCount >= limitCount : false;
 
   return (
@@ -142,13 +172,17 @@ export function AiPlaygroundForm({
             AI Quota Status
           </span>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-            {quota ? `${usedCount}/${limitCount} requests used` : 'Loading quota...'}
+            {quota
+              ? `${usedCount}/${limitCount} requests used`
+              : 'Loading quota...'}
           </span>
         </div>
         <div className="w-full bg-muted/60 h-2 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ease-out ${
-              isQuotaExceeded ? 'bg-destructive' : 'bg-linear-to-r from-violet-500 to-indigo-500'
+              isQuotaExceeded
+                ? 'bg-destructive'
+                : 'bg-linear-to-r from-violet-500 to-indigo-500'
             }`}
             style={{ width: `${quota ? quotaPercent : 0}%` }}
           />
@@ -196,7 +230,9 @@ export function AiPlaygroundForm({
       {mode === 'topic_deck' && (
         <Field className="space-y-2">
           <FieldLabel htmlFor="topic">Subject / Topic</FieldLabel>
-          <FieldDescription>Describe what you want to learn (e.g. "Spanish Nouns").</FieldDescription>
+          <FieldDescription>
+            Describe what you want to learn (e.g. "Spanish Nouns").
+          </FieldDescription>
           <Input
             id="topic"
             placeholder="e.g. Spanish Subjunctive"
@@ -215,7 +251,9 @@ export function AiPlaygroundForm({
       {mode === 'text_cards' && (
         <Field className="space-y-2">
           <FieldLabel htmlFor="sourceText">Source Text</FieldLabel>
-          <FieldDescription>Paste an article or notes to generate cards from.</FieldDescription>
+          <FieldDescription>
+            Paste an article or notes to generate cards from.
+          </FieldDescription>
           <textarea
             id="sourceText"
             placeholder="Paste text here..."
@@ -271,12 +309,22 @@ export function AiPlaygroundForm({
                     onChange={(e) => setSelectedDeckId(e.target.value)}
                     className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2.5 text-sm focus-visible:ring-3 outline-none appearance-none cursor-pointer"
                   >
-                    <option value="" disabled>-- Choose a Word Deck --</option>
+                    <option value="" disabled>
+                      -- Choose a Word Deck --
+                    </option>
                     {wordDecks.map((d) => (
-                      <option key={d.id} value={d.id} className="bg-background text-foreground">{d.title}</option>
+                      <option
+                        key={d.id}
+                        value={d.id}
+                        className="bg-background text-foreground"
+                      >
+                        {d.title}
+                      </option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">▼</div>
+                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
+                    ▼
+                  </div>
                 </div>
               ) : (
                 <div className="text-sm text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
@@ -304,11 +352,19 @@ export function AiPlaygroundForm({
                         onChange={(e) => setNativeLanguageId(e.target.value)}
                         className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2 text-sm appearance-none cursor-pointer"
                       >
-                        {LANGUAGES.map(l => (
-                          <option key={l.value} value={l.value} className="bg-background">{l.flag} {l.name}</option>
+                        {LANGUAGES.map((l) => (
+                          <option
+                            key={l.value}
+                            value={l.value}
+                            className="bg-background"
+                          >
+                            {l.flag} {l.name}
+                          </option>
                         ))}
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">▼</div>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
+                        ▼
+                      </div>
                     </div>
                   </Field>
                   <Field className="space-y-2">
@@ -319,11 +375,19 @@ export function AiPlaygroundForm({
                         onChange={(e) => setTargetLanguageId(e.target.value)}
                         className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2 text-sm appearance-none cursor-pointer"
                       >
-                        {LANGUAGES.map(l => (
-                          <option key={l.value} value={l.value} className="bg-background">{l.flag} {l.name}</option>
+                        {LANGUAGES.map((l) => (
+                          <option
+                            key={l.value}
+                            value={l.value}
+                            className="bg-background"
+                          >
+                            {l.flag} {l.name}
+                          </option>
                         ))}
                       </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">▼</div>
+                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
+                        ▼
+                      </div>
                     </div>
                   </Field>
                 </div>
@@ -342,30 +406,50 @@ export function AiPlaygroundForm({
                 className="w-full border-border/60"
               />
             </Field>
-            
+
             <button
               type="button"
-              onClick={() => setDirection(d => d === 'target' ? 'native' : 'target')}
+              onClick={() =>
+                setDirection((d) => (d === 'target' ? 'native' : 'target'))
+              }
               className="flex items-center gap-2 h-10 px-4 rounded-xl border border-border/60 bg-muted/40 hover:bg-muted/80 transition-colors text-sm font-medium shrink-0"
               title="Toggle Translation Direction"
             >
               <ArrowRightLeft className="size-4 text-violet-500" />
-              <span className="w-16 text-center">{direction === 'target' ? 'Target' : 'Native'}</span>
+              <span className="w-16 text-center">
+                {direction === 'target' ? 'Target' : 'Native'}
+              </span>
             </button>
           </div>
-          
+
           <div className="bg-violet-500/5 border border-violet-500/10 rounded-xl px-4 py-2.5">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {direction === 'target' 
-                ? <><strong className="text-foreground font-semibold">Target Mode:</strong> Enter a word in the language you are learning (e.g. "bonjour") to generate its dictionary note.</>
-                : <><strong className="text-foreground font-semibold">Native Mode:</strong> Enter a word in your native language (e.g. "hello") to translate it and generate a note.</>}
+              {direction === 'target' ? (
+                <>
+                  <strong className="text-foreground font-semibold">
+                    Target Mode:
+                  </strong>{' '}
+                  Enter a word in the language you are learning (e.g. "bonjour")
+                  to generate its dictionary note.
+                </>
+              ) : (
+                <>
+                  <strong className="text-foreground font-semibold">
+                    Native Mode:
+                  </strong>{' '}
+                  Enter a word in your native language (e.g. "hello") to
+                  translate it and generate a note.
+                </>
+              )}
             </p>
           </div>
         </div>
       )}
 
       {/* Configuration Sliders & Dropdown */}
-      <div className={`grid grid-cols-1 ${mode === 'word_note' ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-4`}>
+      <div
+        className={`grid grid-cols-1 ${mode === 'word_note' ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-4`}
+      >
         {/* Model Selector */}
         <Field className="space-y-2">
           <FieldLabel htmlFor="model">Model Selection</FieldLabel>
@@ -374,13 +458,19 @@ export function AiPlaygroundForm({
               id="model"
               value={model}
               onChange={(e) => {
-                const chosen = SELECTABLE_AI_MODELS.find((m) => m === e.target.value);
+                const chosen = SELECTABLE_AI_MODELS.find(
+                  (m) => m === e.target.value,
+                );
                 if (chosen) setModel(chosen);
               }}
               className="w-full rounded-3xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
             >
               {SELECTABLE_AI_MODELS.map((m) => (
-                <option key={m} value={m} className="bg-background text-foreground">
+                <option
+                  key={m}
+                  value={m}
+                  className="bg-background text-foreground"
+                >
                   {MODEL_LABELS[m]}
                 </option>
               ))}
@@ -424,7 +514,11 @@ export function AiPlaygroundForm({
       >
         <span className="flex items-center justify-center gap-2">
           <Sparkles className="size-4 animate-pulse" />
-          {isSubmitting ? 'Generating...' : mode === 'word_note' ? 'Generate Word Note' : 'Start Card Generation'}
+          {isSubmitting
+            ? 'Generating...'
+            : mode === 'word_note'
+              ? 'Generate Word Note'
+              : 'Start Card Generation'}
         </span>
       </Button>
     </form>

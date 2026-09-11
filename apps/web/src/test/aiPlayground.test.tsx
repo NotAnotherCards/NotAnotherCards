@@ -18,7 +18,7 @@ vi.mock('@/hooks/useStore', () => ({
   useStore: () => ({
     decks: [
       { id: 'deck-1', title: 'Spanish Vocab', note_type: 'basic' },
-      { id: 'deck-2', title: 'French Vocab', note_type: 'word' }
+      { id: 'deck-2', title: 'French Vocab', note_type: 'word' },
     ],
     createDeck: mockCreateDeck,
     createCard: mockCreateCard,
@@ -143,7 +143,7 @@ describe('AI Generation Playground Test Suite', () => {
           isSubmitting={false}
           decks={[
             { id: 'deck-1', title: 'Spanish Vocab', note_type: 'basic' },
-            { id: 'deck-2', title: 'French Vocab', note_type: 'word' }
+            { id: 'deck-2', title: 'French Vocab', note_type: 'word' },
           ]}
           createDeck={mockCreateDeck}
         />,

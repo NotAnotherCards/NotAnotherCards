@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { AiWordNoteCandidate } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
-import { FileJson, BookOpen, CheckCircle2, AlertCircle, LayoutTemplate } from 'lucide-react';
+import {
+  FileJson,
+  BookOpen,
+  CheckCircle2,
+  AlertCircle,
+  LayoutTemplate,
+} from 'lucide-react';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface AiWordNotePreviewProps {
@@ -37,8 +43,12 @@ export function AiWordNotePreview({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Generation Results</h2>
-          <p className="text-sm text-muted-foreground">Generated structured word note candidate.</p>
+          <h2 className="text-xl font-bold tracking-tight">
+            Generation Results
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Generated structured word note candidate.
+          </p>
         </div>
 
         {/* Tab Toggle */}
@@ -74,9 +84,7 @@ export function AiWordNotePreview({
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                   Word
                 </h4>
-                <div className="text-lg font-bold">
-                  {note.fields.word}
-                </div>
+                <div className="text-lg font-bold">{note.fields.word}</div>
               </div>
 
               <div>
@@ -87,24 +95,20 @@ export function AiWordNotePreview({
                   {note.fields.translation}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                     Part of Speech
                   </h4>
-                  <div className="text-sm">
-                    {note.fields.part_of_speech}
-                  </div>
+                  <div className="text-sm">{note.fields.part_of_speech}</div>
                 </div>
                 {note.fields.gender && (
                   <div>
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                       Gender
                     </h4>
-                    <div className="text-sm">
-                      {note.fields.gender}
-                    </div>
+                    <div className="text-sm">{note.fields.gender}</div>
                   </div>
                 )}
               </div>
