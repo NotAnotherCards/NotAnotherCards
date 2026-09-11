@@ -25,7 +25,7 @@ COPY --from=build /app /app
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "pnpm --filter api db:migrate && pnpm --filter api run seed:shared-decks && pnpm --filter api start:prod"]
+CMD ["sh", "-c", "pnpm --filter api db:migrate && pnpm --filter api start:prod"]
 
 FROM nginx:1.28-alpine AS web
 
