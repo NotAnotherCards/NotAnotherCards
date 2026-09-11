@@ -1,11 +1,13 @@
 import {
-  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { and, desc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
+import { cardId, noteDeckId } from '@repo/offline-db';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import type { AppDatabase } from '../database/database-schema';
 import {
@@ -17,6 +19,7 @@ import {
 } from '../sync/schema';
 import { syncScopeLockKey } from '../sync/sync-store';
 import { ModerationService } from './moderation.service';
+import { publishedDecks, type PublishedContent } from './schema';
 
 /** How much of a deck a stranger gets to read before importing it. */
 const PREVIEW_CARDS = 10;
@@ -52,6 +55,28 @@ const toSummary = <T extends { username: string }>({
   ...deck
 }: T) => ({ ...deck, owner: { username } });
 
+const publishedSummaryColumns = {
+  id: publishedDecks.deckId,
+  title: publishedDecks.title,
+  description: publishedDecks.description,
+  noteType: publishedDecks.noteType,
+  nativeLanguageId: publishedDecks.nativeLanguageId,
+  targetLanguageId: publishedDecks.targetLanguageId,
+  cardCount: publishedDecks.cardCount,
+  updatedAt: sql<number>`(extract(epoch from ${publishedDecks.publishedAt}) * 1000)::double precision`,
+  username: sql<string>`${userProfiles.username}`,
+};
+
+const publicGate = and(
+  eq(userDecks.visibility, 'public'),
+  isNull(userDecks.deletedAt),
+);
+const liveOwner = and(
+  eq(userProfiles.userId, userDecks.userId),
+  isNull(userProfiles.deletedAt),
+  isNotNull(userProfiles.username),
+);
+
 @Injectable()
 export class SharingService {
   constructor(
@@ -61,8 +86,7 @@ export class SharingService {
   ) {}
 
   async publish(userId: string, deckId: string) {
-    const visibility = await this.ownedVisibility(userId, deckId);
-    if (visibility === 'public') return { visibility };
+    await this.ownedVisibility(userId, deckId);
     // Browse and preview join on the owner's username, so a deck published
     // by an account that never finished onboarding would be public and yet
     // invisible to everyone, its owner included. Refuse instead.
@@ -73,16 +97,20 @@ export class SharingService {
       });
     }
 
-    // Read the fingerprint and cards from one snapshot, but release the
-    // transaction before moderation: a model call must not block sync.
-    const { fingerprint, cards } = await this.db.transaction(
-      async (tx) => ({
-        fingerprint: await this.deckFingerprint(userId, deckId, tx),
-        cards: await this.deckCards(deckId, undefined, tx),
-      }),
+    // Publish exactly the snapshot checked, even if the live deck changes
+    // during moderation. No transaction or scope lock spans the model call.
+    const snapshot = await this.db.transaction(
+      (tx) => this.readSnapshot(userId, deckId, tx),
       { isolationLevel: 'repeatable read', accessMode: 'read only' },
     );
-    const verdict = await this.moderation.check({ deckId, cards });
+    const verdict = await this.moderation.check({
+      deckId,
+      cards: snapshot.content.cards.map(({ id, front, back }) => ({
+        id,
+        front,
+        back,
+      })),
+    });
     if (!verdict.ok) {
       throw new UnprocessableEntityException({
         reason: verdict.reason,
@@ -90,34 +118,99 @@ export class SharingService {
       });
     }
 
-    await this.setVisibility(userId, deckId, 'public', fingerprint);
+    await this.setVisibility(userId, deckId, 'public', snapshot);
     return { visibility: 'public' as const };
   }
 
   async unpublish(userId: string, deckId: string) {
-    const visibility = await this.ownedVisibility(userId, deckId);
-    if (visibility === 'private') return { visibility };
-
     await this.setVisibility(userId, deckId, 'private');
     return { visibility: 'private' as const };
   }
 
+  async importShared(userId: string, sourceId: string) {
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(userId).toString()})`,
+      );
+      const [source] = await tx
+        .select({ snapshot: publishedDecks })
+        .from(publishedDecks)
+        .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+        .where(and(eq(publishedDecks.deckId, sourceId), publicGate));
+      if (!source) throw new NotFoundException('Deck not found');
+
+      const { snapshot } = source;
+      const deckId = randomUUID();
+      const now = Date.now();
+      const timestamps = { createdAt: now, updatedAt: now };
+      await tx.insert(userDecks).values({
+        id: deckId,
+        userId,
+        rev: sql`nextval('remelon_rev')`,
+        visibility: 'private',
+        title: snapshot.title,
+        description: snapshot.description,
+        noteType: snapshot.noteType,
+        nativeLanguageId: snapshot.nativeLanguageId,
+        targetLanguageId: snapshot.targetLanguageId,
+        ...timestamps,
+      });
+      const noteIds = new Map(
+        snapshot.content.notes.map((note) => [note.id, randomUUID()]),
+      );
+      // Each statement stays small even for large decks; all writes still
+      // share the transaction and scope lock, so pull sees a complete copy.
+      for (const note of snapshot.content.notes) {
+        const id = noteIds.get(note.id)!;
+        await tx.insert(userNotes).values({
+          id,
+          userId,
+          rev: sql`nextval('remelon_rev')`,
+          noteType: note.note_type,
+          fieldsVersion: note.fields_version,
+          fieldsJson: note.fields_json,
+          additionalContent: note.additional_content,
+          ...timestamps,
+        });
+        await tx.insert(userNoteDecks).values({
+          id: noteDeckId(id, deckId),
+          userId,
+          rev: sql`nextval('remelon_rev')`,
+          noteId: id,
+          deckId,
+          active: true,
+          ...timestamps,
+        });
+      }
+      for (const card of snapshot.content.cards) {
+        const noteId = noteIds.get(card.note_id);
+        if (!noteId) throw new Error('Published card has no note');
+        await tx.insert(userCards).values({
+          id: cardId(noteId, card.template_key),
+          userId,
+          rev: sql`nextval('remelon_rev')`,
+          noteId,
+          templateKey: card.template_key,
+          active: true,
+          front: card.front,
+          back: card.back,
+          dueAt: now,
+          scheduledIntervalMinutes: 0,
+          ...timestamps,
+        });
+      }
+      return { deckId };
+    });
+  }
+
   async listShared(limit: number, offset: number) {
     const decks = await this.db
-      .select(summaryColumns)
-      .from(userDecks)
-      .innerJoin(
-        userProfiles,
-        and(
-          eq(userProfiles.userId, userDecks.userId),
-          isNull(userProfiles.deletedAt),
-          isNotNull(userProfiles.username),
-        ),
-      )
-      .where(
-        and(eq(userDecks.visibility, 'public'), isNull(userDecks.deletedAt)),
-      )
-      .orderBy(desc(userDecks.updatedAt), desc(userDecks.id))
+      .select(publishedSummaryColumns)
+      .from(publishedDecks)
+      .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+      .innerJoin(userProfiles, liveOwner)
+      .where(publicGate)
+      .orderBy(desc(publishedDecks.publishedAt), desc(publishedDecks.deckId))
       .limit(limit)
       .offset(offset);
 
@@ -127,6 +220,25 @@ export class SharingService {
   }
 
   async previewShared(userId: string, deckId: string) {
+    const [published] = await this.db
+      .select({ ...publishedSummaryColumns, content: publishedDecks.content })
+      .from(publishedDecks)
+      .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+      .innerJoin(userProfiles, liveOwner)
+      .where(and(eq(publishedDecks.deckId, deckId), publicGate));
+    if (published) {
+      const { content, ...summary } = published;
+      return {
+        deck: {
+          ...toSummary(summary),
+          cards: content.cards
+            .slice(0, PREVIEW_CARDS)
+            .map(({ front, back }) => ({ front, back })),
+        },
+      };
+    }
+
+    // Only the owner may preview the current unpublished working copy.
     const [deck] = await this.db
       .select(summaryColumns)
       .from(userDecks)
@@ -142,7 +254,7 @@ export class SharingService {
         and(
           eq(userDecks.id, deckId),
           isNull(userDecks.deletedAt),
-          or(eq(userDecks.visibility, 'public'), eq(userDecks.userId, userId)),
+          eq(userDecks.userId, userId),
         ),
       );
     if (!deck) throw new NotFoundException('Deck not found');
@@ -159,8 +271,12 @@ export class SharingService {
   }
 
   /** 404 rather than 403 for someone else's deck: 403 would confirm the id. */
-  private async ownedVisibility(userId: string, deckId: string) {
-    const [deck] = await this.db
+  private async ownedVisibility(
+    userId: string,
+    deckId: string,
+    db: Pick<AppDatabase, 'select'> = this.db,
+  ) {
+    const [deck] = await db
       .select({ visibility: userDecks.visibility })
       .from(userDecks)
       .where(
@@ -192,7 +308,7 @@ export class SharingService {
     userId: string,
     deckId: string,
     visibility: 'public' | 'private',
-    checkedFingerprint?: string,
+    snapshot?: typeof publishedDecks.$inferInsert,
   ) {
     await this.db.transaction(async (tx) => {
       // The same lock push takes, so a visibility write cannot interleave
@@ -200,11 +316,18 @@ export class SharingService {
       await tx.execute(
         sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(userId).toString()})`,
       );
-      if (
-        checkedFingerprint !== undefined &&
-        (await this.deckFingerprint(userId, deckId, tx)) !== checkedFingerprint
-      ) {
-        throw new ConflictException('Deck changed, publish again');
+      const current = await this.ownedVisibility(userId, deckId, tx);
+      if (snapshot) {
+        const values = { ...snapshot, publishedAt: new Date() };
+        await tx.insert(publishedDecks).values(values).onConflictDoUpdate({
+          target: publishedDecks.deckId,
+          set: values,
+        });
+      } else {
+        await tx
+          .delete(publishedDecks)
+          .where(eq(publishedDecks.deckId, deckId));
+        if (current === 'private') return;
       }
       const written = await tx
         .update(userDecks)
@@ -222,44 +345,53 @@ export class SharingService {
           ),
         )
         .returning({ id: userDecks.id });
-      // The ownership check ran before the lock; the deck can have been
-      // tombstoned by another device in between.
+      // If a non-sync deletion removes the deck, roll back the snapshot too.
       if (written.length === 0) throw new NotFoundException('Deck not found');
     });
   }
 
-  private async deckFingerprint(
+  private async readSnapshot(
     userId: string,
     deckId: string,
     db: Pick<AppDatabase, 'select'>,
   ) {
-    // Sync revisions increase under the owner's scope lock. Include inactive
-    // rows and tombstones so removal cannot hide a change behind an older max.
-    // ponytail: scheduling-only changes also require a retry; compare content
-    // versions instead if those conservative conflicts become disruptive.
     const [deck] = await db
       .select({
-        fingerprint: sql<string>`greatest(
-          ${userDecks.rev},
-          coalesce(max(${userNoteDecks.rev}), 0),
-          coalesce(max(${userNotes.rev}), 0),
-          coalesce(max(${userCards.rev}), 0)
-        )::text`,
+        deckId: userDecks.id,
+        userId: userDecks.userId,
+        title: userDecks.title,
+        description: userDecks.description,
+        noteType: userDecks.noteType,
+        nativeLanguageId: userDecks.nativeLanguageId,
+        targetLanguageId: userDecks.targetLanguageId,
       })
       .from(userDecks)
-      .leftJoin(userNoteDecks, eq(userNoteDecks.deckId, userDecks.id))
-      .leftJoin(userNotes, eq(userNotes.id, userNoteDecks.noteId))
-      .leftJoin(userCards, eq(userCards.noteId, userNotes.id))
       .where(
         and(
           eq(userDecks.id, deckId),
           eq(userDecks.userId, userId),
           isNull(userDecks.deletedAt),
         ),
-      )
-      .groupBy(userDecks.id);
+      );
     if (!deck) throw new NotFoundException('Deck not found');
-    return deck.fingerprint;
+    const rows = await this.deckCards(deckId, undefined, db);
+    const notes = new Map<string, PublishedContent['notes'][number]>();
+    const cards = rows.map(({ note, ...card }) => {
+      if (!notes.has(note.id)) {
+        const fields = z
+          .record(z.string(), z.unknown())
+          .parse(JSON.parse(note.fields_json));
+        delete fields.image;
+        delete fields.word_audio;
+        notes.set(note.id, { ...note, fields_json: JSON.stringify(fields) });
+      }
+      return card;
+    });
+    return {
+      ...deck,
+      cardCount: cards.length,
+      content: { notes: [...notes.values()], cards },
+    };
   }
 
   /** The deck's active cards, already rendered by the client that pushed them. */
@@ -271,8 +403,17 @@ export class SharingService {
     const query = db
       .select({
         id: userCards.id,
+        note_id: userCards.noteId,
+        template_key: userCards.templateKey,
         front: userCards.front,
         back: userCards.back,
+        note: {
+          id: userNotes.id,
+          note_type: userNotes.noteType,
+          fields_version: userNotes.fieldsVersion,
+          fields_json: userNotes.fieldsJson,
+          additional_content: userNotes.additionalContent,
+        },
       })
       .from(userNoteDecks)
       .innerJoin(userNotes, eq(userNotes.id, userNoteDecks.noteId))

@@ -44,3 +44,6 @@ export type SharedDeckSummary = z.infer<typeof sharedDeckSummarySchema>;
 export type SharedDeckList = z.infer<typeof sharedDeckListSchema>;
 export type SharedDeckPreview = z.infer<typeof sharedDeckPreviewSchema>;
 export type ModerationRefusal = z.infer<typeof moderationRefusalSchema>;
+
+export const sharedDeckImportSchema = z.object({ deckId: z.string() });
+export type SharedDeckImport = z.infer<typeof sharedDeckImportSchema>;
