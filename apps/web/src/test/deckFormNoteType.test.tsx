@@ -34,6 +34,22 @@ const chooseWords = () =>
   fireEvent.click(screen.getByRole('button', { name: /words/i }));
 
 describe('DeckForm note type', () => {
+  it('treats whitespace-only optional descriptions as empty before length validation', async () => {
+    render(
+      <DeckForm title="Create deck" onSubmit={onSubmit} onCancel={vi.fn()} />,
+    );
+    fireEvent.change(screen.getByLabelText(/deck title/i), {
+      target: { value: 'Deck' },
+    });
+    fireEvent.change(screen.getByLabelText(/description/i), {
+      target: { value: ' '.repeat(501) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({ description: '' });
+  });
+
   it('offers the choice when creating and not when editing', () => {
     const { unmount } = renderCreate();
     expect(screen.getByRole('button', { name: /words/i })).toBeTruthy();

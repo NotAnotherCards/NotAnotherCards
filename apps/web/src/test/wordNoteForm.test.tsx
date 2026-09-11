@@ -92,17 +92,20 @@ describe('WordNoteForm', () => {
     ).toBe('er läuft');
   });
 
-  it('clearing an optional field removes it rather than blanking it', async () => {
-    renderForm({ word: 'laufen', translation: 'to run', notes: 'irregular' });
-    fill(/notes/i, '');
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+  it.each(['', ' \t '])(
+    'clearing an optional field to %j removes it rather than blanking it',
+    async (blank) => {
+      renderForm({ word: 'laufen', translation: 'to run', notes: 'irregular' });
+      fill(/notes/i, blank);
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    expect(onSubmit.mock.calls[0][0]).toEqual({
-      word: 'laufen',
-      translation: 'to run',
-    });
-  });
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+      expect(onSubmit.mock.calls[0][0]).toEqual({
+        word: 'laufen',
+        translation: 'to run',
+      });
+    },
+  );
 });
 
 // Gender is a property of the language, not of the form. German and Spanish
