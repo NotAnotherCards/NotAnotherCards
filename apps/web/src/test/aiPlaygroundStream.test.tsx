@@ -77,7 +77,7 @@ async function start() {
     target: { value: 'Coffee' },
   });
   fireEvent.click(
-    screen.getByRole('button', { name: /Start Card Generation/i }),
+    screen.getByRole('button', { name: /Create$/i }),
   );
   await waitFor(() =>
     expect(globalThis.fetch).toHaveBeenCalledWith(
@@ -97,21 +97,21 @@ describe('streaming in the existing playground', () => {
       controller.enqueue(encoded.slice(0, cut));
     });
     expect(
-      screen.getByLabelText('Live generation output'),
+      screen.getByLabelText('Live creation output'),
     ).not.toHaveTextContent('café');
     await act(async () => {
       controller.enqueue(encoded.slice(cut));
     });
-    expect(screen.getByLabelText('Live generation output')).toHaveTextContent(
+    expect(screen.getByLabelText('Live creation output')).toHaveTextContent(
       'café',
     );
-    expect(screen.queryByText('Generation Results')).not.toBeInTheDocument();
+    expect(screen.queryByText('Creation Results')).not.toBeInTheDocument();
     expect(save).not.toHaveBeenCalled();
     await act(async () => {
       controller.enqueue(event({ type: 'result', cards }));
       controller.close();
     });
-    expect(await screen.findByText('Generation Results')).toBeInTheDocument();
+    expect(await screen.findByText('Creation Results')).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: /Save Cards to Deck/i }),
     );
@@ -132,10 +132,10 @@ describe('streaming in the existing playground', () => {
     });
     expect(
       await screen.findByText(
-        'Generation connection closed before the result arrived.',
+        'Creation connection closed before the result arrived.',
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText('Generation Results')).not.toBeInTheDocument();
+    expect(screen.queryByText('Creation Results')).not.toBeInTheDocument();
     expect(save).not.toHaveBeenCalled();
   });
   it('shows a streamed timeout in the existing error panel', async () => {
@@ -143,12 +143,12 @@ describe('streaming in the existing playground', () => {
     await start();
     await act(async () => {
       controller.enqueue(
-        event({ type: 'error', message: 'Card generation timed out.' }),
+        event({ type: 'error', message: 'Card creation timed out.' }),
       );
       controller.close();
     });
     expect(
-      await screen.findByText('Card generation timed out.'),
+      await screen.findByText('Card creation timed out.'),
     ).toBeInTheDocument();
   });
   it('aborts when selecting history and keeps the historical result', async () => {
@@ -158,7 +158,7 @@ describe('streaming in the existing playground', () => {
     fireEvent.click(screen.getByText('Old topic'));
     expect(signal.aborted).toBe(true);
     expect(await screen.findByText('Past question')).toBeInTheDocument();
-    expect(screen.queryByText('Generation Failed')).not.toBeInTheDocument();
+    expect(screen.queryByText('Creation Failed')).not.toBeInTheDocument();
   });
   it('aborts on unmount', async () => {
     const view = render(<AiGenerationPlaygroundComponent />);

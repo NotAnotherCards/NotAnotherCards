@@ -64,6 +64,7 @@ export function AiGenerationPlaygroundComponent() {
     }
 
     let disposed = false;
+    const controller = new AbortController();
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const poll = async () => {
@@ -103,8 +104,8 @@ export function AiGenerationPlaygroundComponent() {
           }
           setLoading(false);
           terminalStateReached = true;
-          void fetchJobs();
-          void fetchQuota();
+          void fetchJobs(controller.signal);
+          void fetchQuota(controller.signal);
         }
       } catch {
         if (disposed) return;
@@ -125,28 +126,29 @@ export function AiGenerationPlaygroundComponent() {
 
     return () => {
       disposed = true;
+      controller.abort();
       clearTimeout(timeoutId);
     };
   }, [currentJob?.id, currentJob?.status]);
 
-  const fetchQuota = async () => {
+  const fetchQuota = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch('/api/ai/quota');
+      const res = await fetch('/api/ai/quota', { signal });
       if (res.ok) {
         const { quota } = aiQuotaResponseSchema.parse(await res.json());
-        setQuota(quota);
+        if (!signal?.aborted) setQuota(quota);
       }
     } catch {
       // Background quota fetch failure handled gracefully
     }
   };
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch('/api/ai/jobs');
+      const res = await fetch('/api/ai/jobs', { signal });
       if (res.ok) {
         const { jobs } = aiJobsResponseSchema.parse(await res.json());
-        setJobs(jobs);
+        if (!signal?.aborted) setJobs(jobs);
       }
     } catch {
       // Background jobs list fetch failure handled gracefully
@@ -154,8 +156,10 @@ export function AiGenerationPlaygroundComponent() {
   };
 
   useEffect(() => {
-    void fetchQuota();
-    void fetchJobs();
+    const controller = new AbortController();
+    void fetchQuota(controller.signal);
+    void fetchJobs(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const handleStartGeneration = async (input: CreateAiJobInput) => {
@@ -218,8 +222,8 @@ export function AiGenerationPlaygroundComponent() {
       if (input.type === 'topic_deck') {
         if (!request.signal.aborted) {
           setLoading(false);
-          void fetchQuota();
-          void fetchJobs();
+          void fetchQuota(request.signal);
+          void fetchJobs(request.signal);
         }
       }
       if (streamRequest.current === request) streamRequest.current = null;
