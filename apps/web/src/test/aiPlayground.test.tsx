@@ -47,6 +47,8 @@ describe('AI Generation Playground Test Suite', () => {
           quota={quota}
           onSubmit={vi.fn()}
           isSubmitting={false}
+          decks={[]}
+          createDeck={mockCreateDeck}
         />,
       );
 
@@ -62,6 +64,8 @@ describe('AI Generation Playground Test Suite', () => {
           quota={null}
           onSubmit={handleSubmit}
           isSubmitting={false}
+          decks={[]}
+          createDeck={mockCreateDeck}
         />,
       );
 
@@ -92,6 +96,8 @@ describe('AI Generation Playground Test Suite', () => {
           }}
           onSubmit={handleSubmit}
           isSubmitting={false}
+          decks={[]}
+          createDeck={mockCreateDeck}
         />,
       );
 
