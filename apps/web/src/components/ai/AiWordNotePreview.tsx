@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { AiWordNoteCandidate } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
-import {
-  BookOpen,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
+import { BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface AiWordNotePreviewProps {
