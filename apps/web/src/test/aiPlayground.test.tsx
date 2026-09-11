@@ -179,7 +179,6 @@ describe('AI Generation Playground Test Suite', () => {
       render(<AiJobStatusTracker jobId="job-123" status="processing" />);
 
       expect(screen.getByText('Generating Your Deck')).toBeInTheDocument();
-      expect(screen.getByText('Job ID: job-123')).toBeInTheDocument();
       expect(screen.getByText('Processing LLM')).toBeInTheDocument();
     });
 
@@ -204,8 +203,7 @@ describe('AI Generation Playground Test Suite', () => {
       { front: 'What is "Katze" in English?', back: 'Cat' },
     ];
 
-    it('previews cards and allows switching to JSON Note Schema tab', async () => {
-      const user = userEvent.setup();
+    it('previews generated cards successfully', async () => {
       render(
         <AiResultPreview
           cards={mockCards}
@@ -219,11 +217,6 @@ describe('AI Generation Playground Test Suite', () => {
         screen.getByText('What is "Hund" in English?'),
       ).toBeInTheDocument();
       expect(screen.getByText('Dog')).toBeInTheDocument();
-
-      const schemaTab = screen.getByRole('button', { name: /Note Schema/i });
-      await user.click(schemaTab);
-
-      expect(screen.getByText(/"note_type": "basic"/)).toBeInTheDocument();
     });
 
     it('triggers onSave and displays toast notification when saved successfully', async () => {

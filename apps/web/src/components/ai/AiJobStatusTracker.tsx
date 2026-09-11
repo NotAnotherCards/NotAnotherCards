@@ -49,11 +49,6 @@ export function AiJobStatusTracker({
         <h3 className="text-lg font-semibold tracking-tight">
           Generating Your Deck
         </h3>
-        {jobId && (
-          <p className="text-xs text-muted-foreground font-mono">
-            Job ID: {jobId}
-          </p>
-        )}
       </div>
 
       <div className="flex justify-center py-4">

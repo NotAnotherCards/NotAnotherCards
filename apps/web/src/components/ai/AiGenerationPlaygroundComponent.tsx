@@ -358,12 +358,6 @@ export function AiGenerationPlaygroundComponent() {
                             ? 'Source Paragraph'
                             : 'Word'}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/60">
-                        •
-                      </span>
-                      <span className="text-[10px] font-mono text-muted-foreground/80">
-                        {job.id.slice(0, 8)}
-                      </span>
                     </div>
                     <p className="text-sm font-semibold truncate text-foreground/90">
                       {job.type === 'topic_deck'

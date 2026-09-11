@@ -23,7 +23,6 @@ export function AiWordNotePreview({
   onSave,
   isSaving,
 }: AiWordNotePreviewProps) {
-  const [previewTab, setPreviewTab] = useState<'preview' | 'json'>('preview');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -51,33 +50,9 @@ export function AiWordNotePreview({
           </p>
         </div>
 
-        {/* Tab Toggle */}
-        <div className="flex bg-muted/60 p-0.5 rounded-lg border border-border/40 text-xs">
-          <button
-            onClick={() => setPreviewTab('preview')}
-            className={`flex items-center gap-1 py-1 px-2.5 rounded-md font-medium transition-all ${
-              previewTab === 'preview'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground'
-            }`}
-          >
-            <LayoutTemplate className="size-3" /> Preview
-          </button>
-          <button
-            onClick={() => setPreviewTab('json')}
-            className={`flex items-center gap-1 py-1 px-2.5 rounded-md font-medium transition-all ${
-              previewTab === 'json'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground'
-            }`}
-          >
-            <FileJson className="size-3" /> JSON Schema
-          </button>
-        </div>
       </div>
 
-      {previewTab === 'preview' ? (
-        <div className="bg-card/40 border border-border/60 rounded-2xl p-6 shadow-sm hover:border-violet-500/30 transition-all duration-200">
+      <div className="bg-card/40 border border-border/60 rounded-2xl p-6 shadow-sm hover:border-violet-500/30 transition-all duration-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
@@ -144,11 +119,6 @@ export function AiWordNotePreview({
             </div>
           </div>
         </div>
-      ) : (
-        <div className="bg-muted/40 border border-border/60 rounded-2xl p-4 overflow-auto max-h-100 text-xs font-mono text-muted-foreground whitespace-pre">
-          {JSON.stringify(note, null, 2)}
-        </div>
-      )}
 
       {/* Persistence Section */}
       <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">
