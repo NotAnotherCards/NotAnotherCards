@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
+import { cardId, noteDeckId } from '@repo/offline-db';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import type { AppDatabase } from '../database/database-schema';
 import {
@@ -123,6 +125,82 @@ export class SharingService {
   async unpublish(userId: string, deckId: string) {
     await this.setVisibility(userId, deckId, 'private');
     return { visibility: 'private' as const };
+  }
+
+  async importShared(userId: string, sourceId: string) {
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(userId).toString()})`,
+      );
+      const [source] = await tx
+        .select({ snapshot: publishedDecks })
+        .from(publishedDecks)
+        .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+        .where(and(eq(publishedDecks.deckId, sourceId), publicGate));
+      if (!source) throw new NotFoundException('Deck not found');
+
+      const { snapshot } = source;
+      const deckId = randomUUID();
+      const now = Date.now();
+      const timestamps = { createdAt: now, updatedAt: now };
+      await tx.insert(userDecks).values({
+        id: deckId,
+        userId,
+        rev: sql`nextval('remelon_rev')`,
+        visibility: 'private',
+        title: snapshot.title,
+        description: snapshot.description,
+        noteType: snapshot.noteType,
+        nativeLanguageId: snapshot.nativeLanguageId,
+        targetLanguageId: snapshot.targetLanguageId,
+        ...timestamps,
+      });
+      const noteIds = new Map(
+        snapshot.content.notes.map((note) => [note.id, randomUUID()]),
+      );
+      // Each statement stays small even for large decks; all writes still
+      // share the transaction and scope lock, so pull sees a complete copy.
+      for (const note of snapshot.content.notes) {
+        const id = noteIds.get(note.id)!;
+        await tx.insert(userNotes).values({
+          id,
+          userId,
+          rev: sql`nextval('remelon_rev')`,
+          noteType: note.note_type,
+          fieldsVersion: note.fields_version,
+          fieldsJson: note.fields_json,
+          additionalContent: note.additional_content,
+          ...timestamps,
+        });
+        await tx.insert(userNoteDecks).values({
+          id: noteDeckId(id, deckId),
+          userId,
+          rev: sql`nextval('remelon_rev')`,
+          noteId: id,
+          deckId,
+          active: true,
+          ...timestamps,
+        });
+      }
+      for (const card of snapshot.content.cards) {
+        const noteId = noteIds.get(card.note_id);
+        if (!noteId) throw new Error('Published card has no note');
+        await tx.insert(userCards).values({
+          id: cardId(noteId, card.template_key),
+          userId,
+          rev: sql`nextval('remelon_rev')`,
+          noteId,
+          templateKey: card.template_key,
+          active: true,
+          front: card.front,
+          back: card.back,
+          dueAt: now,
+          scheduledIntervalMinutes: 0,
+          ...timestamps,
+        });
+      }
+      return { deckId };
+    });
   }
 
   async listShared(limit: number, offset: number) {
