@@ -57,7 +57,7 @@ describe('AI Generation Playground Test Suite', () => {
         />,
       );
 
-      expect(screen.getByText('AI Quota Status')).toBeInTheDocument();
+      expect(screen.getByText('Quota Status')).toBeInTheDocument();
       expect(screen.getByText('5/25 requests used')).toBeInTheDocument();
       expect(screen.getByLabelText(/Subject \/ Topic/i)).toBeInTheDocument();
     });
@@ -75,7 +75,7 @@ describe('AI Generation Playground Test Suite', () => {
       );
 
       const submitBtn = screen.getByRole('button', {
-        name: /Start Card Generation/i,
+        name: /Create$/i,
       });
       fireEvent.click(submitBtn);
 
@@ -113,7 +113,7 @@ describe('AI Generation Playground Test Suite', () => {
       await user.selectOptions(modelSelect, 'qwen-next-80b');
 
       const submitBtn = screen.getByRole('button', {
-        name: /Start Card Generation/i,
+        name: /Create$/i,
       });
       await user.click(submitBtn);
 
@@ -160,7 +160,7 @@ describe('AI Generation Playground Test Suite', () => {
       await user.selectOptions(modelSelect, 'qwen-next-80b');
 
       const submitBtn = screen.getByRole('button', {
-        name: /Generate Word Note/i,
+        name: /Create$/i,
       });
       await user.click(submitBtn);
 
@@ -178,7 +178,7 @@ describe('AI Generation Playground Test Suite', () => {
     it('renders active pending/processing steps for presentational tracking', () => {
       render(<AiJobStatusTracker jobId="job-123" status="processing" />);
 
-      expect(screen.getByText('Generating Your Deck')).toBeInTheDocument();
+      expect(screen.getByText('Creating Your Deck')).toBeInTheDocument();
       expect(screen.getByText('Processing LLM')).toBeInTheDocument();
     });
 
@@ -387,7 +387,7 @@ describe('AI Generation Playground Test Suite', () => {
       // Verify polling is resumed for this pending job and updates job status to completed
       await waitFor(() => {
         expect(polledJobId).toBe('job-pending-999');
-        expect(screen.getByText('Generation Results')).toBeInTheDocument();
+        expect(screen.getByText('Creation Results')).toBeInTheDocument();
         expect(screen.getByText('Haben')).toBeInTheDocument();
       });
     });

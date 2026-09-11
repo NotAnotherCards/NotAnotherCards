@@ -123,7 +123,7 @@ export function AiPlaygroundForm({
             return setError('Deck Name cannot be empty');
           const newDeck = await createDeck(
             newDeckTitle.trim(),
-            'AI Generated Word Deck',
+            'Created Word Deck',
             {
               noteType: 'word' as DeckNoteType,
               nativeLanguageId,
@@ -169,7 +169,7 @@ export function AiPlaygroundForm({
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
             <Sparkles className="size-4 text-amber-500 animate-pulse" />
-            AI Quota Status
+            Quota Status
           </span>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
             {quota
@@ -252,7 +252,7 @@ export function AiPlaygroundForm({
         <Field className="space-y-2">
           <FieldLabel htmlFor="sourceText">Source Text</FieldLabel>
           <FieldDescription>
-            Paste an article or notes to generate cards from.
+            Paste an article or notes to create cards from.
           </FieldDescription>
           <textarea
             id="sourceText"
@@ -430,7 +430,7 @@ export function AiPlaygroundForm({
                     Target Mode:
                   </strong>{' '}
                   Enter a word in the language you are learning (e.g. "bonjour")
-                  to generate its dictionary note.
+                  to create its dictionary note.
                 </>
               ) : (
                 <>
@@ -438,7 +438,7 @@ export function AiPlaygroundForm({
                     Native Mode:
                   </strong>{' '}
                   Enter a word in your native language (e.g. "hello") to
-                  translate it and generate a note.
+                  translate it and create a note.
                 </>
               )}
             </p>
@@ -514,11 +514,7 @@ export function AiPlaygroundForm({
       >
         <span className="flex items-center justify-center gap-2">
           <Sparkles className="size-4 animate-pulse" />
-          {isSubmitting
-            ? 'Generating...'
-            : mode === 'word_note'
-              ? 'Generate Word Note'
-              : 'Start Card Generation'}
+          {isSubmitting ? 'Creating...' : 'Create'}
         </span>
       </Button>
     </form>

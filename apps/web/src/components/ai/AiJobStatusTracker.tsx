@@ -26,7 +26,7 @@ export function AiJobStatusTracker({
       label: 'Processing LLM',
       desc: 'Querying model and formatting structured output',
     },
-    { key: 'completed', label: 'Done', desc: 'Cards generated successfully' },
+    { key: 'completed', label: 'Done', desc: 'Cards created successfully' },
   ].filter((step) => jobId || step.key !== 'pending');
 
   const getStepState = (stepKey: string) => {
@@ -47,7 +47,7 @@ export function AiJobStatusTracker({
 
       <div className="text-center space-y-2">
         <h3 className="text-lg font-semibold tracking-tight">
-          Generating Your Deck
+          Creating Your Deck
         </h3>
       </div>
 

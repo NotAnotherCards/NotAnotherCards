@@ -68,10 +68,10 @@ export function AiResultPreview({
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold tracking-tight">
-            Generation Results
+            Creation Results
           </h2>
           <p className="text-sm text-muted-foreground">
-            Generated {cards.length} structured flashcard note candidates.
+            Created {cards.length} structured flashcard note candidates.
           </p>
         </div>
       </div>

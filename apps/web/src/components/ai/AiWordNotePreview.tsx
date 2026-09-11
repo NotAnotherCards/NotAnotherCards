@@ -43,10 +43,10 @@ export function AiWordNotePreview({
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold tracking-tight">
-            Generation Results
+            Creation Results
           </h2>
           <p className="text-sm text-muted-foreground">
-            Generated structured word note candidate.
+            Created structured word note candidate.
           </p>
         </div>
 

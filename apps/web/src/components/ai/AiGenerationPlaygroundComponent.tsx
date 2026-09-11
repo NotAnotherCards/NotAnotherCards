@@ -98,7 +98,7 @@ export function AiGenerationPlaygroundComponent() {
         ) {
           if (updatedJob.status === 'failed') {
             setErrorMessage(
-              'Generation could not be completed. Please try again with a different input.',
+              'Creation could not be completed. Please try again with a different input.',
             );
           }
           setLoading(false);
@@ -180,10 +180,10 @@ export function AiGenerationPlaygroundComponent() {
             await res.json().catch(() => null),
           );
           throw new Error(
-            message || 'Unable to start card generation. Please try again.',
+            message || 'Unable to start card creation. Please try again.',
           );
         }
-        if (!res.body) throw new Error('Generation response has no stream.');
+        if (!res.body) throw new Error('Creation response has no stream.');
         const result = await readPlaygroundStream(res.body, (delta) => {
           if (!request.signal.aborted) setStreamText((text) => text + delta);
         });
@@ -200,7 +200,7 @@ export function AiGenerationPlaygroundComponent() {
             await res.json().catch(() => null),
           );
           throw new Error(
-            message || 'Unable to start generation. Please try again.',
+            message || 'Unable to start creation. Please try again.',
           );
         }
         const data = await res.json();
@@ -211,7 +211,7 @@ export function AiGenerationPlaygroundComponent() {
     } catch (error) {
       if (!request.signal.aborted) {
         setErrorMessage(
-          error instanceof Error ? error.message : 'Unable to generate.',
+          error instanceof Error ? error.message : 'Unable to create.',
         );
       }
     } finally {
@@ -234,7 +234,7 @@ export function AiGenerationPlaygroundComponent() {
       await createCardsBatch({
         deckIdOrTitle,
         isNew,
-        description: 'AI Generated Cards',
+        description: 'Created Cards',
         cards: cards.map((card) => ({
           front: card.front,
           back: card.back,
@@ -278,7 +278,7 @@ export function AiGenerationPlaygroundComponent() {
     setCurrentJob(job);
     if (job.status === 'failed') {
       setErrorMessage(
-        'Generation could not be completed. Please try again with a different input.',
+        'Creation could not be completed. Please try again with a different input.',
       );
     } else {
       setErrorMessage(null);
@@ -398,7 +398,7 @@ export function AiGenerationPlaygroundComponent() {
             <h3 className="text-base font-bold tracking-tight">Live Output</h3>
             <pre
               ref={liveOutput}
-              aria-label="Live generation output"
+              aria-label="Live creation output"
               className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground"
             >
               {streamText || 'Waiting for the first text…'}
@@ -428,13 +428,13 @@ export function AiGenerationPlaygroundComponent() {
               <AlertCircle className="size-6" />
             </div>
             <div className="space-y-1.5 max-w-md">
-              <h3 className="font-bold text-foreground text-base">
-                {currentJob ? 'Generation Job Failed' : 'Generation Failed'}
+              <h3 className="text-xl font-bold mb-2">
+                {currentJob ? 'Creation Job Failed' : 'Creation Failed'}
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||
                   currentJob?.error ||
-                  'Generation could not be completed. Please try again with a different input.'}
+                  'Creation could not be completed. Please try again with a different input.'}
               </p>
             </div>
           </div>
@@ -447,9 +447,9 @@ export function AiGenerationPlaygroundComponent() {
               <h3 className="font-semibold text-foreground text-sm">
                 No Results Preview
               </h3>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                Trigger a generation task or select a completed past job from
-                the log on the left to view results.
+              <p className="text-sm text-muted-foreground/80 max-w-sm mx-auto leading-relaxed">
+                Trigger a creation task or select a completed past job from
+                the history panel to view results.
               </p>
             </div>
           </div>
