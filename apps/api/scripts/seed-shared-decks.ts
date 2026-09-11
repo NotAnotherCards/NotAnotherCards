@@ -101,142 +101,145 @@ async function main() {
   const db = drizzle(pool);
 
   try {
-    console.log('Ensuring admin user exists...');
+    await db.transaction(async (tx) => {
+      console.log('Ensuring admin user exists...');
 
-    // 1. Ensure the underlying user account exists
-    await db
-      .insert(user)
-      .values({
-        id: NOTANOTHERCARDS_USER_ID,
-        name: 'NotAnotherCards Admin',
-        email: NOTANOTHERCARDS_EMAIL,
-        onBoardingComplete: true,
-      })
-      .onConflictDoNothing();
+      // 1. Ensure the underlying user account exists
+      await tx
+        .insert(user)
+        .values({
+          id: NOTANOTHERCARDS_USER_ID,
+          name: 'NotAnotherCards Admin',
+          email: NOTANOTHERCARDS_EMAIL,
+          onBoardingComplete: true,
+        })
+        .onConflictDoNothing();
 
-    // 2. Ensure the user profile (with the public @username) exists
-    await db
-      .insert(userProfiles)
-      .values({
-        userId: NOTANOTHERCARDS_USER_ID,
-        rev: sql`nextval('remelon_rev')`,
-        username: NOTANOTHERCARDS_USERNAME,
-        bio: 'The official NotAnotherCards account providing starter content.',
-        createdAt: NOW,
-        updatedAt: NOW,
-      })
-      .onConflictDoNothing();
-
-    console.log('Seeding foundational decks...');
-
-    for (const deck of STARTER_DECKS) {
-      console.log(`Seeding deck: ${deck.title}`);
-
-      // 3. Create the Deck, marked as 'public' so it appears in the shared feed
-      await db.insert(userDecks).values({
-        id: deck.id,
-        userId: NOTANOTHERCARDS_USER_ID,
-        rev: sql`nextval('remelon_rev')`,
-        title: deck.title,
-        description: deck.description,
-        noteType: deck.noteType,
-        visibility: deck.visibility,
-        createdAt: NOW,
-        updatedAt: NOW,
-      });
-
-      const publishedNotes: PublishedContent['notes'] = [];
-      const publishedCards: PublishedContent['cards'] = [];
-
-      // 4. Insert Notes & Cards for the deck
-      for (const cardData of deck.cards) {
-        const noteId = randomUUID();
-        const cardId = randomUUID();
-        const noteDeckId = randomUUID();
-
-        // Create the abstract Note (holds the raw data)
-        await db.insert(userNotes).values({
-          id: noteId,
+      // 2. Ensure the user profile (with the public @username) exists
+      await tx
+        .insert(userProfiles)
+        .values({
           userId: NOTANOTHERCARDS_USER_ID,
           rev: sql`nextval('remelon_rev')`,
+          username: NOTANOTHERCARDS_USERNAME,
+          bio: 'The official NotAnotherCards account providing starter content.',
+          createdAt: NOW,
+          updatedAt: NOW,
+        })
+        .onConflictDoNothing();
+
+      console.log('Seeding foundational decks...');
+
+      for (const deck of STARTER_DECKS) {
+        console.log(`Seeding deck: ${deck.title}`);
+
+        // 3. Create the Deck, marked as 'public' so it appears in the shared feed
+        await tx.insert(userDecks).values({
+          id: deck.id,
+          userId: NOTANOTHERCARDS_USER_ID,
+          rev: sql`nextval('remelon_rev')`,
+          title: deck.title,
+          description: deck.description,
           noteType: deck.noteType,
-          fieldsVersion: BASIC_NOTE_FIELDS_VERSION,
-          fieldsJson: JSON.stringify({
-            front: cardData.front,
-            back: cardData.back,
-          }),
+          visibility: deck.visibility,
           createdAt: NOW,
           updatedAt: NOW,
         });
 
-        publishedNotes.push({
-          id: noteId,
-          note_type: deck.noteType,
-          fields_version: BASIC_NOTE_FIELDS_VERSION,
-          fields_json: JSON.stringify({
+        const publishedNotes: PublishedContent['notes'] = [];
+        const publishedCards: PublishedContent['cards'] = [];
+
+        // 4. Insert Notes & Cards for the deck
+        for (const cardData of deck.cards) {
+          const noteId = randomUUID();
+          const cardId = randomUUID();
+          const noteDeckId = randomUUID();
+
+          // Create the abstract Note (holds the raw data)
+          await tx.insert(userNotes).values({
+            id: noteId,
+            userId: NOTANOTHERCARDS_USER_ID,
+            rev: sql`nextval('remelon_rev')`,
+            noteType: deck.noteType,
+            fieldsVersion: BASIC_NOTE_FIELDS_VERSION,
+            fieldsJson: JSON.stringify({
+              front: cardData.front,
+              back: cardData.back,
+            }),
+            createdAt: NOW,
+            updatedAt: NOW,
+          });
+
+          publishedNotes.push({
+            id: noteId,
+            note_type: deck.noteType,
+            fields_version: BASIC_NOTE_FIELDS_VERSION,
+            fields_json: JSON.stringify({
+              front: cardData.front,
+              back: cardData.back,
+            }),
+            additional_content: null,
+          });
+
+          // Link the Note specifically to this Deck
+          await tx.insert(userNoteDecks).values({
+            id: noteDeckId,
+            userId: NOTANOTHERCARDS_USER_ID,
+            rev: sql`nextval('remelon_rev')`,
+            noteId: noteId,
+            deckId: deck.id,
+            active: true,
+            createdAt: NOW,
+            updatedAt: NOW,
+          });
+
+          // Create the actual playable Card generated from the Note
+          await tx.insert(userCards).values({
+            id: cardId,
+            userId: NOTANOTHERCARDS_USER_ID,
+            rev: sql`nextval('remelon_rev')`,
+            noteId: noteId,
+            templateKey: BASIC_FRONT_BACK_TEMPLATE_KEY,
+            active: true,
             front: cardData.front,
             back: cardData.back,
-          }),
-          additional_content: null,
-        });
+            dueAt: NOW,
+            createdAt: NOW,
+            updatedAt: NOW,
+          });
 
-        // Link the Note specifically to this Deck
-        await db.insert(userNoteDecks).values({
-          id: noteDeckId,
-          userId: NOTANOTHERCARDS_USER_ID,
-          rev: sql`nextval('remelon_rev')`,
-          noteId: noteId,
+          publishedCards.push({
+            id: cardId,
+            note_id: noteId,
+            template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+            front: cardData.front,
+            back: cardData.back,
+          });
+        }
+
+        // 5. Publish the deck snapshot
+        await tx.insert(publishedDecks).values({
           deckId: deck.id,
-          active: true,
-          createdAt: NOW,
-          updatedAt: NOW,
-        });
-
-        // Create the actual playable Card generated from the Note
-        await db.insert(userCards).values({
-          id: cardId,
           userId: NOTANOTHERCARDS_USER_ID,
-          rev: sql`nextval('remelon_rev')`,
-          noteId: noteId,
-          templateKey: BASIC_FRONT_BACK_TEMPLATE_KEY,
-          active: true,
-          front: cardData.front,
-          back: cardData.back,
-          dueAt: NOW,
-          createdAt: NOW,
-          updatedAt: NOW,
-        });
-
-        publishedCards.push({
-          id: cardId,
-          note_id: noteId,
-          template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
-          front: cardData.front,
-          back: cardData.back,
+          title: deck.title,
+          description: deck.description,
+          noteType: deck.noteType,
+          nativeLanguageId: null,
+          targetLanguageId: null,
+          cardCount: publishedCards.length,
+          content: {
+            notes: publishedNotes,
+            cards: publishedCards,
+          },
+          publishedAt: new Date(NOW),
         });
       }
-
-      // 5. Publish the deck snapshot
-      await db.insert(publishedDecks).values({
-        deckId: deck.id,
-        userId: NOTANOTHERCARDS_USER_ID,
-        title: deck.title,
-        description: deck.description,
-        noteType: deck.noteType,
-        nativeLanguageId: null,
-        targetLanguageId: null,
-        cardCount: publishedCards.length,
-        content: {
-          notes: publishedNotes,
-          cards: publishedCards,
-        },
-        publishedAt: new Date(NOW),
-      });
-    }
+    });
 
     console.log('Successfully seeded foundational decks!');
   } catch (error) {
     console.error('Error seeding data:', error);
+    process.exit(1);
   } finally {
     await pool.end();
   }
