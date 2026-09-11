@@ -448,8 +448,8 @@ export function AiGenerationPlaygroundComponent() {
                 No Results Preview
               </h3>
               <p className="text-sm text-muted-foreground/80 max-w-sm mx-auto leading-relaxed">
-                Trigger a creation task or select a completed past job from
-                the history panel to view results.
+                Trigger a creation task or select a completed past job from the
+                history panel to view results.
               </p>
             </div>
           </div>

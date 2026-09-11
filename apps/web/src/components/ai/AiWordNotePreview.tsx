@@ -42,83 +42,80 @@ export function AiWordNotePreview({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">
-            Creation Results
-          </h2>
+          <h2 className="text-xl font-bold tracking-tight">Creation Results</h2>
           <p className="text-sm text-muted-foreground">
             Created structured word note candidate.
           </p>
         </div>
-
       </div>
 
       <div className="bg-card/40 border border-border/60 rounded-2xl p-6 shadow-sm hover:border-violet-500/30 transition-all duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Word
-                </h4>
-                <div className="text-lg font-bold">{note.fields.word}</div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                Word
+              </h4>
+              <div className="text-lg font-bold">{note.fields.word}</div>
+            </div>
 
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Translation
-                </h4>
-                <div className="text-base font-medium">
-                  {note.fields.translation}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                    Part of Speech
-                  </h4>
-                  <div className="text-sm">{note.fields.part_of_speech}</div>
-                </div>
-                {note.fields.gender && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                      Gender
-                    </h4>
-                    <div className="text-sm">{note.fields.gender}</div>
-                  </div>
-                )}
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                Translation
+              </h4>
+              <div className="text-base font-medium">
+                {note.fields.translation}
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Pronunciation
+                  Part of Speech
                 </h4>
-                <div className="text-sm font-mono">
-                  {note.fields.pronunciation || 'N/A'}
-                </div>
+                <div className="text-sm">{note.fields.part_of_speech}</div>
               </div>
-
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Example
-                </h4>
-                <div className="text-sm italic border-l-2 border-violet-500/30 pl-3 py-1">
-                  <MarkdownRenderer content={note.fields.example} />
+              {note.fields.gender && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                    Gender
+                  </h4>
+                  <div className="text-sm">{note.fields.gender}</div>
                 </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                Pronunciation
+              </h4>
+              <div className="text-sm font-mono">
+                {note.fields.pronunciation || 'N/A'}
               </div>
+            </div>
 
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                  Example Translation
-                </h4>
-                <div className="text-sm border-l-2 border-border pl-3 py-1">
-                  <MarkdownRenderer content={note.fields.example_translation} />
-                </div>
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                Example
+              </h4>
+              <div className="text-sm italic border-l-2 border-violet-500/30 pl-3 py-1">
+                <MarkdownRenderer content={note.fields.example} />
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                Example Translation
+              </h4>
+              <div className="text-sm border-l-2 border-border pl-3 py-1">
+                <MarkdownRenderer content={note.fields.example_translation} />
               </div>
             </div>
           </div>
         </div>
+      </div>
 
       {/* Persistence Section */}
       <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">

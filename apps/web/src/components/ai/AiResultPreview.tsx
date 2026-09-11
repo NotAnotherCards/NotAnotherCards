@@ -67,9 +67,7 @@ export function AiResultPreview({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">
-            Creation Results
-          </h2>
+          <h2 className="text-xl font-bold tracking-tight">Creation Results</h2>
           <p className="text-sm text-muted-foreground">
             Created {cards.length} structured flashcard note candidates.
           </p>
@@ -77,33 +75,33 @@ export function AiResultPreview({
       </div>
 
       <div className="space-y-4 max-h-100 overflow-y-auto pr-2">
-          {cards.map((card, idx) => (
-            <div
-              key={idx}
-              className="bg-card/40 border border-border/60 rounded-2xl p-4 shadow-sm hover:border-violet-500/30 transition-all duration-200 group flex flex-col md:flex-row gap-4 justify-between items-stretch"
-            >
-              <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Front
-                </div>
-                <div className="text-sm font-medium">
-                  <MarkdownRenderer content={card.front} />
-                </div>
+        {cards.map((card, idx) => (
+          <div
+            key={idx}
+            className="bg-card/40 border border-border/60 rounded-2xl p-4 shadow-sm hover:border-violet-500/30 transition-all duration-200 group flex flex-col md:flex-row gap-4 justify-between items-stretch"
+          >
+            <div className="flex-1 space-y-1">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Front
               </div>
-              <div className="hidden md:flex items-center text-muted-foreground">
-                <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-              <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Back
-                </div>
-                <div className="text-sm font-medium">
-                  <MarkdownRenderer content={card.back} />
-                </div>
+              <div className="text-sm font-medium">
+                <MarkdownRenderer content={card.front} />
               </div>
             </div>
-          ))}
-        </div>
+            <div className="hidden md:flex items-center text-muted-foreground">
+              <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Back
+              </div>
+              <div className="text-sm font-medium">
+                <MarkdownRenderer content={card.back} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Persistence Section */}
       <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">
