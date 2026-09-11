@@ -203,7 +203,7 @@ export function AiGenerationPlaygroundComponent() {
             message || 'Unable to start creation. Please try again.',
           );
         }
-        const data = await res.json();
+        const data = (await res.json()) as { job: Job };
         if (!request.signal.aborted) setCurrentJob(data.job);
         // Polling will take over from here
         return;

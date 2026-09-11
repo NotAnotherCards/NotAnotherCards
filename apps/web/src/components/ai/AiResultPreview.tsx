@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
 import { AiCardOutput } from '@repo/schemas';
-import { cardId, BASIC_FRONT_BACK_TEMPLATE_KEY } from '@repo/offline-db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
   ArrowRight,
   BookOpen,
-  Layers,
   FolderPlus,
-  FileJson,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';

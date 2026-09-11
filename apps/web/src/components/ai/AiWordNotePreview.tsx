@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { AiWordNoteCandidate } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import {
-  FileJson,
   BookOpen,
   CheckCircle2,
   AlertCircle,
-  LayoutTemplate,
 } from 'lucide-react';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
