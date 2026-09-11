@@ -16,6 +16,7 @@ import {
   userNoteDecks,
   userCards,
 } from '../src/sync/schema';
+import { publishedDecks, type PublishedContent } from '../src/sharing/schema';
 
 // Constants replicating `@repo/offline-db` to avoid cross-workspace dependency issues in root scripts
 const BASIC_NOTE_TYPE = 'basic';
@@ -144,6 +145,9 @@ async function main() {
         updatedAt: NOW,
       });
 
+      const publishedNotes: PublishedContent['notes'] = [];
+      const publishedCards: PublishedContent['cards'] = [];
+
       // 4. Insert Notes & Cards for the deck
       for (const cardData of deck.cards) {
         const noteId = randomUUID();
@@ -163,6 +167,17 @@ async function main() {
           }),
           createdAt: NOW,
           updatedAt: NOW,
+        });
+
+        publishedNotes.push({
+          id: noteId,
+          note_type: deck.noteType,
+          fields_version: BASIC_NOTE_FIELDS_VERSION,
+          fields_json: JSON.stringify({
+            front: cardData.front,
+            back: cardData.back,
+          }),
+          additional_content: null,
         });
 
         // Link the Note specifically to this Deck
@@ -191,7 +206,32 @@ async function main() {
           createdAt: NOW,
           updatedAt: NOW,
         });
+
+        publishedCards.push({
+          id: cardId,
+          note_id: noteId,
+          template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+          front: cardData.front,
+          back: cardData.back,
+        });
       }
+
+      // 5. Publish the deck snapshot
+      await db.insert(publishedDecks).values({
+        deckId: deck.id,
+        userId: NOTANOTHERCARDS_USER_ID,
+        title: deck.title,
+        description: deck.description,
+        noteType: deck.noteType,
+        nativeLanguageId: null,
+        targetLanguageId: null,
+        cardCount: publishedCards.length,
+        content: {
+          notes: publishedNotes,
+          cards: publishedCards,
+        },
+        publishedAt: new Date(NOW),
+      });
     }
 
     console.log('Successfully seeded foundational decks!');
