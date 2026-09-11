@@ -100,3 +100,28 @@ vi.mock('@/offline/db', () => {
     closeUserDatabase: vi.fn().mockResolvedValue(undefined),
   };
 });
+
+// Mock @tanstack/react-virtual for JSDOM
+vi.mock('@tanstack/react-virtual', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-virtual')>();
+  return {
+    ...actual,
+    useVirtualizer: vi.fn().mockImplementation((options) => {
+      const items = Array.from({ length: options.count }, (_, i) => ({
+        index: i,
+        start: i * 100,
+        size: 100,
+        end: (i + 1) * 100,
+        key: i,
+        lane: 0,
+      }));
+      return {
+        getVirtualItems: () => items,
+        getTotalSize: () => options.count * 100,
+        measureElement: vi.fn(),
+        scrollToIndex: vi.fn(),
+        scrollToOffset: vi.fn(),
+      };
+    }),
+  };
+});

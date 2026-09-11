@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, useStore } from '@/hooks/useStore';
 import { Input } from '@/components/ui/input';
 import {
@@ -46,12 +47,23 @@ export function CardList({
   const store = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
+  
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const filteredCards = cards.filter(
     (c) =>
       c.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.back.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredCards.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 100, // Estimated height per row (adjusts dynamically)
+    overscan: 5,
+    initialRect: { width: 800, height: 800 },
+  });
+
 
   if (store.isTakenOver) {
     return (
@@ -159,29 +171,51 @@ export function CardList({
             ) : null}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
-                  <th className="px-6 py-3 min-w-50">Front / Question</th>
-                  <th className="px-6 py-3 min-w-50">Back / Answer</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30">
-                {filteredCards.map((card) => (
-                  <CardItem
-                    key={card.id}
-                    card={card}
-                    onEditCard={onEditCard}
-                    onRemoveFromDeck={onRemoveFromDeck}
-                    onViewCard={(c) => setViewingCard(c)}
-                    canEdit={canEditCard(card)}
-                    canRemove={canRemoveCard}
-                  />
-                ))}
-              </tbody>
-            </table>
+          <div className="flex flex-col">
+            {/* Header row (visible on desktop) */}
+            <div className="hidden md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
+              <div>Front / Question</div>
+              <div>Back / Answer</div>
+              <div className="text-right">Actions</div>
+            </div>
+            
+            {/* Scrollable container for virtualized list */}
+            <div 
+              ref={parentRef} 
+              className="h-[calc(100vh-250px)] min-h-100 overflow-auto"
+            >
+              <div 
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const card = filteredCards[virtualRow.index];
+                  return (
+                    <CardItem
+                      key={card.id}
+                      card={card}
+                      onEditCard={onEditCard}
+                      onRemoveFromDeck={onRemoveFromDeck}
+                      onViewCard={(c) => setViewingCard(c)}
+                      canEdit={canEditCard(card)}
+                      canRemove={canRemoveCard}
+                      ref={rowVirtualizer.measureElement}
+                      data-index={virtualRow.index}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
