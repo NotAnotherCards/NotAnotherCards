@@ -6,6 +6,7 @@ import {
   BASIC_NOTE_TYPE,
   WORD_NOTE_TYPE,
   cardId,
+  compileNote,
   noteDeckId,
 } from '@repo/offline-db';
 import {
@@ -31,6 +32,8 @@ import {
 import { AppModule } from '../../src/app.module';
 import { DATABASE_CONNECTION } from '../../src/database/database-connection';
 import { ModerationService } from '../../src/sharing/moderation.service';
+import { SharingService } from '../../src/sharing/sharing.service';
+import { publishedDecks } from '../../src/sharing/schema';
 import {
   userCards,
   userDecks,
@@ -155,35 +158,51 @@ describePostgres('deck sharing endpoints', () => {
     });
     if (cards === 0) return { deckId, noteIds, cardIds: [] };
 
+    const compiled = noteIds.map((_, index) =>
+      compileNote(
+        options.languages ? WORD_NOTE_TYPE : BASIC_NOTE_TYPE,
+        BASIC_NOTE_FIELDS_VERSION,
+        options.languages
+          ? {
+              word: `front ${index}`,
+              translation: `back ${index}`,
+              native_language_id: options.languages.native,
+              target_language_id: options.languages.target,
+              image: 'private-image-id',
+              word_audio: 'private-audio-id',
+            }
+          : { front: `front ${index}`, back: `back ${index}` },
+      ),
+    );
+
     await db.insert(userNotes).values(
       noteIds.map((noteId, index) => ({
         id: noteId,
         rev: sql`nextval('remelon_rev')`,
         userId: owner.id,
-        noteType: BASIC_NOTE_TYPE,
+        noteType: options.languages ? WORD_NOTE_TYPE : BASIC_NOTE_TYPE,
         fieldsVersion: BASIC_NOTE_FIELDS_VERSION,
-        fieldsJson: JSON.stringify({
-          front: `front ${index}`,
-          back: `back ${index}`,
-        }),
+        fieldsJson: compiled[index].fieldsJson,
         additionalContent: null,
         createdAt: now + index,
         updatedAt: now + index,
       })),
     );
     await db.insert(userCards).values(
-      noteIds.map((noteId, index) => ({
-        id: cardId(noteId, BASIC_FRONT_BACK_TEMPLATE_KEY),
-        rev: sql`nextval('remelon_rev')`,
-        userId: owner.id,
-        noteId,
-        templateKey: BASIC_FRONT_BACK_TEMPLATE_KEY,
-        front: `front ${index}`,
-        back: `back ${index}`,
-        dueAt: now,
-        createdAt: now + index,
-        updatedAt: now + index,
-      })),
+      noteIds.flatMap((noteId, index) =>
+        compiled[index].cards.map((card) => ({
+          id: cardId(noteId, card.templateKey),
+          rev: sql`nextval('remelon_rev')`,
+          userId: owner.id,
+          noteId,
+          templateKey: card.templateKey,
+          front: card.front,
+          back: card.back,
+          dueAt: now,
+          createdAt: now + index,
+          updatedAt: now + index,
+        })),
+      ),
     );
     await db.insert(userNoteDecks).values(
       noteIds.map((noteId, index) => ({
@@ -197,11 +216,18 @@ describePostgres('deck sharing endpoints', () => {
       })),
     );
 
+    if (visibility === 'public' && !deleted) {
+      await app.get(SharingService).publish(owner.id, deckId);
+      await db
+        .update(publishedDecks)
+        .set({ publishedAt: new Date(now) })
+        .where(eq(publishedDecks.deckId, deckId));
+    }
     return {
       deckId,
       noteIds,
-      cardIds: noteIds.map((noteId) =>
-        cardId(noteId, BASIC_FRONT_BACK_TEMPLATE_KEY),
+      cardIds: noteIds.flatMap((noteId, index) =>
+        compiled[index].cards.map((card) => cardId(noteId, card.templateKey)),
       ),
     };
   };
@@ -261,7 +287,7 @@ describePostgres('deck sharing endpoints', () => {
 
   beforeEach(async () => {
     await db.execute(`
-      truncate table user_profiles, review_events, user_note_decks, user_cards, user_notes, user_decks cascade;
+      truncate table published_decks, user_profiles, review_events, user_note_decks, user_cards, user_notes, user_decks cascade;
       delete from remelon_revision_checkpoints;
       delete from remelon_sync_meta;
       alter sequence remelon_rev restart with 1;
@@ -312,7 +338,7 @@ describePostgres('deck sharing endpoints', () => {
     expect((await storedDeck('anon-deck')).visibility).toBe('private');
   });
 
-  it('publishes with a fresh revision the owner pulls, and repeats without writing', async () => {
+  it('publishes with a fresh revision the owner pulls, and republishes', async () => {
     await seedDeck(userA, 'publishable');
     const before = await storedDeck('publishable');
     const start = await pull(userA);
@@ -332,7 +358,10 @@ describePostgres('deck sharing endpoints', () => {
     ]);
 
     await post(userA, '/api/decks/publishable/publish').expect(200);
-    expect((await storedDeck('publishable')).rev).toBe(published.rev);
+    expect((await storedDeck('publishable')).rev).toBeGreaterThan(
+      published.rev,
+    );
+    expect(await db.select().from(publishedDecks)).toHaveLength(1);
   });
 
   it('refuses a deck the moderator flags and names the offending card', async () => {
@@ -403,6 +432,9 @@ describePostgres('deck sharing endpoints', () => {
 
     await post(userA, '/api/decks/retractable/unpublish').expect(200);
     expect((await storedDeck('retractable')).rev).toBe(retracted.rev);
+    expect(await db.select().from(publishedDecks)).toEqual([]);
+    await post(userA, '/api/decks/retractable/publish').expect(200);
+    expect(await db.select().from(publishedDecks)).toHaveLength(1);
   });
 
   it('still rejects a client push to public after a publish and unpublish', async () => {
@@ -603,7 +635,7 @@ describePostgres('deck sharing endpoints', () => {
   });
 
   it.each(['deck', 'note', 'card', 'membership'] as const)(
-    'refuses publication when a %s syncs during moderation, then allows retry',
+    'publishes the checked snapshot when a %s syncs during moderation',
     async (changed) => {
       const { noteIds, cardIds } = await seedDeck(userA, 'racing');
       const cursor = (await pull(userA)).cursor;
@@ -652,7 +684,6 @@ describePostgres('deck sharing endpoints', () => {
           },
         },
       };
-      let afterPush = await storedDeck('racing');
       vi.spyOn(app.get(ModerationService), 'check').mockImplementationOnce(
         async ({ cards }) => {
           expect(cards[0].front).toBe('front 0');
@@ -669,30 +700,34 @@ describePostgres('deck sharing endpoints', () => {
             .expect(200);
           const body = response.body as { rejected?: Record<string, string[]> };
           expect(body.rejected ?? {}).toEqual({});
-          afterPush = await storedDeck('racing');
           return { ok: true, flagged: [] };
         },
       );
 
-      const response = await post(userA, '/api/decks/racing/publish').expect(
-        409,
-      );
-      expect(response.body).toMatchObject({
-        message: 'Deck changed, publish again',
-      });
-      expect(await storedDeck('racing')).toEqual(afterPush);
-      expect(afterPush.visibility).toBe('private');
-      expect(await browse(userB)).toEqual([]);
-
       await post(userA, '/api/decks/racing/publish').expect(200);
       expect((await storedDeck('racing')).visibility).toBe('public');
+      const [snapshot] = await db.select().from(publishedDecks);
+      expect(snapshot.title).toBe('Deck racing');
+      expect(snapshot.content.cards).toEqual([
+        expect.objectContaining({ front: 'front 0', back: 'back 0' }),
+      ]);
+      expect(JSON.parse(snapshot.content.notes[0].fields_json)).toEqual({
+        front: 'front 0',
+        back: 'back 0',
+      });
+      const preview = await get(userB, '/api/shared/decks/racing').expect(200);
+      expect(preview.body).toMatchObject({
+        deck: {
+          title: 'Deck racing',
+          cards: [{ front: 'front 0', back: 'back 0' }],
+        },
+      });
     },
   );
 
-  it('refuses an unchecked membership added to an empty deck during moderation', async () => {
+  it('does not publish a membership added to an empty deck during moderation', async () => {
     await seedDeck(userA, 'empty', { cards: 0 });
     const { noteIds } = await seedDeck(userA, 'source');
-    const before = await storedDeck('empty');
     const cursor = (await pull(userA)).cursor;
     vi.spyOn(app.get(ModerationService), 'check').mockImplementationOnce(
       async ({ cards }) => {
@@ -725,7 +760,103 @@ describePostgres('deck sharing endpoints', () => {
       },
     );
 
-    await post(userA, '/api/decks/empty/publish').expect(409);
-    expect(await storedDeck('empty')).toEqual(before);
+    await post(userA, '/api/decks/empty/publish').expect(200);
+    const [snapshot] = await db.select().from(publishedDecks);
+    expect(snapshot.content).toEqual({ notes: [], cards: [] });
+    expect(snapshot.cardCount).toBe(0);
+  });
+
+  it('keeps edits private until republish, and keeps the previous snapshot on refusal', async () => {
+    const { noteIds, cardIds } = await seedDeck(userA, 'working', {
+      visibility: 'public',
+    });
+    const [before] = await db.select().from(publishedDecks);
+    const cursor = (await pull(userA)).cursor;
+    const now = Date.now();
+    const response = await post(userA, '/sync/push')
+      .send({
+        cursor,
+        changes: {
+          user_decks: {
+            created: [],
+            updated: [deckWire('working', 'public', 'New title')],
+            deleted: [],
+          },
+          user_cards: {
+            created: [],
+            updated: [
+              {
+                id: cardIds[0],
+                note_id: noteIds[0],
+                template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+                active: true,
+                front: 'new front',
+                back: 'new back',
+                due_at: now,
+                scheduled_interval_minutes: 0,
+                created_at: now,
+                updated_at: now,
+              },
+            ],
+            deleted: [],
+          },
+        },
+      })
+      .expect(200);
+    expect((response.body as { rejected?: unknown }).rejected ?? {}).toEqual(
+      {},
+    );
+    expect((await storedDeck('working')).visibility).toBe('public');
+    const changes = (await pull(userA, cursor)).changes;
+    expect(changes.user_cards.updated).toEqual([
+      expect.objectContaining({ front: 'new front' }),
+    ]);
+    expect(await browse(userB)).toEqual([
+      expect.objectContaining({
+        title: 'Deck working',
+        updatedAt: before.publishedAt.getTime(),
+      }),
+    ]);
+    const preview = await get(userB, '/api/shared/decks/working').expect(200);
+    expect(preview.body).toMatchObject({
+      deck: { cards: [{ front: 'front 0', back: 'back 0' }] },
+    });
+
+    vi.spyOn(app.get(ModerationService), 'check').mockResolvedValueOnce({
+      ok: false,
+      flagged: [],
+      reason: 'refused',
+    });
+    await post(userA, '/api/decks/working/publish').expect(422);
+    expect(await db.select().from(publishedDecks)).toEqual([before]);
+    await post(userA, '/api/decks/working/publish').expect(200);
+    const updated = await get(userB, '/api/shared/decks/working').expect(200);
+    expect(updated.body).toMatchObject({
+      deck: {
+        title: 'New title',
+        cards: [{ front: 'new front', back: 'new back' }],
+      },
+    });
+
+    await db
+      .update(userDecks)
+      .set({ deletedAt: new Date() })
+      .where(eq(userDecks.id, 'working'));
+    expect(await db.select().from(publishedDecks)).toHaveLength(1);
+    expect(await browse(userB)).toEqual([]);
+    await get(userB, '/api/shared/decks/working').expect(404);
+  });
+
+  it('requires legacy public decks without a snapshot to be republished', async () => {
+    await seedDeck(userA, 'legacy');
+    await db
+      .update(userDecks)
+      .set({ visibility: 'public' })
+      .where(eq(userDecks.id, 'legacy'));
+    expect(await browse(userB)).toEqual([]);
+    await get(userB, '/api/shared/decks/legacy').expect(404);
+    await get(userA, '/api/shared/decks/legacy').expect(200);
+    await post(userA, '/api/decks/legacy/publish').expect(200);
+    await get(userB, '/api/shared/decks/legacy').expect(200);
   });
 });

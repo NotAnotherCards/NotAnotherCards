@@ -131,7 +131,9 @@ file.
   check (#263) is a stub. Empty, the default, refuses every publish with
   `moderation unavailable`; `1` lets every deck through. Staging sets `1` so
   the sharing UI (#289) can be tried; production leaves it empty until #263
-  lands, at which point the variable goes away with the stub.
+  lands, at which point the variable goes away with the stub. Publish snapshots
+  the content; edits never unpublish it, and republishing replaces the snapshot.
+  Existing public decks without a snapshot must be republished to appear.
 
 ## The AI backend
 
