@@ -62,7 +62,13 @@ export function AiGenerationPlaygroundComponent() {
     }
 
     let disposed = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const poll = async () => {
+      if (disposed) return;
+      
+      let terminalStateReached = false;
+
       try {
         const res = await fetch(`/api/ai/jobs/${currentJob.id}`);
         if (disposed) return;
@@ -76,6 +82,7 @@ export function AiGenerationPlaygroundComponent() {
             prev ? { ...prev, status: 'failed' } : null,
           );
           setLoading(false);
+          terminalStateReached = true;
           return;
         }
 
@@ -93,6 +100,7 @@ export function AiGenerationPlaygroundComponent() {
             );
           }
           setLoading(false);
+          terminalStateReached = true;
           void fetchJobs();
           void fetchQuota();
         }
@@ -103,18 +111,19 @@ export function AiGenerationPlaygroundComponent() {
         );
         setCurrentJob((prev) => (prev ? { ...prev, status: 'failed' } : null));
         setLoading(false);
+        terminalStateReached = true;
+      } finally {
+        if (!disposed && !terminalStateReached) {
+          timeoutId = setTimeout(() => void poll(), 1000);
+        }
       }
     };
 
     void poll();
 
-    const intervalId = setInterval(() => {
-      void poll();
-    }, 1000);
-
     return () => {
       disposed = true;
-      clearInterval(intervalId);
+      clearTimeout(timeoutId);
     };
   }, [currentJob?.id, currentJob?.status]);
 

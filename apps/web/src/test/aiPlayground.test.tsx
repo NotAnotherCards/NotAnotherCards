@@ -12,13 +12,18 @@ const mockCreateDeck = vi
   .mockResolvedValue({ id: 'deck-new-1', title: 'New Test Deck' });
 const mockCreateCard = vi.fn().mockResolvedValue({ id: 'card-1' });
 const mockCreateCardsBatch = vi.fn().mockResolvedValue('deck-1');
+const mockCreateNote = vi.fn().mockResolvedValue('note-1');
 
 vi.mock('@/hooks/useStore', () => ({
   useStore: () => ({
-    decks: [{ id: 'deck-1', title: 'Spanish Vocab' }],
+    decks: [
+      { id: 'deck-1', title: 'Spanish Vocab', note_type: 'basic' },
+      { id: 'deck-2', title: 'French Vocab', note_type: 'word' }
+    ],
     createDeck: mockCreateDeck,
     createCard: mockCreateCard,
     createCardsBatch: mockCreateCardsBatch,
+    createNote: mockCreateNote,
   }),
 }));
 
@@ -116,6 +121,54 @@ describe('AI Generation Playground Test Suite', () => {
         type: 'topic_deck',
         topic: 'German Modal Verbs',
         count: 5,
+        model: 'qwen-next-80b',
+      });
+    });
+
+    it('submits valid form inputs for word_note mode', async () => {
+      const handleSubmit = vi.fn();
+      const user = userEvent.setup();
+
+      render(
+        <AiPlaygroundForm
+          quota={{
+            requestsUsed: 0,
+            maxRequests: 25,
+            usedTokens: 0,
+            maxTokens: 50000,
+            activePendingJobs: 0,
+            maxPendingJobs: 2,
+          }}
+          onSubmit={handleSubmit}
+          isSubmitting={false}
+          decks={[
+            { id: 'deck-1', title: 'Spanish Vocab', note_type: 'basic' },
+            { id: 'deck-2', title: 'French Vocab', note_type: 'word' }
+          ]}
+          createDeck={mockCreateDeck}
+        />,
+      );
+
+      // Switch to word note mode
+      const wordNoteBtn = screen.getByRole('button', { name: /Word Note/i });
+      await user.click(wordNoteBtn);
+
+      const wordInput = screen.getByLabelText(/Word \/ Translation/i);
+      await user.type(wordInput, 'bonjour');
+
+      const modelSelect = screen.getByLabelText(/Model Selection/i);
+      await user.selectOptions(modelSelect, 'qwen-next-80b');
+
+      const submitBtn = screen.getByRole('button', {
+        name: /Generate Word Note/i,
+      });
+      await user.click(submitBtn);
+
+      expect(handleSubmit).toHaveBeenCalledWith({
+        type: 'word_note',
+        deckId: 'deck-2',
+        word: 'bonjour',
+        direction: 'target',
         model: 'qwen-next-80b',
       });
     });

@@ -120,9 +120,6 @@ export function AiPlaygroundForm({
           word: word.trim(),
           direction,
           model,
-          // Since the server payload requires these names/ids but the schema definition in `createAiJobSchema` for UI payload only asks for:
-          // deckId, word, direction, model. Wait, `createAiJobSchema` in `@repo/schemas/src/ai.ts` ONLY asks for `deckId`, `word`, `direction`, `model`. The server uses these to construct the `wordNotePayloadSchema` which DOES include language details, OR the backend fetches it from the deck.
-          // Let's rely on `createAiJobSchema` type checking which only expects deckId, word, direction, model.
         });
       }
     } catch (err) {
