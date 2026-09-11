@@ -76,9 +76,7 @@ async function start() {
   fireEvent.change(screen.getByLabelText(/Subject \/ Topic/i), {
     target: { value: 'Coffee' },
   });
-  fireEvent.click(
-    screen.getByRole('button', { name: /Create$/i }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /Create$/i }));
   await waitFor(() =>
     expect(globalThis.fetch).toHaveBeenCalledWith(
       '/api/ai/playground/stream',
@@ -96,9 +94,9 @@ describe('streaming in the existing playground', () => {
     await act(async () => {
       controller.enqueue(encoded.slice(0, cut));
     });
-    expect(
-      screen.getByLabelText('Live creation output'),
-    ).not.toHaveTextContent('café');
+    expect(screen.getByLabelText('Live creation output')).not.toHaveTextContent(
+      'café',
+    );
     await act(async () => {
       controller.enqueue(encoded.slice(cut));
     });

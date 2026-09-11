@@ -17,8 +17,7 @@ export async function readPlaygroundStream(
           'Creation connection closed before the result arrived.',
         );
       size += value.byteLength;
-      if (size > 2_000_000)
-        throw new Error('Creation response is too large.');
+      if (size > 2_000_000) throw new Error('Creation response is too large.');
       tail += decoder.decode(value, { stream: true });
       for (;;) {
         const boundary = /\r?\n\r?\n/.exec(tail);
