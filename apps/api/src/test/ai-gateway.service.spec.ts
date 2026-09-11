@@ -1,5 +1,10 @@
 import { ConfigService } from '@nestjs/config';
-import { AiGatewayService, AiParseError } from '../ai/ai-gateway.service';
+import {
+  AiGatewayService,
+  AiParseError,
+  AiStreamError,
+  sseData,
+} from '../ai/ai-gateway.service';
 
 describe('AiGatewayService', () => {
   let service: AiGatewayService;
@@ -268,5 +273,203 @@ describe('AiGatewayService', () => {
     );
 
     expect(result.model).toBe('qwen3.6');
+  });
+
+  describe('streaming through generateCards', () => {
+    const event = (value: unknown) => 'data: ' + JSON.stringify(value) + '\n\n';
+    const usageEvent = event({
+      model: 'served',
+      choices: [],
+      usage: {
+        prompt_tokens: 2,
+        completion_tokens: 3,
+        total_tokens: 5,
+      },
+    });
+    const gateway = (timeout = '1000') =>
+      new AiGatewayService({
+        get: (key: string) =>
+          key === 'AI_API_BASE'
+            ? 'https://gateway.test/v1'
+            : key === 'AI_REQUEST_TIMEOUT_MS'
+              ? timeout
+              : undefined,
+      } as ConfigService);
+    const body = (parts: Uint8Array[]) =>
+      new ReadableStream<Uint8Array>({
+        pull(controller) {
+          const part = parts.shift();
+          if (part) controller.enqueue(part);
+          else controller.close();
+        },
+      });
+
+    it('streams split UTF-8 and returns exactly the buffered parser result', async () => {
+      const raw =
+        '<think>[ignore]</think>Cards: ' +
+        JSON.stringify([
+          { front: 'café', back: 'x'.repeat(1100) },
+          { front: 'extra', back: 'not requested' },
+        ]);
+      const wire =
+        event({ choices: [{ delta: { content: raw } }] }) +
+        usageEvent +
+        'data: [DONE]\n\n';
+      const bytes = new TextEncoder().encode(wire);
+      const cut = bytes.indexOf(0xc3) + 1;
+      const fetchMock = jest
+        .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+        .mockResolvedValueOnce(
+          new Response(body([bytes.slice(0, cut), bytes.slice(cut)])),
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              model: 'served',
+              choices: [{ message: { content: raw } }],
+              usage: {
+                prompt_tokens: 2,
+                completion_tokens: 3,
+                total_tokens: 5,
+              },
+            }),
+          ),
+        );
+      global.fetch = fetchMock;
+      const pieces: string[] = [];
+      const streamed = await gateway().generateCards(
+        'sys',
+        'topic',
+        undefined,
+        1,
+        {
+          onDelta: (delta) => {
+            pieces.push(delta);
+          },
+        },
+      );
+      const buffered = await gateway().generateCards(
+        'sys',
+        'topic',
+        undefined,
+        1,
+      );
+      expect(pieces.join('')).toBe(raw);
+      expect(streamed).toEqual(buffered);
+      expect(streamed.cards).toEqual([
+        { front: 'café', back: 'x'.repeat(1000) },
+      ]);
+      const init = fetchMock.mock.calls[0][1]!;
+      expect(JSON.parse(init.body as string)).toMatchObject({
+        stream: true,
+        stream_options: { include_usage: true },
+      });
+    });
+
+    it('keeps usage when the body ends without DONE', async () => {
+      global.fetch = jest.fn().mockResolvedValue(new Response(usageEvent));
+      await expect(
+        gateway().generateCards('sys', 'topic', undefined, 1, {
+          onDelta: () => {},
+        }),
+      ).rejects.toMatchObject({
+        name: 'AiStreamError',
+        message: 'AI stream ended before [DONE]',
+        model: 'served',
+        usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 },
+      });
+    });
+
+    it('keeps usage on invalid generated cards', async () => {
+      global.fetch = jest
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            event({ choices: [{ delta: { content: 'not cards' } }] }) +
+              usageEvent +
+              'data: [DONE]\n\n',
+          ),
+        );
+      await expect(
+        gateway().generateCards('sys', 'topic', undefined, 1, {
+          onDelta: () => {},
+        }),
+      ).rejects.toBeInstanceOf(AiParseError);
+    });
+
+    it('surfaces an upstream error and cancels its reader', async () => {
+      const cancel = jest.fn();
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              event({ error: { message: 'provider failed' } }),
+            ),
+          );
+        },
+        cancel,
+      });
+      global.fetch = jest.fn().mockResolvedValue(new Response(stream));
+      await expect(
+        gateway().generateCards('sys', 'topic', undefined, 1, {
+          onDelta: () => {},
+        }),
+      ).rejects.toThrow('provider failed');
+      expect(cancel).toHaveBeenCalled();
+      expect(stream.locked).toBe(false);
+    });
+
+    it('aborts a stalled streamed body on timeout', async () => {
+      global.fetch = jest
+        .fn()
+        .mockImplementation((_url: string, init: RequestInit) =>
+          Promise.resolve(
+            new Response(
+              new ReadableStream<Uint8Array>({
+                start(controller) {
+                  init.signal!.addEventListener(
+                    'abort',
+                    () => controller.error(init.signal!.reason),
+                    { once: true },
+                  );
+                },
+              }),
+            ),
+          ),
+        );
+      await expect(
+        gateway('20').generateCards('sys', 'topic', undefined, 1, {
+          onDelta: () => {},
+        }),
+      ).rejects.toBeInstanceOf(AiStreamError);
+    });
+
+    it('mock mode streams the same cards and obeys cancellation', async () => {
+      const pieces: string[] = [];
+      const result = await service.generateCards('sys', 'topic', undefined, 1, {
+        onDelta: (delta) => {
+          pieces.push(delta);
+        },
+      });
+      expect(pieces.length).toBeGreaterThan(1);
+      expect(JSON.parse(pieces.join(''))).toEqual(result.cards);
+      const abort = new AbortController();
+      abort.abort();
+      await expect(
+        service.generateCards('sys', 'topic', undefined, 1, {
+          signal: abort.signal,
+          onDelta: () => {},
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('the SSE reader supports CRLF, comments, and multiple events per chunk', async () => {
+      const parts: string[] = [];
+      const response = new Response(
+        ': comment\r\n\r\ndata: one\r\n\r\ndata: two\r\n\r\ndata: [DONE]\r\n\r\n',
+      );
+      for await (const data of sseData(response.body!)) parts.push(data);
+      expect(parts).toEqual(['one', 'two']);
+    });
   });
 });

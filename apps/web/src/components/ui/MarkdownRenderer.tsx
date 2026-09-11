@@ -5,7 +5,6 @@ import DOMPurify from 'dompurify';
 interface MarkdownRendererProps {
   content: string;
   className?: string;
-  inline?: boolean;
   'data-testid'?: string;
 }
 
@@ -67,19 +66,14 @@ function escapeHtml(str: string): string {
 export function MarkdownRenderer({
   content,
   className = '',
-  inline = false,
   'data-testid': testId,
 }: MarkdownRendererProps) {
   const sanitizedHtml = useMemo(() => {
     if (!content) return '';
 
     try {
-      // 1. Parse Markdown into raw HTML
-      const rawHtml = (
-        inline
-          ? markedInstance.parseInline(content, { async: false })
-          : markedInstance.parse(content, { async: false })
-      ) as string;
+      // 1. Parse Markdown into raw HTML.
+      const rawHtml = markedInstance.parse(content, { async: false }) as string;
 
       // 2. Sanitize HTML via DOMPurify to eliminate XSS, scripts, and unsafe attributes
       const purified = DOMPurify.sanitize(rawHtml, {
@@ -132,12 +126,10 @@ export function MarkdownRenderer({
     } catch {
       return escapeHtml(content);
     }
-  }, [content, inline]);
-
-  const Component = inline ? 'span' : 'div';
+  }, [content]);
 
   return (
-    <Component
+    <div
       className={`markdown-content [&_p]:my-0 [&_p+p]:mt-2 [&_h1]:text-4xl [&_h1]:font-bold [&_h2]:text-3xl [&_h2]:font-bold [&_h3]:text-2xl [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li+li]:mt-1 ${className}`.trim()}
       data-testid={testId}
       onClick={(e) => {

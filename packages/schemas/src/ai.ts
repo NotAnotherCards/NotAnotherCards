@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Gateway aliases (infra/gx10/litellm-config.yaml). 'qwen' is the deprecated
-// name for 'qwen3.6', kept until production sends the new one (#193).
+// name for 'qwen3.6', kept for clients that still send the legacy alias.
 export const AI_MODELS = [
   'gemma4',
   'qwen3.6',
@@ -178,3 +178,11 @@ export const aiJobsResponseSchema = z.object({
   ),
 });
 export const aiQuotaResponseSchema = z.object({ quota: quotaStatusSchema });
+
+/** Playground transport reuses the same card contract as completed jobs. */
+export const aiPlaygroundEventSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('delta'), delta: z.string() }),
+  z.object({ type: z.literal('result'), cards: z.array(aiCardOutputSchema) }),
+  z.object({ type: z.literal('error'), message: z.string() }),
+]);
+export type AiPlaygroundEvent = z.infer<typeof aiPlaygroundEventSchema>;

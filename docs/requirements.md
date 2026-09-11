@@ -17,13 +17,13 @@ Status values:
 - **not started**: nothing exists.
 - **gap**: mandatory, missing, and the subject says it causes rejection.
 
-Progress (2026-09-03): **13 modules, 17 points claimed** (Public API and PWA
+Progress (2026-09-09): **13 modules, 17 points claimed** (Public API and PWA
 at very low priority and not counted in the 17, advanced search open and not
-counted; see section 6). By module: done 3
-(4 pts), in review 2 (3 pts), in progress 4 (6 pts), not started 4 (4 pts).
-Weighted by points, about **50%** of the claimed 17 points is done. Two
-mandatory gaps (Privacy and Terms pages, README first line) and the README
-sections, which are at about 15%.
+counted; see section 6). By module: done 4
+(6 pts), in review 1 (1 pt), in progress 4 (6 pts), not started 4 (4 pts).
+Weighted by points and module progress, about **57%** of the claimed 17 points
+is done. Two mandatory gaps remain (Privacy and Terms pages, README first line),
+along with the README sections, which are at about 15%.
 
 How the percentages are made: a module's figure is the share of its subject
 bullets that are met; a partly met bullet gets partial credit, stated in its
@@ -104,10 +104,10 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 - Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google and Facebook in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
 
-### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — in progress — 65%
+### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — done — 100%
 
 - Generate text or images from user input. **done**: card generation jobs, `apps/api/src/ai`; gemma4 is the default and the benchmarked models are selectable through one shared `AI_MODELS` list (#197, merged 2026-08-31). A web playground is in review (#217).
-- Handle streaming responses correctly. **not started**: no streaming in `apps/api/src/ai` (#80).
+- Handle streaming responses correctly. **done**: the playground streams generation (`POST /api/ai/playground/stream`, #80); usage recorded per run. `docs/ai-generation.md` describes the whole path.
 - Implement error handling and rate limiting. **done**: job quotas (`AI_MAX_*`), gateway errors mapped, LiteLLM per-key limits.
 
 ### 4.8 Data and Analytics: data export and import — Minor, 1 — in review — 90%
@@ -134,13 +134,20 @@ base, and daily challenges — 3 of the 6 listed options.
 - The README must justify: why this module, which technical challenges it addresses, how it adds value, and why it deserves Major status. **not started**: not in the README. This bullet is half the module's score, hence 25%.
 - Trivial features or shortcuts cause rejection of the module. Note for the README.
 
-### 4.12 DevOps: monitoring with Prometheus and Grafana — Major, 2 — in review — 40%
+### 4.12 DevOps: monitoring with Prometheus and Grafana — Major, 2 — done — 100%
 
-- Set up Prometheus to collect metrics. **in review**: #162.
-- Configure exporters and integrations. **in review**: API metrics, postgres and node exporters (#162, #167). LiteLLM, DCGM and node metrics from the GX10 go through `ai.dustyway.org`, allow-listed to the production IP, until #193 puts the production VPS on the tailnet; the proxy config is in #222. #162 has changes requested; nothing is merged yet.
-- Make custom Grafana dashboards. **in review**: #162.
-- Set up alerting rules. **in review**: #188.
-- Secure access to Grafana. **in review**: #162.
+- Set up Prometheus to collect metrics. **done**: the monitoring stack and its
+  production deployment are merged in #162.
+- Configure exporters and integrations. **done**: API metrics plus the postgres
+  and VPS node exporters are implemented in #162 and #167. LiteLLM, DCGM, and
+  node metrics are scraped directly from the GX10's tailnet address. The old
+  public metrics paths and their subtrees return 404.
+- Make custom Grafana dashboards. **done**: #162 provisions dashboards for AI
+  queues, API and VPS health, and GX10 GPU and inference metrics.
+- Set up alerting rules. **done**: #162 includes the rules from #188 and routes
+  notifications through Alertmanager to Slack.
+- Secure access to Grafana. **done**: #162 requires admin credentials and serves
+  Grafana through the HTTPS nginx endpoint.
 
 ### 4.13 User Management: user activity analytics and insights dashboard — Minor, 1 — in progress — 50%
 
@@ -247,12 +254,12 @@ questions are kept below with the current status on each.
   written backup and recovery procedure, on top of the monitoring stack.
   Estimate: about 1 day.
 
-Arithmetic (2026-09-03): claimed 17. Merged 4 pts (framework, ORM, OAuth — 3
-modules). In review 3 pts (export/import 1, monitoring 2 — 2 modules). In
+Arithmetic (2026-09-09): claimed 17. Merged 6 pts (framework, ORM, OAuth,
+monitoring — 4 modules). In review 1 pt (export/import — 1 module). In
 progress 6 pts (LLM 2, design system 1, mobile 2, activity analytics
 dashboard 1 — 4 modules). Not started 4 pts (gamification, multiple
 languages, 2FA, content moderation AI — 4 modules). To reach 14, at most 3 of
-the remaining 13 points may be missing at evaluation; advanced search (1) is
+the remaining 11 points may be missing at evaluation; advanced search (1) is
 an additional reserve outside the 17.
 
 Before any of this: the Privacy Policy and Terms of Service pages, and the

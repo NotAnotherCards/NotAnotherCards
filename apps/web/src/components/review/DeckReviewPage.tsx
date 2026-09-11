@@ -1,7 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { type Card, useStore } from '@/hooks/useStore';
 import { authClient } from '@/lib/auth-client';
-import { saveLastReviewDeckId } from '@/lib/review-preferences';
+import {
+  getReviewPreferences,
+  clearLastReviewDeckId,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
+import { selectReviewBatch } from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -16,8 +21,6 @@ type ActiveReviewSession = {
   cards: Card[];
 };
 
-const REVIEW_BATCH_SIZE = 10;
-
 export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const store = useStore();
   const navigate = useNavigate();
@@ -31,6 +34,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       .sort((first, second) => first.due_at - second.due_at);
   const dueCards = deckId ? getDueCards(deckId) : [];
   const deck = store.decks.find((item) => item.id === deckId);
+  const reviewPreferences = getReviewPreferences(session?.user.id);
 
   useEffect(() => {
     if (deck && session?.user.id) {
@@ -49,12 +53,24 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
     if (activeSession?.deckId === deckId) return;
 
-    setActiveSession({ deckId, cards: dueCards.slice(0, REVIEW_BATCH_SIZE) });
+    setActiveSession({ deckId, cards: selectReviewBatch(dueCards) });
   }, [activeSession?.deckId, deck, deckId, dueCards, store.ready]);
 
   const hasActiveSession =
     activeSession !== null && activeSession.deckId === deckId;
-  const sessionCards = hasActiveSession ? activeSession.cards : dueCards;
+
+  const sessionCards = hasActiveSession
+    ? activeSession.cards
+    : selectReviewBatch(dueCards);
+
+  const clearSavedDeckPreference = () => {
+    if (session?.user.id) clearLastReviewDeckId(session.user.id);
+  };
+
+  const exitReview = () => {
+    clearSavedDeckPreference();
+    void navigate({ to: '/dashboard' });
+  };
 
   if (!deckId) {
     return (
@@ -123,13 +139,16 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       key={deckId}
       cards={sessionCards}
       deckTitle={deck.title}
-      onExit={() => navigate({ to: '/dashboard' })}
+      onExit={exitReview}
+      onComplete={clearSavedDeckPreference}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}
       onRecordReview={store.recordReview}
       onDeleteNote={store.deleteNote}
-      onRequestNextBatch={() => getDueCards(deckId).slice(0, REVIEW_BATCH_SIZE)}
+      onRequestNextBatch={() => selectReviewBatch(getDueCards(deckId))}
+      reviewMode={reviewPreferences.reviewMode}
+      showNextReviewInterval={reviewPreferences.showNextReviewInterval}
     />
   );
 }

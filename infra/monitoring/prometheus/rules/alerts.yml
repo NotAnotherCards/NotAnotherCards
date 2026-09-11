@@ -26,7 +26,7 @@ groups:
           severity: critical
         annotations:
           summary: 'LiteLLM AI Gateway on GX10 is unreachable'
-          description: 'LiteLLM inference gateway (via the ai.dustyway.org HTTPS proxy, temporary until #193 joins the VPS to the tailnet) has been unreachable for 5 minutes.'
+          description: 'LiteLLM inference gateway on the GX10 tailnet address has been unreachable for 5 minutes.'
 
       - alert: Gx10NodeExporterDown
         expr: up{job="node-gx10"} == 0

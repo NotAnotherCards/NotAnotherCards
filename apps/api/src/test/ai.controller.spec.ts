@@ -16,6 +16,7 @@ jest.mock('better-auth/node', () => ({
 
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express';
+import { AiPlaygroundService } from '../ai/ai-playground.service';
 import { AiController } from '../ai/ai.controller';
 import { AuthService } from '../auth/auth.service';
 import { AiLimitsService } from '../ai/ai-limits.service';
@@ -47,6 +48,7 @@ describe('AiController', () => {
       mockAuthService,
       mockLimitsService,
       mockQueueService,
+      { stream: jest.fn() } as unknown as AiPlaygroundService,
     );
   });
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   aiJobResponseSchema,
   aiJobsResponseSchema,
@@ -7,9 +7,11 @@ import {
   CreateAiJobInput,
   QuotaStatus,
   type AiJob,
+  type AiCardOutput,
 } from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
 import { AiJobStatusTracker } from './AiJobStatusTracker';
+import { readPlaygroundStream } from './readPlaygroundStream';
 import { AiResultPreview } from './AiResultPreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
@@ -24,6 +26,23 @@ export function AiGenerationPlaygroundComponent() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [streamText, setStreamText] = useState('');
+  const [streamResult, setStreamResult] = useState<AiCardOutput[] | null>(null);
+  const streamRequest = useRef<AbortController | null>(null);
+  const liveOutput = useRef<HTMLPreElement>(null);
+  const cards =
+    streamResult ??
+    (currentJob?.status === 'completed' && Array.isArray(currentJob.result)
+      ? currentJob.result
+      : null);
+
+  useEffect(() => () => streamRequest.current?.abort(), []);
+
+  useEffect(() => {
+    if (liveOutput.current)
+      liveOutput.current.scrollTop = liveOutput.current.scrollHeight;
+  }, [streamText]);
+
   // Retrieve local store to get actual decks for dropdown list
   const { decks, createCardsBatch } = useStore();
 
@@ -36,13 +55,16 @@ export function AiGenerationPlaygroundComponent() {
       return;
     }
 
+    let disposed = false;
     const poll = async () => {
       try {
         const res = await fetch(`/api/ai/jobs/${currentJob.id}`);
+        if (disposed) return;
         if (!res.ok) {
           const { message } = apiErrorBodySchema.parse(
             await res.json().catch(() => null),
           );
+          if (disposed) return;
           setErrorMessage(message || 'Failed to poll job status');
           setCurrentJob((prev) =>
             prev ? { ...prev, status: 'failed' } : null,
@@ -52,6 +74,7 @@ export function AiGenerationPlaygroundComponent() {
         }
 
         const { job: updatedJob } = aiJobResponseSchema.parse(await res.json());
+        if (disposed) return;
         setCurrentJob(updatedJob);
 
         if (
@@ -68,6 +91,7 @@ export function AiGenerationPlaygroundComponent() {
           void fetchQuota();
         }
       } catch {
+        if (disposed) return;
         setErrorMessage(
           'Unable to update job status. Please check your connection.',
         );
@@ -82,7 +106,10 @@ export function AiGenerationPlaygroundComponent() {
       void poll();
     }, 1000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      disposed = true;
+      clearInterval(intervalId);
+    };
   }, [currentJob?.id, currentJob?.status]);
 
   const fetchQuota = async () => {
@@ -115,15 +142,21 @@ export function AiGenerationPlaygroundComponent() {
   }, []);
 
   const handleStartGeneration = async (input: CreateAiJobInput) => {
+    streamRequest.current?.abort();
+    const request = new AbortController();
+    streamRequest.current = request;
+    setCurrentJob(null);
+    setStreamResult(null);
+    setStreamText('');
     setLoading(true);
     setErrorMessage(null);
     try {
-      const res = await fetch('/api/ai/generate', {
+      const res = await fetch('/api/ai/playground/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
+        signal: request.signal,
       });
-
       if (!res.ok) {
         const { message } = apiErrorBodySchema.parse(
           await res.json().catch(() => null),
@@ -132,22 +165,29 @@ export function AiGenerationPlaygroundComponent() {
           message || 'Unable to start card generation. Please try again.',
         );
       }
-
-      const { job } = aiJobResponseSchema.parse(await res.json());
-      setCurrentJob(job);
-      void fetchQuota();
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Unable to start generation job. Please try again.';
-      setErrorMessage(msg);
-      setLoading(false);
+      if (!res.body) throw new Error('Generation response has no stream.');
+      const result = await readPlaygroundStream(res.body, (delta) => {
+        if (!request.signal.aborted) setStreamText((text) => text + delta);
+      });
+      if (!request.signal.aborted) setStreamResult(result);
+    } catch (error) {
+      if (!request.signal.aborted) {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Unable to generate cards.',
+        );
+      }
+    } finally {
+      if (!request.signal.aborted) {
+        setLoading(false);
+        void fetchQuota();
+        void fetchJobs();
+      }
+      if (streamRequest.current === request) streamRequest.current = null;
     }
   };
 
   const handleSaveDeck = async (deckIdOrTitle: string, isNew: boolean) => {
-    if (!currentJob || !Array.isArray(currentJob.result)) return;
+    if (!cards) return;
     setSaving(true);
     setErrorMessage(null);
     try {
@@ -155,7 +195,7 @@ export function AiGenerationPlaygroundComponent() {
         deckIdOrTitle,
         isNew,
         description: 'AI Generated Cards',
-        cards: currentJob.result.map((card) => ({
+        cards: cards.map((card) => ({
           front: card.front,
           back: card.back,
         })),
@@ -170,6 +210,10 @@ export function AiGenerationPlaygroundComponent() {
   };
 
   const selectPastJob = (job: Job) => {
+    streamRequest.current?.abort();
+    streamRequest.current = null;
+    setStreamResult(null);
+    setStreamText('');
     setCurrentJob(job);
     if (job.status === 'failed') {
       setErrorMessage(
@@ -189,11 +233,11 @@ export function AiGenerationPlaygroundComponent() {
     <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* Left side: Config Form & Job Status Tracker */}
       <div className="lg:col-span-5 space-y-6">
-        {loading && currentJob ? (
+        {loading ? (
           <AiJobStatusTracker
-            jobId={currentJob.id}
-            status={currentJob.status}
-            error={currentJob.error}
+            jobId={currentJob?.id}
+            status={currentJob?.status ?? 'processing'}
+            error={currentJob?.error}
           />
         ) : (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
@@ -277,14 +321,23 @@ export function AiGenerationPlaygroundComponent() {
         </div>
       </div>
 
-      {/* Right side: Results Preview or Error Message */}
+      {/* Right side: Live Output, Results Preview or Error Message */}
       <div className="lg:col-span-7 space-y-8">
-        {currentJob &&
-        currentJob.status === 'completed' &&
-        Array.isArray(currentJob.result) ? (
+        {loading && !currentJob ? (
+          <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md space-y-3">
+            <h3 className="text-base font-bold tracking-tight">Live Output</h3>
+            <pre
+              ref={liveOutput}
+              aria-label="Live generation output"
+              className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground"
+            >
+              {streamText || 'Waiting for the first text…'}
+            </pre>
+          </div>
+        ) : cards ? (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
             <AiResultPreview
-              cards={currentJob.result}
+              cards={cards}
               decks={decks.map((d) => ({ id: d.id, title: d.title }))}
               onSave={handleSaveDeck}
               isSaving={saving}
@@ -297,7 +350,7 @@ export function AiGenerationPlaygroundComponent() {
             </div>
             <div className="space-y-1.5 max-w-md">
               <h3 className="font-bold text-foreground text-base">
-                Generation Job Failed
+                {currentJob ? 'Generation Job Failed' : 'Generation Failed'}
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||

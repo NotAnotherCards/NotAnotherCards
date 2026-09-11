@@ -37,10 +37,12 @@ const deckSchema = z.object({
   targetLanguageId: z.string().optional().or(z.literal('')),
   title: z
     .string()
+    .trim()
     .min(1, 'Deck title is required')
     .max(100, 'Deck title cannot exceed 100 characters'),
   description: z
     .string()
+    .trim()
     .max(500, 'Description cannot exceed 500 characters')
     .optional()
     .or(z.literal('')),

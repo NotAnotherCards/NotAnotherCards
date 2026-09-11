@@ -1,13 +1,10 @@
 # Monitoring Stack (Prometheus & Grafana)
 
-The monitoring stack runs as its own standalone Docker Compose project on the VPS, separate from the core application bundle. It monitors VPS health, database metrics, NestJS API performance, and GX10 AI inference.
-
-> **Temporary GX10 scrape path:** the team VPS is not on the tailnet yet
-> (#193), so the three GX10 jobs are scraped through the public HTTPS proxy
-> `ai.dustyway.org` (allow-listed to the production VPS IP, 403 elsewhere).
-> The proxy host is configured via `GX10_METRICS_HOST` in
-> `infra/monitoring/.env`; after #193 it switches back to the tailnet
-> address and the proxy goes away.
+The monitoring stack runs as its own standalone Docker Compose project on the
+VPS, separate from the core application bundle. It monitors VPS health,
+database metrics, NestJS API performance, and GX10 AI inference. The production
+VPS must be enrolled in the self-hosted tailnet as described in the
+[VPS operations guide](../vps/README.md#tailnet-access-to-the-gx10).
 
 Architecture and design rationale are documented in [`docs/deployment.md`](../../docs/deployment.md).
 
@@ -36,17 +33,17 @@ Architecture and design rationale are documented in [`docs/deployment.md`](../..
 │          ├─► postgres-exporter (:9187: DB queries, connections)     │
 │          ├─► node-exporter (:9100: Host CPU, RAM, Disk)             │
 │          │                                                          │
-│          │ Scrapes over HTTPS proxy (ai.dustyway.org, until #193)   │
+│          │ Scrapes GX10 directly over the encrypted tailnet         │
 │          ▼                                                          │
 └──────────┼──────────────────────────────────────────────────────────┘
            │
            ▼
-┌── GX10 AI Supercomputer (via ai.dustyway.org proxy) ──┐
-│                                                       │
-│  ├─► LiteLLM Gateway (/metrics)                       │
-│  ├─► Node Exporter (/node/metrics)                    │
-│  └─► NVIDIA DCGM Exporter (/dcgm/metrics GPU stats)   │
-└───────────────────────────────────────────────────────┘
+┌──────── GX10 AI Supercomputer (100.64.0.1) ────────┐
+│                                                    │
+│  ├─► LiteLLM Gateway (:4000/metrics)               │
+│  ├─► Node Exporter (:9100/metrics)                 │
+│  └─► NVIDIA DCGM Exporter (:9400/metrics GPU stats)│
+└────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -74,7 +71,8 @@ Architecture and design rationale are documented in [`docs/deployment.md`](../..
 
 - `ApiDown` (critical, 1m) — triggers when API `/metrics` is unreachable for 1m.
 - `PostgresDown` (critical, 1m) — triggers when PostgreSQL database exporter is unreachable for 1m.
-- `LiteLlmGatewayDown` (critical, 5m) — triggers when LiteLLM AI gateway is unreachable (via the ai.dustyway.org proxy until #193) for 5m.
+- `LiteLlmGatewayDown` (critical, 5m) — triggers when LiteLLM AI gateway is
+  unreachable over the tailnet for 5m.
 - `Gx10NodeExporterDown` (warning, 15m) — triggers when GX10 host exporter is unreachable for 15m.
 - `Gx10GpuExporterDown` (warning, 15m) — triggers when GX10 NVIDIA DCGM GPU exporter is unreachable for 15m.
 - `AiQueueDepthHigh` (warning, 5m) — triggers when pending queue depth exceeds 10 jobs for 5m (guarded by `ai_queue_depth_scrape_success == 1` so stale values cannot fire it).
