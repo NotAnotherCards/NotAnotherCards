@@ -142,16 +142,14 @@ describe('CardItem Component', () => {
 
   it('renders card front and back inside a table context', () => {
     render(
-      <table>
-        <tbody>
-          <CardItem
-            card={mockCard}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={mockCard}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+        />
+      </div>,
     );
 
     expect(screen.getByText('Hola')).toBeInTheDocument();
@@ -160,20 +158,18 @@ describe('CardItem Component', () => {
 
   it('keeps word examples as a smaller second paragraph without restyling basic cards', () => {
     const { rerender } = render(
-      <table>
-        <tbody>
-          <CardItem
-            card={{
-              ...mockCard,
-              template_key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
-              back: 'old\n\nAn old house',
-            }}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={{
+            ...mockCard,
+            template_key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
+            back: 'old\n\nAn old house',
+          }}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+        />
+      </div>,
     );
 
     const wordBack = screen
@@ -183,16 +179,14 @@ describe('CardItem Component', () => {
     expect(wordBack).toHaveClass('[&_p+p]:text-xs');
 
     rerender(
-      <table>
-        <tbody>
-          <CardItem
-            card={{ ...mockCard, back: 'answer\n\nMore detail' }}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={{ ...mockCard, back: 'answer\n\nMore detail' }}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+        />
+      </div>,
     );
 
     expect(
@@ -206,16 +200,14 @@ describe('CardItem Component', () => {
     const onViewCard = vi.fn();
 
     render(
-      <table>
-        <tbody>
-          <CardItem
-            card={mockCard}
-            onEditCard={onEditCard}
-            onRemoveFromDeck={onRemoveFromDeck}
-            onViewCard={onViewCard}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={mockCard}
+          onEditCard={onEditCard}
+          onRemoveFromDeck={onRemoveFromDeck}
+          onViewCard={onViewCard}
+        />
+      </div>,
     );
 
     // Click View button
@@ -233,17 +225,15 @@ describe('CardItem Component', () => {
 
   it('hides the basic front/back editor for structured-note cards', () => {
     render(
-      <table>
-        <tbody>
-          <CardItem
-            card={mockCard}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-            canEdit={false}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={mockCard}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+          canEdit={false}
+        />
+      </div>,
     );
 
     expect(screen.queryByTitle('Edit Card')).not.toBeInTheDocument();
