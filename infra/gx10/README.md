@@ -40,8 +40,8 @@ node infra/gx10/model-test.mts qwen --nothink --topic programming --key <your ke
 For app code, TypeScript, generating cards the way the app will:
 
 ```ts
-import OpenAI from "openai";
-import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
+import OpenAI from 'openai';
+import type { ChatCompletionCreateParamsNonStreaming } from 'openai/resources/chat/completions';
 
 // gateway extension: qwen models accept think to toggle reasoning mode
 type GatewayChatParams = ChatCompletionCreateParamsNonStreaming & {
@@ -54,27 +54,29 @@ interface Card {
 }
 
 const client = new OpenAI({
-  baseURL: "https://ai.dustyway.org",
+  baseURL: 'https://ai.dustyway.org',
   apiKey: process.env.AI_API_KEY!, // from .env, never hardcoded
 });
 
 const params: GatewayChatParams = {
-  model: "gemma4",
+  model: 'gemma4',
   think: false, // ~3 s; leave thinking on for fewer factual errors at ~30 s
-  messages: [{
-    role: "user",
-    content:
-      'You generate flashcards for a spaced-repetition app. Create 5 flashcards ' +
-      'for the topic "JavaScript array methods (map, filter, reduce)". ' +
-      'Reply with only a JSON array, each element {"front": string, "back": string}. ' +
-      "Front is a question or prompt, back is the answer. Keep each side under 20 words.",
-  }],
+  messages: [
+    {
+      role: 'user',
+      content:
+        'You generate flashcards for a spaced-repetition app. Create 5 flashcards ' +
+        'for the topic "JavaScript array methods (map, filter, reduce)". ' +
+        'Reply with only a JSON array, each element {"front": string, "back": string}. ' +
+        'Front is a question or prompt, back is the answer. Keep each side under 20 words.',
+    },
+  ],
 };
 
 const r = await client.chat.completions.create(params);
 const content = r.choices[0].message.content!;
 const cards: Card[] = JSON.parse(
-  content.slice(content.indexOf("["), content.lastIndexOf("]") + 1),
+  content.slice(content.indexOf('['), content.lastIndexOf(']') + 1),
 );
 console.log(cards);
 ```
@@ -86,18 +88,18 @@ across models.
 Which model for what (measured, see
 [docs/model-report.md](../../docs/model-report.md)):
 
-| model | use it for | notes |
-|---|---|---|
-| `gemma4` | default generation | best quality in the v2 run, 3.49 s median for five cards; falls back to `qwen3.6` on failure |
-| `qwen3.6` | low-latency fallback, chat | ~0.8 s faster than `gemma4`, a few more errors; thinking mode is slower, more accurate, and doubles as our reviewer |
-| `qwen` | nothing new | deprecated alias for `qwen3.6`, removed once all clients send the new name |
-| `qwen-next-80b` | best accuracy, no hurry | ~45 s per answer |
-| `qwen3.8` | comparison only | 2.5x slower than `qwen3.6` with more errors; send `reasoning_effort: "none"` |
-| `muse-glimmer` | comparison only | quality on par with `gemma4`, ~17 s per set |
-| `mistral-small` | second opinion, dense-model style | older results, rerun pending |
-| `fact-check` | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no |
-| `moderation` | content screening | granite guardian risk prompts |
-| `embeddings` | vectors (bge-m3) | embeddings API, not chat |
+| model           | use it for                             | notes                                                                                                               |
+| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `gemma4`        | default generation                     | best quality in the v2 run, 3.49 s median for five cards; falls back to `qwen3.6` on failure                        |
+| `qwen3.6`       | low-latency fallback, chat             | ~0.8 s faster than `gemma4`, a few more errors; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `qwen`          | nothing new                            | deprecated alias for `qwen3.6`, removed once all clients send the new name                                          |
+| `qwen-next-80b` | best accuracy, no hurry                | ~45 s per answer                                                                                                    |
+| `qwen3.8`       | comparison only                        | 2.5x slower than `qwen3.6` with more errors; send `reasoning_effort: "none"`                                        |
+| `muse-glimmer`  | comparison only                        | quality on par with `gemma4`, ~17 s per set                                                                         |
+| `mistral-small` | second opinion, dense-model style      | older results, rerun pending                                                                                        |
+| `fact-check`    | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no                                                                  |
+| `moderation`    | content screening                      | qwen3guard verdicts: Safe, Unsafe, or Controversial, plus categories                                                |
+| `embeddings`    | vectors (bge-m3)                       | embeddings API, not chat                                                                                            |
 
 Good to know:
 
@@ -172,11 +174,11 @@ Conventions:
   anyway; the limit is not a throughput budget, it is a backstop that
   stops a runaway script after a minute instead of never. The production
   worker gets `"key_alias": "production-worker",
-  "max_parallel_requests": 2` to protect the single GPU.
+"max_parallel_requests": 2` to protect the single GPU.
 - Keys do not expire; they are valid until revoked. For a deliberately
   short-lived key (demo day), mint it with `"duration": "30d"`.
 - List keys: `curl -s http://100.64.0.1:4000/key/list -H "Authorization:
-  Bearer $KEY"`. Revoking needs the master key (teammates report a leak,
+Bearer $KEY"`. Revoking needs the master key (teammates report a leak,
   they cannot revoke themselves):
 
   ```sh
@@ -186,6 +188,7 @@ Conventions:
   ```
 
   Losing a key file is no incident, revoke and re-mint.
+
 - When handing a key over, point the person at "After you have your key"
   above.
 - The master key is admin-only; never hand it out or put it in an app.
@@ -210,7 +213,7 @@ Conventions:
   the bind succeed before the address is up:
   `echo net.ipv4.ip_nonlocal_bind=1 | sudo tee /etc/sysctl.d/99-tailnet-bind.conf && sudo sysctl --system`.
   If it still happens, recover with `docker compose up -d --force-recreate
-  litellm dcgm-exporter node-exporter`. A plain `up -d` restarts the same
+litellm dcgm-exporter node-exporter`. A plain `up -d` restarts the same
   container, which has no network endpoint from its failed start, so
   litellm crash-loops on "Can't reach database server at litellm-db".
 - node-exporter runs with `--no-collector.cpufreq`. On this box the CPPC

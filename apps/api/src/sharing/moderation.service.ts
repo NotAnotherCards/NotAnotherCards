@@ -1,11 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
+interface ChatCompletionResponse {
+  choices?: Array<{ message?: { content?: string } }>;
+}
+
+// The deck deadline scales with the deck: healthy moderation takes ~0.25 s
+// per card, so 1 s per card is a 4x margin, and 5 s covers the first
+// round trip. A fixed budget would cap deck size instead of catching a
+// slow gateway. 240 s stays under nginx's 300 s API timeout.
+const MODERATION_BASE_DEADLINE_MS = 5_000;
+const MODERATION_PER_CARD_MS = 1_000;
+const MODERATION_MAX_DEADLINE_MS = 240_000;
+// Cap one stalled card at 30 s, well below nginx's 300 s API timeout.
+const MODERATION_CARD_TIMEOUT_MS = 30_000;
+
+export function moderationDeadlineMs(cardCount: number): number {
+  return Math.min(
+    MODERATION_BASE_DEADLINE_MS + MODERATION_PER_CARD_MS * cardCount,
+    MODERATION_MAX_DEADLINE_MS,
+  );
+}
 
 export interface ModerationVerdict {
   ok: boolean;
   /** Why the deck was refused when no individual card was flagged. */
   reason?: string;
   flagged: { cardId: string; reason: string }[];
+  warnings: { cardId: string; reason: string }[];
 }
 
 export interface ModerationInput {
@@ -15,19 +37,83 @@ export interface ModerationInput {
 
 @Injectable()
 export class ModerationService {
+  private readonly logger = new Logger(ModerationService.name);
+
   constructor(private readonly config: ConfigService) {}
 
-  // Until #263 fills this in it fails closed, so a deck can only go public
-  // where someone opted in: staging sets the flag for the #289 demo,
-  // production and CI do not. The stub has nothing to await and ignores the
-  // cards it is handed, which is what the disabled rules are complaining about.
-  // Reshaping the stub for the linter would only be more to delete when
-  // #263 replaces this body.
-  // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
   async check(input: ModerationInput): Promise<ModerationVerdict> {
     if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
-      return { ok: true, flagged: [] };
+      return { ok: true, flagged: [], warnings: [] };
     }
-    return { ok: false, reason: 'moderation unavailable', flagged: [] };
+
+    const apiBase = this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, '');
+    const apiKey = this.config.get<string>('AI_API_KEY') ?? '';
+    const unavailable = (): ModerationVerdict => ({
+      ok: false,
+      reason: 'moderation unavailable',
+      flagged: [],
+      warnings: [],
+    });
+    if (!apiBase) return unavailable();
+
+    const flagged: ModerationVerdict['flagged'] = [];
+    const warnings: ModerationVerdict['warnings'] = [];
+    const startedAt = Date.now();
+    const deadline = startedAt + moderationDeadlineMs(input.cards.length);
+    try {
+      for (const card of input.cards) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw new Error('Moderation deadline exceeded');
+
+        const response = await fetch(`${apiBase}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+          },
+          body: JSON.stringify({
+            model: 'moderation',
+            temperature: 0,
+            stream: false,
+            messages: [
+              { role: 'user', content: `${card.front}\n${card.back}` },
+            ],
+          }),
+          signal: AbortSignal.timeout(
+            Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
+          ),
+        });
+        if (!response.ok) throw new Error('Moderation gateway error');
+
+        const data = (await response.json()) as ChatCompletionResponse;
+        const content = data.choices?.[0]?.message?.content ?? '';
+        const match = content.match(
+          /Safety:\s*(Safe|Unsafe|Controversial)\b(?:[\s\S]*?Categories:\s*([^\n]*))?/i,
+        );
+        if (!match) throw new Error('Unparseable moderation verdict');
+
+        const grade = match[1].toLowerCase();
+        const category = match[2]?.trim();
+        const reason =
+          category && category.toLowerCase() !== 'none' ? category : match[1];
+        if (grade === 'unsafe') flagged.push({ cardId: card.id, reason });
+        if (grade === 'controversial')
+          warnings.push({ cardId: card.id, reason });
+      }
+    } catch (error: unknown) {
+      const name =
+        typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        typeof error.name === 'string'
+          ? error.name
+          : 'UnknownError';
+      this.logger.warn(
+        `Moderation failed for deck ${input.deckId} after ${Date.now() - startedAt}ms: ${name}`,
+      );
+      return unavailable();
+    }
+
+    return { ok: flagged.length === 0, flagged, warnings };
   }
 }

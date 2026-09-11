@@ -13,6 +13,7 @@ import {
   ENGLISH,
   GERMAN,
   moderationRefusalSchema,
+  publishResponseSchema,
   sharedDeckListSchema,
   sharedDeckPreviewSchema,
   sharedDeckImportSchema,
@@ -348,7 +349,8 @@ describePostgres('deck sharing endpoints', () => {
     const response = await post(userA, '/api/decks/publishable/publish').expect(
       200,
     );
-    expect(response.body).toEqual({ visibility: 'public' });
+    expect(response.body).toEqual({ visibility: 'public', warnings: [] });
+    publishResponseSchema.parse(response.body);
 
     const published = await storedDeck('publishable');
     expect(published.visibility).toBe('public');
@@ -374,6 +376,7 @@ describePostgres('deck sharing endpoints', () => {
       .mockResolvedValue({
         ok: false,
         flagged: [{ cardId: cardIds[1], reason: 'slur' }],
+        warnings: [],
       });
 
     const response = await post(userA, '/api/decks/flagged/publish').expect(
@@ -392,6 +395,23 @@ describePostgres('deck sharing endpoints', () => {
       ],
     });
     expect(await storedDeck('flagged')).toEqual(before);
+  });
+
+  it('publishes with moderation warnings in the response', async () => {
+    const { cardIds } = await seedDeck(userA, 'warned');
+    vi.spyOn(app.get(ModerationService), 'check').mockResolvedValue({
+      ok: true,
+      flagged: [],
+      warnings: [{ cardId: cardIds[0], reason: 'Violent' }],
+    });
+
+    const response = await post(userA, '/api/decks/warned/publish').expect(200);
+    expect(response.body).toEqual({
+      visibility: 'public',
+      warnings: [{ cardId: cardIds[0], reason: 'Violent' }],
+    });
+    publishResponseSchema.parse(response.body);
+    expect((await storedDeck('warned')).visibility).toBe('public');
   });
 
   it('refuses to publish where moderation is not switched on', async () => {
@@ -628,7 +648,7 @@ describePostgres('deck sharing endpoints', () => {
           .update(userDecks)
           .set({ deletedAt: new Date() })
           .where(eq(userDecks.id, 'vanishing'));
-        return { ok: true, flagged: [] };
+        return { ok: true, flagged: [], warnings: [] };
       },
     );
 
@@ -702,7 +722,7 @@ describePostgres('deck sharing endpoints', () => {
             .expect(200);
           const body = response.body as { rejected?: Record<string, string[]> };
           expect(body.rejected ?? {}).toEqual({});
-          return { ok: true, flagged: [] };
+          return { ok: true, flagged: [], warnings: [] };
         },
       );
 
@@ -758,7 +778,7 @@ describePostgres('deck sharing endpoints', () => {
           .expect(200);
         const body = response.body as { rejected?: Record<string, string[]> };
         expect(body.rejected ?? {}).toEqual({});
-        return { ok: true, flagged: [] };
+        return { ok: true, flagged: [], warnings: [] };
       },
     );
 
@@ -827,6 +847,7 @@ describePostgres('deck sharing endpoints', () => {
     vi.spyOn(app.get(ModerationService), 'check').mockResolvedValueOnce({
       ok: false,
       flagged: [],
+      warnings: [],
       reason: 'refused',
     });
     await post(userA, '/api/decks/working/publish').expect(422);
