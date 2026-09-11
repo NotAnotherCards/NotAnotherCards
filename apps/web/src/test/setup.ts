@@ -103,7 +103,8 @@ vi.mock('@/offline/db', () => {
 
 // Mock @tanstack/react-virtual for JSDOM
 vi.mock('@tanstack/react-virtual', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-virtual')>();
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-virtual')>();
   return {
     ...actual,
     useVirtualizer: vi.fn().mockImplementation((options) => {

@@ -28,7 +28,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
       style,
       'data-index': dataIndex,
     },
-    ref
+    ref,
   ) => {
     const hasExample = card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY;
 
@@ -39,11 +39,17 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
         data-index={dataIndex}
         className="flex flex-col md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
       >
-        <div className="font-medium max-w-full md:max-w-62.5 truncate" title={card.front}>
+        <div
+          className="font-medium max-w-full md:max-w-62.5 truncate"
+          title={card.front}
+        >
           <MarkdownRenderer content={card.front} />
         </div>
-        
-        <div className="text-muted-foreground max-w-full md:max-w-62.5 truncate" title={card.back}>
+
+        <div
+          className="text-muted-foreground max-w-full md:max-w-62.5 truncate"
+          title={card.back}
+        >
           <MarkdownRenderer
             content={card.back}
             className={
@@ -53,7 +59,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
             }
           />
         </div>
-        
+
         <div className="flex items-center justify-end md:justify-end gap-1.5 mt-2 md:mt-0">
           <Button
             variant="ghost"
@@ -90,7 +96,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 CardItem.displayName = 'CardItem';

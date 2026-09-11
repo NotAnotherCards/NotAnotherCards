@@ -47,7 +47,7 @@ export function CardList({
   const store = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
-  
+
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filteredCards = cards.filter(
@@ -63,7 +63,6 @@ export function CardList({
     overscan: 5,
     initialRect: { width: 800, height: 800 },
   });
-
 
   if (store.isTakenOver) {
     return (
@@ -178,13 +177,13 @@ export function CardList({
               <div>Back / Answer</div>
               <div className="text-right">Actions</div>
             </div>
-            
+
             {/* Scrollable container for virtualized list */}
-            <div 
-              ref={parentRef} 
+            <div
+              ref={parentRef}
               className="h-[calc(100vh-250px)] min-h-100 overflow-auto"
             >
-              <div 
+              <div
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
                   width: '100%',
