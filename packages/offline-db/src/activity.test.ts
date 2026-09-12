@@ -37,7 +37,6 @@ function summary(
     cards: ActivityCard[];
     notes: ActivityNote[];
     now: number;
-    timeZone: string | null;
   }> = {},
 ) {
   return selectActivitySummary({
@@ -45,7 +44,6 @@ function summary(
     cards: [],
     notes: [],
     now: at('2026-09-08T12:00:00.000Z'),
-    timeZone: 'UTC',
     ...overrides,
   });
 }
@@ -59,8 +57,7 @@ describe('shared activity and gamification rules', () => {
       learnedNoteCount: 0,
       currentStreak: 0,
       longestStreak: 0,
-      timeZone: 'UTC',
-      localDate: '2026-09-08',
+      utcDate: '2026-09-08',
       todayChallenges: [
         {
           code: 'daily-review',
@@ -88,7 +85,7 @@ describe('shared activity and gamification rules', () => {
     });
 
     expect(result).toMatchObject({
-      reviewPoints: 4,
+      reviewPoints: 1,
       reviewCount: 1,
       learnedNoteCount: 1,
       eligibleBadgeCodes: ['first-review'],
@@ -96,36 +93,57 @@ describe('shared activity and gamification rules', () => {
     expect(result.todayChallenges[0]).toMatchObject({ current: 1 });
   });
 
-  it('uses the fixed rating boundaries for points and learned notes', () => {
+  it('awards one point for every supported rating', () => {
+    const reviewEvents = [1, 2, 3, 4].map((rating) =>
+      review(
+        `rating-${rating}`,
+        `2026-09-08T${String(rating + 7).padStart(2, '0')}:00:00.000Z`,
+        rating,
+      ),
+    );
+
+    const result = summary({ reviewEvents });
+
+    expect(result.reviewPoints).toBe(4);
+    expect(result.reviewCount).toBe(4);
+    expect(result.reviewPointsReachedAt).toBe(at('2026-09-08T11:00:00.000Z'));
+
+    for (const rating of [0, 5, 1.5]) {
+      expect(() =>
+        summary({
+          reviewEvents: [
+            review(`invalid-${rating}`, '2026-09-08T12:00:00.000Z', rating),
+          ],
+        }),
+      ).toThrow(`Unsupported review rating: ${rating}`);
+    }
+  });
+
+  it('uses the successful-rating threshold only for learned notes', () => {
     const result = summary({
       reviewEvents: [
         review('again', '2026-09-08T08:00:00.000Z', 1, 'card-again'),
         review('hard', '2026-09-08T09:00:00.000Z', 2, 'card-hard'),
-        review('easy', '2026-09-08T10:00:00.000Z', 4, 'card-easy'),
+        review('good', '2026-09-08T10:00:00.000Z', 3, 'card-good'),
+        review('easy', '2026-09-08T11:00:00.000Z', 4, 'card-easy'),
       ],
       cards: [
         card('card-again', 'note-again'),
         card('card-hard', 'note-hard'),
+        card('card-good', 'note-good'),
         card('card-easy', 'note-easy'),
       ],
       notes: [
         note('note-again', '2026-09-01T00:00:00.000Z'),
         note('note-hard', '2026-09-01T00:00:00.000Z'),
+        note('note-good', '2026-09-01T00:00:00.000Z'),
         note('note-easy', '2026-09-01T00:00:00.000Z'),
       ],
     });
 
-    expect(result.reviewPoints).toBe(7);
-    expect(result.reviewCount).toBe(3);
-    expect(result.reviewPointsReachedAt).toBe(at('2026-09-08T10:00:00.000Z'));
-    expect(result.learnedNoteCount).toBe(2);
-    expect(() =>
-      summary({
-        reviewEvents: [
-          review('invalid', '2026-09-08T11:00:00.000Z', 5, 'card-easy'),
-        ],
-      }),
-    ).toThrow('Unsupported review rating: 5');
+    expect(result.reviewPoints).toBe(4);
+    expect(result.reviewCount).toBe(4);
+    expect(result.learnedNoteCount).toBe(3);
   });
 
   it('counts one distinct note for reviewed sibling cards and new vocabulary', () => {
@@ -177,38 +195,36 @@ describe('shared activity and gamification rules', () => {
     ).toBe(1);
   });
 
-  it('uses calendar dates rather than 24-hour periods across DST', () => {
+  it('groups streaks and challenges at the UTC midnight boundary', () => {
     const result = summary({
-      timeZone: 'Europe/Berlin',
-      now: at('2026-03-30T10:00:00.000Z'),
+      now: at('2026-09-08T00:30:00.000Z'),
       reviewEvents: [
-        // Berlin changes from CET to CEST on 2026-03-29. These local review
-        // times are on three consecutive dates despite unequal UTC offsets.
-        review('day-1', '2026-03-27T22:30:00.000Z'),
-        review('day-2', '2026-03-28T22:30:00.000Z'),
-        review('day-3', '2026-03-29T21:30:00.000Z'),
+        review('before-midnight', '2026-09-07T23:59:59.000Z'),
+        review('at-midnight', '2026-09-08T00:00:00.000Z'),
+      ],
+      notes: [
+        note('before-midnight', '2026-09-07T23:59:59.000Z'),
+        note('at-midnight', '2026-09-08T00:00:00.000Z'),
       ],
     });
 
-    expect(result.localDate).toBe('2026-03-30');
-    expect(result.currentStreak).toBe(3);
-    expect(result.longestStreak).toBe(3);
-  });
-
-  it('falls back to UTC for an absent or invalid timezone', () => {
-    const input = {
-      reviewEvents: [review('near-midnight', '2026-09-07T23:30:00.000Z')],
-      now: at('2026-09-08T00:30:00.000Z'),
-    };
-
-    expect(selectStreakActivity(input.reviewEvents, input.now)).toEqual(
-      selectStreakActivity(input.reviewEvents, input.now, 'Not/A_Timezone'),
-    );
-    expect(summary({ ...input, timeZone: 'Not/A_Timezone' })).toMatchObject({
-      timeZone: 'UTC',
-      localDate: '2026-09-08',
-      currentStreak: 1,
-    });
+    expect(result.utcDate).toBe('2026-09-08');
+    expect(result.currentStreak).toBe(2);
+    expect(result.longestStreak).toBe(2);
+    expect(result.todayChallenges).toEqual([
+      {
+        code: 'daily-review',
+        current: 1,
+        target: 20,
+        completed: false,
+      },
+      {
+        code: 'new-vocabulary',
+        current: 1,
+        target: 5,
+        completed: false,
+      },
+    ]);
   });
 
   it('keeps the longest run but restarts the current streak after a gap', () => {
@@ -232,7 +248,10 @@ describe('shared activity and gamification rules', () => {
       review('yesterday', '2026-09-07T12:00:00.000Z'),
     ];
 
-    expect(summary({ reviewEvents: yesterday }).currentStreak).toBe(3);
+    expect(
+      selectStreakActivity(yesterday, at('2026-09-08T12:00:00.000Z'))
+        .currentStreak,
+    ).toBe(3);
     expect(
       summary({ reviewEvents: yesterday.slice(0, -1) }).currentStreak,
     ).toBe(0);

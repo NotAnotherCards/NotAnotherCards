@@ -124,10 +124,6 @@ try {
     format: 'iife',
     platform: 'browser',
     target: 'es2019',
-    // The contract runs without Intl even when a host provides a complete
-    // implementation, matching standalone Hermes and proving the selector's
-    // calendar conversion comes only from bundled timezone data.
-    banner: { js: 'globalThis.Intl = undefined;' },
   });
 
   const nodeOutput = lastOutputLine(

@@ -4,19 +4,19 @@ const fixtureInputs = [
   {
     reviewEvents: [
       {
-        id: 'berlin-day-1',
+        id: 'utc-day-1',
         user_card_id: 'card-1',
         rating: 3,
         reviewed_at: 1_774_650_600_000,
       },
       {
-        id: 'berlin-day-2',
+        id: 'utc-day-2',
         user_card_id: 'card-2',
         rating: 3,
         reviewed_at: 1_774_737_000_000,
       },
       {
-        id: 'berlin-day-3',
+        id: 'utc-day-3',
         user_card_id: 'inactive-card',
         rating: 3,
         reviewed_at: 1_774_819_800_000,
@@ -25,7 +25,6 @@ const fixtureInputs = [
     cards: [{ id: 'inactive-card', note_id: 'note-1', active: false }],
     notes: [{ id: 'note-1', created_at: 1_774_818_000_000 }],
     now: 1_774_864_800_000,
-    timeZone: 'Europe/Berlin',
   },
   {
     reviewEvents: [
@@ -39,19 +38,17 @@ const fixtureInputs = [
     cards: [{ id: 'inactive-card', note_id: 'note-1', active: false }],
     notes: [{ id: 'note-1', created_at: 1_788_826_500_000 }],
     now: 1_788_827_400_000,
-    timeZone: 'Not/A_Timezone',
   },
 ] as const;
 
 const expectedResults = [
   {
-    reviewPoints: 9,
+    reviewPoints: 3,
     reviewCount: 3,
     reviewPointsReachedAt: 1_774_819_800_000,
     currentStreak: 3,
     longestStreak: 3,
-    timeZone: 'Europe/Berlin',
-    localDate: '2026-03-30',
+    utcDate: '2026-03-30',
     learnedNoteCount: 1,
     todayChallenges: [
       {
@@ -70,13 +67,12 @@ const expectedResults = [
     eligibleBadgeCodes: ['first-review'],
   },
   {
-    reviewPoints: 4,
+    reviewPoints: 1,
     reviewCount: 1,
     reviewPointsReachedAt: 1_788_823_800_000,
     currentStreak: 1,
     longestStreak: 1,
-    timeZone: 'UTC',
-    localDate: '2026-09-08',
+    utcDate: '2026-09-08',
     learnedNoteCount: 1,
     todayChallenges: [
       {
