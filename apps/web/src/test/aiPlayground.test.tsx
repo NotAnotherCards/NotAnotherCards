@@ -12,13 +12,18 @@ const mockCreateDeck = vi
   .mockResolvedValue({ id: 'deck-new-1', title: 'New Test Deck' });
 const mockCreateCard = vi.fn().mockResolvedValue({ id: 'card-1' });
 const mockCreateCardsBatch = vi.fn().mockResolvedValue('deck-1');
+const mockCreateNote = vi.fn().mockResolvedValue('note-1');
 
 vi.mock('@/hooks/useStore', () => ({
   useStore: () => ({
-    decks: [{ id: 'deck-1', title: 'Spanish Vocab' }],
+    decks: [
+      { id: 'deck-1', title: 'Spanish Vocab', note_type: 'basic' },
+      { id: 'deck-2', title: 'French Vocab', note_type: 'word' },
+    ],
     createDeck: mockCreateDeck,
     createCard: mockCreateCard,
     createCardsBatch: mockCreateCardsBatch,
+    createNote: mockCreateNote,
   }),
 }));
 
@@ -47,10 +52,12 @@ describe('AI Generation Playground Test Suite', () => {
           quota={quota}
           onSubmit={vi.fn()}
           isSubmitting={false}
+          decks={[]}
+          createDeck={mockCreateDeck}
         />,
       );
 
-      expect(screen.getByText('AI Quota Status')).toBeInTheDocument();
+      expect(screen.getByText('Quota Status')).toBeInTheDocument();
       expect(screen.getByText('5/25 requests used')).toBeInTheDocument();
       expect(screen.getByLabelText(/Subject \/ Topic/i)).toBeInTheDocument();
     });
@@ -62,11 +69,13 @@ describe('AI Generation Playground Test Suite', () => {
           quota={null}
           onSubmit={handleSubmit}
           isSubmitting={false}
+          decks={[]}
+          createDeck={mockCreateDeck}
         />,
       );
 
       const submitBtn = screen.getByRole('button', {
-        name: /Start Card Generation/i,
+        name: /Create$/i,
       });
       fireEvent.click(submitBtn);
 
@@ -92,6 +101,8 @@ describe('AI Generation Playground Test Suite', () => {
           }}
           onSubmit={handleSubmit}
           isSubmitting={false}
+          decks={[]}
+          createDeck={mockCreateDeck}
         />,
       );
 
@@ -102,7 +113,7 @@ describe('AI Generation Playground Test Suite', () => {
       await user.selectOptions(modelSelect, 'qwen-next-80b');
 
       const submitBtn = screen.getByRole('button', {
-        name: /Start Card Generation/i,
+        name: /Create$/i,
       });
       await user.click(submitBtn);
 
@@ -113,14 +124,61 @@ describe('AI Generation Playground Test Suite', () => {
         model: 'qwen-next-80b',
       });
     });
+
+    it('submits valid form inputs for word_note mode', async () => {
+      const handleSubmit = vi.fn();
+      const user = userEvent.setup();
+
+      render(
+        <AiPlaygroundForm
+          quota={{
+            requestsUsed: 0,
+            maxRequests: 25,
+            usedTokens: 0,
+            maxTokens: 50000,
+            activePendingJobs: 0,
+            maxPendingJobs: 2,
+          }}
+          onSubmit={handleSubmit}
+          isSubmitting={false}
+          decks={[
+            { id: 'deck-1', title: 'Spanish Vocab', note_type: 'basic' },
+            { id: 'deck-2', title: 'French Vocab', note_type: 'word' },
+          ]}
+          createDeck={mockCreateDeck}
+        />,
+      );
+
+      // Switch to word note mode
+      const wordNoteBtn = screen.getByRole('button', { name: /Word Note/i });
+      await user.click(wordNoteBtn);
+
+      const wordInput = screen.getByLabelText(/Word \/ Translation/i);
+      await user.type(wordInput, 'bonjour');
+
+      const modelSelect = screen.getByLabelText(/Model Selection/i);
+      await user.selectOptions(modelSelect, 'qwen-next-80b');
+
+      const submitBtn = screen.getByRole('button', {
+        name: /Create$/i,
+      });
+      await user.click(submitBtn);
+
+      expect(handleSubmit).toHaveBeenCalledWith({
+        type: 'word_note',
+        deckId: 'deck-2',
+        word: 'bonjour',
+        direction: 'target',
+        model: 'qwen-next-80b',
+      });
+    });
   });
 
   describe('AiJobStatusTracker Component', () => {
     it('renders active pending/processing steps for presentational tracking', () => {
       render(<AiJobStatusTracker jobId="job-123" status="processing" />);
 
-      expect(screen.getByText('Generating Your Deck')).toBeInTheDocument();
-      expect(screen.getByText('Job ID: job-123')).toBeInTheDocument();
+      expect(screen.getByText('Creating Your Deck')).toBeInTheDocument();
       expect(screen.getByText('Processing LLM')).toBeInTheDocument();
     });
 
@@ -145,8 +203,7 @@ describe('AI Generation Playground Test Suite', () => {
       { front: 'What is "Katze" in English?', back: 'Cat' },
     ];
 
-    it('previews cards and allows switching to JSON Note Schema tab', async () => {
-      const user = userEvent.setup();
+    it('previews generated cards successfully', async () => {
       render(
         <AiResultPreview
           cards={mockCards}
@@ -160,11 +217,6 @@ describe('AI Generation Playground Test Suite', () => {
         screen.getByText('What is "Hund" in English?'),
       ).toBeInTheDocument();
       expect(screen.getByText('Dog')).toBeInTheDocument();
-
-      const schemaTab = screen.getByRole('button', { name: /Note Schema/i });
-      await user.click(schemaTab);
-
-      expect(screen.getByText(/"note_type": "basic"/)).toBeInTheDocument();
     });
 
     it('triggers onSave and displays toast notification when saved successfully', async () => {
@@ -335,7 +387,7 @@ describe('AI Generation Playground Test Suite', () => {
       // Verify polling is resumed for this pending job and updates job status to completed
       await waitFor(() => {
         expect(polledJobId).toBe('job-pending-999');
-        expect(screen.getByText('Generation Results')).toBeInTheDocument();
+        expect(screen.getByText('Creation Results')).toBeInTheDocument();
         expect(screen.getByText('Haben')).toBeInTheDocument();
       });
     });
