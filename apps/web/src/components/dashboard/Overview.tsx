@@ -17,8 +17,12 @@ import {
   Mail,
   Library,
   RefreshCw,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSharedDecks } from '@/hooks/useSharedDecks';
+import { useImportDeck } from '@/hooks/useImportDeck';
 import { useStore } from '@/hooks/useStore';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
 import { useNavigate } from '@tanstack/react-router';
@@ -79,6 +83,13 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
+  const controller = useSyncController();
+  const {
+    decks: sharedDecks,
+    isLoading: isSharedDecksLoading,
+    error: sharedDecksError,
+  } = useSharedDecks();
+  const { importDeck, importingIds, error: importError } = useImportDeck();
 
   const user = session?.user || {
     name: 'Legendary Learner',
@@ -135,50 +146,6 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       description: '12.4% total progress',
       icon: GraduationCap,
       color: 'text-purple-500 bg-purple-500/10',
-    },
-  ];
-
-  // Mock dictionaries from concept.md
-  const readyMadeDictionaries = [
-    {
-      id: 1,
-      name: 'Top-100 words',
-      description: 'Most common foundational words',
-      progress: '100%',
-      percent: 100,
-      status: 'Completed',
-    },
-    {
-      id: 2,
-      name: 'Top-300 words',
-      description: 'Essential everyday vocabulary',
-      progress: '85%',
-      percent: 85,
-      status: 'In Progress',
-    },
-    {
-      id: 3,
-      name: 'Top-500 words',
-      description: 'Intermediate conversational phrases',
-      progress: '20%',
-      percent: 20,
-      status: 'In Progress',
-    },
-    {
-      id: 4,
-      name: 'Top-1000 words',
-      description: 'Broad everyday comprehension',
-      progress: '0%',
-      percent: 0,
-      status: 'Not Started',
-    },
-    {
-      id: 5,
-      name: 'Thematic: Business English',
-      description: 'Professional terms and jargon',
-      progress: '0%',
-      percent: 0,
-      status: 'Not Started',
     },
   ];
 
@@ -302,69 +269,95 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <BookOpen className="size-4 text-primary" />
-              Explore Dictionaries
+              Community Decks
             </CardTitle>
             <CardDescription>
-              Browse and study ready-made vocabulary sets based on word
-              frequency.
+              Browse and study ready-made vocabulary sets shared by the
+              community.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
+            {importError && (
+              <div className="mx-6 mt-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20 flex items-center gap-2">
+                <AlertCircle className="size-4" />
+                {importError}
+              </div>
+            )}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
-                    <th className="px-6 py-3">Dictionary Name</th>
-                    <th className="px-6 py-3">Description</th>
-                    <th className="px-6 py-3">Progress</th>
-                    <th className="px-6 py-3 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
-                  {readyMadeDictionaries.map((dict) => (
-                    <tr
-                      key={dict.id}
-                      className="hover:bg-muted/10 transition-colors"
-                    >
-                      <td className="px-6 py-3.5 font-medium flex items-center gap-2">
-                        <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                          {dict.id}
-                        </div>
-                        {dict.name}
-                      </td>
-                      <td className="px-6 py-3.5 text-muted-foreground">
-                        {dict.description}
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full"
-                              style={{ width: `${dict.percent}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {dict.progress}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3.5 text-right">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            dict.status === 'Completed'
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                              : dict.status === 'In Progress'
-                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          {dict.status}
-                        </span>
-                      </td>
+              {isSharedDecksLoading ? (
+                <div className="p-8 flex justify-center">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : sharedDecksError ? (
+                <div className="p-8 text-center text-muted-foreground text-sm">
+                  Failed to load community decks. Please try again later.
+                </div>
+              ) : sharedDecks.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-sm">
+                  No community decks available yet.
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
+                      <th className="px-6 py-3">Deck Name</th>
+                      <th className="px-6 py-3">Description</th>
+                      <th className="px-6 py-3">Cards</th>
+                      <th className="px-6 py-3 text-right">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/30">
+                    {sharedDecks.map((deck) => (
+                      <tr
+                        key={deck.id}
+                        className="hover:bg-muted/10 transition-colors"
+                      >
+                        <td className="px-6 py-3.5 font-medium flex items-center gap-2">
+                          <div className="size-6 rounded-full bg-muted flex shrink-0 items-center justify-center text-[10px] font-bold text-muted-foreground">
+                            {deck.owner.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate">
+                              {deck.title || 'Untitled'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-normal truncate">
+                              by @{deck.owner.username}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3.5 text-muted-foreground max-w-50 truncate">
+                          {deck.description || '-'}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <span className="text-xs text-muted-foreground">
+                            {deck.cardCount}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3.5 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="cursor-pointer min-w-17.5"
+                            disabled={importingIds.has(deck.id)}
+                            onClick={async () => {
+                              const result = await importDeck(deck.id);
+                              if (result) {
+                                controller?.syncNow();
+                              }
+                            }}
+                          >
+                            {importingIds.has(deck.id) ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              'Import'
+                            )}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </CardContent>
         </Card>

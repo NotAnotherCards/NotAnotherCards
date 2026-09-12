@@ -15,6 +15,7 @@
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "db:push": "drizzle-kit push --config drizzle.config.ts",
+    "seed:shared-decks": "tsx scripts/seed-shared-decks.ts",
     "presync:gc": "pnpm --filter @repo/offline-db build",
     "sync:gc": "tsx src/sync/run-gc.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
