@@ -84,8 +84,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const controller = useSyncController();
-  const { decks: sharedDecks, isLoading: isSharedDecksLoading, error: sharedDecksError } =
-    useSharedDecks();
+  const {
+    decks: sharedDecks,
+    isLoading: isSharedDecksLoading,
+    error: sharedDecksError,
+  } = useSharedDecks();
   const { importDeck, importingIds, error: importError } = useImportDeck();
 
   const user = session?.user || {

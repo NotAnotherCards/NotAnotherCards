@@ -444,7 +444,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 className="text-lg font-bold flex items-center gap-2"
               >
                 <AlertCircle className="size-5 text-destructive" />
-                {error.action === 'publish' ? 'Could Not Publish Deck' : 'Could Not Unpublish Deck'}
+                {error.action === 'publish'
+                  ? 'Could Not Publish Deck'
+                  : 'Could Not Unpublish Deck'}
               </CardTitle>
               <CardDescription>
                 {error.flagged && error.flagged.length > 0

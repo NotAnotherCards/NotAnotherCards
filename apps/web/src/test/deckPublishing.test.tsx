@@ -212,13 +212,15 @@ describe('Deck Publishing Controls', () => {
       });
     });
 
-    const fetchMock = vi.fn().mockResolvedValue(response({ visibility: 'public' }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(response({ visibility: 'public' }));
     vi.stubGlobal('fetch', fetchMock);
 
     render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
-    
+
     const publishBtn = screen.getByRole('button', { name: 'Publish' });
-    
+
     // First click
     fireEvent.click(publishBtn);
     // Button should be disabled immediately due to isPendingPublishAction
