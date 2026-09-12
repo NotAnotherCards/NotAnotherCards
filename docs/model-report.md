@@ -357,6 +357,9 @@ integrated and doubles as a groundedness checker; there is no measured
 reason to switch. Sensitivity on actually harmful content remains untested
 for all of them.
 
+Moderation has its own report since 2026-09-10:
+[model-report-moderation.md](model-report-moderation.md).
+
 ## Recommendations
 
 - **Interactive generation** (streaming preview): `qwen` with thinking off.
