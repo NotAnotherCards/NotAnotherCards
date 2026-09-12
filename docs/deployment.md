@@ -133,6 +133,49 @@ file.
   edits never unpublish it, and republishing replaces the snapshot. Existing
   public decks without a snapshot must be republished to appear.
 
+### Password-reset email delivery
+
+Production must configure an email transport in `/opt/notanothercards/.env`.
+Docker Compose does not automatically copy arbitrary host variables into a
+container, so the API service explicitly forwards the supported mail settings.
+Use either Resend:
+
+```dotenv
+RESEND_API_KEY=re_replace_with_the_production_key
+SMTP_FROM=no-reply@notanothercards.com
+```
+
+or SMTP:
+
+```dotenv
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_FROM=no-reply@notanothercards.com
+SMTP_USER=replace_with_the_smtp_user
+SMTP_PASSWORD=replace_with_the_smtp_password
+```
+
+`SMTP_PORT` defaults to `587`, `SMTP_SECURE` defaults to `false`, and
+`SMTP_FROM` defaults to `no-reply@notanothercards.com`. When `SMTP_USER` is
+empty, the API connects without SMTP authentication. Staging may omit both
+`RESEND_API_KEY` and `SMTP_HOST` when disabled email delivery is intentional.
+
+After changing the production environment, redeploy the API and verify that a
+transport reached the container without displaying the secret:
+
+```bash
+sudo -u deploy docker compose \
+  -f /opt/notanothercards/docker-compose.yml \
+  -f /opt/notanothercards/docker-compose.production.yml \
+  up -d --build --wait api
+
+sudo -u deploy docker compose \
+  -f /opt/notanothercards/docker-compose.yml \
+  -f /opt/notanothercards/docker-compose.production.yml \
+  exec -T api sh -c 'test -n "$RESEND_API_KEY" || test -n "$SMTP_HOST"'
+```
+
 ## The AI backend
 
 The GX10 runs an inference server with LiteLLM in front. LiteLLM gives us:
