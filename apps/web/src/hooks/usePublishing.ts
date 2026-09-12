@@ -7,6 +7,7 @@ export interface FlaggedCard {
 }
 
 export interface ModerationError {
+  action: 'publish' | 'unpublish';
   reason: string;
   flagged: FlaggedCard[];
 }
@@ -35,6 +36,7 @@ export function usePublishing() {
           const body = moderationRefusalSchema.safeParse(json);
           if (body.success) {
             setError({
+              action: 'publish',
               reason: body.data.reason || 'Moderation failed',
               flagged: body.data.flagged || [],
             });
@@ -48,6 +50,7 @@ export function usePublishing() {
       return true;
     } catch (err) {
       setError({
+        action: 'publish',
         reason: err instanceof Error ? err.message : 'Unknown error occurred',
         flagged: [],
       });
@@ -79,6 +82,7 @@ export function usePublishing() {
       return true;
     } catch (err) {
       setError({
+        action: 'unpublish',
         reason: err instanceof Error ? err.message : 'Unknown error occurred',
         flagged: [],
       });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useStore, Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,6 +43,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [noteToRemove, setNoteToRemove] = useState<Card | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
+  const [isPendingPublishAction, setIsPendingPublishAction] = useState(false);
+  const isBusyRef = useRef(false);
   const { publish, unpublish, isPublishing, isUnpublishing, error, setError } =
     usePublishing();
   const controller = useSyncController();
@@ -242,13 +244,21 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             {isPublic ? (
               <Button
                 variant="outline"
-                disabled={isUnpublishing}
+                disabled={isUnpublishing || isPendingPublishAction}
                 onClick={async () => {
-                  await controller?.syncNow();
-                  await unpublish(
-                    deckId,
-                    () => controller?.syncNow() || Promise.resolve(),
-                  );
+                  if (isBusyRef.current) return;
+                  isBusyRef.current = true;
+                  setIsPendingPublishAction(true);
+                  try {
+                    await controller?.syncNow();
+                    await unpublish(
+                      deckId,
+                      () => controller?.syncNow() || Promise.resolve(),
+                    );
+                  } finally {
+                    setIsPendingPublishAction(false);
+                    isBusyRef.current = false;
+                  }
                 }}
                 className="cursor-pointer gap-1.5 justify-center"
               >
@@ -257,13 +267,21 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             ) : (
               <Button
                 variant="secondary"
-                disabled={isPublishing}
+                disabled={isPublishing || isPendingPublishAction}
                 onClick={async () => {
-                  await controller?.syncNow();
-                  await publish(
-                    deckId,
-                    () => controller?.syncNow() || Promise.resolve(),
-                  );
+                  if (isBusyRef.current) return;
+                  isBusyRef.current = true;
+                  setIsPendingPublishAction(true);
+                  try {
+                    await controller?.syncNow();
+                    await publish(
+                      deckId,
+                      () => controller?.syncNow() || Promise.resolve(),
+                    );
+                  } finally {
+                    setIsPendingPublishAction(false);
+                    isBusyRef.current = false;
+                  }
                 }}
                 className="cursor-pointer gap-1.5 justify-center"
               >
@@ -426,11 +444,12 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 className="text-lg font-bold flex items-center gap-2"
               >
                 <AlertCircle className="size-5 text-destructive" />
-                Could Not Publish Deck
+                {error.action === 'publish' ? 'Could Not Publish Deck' : 'Could Not Unpublish Deck'}
               </CardTitle>
               <CardDescription>
-                The deck was refused by our automated moderation system. Please
-                review the flagged content before trying again.
+                {error.flagged && error.flagged.length > 0
+                  ? 'The deck was refused by our automated moderation system. Please review the flagged content before trying again.'
+                  : 'There was an issue processing your request. Please try again.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">

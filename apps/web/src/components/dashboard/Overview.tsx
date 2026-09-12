@@ -18,6 +18,7 @@ import {
   Library,
   RefreshCw,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useSharedDecks } from '@/hooks/useSharedDecks';
@@ -83,9 +84,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const controller = useSyncController();
-  const { decks: sharedDecks, isLoading: isSharedDecksLoading } =
+  const { decks: sharedDecks, isLoading: isSharedDecksLoading, error: sharedDecksError } =
     useSharedDecks();
-  const { importDeck, importingIds } = useImportDeck();
+  const { importDeck, importingIds, error: importError } = useImportDeck();
 
   const user = session?.user || {
     name: 'Legendary Learner',
@@ -273,10 +274,20 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
+            {importError && (
+              <div className="mx-6 mt-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20 flex items-center gap-2">
+                <AlertCircle className="size-4" />
+                {importError}
+              </div>
+            )}
             <div className="overflow-x-auto">
               {isSharedDecksLoading ? (
                 <div className="p-8 flex justify-center">
                   <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : sharedDecksError ? (
+                <div className="p-8 text-center text-muted-foreground text-sm">
+                  Failed to load community decks. Please try again later.
                 </div>
               ) : sharedDecks.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground text-sm">

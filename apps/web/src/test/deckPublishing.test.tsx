@@ -31,14 +31,19 @@ vi.mock('@/hooks/useStore', () => ({
   useStore: () => mockStore,
 }));
 
+const mockSyncController = {
+  syncNow: vi.fn().mockResolvedValue(undefined),
+};
+
 vi.mock('@/offline/syncProvider', () => ({
-  useSyncController: () => ({ syncNow: vi.fn().mockResolvedValue(undefined) }),
+  useSyncController: () => mockSyncController,
   useSyncState: () => ({ status: 'ready', error: null }),
 }));
 
 describe('Deck Publishing Controls', () => {
   beforeEach(() => {
     mockDeck.visibility = 'private'; // Reset to private for each test
+    mockSyncController.syncNow.mockClear();
   });
 
   afterEach(() => {
@@ -197,5 +202,43 @@ describe('Deck Publishing Controls', () => {
     const btn = screen.getByRole('button', { name: 'Publish' });
     expect(btn).toBeInTheDocument();
     await waitFor(() => expect(btn).not.toBeDisabled());
+  });
+
+  it('prevents double-click while syncNow is pending before publish', async () => {
+    let completeSync!: () => void;
+    mockSyncController.syncNow.mockImplementationOnce(() => {
+      return new Promise<void>((resolve) => {
+        completeSync = resolve;
+      });
+    });
+
+    const fetchMock = vi.fn().mockResolvedValue(response({ visibility: 'public' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+    
+    const publishBtn = screen.getByRole('button', { name: 'Publish' });
+    
+    // First click
+    fireEvent.click(publishBtn);
+    // Button should be disabled immediately due to isPendingPublishAction
+    expect(publishBtn).toBeDisabled();
+
+    // Try clicking again
+    fireEvent.click(publishBtn);
+
+    // Resolve the sync
+    await act(async () => {
+      completeSync();
+    });
+
+    // Wait for the publish fetch to finish
+    await waitFor(() => {
+      expect(publishBtn).not.toBeDisabled();
+    });
+
+    // Ensure syncNow was called twice (once before publish, once after publish)
+    expect(mockSyncController.syncNow).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
