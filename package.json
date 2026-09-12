@@ -5,6 +5,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "e2e": "pnpm --filter web e2e",
     "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/monitoring/validate.sh && bash infra/vps/validate-ai-gateway.sh",
     "check:cycles": "node scripts/check-cycles.mjs",
     "test:watch": "turbo run test:watch",

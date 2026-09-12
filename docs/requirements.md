@@ -39,8 +39,8 @@ The subject says the project is rejected if one of these is not met.
 | The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done              | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                             |
 | The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done              | 100 | 10 authors on `main` (`git shortlog -sn`)                                              |
 | Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done              | 100 | `docker compose up`, `README.md`                                                       |
-| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | not verified      |  90 | no evidence recorded                                                                   |
-| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | not verified      |  70 | A21 in the plan                                                                        |
+| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | in review         |  90 | #252 browser suite: `pnpm e2e` on stable Chrome                                        |
+| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | in review         |  70 | #252 browser suite: warnings and errors fail a test                                    |
 | The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | **gap**           |   0 | no such page in `apps/web/src`                                                         |
 | The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | per-user databases and sync (#151, #177); updates arrive on sync triggers, not by push |
 
@@ -267,6 +267,14 @@ README. They give 0 points and their absence rejects the project.
 
 ## 7. Evaluation dry run
 
+Browser coverage for #252 is implemented in `apps/web/e2e`: registration,
+onboarding, deck/card edits, review ratings, three-context sync/isolation,
+account switching, and representative validation/XSS checks. `pnpm e2e` uses
+stable Chrome at desktop and phone widths with a strict browser-console gate.
+These are evidence for the covered paths, not complete accessibility, responsive
+layout, or security certification; #318's long-content behavior is still pending.
+See the README for setup and failure artifacts.
+
 The mechanical checks are becoming CI jobs (#251 fresh-clone start and
 credential scan, #252 browser flows and console, #253 hostile input).
 Until they land they are manual; after, the dry run is green CI plus one
@@ -278,8 +286,8 @@ live rehearsal — CI proves the code, it cannot rehearse a demonstration.
   touches before running it in front of an evaluator.
 - **Rehearse the demo in real Chrome**: latest stable, DevTools open,
   console clean, main flows at desktop and phone width, two accounts
-  side by side with isolated data and working sync. CI's chromium is not
-  the subject's "latest stable Google Chrome", so one real pass stays.
+  side by side with isolated data and working sync. The browser suite uses
+  stable Chrome, but the live rehearsal still covers the full demonstration.
 - **People**: all five attend. Each of us can explain and demo what we
   built and point at the commits. Architecture, stack choices and the
   work split are explainable by at least two of us. Everyone knows the

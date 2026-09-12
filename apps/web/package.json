@@ -7,12 +7,15 @@
     "dev": "vite --clearScreen false",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\"",
     "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
     "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:typecheck": "tsc --project e2e/tsconfig.json",
     "test:watch": "vitest --watch"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@remelondb/driver-node": "0.3.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",

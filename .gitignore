@@ -13,4 +13,6 @@ server/dist
 public/dist
 infra/monitoring/secrets/
 infra/monitoring/.env
-
+apps/web/playwright-report/
+apps/web/playwright-logs/
+apps/web/test-results/
