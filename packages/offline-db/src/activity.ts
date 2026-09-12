@@ -1,15 +1,16 @@
 /**
  * Shared activity and gamification rules from epic #269.
  *
- * - Reviews award their rating in points (Again 1, Hard 2, Good 3, Easy 4)
+ * - Every review awards one point, regardless of rating
  * - A review event is counted once, by id
- * - A note is learned after a successful rating (2-4) on one of its retained
- *   cards; later deactivating that card does not erase learning history, and
- *   reviewing sibling cards still learns one note
- * - A learning day has at least one review in the user's calendar day
- * - A current streak may finish today or yesterday
- * - `daily-review` needs 20 reviews in the current calendar day
- * - `new-vocabulary` needs 5 distinct notes created in that day
+ * - Learned-note analytics remain separate from points: a note is learned
+ *   after a successful rating (2-4) on one of its retained cards; later
+ *   deactivating that card does not erase learning history, and reviewing
+ *   sibling cards still learns one note
+ * - A learning day has at least one review on its UTC calendar date
+ * - A current streak may finish on the current or preceding UTC date
+ * - `daily-review` needs 20 reviews on the current UTC date
+ * - `new-vocabulary` needs 5 distinct notes created on that UTC date
  * - The initial badges are earned by the first review, a seven-day streak,
  *   and one hundred reviews
  * - The global leaderboard uses all-time review points. Ties sort by the
@@ -20,17 +21,9 @@
  *
  * These selectors deliberately accept plain records and have no database or
  * UI dependencies. Callers must pass `now`; this keeps browser, mobile, and
- * API results reproducible for the same records, timestamp, and timezone.
+ * API results reproducible for the same records and timestamp. User-local
+ * calendar days and daylight-saving behavior are deferred.
  */
-
-import moment from 'moment-timezone';
-
-export const REVIEW_POINTS_BY_RATING = {
-  1: 1,
-  2: 2,
-  3: 3,
-  4: 4,
-} as const;
 
 export const SUCCESSFUL_REVIEW_RATING_MIN = 2;
 
@@ -92,7 +85,6 @@ export interface ActivitySelectorInput {
   readonly cards: readonly ActivityCard[];
   readonly notes: readonly ActivityNote[];
   readonly now: number;
-  readonly timeZone?: string | null;
 }
 
 export interface ReviewActivity {
@@ -115,24 +107,21 @@ export interface DailyChallengeProgress {
 }
 
 export interface TodayChallengeActivity {
-  readonly timeZone: string;
-  // Gregorian calendar date in the resolved timezone, formatted YYYY-MM-DD
-  readonly localDate: string;
+  // UTC Gregorian calendar date, formatted YYYY-MM-DD
+  readonly utcDate: string;
   readonly challenges: readonly DailyChallengeProgress[];
 }
 
 export interface ActivitySummary extends ReviewActivity, StreakActivity {
-  readonly timeZone: string;
-  readonly localDate: string;
+  readonly utcDate: string;
   readonly learnedNoteCount: number;
   readonly todayChallenges: readonly DailyChallengeProgress[];
   readonly eligibleBadgeCodes: readonly BadgeCode[];
 }
 
 const MILLISECONDS_PER_DAY = 86_400_000;
-const UTC = 'UTC';
 
-interface LocalDay {
+interface UtcDay {
   readonly key: string;
   readonly ordinal: number;
 }
@@ -151,7 +140,7 @@ function assertReviewEvent(event: ActivityReviewEvent): void {
   if (!event.user_card_id) {
     throw new Error('Review event user_card_id must not be empty');
   }
-  if (!(event.rating in REVIEW_POINTS_BY_RATING)) {
+  if (!Number.isInteger(event.rating) || event.rating < 1 || event.rating > 4) {
     throw new Error(`Unsupported review rating: ${event.rating}`);
   }
   assertTimestamp(event.reviewed_at, 'Review timestamp');
@@ -175,46 +164,30 @@ function uniqueReviewEvents(
   return uniqueById(reviewEvents);
 }
 
-// Moment Timezone carries the IANA data, so resolving and converting calendar
-// dates does not depend on a runtime's partial or platform-specific Intl build
-export function resolveActivityTimeZone(timeZone?: string | null): string {
-  return timeZone && moment.tz.zone(timeZone) ? timeZone : UTC;
-}
-
-function localDayAt(timestamp: number, timeZone: string): LocalDay {
-  const local = moment.tz(timestamp, timeZone);
-  const year = local.year();
-  const month = local.month() + 1;
-  const day = local.date();
-
+function utcDayAt(timestamp: number): UtcDay {
   return {
-    key: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-    // Calendar ordinals, rather than elapsed 24-hour periods, make adjacent
-    // local dates consecutive across daylight-saving changes
-    ordinal: Math.floor(Date.UTC(year, month - 1, day) / MILLISECONDS_PER_DAY),
+    key: new Date(timestamp).toISOString().slice(0, 10),
+    ordinal: Math.floor(timestamp / MILLISECONDS_PER_DAY),
   };
 }
 
 function reviewActivityFromUniqueEvents(
   reviewEvents: readonly ActivityReviewEvent[],
 ): ReviewActivity {
-  let reviewPoints = 0;
   let reviewPointsReachedAt: number | null = null;
 
   for (const event of reviewEvents) {
-    reviewPoints +=
-      REVIEW_POINTS_BY_RATING[
-        event.rating as keyof typeof REVIEW_POINTS_BY_RATING
-      ];
     reviewPointsReachedAt = Math.max(
       reviewPointsReachedAt ?? event.reviewed_at,
       event.reviewed_at,
     );
   }
 
+  const reviewCount = reviewEvents.length;
+
   return {
-    reviewPoints,
-    reviewCount: reviewEvents.length,
+    reviewPoints: reviewCount,
+    reviewCount,
     reviewPointsReachedAt,
   };
 }
@@ -262,13 +235,12 @@ export function selectLearnedNoteCount(
 function streaksFromUniqueEvents(
   reviewEvents: readonly ActivityReviewEvent[],
   now: number,
-  timeZone: string,
 ): StreakActivity {
-  const todayOrdinal = localDayAt(now, timeZone).ordinal;
+  const todayOrdinal = utcDayAt(now).ordinal;
   const learningDayOrdinals = [
     ...new Set(
       reviewEvents
-        .map((event) => localDayAt(event.reviewed_at, timeZone).ordinal)
+        .map((event) => utcDayAt(event.reviewed_at).ordinal)
         .filter((ordinal) => ordinal <= todayOrdinal),
     ),
   ].sort((left, right) => left - right);
@@ -299,15 +271,9 @@ function streaksFromUniqueEvents(
 export function selectStreakActivity(
   reviewEvents: readonly ActivityReviewEvent[],
   now: number,
-  timeZone?: string | null,
 ): StreakActivity {
   assertTimestamp(now, 'Now');
-  const resolvedTimeZone = resolveActivityTimeZone(timeZone);
-  return streaksFromUniqueEvents(
-    uniqueReviewEvents(reviewEvents),
-    now,
-    resolvedTimeZone,
-  );
+  return streaksFromUniqueEvents(uniqueReviewEvents(reviewEvents), now);
 }
 
 function challenge(
@@ -322,20 +288,18 @@ function todayChallengeActivityFromUniqueRecords(
   reviewEvents: readonly ActivityReviewEvent[],
   notes: readonly ActivityNote[],
   now: number,
-  timeZone: string,
 ): TodayChallengeActivity {
-  const today = localDayAt(now, timeZone);
+  const today = utcDayAt(now);
   const reviewCount = reviewEvents.filter(
-    (event) => localDayAt(event.reviewed_at, timeZone).key === today.key,
+    (event) => utcDayAt(event.reviewed_at).key === today.key,
   ).length;
   const newNoteCount = uniqueById(notes).filter((note) => {
     assertTimestamp(note.created_at, 'Note creation timestamp');
-    return localDayAt(note.created_at, timeZone).key === today.key;
+    return utcDayAt(note.created_at).key === today.key;
   }).length;
 
   return {
-    timeZone,
-    localDate: today.key,
+    utcDate: today.key,
     challenges: [
       challenge('daily-review', reviewCount),
       challenge('new-vocabulary', newNoteCount),
@@ -347,15 +311,12 @@ export function selectTodayChallengeActivity(
   reviewEvents: readonly ActivityReviewEvent[],
   notes: readonly ActivityNote[],
   now: number,
-  timeZone?: string | null,
 ): TodayChallengeActivity {
   assertTimestamp(now, 'Now');
-  const resolvedTimeZone = resolveActivityTimeZone(timeZone);
   return todayChallengeActivityFromUniqueRecords(
     uniqueReviewEvents(reviewEvents),
     notes,
     now,
-    resolvedTimeZone,
   );
 }
 
@@ -377,26 +338,19 @@ export function selectActivitySummary(
   input: ActivitySelectorInput,
 ): ActivitySummary {
   assertTimestamp(input.now, 'Now');
-  const timeZone = resolveActivityTimeZone(input.timeZone);
   const reviewEvents = uniqueReviewEvents(input.reviewEvents);
   const reviewActivity = reviewActivityFromUniqueEvents(reviewEvents);
-  const streakActivity = streaksFromUniqueEvents(
-    reviewEvents,
-    input.now,
-    timeZone,
-  );
+  const streakActivity = streaksFromUniqueEvents(reviewEvents, input.now);
   const today = todayChallengeActivityFromUniqueRecords(
     reviewEvents,
     input.notes,
     input.now,
-    timeZone,
   );
 
   return {
     ...reviewActivity,
     ...streakActivity,
-    timeZone,
-    localDate: today.localDate,
+    utcDate: today.utcDate,
     learnedNoteCount: learnedNoteCountFromUniqueRecords(
       reviewEvents,
       input.cards,
