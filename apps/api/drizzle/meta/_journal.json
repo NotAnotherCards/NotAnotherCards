@@ -99,6 +99,13 @@
       "when": 1788960508522,
       "tag": "0013_windy_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789294918722,
+      "tag": "0014_closed_scrambler",
+      "breakpoints": true
     }
   ]
 }
