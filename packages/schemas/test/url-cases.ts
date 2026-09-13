@@ -25,6 +25,7 @@ export const safeUrlTestCases: ReadonlyArray<readonly [string, boolean]> = [
   ['javascript:alert(1)', false],
   ['JavaScript:alert(1)', false],
   [' javascript:alert(1)', false],
+  ['\u001fjavascript:alert(1)', false],
   ['java\tscript:alert(1)', false],
   ['java\nscript:alert(1)', false],
   ['data:text/html,<script>alert(1)</script>', false],

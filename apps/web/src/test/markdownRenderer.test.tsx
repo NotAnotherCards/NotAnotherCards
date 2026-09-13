@@ -135,6 +135,18 @@ describe('MarkdownRenderer', () => {
       expect(a).not.toHaveAttribute('href');
     });
 
+    it('strips javascript: URIs hidden behind a leading C0 control', () => {
+      const { container } = render(
+        <MarkdownRenderer
+          content={'<a href="\u001fjavascript:alert(1)">x</a>'}
+        />,
+      );
+
+      const a = container.querySelector('a');
+      expect(a).toBeInTheDocument();
+      expect(a).not.toHaveAttribute('href');
+    });
+
     it('strips data:text/html URIs from href attributes', () => {
       const { container } = render(
         <MarkdownRenderer content="[HTML Data](data:text/html,<script>alert(1)</script>)" />,

@@ -6,6 +6,23 @@ const SAFE_DATA_URL_PATTERN =
 const URL_SCHEME_PATTERN = /^([a-z][a-z0-9+.-]*):/i;
 const URL_PARSER_IGNORED_WHITESPACE_PATTERN = /[\t\n\r]/g;
 
+function normalizeForSchemeDetection(value: string): string {
+  let start = 0;
+  let end = value.length;
+
+  while (start < end && value.charCodeAt(start) <= 0x20) {
+    start += 1;
+  }
+
+  while (end > start && value.charCodeAt(end - 1) <= 0x20) {
+    end -= 1;
+  }
+
+  return value
+    .slice(start, end)
+    .replace(URL_PARSER_IGNORED_WHITESPACE_PATTERN, '');
+}
+
 /**
  * Reports whether a URL is safe to expose from user-authored card content.
  *
@@ -17,9 +34,7 @@ export function isSafeUrl(value: string): boolean {
   // WHATWG URL parsing ignores tabs and line breaks before identifying the
   // scheme. Apply that normalization here so java\tscript: cannot masquerade
   // as a relative URL.
-  const normalizedValue = value
-    .trim()
-    .replace(URL_PARSER_IGNORED_WHITESPACE_PATTERN, '');
+  const normalizedValue = normalizeForSchemeDetection(value);
   const schemeMatch = URL_SCHEME_PATTERN.exec(normalizedValue);
 
   if (!schemeMatch) {
