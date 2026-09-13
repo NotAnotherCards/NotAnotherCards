@@ -1,10 +1,24 @@
 import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { ConfigService } from '@nestjs/config';
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  sql,
+} from 'drizzle-orm';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { cardId, noteDeckId } from '@repo/offline-db';
@@ -19,7 +33,14 @@ import {
 } from '../sync/schema';
 import { syncScopeLockKey } from '../sync/sync-store';
 import { ModerationService } from './moderation.service';
-import { publishedDecks, type PublishedContent } from './schema';
+import { aiGenerationJobs } from '../ai/schema';
+import {
+  deckReports,
+  deckTakedowns,
+  publishedDecks,
+  type PublishedContent,
+  type StoredModerationVerdict,
+} from './schema';
 
 /** How much of a deck a stranger gets to read before importing it. */
 const PREVIEW_CARDS = 10;
@@ -71,6 +92,7 @@ const publicGate = and(
   eq(userDecks.visibility, 'public'),
   isNull(userDecks.deletedAt),
 );
+const visibleSnapshot = eq(publishedDecks.moderationStatus, 'visible');
 const liveOwner = and(
   eq(userProfiles.userId, userDecks.userId),
   isNull(userProfiles.deletedAt),
@@ -83,6 +105,7 @@ export class SharingService {
     @Inject(DATABASE_CONNECTION)
     private readonly db: AppDatabase,
     private readonly moderation: ModerationService,
+    private readonly config: ConfigService,
   ) {}
 
   async publish(userId: string, deckId: string) {
@@ -136,7 +159,9 @@ export class SharingService {
         .select({ snapshot: publishedDecks })
         .from(publishedDecks)
         .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
-        .where(and(eq(publishedDecks.deckId, sourceId), publicGate));
+        .where(
+          and(eq(publishedDecks.deckId, sourceId), publicGate, visibleSnapshot),
+        );
       if (!source) throw new NotFoundException('Deck not found');
 
       const { snapshot } = source;
@@ -209,7 +234,7 @@ export class SharingService {
       .from(publishedDecks)
       .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
       .innerJoin(userProfiles, liveOwner)
-      .where(publicGate)
+      .where(and(publicGate, visibleSnapshot))
       .orderBy(desc(publishedDecks.publishedAt), desc(publishedDecks.deckId))
       .limit(limit)
       .offset(offset);
@@ -225,7 +250,9 @@ export class SharingService {
       .from(publishedDecks)
       .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
       .innerJoin(userProfiles, liveOwner)
-      .where(and(eq(publishedDecks.deckId, deckId), publicGate));
+      .where(
+        and(eq(publishedDecks.deckId, deckId), publicGate, visibleSnapshot),
+      );
     if (published) {
       const { content, ...summary } = published;
       return {
@@ -268,6 +295,242 @@ export class SharingService {
         cards: cards.map(({ front, back }) => ({ front, back })),
       },
     };
+  }
+
+  async report(userId: string, deckId: string, reason: string) {
+    const reportId = randomUUID();
+    const maxDailyReports = Number(
+      this.config.get<string>('MODERATION_MAX_DAILY_REPORTS_PER_USER') ?? 10,
+    );
+    const recheckWindowHours = Number(
+      this.config.get<string>('MODERATION_RECHECK_WINDOW_HOURS') ?? 24,
+    );
+
+    return this.db.transaction(async (tx) => {
+      // Serialize both quota reservations and per-deck enqueue decisions.
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext('deck_report_user_' || ${userId}))`,
+      );
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext('deck_report_deck_' || ${deckId}))`,
+      );
+
+      const [published] = await tx
+        .select({
+          ownerId: publishedDecks.userId,
+          publishedAt: publishedDecks.publishedAt,
+          moderatedAt: publishedDecks.moderatedAt,
+        })
+        .from(publishedDecks)
+        .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+        .where(
+          and(eq(publishedDecks.deckId, deckId), publicGate, visibleSnapshot),
+        );
+      if (!published) throw new NotFoundException('Deck not found');
+      if (published.ownerId === userId) {
+        throw new BadRequestException('You cannot report your own deck');
+      }
+
+      const [existing] = await tx
+        .select({ id: deckReports.id })
+        .from(deckReports)
+        .where(
+          and(
+            eq(deckReports.reporterUserId, userId),
+            eq(deckReports.deckId, deckId),
+          ),
+        );
+      if (existing) throw new ConflictException('Deck already reported');
+
+      const windowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const [daily] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(deckReports)
+        .where(
+          and(
+            eq(deckReports.reporterUserId, userId),
+            gte(deckReports.createdAt, windowStart),
+          ),
+        );
+      if (Number(daily?.count ?? 0) >= maxDailyReports) {
+        throw new HttpException(
+          `Daily deck report cap reached (max allowed: ${maxDailyReports})`,
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
+      const [report] = await tx
+        .insert(deckReports)
+        .values({
+          id: reportId,
+          deckId,
+          reporterUserId: userId,
+          reason,
+          snapshotPublishedAt: published.publishedAt,
+        })
+        .returning();
+
+      const cacheCutoff = new Date(
+        Date.now() - recheckWindowHours * 60 * 60 * 1000,
+      );
+      if (published.moderatedAt && published.moderatedAt >= cacheCutoff) {
+        return { report, recheck: 'cached' as const };
+      }
+
+      const [active] = await tx
+        .select({ id: aiGenerationJobs.id })
+        .from(aiGenerationJobs)
+        .where(
+          and(
+            sql`${aiGenerationJobs.payload} ->> 'deckId' = ${deckId}`,
+            eq(aiGenerationJobs.type, 'deck_moderation'),
+            inArray(aiGenerationJobs.status, ['pending', 'processing']),
+          ),
+        );
+      if (active) return { report, recheck: 'pending' as const };
+
+      await tx.insert(aiGenerationJobs).values({
+        id: randomUUID(),
+        userId,
+        type: 'deck_moderation',
+        payload: {
+          deckId,
+          snapshotPublishedAt: published.publishedAt.toISOString(),
+        },
+      });
+      return { report, recheck: 'queued' as const };
+    });
+  }
+
+  async ownerModerationStatus(userId: string, deckId: string) {
+    await this.ownedVisibility(userId, deckId);
+    const [snapshot] = await this.db
+      .select({
+        status: publishedDecks.moderationStatus,
+        verdict: publishedDecks.moderationVerdict,
+        moderatedAt: publishedDecks.moderatedAt,
+      })
+      .from(publishedDecks)
+      .where(
+        and(
+          eq(publishedDecks.deckId, deckId),
+          eq(publishedDecks.userId, userId),
+        ),
+      );
+    if (!snapshot || snapshot.status !== 'blocked') {
+      return { status: 'clear' as const };
+    }
+    return {
+      status: 'blocked' as const,
+      reason: snapshot.verdict?.reason,
+      flagged: snapshot.verdict?.flagged ?? [],
+      warnings: snapshot.verdict?.warnings ?? [],
+      moderatedAt: snapshot.moderatedAt,
+    };
+  }
+
+  async listReports(limit: number, offset: number) {
+    const reports = await this.db
+      .select({
+        id: deckReports.id,
+        deckId: deckReports.deckId,
+        reporterUserId: deckReports.reporterUserId,
+        reason: deckReports.reason,
+        snapshotPublishedAt: deckReports.snapshotPublishedAt,
+        createdAt: deckReports.createdAt,
+        currentSnapshotPublishedAt: publishedDecks.publishedAt,
+        moderationStatus: publishedDecks.moderationStatus,
+        moderationVerdict: publishedDecks.moderationVerdict,
+        moderatedAt: publishedDecks.moderatedAt,
+      })
+      .from(deckReports)
+      .leftJoin(publishedDecks, eq(publishedDecks.deckId, deckReports.deckId))
+      .orderBy(desc(deckReports.createdAt), desc(deckReports.id))
+      .limit(limit)
+      .offset(offset);
+    return { reports };
+  }
+
+  async operatorTakedown(deckId: string, reason: string) {
+    const verdict: StoredModerationVerdict = {
+      reason,
+      flagged: [],
+      warnings: [],
+    };
+    const blocked = await this.blockPublishedSnapshot(
+      deckId,
+      verdict,
+      'operator',
+    );
+    if (!blocked) throw new NotFoundException('Deck not found');
+    return { status: 'blocked' as const };
+  }
+
+  private async blockPublishedSnapshot(
+    deckId: string,
+    verdict: StoredModerationVerdict,
+    source: 'operator',
+  ) {
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext('deck_report_deck_' || ${deckId}))`,
+      );
+      const [snapshot] = await tx
+        .select({
+          userId: publishedDecks.userId,
+          publishedAt: publishedDecks.publishedAt,
+        })
+        .from(publishedDecks)
+        .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+        .where(
+          and(eq(publishedDecks.deckId, deckId), publicGate, visibleSnapshot),
+        );
+      if (!snapshot) return false;
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(snapshot.userId).toString()})`,
+      );
+      const [lockedSnapshot] = await tx
+        .select({ publishedAt: publishedDecks.publishedAt })
+        .from(publishedDecks)
+        .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+        .where(
+          and(eq(publishedDecks.deckId, deckId), publicGate, visibleSnapshot),
+        );
+      if (!lockedSnapshot) return false;
+
+      const now = new Date();
+      await tx
+        .update(publishedDecks)
+        .set({
+          moderationStatus: 'blocked',
+          moderationVerdict: verdict,
+          moderatedAt: now,
+        })
+        .where(eq(publishedDecks.deckId, deckId));
+      await tx.insert(deckTakedowns).values({
+        id: randomUUID(),
+        deckId,
+        source,
+        reason: verdict.reason,
+        verdict,
+        snapshotPublishedAt: lockedSnapshot.publishedAt,
+      });
+      await tx
+        .update(userDecks)
+        .set({
+          visibility: 'private',
+          rev: sql`nextval('remelon_rev')`,
+          updatedAt: Date.now(),
+        })
+        .where(
+          and(
+            eq(userDecks.id, deckId),
+            eq(userDecks.userId, snapshot.userId),
+            isNull(userDecks.deletedAt),
+          ),
+        );
+      return true;
+    });
   }
 
   /** 404 rather than 403 for someone else's deck: 403 would confirm the id. */
@@ -318,7 +581,13 @@ export class SharingService {
       );
       const current = await this.ownedVisibility(userId, deckId, tx);
       if (snapshot) {
-        const values = { ...snapshot, publishedAt: new Date() };
+        const values = {
+          ...snapshot,
+          moderationStatus: 'visible' as const,
+          moderationVerdict: null,
+          moderatedAt: null,
+          publishedAt: new Date(),
+        };
         await tx.insert(publishedDecks).values(values).onConflictDoUpdate({
           target: publishedDecks.deckId,
           set: values,
