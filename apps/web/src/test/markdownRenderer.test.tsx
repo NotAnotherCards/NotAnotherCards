@@ -67,6 +67,16 @@ describe('MarkdownRenderer', () => {
       expect(img).toHaveAttribute('src', dataUri);
     });
 
+    it('preserves blob URLs', () => {
+      const blobUrl = 'blob:https://example.com/7f38fc88';
+      render(<MarkdownRenderer content={`[Download](${blobUrl})`} />);
+
+      expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute(
+        'href',
+        blobUrl,
+      );
+    });
+
     it('renders custom audio scheme link as audio player', () => {
       const { container } = render(
         <MarkdownRenderer content="[Track](audio:https://example.com/song.mp3)" />,
@@ -121,8 +131,8 @@ describe('MarkdownRenderer', () => {
 
       expect(screen.getByText('Malicious Link')).toBeInTheDocument();
       const a = container.querySelector('a');
-      const href = a?.getAttribute('href');
-      expect(href ?? '').not.toMatch(/^javascript:/i);
+      expect(a).toBeInTheDocument();
+      expect(a).not.toHaveAttribute('href');
     });
 
     it('strips data:text/html URIs from href attributes', () => {
@@ -132,8 +142,8 @@ describe('MarkdownRenderer', () => {
 
       expect(screen.getByText('HTML Data')).toBeInTheDocument();
       const a = container.querySelector('a');
-      const href = a?.getAttribute('href');
-      expect(href ?? '').not.toMatch(/^data:text\/html/i);
+      expect(a).toBeInTheDocument();
+      expect(a).not.toHaveAttribute('href');
     });
 
     it('strips vbscript: URIs from href attributes', () => {
@@ -143,8 +153,8 @@ describe('MarkdownRenderer', () => {
 
       expect(screen.getByText('VBScript Link')).toBeInTheDocument();
       const a = container.querySelector('a');
-      const href = a?.getAttribute('href');
-      expect(href ?? '').not.toMatch(/^vbscript:/i);
+      expect(a).toBeInTheDocument();
+      expect(a).not.toHaveAttribute('href');
     });
 
     it('strips inline <script> tags and execution code', () => {

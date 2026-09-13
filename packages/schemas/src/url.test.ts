@@ -1,0 +1,44 @@
+import { describe, expect, it } from 'vitest';
+import { isSafeUrl } from './url.js';
+
+describe('isSafeUrl', () => {
+  it.each<[string, boolean]>([
+    ['https://example.com/card', true],
+    ['http://example.com/card', true],
+    ['mailto:cards@example.com', true],
+    ['blob:https://example.com/7f38fc88', true],
+    ['/images/logo.png', true],
+    ['images/logo.png', true],
+    ['../images/logo.png', true],
+    ['page2.html', true],
+    ['v2', true],
+    ['#section', true],
+    ['?page=2', true],
+    ['data:image/png;base64,AA==', true],
+    ['data:image/jpeg;base64,AA==', true],
+    ['data:image/jpg;base64,AA==', true],
+    ['data:image/gif;base64,AA==', true],
+    ['data:image/webp;base64,AA==', true],
+    ['data:image/svg+xml;base64,AA==', true],
+    ['data:audio/mp3;base64,AA==', true],
+    ['data:audio/wav;base64,AA==', true],
+    ['data:audio/ogg;base64,AA==', true],
+    ['data:audio/mpeg;base64,AA==', true],
+    ['data:audio/aac;base64,AA==', true],
+    ['data:audio/m4a;base64,AA==', true],
+    ['javascript:alert(1)', false],
+    ['JavaScript:alert(1)', false],
+    [' javascript:alert(1)', false],
+    ['java\tscript:alert(1)', false],
+    ['data:text/html,<script>alert(1)</script>', false],
+    ['data:image/bmp;base64,AA==', false],
+    ['data:image/png,AA==', false],
+    ['vbscript:msgbox(1)', false],
+    ['ftp://example.com/card', false],
+    ['tel:+49123456789', false],
+    ['audio:https://example.com/song.mp3', false],
+    ['https://[', false],
+  ])('returns %j for %s', (value, expected) => {
+    expect(isSafeUrl(value)).toBe(expected);
+  });
+});
