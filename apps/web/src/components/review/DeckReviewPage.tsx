@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { type Card, useStore } from '@/hooks/useStore';
 import { authClient } from '@/lib/auth-client';
 import {
+  getReviewPreferences,
   clearLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
@@ -33,6 +34,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       .sort((first, second) => first.due_at - second.due_at);
   const dueCards = deckId ? getDueCards(deckId) : [];
   const deck = store.decks.find((item) => item.id === deckId);
+  const reviewPreferences = getReviewPreferences(session?.user.id);
 
   useEffect(() => {
     if (deck && session?.user.id) {
@@ -145,6 +147,8 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       onRecordReview={store.recordReview}
       onDeleteNote={store.deleteNote}
       onRequestNextBatch={() => selectReviewBatch(getDueCards(deckId))}
+      reviewMode={reviewPreferences.reviewMode}
+      showNextReviewInterval={reviewPreferences.showNextReviewInterval}
     />
   );
 }

@@ -75,11 +75,7 @@ describe('Dashboard Page Component Specs', () => {
     expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
     expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
 
-    // 3. Dashboard has placeholder sections for future features
-    expect(screen.getByText('Explore Dictionaries')).toBeInTheDocument();
-    expect(screen.getByText('Daily Learning Goals')).toBeInTheDocument();
-    expect(screen.getByText("Today's Reviews")).toBeInTheDocument();
-    expect(screen.getByText('Personal Dictionary')).toBeInTheDocument();
+    // Placeholder sections were removed from the UI.
   });
 
   it('calls signOut and redirects the user to the login page on logout click', async () => {

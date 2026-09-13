@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  extendedReviewAnswerLabels,
+  formatReviewInterval,
   getAnswerForReviewGesture,
   reviewAnswerLabels,
 } from '@/components/review/review-controls';
@@ -12,6 +14,21 @@ describe('review controls', () => {
       remember: 'Remembered',
       'very-easy': 'Knew it',
     });
+  });
+
+  it('uses the shorter labels only for extended answer buttons', () => {
+    expect(extendedReviewAnswerLabels).toEqual({
+      forgot: 'Again',
+      hard: 'Hard',
+      remember: 'Good',
+      'very-easy': 'Easy',
+    });
+  });
+
+  it('formats short review intervals in minutes or hours', () => {
+    expect(formatReviewInterval(5)).toBe('5 min');
+    expect(formatReviewInterval(120)).toBe('2 hours');
+    expect(formatReviewInterval(24 * 60)).toBe('1 day');
   });
 
   it('keeps the Up gesture inactive in the two-answer mode', () => {

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+  getAnswerForReviewKeyboardShortcut,
   getAnswerForReviewGesture,
   type ReviewAnswer,
   type ReviewMode,
@@ -24,6 +25,13 @@ function isInteractiveKeyboardTarget(target: EventTarget | null) {
   );
 }
 
+function isReviewAnswerButton(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    target.closest('[data-review-answer-button]') !== null
+  );
+}
+
 export function useReviewKeyboardShortcuts({
   isFlipped,
   isBlocked,
@@ -38,7 +46,8 @@ export function useReviewKeyboardShortcuts({
       if (isBlocked) return;
       if (
         isInteractiveKeyboardTarget(event.target) &&
-        event.target !== reviewCardElement
+        event.target !== reviewCardElement &&
+        !isReviewAnswerButton(event.target)
       ) {
         return;
       }
@@ -46,6 +55,10 @@ export function useReviewKeyboardShortcuts({
       if (!isFlipped) {
         if (
           event.code === 'Space' ||
+          event.key === '1' ||
+          event.key === '2' ||
+          event.key === '3' ||
+          event.key === '4' ||
           event.key === 'ArrowLeft' ||
           event.key === 'ArrowRight' ||
           event.key === 'ArrowUp' ||
@@ -54,6 +67,16 @@ export function useReviewKeyboardShortcuts({
           event.preventDefault();
           onReveal();
         }
+        return;
+      }
+
+      const keyboardAnswer = getAnswerForReviewKeyboardShortcut(
+        reviewMode,
+        event.key,
+      );
+      if (keyboardAnswer) {
+        event.preventDefault();
+        onAnswer(keyboardAnswer);
         return;
       }
 

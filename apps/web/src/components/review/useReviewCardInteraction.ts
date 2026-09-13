@@ -136,7 +136,7 @@ export function useReviewCardInteraction({
               Math.min(MAX_DRAG_DISTANCE_Y_PX, verticalDistance),
             ),
       });
-      if (nextDirection) setDragDirection(nextDirection);
+      setDragDirection(nextDirection);
     },
     handlePointerUp: (event: PointerEvent<HTMLDivElement>) => {
       if (isBlocked || isReviewCardControl(event.target)) return;

@@ -9,6 +9,24 @@ export const reviewAnswerLabels: Record<ReviewAnswer, string> = {
   'very-easy': 'Knew it',
 };
 
+export const extendedReviewAnswerLabels: Record<ReviewAnswer, string> = {
+  forgot: 'Again',
+  hard: 'Hard',
+  remember: 'Good',
+  'very-easy': 'Easy',
+};
+
+export function formatReviewInterval(minutes: number) {
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 24 * 60) {
+    const hours = Math.round(minutes / 60);
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  }
+
+  const days = Math.round(minutes / (24 * 60));
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
+}
+
 type GestureReviewAnswer = Exclude<ReviewAnswer, 'very-easy'>;
 
 export const CURRENT_REVIEW_MODE: ReviewMode = 'four';
@@ -33,9 +51,37 @@ const answersByGesture: Record<
   },
 };
 
+const answersByKeyboardShortcut: Record<
+  ReviewMode,
+  Partial<Record<string, ReviewAnswer>>
+> = {
+  two: {
+    1: 'forgot',
+    2: 'remember',
+  },
+  three: {
+    1: 'forgot',
+    2: 'hard',
+    3: 'remember',
+  },
+  four: {
+    1: 'forgot',
+    2: 'hard',
+    3: 'remember',
+    4: 'very-easy',
+  },
+};
+
 export function getAnswerForReviewGesture(
   mode: ReviewMode,
   gesture: ReviewGesture,
 ) {
   return answersByGesture[mode][gesture] ?? null;
+}
+
+export function getAnswerForReviewKeyboardShortcut(
+  mode: ReviewMode,
+  key: string,
+) {
+  return answersByKeyboardShortcut[mode][key] ?? null;
 }

@@ -23,10 +23,12 @@ import {
 const cardSchema = z.object({
   front: z
     .string()
+    .trim()
     .min(1, 'Front content is required')
     .max(1000, 'Content cannot exceed 1000 characters'),
   back: z
     .string()
+    .trim()
     .min(1, 'Back content is required')
     .max(1000, 'Content cannot exceed 1000 characters'),
 });

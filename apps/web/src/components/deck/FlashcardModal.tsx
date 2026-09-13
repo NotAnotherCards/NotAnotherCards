@@ -1,6 +1,7 @@
 import { RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Card } from '@/hooks/useStore';
+import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 type FlashcardModalProps = {
@@ -48,9 +49,9 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
             <span className="absolute top-4 left-4 rounded-full bg-muted/40 px-2 py-0.5 text-[10px] font-bold tracking-wider text-muted-foreground/60 uppercase">
               Question / Front
             </span>
-            <h3 className="max-h-48 max-w-full overflow-y-auto wrap-break-word pr-1 text-center font-heading text-3xl font-bold tracking-tight text-foreground">
-              <MarkdownRenderer content={card.front} inline />
-            </h3>
+            <div className="max-h-48 max-w-full overflow-y-auto wrap-break-word pr-1 text-center font-heading text-3xl font-bold tracking-tight text-foreground">
+              <MarkdownRenderer content={card.front} />
+            </div>
             <div className="absolute bottom-4 flex items-center gap-1.5 text-xs font-medium text-muted-foreground/60">
               <RefreshCw className="size-3.5" />
               Click card to flip
@@ -67,9 +68,16 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
             <span className="absolute top-4 left-4 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary/60 uppercase">
               Answer / Back
             </span>
-            <h3 className="max-h-32 max-w-full overflow-y-auto wrap-break-word pr-1 text-center font-heading text-3xl font-bold tracking-tight text-primary">
-              <MarkdownRenderer content={card.back} inline />
-            </h3>
+            <div className="max-h-32 max-w-full overflow-y-auto wrap-break-word pr-1 text-center font-heading text-3xl font-bold tracking-tight text-primary">
+              <MarkdownRenderer
+                content={card.back}
+                className={
+                  card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY
+                    ? '[&_p+p]:!mt-4 [&_p+p]:text-xl [&_p+p]:font-normal'
+                    : ''
+                }
+              />
+            </div>
           </div>
         </div>
       </div>

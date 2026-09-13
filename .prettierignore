@@ -3,3 +3,5 @@ apps/web/src/routeTree.gen.ts
 **/android/**
 **/ios/**
 **/.expo/**
+**/*.yml
+**/*.yaml

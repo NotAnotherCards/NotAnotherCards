@@ -27,6 +27,7 @@ describe('ReviewCard', () => {
       <ReviewCard
         card={card}
         isFlipped={false}
+        reviewMode="basic"
         isDragging={false}
         isSettlingDrag={false}
         dragOffset={{ x: 0, y: 0 }}
@@ -56,5 +57,40 @@ describe('ReviewCard', () => {
     expect(onPointerDown).toHaveBeenCalledOnce();
     expect(onPointerMove).toHaveBeenCalledOnce();
     expect(onPointerUp).toHaveBeenCalledOnce();
+  });
+
+  it('makes the hidden card face inert even when Markdown contains a link', () => {
+    const linkCard = {
+      ...card,
+      front: '[Front link](https://example.com/front)',
+      back: '[Back link](https://example.com/back)',
+    };
+    const props = {
+      card: linkCard,
+      reviewMode: 'basic' as const,
+      isDragging: false,
+      isSettlingDrag: false,
+      dragOffset: { x: 0, y: 0 },
+      dragDirection: null,
+      exitDirection: null,
+      cardButtonRef: createRef<HTMLButtonElement>(),
+      onClick: vi.fn(),
+      onPointerDown: vi.fn(),
+      onPointerMove: vi.fn(),
+      onPointerUp: vi.fn(),
+      onPointerCancel: vi.fn(),
+      onSettled: vi.fn(),
+    };
+    const { rerender } = render(<ReviewCard {...props} isFlipped={false} />);
+
+    expect(screen.getByText('Back link').closest('[inert]')).not.toBeNull();
+
+    rerender(<ReviewCard {...props} isFlipped />);
+
+    expect(
+      screen
+        .getAllByText('Front link')
+        .some((element) => element.closest('[inert]') !== null),
+    ).toBe(true);
   });
 });
