@@ -4,8 +4,13 @@ import type {
   WireRow,
 } from '@remelondb/server';
 import { describe, expect, it, vi } from 'vitest';
-import { cardId } from '@repo/offline-db';
+import {
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
+  cardId,
+  noteDeckId,
+} from '@repo/offline-db';
 import { LANGUAGES } from '@repo/schemas';
+import { MAX_FUTURE_ACTIVITY_SKEW_MS } from '../../src/sync/sync-change-validation';
 import { createCrossValidateSyncRelationships } from '../../src/sync/sync-validation';
 
 const profileRow = (id: string): WireRow => ({
@@ -267,5 +272,192 @@ describe('derived-card validation (#194)', () => {
         ]),
       ).toEqual([cardId('note-a', 'invented-template')]);
     });
+  });
+});
+
+describe('activity timestamp validation (#344)', () => {
+  const serverNow = Date.parse('2040-02-01T00:02:00.000Z');
+  const latestAllowed = serverNow + MAX_FUTURE_ACTIVITY_SKEW_MS;
+  const basicNote = (id: string, createdAt: number): WireRow => ({
+    id,
+    note_type: 'basic',
+    fields_version: 1,
+    fields_json: JSON.stringify({ front: 'front', back: 'back' }),
+    additional_content: null,
+    created_at: createdAt,
+    updated_at: createdAt,
+  });
+  const basicCard = (noteId: string): WireRow => ({
+    id: cardId(noteId, BASIC_FRONT_BACK_TEMPLATE_KEY),
+    note_id: noteId,
+    template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+    active: true,
+    front: 'front',
+    back: 'back',
+    due_at: serverNow,
+    scheduled_interval_minutes: 0,
+    created_at: serverNow,
+    updated_at: serverNow,
+  });
+  const review = (id: string, userCardId: string, reviewedAt: number) => ({
+    id,
+    user_card_id: userCardId,
+    rating: 3,
+    reviewed_at: reviewedAt,
+  });
+  const stored = (row: WireRow) => ({ id: row.id, rev: 1, row });
+
+  it('accepts the five-minute boundary and historical offline activity using one clock reading', async () => {
+    const card = basicCard('durable-note');
+    const now = vi.fn(() => serverNow);
+    const validate = createCrossValidateSyncRelationships(
+      async () => Promise.resolve(new Map()),
+      now,
+    );
+    const tx = {
+      changedSince: vi.fn((table: string) =>
+        Promise.resolve(table === 'user_cards' ? [stored(card)] : []),
+      ),
+      currentRevs: vi.fn(() => Promise.resolve(new Map())),
+    } as unknown as SyncStoreTx<string>;
+
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: {
+        rows: [
+          basicNote('boundary-note', latestAllowed),
+          basicNote('offline-note', Date.parse('2020-01-01T00:00:00.000Z')),
+        ],
+        deleted: [],
+      },
+      review_events: {
+        rows: [
+          review('boundary-review', card.id, latestAllowed),
+          review(
+            'offline-review',
+            card.id,
+            Date.parse('2020-01-01T00:00:00.000Z'),
+          ),
+        ],
+        deleted: [],
+      },
+    });
+
+    expect(rejected['user_notes']).toEqual([]);
+    expect(rejected['review_events']).toEqual([]);
+    expect(now).toHaveBeenCalledOnce();
+  });
+
+  it('rejects new activity one millisecond beyond the allowance', async () => {
+    const card = basicCard('durable-note');
+    const validate = createCrossValidateSyncRelationships(
+      async () => Promise.resolve(new Map()),
+      () => serverNow,
+    );
+    const tx = {
+      changedSince: vi.fn((table: string) =>
+        Promise.resolve(table === 'user_cards' ? [stored(card)] : []),
+      ),
+      currentRevs: vi.fn(() => Promise.resolve(new Map())),
+    } as unknown as SyncStoreTx<string>;
+
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: {
+        rows: [basicNote('future-note', latestAllowed + 1)],
+        deleted: [],
+      },
+      review_events: {
+        rows: [review('future-review', card.id, latestAllowed + 1)],
+        deleted: [],
+      },
+    });
+
+    expect(rejected['user_notes']).toEqual(['future-note']);
+    expect(rejected['review_events']).toEqual(['future-review']);
+  });
+
+  it('rejects every same-push row that depends on a future-dated note', async () => {
+    const note = basicNote('future-note', latestAllowed + 1);
+    const card = basicCard(note.id);
+    const validate = createCrossValidateSyncRelationships(
+      async () => Promise.resolve(new Map()),
+      () => serverNow,
+    );
+    const durableDeck: WireRow = {
+      id: 'durable-deck',
+      title: 'Deck',
+      description: null,
+      visibility: 'private',
+      note_type: 'basic',
+      native_language_id: null,
+      target_language_id: null,
+      created_at: serverNow,
+      updated_at: serverNow,
+    };
+    const membershipId = noteDeckId(note.id, durableDeck.id);
+    const tx = {
+      changedSince: vi.fn((table: string) =>
+        Promise.resolve(table === 'user_decks' ? [stored(durableDeck)] : []),
+      ),
+      currentRevs: vi.fn(() => Promise.resolve(new Map())),
+    } as unknown as SyncStoreTx<string>;
+
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: { rows: [note], deleted: [] },
+      user_cards: { rows: [card], deleted: [] },
+      user_note_decks: {
+        rows: [
+          {
+            id: membershipId,
+            note_id: note.id,
+            deck_id: durableDeck.id,
+            active: true,
+            created_at: serverNow,
+            updated_at: serverNow,
+          },
+        ],
+        deleted: [],
+      },
+      review_events: {
+        rows: [review('dependent-review', card.id, serverNow)],
+        deleted: [],
+      },
+    });
+
+    expect(rejected['user_notes']).toEqual([note.id]);
+    expect(rejected['user_cards']).toEqual([card.id]);
+    expect(rejected['user_note_decks']).toEqual([membershipId]);
+    expect(rejected['review_events']).toEqual(['dependent-review']);
+  });
+
+  it('does not apply the new limit retroactively to durable activity rows', async () => {
+    const note = basicNote('durable-note', latestAllowed + 1);
+    const card = basicCard(note.id);
+    const durableReview = review('durable-review', card.id, latestAllowed + 1);
+    const validate = createCrossValidateSyncRelationships(
+      async () => Promise.resolve(new Map()),
+      () => serverNow,
+    );
+    const tx = {
+      changedSince: vi.fn((table: string) => {
+        const rows =
+          table === 'user_notes'
+            ? [stored(note)]
+            : table === 'user_cards'
+              ? [stored(card)]
+              : [];
+        return Promise.resolve(rows);
+      }),
+      currentRevs: vi.fn(() =>
+        Promise.resolve(new Map([[durableReview.id, 1]])),
+      ),
+    } as unknown as SyncStoreTx<string>;
+
+    const rejected = await validate(tx, 'user-a', {
+      user_notes: { rows: [note], deleted: [] },
+      review_events: { rows: [durableReview], deleted: [] },
+    });
+
+    expect(rejected['user_notes']).toEqual([]);
+    expect(rejected['review_events']).toEqual([]);
   });
 });
