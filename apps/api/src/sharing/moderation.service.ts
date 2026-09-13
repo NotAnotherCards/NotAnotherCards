@@ -35,6 +35,67 @@ export interface ModerationInput {
   cards: { id: string; front: string; back: string }[];
 }
 
+type ModerationGrade = 'safe' | 'unsafe' | 'controversial';
+type ModerationOutputFormat =
+  'qwen3guard' | 'shieldgemma' | 'llama-guard' | 'granite-guardian';
+
+interface Classifier {
+  model: string;
+  format: ModerationOutputFormat;
+}
+
+const FAST_CLASSIFIER: Classifier = {
+  model: 'moderation',
+  format: 'qwen3guard',
+};
+
+// This alias is backed by ShieldGemma in the checked-in LiteLLM config. Keep
+// the alias and parser contract in lockstep if round two selects a replacement.
+const THOROUGH_CLASSIFIER: Classifier = {
+  model: 'moderation-thorough',
+  format: 'shieldgemma',
+};
+
+export function parseModerationOutput(
+  format: ModerationOutputFormat,
+  content: string,
+): { grade: ModerationGrade; reason: string } | null {
+  if (format === 'qwen3guard') {
+    const match = content.match(
+      /Safety:\s*(Safe|Unsafe|Controversial)\b(?:[\s\S]*?Categories:\s*([^\n]*))?/i,
+    );
+    if (!match) return null;
+    const grade = match[1].toLowerCase() as ModerationGrade;
+    const category = match[2]?.trim();
+    return {
+      grade,
+      reason:
+        category && category.toLowerCase() !== 'none' ? category : match[1],
+    };
+  }
+
+  if (format === 'shieldgemma') {
+    const match = content.trim().match(/^(yes|no)\.?$/i);
+    if (!match) return null;
+    return match[1].toLowerCase() === 'yes'
+      ? { grade: 'unsafe', reason: 'Unsafe' }
+      : { grade: 'safe', reason: 'Safe' };
+  }
+
+  if (format === 'llama-guard') {
+    const match = content.trim().match(/^(safe|unsafe)(?:\s+([^\n]+))?/i);
+    if (!match) return null;
+    const grade = match[1].toLowerCase() as 'safe' | 'unsafe';
+    return { grade, reason: match[2]?.trim() || match[1] };
+  }
+
+  const match = content.match(/<score>\s*(yes|no)\s*<\/score>/i);
+  if (!match) return null;
+  return match[1].toLowerCase() === 'yes'
+    ? { grade: 'unsafe', reason: 'Unsafe' }
+    : { grade: 'safe', reason: 'Safe' };
+}
+
 @Injectable()
 export class ModerationService {
   private readonly logger = new Logger(ModerationService.name);
@@ -42,25 +103,26 @@ export class ModerationService {
   constructor(private readonly config: ConfigService) {}
 
   async check(input: ModerationInput): Promise<ModerationVerdict> {
-    return this.checkWithModels(input, ['moderation'], false);
+    return this.checkWithModels(input, [FAST_CLASSIFIER], false);
   }
 
   /**
    * A report is stronger evidence than a normal publish attempt. Re-check the
    * immutable public snapshot with the fast gate and an independently
-   * configured second classifier. The alias lets the benchmark choose the
-   * actual model without changing application code.
+   * configured second classifier. The alias and its native response parser
+   * form one versioned contract and must change together after benchmarking.
    */
   async checkThorough(input: ModerationInput): Promise<ModerationVerdict> {
-    const secondModel =
-      this.config.get<string>('MODERATION_THOROUGH_MODEL') ??
-      'moderation-thorough';
-    return this.checkWithModels(input, ['moderation', secondModel], true);
+    return this.checkWithModels(
+      input,
+      [FAST_CLASSIFIER, THOROUGH_CLASSIFIER],
+      true,
+    );
   }
 
   private async checkWithModels(
     input: ModerationInput,
-    models: string[],
+    classifiers: Classifier[],
     identifyClassifier: boolean,
   ): Promise<ModerationVerdict> {
     if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
@@ -81,9 +143,9 @@ export class ModerationService {
     const warnings: ModerationVerdict['warnings'] = [];
     const startedAt = Date.now();
     const deadline =
-      startedAt + moderationDeadlineMs(input.cards.length * models.length);
+      startedAt + moderationDeadlineMs(input.cards.length * classifiers.length);
     try {
-      for (const model of models) {
+      for (const classifier of classifiers) {
         for (const card of input.cards) {
           const remaining = deadline - Date.now();
           if (remaining <= 0) throw new Error('Moderation deadline exceeded');
@@ -95,7 +157,7 @@ export class ModerationService {
               ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
             },
             body: JSON.stringify({
-              model,
+              model: classifier.model,
               temperature: 0,
               stream: false,
               messages: [
@@ -110,22 +172,16 @@ export class ModerationService {
 
           const data = (await response.json()) as ChatCompletionResponse;
           const content = data.choices?.[0]?.message?.content ?? '';
-          const match = content.match(
-            /Safety:\s*(Safe|Unsafe|Controversial)\b(?:[\s\S]*?Categories:\s*([^\n]*))?/i,
-          );
-          if (!match) throw new Error('Unparseable moderation verdict');
+          const parsed = parseModerationOutput(classifier.format, content);
+          if (!parsed) throw new Error('Unparseable moderation verdict');
 
-          const grade = match[1].toLowerCase();
-          const category = match[2]?.trim();
-          const reason =
-            category && category.toLowerCase() !== 'none' ? category : match[1];
           const finding = {
             cardId: card.id,
-            reason,
-            ...(identifyClassifier ? { classifier: model } : {}),
+            reason: parsed.reason,
+            ...(identifyClassifier ? { classifier: classifier.model } : {}),
           };
-          if (grade === 'unsafe') flagged.push(finding);
-          if (grade === 'controversial') warnings.push(finding);
+          if (parsed.grade === 'unsafe') flagged.push(finding);
+          if (parsed.grade === 'controversial') warnings.push(finding);
         }
       }
     } catch (error: unknown) {
