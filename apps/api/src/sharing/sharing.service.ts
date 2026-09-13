@@ -141,7 +141,10 @@ export class SharingService {
       });
     }
 
-    await this.setVisibility(userId, deckId, 'public', snapshot);
+    await this.setVisibility(userId, deckId, 'public', snapshot, {
+      flagged: [],
+      warnings: verdict.warnings,
+    });
     return { visibility: 'public' as const, warnings: verdict.warnings };
   }
 
@@ -417,8 +420,14 @@ export class SharingService {
           eq(publishedDecks.userId, userId),
         ),
       );
-    if (!snapshot || snapshot.status !== 'blocked') {
+    if (!snapshot) {
       return { status: 'clear' as const };
+    }
+    if (snapshot.status === 'visible') {
+      const warnings = snapshot.verdict?.warnings ?? [];
+      return warnings.length > 0
+        ? { status: 'visible' as const, warnings }
+        : { status: 'clear' as const };
     }
     return {
       status: 'blocked' as const,
@@ -426,6 +435,65 @@ export class SharingService {
       flagged: snapshot.verdict?.flagged ?? [],
       warnings: snapshot.verdict?.warnings ?? [],
       moderatedAt: snapshot.moderatedAt,
+    };
+  }
+
+  async moderationExplanationInput(
+    userId: string,
+    deckId: string,
+    cardIdToExplain: string,
+    reason: string,
+    source: 'working' | 'published',
+  ) {
+    await this.ownedVisibility(userId, deckId);
+
+    // A takedown explains the immutable card that was actually classified,
+    // even if the owner has since edited the working copy.
+    if (source === 'published') {
+      const [snapshot] = await this.db
+        .select({
+          content: publishedDecks.content,
+          verdict: publishedDecks.moderationVerdict,
+        })
+        .from(publishedDecks)
+        .where(
+          and(
+            eq(publishedDecks.deckId, deckId),
+            eq(publishedDecks.userId, userId),
+          ),
+        );
+      const isFinding = [
+        ...(snapshot?.verdict?.flagged ?? []),
+        ...(snapshot?.verdict?.warnings ?? []),
+      ].some(
+        (finding) =>
+          finding.cardId === cardIdToExplain && finding.reason === reason,
+      );
+      const publishedCard = snapshot?.content.cards.find(
+        (card) => card.id === cardIdToExplain,
+      );
+      if (!publishedCard || !isFinding) {
+        throw new NotFoundException('Moderation finding not found');
+      }
+      return {
+        cardId: publishedCard.id,
+        front: publishedCard.front,
+        back: publishedCard.back,
+        reason,
+      };
+    }
+
+    // A refused publish explains the current active card, not a possibly
+    // older blocked snapshot retained from a previous publication.
+    const card = (await this.deckCards(deckId)).find(
+      ({ id }) => id === cardIdToExplain,
+    );
+    if (!card) throw new NotFoundException('Card not found');
+    return {
+      cardId: card.id,
+      front: card.front,
+      back: card.back,
+      reason,
     };
   }
 
@@ -572,6 +640,7 @@ export class SharingService {
     deckId: string,
     visibility: 'public' | 'private',
     snapshot?: typeof publishedDecks.$inferInsert,
+    moderationVerdict?: StoredModerationVerdict,
   ) {
     await this.db.transaction(async (tx) => {
       // The same lock push takes, so a visibility write cannot interleave
@@ -584,7 +653,7 @@ export class SharingService {
         const values = {
           ...snapshot,
           moderationStatus: 'visible' as const,
-          moderationVerdict: null,
+          moderationVerdict: moderationVerdict ?? null,
           moderatedAt: null,
           publishedAt: new Date(),
         };

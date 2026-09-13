@@ -438,6 +438,43 @@ describePostgres('deck sharing endpoints', () => {
     });
     publishResponseSchema.parse(response.body);
     expect((await storedDeck('warned')).visibility).toBe('public');
+
+    await get(userA, '/api/decks/warned/moderation')
+      .expect(200)
+      .expect({
+        status: 'visible',
+        warnings: [{ cardId: cardIds[0], reason: 'Violent' }],
+      });
+
+    const explanation = await post(
+      userA,
+      '/api/decks/warned/moderation/explain',
+    )
+      .send({
+        cardId: cardIds[0],
+        reason: 'Violent',
+        source: 'published',
+      })
+      .expect('Content-Type', /text\/event-stream/)
+      .expect(200);
+    expect(explanation.text).toContain('"type":"delta"');
+    expect(explanation.text).toContain('"type":"result"');
+
+    await post(userA, '/api/decks/warned/moderation/explain')
+      .send({
+        cardId: cardIds[0],
+        reason: 'Invented category',
+        source: 'published',
+      })
+      .expect(404);
+
+    await post(userB, '/api/decks/warned/moderation/explain')
+      .send({
+        cardId: cardIds[0],
+        reason: 'Violent',
+        source: 'published',
+      })
+      .expect(404);
   });
 
   it('refuses to publish where moderation is not switched on', async () => {

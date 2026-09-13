@@ -8,14 +8,17 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+import { moderationExplanationRequestSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { timingSafeEqual } from 'node:crypto';
 import { AuthService } from '../auth/auth.service';
 import { SharingService } from './sharing.service';
+import { ModerationExplanationService } from './moderation-explanation.service';
 
 // Paging is clamped, not validated: only a buggy client sends limit=101 or
 // offset=-1, and a page of results serves it better than a 400 nobody reads.
@@ -49,6 +52,7 @@ export class SharingController {
     private readonly authService: AuthService,
     private readonly sharingService: SharingService,
     private readonly config: ConfigService,
+    private readonly explanationService: ModerationExplanationService,
   ) {}
 
   private async getAuthenticatedUserId(req: Request): Promise<string> {
@@ -113,6 +117,31 @@ export class SharingController {
   ) {
     const userId = await this.getAuthenticatedUserId(req);
     return this.sharingService.ownerModerationStatus(userId, deckId);
+  }
+
+  @Post('decks/:id/moderation/explain')
+  @HttpCode(200)
+  async explainModeration(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('id') deckId: string,
+    @Body() body: unknown,
+  ) {
+    const userId = await this.getAuthenticatedUserId(req);
+    const parsed = moderationExplanationRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        'A card and moderation reason are required',
+      );
+    }
+    const input = await this.sharingService.moderationExplanationInput(
+      userId,
+      deckId,
+      parsed.data.cardId,
+      parsed.data.reason,
+      parsed.data.source,
+    );
+    await this.explanationService.stream(userId, input, res);
   }
 
   @Get('operator/deck-reports')
