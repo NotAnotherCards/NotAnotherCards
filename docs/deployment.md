@@ -132,6 +132,16 @@ file.
   moderation gate deploys, or every deck passes. Publish snapshots the content;
   edits never unpublish it, and republishing replaces the snapshot. Existing
   public decks without a snapshot must be republished to appear.
+- `MODERATION_THOROUGH_MODEL` is the independent second classifier alias for
+  report-triggered re-checks (default `moderation-thorough`). Configure that
+  gateway alias to the winner of the second moderation benchmark before
+  enabling reports in production.
+- `MODERATION_OPERATOR_KEY` protects report listing and manual takedown while
+  the application has no moderator role. Generate and store it like any other
+  production secret. Reporters default to 10 reports per rolling 24 hours;
+  `MODERATION_MAX_DAILY_REPORTS_PER_USER` changes that cap, and
+  `MODERATION_RECHECK_WINDOW_HOURS` changes the clean-result cache (default
+  24 hours).
 
 ### Password-reset email delivery
 

@@ -90,3 +90,25 @@ unparsable verdict refuses publication with `moderation unavailable`; there
 is no allow-on-error path. A deck check has a budget of 5 s plus 1 s per card,
 capped at 240 s, and fails closed when that budget runs out. Private decks are never checked.
 `MODERATION_ALLOW_ALL=1` bypasses the classifier, for tests and demos only.
+
+## Moderation after a report
+
+A signed-in user can report a public deck once, subject to a rolling daily
+report cap. The report is durable and visible through the operator API. It
+does not hide the deck by itself: it queues a `deck_moderation` job against
+the exact published snapshot. One pending/running job is allowed per deck.
+
+The thorough job sends every card to the fast `moderation` alias and to the
+independent `MODERATION_THOROUGH_MODEL` alias. Either classifier returning
+`Unsafe` blocks that snapshot, stores both classifiers' findings in a
+takedown record, makes the owner's synced deck private, and removes it from
+browse, preview, and import. Existing imported copies are independent and
+remain usable. A clean result is cached on that snapshot for
+`MODERATION_RECHECK_WINDOW_HOURS` (24 by default); reports remain recorded,
+but do not repeatedly spend classifier work within that window.
+
+Until account roles are implemented, operator report listing and manual
+takedown require `x-moderation-operator-key` to match
+`MODERATION_OPERATOR_KEY`. Keep that key in the deployment secret store.
+Manual takedowns use the same durable blocked state and owner-visible refusal
+details as automatic takedowns.

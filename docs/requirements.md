@@ -185,18 +185,20 @@ Decided 2026-09-03.
 
 - Implement a complete 2FA (Two-Factor Authentication) system for the users. **not started**
 
-### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — in review — 70%
+### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — implemented — 100%
 
 Decided 2026-09-03.
 
 - Content moderation AI (auto moderation, auto deletion, auto warning, etc.).
-  **in review**: every card is checked by a classifier at publish (#263);
+  **done**: every card is checked by a classifier at publish (#263);
   an unsafe card refuses publication and names the card and its category
   (auto moderation, auto warning); verified on staging against the real
   gateway 2026-09-10 (a harmful deck refused with 422, a clean deck
-  published). Model choice measured in `docs/model-report-moderation.md`.
-  Not yet: auto deletion (#264, takedown on report), the README module
-  section.
+  published). A signed-in report queues a thorough two-classifier re-check;
+  either classifier can automatically take down the exact public snapshot,
+  while an operator can take down content the models miss (#264). Findings
+  are stored and shown to the owner, and the report alone never hides a deck.
+  Model choice is measured in `docs/model-report-moderation.md`.
 
 ## 5. Modules not claimed
 
