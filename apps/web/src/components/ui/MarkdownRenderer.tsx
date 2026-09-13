@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Marked } from 'marked';
-import DOMPurify from 'dompurify';
+import DOMPurify, { type UponSanitizeAttributeHook } from 'dompurify';
+import { isSafeUrl } from '@repo/schemas';
 
 interface MarkdownRendererProps {
   content: string;
@@ -63,6 +64,21 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
+const keepSafeUrlAttributes: UponSanitizeAttributeHook = (
+  _currentNode,
+  hookEvent,
+) => {
+  if (hookEvent.attrName !== 'href' && hookEvent.attrName !== 'src') {
+    return;
+  }
+
+  const safe = isSafeUrl(hookEvent.attrValue);
+  hookEvent.keepAttr = safe;
+  // The shared policy intentionally allows blob: and selected data: URLs,
+  // which DOMPurify's built-in URI expression would reject.
+  hookEvent.forceKeepAttr = safe;
+};
+
 export function MarkdownRenderer({
   content,
   className = '',
@@ -76,53 +92,55 @@ export function MarkdownRenderer({
       const rawHtml = markedInstance.parse(content, { async: false }) as string;
 
       // 2. Sanitize HTML via DOMPurify to eliminate XSS, scripts, and unsafe attributes
-      const purified = DOMPurify.sanitize(rawHtml, {
-        ALLOWED_TAGS: [
-          'p',
-          'span',
-          'div',
-          'em',
-          'strong',
-          'del',
-          'code',
-          'pre',
-          'a',
-          'img',
-          'audio',
-          'source',
-          'ul',
-          'ol',
-          'li',
-          'br',
-          'blockquote',
-          'sub',
-          'sup',
-          'h1',
-          'h2',
-          'h3',
-          'h4',
-          'h5',
-          'h6',
-        ],
-        ALLOWED_ATTR: [
-          'href',
-          'src',
-          'alt',
-          'title',
-          'rel',
-          'target',
-          'controls',
-          'preload',
-          'aria-label',
-          'class',
-          'type',
-        ],
-        ALLOWED_URI_REGEXP:
-          /^(?:(?:https?|mailto|blob):|data:(?:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml)|audio\/(?:mp3|wav|ogg|mpeg|aac|m4a));|[^a-z]|[a-z+.-]+(?:[^a-z+.:-]|$))/i,
-        ADD_ATTR: ['target', 'rel'],
-      });
+      DOMPurify.addHook('uponSanitizeAttribute', keepSafeUrlAttributes);
 
-      return purified;
+      try {
+        return DOMPurify.sanitize(rawHtml, {
+          ALLOWED_TAGS: [
+            'p',
+            'span',
+            'div',
+            'em',
+            'strong',
+            'del',
+            'code',
+            'pre',
+            'a',
+            'img',
+            'audio',
+            'source',
+            'ul',
+            'ol',
+            'li',
+            'br',
+            'blockquote',
+            'sub',
+            'sup',
+            'h1',
+            'h2',
+            'h3',
+            'h4',
+            'h5',
+            'h6',
+          ],
+          ALLOWED_ATTR: [
+            'href',
+            'src',
+            'alt',
+            'title',
+            'rel',
+            'target',
+            'controls',
+            'preload',
+            'aria-label',
+            'class',
+            'type',
+          ],
+          ADD_URI_SAFE_ATTR: ['target', 'rel'],
+        });
+      } finally {
+        DOMPurify.removeHook('uponSanitizeAttribute', keepSafeUrlAttributes);
+      }
     } catch {
       return escapeHtml(content);
     }

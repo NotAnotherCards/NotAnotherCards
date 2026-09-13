@@ -8,12 +8,15 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'prettier',
   ],
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'regexp'],
   parserOptions: {
     sourceType: 'module',
     ecmaVersion: 2020,
   },
   rules: {
     '@typescript-eslint/no-non-null-assertion': 'off',
+    // Keep character-class edits from silently widening security regexes.
+    'regexp/no-obscure-range': 'error',
+    'regexp/no-useless-escape': 'error',
   },
 };
