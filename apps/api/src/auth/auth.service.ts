@@ -13,6 +13,7 @@ import { userAdditionalFields } from './auth-fields';
 import { twoFactor } from 'better-auth/plugins';
 import { genericOAuth } from 'better-auth/plugins/generic-oauth';
 import { twoFactorOAuthChallengeHook } from './two-factor-oauth.hook';
+import { twoFactorReenrollmentGuard } from './two-factor-enrollment.hook';
 
 @Injectable()
 export class AuthService {
@@ -93,7 +94,7 @@ export class AuthService {
           accountLockout: {
             enabled: true,
             maxFailedAttempts: 5,
-            durationSeconds: 300,
+            durationSeconds: 900,
           },
           backupCodeOptions: {
             storeBackupCodes: 'encrypted',
@@ -144,6 +145,7 @@ export class AuthService {
         'exp://**',
       ],
       hooks: {
+        before: twoFactorReenrollmentGuard(),
         after: twoFactorOAuthChallengeHook(
           this.configService.getOrThrow<string>('FRONTEND_URL'),
         ),

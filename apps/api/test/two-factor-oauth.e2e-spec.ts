@@ -24,6 +24,10 @@ import {
 // by this whole file because every request comes from localhost). Each test
 // that touches them starts with paceTwoFactor() to guarantee a fresh window.
 // Do not remove the pacing without re-checking the plugin's rateLimit.
+//
+// SECRET HYGIENE: Jest prints assertion operands on failure, so never use
+// real secrets/codes/TOTP URIs in `expect()` — assert booleans, lengths and
+// structure only (see the at-rest encryption test).
 const frontendOrigin = 'http://localhost:5173';
 const testProviderId = 'test-oauth';
 
@@ -134,10 +138,13 @@ describe('OAuth second-factor enforcement (e2e)', () => {
    * Drives one full OAuth round-trip (initiate -> stub authorize -> app
    * callback) and returns the app's callback response with redirects
    * disabled, so 302 targets and Set-Cookie headers stay observable.
+   * `callbackTarget` is the deep link / URL handed to the provider; OAuth
+   * state generation validates it against trustedOrigins.
    */
   async function driveOAuthFlow(
     endpoint: '/api/auth/sign-in/social' | '/api/auth/link-social',
     sessionCookies: string[] = [],
+    callbackTarget: string = `${frontendOrigin}/app/dashboard`,
   ): Promise<request.Response> {
     const init = await request(app.getHttpServer())
       .post(endpoint)
@@ -145,7 +152,7 @@ describe('OAuth second-factor enforcement (e2e)', () => {
       .set('Cookie', sessionCookies)
       .send({
         provider: testProviderId,
-        callbackURL: `${frontendOrigin}/app/dashboard`,
+        callbackURL: callbackTarget,
       });
     const appCookies = cookiesOf(init);
     const authorizeUrl =
@@ -180,7 +187,9 @@ describe('OAuth second-factor enforcement (e2e)', () => {
       .send({ password })
       .expect(200);
     const body = res.body as { totpURI: string; backupCodes: string[] };
-    expect(body.totpURI).toContain('otpauth://');
+    // Never assert on raw secret material (URI/backup codes) directly: Jest
+    // prints operands on failure. Compare booleans/lengths/structure only.
+    expect(body.totpURI.startsWith('otpauth://')).toBe(true);
     expect(body.backupCodes).toHaveLength(10);
     return { totpUri: body.totpURI, backupCodes: body.backupCodes };
   }
@@ -252,7 +261,11 @@ describe('OAuth second-factor enforcement (e2e)', () => {
     // THE assertion: no usable session may exist before second-factor verification.
     expect(hasLiveSessionCookie(callbackCookies)).toBe(false);
     expect(hasTwoFactorChallengeCookie(callbackCookies)).toBe(true);
-    expect(callback.headers.location).toContain('/two-factor');
+    // The challenge must point back at the original callback target with an
+    // explicit flag, not a hardcoded web page (which would drop deep links).
+    expect(callback.headers.location).toBe(
+      `${frontendOrigin}/app/dashboard?twoFactorRequired=true`,
+    );
 
     const completed = await verifyTotp(
       callbackCookies,
@@ -270,6 +283,58 @@ describe('OAuth second-factor enforcement (e2e)', () => {
     expect((session.body as { user: { email: string } }).user.email).toBe(
       email,
     );
+  }, 60_000);
+
+  it('preserves a native Expo deep link as the 2FA challenge target', async () => {
+    await paceTwoFactor();
+    const deepLink = 'notanothercards://dashboard';
+    const email = uniqueEmail('deeplink');
+    stub.setProfile({ email, name: 'OAuth 2FA Tester' });
+
+    const signupCookies = await signUp(email);
+    await linkTestProvider(signupCookies, email);
+    await signOut(signupCookies);
+
+    const sessionCookies = await signIn(email);
+    const { totpUri } = await enableTwoFactor(sessionCookies);
+    const secret = secretFromTotpUri(totpUri);
+    const enrolled = await verifyTotp(
+      sessionCookies,
+      await createOTP(secret).totp(),
+    );
+    expect(enrolled.status).toBe(200);
+    await signOut(cookiesOf(enrolled));
+
+    const callback = await driveOAuthFlow(
+      '/api/auth/sign-in/social',
+      [],
+      deepLink,
+    );
+    const callbackCookies = cookiesOf(callback);
+    expect(hasLiveSessionCookie(callbackCookies)).toBe(false);
+    expect(hasTwoFactorChallengeCookie(callbackCookies)).toBe(true);
+    const location = String(callback.headers.location);
+    // The target is the deep link — not the web page — carrying our flag.
+    expect(location.startsWith(`${deepLink}?twoFactorRequired=true`)).toBe(
+      true,
+    );
+    // The @better-auth/expo plugin relays the response's Set-Cookie headers
+    // onto non-http redirects as a `cookie=` query param (that is how a
+    // native app obtains the challenge cookie from an ASWebAuthentication-
+    // Session-style flow). Assert the challenge cookie is relayed (it is the
+    // only non-expired cookie in the set: Max-Age=600).
+    expect(location).toContain('&cookie=better-auth');
+    expect(location).toContain('better-auth.two_factor%3D');
+    expect(location).toContain('Max-Age%3D600');
+    expect(location).toContain('twoFactorRequired=true');
+
+    // The challenge still completes a real session from the deep-link flow.
+    const completed = await verifyTotp(
+      callbackCookies,
+      await createOTP(secret).totp(),
+    );
+    expect(completed.status).toBe(200);
+    expect(hasSessionCookie(cookiesOf(completed))).toBe(true);
   }, 60_000);
 
   it('accepts a backup code exactly once during an OAuth challenge', async () => {
@@ -361,11 +426,13 @@ describe('OAuth second-factor enforcement (e2e)', () => {
         .where(eq(twoFactor.userId, userId));
       expect(rows).toHaveLength(1);
       // Encrypted at rest: neither the raw secret nor any plaintext backup
-      // code may appear in the stored row.
-      expect(rows[0].secret).not.toContain(rawSecret);
-      for (const code of backupCodes) {
-        expect(rows[0].backupCodes).not.toContain(code);
-      }
+      // code may appear in the stored row. Assert booleans only — a failing
+      // `toContain` would print the operands to the log.
+      expect(rows[0].secret.includes(rawSecret)).toBe(false);
+      const hasPlaintextCode = backupCodes.some((code) =>
+        rows[0].backupCodes.includes(code),
+      );
+      expect(hasPlaintextCode).toBe(false);
       // Not usable until verified: flag off and row unverified.
       expect(rows[0].verified).toBe(false);
       const [dbUser] = await drizzle(pool)
@@ -438,6 +505,49 @@ describe('OAuth second-factor enforcement (e2e)', () => {
       .expect(400);
     expect(JSON.stringify(res.body).toLowerCase()).toContain('password');
   }, 60_000);
+
+  it('rejects re-enrolling until the verified setup is disabled', async () => {
+    await paceTwoFactor();
+    const email = uniqueEmail('reenroll');
+    const sessionCookies = await signUp(email);
+
+    const first = await enableTwoFactor(sessionCookies);
+    const firstSecret = secretFromTotpUri(first.totpUri);
+    const enrolled = await verifyTotp(
+      sessionCookies,
+      await createOTP(firstSecret).totp(),
+    );
+    expect(enrolled.status).toBe(200);
+    // verifyTotp rotates the session cookie; keep using the fresh one.
+    const enrolledCookies = cookiesOf(enrolled);
+
+    // Re-enabling a verified account must fail loudly: the plugin would
+    // otherwise silently rotate the secret under a setup the user may no
+    // longer be able to reproduce.
+    await paceTwoFactor();
+    const rejected = await request(app.getHttpServer())
+      .post('/api/auth/two-factor/enable')
+      .set('Origin', frontendOrigin)
+      .set('Cookie', enrolledCookies)
+      .send({ password })
+      .expect(400);
+    expect(JSON.stringify(rejected.body).toLowerCase()).toContain(
+      'already enabled',
+    );
+
+    // Recovery path: disable first, then a fresh enrollment works again.
+    const disableRes = await request(app.getHttpServer())
+      .post('/api/auth/two-factor/disable')
+      .set('Origin', frontendOrigin)
+      .set('Cookie', enrolledCookies)
+      .send({ password })
+      .expect(200);
+    // Disable rotates the session again — use the fresh cookies for re-enroll.
+    const recoveryCookies = cookiesOf(disableRes);
+
+    const second = await enableTwoFactor(recoveryCookies);
+    expect(second.backupCodes).toHaveLength(10);
+  }, 90_000);
 
   it('locks the account after repeated failed challenge verifications', async () => {
     await paceTwoFactor();

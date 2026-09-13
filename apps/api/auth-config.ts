@@ -23,7 +23,7 @@ export const auth = betterAuth({
       accountLockout: {
         enabled: true,
         maxFailedAttempts: 5,
-        durationSeconds: 300,
+        durationSeconds: 900,
       },
       backupCodeOptions: {
         storeBackupCodes: 'encrypted',
