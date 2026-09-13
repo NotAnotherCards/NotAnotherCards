@@ -45,6 +45,14 @@ export const moderationWarningSchema = z.object({
   reason: z.string(),
 });
 
+export const moderationClassifierResultSchema = z.object({
+  cardId: z.string(),
+  classifier: z.string(),
+  verdict: z.enum(['safe', 'unsafe', 'controversial', 'error']),
+  categories: z.array(z.string()).nullable(),
+  error: z.string().optional(),
+});
+
 export const publishResponseSchema = z.object({
   visibility: z.literal('public'),
   warnings: z.array(moderationWarningSchema),
@@ -55,6 +63,9 @@ export type SharedDeckList = z.infer<typeof sharedDeckListSchema>;
 export type SharedDeckPreview = z.infer<typeof sharedDeckPreviewSchema>;
 export type ModerationRefusal = z.infer<typeof moderationRefusalSchema>;
 export type ModerationWarning = z.infer<typeof moderationWarningSchema>;
+export type ModerationClassifierResult = z.infer<
+  typeof moderationClassifierResultSchema
+>;
 export type PublishResponse = z.infer<typeof publishResponseSchema>;
 
 export const moderationExplanationRequestSchema = z.object({
@@ -120,6 +131,7 @@ export const ownerModerationStatusSchema = z.discriminatedUnion('status', [
         classifier: z.string().optional(),
       }),
     ),
+    results: z.array(moderationClassifierResultSchema),
     moderatedAt: z.coerce.date().nullable(),
   }),
 ]);

@@ -144,6 +144,7 @@ export class SharingService {
     await this.setVisibility(userId, deckId, 'public', snapshot, {
       flagged: [],
       warnings: verdict.warnings,
+      results: verdict.results,
     });
     return { visibility: 'public' as const, warnings: verdict.warnings };
   }
@@ -434,6 +435,7 @@ export class SharingService {
       reason: snapshot.verdict?.reason,
       flagged: snapshot.verdict?.flagged ?? [],
       warnings: snapshot.verdict?.warnings ?? [],
+      results: snapshot.verdict?.results ?? [],
       moderatedAt: snapshot.moderatedAt,
     };
   }
@@ -524,6 +526,7 @@ export class SharingService {
       reason,
       flagged: [],
       warnings: [],
+      results: [],
     };
     const blocked = await this.blockPublishedSnapshot(
       deckId,

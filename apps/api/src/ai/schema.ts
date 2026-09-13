@@ -16,6 +16,7 @@ import type {
   TopicDeckPayload,
   WordNotePayload,
 } from '@repo/schemas';
+import type { StoredModerationClassifierResult } from '../sharing/schema';
 
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type JobType =
@@ -31,6 +32,7 @@ export interface DeckModerationResult {
   outcome: 'clean' | 'blocked' | 'stale';
   flagged: { cardId: string; reason: string; classifier?: string }[];
   warnings: { cardId: string; reason: string; classifier?: string }[];
+  results: StoredModerationClassifierResult[];
 }
 export type GenerationPayload =
   DeckGenerationPayload | WordNotePayload | DeckModerationPayload;

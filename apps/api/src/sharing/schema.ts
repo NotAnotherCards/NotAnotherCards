@@ -34,10 +34,20 @@ export interface ModerationFinding {
   classifier?: string;
 }
 
+export interface StoredModerationClassifierResult {
+  cardId: string;
+  classifier: string;
+  verdict: 'safe' | 'unsafe' | 'controversial' | 'error';
+  categories: string[] | null;
+  error?: string;
+}
+
 export interface StoredModerationVerdict {
   reason?: string;
   flagged: ModerationFinding[];
   warnings: ModerationFinding[];
+  /** Optional only so snapshots written before classifier auditing still read. */
+  results?: StoredModerationClassifierResult[];
 }
 
 // Content only: the live deck's visibility and tombstone remain the gate.
