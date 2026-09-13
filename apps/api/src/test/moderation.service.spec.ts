@@ -125,6 +125,56 @@ describe('ModerationService', () => {
     expect(result).toEqual({ ok: true, flagged: [], warnings: [] });
   });
 
+  it('uses the fast gate plus an independent classifier for a thorough re-check', async () => {
+    const mockFetch = jest.mocked(global.fetch);
+    mockFetch
+      .mockResolvedValueOnce(response('Safety: Safe Categories: None'))
+      .mockResolvedValueOnce(response('Safety: Unsafe Categories: Harassment'));
+
+    const result = await serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+      MODERATION_THOROUGH_MODEL: 'second-opinion',
+    }).checkThorough({ ...input, cards: cards.slice(0, 1) });
+
+    expect(result).toEqual({
+      ok: false,
+      flagged: [
+        {
+          cardId: 'card-1',
+          reason: 'Harassment',
+          classifier: 'second-opinion',
+        },
+      ],
+      warnings: [],
+    });
+    expect(
+      mockFetch.mock.calls.map(
+        (call) => JSON.parse(call[1]?.body as string) as unknown,
+      ),
+    ).toEqual([
+      expect.objectContaining({ model: 'moderation' }),
+      expect.objectContaining({ model: 'second-opinion' }),
+    ]);
+  });
+
+  it('keeps an Unsafe finding when the other classifier is unavailable', async () => {
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce(response('Safety: Unsafe Categories: Hate'))
+      .mockRejectedValueOnce(new TypeError('second classifier offline'));
+
+    await expect(
+      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).checkThorough({
+        ...input,
+        cards: cards.slice(0, 1),
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      flagged: [{ cardId: 'card-1', reason: 'Hate', classifier: 'moderation' }],
+      warnings: [],
+    });
+  });
+
   it('fails closed on a non-200 response', async () => {
     jest
       .mocked(global.fetch)

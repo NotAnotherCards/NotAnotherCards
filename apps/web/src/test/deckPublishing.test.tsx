@@ -241,6 +241,48 @@ describe('Deck Publishing Controls', () => {
 
     // Ensure syncNow was called twice (once before publish, once after publish)
     expect(mockSyncController.syncNow).toHaveBeenCalledTimes(2);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      fetchMock.mock.calls.filter(([url]) =>
+        String(url).includes('/api/decks/deck-1/publish'),
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('shows the stored takedown verdict to the owner', async () => {
+    mockDeck.visibility = 'public';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/api/decks/deck-1/moderation')) {
+          return Promise.resolve(
+            response({
+              status: 'blocked',
+              reason: 'Reported deck did not pass the thorough check.',
+              flagged: [
+                {
+                  cardId: 'card-123456789',
+                  reason: 'Harassment',
+                  classifier: 'moderation-thorough',
+                },
+              ],
+              warnings: [],
+              moderatedAt: new Date().toISOString(),
+            }),
+          );
+        }
+        return Promise.reject(new Error(`unmocked request: ${url}`));
+      }),
+    );
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+
+    expect(await screen.findByText('Deck taken down')).toBeInTheDocument();
+    expect(
+      screen.getByText('Reported deck did not pass the thorough check.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Harassment')).toBeInTheDocument();
+    // The server has made it private, so even a stale local public row offers
+    // the recovery path instead of an ineffective Unpublish action.
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeInTheDocument();
   });
 });
