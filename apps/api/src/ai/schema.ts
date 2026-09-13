@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   pgTable,
   text,
@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { user } from '../database/schema';
 import type {
@@ -17,12 +18,24 @@ import type {
 } from '@repo/schemas';
 
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type JobType = 'topic_deck' | 'text_cards' | 'word_note';
+export type JobType =
+  'topic_deck' | 'text_cards' | 'word_note' | 'deck_moderation';
 
 export type CardOutput = AiCardOutput;
 export type DeckGenerationPayload = TopicDeckPayload | TextCardsPayload;
-export type GenerationPayload = DeckGenerationPayload | WordNotePayload;
-export type GenerationResult = CardOutput[] | AiWordNoteCandidate;
+export interface DeckModerationPayload {
+  deckId: string;
+  snapshotPublishedAt: string;
+}
+export interface DeckModerationResult {
+  outcome: 'clean' | 'blocked' | 'stale';
+  flagged: { cardId: string; reason: string; classifier?: string }[];
+  warnings: { cardId: string; reason: string; classifier?: string }[];
+}
+export type GenerationPayload =
+  DeckGenerationPayload | WordNotePayload | DeckModerationPayload;
+export type GenerationResult =
+  CardOutput[] | AiWordNoteCandidate | DeckModerationResult;
 
 export const aiGenerationJobs = pgTable(
   'ai_generation_jobs',
@@ -54,6 +67,11 @@ export const aiGenerationJobs = pgTable(
     index('ai_jobs_user_status_idx').on(table.userId, table.status),
     index('ai_jobs_status_attempts_idx').on(table.status, table.attempts),
     index('ai_jobs_status_next_run_idx').on(table.status, table.nextRunAt),
+    uniqueIndex('ai_jobs_active_deck_moderation_unique')
+      .on(sql`(${table.payload} ->> 'deckId')`)
+      .where(
+        sql`${table.type} = 'deck_moderation' and ${table.status} in ('pending', 'processing')`,
+      ),
   ],
 );
 

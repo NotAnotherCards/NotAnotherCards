@@ -30,6 +30,7 @@ import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { usePublishing } from '@/hooks/usePublishing';
 import { useSyncController } from '@/offline/syncProvider';
+import { useOwnerModerationStatus } from '@/hooks/useOwnerModerationStatus';
 
 interface DeckDetailProps {
   deckId: string;
@@ -48,6 +49,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const { publish, unpublish, isPublishing, isUnpublishing, error, setError } =
     usePublishing();
   const controller = useSyncController();
+  const { status: moderationStatus, refresh: refreshModerationStatus } =
+    useOwnerModerationStatus(deckId);
 
   if (store.isTakenOver) {
     return (
@@ -105,7 +108,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
   const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
-  const isPublic = deck?.visibility === 'public';
+  const isPublic =
+    deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
   const editingWordFields = (() => {
@@ -274,10 +278,11 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   setIsPendingPublishAction(true);
                   try {
                     await controller?.syncNow();
-                    await publish(
+                    const published = await publish(
                       deckId,
                       () => controller?.syncNow() || Promise.resolve(),
                     );
+                    if (published) await refreshModerationStatus();
                   } finally {
                     setIsPendingPublishAction(false);
                     isBusyRef.current = false;
@@ -305,6 +310,42 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           </p>
         )}
       </div>
+
+      {moderationStatus.status === 'blocked' && (
+        <UICard role="alert" className="border-destructive/40 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
+              <AlertCircle className="size-5" />
+              Deck taken down
+            </CardTitle>
+            <CardDescription>
+              This deck is no longer visible to the community. Review the
+              moderation result, edit the working copy, and publish again when
+              it is ready.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0">
+            <FormErrorMessage
+              message={
+                moderationStatus.reason ??
+                'The reported deck did not pass moderation.'
+              }
+            />
+            {moderationStatus.flagged.length > 0 && (
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                {moderationStatus.flagged.map((finding, index) => (
+                  <li key={`${finding.cardId}-${finding.classifier ?? index}`}>
+                    <span className="font-mono text-muted-foreground mr-1.5">
+                      {finding.cardId.slice(0, 8)}
+                    </span>
+                    {finding.reason}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </UICard>
+      )}
 
       {/* Library View (Search & Card Table via CardList) */}
       <CardList

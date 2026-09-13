@@ -59,3 +59,41 @@ export type PublishResponse = z.infer<typeof publishResponseSchema>;
 
 export const sharedDeckImportSchema = z.object({ deckId: z.string() });
 export type SharedDeckImport = z.infer<typeof sharedDeckImportSchema>;
+
+export const deckReportResponseSchema = z.object({
+  report: z.object({
+    id: z.string(),
+    deckId: z.string(),
+    reporterUserId: z.string(),
+    reason: z.string(),
+    snapshotPublishedAt: z.coerce.date(),
+    createdAt: z.coerce.date(),
+  }),
+  recheck: z.enum(['queued', 'pending', 'cached']),
+});
+
+export const ownerModerationStatusSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('clear') }),
+  z.object({
+    status: z.literal('blocked'),
+    reason: z.string().optional(),
+    flagged: z.array(
+      z.object({
+        cardId: z.string(),
+        reason: z.string(),
+        classifier: z.string().optional(),
+      }),
+    ),
+    warnings: z.array(
+      z.object({
+        cardId: z.string(),
+        reason: z.string(),
+        classifier: z.string().optional(),
+      }),
+    ),
+    moderatedAt: z.coerce.date().nullable(),
+  }),
+]);
+
+export type DeckReportResponse = z.infer<typeof deckReportResponseSchema>;
+export type OwnerModerationStatus = z.infer<typeof ownerModerationStatusSchema>;

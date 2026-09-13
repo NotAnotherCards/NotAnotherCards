@@ -1,7 +1,7 @@
 import { Inject, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { and, eq, gte, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, ne, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { InferenceResult } from './ai-gateway.service';
 import { DATABASE_CONNECTION } from '../database/database-connection';
@@ -49,6 +49,7 @@ export class AiLimitsService {
       .where(
         and(
           eq(aiGenerationJobs.userId, userId),
+          ne(aiGenerationJobs.type, 'deck_moderation'),
           inArray(aiGenerationJobs.status, ['pending', 'processing']),
         ),
       );
@@ -128,6 +129,7 @@ export class AiLimitsService {
         .where(
           and(
             eq(aiGenerationJobs.userId, userId),
+            ne(aiGenerationJobs.type, 'deck_moderation'),
             inArray(aiGenerationJobs.status, ['pending', 'processing']),
           ),
         ),
