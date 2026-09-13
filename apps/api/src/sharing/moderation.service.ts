@@ -26,8 +26,8 @@ export interface ModerationVerdict {
   ok: boolean;
   /** Why the deck was refused when no individual card was flagged. */
   reason?: string;
-  flagged: { cardId: string; reason: string }[];
-  warnings: { cardId: string; reason: string }[];
+  flagged: { cardId: string; reason: string; classifier?: string }[];
+  warnings: { cardId: string; reason: string; classifier?: string }[];
 }
 
 export interface ModerationInput {
@@ -42,6 +42,27 @@ export class ModerationService {
   constructor(private readonly config: ConfigService) {}
 
   async check(input: ModerationInput): Promise<ModerationVerdict> {
+    return this.checkWithModels(input, ['moderation'], false);
+  }
+
+  /**
+   * A report is stronger evidence than a normal publish attempt. Re-check the
+   * immutable public snapshot with the fast gate and an independently
+   * configured second classifier. The alias lets the benchmark choose the
+   * actual model without changing application code.
+   */
+  async checkThorough(input: ModerationInput): Promise<ModerationVerdict> {
+    const secondModel =
+      this.config.get<string>('MODERATION_THOROUGH_MODEL') ??
+      'moderation-thorough';
+    return this.checkWithModels(input, ['moderation', secondModel], true);
+  }
+
+  private async checkWithModels(
+    input: ModerationInput,
+    models: string[],
+    identifyClassifier: boolean,
+  ): Promise<ModerationVerdict> {
     if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
       return { ok: true, flagged: [], warnings: [] };
     }
@@ -59,46 +80,53 @@ export class ModerationService {
     const flagged: ModerationVerdict['flagged'] = [];
     const warnings: ModerationVerdict['warnings'] = [];
     const startedAt = Date.now();
-    const deadline = startedAt + moderationDeadlineMs(input.cards.length);
+    const deadline =
+      startedAt + moderationDeadlineMs(input.cards.length * models.length);
     try {
-      for (const card of input.cards) {
-        const remaining = deadline - Date.now();
-        if (remaining <= 0) throw new Error('Moderation deadline exceeded');
+      for (const model of models) {
+        for (const card of input.cards) {
+          const remaining = deadline - Date.now();
+          if (remaining <= 0) throw new Error('Moderation deadline exceeded');
 
-        const response = await fetch(`${apiBase}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-          },
-          body: JSON.stringify({
-            model: 'moderation',
-            temperature: 0,
-            stream: false,
-            messages: [
-              { role: 'user', content: `${card.front}\n${card.back}` },
-            ],
-          }),
-          signal: AbortSignal.timeout(
-            Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
-          ),
-        });
-        if (!response.ok) throw new Error('Moderation gateway error');
+          const response = await fetch(`${apiBase}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+            },
+            body: JSON.stringify({
+              model,
+              temperature: 0,
+              stream: false,
+              messages: [
+                { role: 'user', content: `${card.front}\n${card.back}` },
+              ],
+            }),
+            signal: AbortSignal.timeout(
+              Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
+            ),
+          });
+          if (!response.ok) throw new Error('Moderation gateway error');
 
-        const data = (await response.json()) as ChatCompletionResponse;
-        const content = data.choices?.[0]?.message?.content ?? '';
-        const match = content.match(
-          /Safety:\s*(Safe|Unsafe|Controversial)\b(?:[\s\S]*?Categories:\s*([^\n]*))?/i,
-        );
-        if (!match) throw new Error('Unparseable moderation verdict');
+          const data = (await response.json()) as ChatCompletionResponse;
+          const content = data.choices?.[0]?.message?.content ?? '';
+          const match = content.match(
+            /Safety:\s*(Safe|Unsafe|Controversial)\b(?:[\s\S]*?Categories:\s*([^\n]*))?/i,
+          );
+          if (!match) throw new Error('Unparseable moderation verdict');
 
-        const grade = match[1].toLowerCase();
-        const category = match[2]?.trim();
-        const reason =
-          category && category.toLowerCase() !== 'none' ? category : match[1];
-        if (grade === 'unsafe') flagged.push({ cardId: card.id, reason });
-        if (grade === 'controversial')
-          warnings.push({ cardId: card.id, reason });
+          const grade = match[1].toLowerCase();
+          const category = match[2]?.trim();
+          const reason =
+            category && category.toLowerCase() !== 'none' ? category : match[1];
+          const finding = {
+            cardId: card.id,
+            reason,
+            ...(identifyClassifier ? { classifier: model } : {}),
+          };
+          if (grade === 'unsafe') flagged.push(finding);
+          if (grade === 'controversial') warnings.push(finding);
+        }
       }
     } catch (error: unknown) {
       const name =
@@ -111,6 +139,9 @@ export class ModerationService {
       this.logger.warn(
         `Moderation failed for deck ${input.deckId} after ${Date.now() - startedAt}ms: ${name}`,
       );
+      // An already returned Unsafe verdict is sufficient to block. Do not
+      // erase that evidence merely because a later card or classifier failed.
+      if (flagged.length > 0) return { ok: false, flagged, warnings };
       return unavailable();
     }
 
