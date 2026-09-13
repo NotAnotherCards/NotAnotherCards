@@ -26,10 +26,12 @@ export const twoFactorReenrollmentGuard = () =>
     const session = await getSessionFromCtx(ctx);
     if (!session) return; // unauthenticated requests are the endpoint's job
 
-    const existing = (await ctx.context.adapter.findOne({
+    const existing = await ctx.context.adapter.findOne<{
+      verified?: boolean;
+    } | null>({
       model: TWO_FACTOR_MODEL,
       where: [{ field: 'userId', value: session.user.id }],
-    })) as { verified?: boolean } | null;
+    });
 
     if (existing && existing.verified !== false) {
       throw APIError.from('BAD_REQUEST', {
