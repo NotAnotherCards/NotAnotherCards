@@ -32,6 +32,7 @@ import { ModerationService } from '../sharing/moderation.service';
 import {
   deckTakedowns,
   publishedDecks,
+  type StoredModerationClassifierResult,
   type StoredModerationVerdict,
 } from '../sharing/schema';
 import { userDecks } from '../sync/schema';
@@ -407,6 +408,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         outcome: 'stale' as const,
         flagged: [],
         warnings: [],
+        results: [],
       };
 
     if (!this.moderation) throw new Error('Moderation service unavailable');
@@ -428,6 +430,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       ...(verdict.reason ? { reason: verdict.reason } : {}),
       flagged: verdict.flagged,
       warnings: verdict.warnings,
+      results: verdict.results,
     };
     const outcome = await this.db.transaction(async (tx) => {
       await tx.execute(
@@ -513,6 +516,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       outcome,
       flagged: verdict.flagged,
       warnings: verdict.warnings,
+      results: verdict.results,
     };
   }
 
@@ -523,12 +527,14 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       outcome: 'clean' | 'blocked' | 'stale';
       flagged: { cardId: string; reason: string; classifier?: string }[];
       warnings: { cardId: string; reason: string; classifier?: string }[];
+      results: StoredModerationClassifierResult[];
     },
   ) {
     const persisted = {
       outcome: result.outcome,
       flagged: result.flagged,
       warnings: result.warnings,
+      results: result.results,
     };
     await this.db.transaction(async (tx) => {
       if (result.outcome === 'stale') {

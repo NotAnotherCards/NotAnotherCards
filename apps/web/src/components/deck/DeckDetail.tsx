@@ -217,6 +217,92 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     </div>
   );
 
+  const classifierResultList = () => {
+    if (moderationStatus.status !== 'blocked') return null;
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold">Classifier results</p>
+        <ul className="space-y-2 text-sm">
+          {moderationStatus.results.map((result, index) => {
+            const reason = result.categories?.length
+              ? result.categories.join(', ')
+              : result.verdict[0].toUpperCase() + result.verdict.slice(1);
+            const finding = {
+              cardId: result.cardId,
+              reason,
+              classifier: result.classifier,
+            };
+            const key = `${result.cardId}:${reason}`;
+            const isActive = explanation.activeKey === `published:${key}`;
+            const canExplain =
+              result.verdict === 'unsafe' || result.verdict === 'controversial';
+            return (
+              <li
+                key={`${result.classifier}:${result.cardId}:${index}`}
+                className="rounded-lg border border-border/60 bg-background/60 p-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-muted-foreground">
+                    {result.cardId.slice(0, 8)}
+                  </span>
+                  <span className="font-semibold capitalize">
+                    {result.verdict}
+                  </span>
+                  <span className="grow text-foreground">
+                    {result.categories === null
+                      ? 'No category supplied'
+                      : result.categories.length > 0
+                        ? result.categories.join(', ')
+                        : 'Categories: none'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {result.classifier}
+                  </span>
+                  {canExplain && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 cursor-pointer gap-1"
+                      onClick={() =>
+                        void explanation.explain(finding, 'published')
+                      }
+                      disabled={isActive && explanation.isLoading}
+                    >
+                      {isActive && explanation.isLoading ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <HelpCircle className="size-3.5" />
+                      )}
+                      Why?
+                    </Button>
+                  )}
+                </div>
+                {result.error && (
+                  <p className="mt-2 text-xs text-destructive">
+                    Check failed: {result.error}
+                  </p>
+                )}
+                {isActive && (explanation.text || explanation.error) && (
+                  <p
+                    className={`mt-2 border-t border-border/50 pt-2 ${
+                      explanation.error
+                        ? 'text-destructive'
+                        : 'text-muted-foreground'
+                    }`}
+                    aria-live="polite"
+                  >
+                    {explanation.error ?? explanation.text}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  };
+
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
   const handleCreateCard = async (data: { front: string; back: string }) => {
@@ -430,10 +516,16 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 'The reported deck did not pass moderation.'
               }
             />
-            {moderationStatus.flagged.length > 0 &&
-              findingList(moderationStatus.flagged, 'Flagged cards')}
-            {moderationStatus.warnings.length > 0 &&
-              findingList(moderationStatus.warnings, 'Warnings')}
+            {moderationStatus.results.length > 0 ? (
+              classifierResultList()
+            ) : (
+              <>
+                {moderationStatus.flagged.length > 0 &&
+                  findingList(moderationStatus.flagged, 'Flagged cards')}
+                {moderationStatus.warnings.length > 0 &&
+                  findingList(moderationStatus.warnings, 'Warnings')}
+              </>
+            )}
           </CardContent>
         </UICard>
       )}
