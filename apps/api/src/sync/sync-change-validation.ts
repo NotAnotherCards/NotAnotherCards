@@ -9,6 +9,8 @@ import {
 } from '@repo/offline-db';
 import { LANGUAGES } from '@repo/schemas';
 
+export const MAX_FUTURE_ACTIVITY_SKEW_MS = 5 * 60 * 1000;
+
 export const activeIds = (changes: readonly StoredChange[]): Set<string> =>
   new Set(
     changes.filter((change) => change.row !== null).map((change) => change.id),
@@ -95,7 +97,9 @@ export function validateDeckRows(
 export function validateNoteRows(
   noteRows: readonly WireRow[],
   noteChanges: readonly StoredChange[],
+  latestActivityTimestamp: number,
 ) {
+  const durableNoteIds = new Set(noteChanges.map((change) => change.id));
   const durableNoteIdentity = new Map<
     string,
     { type: string; version: number }
@@ -113,6 +117,14 @@ export function validateNoteRows(
   }
 
   const rejectedNotes = noteRows.filter((note) => {
+    const createdAt = note['created_at'];
+    if (
+      !durableNoteIds.has(note.id) &&
+      typeof createdAt === 'number' &&
+      createdAt > latestActivityTimestamp
+    ) {
+      return true;
+    }
     const noteType = stringField(note, 'note_type');
     const fieldsJson = stringField(note, 'fields_json');
     const fieldsVersion = note['fields_version'];
@@ -294,9 +306,11 @@ export function validateReviewRows(
   reviewRows: readonly WireRow[],
   cardRows: readonly WireRow[],
   cardChanges: readonly StoredChange[],
+  durableReviewIds: ReadonlySet<string>,
   rejectedCardIds: ReadonlySet<string>,
   cardDeletes: ReadonlySet<string>,
   noteDeletes: ReadonlySet<string>,
+  latestActivityTimestamp: number,
 ) {
   const ownedCardIds = activeIds(cardChanges);
   const deletedCardIds = tombstoneIds(cardChanges);
@@ -314,6 +328,14 @@ export function validateReviewRows(
   }
 
   const rejectedReviews = reviewRows.filter((review) => {
+    const reviewedAt = review['reviewed_at'];
+    if (
+      !durableReviewIds.has(review.id) &&
+      typeof reviewedAt === 'number' &&
+      reviewedAt > latestActivityTimestamp
+    ) {
+      return true;
+    }
     const reviewCardId = stringField(review, 'user_card_id');
     return reviewCardId === null || !ownedCardIds.has(reviewCardId);
   });
