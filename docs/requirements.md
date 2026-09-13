@@ -185,20 +185,23 @@ Decided 2026-09-03.
 
 - Implement a complete 2FA (Two-Factor Authentication) system for the users. **not started**
 
-### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — implemented — 100%
+### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — in review — 90%
 
 Decided 2026-09-03.
 
 - Content moderation AI (auto moderation, auto deletion, auto warning, etc.).
-  **done**: every card is checked by a classifier at publish (#263);
+  **in review**: every card is checked by a classifier at publish (#263);
   an unsafe card refuses publication and names the card and its category
   (auto moderation, auto warning); verified on staging against the real
   gateway 2026-09-10 (a harmful deck refused with 422, a clean deck
   published). A signed-in report queues a thorough two-classifier re-check;
   either classifier can automatically take down the exact public snapshot,
   while an operator can take down content the models miss (#264). Findings
-  are stored and shown to the owner, and the report alone never hides a deck.
-  Model choice is measured in `docs/model-report-moderation.md`.
+  are stored and shown to the owner, with an on-demand streamed explanation,
+  and the report alone never hides a deck. The checked-in independent alias is
+  operational with ShieldGemma's tested `Yes`/`No` response contract. Do not
+  mark this complete until round two selects the final independent classifier
+  and the full report/re-check/owner-warning flow is verified on staging.
 
 ## 5. Modules not claimed
 
@@ -256,11 +259,11 @@ questions are kept below with the current status on each.
   written backup and recovery procedure, on top of the monitoring stack.
   Estimate: about 1 day.
 
-Arithmetic (2026-09-09): claimed 17. Merged 6 pts (framework, ORM, OAuth,
-monitoring — 4 modules). In review 1 pt (export/import — 1 module). In
-progress 6 pts (LLM 2, design system 1, mobile 2, activity analytics
-dashboard 1 — 4 modules). Not started 4 pts (gamification, multiple
-languages, 2FA, content moderation AI — 4 modules). To reach 14, at most 3 of
+Arithmetic (2026-09-13): claimed 17. Merged 6 pts (framework, ORM, OAuth,
+monitoring — 4 modules). In review 2 pts (export/import, content moderation
+AI — 2 modules). In progress 6 pts (LLM 2, design system 1, mobile 2,
+activity analytics dashboard 1 — 4 modules). Not started 3 pts (gamification, multiple
+languages, 2FA — 3 modules). To reach 14, at most 3 of
 the remaining 11 points may be missing at evaluation; advanced search (1) is
 an additional reserve outside the 17.
 
