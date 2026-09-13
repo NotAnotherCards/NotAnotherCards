@@ -403,6 +403,7 @@ describePostgres('deck sharing endpoints', () => {
         ok: false,
         flagged: [{ cardId: cardIds[1], reason: 'slur' }],
         warnings: [],
+        results: [],
       });
 
     const response = await post(userA, '/api/decks/flagged/publish').expect(
@@ -429,6 +430,7 @@ describePostgres('deck sharing endpoints', () => {
       ok: true,
       flagged: [],
       warnings: [{ cardId: cardIds[0], reason: 'Violent' }],
+      results: [],
     });
 
     const response = await post(userA, '/api/decks/warned/publish').expect(200);
@@ -583,7 +585,7 @@ describePostgres('deck sharing endpoints', () => {
       .expect(201);
     const check = vi
       .spyOn(app.get(ModerationService), 'checkThorough')
-      .mockResolvedValue({ ok: true, flagged: [], warnings: [] });
+      .mockResolvedValue({ ok: true, flagged: [], warnings: [], results: [] });
 
     expect(await app.get(AiWorkerService).processNextJob()).toBe(true);
     expect(check).toHaveBeenCalledTimes(1);
@@ -614,6 +616,20 @@ describePostgres('deck sharing endpoints', () => {
         },
       ],
       warnings: [],
+      results: [
+        {
+          cardId: 'flagged-card',
+          classifier: 'moderation',
+          verdict: 'safe',
+          categories: [],
+        },
+        {
+          cardId: 'flagged-card',
+          classifier: 'moderation-thorough',
+          verdict: 'unsafe',
+          categories: null,
+        },
+      ],
     });
 
     expect(await app.get(AiWorkerService).processNextJob()).toBe(true);
@@ -626,8 +642,26 @@ describePostgres('deck sharing endpoints', () => {
     expect(await storedDeck(importedId)).toEqual(
       expect.objectContaining({ userId: userC.id, visibility: 'private' }),
     );
-    expect(await db.select().from(deckTakedowns)).toEqual([
-      expect.objectContaining({ deckId: 'auto-blocked', source: 'automatic' }),
+    const [takedown] = await db.select().from(deckTakedowns);
+    expect(takedown).toEqual(
+      expect.objectContaining({
+        deckId: 'auto-blocked',
+        source: 'automatic',
+      }),
+    );
+    expect(takedown.verdict.results).toEqual([
+      {
+        cardId: 'flagged-card',
+        classifier: 'moderation',
+        verdict: 'safe',
+        categories: [],
+      },
+      {
+        cardId: 'flagged-card',
+        classifier: 'moderation-thorough',
+        verdict: 'unsafe',
+        categories: null,
+      },
     ]);
 
     const status = await get(
@@ -642,6 +676,18 @@ describePostgres('deck sharing endpoints', () => {
           reason: 'Harassment',
           classifier: 'moderation-thorough',
         },
+      ],
+      results: [
+        expect.objectContaining({
+          classifier: 'moderation',
+          verdict: 'safe',
+          categories: [],
+        }),
+        expect.objectContaining({
+          classifier: 'moderation-thorough',
+          verdict: 'unsafe',
+          categories: null,
+        }),
       ],
     });
   });
@@ -694,6 +740,7 @@ describePostgres('deck sharing endpoints', () => {
         ok: false,
         flagged: [{ cardId: 'new-card', reason: 'Harassment' }],
         warnings: [],
+        results: [],
       });
 
     // The old job is completed as stale and atomically replaced by one for
@@ -941,7 +988,7 @@ describePostgres('deck sharing endpoints', () => {
           .update(userDecks)
           .set({ deletedAt: new Date() })
           .where(eq(userDecks.id, 'vanishing'));
-        return { ok: true, flagged: [], warnings: [] };
+        return { ok: true, flagged: [], warnings: [], results: [] };
       },
     );
 
@@ -1015,7 +1062,7 @@ describePostgres('deck sharing endpoints', () => {
             .expect(200);
           const body = response.body as { rejected?: Record<string, string[]> };
           expect(body.rejected ?? {}).toEqual({});
-          return { ok: true, flagged: [], warnings: [] };
+          return { ok: true, flagged: [], warnings: [], results: [] };
         },
       );
 
@@ -1071,7 +1118,7 @@ describePostgres('deck sharing endpoints', () => {
           .expect(200);
         const body = response.body as { rejected?: Record<string, string[]> };
         expect(body.rejected ?? {}).toEqual({});
-        return { ok: true, flagged: [], warnings: [] };
+        return { ok: true, flagged: [], warnings: [], results: [] };
       },
     );
 
@@ -1142,6 +1189,7 @@ describePostgres('deck sharing endpoints', () => {
       flagged: [],
       warnings: [],
       reason: 'refused',
+      results: [],
     });
     await post(userA, '/api/decks/working/publish').expect(422);
     expect(await db.select().from(publishedDecks)).toEqual([before]);

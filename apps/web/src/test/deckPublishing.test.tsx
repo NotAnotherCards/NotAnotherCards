@@ -272,6 +272,20 @@ describe('Deck Publishing Controls', () => {
                   classifier: 'moderation',
                 },
               ],
+              results: [
+                {
+                  cardId: 'card-123456789',
+                  classifier: 'moderation',
+                  verdict: 'safe',
+                  categories: [],
+                },
+                {
+                  cardId: 'card-123456789',
+                  classifier: 'moderation-thorough',
+                  verdict: 'unsafe',
+                  categories: null,
+                },
+              ],
               moderatedAt: new Date().toISOString(),
             }),
           );
@@ -286,8 +300,13 @@ describe('Deck Publishing Controls', () => {
     expect(
       screen.getByText('Reported deck did not pass the thorough check.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Harassment')).toBeInTheDocument();
-    expect(screen.getByText('Sensitive topic')).toBeInTheDocument();
+    expect(screen.getByText('Classifier results')).toBeInTheDocument();
+    expect(screen.getByText('safe')).toBeInTheDocument();
+    expect(screen.getByText('unsafe')).toBeInTheDocument();
+    expect(screen.getByText('Categories: none')).toBeInTheDocument();
+    expect(screen.getByText('No category supplied')).toBeInTheDocument();
+    expect(screen.getByText('moderation')).toBeInTheDocument();
+    expect(screen.getByText('moderation-thorough')).toBeInTheDocument();
     // The server has made it private, so even a stale local public row offers
     // the recovery path instead of an ineffective Unpublish action.
     expect(screen.getByRole('button', { name: 'Publish' })).toBeInTheDocument();

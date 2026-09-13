@@ -49,7 +49,9 @@ describe('AiGatewayService', () => {
   it('streams mock explanation text', async () => {
     const deltas: string[] = [];
     const result = await service.generateText('system', 'card', 'gemma4', {
-      onDelta: (delta) => deltas.push(delta),
+      onDelta: (delta) => {
+        deltas.push(delta);
+      },
     });
 
     expect(result.text).toContain('flagged');
