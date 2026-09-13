@@ -102,9 +102,16 @@ The thorough job sends every card to the fast `moderation` alias (Qwen3Guard)
 and to the checked-in independent `moderation-thorough` alias (currently
 ShieldGemma 2B). Qwen3Guard's structured safety/category response and
 ShieldGemma's native `Yes`/`No` response have separate parsers and contract
-tests. Either classifier returning unsafe blocks that snapshot, stores both
-classifiers' findings in a takedown record, makes the owner's synced deck
-private, and removes it from browse, preview, and import. Existing imported
+tests. Each classifier receives its own deck deadline, so a failed or timed-out
+request from one cannot prevent the other from running. Either classifier
+returning unsafe blocks that snapshot even if another request failed. Only when
+no classifier found unsafe content does any required failed request make the
+check unavailable and eligible for the queue's normal retries. The takedown
+record stores every completed per-card opinion, including safe verdicts, plus
+an explicit error result for a failed request. Categories are nullable because
+binary classifiers such as ShieldGemma do not supply one. Owners see that full
+classifier record. Blocking also makes the owner's synced deck private and
+removes it from browse, preview, and import. Existing imported
 copies are independent and remain usable. A clean result is cached on that
 snapshot for `MODERATION_RECHECK_WINDOW_HOURS` (24 by default). Reports remain
 recorded, but do not repeatedly spend classifier work within that window.

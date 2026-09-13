@@ -4,8 +4,8 @@ It's not another flashcard app. AI-powered language learning through context, nu
 
 Published community decks use automatic content moderation, user reporting,
 automatic takedown after an independent two-classifier re-check, and an
-operator takedown path. Owners see warning and takedown categories and can
-request a streamed contextual explanation. Personal copies already imported
+operator takedown path. Owners see each classifier's verdict and any category
+that classifier supplies, and can request a streamed contextual explanation. Personal copies already imported
 from a community deck remain owned by the learner and are not altered by a
 later takedown.
 

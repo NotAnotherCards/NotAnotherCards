@@ -196,8 +196,9 @@ Decided 2026-09-03.
   gateway 2026-09-10 (a harmful deck refused with 422, a clean deck
   published). A signed-in report queues a thorough two-classifier re-check;
   either classifier can automatically take down the exact public snapshot,
-  while an operator can take down content the models miss (#264). Findings
-  are stored and shown to the owner, with an on-demand streamed explanation,
+  while an operator can take down content the models miss (#264). Every
+  classifier verdict, including safe opinions and nullable categories, is
+  stored and shown to the owner, with an on-demand streamed explanation,
   and the report alone never hides a deck. The checked-in independent alias is
   operational with ShieldGemma's tested `Yes`/`No` response contract. Do not
   mark this complete until round two selects the final independent classifier
