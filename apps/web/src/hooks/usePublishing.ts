@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { moderationRefusalSchema, apiErrorBodySchema } from '@repo/schemas';
+import {
+  moderationRefusalSchema,
+  apiErrorBodySchema,
+  publishResponseSchema,
+  type ModerationWarning,
+} from '@repo/schemas';
 
 export interface FlaggedCard {
   cardId: string;
@@ -16,6 +21,7 @@ export function usePublishing() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const [error, setError] = useState<ModerationError | null>(null);
+  const [warnings, setWarnings] = useState<ModerationWarning[]>([]);
 
   const publish = async (
     deckId: string,
@@ -23,6 +29,7 @@ export function usePublishing() {
   ): Promise<boolean> => {
     setIsPublishing(true);
     setError(null);
+    setWarnings([]);
     try {
       const res = await fetch(
         `/api/decks/${encodeURIComponent(deckId)}/publish`,
@@ -46,6 +53,8 @@ export function usePublishing() {
         const errorBody = apiErrorBodySchema.parse(json);
         throw new Error(errorBody.message || 'Failed to publish deck');
       }
+      const published = publishResponseSchema.parse(await res.json());
+      setWarnings(published.warnings);
       if (onSync) await onSync();
       return true;
     } catch (err) {
@@ -79,6 +88,7 @@ export function usePublishing() {
         throw new Error(errorBody.message || 'Failed to unpublish deck');
       }
       if (onSync) await onSync();
+      setWarnings([]);
       return true;
     } catch (err) {
       setError({
@@ -92,5 +102,13 @@ export function usePublishing() {
     }
   };
 
-  return { publish, unpublish, isPublishing, isUnpublishing, error, setError };
+  return {
+    publish,
+    unpublish,
+    isPublishing,
+    isUnpublishing,
+    error,
+    setError,
+    warnings,
+  };
 }

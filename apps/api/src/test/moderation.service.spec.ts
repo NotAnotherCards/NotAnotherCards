@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   ModerationService,
   moderationDeadlineMs,
+  parseModerationOutput,
 } from '../sharing/moderation.service';
 
 describe('ModerationService', () => {
@@ -129,11 +130,11 @@ describe('ModerationService', () => {
     const mockFetch = jest.mocked(global.fetch);
     mockFetch
       .mockResolvedValueOnce(response('Safety: Safe Categories: None'))
-      .mockResolvedValueOnce(response('Safety: Unsafe Categories: Harassment'));
+      // ShieldGemma's real native response contract: Yes means unsafe.
+      .mockResolvedValueOnce(response('Yes'));
 
     const result = await serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-      MODERATION_THOROUGH_MODEL: 'second-opinion',
     }).checkThorough({ ...input, cards: cards.slice(0, 1) });
 
     expect(result).toEqual({
@@ -141,8 +142,8 @@ describe('ModerationService', () => {
       flagged: [
         {
           cardId: 'card-1',
-          reason: 'Harassment',
-          classifier: 'second-opinion',
+          reason: 'Unsafe',
+          classifier: 'moderation-thorough',
         },
       ],
       warnings: [],
@@ -153,8 +154,48 @@ describe('ModerationService', () => {
       ),
     ).toEqual([
       expect.objectContaining({ model: 'moderation' }),
-      expect.objectContaining({ model: 'second-opinion' }),
+      expect.objectContaining({ model: 'moderation-thorough' }),
     ]);
+  });
+
+  it('accepts ShieldGemma safe output from the thorough alias', async () => {
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce(response('Safety: Safe Categories: None'))
+      .mockResolvedValueOnce(response('No'));
+
+    await expect(
+      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).checkThorough({
+        ...input,
+        cards: cards.slice(0, 1),
+      }),
+    ).resolves.toEqual({ ok: true, flagged: [], warnings: [] });
+  });
+
+  it('has explicit parsers for every benchmarked native output shape', () => {
+    expect(
+      parseModerationOutput(
+        'qwen3guard',
+        'Safety: Unsafe\nCategories: Violent',
+      ),
+    ).toEqual({
+      grade: 'unsafe',
+      reason: 'Violent',
+    });
+    expect(parseModerationOutput('shieldgemma', 'Yes')).toEqual({
+      grade: 'unsafe',
+      reason: 'Unsafe',
+    });
+    expect(parseModerationOutput('llama-guard', 'unsafe\nS1')).toEqual({
+      grade: 'unsafe',
+      reason: 'S1',
+    });
+    expect(
+      parseModerationOutput(
+        'granite-guardian',
+        '<think>review</think>\n<score> yes </score>',
+      ),
+    ).toEqual({ grade: 'unsafe', reason: 'Unsafe' });
   });
 
   it('keeps an Unsafe finding when the other classifier is unavailable', async () => {

@@ -132,10 +132,12 @@ file.
   moderation gate deploys, or every deck passes. Publish snapshots the content;
   edits never unpublish it, and republishing replaces the snapshot. Existing
   public decks without a snapshot must be republished to appear.
-- `MODERATION_THOROUGH_MODEL` is the independent second classifier alias for
-  report-triggered re-checks (default `moderation-thorough`). Configure that
-  gateway alias to the winner of the second moderation benchmark before
-  enabling reports in production.
+- The checked-in `moderation-thorough` gateway alias currently maps to
+  ShieldGemma 2B and has a `Yes` (unsafe) / `No` (safe) application parser.
+  It makes report-triggered re-checks operational before round two. Round two
+  remains a release gate for the final independent model: if it replaces
+  ShieldGemma with a model that has a different native response, update the
+  parser and its real-output contract tests in the same deployment.
 - `MODERATION_OPERATOR_KEY` protects report listing and manual takedown while
   the application has no moderator role. Generate and store it like any other
   production secret. Reporters default to 10 reports per rolling 24 hours;
