@@ -33,10 +33,10 @@ describe('Markdown', () => {
     );
   });
 
-  it('renders relative links as noninteractive text', () => {
-    const result = render(<Markdown content="[Next](page2.html)" inline />);
+  it('preserves nested formatting when a relative link becomes noninteractive', () => {
+    const result = render(<Markdown content="[**Next**](page2.html)" inline />);
 
-    expect(result.getByText('Next')).toBeTruthy();
+    expect(result.getByText('Next')).toHaveStyle({ fontWeight: 'bold' });
     expect(result.queryByRole('link')).toBeNull();
     fireEvent.press(result.getByText('Next'));
     expect(openUrl).not.toHaveBeenCalled();
@@ -74,6 +74,16 @@ describe('Markdown', () => {
 
     expect(safe.getByTestId('markdown-image')).toBeTruthy();
     expect(unsafe.queryByTestId('markdown-image')).toBeNull();
+  });
+
+  it('preserves a safe image inside a blocked link without making it interactive', () => {
+    const result = render(
+      <Markdown content="[![cat](https://example.com/cat.png)](javascript:alert(1))" />,
+    );
+
+    expect(result.getByTestId('markdown-image')).toBeTruthy();
+    expect(result.queryByRole('link')).toBeNull();
+    expect(openUrl).not.toHaveBeenCalled();
   });
 
   it.each([

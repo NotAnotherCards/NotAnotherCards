@@ -83,21 +83,15 @@ function blockUnsafeTokenUrls(value: unknown, seen = new Set<object>()): void {
     typeof value.href === 'string' &&
     (value.type === 'image' ? !isSafeUrl(value.href) : !canOpenUrl(value.href))
   ) {
-    if (value.type === 'link') {
-      const text =
-        'text' in value && typeof value.text === 'string' ? value.text : '';
-      Object.assign(value, { type: 'text', raw: text });
-    } else {
-      value.href = blockedUrl;
-    }
+    value.href = blockedUrl;
   }
   Object.values(value).forEach((item) => blockUnsafeTokenUrls(item, seen));
 }
 
 // react-native-marked resolves relative links before they reach its renderer.
 // Check the original token so URL-parser whitespace cannot be hidden by that
-// resolution step. Unsafe or relative links become plain text; unsafe images
-// get a scheme that the renderer will refuse.
+// resolution step. Unsafe or relative links lose only their interactivity, so
+// nested formatting and images still render. Unsafe images are still refused.
 safeUrlHooks.processAllTokens = (tokens) => {
   blockUnsafeTokenUrls(tokens);
   return tokens;
@@ -194,7 +188,7 @@ class SafeRenderer extends Renderer {
   ): ReactNode {
     const safeStyle = this.textStyle(style, true);
     if (!canOpenUrl(href)) {
-      return super.text(children, this.textStyle(style));
+      return <Fragment key={this.getKey()}>{children}</Fragment>;
     }
     return (
       <NativeText

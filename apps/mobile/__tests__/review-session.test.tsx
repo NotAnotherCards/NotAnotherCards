@@ -70,7 +70,12 @@ describe('ReviewSession', () => {
     expect(result.queryByText('gato')).toBeNull();
     expect(result.getByText('cat')).toHaveStyle({ fontFamily: 'monospace' });
 
-    fireEvent.press(result.getByText('Good'));
+    expect(result.getByText('Forgot')).toBeTruthy();
+    expect(result.getByText('Remembered')).toBeTruthy();
+    expect(result.queryByText('Hard')).toBeNull();
+    expect(result.queryByText('Easy')).toBeNull();
+
+    fireEvent.press(result.getByText('Remembered'));
     await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
     expect(await result.findByText('Review complete')).toBeTruthy();
   });
@@ -90,10 +95,10 @@ describe('ReviewSession', () => {
 
     await result.findByText('gato');
     fireEvent.press(result.getByText('Show answer'));
-    fireEvent.press(result.getByText('Again'));
+    fireEvent.press(result.getByText('Forgot'));
 
     expect(await result.findByText('disk full')).toBeTruthy();
     expect(result.getByText('cat')).toBeTruthy();
-    expect(result.getByText('Again')).toBeTruthy();
+    expect(result.getByText('Forgot')).toBeTruthy();
   });
 });

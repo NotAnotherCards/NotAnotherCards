@@ -3,7 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
-  extendedReviewAnswerLabels,
+  reviewAnswerLabels,
   reviewRatingByAnswer,
   selectReviewBatch,
   type ReviewAnswer,
@@ -23,7 +23,9 @@ type ReviewBatch = {
   remaining: UserCardRecord[];
 };
 
-const answers: ReviewAnswer[] = ['forgot', 'hard', 'remember', 'very-easy'];
+// Mobile has no persisted review preference yet, so match web's default
+// basic mode until that setting is available here.
+const answers: ReviewAnswer[] = ['forgot', 'remember'];
 
 function makeBatch(deckId: string, cards: UserCardRecord[]): ReviewBatch {
   const batch = selectReviewBatch(cards);
@@ -220,7 +222,7 @@ function ActiveReviewSession({
               disabled={isSaving}
               onPress={() => void record(answer)}
             >
-              <Text>{extendedReviewAnswerLabels[answer]}</Text>
+              <Text>{reviewAnswerLabels[answer]}</Text>
             </Button>
           ))}
         </View>
