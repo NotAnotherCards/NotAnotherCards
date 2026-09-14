@@ -5,6 +5,7 @@ import { Card } from '@/hooks/useStore';
 import { writeErrorMessage } from '@/lib/write-error';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { reviewRatingByAnswer } from '@repo/offline-db';
 import { type ReviewAnswer } from './review-controls';
 import { ReviewAnswerButtons } from './ReviewAnswerButtons';
 import { ReviewCard, type ReviewCardExitDirection } from './ReviewCard';
@@ -26,13 +27,6 @@ type ReviewSessionProps = {
 };
 
 const REVIEW_CARD_EXIT_DURATION_MS = 250;
-
-const reviewRatingByAnswer: Record<ReviewAnswer, number> = {
-  forgot: 1,
-  hard: 2,
-  remember: 3,
-  'very-easy': 4,
-};
 
 export function ReviewSession({
   cards,

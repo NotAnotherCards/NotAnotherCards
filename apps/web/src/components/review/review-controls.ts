@@ -1,31 +1,18 @@
-export type ReviewAnswer = 'forgot' | 'hard' | 'remember' | 'very-easy';
+import {
+  extendedReviewAnswerLabels,
+  formatReviewInterval,
+  reviewAnswerLabels,
+  type ReviewAnswer,
+} from '@repo/offline-db';
+
+export {
+  extendedReviewAnswerLabels,
+  formatReviewInterval,
+  reviewAnswerLabels,
+  type ReviewAnswer,
+};
 export type ReviewMode = 'two' | 'three' | 'four';
 export type ReviewGesture = 'left' | 'right' | 'up';
-
-export const reviewAnswerLabels: Record<ReviewAnswer, string> = {
-  forgot: 'Forgot',
-  hard: 'Struggled',
-  remember: 'Remembered',
-  'very-easy': 'Knew it',
-};
-
-export const extendedReviewAnswerLabels: Record<ReviewAnswer, string> = {
-  forgot: 'Again',
-  hard: 'Hard',
-  remember: 'Good',
-  'very-easy': 'Easy',
-};
-
-export function formatReviewInterval(minutes: number) {
-  if (minutes < 60) return `${minutes} min`;
-  if (minutes < 24 * 60) {
-    const hours = Math.round(minutes / 60);
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
-  }
-
-  const days = Math.round(minutes / (24 * 60));
-  return `${days} ${days === 1 ? 'day' : 'days'}`;
-}
 
 type GestureReviewAnswer = Exclude<ReviewAnswer, 'very-easy'>;
 
