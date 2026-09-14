@@ -7,7 +7,8 @@ import { generateRandomString } from 'better-auth/crypto';
 // OAuth-2FA regression test fails loudly — that is the tripwire.
 const TWO_FACTOR_COOKIE_NAME = 'two_factor';
 const CHALLENGE_MAX_AGE_SECONDS = 600;
-const TWO_FACTOR_REQUIRED_FLAG = 'twoFactorRequired=true';
+const TWO_FACTOR_REQUIRED_FLAG_NAME = 'twoFactorRequired';
+const TWO_FACTOR_REQUIRED_FLAG_VALUE = 'true';
 const FRONTEND_FALLBACK_PATH = '/two-factor';
 
 // Matches the two route templates OAuth callbacks arrive on (ctx.path is the
@@ -20,10 +21,25 @@ export const isOAuthChallengePath = (path: string): boolean =>
 const isSocialSignInPath = (path: string): boolean =>
   path === '/sign-in/social';
 
-/** Appends ?twoFactorRequired=true, preserving any existing query string. */
-function withTwoFactorFlag(target: string): string {
-  const flag = TWO_FACTOR_REQUIRED_FLAG;
-  return target.includes('?') ? `${target}&${flag}` : `${target}?${flag}`;
+/**
+ * Appends the ?twoFactorRequired=true flag to the callback target. Built on
+ * URL + searchParams so the flag lands in the query string even when the
+ * target already has one or carries a fragment (string concatenation would
+ * drop the flag after `#fragment`). Fall back to concatenation only for
+ * unparseable targets, which cannot host a fragment anyway.
+ */
+export function withTwoFactorFlag(target: string): string {
+  try {
+    const url = new URL(target);
+    url.searchParams.set(
+      TWO_FACTOR_REQUIRED_FLAG_NAME,
+      TWO_FACTOR_REQUIRED_FLAG_VALUE,
+    );
+    return url.toString();
+  } catch {
+    const flag = `${TWO_FACTOR_REQUIRED_FLAG_NAME}=${TWO_FACTOR_REQUIRED_FLAG_VALUE}`;
+    return target.includes('?') ? `${target}&${flag}` : `${target}?${flag}`;
+  }
 }
 
 export const twoFactorOAuthChallengeHook = (frontendUrl: string) =>
@@ -74,13 +90,17 @@ export const twoFactorOAuthChallengeHook = (frontendUrl: string) =>
     // via setOAuthState (better-auth keeps it in a per-request store, NOT the
     // verification row the endpoint consumed), so getOAuthState() safely
     // returns the stateData — including the plugin-validated callbackURL —
-    // without touching the database again. On the impossible path where no
-    // state is present (e.g. a pre-state redirectOnError), fall back to the
+    // without touching the database again. When no request state is present
+    // (e.g. a pre-state redirectOnError, or out-of-band invocation),
+    // getOAuthState() throws instead of returning null — fall back to the
     // web page rather than hanging or 500ing.
-    const state = await getOAuthState();
-    const callbackUrl =
-      (state as { callbackURL?: string } | null)?.callbackURL ??
-      `${frontendUrl}${FRONTEND_FALLBACK_PATH}`;
+    let callbackUrl = `${frontendUrl}${FRONTEND_FALLBACK_PATH}`;
+    try {
+      const state = (await getOAuthState()) as { callbackURL?: string } | null;
+      callbackUrl = state?.callbackURL ?? callbackUrl;
+    } catch {
+      // no request state — keep the web-page fallback above
+    }
 
     return ctx.redirect(withTwoFactorFlag(callbackUrl));
   });

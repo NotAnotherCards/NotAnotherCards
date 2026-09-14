@@ -190,7 +190,7 @@ describe('OAuth second-factor enforcement (e2e)', () => {
     // Never assert on raw secret material (URI/backup codes) directly: Jest
     // prints operands on failure. Compare booleans/lengths/structure only.
     expect(body.totpURI.startsWith('otpauth://')).toBe(true);
-    expect(body.backupCodes).toHaveLength(10);
+    expect(body.backupCodes.length).toBe(10);
     return { totpUri: body.totpURI, backupCodes: body.backupCodes };
   }
 
@@ -321,12 +321,12 @@ describe('OAuth second-factor enforcement (e2e)', () => {
     // The @better-auth/expo plugin relays the response's Set-Cookie headers
     // onto non-http redirects as a `cookie=` query param (that is how a
     // native app obtains the challenge cookie from an ASWebAuthentication-
-    // Session-style flow). Assert the challenge cookie is relayed (it is the
-    // only non-expired cookie in the set: Max-Age=600).
-    expect(location).toContain('&cookie=better-auth');
-    expect(location).toContain('better-auth.two_factor%3D');
-    expect(location).toContain('Max-Age%3D600');
-    expect(location).toContain('twoFactorRequired=true');
+    // Session-style flow). Assert via booleans so a failure never prints the
+    // signed challenge cookie to the log.
+    expect(location.includes('&cookie=better-auth')).toBe(true);
+    expect(location.includes('better-auth.two_factor%3D')).toBe(true);
+    expect(location.includes('Max-Age%3D600')).toBe(true);
+    expect(location.includes('twoFactorRequired=true')).toBe(true);
 
     // The challenge still completes a real session from the deep-link flow.
     const completed = await verifyTotp(
@@ -546,7 +546,7 @@ describe('OAuth second-factor enforcement (e2e)', () => {
     const recoveryCookies = cookiesOf(disableRes);
 
     const second = await enableTwoFactor(recoveryCookies);
-    expect(second.backupCodes).toHaveLength(10);
+    expect(second.backupCodes.length).toBe(10);
   }, 90_000);
 
   it('locks the account after repeated failed challenge verifications', async () => {
