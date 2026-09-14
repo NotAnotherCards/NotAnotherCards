@@ -18,7 +18,15 @@ import {
   registerServerConformance,
 } from '@remelondb/server/conformance';
 import { Pool } from 'pg';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import {
   databaseSchema,
   type AppDatabase,
@@ -29,6 +37,7 @@ import {
   createAppSyncStore,
   type AppSyncStore,
 } from '../../src/sync/sync-store';
+import { MAX_FUTURE_ACTIVITY_SKEW_MS } from '../../src/sync/sync-change-validation';
 import { userProfiles } from '../../src/sync/schema';
 import {
   db,
@@ -120,7 +129,11 @@ const modelIds = (suffix = '1') => {
   };
 };
 
-const allTablesCreated = (now: number, suffix = '1'): SyncChanges => {
+const allTablesCreated = (
+  now: number,
+  suffix = '1',
+  activityAt = now,
+): SyncChanges => {
   const ids = modelIds(suffix);
   return {
     user_decks: {
@@ -153,7 +166,7 @@ const allTablesCreated = (now: number, suffix = '1'): SyncChanges => {
             back: 'secret back',
           }),
           additional_content: 'Sensitive additional content',
-          created_at: now,
+          created_at: activityAt,
           updated_at: now,
         },
       ],
@@ -198,7 +211,7 @@ const allTablesCreated = (now: number, suffix = '1'): SyncChanges => {
           id: ids.review,
           user_card_id: ids.card,
           rating: 3,
-          reviewed_at: now,
+          reviewed_at: activityAt,
         },
       ],
       updated: [],
@@ -511,6 +524,165 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     } finally {
       await anotherPool.end();
     }
+  });
+
+  it('enforces the future activity boundary while preserving offline history', async () => {
+    const serverNow = Date.parse('2040-02-01T00:02:00.000Z');
+    const latestAllowed = serverNow + MAX_FUTURE_ACTIVITY_SKEW_MS;
+    const now = vi.fn(() => serverNow);
+    const handlers = createAppSyncEngine(createAppSyncStore(db, now)).as(
+      'user-a',
+    );
+    const start = pulled(await handlers.pull(pullArgs(null)));
+
+    const boundary = accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(serverNow, 'boundary', latestAllowed),
+      }),
+    );
+    expect(boundary.rejected ?? {}).toEqual({});
+
+    const note = (id: string, createdAt: number) => ({
+      id,
+      note_type: BASIC_NOTE_TYPE,
+      fields_version: BASIC_NOTE_FIELDS_VERSION,
+      fields_json: JSON.stringify({ front: id, back: id }),
+      additional_content: null,
+      created_at: createdAt,
+      updated_at: serverNow,
+    });
+    const review = (id: string, reviewedAt: number) => ({
+      id,
+      user_card_id: modelIds('boundary').card,
+      rating: 3,
+      reviewed_at: reviewedAt,
+    });
+    const historical = Date.parse('2020-01-01T00:00:00.000Z');
+    const mixed = accepted(
+      await handlers.push({
+        cursor: boundary.cursor!,
+        changes: {
+          user_notes: {
+            created: [
+              note('historical-note', historical),
+              note('future-note', latestAllowed + 1),
+            ],
+            updated: [],
+            deleted: [],
+          },
+          review_events: {
+            created: [
+              review('historical-review', historical),
+              review('future-review', latestAllowed + 1),
+            ],
+            updated: [],
+            deleted: [],
+          },
+        },
+      }),
+    );
+
+    expect(mixed.rejected).toEqual({
+      user_notes: ['future-note'],
+      review_events: ['future-review'],
+    });
+    expect(now).toHaveBeenCalledTimes(2);
+    const state = pulled(await handlers.pull(pullArgs(null)));
+    expect(state.changes.user_notes?.updated.map((row) => row.id)).toEqual(
+      expect.arrayContaining(['note-boundary', 'historical-note']),
+    );
+    expect(
+      state.changes.user_notes?.updated.map((row) => row.id),
+    ).not.toContain('future-note');
+    expect(state.changes.review_events?.updated.map((row) => row.id)).toEqual(
+      expect.arrayContaining(['review-boundary', 'historical-review']),
+    );
+    expect(
+      state.changes.review_events?.updated.map((row) => row.id),
+    ).not.toContain('future-review');
+  });
+
+  it('rejects same-push rows that depend on a future-dated note', async () => {
+    const serverNow = Date.parse('2040-02-01T00:02:00.000Z');
+    const latestAllowed = serverNow + MAX_FUTURE_ACTIVITY_SKEW_MS;
+    const handlers = createAppSyncEngine(
+      createAppSyncStore(db, () => serverNow),
+    ).as('user-a');
+    const start = pulled(await handlers.pull(pullArgs(null)));
+    const ids = modelIds('future');
+
+    const result = accepted(
+      await handlers.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(serverNow, 'future', latestAllowed + 1),
+      }),
+    );
+
+    expect(result.rejected).toEqual({
+      user_notes: [ids.note],
+      user_cards: [ids.card],
+      user_note_decks: [ids.membership],
+      review_events: [ids.review],
+    });
+    const state = pulled(await handlers.pull(pullArgs(null)));
+    expect(state.changes.user_decks?.updated.map((row) => row.id)).toEqual([
+      ids.deck,
+    ]);
+    expect(state.changes.user_notes?.updated ?? []).toEqual([]);
+    expect(state.changes.user_cards?.updated ?? []).toEqual([]);
+    expect(state.changes.user_note_decks?.updated ?? []).toEqual([]);
+    expect(state.changes.review_events?.updated ?? []).toEqual([]);
+  });
+
+  it('does not retroactively reject durable future-dated activity', async () => {
+    const serverNow = Date.parse('2040-02-01T00:02:00.000Z');
+    const durableActivityAt = serverNow + MAX_FUTURE_ACTIVITY_SKEW_MS + 1;
+    const laterClock = () => durableActivityAt;
+    const initial = createAppSyncEngine(createAppSyncStore(db, laterClock)).as(
+      'user-a',
+    );
+    const start = pulled(await initial.pull(pullArgs(null)));
+    accepted(
+      await initial.push({
+        cursor: start.cursor,
+        changes: allTablesCreated(serverNow, 'durable', durableActivityAt),
+      }),
+    );
+
+    const handlers = createAppSyncEngine(
+      createAppSyncStore(db, () => serverNow),
+    ).as('user-a');
+    const durable = pulled(await handlers.pull(pullArgs(null)));
+    const storedNote = durable.changes.user_notes?.updated[0];
+    expect(storedNote).toMatchObject({
+      id: 'note-durable',
+      created_at: durableActivityAt,
+    });
+    expect(durable.changes.review_events?.updated[0]).toMatchObject({
+      id: 'review-durable',
+      reviewed_at: durableActivityAt,
+    });
+
+    const updated = accepted(
+      await handlers.push({
+        cursor: durable.cursor,
+        changes: {
+          user_notes: {
+            created: [],
+            updated: [
+              {
+                ...storedNote,
+                additional_content: 'updated after the clock correction',
+                updated_at: serverNow,
+              },
+            ],
+            deleted: [],
+          },
+        },
+      }),
+    );
+    expect(updated.rejected?.user_notes ?? []).toEqual([]);
   });
 
   it('round-trips card updates while preserving insert-only creation time', async () => {

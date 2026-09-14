@@ -82,7 +82,10 @@ export const appSyncTableOptions: NonNullable<
   review_events: { appendOnly: true },
 };
 
-export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
+export function createAppSyncStore(
+  db: AppDatabase,
+  now: () => number = () => Date.now(),
+): AppSyncStoreBundle {
   const tables = {
     user_decks: drizzleSyncTable<string, typeof userDecks>({
       table: userDecks,
@@ -189,6 +192,7 @@ export function createAppSyncStore(db: AppDatabase): AppSyncStoreBundle {
     store,
     crossValidateChanges: createCrossValidateSyncRelationships(
       findProfileUsernameOwners,
+      now,
     ),
   };
 }

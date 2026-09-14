@@ -2,6 +2,7 @@ import type { SyncEngineOptions, SyncStoreTx } from '@remelondb/server';
 import type { DrizzleStore } from '@remelondb/store-drizzle';
 import {
   liveRows,
+  MAX_FUTURE_ACTIVITY_SKEW_MS,
   stringField,
   validateCardRows,
   validateDeckRows,
@@ -134,8 +135,10 @@ export function withSyncCascadingDeletes(
  */
 export function createCrossValidateSyncRelationships(
   findProfileUsernameOwners: ProfileUsernameOwnerLookup,
+  now: () => number = () => Date.now(),
 ): NonNullable<SyncEngineOptions<string>['crossValidateChanges']> {
   return async (tx, scope, changes) => {
+    const latestActivityTimestamp = now() + MAX_FUTURE_ACTIVITY_SKEW_MS;
     const deckRows = changes[USER_DECKS]?.rows ?? [];
     const deckDeletesRequested = changes[USER_DECKS]?.deleted ?? [];
     const noteRows = changes[USER_NOTES]?.rows ?? [];
@@ -159,7 +162,11 @@ export function createCrossValidateSyncRelationships(
       noteRows.length === 0
         ? []
         : await tx.changedSince(USER_NOTES, scope, 0);
-    const notes = validateNoteRows(noteRows, noteChanges);
+    const notes = validateNoteRows(
+      noteRows,
+      noteChanges,
+      latestActivityTimestamp,
+    );
     const noteDeletes = new Set(noteDeletesRequested);
     const validatedCards = validateCardRows(
       cardRows,
@@ -191,6 +198,7 @@ export function createCrossValidateSyncRelationships(
       validatedCards.rejectedCardIds,
       cardDeletes,
       noteDeletes,
+      latestActivityTimestamp,
     );
 
     const submittedUsernames = profileRows.flatMap((profile) => {
