@@ -61,6 +61,7 @@ export class AuthService {
       account: {
         accountLinking: {
           enabled: true,
+          requireLocalEmailVerified: false,
           trustedProviders: Object.keys(socialProviders),
         },
       },
