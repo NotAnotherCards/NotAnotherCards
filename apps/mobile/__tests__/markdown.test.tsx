@@ -33,6 +33,15 @@ describe('Markdown', () => {
     );
   });
 
+  it('renders relative links as noninteractive text', () => {
+    const result = render(<Markdown content="[Next](page2.html)" inline />);
+
+    expect(result.getByText('Next')).toBeTruthy();
+    expect(result.queryByRole('link')).toBeNull();
+    fireEvent.press(result.getByText('Next'));
+    expect(openUrl).not.toHaveBeenCalled();
+  });
+
   it.each(['javascript:alert(1)', ' javaScript:alert(1)'])(
     'renders unsafe link %j as plain text without opening it',
     (url) => {
@@ -67,8 +76,14 @@ describe('Markdown', () => {
     expect(unsafe.queryByTestId('markdown-image')).toBeNull();
   });
 
-  it('does not add a block view in inline mode', () => {
-    const result = render(<Markdown content="inline **content**" inline />);
+  it.each([
+    ['fenced code', '```ts\nconst value = 1;\n```'],
+    ['list', '- one\n- two'],
+    ['blockquote', '> quoted'],
+    ['horizontal rule', '---'],
+    ['table', '| a | b |\n| - | - |\n| c | d |'],
+  ])('does not emit block views for %s in inline mode', (_name, content) => {
+    const result = render(<Markdown content={content} inline />);
 
     expect(result.UNSAFE_queryAllByType(View)).toHaveLength(0);
     expect(result.UNSAFE_queryAllByType(Text)).not.toHaveLength(0);
