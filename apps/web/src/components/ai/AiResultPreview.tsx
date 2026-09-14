@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
 import { AiCardOutput } from '@repo/schemas';
-import { cardId, BASIC_FRONT_BACK_TEMPLATE_KEY } from '@repo/offline-db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
   ArrowRight,
   BookOpen,
-  Layers,
   FolderPlus,
-  FileJson,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
@@ -36,7 +33,6 @@ export function AiResultPreview({
   const [deckMode, setDeckMode] = useState<'existing' | 'new'>('existing');
   const [selectedDeckId, setSelectedDeckId] = useState(decks[0]?.id || '');
   const [newDeckTitle, setNewDeckTitle] = useState('');
-  const [previewTab, setPreviewTab] = useState<'cards' | 'json'>('cards');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -64,102 +60,45 @@ export function AiResultPreview({
     }
   };
 
-  // Structured notes representation for the json tab
-  const noteRepresentation = {
-    note_type: 'basic',
-    fields_version: 1,
-    notes: cards.map((c, i) => {
-      const noteId = `note-${i + 1}`;
-      return {
-        note_id: noteId,
-        fields_json: JSON.stringify({
-          front: c.front,
-          back: c.back,
-        }),
-        additional_content: `AI Generated Note #${i + 1}`,
-        generated_cards: [
-          {
-            template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
-            front: c.front,
-            back: c.back,
-            id: cardId(noteId, BASIC_FRONT_BACK_TEMPLATE_KEY),
-          },
-        ],
-      };
-    }),
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">
-            Generation Results
-          </h2>
+          <h2 className="text-xl font-bold tracking-tight">Creation Results</h2>
           <p className="text-sm text-muted-foreground">
-            Generated {cards.length} structured flashcard note candidates.
+            Created {cards.length} structured flashcard note candidates.
           </p>
-        </div>
-
-        {/* Tab Toggle */}
-        <div className="flex bg-muted/60 p-0.5 rounded-lg border border-border/40 text-xs">
-          <button
-            onClick={() => setPreviewTab('cards')}
-            className={`flex items-center gap-1 py-1 px-2.5 rounded-md font-medium transition-all ${
-              previewTab === 'cards'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground'
-            }`}
-          >
-            <Layers className="size-3" /> Cards
-          </button>
-          <button
-            onClick={() => setPreviewTab('json')}
-            className={`flex items-center gap-1 py-1 px-2.5 rounded-md font-medium transition-all ${
-              previewTab === 'json'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground'
-            }`}
-          >
-            <FileJson className="size-3" /> Note Schema
-          </button>
         </div>
       </div>
 
-      {previewTab === 'cards' ? (
-        <div className="space-y-4 max-h-100 overflow-y-auto pr-2">
-          {cards.map((card, idx) => (
-            <div
-              key={idx}
-              className="bg-card/40 border border-border/60 rounded-2xl p-4 shadow-sm hover:border-violet-500/30 transition-all duration-200 group flex flex-col md:flex-row gap-4 justify-between items-stretch"
-            >
-              <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Front
-                </div>
-                <div className="text-sm font-medium">
-                  <MarkdownRenderer content={card.front} />
-                </div>
+      <div className="space-y-4 max-h-100 overflow-y-auto pr-2">
+        {cards.map((card, idx) => (
+          <div
+            key={idx}
+            className="bg-card/40 border border-border/60 rounded-2xl p-4 shadow-sm hover:border-violet-500/30 transition-all duration-200 group flex flex-col md:flex-row gap-4 justify-between items-stretch"
+          >
+            <div className="flex-1 space-y-1">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Front
               </div>
-              <div className="hidden md:flex items-center text-muted-foreground">
-                <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-              <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Back
-                </div>
-                <div className="text-sm font-medium">
-                  <MarkdownRenderer content={card.back} />
-                </div>
+              <div className="text-sm font-medium">
+                <MarkdownRenderer content={card.front} />
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-muted/40 border border-border/60 rounded-2xl p-4 overflow-auto max-h-100 text-xs font-mono text-muted-foreground whitespace-pre">
-          {JSON.stringify(noteRepresentation, null, 2)}
-        </div>
-      )}
+            <div className="hidden md:flex items-center text-muted-foreground">
+              <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Back
+              </div>
+              <div className="text-sm font-medium">
+                <MarkdownRenderer content={card.back} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Persistence Section */}
       <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">
