@@ -5,8 +5,6 @@ import {
   MODEL_LABELS,
   SELECTABLE_AI_MODELS,
   QuotaStatus,
-  LANGUAGES,
-  languageFor,
 } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +19,6 @@ import {
   Layers,
   Type,
   BookOpen,
-  FolderPlus,
   ArrowRightLeft,
 } from 'lucide-react';
 import type { DeckNoteType } from '@repo/offline-db';
@@ -53,7 +50,6 @@ export function AiPlaygroundForm({
   onSubmit,
   isSubmitting,
   decks,
-  createDeck,
 }: AiPlaygroundFormProps) {
   const [mode, setMode] = useState<'topic_deck' | 'text_cards' | 'word_note'>(
     'topic_deck',
@@ -67,16 +63,7 @@ export function AiPlaygroundForm({
   const [word, setWord] = useState('');
   const [direction, setDirection] = useState<'target' | 'native'>('target');
 
-  // Deck Selection for Word Note
-  const [deckMode, setDeckMode] = useState<'existing' | 'new'>('existing');
   const [selectedDeckId, setSelectedDeckId] = useState('');
-  const [newDeckTitle, setNewDeckTitle] = useState('');
-  const [nativeLanguageId, setNativeLanguageId] = useState<string>(
-    LANGUAGES[0].value,
-  );
-  const [targetLanguageId, setTargetLanguageId] = useState<string>(
-    LANGUAGES[1].value,
-  );
 
   const [count, setCount] = useState(5);
   const [model, setModel] = useState<AiModel>('gemma4');
@@ -84,18 +71,11 @@ export function AiPlaygroundForm({
 
   const wordDecks = decks.filter((d) => d.note_type === 'word');
 
-  const effectiveDeckMode = wordDecks.length === 0 ? 'new' : deckMode;
-
   useEffect(() => {
-    if (
-      mode === 'word_note' &&
-      effectiveDeckMode === 'existing' &&
-      wordDecks.length > 0 &&
-      !selectedDeckId
-    ) {
+    if (mode === 'word_note' && wordDecks.length > 0 && !selectedDeckId) {
       setSelectedDeckId(wordDecks[0].id);
     }
-  }, [mode, wordDecks, selectedDeckId, effectiveDeckMode]);
+  }, [mode, wordDecks, selectedDeckId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,37 +95,11 @@ export function AiPlaygroundForm({
         });
       } else if (mode === 'word_note') {
         if (!word.trim()) return setError('Word cannot be empty');
-
-        let deckId = selectedDeckId;
-
-        if (effectiveDeckMode === 'new') {
-          if (!newDeckTitle.trim())
-            return setError('Deck Name cannot be empty');
-          const newDeck = await createDeck(
-            newDeckTitle.trim(),
-            'Created Word Deck',
-            {
-              noteType: 'word' as DeckNoteType,
-              nativeLanguageId,
-              targetLanguageId,
-            },
-          );
-          deckId = newDeck.id;
-          // After creating, we might want to switch back to existing to keep it selected
-          // but we are about to submit, so it's fine.
-        } else {
-          if (!deckId) return setError('Please select or create a target deck');
-        }
-
-        const nativeLang = languageFor(nativeLanguageId);
-        const targetLang = languageFor(targetLanguageId);
-
-        if (!nativeLang || !targetLang)
-          return setError('Invalid languages selected');
+        if (!selectedDeckId) return setError('Please select a target deck');
 
         onSubmit({
           type: 'word_note',
-          deckId,
+          deckId: selectedDeckId,
           word: word.trim(),
           direction,
           model,
@@ -272,125 +226,35 @@ export function AiPlaygroundForm({
       {mode === 'word_note' && (
         <div className="space-y-6">
           <div className="bg-muted/20 border border-border/40 rounded-2xl p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <FieldLabel>Target Deck</FieldLabel>
-              <div className="flex bg-muted/60 p-0.5 rounded-lg border border-border/40 text-[10px]">
-                <button
-                  type="button"
-                  disabled={wordDecks.length === 0}
-                  onClick={() => setDeckMode('existing')}
-                  className={`flex items-center gap-1 py-1 px-2 rounded-md font-medium transition-all ${
-                    effectiveDeckMode === 'existing'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground/80'
-                  } ${wordDecks.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  Select Existing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeckMode('new')}
-                  className={`flex items-center gap-1 py-1 px-2 rounded-md font-medium transition-all ${
-                    effectiveDeckMode === 'new'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground/80'
-                  }`}
-                >
-                  <FolderPlus className="size-3" /> Create New
-                </button>
-              </div>
-            </div>
+            <FieldLabel>Target Deck</FieldLabel>
 
-            {effectiveDeckMode === 'existing' ? (
-              wordDecks.length > 0 ? (
-                <div className="relative">
-                  <select
-                    value={selectedDeckId}
-                    onChange={(e) => setSelectedDeckId(e.target.value)}
-                    className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2.5 text-sm focus-visible:ring-3 outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>
-                      -- Choose a Word Deck --
+            {wordDecks.length > 0 ? (
+              <div className="relative">
+                <select
+                  value={selectedDeckId}
+                  onChange={(e) => setSelectedDeckId(e.target.value)}
+                  className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2.5 text-sm focus-visible:ring-3 outline-none appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>
+                    -- Choose a Word Deck --
+                  </option>
+                  {wordDecks.map((d) => (
+                    <option
+                      key={d.id}
+                      value={d.id}
+                      className="bg-background text-foreground"
+                    >
+                      {d.title}
                     </option>
-                    {wordDecks.map((d) => (
-                      <option
-                        key={d.id}
-                        value={d.id}
-                        className="bg-background text-foreground"
-                      >
-                        {d.title}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
-                    ▼
-                  </div>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
+                  ▼
                 </div>
-              ) : (
-                <div className="text-sm text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                  No word decks available. Please create a new one.
-                </div>
-              )
+              </div>
             ) : (
-              <div className="space-y-4 pt-2 border-t border-border/40">
-                <Field className="space-y-2">
-                  <FieldLabel htmlFor="new-deck-title">Deck Title</FieldLabel>
-                  <Input
-                    id="new-deck-title"
-                    placeholder="e.g. French Vocabulary"
-                    value={newDeckTitle}
-                    onChange={(e) => setNewDeckTitle(e.target.value)}
-                    className="w-full border-border/60"
-                  />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field className="space-y-2">
-                    <FieldLabel>Native Language</FieldLabel>
-                    <div className="relative">
-                      <select
-                        value={nativeLanguageId}
-                        onChange={(e) => setNativeLanguageId(e.target.value)}
-                        className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2 text-sm appearance-none cursor-pointer"
-                      >
-                        {LANGUAGES.map((l) => (
-                          <option
-                            key={l.value}
-                            value={l.value}
-                            className="bg-background"
-                          >
-                            {l.flag} {l.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
-                        ▼
-                      </div>
-                    </div>
-                  </Field>
-                  <Field className="space-y-2">
-                    <FieldLabel>Target Language</FieldLabel>
-                    <div className="relative">
-                      <select
-                        value={targetLanguageId}
-                        onChange={(e) => setTargetLanguageId(e.target.value)}
-                        className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2 text-sm appearance-none cursor-pointer"
-                      >
-                        {LANGUAGES.map((l) => (
-                          <option
-                            key={l.value}
-                            value={l.value}
-                            className="bg-background"
-                          >
-                            {l.flag} {l.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted-foreground">
-                        ▼
-                      </div>
-                    </div>
-                  </Field>
-                </div>
+              <div className="text-sm text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                No word decks available. Please create one in the Decks tab.
               </div>
             )}
           </div>
