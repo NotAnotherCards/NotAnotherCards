@@ -77,3 +77,16 @@ when the stream stalls past the timeout, ends without `[DONE]`, or the
 cards do not parse; the browser gets an `error` event, never partial
 cards. A failed run still counts a request, at zero tokens if the usage
 chunk never arrived, so only the request cap stops a failing loop.
+
+## Moderation at publish
+
+Only the publish endpoint calls it, on every card of the deck's snapshot,
+through the separate `moderation` gateway alias (qwen3guard-8b); it does not
+go through `AiGatewayService`. The classifier grades each card `Safe`,
+`Unsafe` or `Controversial`: an unsafe card refuses publication with the
+card and its category in the 422 body; a controversial card is returned as a
+warning on the successful response. An unreachable gateway, a timeout or an
+unparsable verdict refuses publication with `moderation unavailable`; there
+is no allow-on-error path. A deck check has a budget of 5 s plus 1 s per card,
+capped at 240 s, and fails closed when that budget runs out. Private decks are never checked.
+`MODERATION_ALLOW_ALL=1` bypasses the classifier, for tests and demos only.
