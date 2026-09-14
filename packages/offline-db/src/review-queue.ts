@@ -7,6 +7,16 @@ export type ReviewQueueCard = {
   readonly due_at: number;
 };
 
+/** The cards due at `now`, earliest first; the order `selectReviewBatch` keeps. */
+export function selectDueCards<T extends ReviewQueueCard>(
+  cards: readonly T[],
+  now: number = Date.now(),
+): T[] {
+  return cards
+    .filter((card) => card.due_at <= now)
+    .sort((first, second) => first.due_at - second.due_at);
+}
+
 /**
  * Keeps the caller's due-card order while allowing only one card from each
  * note in a batch. A sibling skipped here remains due for a later batch.

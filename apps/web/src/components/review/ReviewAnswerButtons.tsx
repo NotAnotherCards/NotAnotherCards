@@ -1,4 +1,7 @@
-import { calculateReviewIntervalMinutes } from '@repo/offline-db';
+import {
+  calculateReviewIntervalMinutes,
+  reviewRatingByAnswer,
+} from '@repo/offline-db';
 import { Button } from '@/components/ui/button';
 import type { RefObject } from 'react';
 import {
@@ -17,13 +20,6 @@ type ReviewAnswerButtonsProps = {
   firstAnswerButtonRef: RefObject<HTMLButtonElement | null>;
   onAnswer: (answer: ReviewAnswer) => Promise<void>;
   onReveal: () => void;
-};
-
-const reviewRatingByAnswer: Record<ReviewAnswer, number> = {
-  forgot: 1,
-  hard: 2,
-  remember: 3,
-  'very-easy': 4,
 };
 
 const answerButtonClassName: Record<ReviewAnswer, string> = {

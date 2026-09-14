@@ -6,7 +6,7 @@ import {
   clearLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
-import { selectReviewBatch } from '@repo/offline-db';
+import { selectDueCards, selectReviewBatch } from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -27,11 +27,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const { data: session } = authClient.useSession();
   const [activeSession, setActiveSession] =
     useState<ActiveReviewSession | null>(null);
-  const getDueCards = (id: string) =>
-    store
-      .getCardsForDeck(id)
-      .filter((card) => card.due_at <= Date.now())
-      .sort((first, second) => first.due_at - second.due_at);
+  const getDueCards = (id: string) => selectDueCards(store.getCardsForDeck(id));
   const dueCards = deckId ? getDueCards(deckId) : [];
   const deck = store.decks.find((item) => item.id === deckId);
   const reviewPreferences = getReviewPreferences(session?.user.id);
