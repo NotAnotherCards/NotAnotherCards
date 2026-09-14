@@ -318,7 +318,6 @@ describe('activity timestamp validation (#344)', () => {
       changedSince: vi.fn((table: string) =>
         Promise.resolve(table === 'user_cards' ? [stored(card)] : []),
       ),
-      currentRevs: vi.fn(() => Promise.resolve(new Map())),
     } as unknown as SyncStoreTx<string>;
 
     const rejected = await validate(tx, 'user-a', {
@@ -357,7 +356,6 @@ describe('activity timestamp validation (#344)', () => {
       changedSince: vi.fn((table: string) =>
         Promise.resolve(table === 'user_cards' ? [stored(card)] : []),
       ),
-      currentRevs: vi.fn(() => Promise.resolve(new Map())),
     } as unknown as SyncStoreTx<string>;
 
     const rejected = await validate(tx, 'user-a', {
@@ -398,7 +396,6 @@ describe('activity timestamp validation (#344)', () => {
       changedSince: vi.fn((table: string) =>
         Promise.resolve(table === 'user_decks' ? [stored(durableDeck)] : []),
       ),
-      currentRevs: vi.fn(() => Promise.resolve(new Map())),
     } as unknown as SyncStoreTx<string>;
 
     const rejected = await validate(tx, 'user-a', {
@@ -429,35 +426,23 @@ describe('activity timestamp validation (#344)', () => {
     expect(rejected['review_events']).toEqual(['dependent-review']);
   });
 
-  it('does not apply the new limit retroactively to durable activity rows', async () => {
+  it('does not apply the new limit retroactively to durable note rows', async () => {
     const note = basicNote('durable-note', latestAllowed + 1);
-    const card = basicCard(note.id);
-    const durableReview = review('durable-review', card.id, latestAllowed + 1);
     const validate = createCrossValidateSyncRelationships(
       async () => Promise.resolve(new Map()),
       () => serverNow,
     );
     const tx = {
       changedSince: vi.fn((table: string) => {
-        const rows =
-          table === 'user_notes'
-            ? [stored(note)]
-            : table === 'user_cards'
-              ? [stored(card)]
-              : [];
+        const rows = table === 'user_notes' ? [stored(note)] : [];
         return Promise.resolve(rows);
       }),
-      currentRevs: vi.fn(() =>
-        Promise.resolve(new Map([[durableReview.id, 1]])),
-      ),
     } as unknown as SyncStoreTx<string>;
 
     const rejected = await validate(tx, 'user-a', {
       user_notes: { rows: [note], deleted: [] },
-      review_events: { rows: [durableReview], deleted: [] },
     });
 
     expect(rejected['user_notes']).toEqual([]);
-    expect(rejected['review_events']).toEqual([]);
   });
 });

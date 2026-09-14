@@ -306,7 +306,6 @@ export function validateReviewRows(
   reviewRows: readonly WireRow[],
   cardRows: readonly WireRow[],
   cardChanges: readonly StoredChange[],
-  durableReviewIds: ReadonlySet<string>,
   rejectedCardIds: ReadonlySet<string>,
   cardDeletes: ReadonlySet<string>,
   noteDeletes: ReadonlySet<string>,
@@ -330,7 +329,6 @@ export function validateReviewRows(
   const rejectedReviews = reviewRows.filter((review) => {
     const reviewedAt = review['reviewed_at'];
     if (
-      !durableReviewIds.has(review.id) &&
       typeof reviewedAt === 'number' &&
       reviewedAt > latestActivityTimestamp
     ) {

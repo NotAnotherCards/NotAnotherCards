@@ -190,24 +190,11 @@ export function createCrossValidateSyncRelationships(
       reviewRows.length === 0
         ? []
         : await tx.changedSince(USER_CARDS, scope, 0);
-    const durableReviewIds =
-      reviewRows.length === 0
-        ? new Set<string>()
-        : new Set(
-            (
-              await tx.currentRevs(
-                REVIEW_EVENTS,
-                scope,
-                reviewRows.map((review) => review.id),
-              )
-            ).keys(),
-          );
     const cardDeletes = new Set(cardDeletesRequested);
     const reviews = validateReviewRows(
       reviewRows,
       cardRows,
       cardChanges,
-      durableReviewIds,
       validatedCards.rejectedCardIds,
       cardDeletes,
       noteDeletes,
