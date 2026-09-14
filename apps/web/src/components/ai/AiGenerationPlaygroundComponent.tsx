@@ -73,7 +73,9 @@ export function AiGenerationPlaygroundComponent() {
       let terminalStateReached = false;
 
       try {
-        const res = await fetch(`/api/ai/jobs/${currentJob.id}`);
+        const res = await fetch(`/api/ai/jobs/${currentJob.id}`, {
+          signal: controller.signal,
+        });
         if (disposed) return;
         if (!res.ok) {
           const { message } = apiErrorBodySchema.parse(
@@ -129,7 +131,7 @@ export function AiGenerationPlaygroundComponent() {
       controller.abort();
       clearTimeout(timeoutId);
     };
-  }, [currentJob?.id, currentJob?.status]);
+  }, [currentJob?.id]);
 
   const fetchQuota = async (signal?: AbortSignal) => {
     try {
