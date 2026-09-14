@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import {
@@ -232,7 +232,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
     // We use UTC date to match the gamification reset logic
     const todayStr = new Date().toISOString().split('T')[0];
-    
+
     let notifiedState = { date: '', codes: [] as string[] };
     try {
       const stored = localStorage.getItem(NOTIFIED_STORAGE_KEY);
