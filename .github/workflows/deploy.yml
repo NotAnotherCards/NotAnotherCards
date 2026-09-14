@@ -34,11 +34,36 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            # Fail before replacing any containers unless Compose resolves at
+            # least one production email transport. The resolved config is
+            # consumed by jq and never written to the deployment log.
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              config --format json \
+              | jq --exit-status \
+                '(.services.api.environment.RESEND_API_KEY // "") != "" or (.services.api.environment.SMTP_HOST // "") != ""' \
+                >/dev/null || {
+              echo "FATAL: production email transport is not configured (set RESEND_API_KEY or SMTP_HOST in /opt/notanothercards/.env)" >&2
+              exit 1
+            }
+
             # 1. Deploy App Bundle
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.production.yml \
               up -d --build --wait
+
+            # Verify the selected transport reached the running API without
+            # displaying its value.
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              exec -T api sh -c \
+              'test -n "$RESEND_API_KEY" || test -n "$SMTP_HOST"' || {
+              echo "FATAL: production email transport did not reach the API container" >&2
+              exit 1
+            }
 
             docker compose \
               -f docker-compose.yml \

@@ -64,6 +64,13 @@ export class SharingController {
     return this.sharingService.listShared(page.limit, page.offset);
   }
 
+  @Post('shared/decks/:id/import')
+  @HttpCode(201)
+  async importShared(@Req() req: Request, @Param('id') deckId: string) {
+    const userId = await this.getAuthenticatedUserId(req);
+    return this.sharingService.importShared(userId, deckId);
+  }
+
   @Get('shared/decks/:id')
   async previewShared(@Req() req: Request, @Param('id') deckId: string) {
     const userId = await this.getAuthenticatedUserId(req);

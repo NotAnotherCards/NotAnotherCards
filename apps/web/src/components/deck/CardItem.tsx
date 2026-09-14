@@ -1,6 +1,7 @@
 import { Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import { Edit, Unlink, Eye } from 'lucide-react';
+import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface CardItemProps {
@@ -20,19 +21,28 @@ export function CardItem({
   canEdit = true,
   canRemove = true,
 }: CardItemProps) {
+  const hasExample = card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY;
+
   return (
     <tr className="hover:bg-muted/10 transition-colors">
       <td
         className="px-6 py-4 font-medium max-w-62.5 truncate"
         title={card.front}
       >
-        <MarkdownRenderer content={card.front} inline />
+        <MarkdownRenderer content={card.front} />
       </td>
       <td
         className="px-6 py-4 text-muted-foreground max-w-62.5 truncate"
         title={card.back}
       >
-        <MarkdownRenderer content={card.back} inline />
+        <MarkdownRenderer
+          content={card.back}
+          className={
+            hasExample
+              ? '[&_p+p]:!mt-3 [&_p+p]:text-xs [&_p+p]:font-normal'
+              : ''
+          }
+        />
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-1.5">

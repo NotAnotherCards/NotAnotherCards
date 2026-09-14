@@ -43,11 +43,9 @@ const DETAIL_FIELDS = [
   ['notes', 'Notes', 'anything you want to remember'],
 ] as const;
 
-// An untouched input holds '', which the registry rejects as a
-// present-but-blank optional field. The form accepts it and drops it on
-// submit, so an empty box means absent rather than invalid. Each rule still
-// comes from the registry; only '' is added to it.
-const blank = z.literal('');
+// Blank optional inputs, including whitespace, mean absent in the form.
+// Drop them on submit; the registry still rejects present-but-blank fields.
+const blank = z.string().trim().pipe(z.literal(''));
 const wordFormSchema = wordFields.extend({
   example: wordFields.shape.example.or(blank),
   example_translation: wordFields.shape.example_translation.or(blank),

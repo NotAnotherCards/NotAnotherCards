@@ -138,7 +138,7 @@ export function AiResultPreview({
                   Front
                 </div>
                 <div className="text-sm font-medium">
-                  <MarkdownRenderer content={card.front} inline />
+                  <MarkdownRenderer content={card.front} />
                 </div>
               </div>
               <div className="hidden md:flex items-center text-muted-foreground">
@@ -149,7 +149,7 @@ export function AiResultPreview({
                   Back
                 </div>
                 <div className="text-sm font-medium">
-                  <MarkdownRenderer content={card.back} inline />
+                  <MarkdownRenderer content={card.back} />
                 </div>
               </div>
             </div>

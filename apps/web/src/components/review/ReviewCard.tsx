@@ -1,5 +1,6 @@
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import type { Card } from '@/hooks/useStore';
+import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
 import type { ReviewCardSwipeDirection } from './useReviewCardInteraction';
 
@@ -99,14 +100,14 @@ export function ReviewCard({
     <div className="relative z-10 w-full sm:max-w-xl sm:self-center">
       {followingCard && (
         <div
-          className="pointer-events-none absolute inset-x-0 top-3 z-0 min-h-[min(52dvh,28rem)] w-full rounded-3xl border border-border/80 bg-white shadow-xl sm:min-h-80 dark:bg-zinc-800"
+          className="pointer-events-none absolute inset-x-0 top-3 z-0 h-[min(52dvh,28rem)] w-full rounded-3xl border border-border/80 bg-white shadow-xl sm:h-80 dark:bg-zinc-800"
           data-testid="following-review-card-outline"
           aria-hidden="true"
         />
       )}
       {nextCard && (
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-1 flex min-h-[min(52dvh,28rem)] w-full items-center justify-center rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+          className="pointer-events-none absolute inset-x-0 top-0 z-1 flex h-[min(52dvh,28rem)] w-full items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl sm:h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
           data-testid="next-review-card"
           aria-hidden="true"
         >
@@ -136,16 +137,16 @@ export function ReviewCard({
         <button
           ref={cardButtonRef}
           type="button"
-          className="absolute inset-0 z-20 min-h-[min(52dvh,28rem)] w-full touch-none select-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 sm:min-h-80"
+          className="absolute inset-0 z-20 w-full touch-none select-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
           aria-pressed={isFlipped}
           aria-label={isFlipped ? 'Answer is shown' : 'Review card'}
           aria-hidden={isFlipped}
           tabIndex={isFlipped ? -1 : 0}
           data-testid="review-card"
         />
-        <div className="relative min-h-[min(52dvh,28rem)] w-full [perspective:1200px] sm:min-h-80">
+        <div className="relative h-[min(52dvh,28rem)] w-full [perspective:1200px] sm:h-80">
           <div
-            className={`relative z-10 flex min-h-[min(52dvh,28rem)] w-full [transform-style:preserve-3d] transition-transform ease-in-out motion-reduce:transition-none sm:min-h-80 ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
+            className={`relative z-10 flex h-full w-full [transform-style:preserve-3d] transition-transform ease-in-out motion-reduce:transition-none ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
             data-flipped={isFlipped}
             data-testid="review-card-flip"
             style={{ transitionDuration: `${REVIEW_CARD_FLIP_DURATION_MS}ms` }}
@@ -153,7 +154,7 @@ export function ReviewCard({
             <div
               aria-hidden={isFlipped}
               inert={isFlipped}
-              className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+              className="absolute inset-0 flex w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
             >
               <MarkdownRenderer
                 content={card.front}
@@ -164,12 +165,16 @@ export function ReviewCard({
             <div
               aria-hidden={!isFlipped}
               inert={!isFlipped}
-              className="absolute inset-0 flex min-h-[min(52dvh,28rem)] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:min-h-80 sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
+              className="absolute inset-0 flex w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-border/80 bg-linear-to-br from-white to-zinc-100 p-5 text-center shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] sm:p-8 dark:from-zinc-800 dark:to-zinc-900"
             >
               <MarkdownRenderer
                 content={card.back}
                 data-testid="review-card-back-content"
-                className="max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal"
+                className={`max-h-full max-w-full overflow-hidden text-3xl font-bold text-center wrap-break-word [&_img]:max-h-48 [&_img]:max-w-full [&_img]:object-contain [&_ul]:mt-4 [&_ul]:text-xl [&_ul]:font-normal ${
+                  card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY
+                    ? '[&_p+p]:!mt-4 [&_p+p]:text-xl [&_p+p]:font-normal'
+                    : ''
+                }`}
               />
             </div>
           </div>
