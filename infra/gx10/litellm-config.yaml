@@ -74,6 +74,16 @@ model_list:
       # after that paid ~3.4 s of model load. 7.3 GB resident.
       keep_alive: -1
 
+  # Independent report-triggered re-check. ShieldGemma is the strongest
+  # already-measured independent round-one candidate (88/100 harmful and
+  # 0/100 benign flags); its response contract is exactly Yes (unsafe) or No.
+  # Round two may replace the backing model, but the API parser and contract
+  # tests must change in the same release if its native output differs.
+  - model_name: moderation-thorough
+    litellm_params:
+      model: ollama_chat/shieldgemma:2b
+      api_base: http://ollama:11434
+
   - model_name: embeddings
     litellm_params:
       model: ollama/bge-m3

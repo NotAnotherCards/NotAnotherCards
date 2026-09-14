@@ -8,8 +8,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
 import {
   textCardsPayloadSchema,
   topicDeckPayloadSchema,
@@ -27,6 +28,15 @@ import { TEXT_GENERATION_V1 } from './prompts/text-generation.v1';
 import { MetricsService } from '../metrics/metrics.service';
 import { WORD_NOTE_V1 } from './prompts/word-note.v1';
 import { assembleWordNoteCandidate } from './word-note';
+import { ModerationService } from '../sharing/moderation.service';
+import {
+  deckTakedowns,
+  publishedDecks,
+  type StoredModerationClassifierResult,
+  type StoredModerationVerdict,
+} from '../sharing/schema';
+import { userDecks } from '../sync/schema';
+import { syncScopeLockKey } from '../sync/sync-store';
 
 interface ClaimedJobRow {
   id: string;
@@ -56,6 +66,8 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly config: ConfigService,
     @Optional()
     private readonly metricsService?: MetricsService,
+    @Optional()
+    private readonly moderation?: ModerationService,
   ) {
     this.pollIntervalMs = Number(
       this.config.get<string>('AI_WORKER_POLL_INTERVAL_MS') ?? 2000,
@@ -170,6 +182,21 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
     try {
       const rawPayload: unknown =
         typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
+      if (job.type === 'deck_moderation') {
+        metricModel = 'moderation-thorough';
+        const result = await this.executeDeckModeration(rawPayload);
+        await this.completeWithoutUsage(job.id, result);
+        this.metricsService?.aiJobsCompletedTotal.inc();
+        this.metricsService?.observeAiJobDuration(
+          metricModel,
+          'completed',
+          Number(process.hrtime.bigint() - startTime) / 1e9,
+        );
+        this.logger.log(
+          `Job ${job.id} completed (deck moderation: ${result.outcome})`,
+        );
+        return;
+      }
       let result: GenerationResult;
       let usage: InferenceResult['usage'];
       let model: string;
@@ -349,5 +376,216 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         `Job ${job.id} execution failed (attempt ${job.attempts}/${job.max_attempts}, next status: ${nextStatus}, backoff: ${backoffSeconds}s): ${errorMessage}`,
       );
     }
+  }
+
+  private async executeDeckModeration(rawPayload: unknown) {
+    const payload = z
+      .object({
+        deckId: z.string().min(1),
+        snapshotPublishedAt: z.iso.datetime(),
+      })
+      .parse(rawPayload);
+    const publishedAt = new Date(payload.snapshotPublishedAt);
+    const [snapshot] = await this.db
+      .select({
+        userId: publishedDecks.userId,
+        content: publishedDecks.content,
+      })
+      .from(publishedDecks)
+      .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+      .where(
+        and(
+          eq(publishedDecks.deckId, payload.deckId),
+          eq(publishedDecks.publishedAt, publishedAt),
+          eq(publishedDecks.moderationStatus, 'visible'),
+          eq(userDecks.visibility, 'public'),
+          isNull(userDecks.deletedAt),
+        ),
+      );
+    if (!snapshot)
+      return {
+        deckId: payload.deckId,
+        outcome: 'stale' as const,
+        flagged: [],
+        warnings: [],
+        results: [],
+      };
+
+    if (!this.moderation) throw new Error('Moderation service unavailable');
+    const verdict = await this.moderation.checkThorough({
+      deckId: payload.deckId,
+      cards: snapshot.content.cards.map(({ id, front, back }) => ({
+        id,
+        front,
+        back,
+      })),
+    });
+    // Gateway failures never hide a deck merely because somebody reported it;
+    // throwing here gives the queue its normal retry/backoff behaviour.
+    if (verdict.reason === 'moderation unavailable') {
+      throw new Error(verdict.reason);
+    }
+
+    const storedVerdict: StoredModerationVerdict = {
+      ...(verdict.reason ? { reason: verdict.reason } : {}),
+      flagged: verdict.flagged,
+      warnings: verdict.warnings,
+      results: verdict.results,
+    };
+    const outcome = await this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext('deck_report_deck_' || ${payload.deckId}))`,
+      );
+      const [current] = await tx
+        .select({ userId: publishedDecks.userId })
+        .from(publishedDecks)
+        .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+        .where(
+          and(
+            eq(publishedDecks.deckId, payload.deckId),
+            eq(publishedDecks.publishedAt, publishedAt),
+            eq(publishedDecks.moderationStatus, 'visible'),
+            eq(userDecks.visibility, 'public'),
+            isNull(userDecks.deletedAt),
+          ),
+        );
+      if (!current) return 'stale' as const;
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(current.userId).toString()})`,
+      );
+      // Publishing and unpublishing take the scope lock. Re-read after taking
+      // it so a verdict can never land on a snapshot replaced while we waited.
+      const [lockedCurrent] = await tx
+        .select({ userId: publishedDecks.userId })
+        .from(publishedDecks)
+        .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+        .where(
+          and(
+            eq(publishedDecks.deckId, payload.deckId),
+            eq(publishedDecks.publishedAt, publishedAt),
+            eq(publishedDecks.moderationStatus, 'visible'),
+            eq(userDecks.visibility, 'public'),
+            isNull(userDecks.deletedAt),
+          ),
+        );
+      if (!lockedCurrent) return 'stale' as const;
+
+      const now = new Date();
+      await tx
+        .update(publishedDecks)
+        .set({ moderationVerdict: storedVerdict, moderatedAt: now })
+        .where(
+          and(
+            eq(publishedDecks.deckId, payload.deckId),
+            eq(publishedDecks.publishedAt, publishedAt),
+          ),
+        );
+      if (verdict.ok) return 'clean' as const;
+
+      await tx
+        .update(publishedDecks)
+        .set({ moderationStatus: 'blocked' })
+        .where(eq(publishedDecks.deckId, payload.deckId));
+      await tx.insert(deckTakedowns).values({
+        id: randomUUID(),
+        deckId: payload.deckId,
+        source: 'automatic',
+        reason: verdict.reason,
+        verdict: storedVerdict,
+        snapshotPublishedAt: publishedAt,
+      });
+      await tx
+        .update(userDecks)
+        .set({
+          visibility: 'private',
+          rev: sql`nextval('remelon_rev')`,
+          updatedAt: Date.now(),
+        })
+        .where(
+          and(
+            eq(userDecks.id, payload.deckId),
+            eq(userDecks.userId, lockedCurrent.userId),
+            isNull(userDecks.deletedAt),
+          ),
+        );
+      return 'blocked' as const;
+    });
+
+    return {
+      deckId: payload.deckId,
+      outcome,
+      flagged: verdict.flagged,
+      warnings: verdict.warnings,
+      results: verdict.results,
+    };
+  }
+
+  private async completeWithoutUsage(
+    jobId: string,
+    result: {
+      deckId: string;
+      outcome: 'clean' | 'blocked' | 'stale';
+      flagged: { cardId: string; reason: string; classifier?: string }[];
+      warnings: { cardId: string; reason: string; classifier?: string }[];
+      results: StoredModerationClassifierResult[];
+    },
+  ) {
+    const persisted = {
+      outcome: result.outcome,
+      flagged: result.flagged,
+      warnings: result.warnings,
+      results: result.results,
+    };
+    await this.db.transaction(async (tx) => {
+      if (result.outcome === 'stale') {
+        // A report can arrive for a republished snapshot while this job still
+        // owns the deck's single active slot. Serialize with report creation,
+        // finish the stale job, then carry that newer report into a fresh job.
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtext('deck_report_deck_' || ${result.deckId}))`,
+        );
+      }
+      await tx.execute(sql`
+        UPDATE ai_generation_jobs
+        SET status = 'completed',
+            result = ${JSON.stringify(persisted)}::jsonb,
+            error = NULL,
+            completed_at = NOW(),
+            updated_at = NOW()
+        WHERE id = ${jobId}
+      `);
+      if (result.outcome !== 'stale') return;
+
+      const followUp = await tx.execute(sql`
+        SELECT p.published_at, r.reporter_user_id
+        FROM published_decks p
+        JOIN user_decks d ON d.id = p.deck_id
+        JOIN deck_reports r
+          ON r.deck_id = p.deck_id
+         AND r.snapshot_published_at = p.published_at
+        WHERE p.deck_id = ${result.deckId}
+          AND p.moderation_status = 'visible'
+          AND p.moderated_at IS NULL
+          AND d.visibility = 'public'
+          AND d.deleted_at IS NULL
+        ORDER BY r.created_at ASC
+        LIMIT 1
+      `);
+      const row = followUp.rows[0] as
+        { published_at: Date | string; reporter_user_id: string } | undefined;
+      if (!row) return;
+      await tx.execute(sql`
+        INSERT INTO ai_generation_jobs (id, user_id, type, payload)
+        VALUES (
+          ${randomUUID()},
+          ${row.reporter_user_id},
+          'deck_moderation',
+          ${JSON.stringify({
+            deckId: result.deckId,
+            snapshotPublishedAt: new Date(row.published_at).toISOString(),
+          })}::jsonb
+        )
+      `);
+    });
   }
 }

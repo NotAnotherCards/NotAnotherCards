@@ -8,6 +8,7 @@ import { AiQueueService } from './ai-queue.service';
 import { AiWorkerService } from './ai-worker.service';
 import { AiController } from './ai.controller';
 import { AiPlaygroundService } from './ai-playground.service';
+import { ModerationService } from '../sharing/moderation.service';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, AuthModule],
@@ -18,7 +19,14 @@ import { AiPlaygroundService } from './ai-playground.service';
     AiQueueService,
     AiWorkerService,
     AiPlaygroundService,
+    ModerationService,
   ],
-  exports: [AiGatewayService, AiLimitsService, AiQueueService, AiWorkerService],
+  exports: [
+    AiGatewayService,
+    AiLimitsService,
+    AiQueueService,
+    AiWorkerService,
+    ModerationService,
+  ],
 })
 export class AiModule {}

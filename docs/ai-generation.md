@@ -90,3 +90,39 @@ unparsable verdict refuses publication with `moderation unavailable`; there
 is no allow-on-error path. A deck check has a budget of 5 s plus 1 s per card,
 capped at 240 s, and fails closed when that budget runs out. Private decks are never checked.
 `MODERATION_ALLOW_ALL=1` bypasses the classifier, for tests and demos only.
+
+## Moderation after a report
+
+A signed-in user can report a public deck once, subject to a rolling daily
+report cap. The report is durable and visible through the operator API. It
+does not hide the deck by itself: it queues a `deck_moderation` job against
+the exact published snapshot. One pending/running job is allowed per deck.
+
+The thorough job sends every card to the fast `moderation` alias (Qwen3Guard)
+and to the checked-in independent `moderation-thorough` alias (currently
+ShieldGemma 2B). Qwen3Guard's structured safety/category response and
+ShieldGemma's native `Yes`/`No` response have separate parsers and contract
+tests. Each classifier receives its own deck deadline, so a failed or timed-out
+request from one cannot prevent the other from running. Either classifier
+returning unsafe blocks that snapshot even if another request failed. Only when
+no classifier found unsafe content does any required failed request make the
+check unavailable and eligible for the queue's normal retries. The takedown
+record stores every completed per-card opinion, including safe verdicts, plus
+an explicit error result for a failed request. Categories are nullable because
+binary classifiers such as ShieldGemma do not supply one. Owners see that full
+classifier record. Blocking also makes the owner's synced deck private and
+removes it from browse, preview, and import. Existing imported
+copies are independent and remain usable. A clean result is cached on that
+snapshot for `MODERATION_RECHECK_WINDOW_HOURS` (24 by default). Reports remain
+recorded, but do not repeatedly spend classifier work within that window.
+
+Until account roles are implemented, operator report listing and manual
+takedown require `x-moderation-operator-key` to match
+`MODERATION_OPERATOR_KEY`. Keep that key in the deployment secret store.
+Manual takedowns use the same durable blocked state and owner-visible refusal
+details as automatic takedowns.
+
+Warnings are shown immediately after publish and remain attached to the
+published snapshot. Refusals, warnings, and takedown findings each offer an
+owner-only **Why?** action; it streams a short contextual explanation from the
+default generation model and may identify a likely false positive.

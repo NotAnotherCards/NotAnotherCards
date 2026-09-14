@@ -20,6 +20,12 @@ export interface ObjectInferenceResult {
   model: string;
 }
 
+export interface TextInferenceResult {
+  text: string;
+  usage: InferenceResult['usage'];
+  model: string;
+}
+
 export class AiParseError extends Error {
   constructor(
     message: string,
@@ -193,6 +199,42 @@ export class AiGatewayService {
     }
 
     return { cards, usage: completion.usage, model: completion.model };
+  }
+
+  async generateText(
+    systemPrompt: string,
+    userPrompt: string,
+    requestedModel?: string,
+    stream?: StreamingOptions,
+  ): Promise<TextInferenceResult> {
+    const settings = this.gatewaySettings(requestedModel);
+    if (!settings.apiBase) {
+      if (settings.isMock) {
+        const text =
+          'This card was flagged because its wording may match the selected safety category. Revise it to keep the learning objective while removing or clearly contextualizing the sensitive wording.';
+        if (stream) await stream.onDelta(text);
+        return {
+          text,
+          usage: { promptTokens: 20, completionTokens: 30, totalTokens: 50 },
+          model: `${settings.model}-mock`,
+        };
+      }
+      throw new Error('AI gateway is not configured (AI_API_BASE is unset).');
+    }
+
+    const completion = stream
+      ? await this.requestStreamingCompletion(
+          systemPrompt,
+          userPrompt,
+          settings,
+          stream,
+        )
+      : await this.requestCompletion(systemPrompt, userPrompt, settings);
+    return {
+      text: completion.rawContent.trim(),
+      usage: completion.usage,
+      model: completion.model,
+    };
   }
 
   private async requestStreamingCompletion(

@@ -2,6 +2,13 @@
 
 It's not another flashcard app. AI-powered language learning through context, nuance, and spaced repetition.
 
+Published community decks use automatic content moderation, user reporting,
+automatic takedown after an independent two-classifier re-check, and an
+operator takedown path. Owners see each classifier's verdict and any category
+that classifier supplies, and can request a streamed contextual explanation. Personal copies already imported
+from a community deck remain owned by the learner and are not altered by a
+later takedown.
+
 ## Stack
 
 - `apps/web`: React, Vite, TypeScript, Tailwind CSS, shadcn/ui, Vitest, and React Testing Library

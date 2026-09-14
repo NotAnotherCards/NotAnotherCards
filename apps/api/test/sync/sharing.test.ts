@@ -35,7 +35,13 @@ import { AppModule } from '../../src/app.module';
 import { DATABASE_CONNECTION } from '../../src/database/database-connection';
 import { ModerationService } from '../../src/sharing/moderation.service';
 import { SharingService } from '../../src/sharing/sharing.service';
-import { publishedDecks } from '../../src/sharing/schema';
+import {
+  deckReports,
+  deckTakedowns,
+  publishedDecks,
+} from '../../src/sharing/schema';
+import { aiGenerationJobs } from '../../src/ai/schema';
+import { AiWorkerService } from '../../src/ai/ai-worker.service';
 import { syncScopeLockKey } from '../../src/sync/sync-store';
 import {
   userCards,
@@ -85,6 +91,7 @@ describePostgres('deck sharing endpoints', () => {
   let app: INestApplication<App>;
   let userA: TestUser;
   let userB: TestUser;
+  let userC: TestUser;
 
   const previousEnvironment = {
     databaseUrl: process.env.DATABASE_URL,
@@ -92,6 +99,9 @@ describePostgres('deck sharing endpoints', () => {
     authSecret: process.env.BETTER_AUTH_SECRET,
     authUrl: process.env.BETTER_AUTH_URL,
     moderationAllowAll: process.env.MODERATION_ALLOW_ALL,
+    operatorKey: process.env.MODERATION_OPERATOR_KEY,
+    workerEnabled: process.env.AI_WORKER_ENABLED,
+    maxDailyReports: process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER,
   };
 
   const signUp = async (label: string): Promise<TestUser> => {
@@ -273,6 +283,9 @@ describePostgres('deck sharing endpoints', () => {
     process.env.BETTER_AUTH_SECRET = 'test-secret-at-least-32-characters';
     process.env.BETTER_AUTH_URL = 'http://localhost:3000';
     process.env.MODERATION_ALLOW_ALL = '1';
+    process.env.MODERATION_OPERATOR_KEY = 'test-operator-key';
+    process.env.AI_WORKER_ENABLED = 'false';
+    process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER = '10';
 
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
@@ -286,11 +299,12 @@ describePostgres('deck sharing endpoints', () => {
 
     userA = await signUp('sharing-user-a');
     userB = await signUp('sharing-user-b');
+    userC = await signUp('sharing-user-c');
   }, 30_000);
 
   beforeEach(async () => {
     await db.execute(`
-      truncate table published_decks, user_profiles, review_events, user_note_decks, user_cards, user_notes, user_decks cascade;
+      truncate table deck_takedowns, deck_reports, published_decks, user_profiles, review_events, user_note_decks, user_cards, user_notes, user_decks, ai_generation_jobs, ai_usage cascade;
       delete from remelon_revision_checkpoints;
       delete from remelon_sync_meta;
       alter sequence remelon_rev restart with 1;
@@ -311,12 +325,20 @@ describePostgres('deck sharing endpoints', () => {
         createdAt: now,
         updatedAt: now,
       },
+      {
+        userId: userC.id,
+        rev: sql`nextval('remelon_rev')`,
+        username: 'user-c',
+        createdAt: now,
+        updatedAt: now,
+      },
     ]);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     process.env.MODERATION_ALLOW_ALL = '1';
+    process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER = '10';
   });
 
   afterAll(async () => {
@@ -328,6 +350,10 @@ describePostgres('deck sharing endpoints', () => {
     process.env.BETTER_AUTH_SECRET = previousEnvironment.authSecret;
     process.env.BETTER_AUTH_URL = previousEnvironment.authUrl;
     process.env.MODERATION_ALLOW_ALL = previousEnvironment.moderationAllowAll;
+    process.env.MODERATION_OPERATOR_KEY = previousEnvironment.operatorKey;
+    process.env.AI_WORKER_ENABLED = previousEnvironment.workerEnabled;
+    process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER =
+      previousEnvironment.maxDailyReports;
   }, 30_000);
 
   it('rejects unauthenticated publish and unpublish', async () => {
@@ -377,6 +403,7 @@ describePostgres('deck sharing endpoints', () => {
         ok: false,
         flagged: [{ cardId: cardIds[1], reason: 'slur' }],
         warnings: [],
+        results: [],
       });
 
     const response = await post(userA, '/api/decks/flagged/publish').expect(
@@ -403,6 +430,7 @@ describePostgres('deck sharing endpoints', () => {
       ok: true,
       flagged: [],
       warnings: [{ cardId: cardIds[0], reason: 'Violent' }],
+      results: [],
     });
 
     const response = await post(userA, '/api/decks/warned/publish').expect(200);
@@ -412,6 +440,43 @@ describePostgres('deck sharing endpoints', () => {
     });
     publishResponseSchema.parse(response.body);
     expect((await storedDeck('warned')).visibility).toBe('public');
+
+    await get(userA, '/api/decks/warned/moderation')
+      .expect(200)
+      .expect({
+        status: 'visible',
+        warnings: [{ cardId: cardIds[0], reason: 'Violent' }],
+      });
+
+    const explanation = await post(
+      userA,
+      '/api/decks/warned/moderation/explain',
+    )
+      .send({
+        cardId: cardIds[0],
+        reason: 'Violent',
+        source: 'published',
+      })
+      .expect('Content-Type', /text\/event-stream/)
+      .expect(200);
+    expect(explanation.text).toContain('"type":"delta"');
+    expect(explanation.text).toContain('"type":"result"');
+
+    await post(userA, '/api/decks/warned/moderation/explain')
+      .send({
+        cardId: cardIds[0],
+        reason: 'Invented category',
+        source: 'published',
+      })
+      .expect(404);
+
+    await post(userB, '/api/decks/warned/moderation/explain')
+      .send({
+        cardId: cardIds[0],
+        reason: 'Violent',
+        source: 'published',
+      })
+      .expect(404);
   });
 
   it('refuses to publish where moderation is not switched on', async () => {
@@ -457,6 +522,281 @@ describePostgres('deck sharing endpoints', () => {
     expect(await db.select().from(publishedDecks)).toEqual([]);
     await post(userA, '/api/decks/retractable/publish').expect(200);
     expect(await db.select().from(publishedDecks)).toHaveLength(1);
+  });
+
+  it('records one report per user and queues one re-check without hiding the deck', async () => {
+    await seedDeck(userA, 'reported', { visibility: 'public' });
+
+    const response = await post(userB, '/api/shared/decks/reported/report')
+      .send({ reason: 'The answer contains harassment.' })
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      report: {
+        deckId: 'reported',
+        reporterUserId: userB.id,
+        reason: 'The answer contains harassment.',
+      },
+      recheck: 'queued',
+    });
+    expect(await db.select().from(deckReports)).toHaveLength(1);
+    expect(await db.select().from(aiGenerationJobs)).toEqual([
+      expect.objectContaining({
+        type: 'deck_moderation',
+        status: 'pending',
+      }),
+    ]);
+    expect((await browse(userB)).map(({ id }) => id)).toContain('reported');
+
+    const pending = await post(userC, '/api/shared/decks/reported/report')
+      .send({ reason: 'A separate report while the check is queued.' })
+      .expect(201);
+    expect((pending.body as { recheck: string }).recheck).toBe('pending');
+    expect(await db.select().from(aiGenerationJobs)).toHaveLength(1);
+
+    await post(userB, '/api/shared/decks/reported/report')
+      .send({ reason: 'A second report' })
+      .expect(409);
+    await post(userA, '/api/shared/decks/reported/report')
+      .send({ reason: 'Reporting my own deck' })
+      .expect(400);
+  });
+
+  it('enforces the reporter daily cap before recording or queuing', async () => {
+    process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER = '1';
+    await seedDeck(userA, 'first-report', { visibility: 'public' });
+    await seedDeck(userA, 'over-report-cap', { visibility: 'public' });
+
+    await post(userB, '/api/shared/decks/first-report/report')
+      .send({ reason: 'First legitimate report.' })
+      .expect(201);
+    await post(userB, '/api/shared/decks/over-report-cap/report')
+      .send({ reason: 'This one exceeds the daily cap.' })
+      .expect(429);
+
+    expect(await db.select().from(deckReports)).toHaveLength(1);
+    expect(await db.select().from(aiGenerationJobs)).toHaveLength(1);
+  });
+
+  it('caches a clean thorough re-check of the same published snapshot', async () => {
+    await seedDeck(userA, 'clean-report', { visibility: 'public' });
+    await post(userB, '/api/shared/decks/clean-report/report')
+      .send({ reason: 'Please double-check this.' })
+      .expect(201);
+    const check = vi
+      .spyOn(app.get(ModerationService), 'checkThorough')
+      .mockResolvedValue({ ok: true, flagged: [], warnings: [], results: [] });
+
+    expect(await app.get(AiWorkerService).processNextJob()).toBe(true);
+    expect(check).toHaveBeenCalledTimes(1);
+    const cached = await post(userC, '/api/shared/decks/clean-report/report')
+      .send({ reason: 'I am not sure this is accurate.' })
+      .expect(201);
+    expect((cached.body as { recheck: string }).recheck).toBe('cached');
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(await db.select().from(aiGenerationJobs)).toHaveLength(1);
+  });
+
+  it('automatically takes down a snapshot either thorough classifier flags', async () => {
+    await seedDeck(userA, 'auto-blocked', { visibility: 'public' });
+    const imported = await post(
+      userC,
+      '/api/shared/decks/auto-blocked/import',
+    ).expect(201);
+    await post(userB, '/api/shared/decks/auto-blocked/report')
+      .send({ reason: 'This contains targeted abuse.' })
+      .expect(201);
+    vi.spyOn(app.get(ModerationService), 'checkThorough').mockResolvedValue({
+      ok: false,
+      flagged: [
+        {
+          cardId: 'flagged-card',
+          reason: 'Harassment',
+          classifier: 'moderation-thorough',
+        },
+      ],
+      warnings: [],
+      results: [
+        {
+          cardId: 'flagged-card',
+          classifier: 'moderation',
+          verdict: 'safe',
+          categories: [],
+        },
+        {
+          cardId: 'flagged-card',
+          classifier: 'moderation-thorough',
+          verdict: 'unsafe',
+          categories: null,
+        },
+      ],
+    });
+
+    expect(await app.get(AiWorkerService).processNextJob()).toBe(true);
+    expect((await storedDeck('auto-blocked')).visibility).toBe('private');
+    expect(await browse(userB)).toEqual([]);
+    await get(userB, '/api/shared/decks/auto-blocked').expect(404);
+    await post(userB, '/api/shared/decks/auto-blocked/import').expect(404);
+    // Copy-on-import means a takedown cannot reach an existing personal copy.
+    const importedId = (imported.body as { deckId: string }).deckId;
+    expect(await storedDeck(importedId)).toEqual(
+      expect.objectContaining({ userId: userC.id, visibility: 'private' }),
+    );
+    const [takedown] = await db.select().from(deckTakedowns);
+    expect(takedown).toEqual(
+      expect.objectContaining({
+        deckId: 'auto-blocked',
+        source: 'automatic',
+      }),
+    );
+    expect(takedown.verdict.results).toEqual([
+      {
+        cardId: 'flagged-card',
+        classifier: 'moderation',
+        verdict: 'safe',
+        categories: [],
+      },
+      {
+        cardId: 'flagged-card',
+        classifier: 'moderation-thorough',
+        verdict: 'unsafe',
+        categories: null,
+      },
+    ]);
+
+    const status = await get(
+      userA,
+      '/api/decks/auto-blocked/moderation',
+    ).expect(200);
+    expect(status.body).toMatchObject({
+      status: 'blocked',
+      flagged: [
+        {
+          cardId: 'flagged-card',
+          reason: 'Harassment',
+          classifier: 'moderation-thorough',
+        },
+      ],
+      results: [
+        expect.objectContaining({
+          classifier: 'moderation',
+          verdict: 'safe',
+          categories: [],
+        }),
+        expect.objectContaining({
+          classifier: 'moderation-thorough',
+          verdict: 'unsafe',
+          categories: null,
+        }),
+      ],
+    });
+  });
+
+  it('never applies a report check to a newer republished snapshot', async () => {
+    await seedDeck(userA, 'republished-before-check', {
+      visibility: 'public',
+    });
+    await post(userB, '/api/shared/decks/republished-before-check/report')
+      .send({ reason: 'This old version needs review.' })
+      .expect(201);
+    await post(userA, '/api/decks/republished-before-check/publish').expect(
+      200,
+    );
+    const check = vi.spyOn(app.get(ModerationService), 'checkThorough');
+
+    expect(await app.get(AiWorkerService).processNextJob()).toBe(true);
+    expect(check).not.toHaveBeenCalled();
+    expect((await storedDeck('republished-before-check')).visibility).toBe(
+      'public',
+    );
+    expect(await db.select().from(deckTakedowns)).toEqual([]);
+    expect(await browse(userB)).toHaveLength(1);
+  });
+
+  it('carries a newer-snapshot report forward when the active job is stale', async () => {
+    await seedDeck(userA, 'reported-twice-around-republish', {
+      visibility: 'public',
+    });
+    await post(
+      userB,
+      '/api/shared/decks/reported-twice-around-republish/report',
+    )
+      .send({ reason: 'Problem in the first snapshot.' })
+      .expect(201);
+    await post(
+      userA,
+      '/api/decks/reported-twice-around-republish/publish',
+    ).expect(200);
+    const newerReport = await post(
+      userC,
+      '/api/shared/decks/reported-twice-around-republish/report',
+    )
+      .send({ reason: 'The republished snapshot still has a problem.' })
+      .expect(201);
+    expect((newerReport.body as { recheck: string }).recheck).toBe('pending');
+    const check = vi
+      .spyOn(app.get(ModerationService), 'checkThorough')
+      .mockResolvedValue({
+        ok: false,
+        flagged: [{ cardId: 'new-card', reason: 'Harassment' }],
+        warnings: [],
+        results: [],
+      });
+
+    // The old job is completed as stale and atomically replaced by one for
+    // the snapshot the second reporter actually saw.
+    expect(await app.get(AiWorkerService).processNextJob()).toBe(true);
+    expect(check).not.toHaveBeenCalled();
+    const pendingJobs = (await db.select().from(aiGenerationJobs)).filter(
+      ({ status }) => status === 'pending',
+    );
+    expect(pendingJobs).toHaveLength(1);
+    expect(pendingJobs[0].nextRunAt.getTime()).toBeLessThanOrEqual(Date.now());
+
+    expect(await app.get(AiWorkerService).processNextJob()).toBe(true);
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(
+      (await storedDeck('reported-twice-around-republish')).visibility,
+    ).toBe('private');
+  });
+
+  it('keeps operator reports and takedown behind the operator key', async () => {
+    await seedDeck(userA, 'operator-blocked', { visibility: 'public' });
+    await post(userB, '/api/shared/decks/operator-blocked/report')
+      .send({ reason: 'The facts are dangerously wrong.' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get('/api/operator/deck-reports')
+      .expect(401);
+    const reports = await request(app.getHttpServer())
+      .get('/api/operator/deck-reports')
+      .set('x-moderation-operator-key', 'test-operator-key')
+      .expect(200);
+    expect((reports.body as { reports: unknown[] }).reports).toEqual([
+      expect.objectContaining({
+        deckId: 'operator-blocked',
+        reporterUserId: userB.id,
+      }),
+    ]);
+
+    await request(app.getHttpServer())
+      .post('/api/operator/decks/operator-blocked/takedown')
+      .send({ reason: 'Copyright complaint verified.' })
+      .expect(401);
+    await request(app.getHttpServer())
+      .post('/api/operator/decks/operator-blocked/takedown')
+      .set('x-moderation-operator-key', 'test-operator-key')
+      .send({ reason: 'Copyright complaint verified.' })
+      .expect(200);
+    expect((await storedDeck('operator-blocked')).visibility).toBe('private');
+    expect(await db.select().from(deckTakedowns)).toEqual([
+      expect.objectContaining({
+        deckId: 'operator-blocked',
+        source: 'operator',
+        reason: 'Copyright complaint verified.',
+      }),
+    ]);
   });
 
   it('still rejects a client push to public after a publish and unpublish', async () => {
@@ -648,7 +988,7 @@ describePostgres('deck sharing endpoints', () => {
           .update(userDecks)
           .set({ deletedAt: new Date() })
           .where(eq(userDecks.id, 'vanishing'));
-        return { ok: true, flagged: [], warnings: [] };
+        return { ok: true, flagged: [], warnings: [], results: [] };
       },
     );
 
@@ -722,7 +1062,7 @@ describePostgres('deck sharing endpoints', () => {
             .expect(200);
           const body = response.body as { rejected?: Record<string, string[]> };
           expect(body.rejected ?? {}).toEqual({});
-          return { ok: true, flagged: [], warnings: [] };
+          return { ok: true, flagged: [], warnings: [], results: [] };
         },
       );
 
@@ -778,7 +1118,7 @@ describePostgres('deck sharing endpoints', () => {
           .expect(200);
         const body = response.body as { rejected?: Record<string, string[]> };
         expect(body.rejected ?? {}).toEqual({});
-        return { ok: true, flagged: [], warnings: [] };
+        return { ok: true, flagged: [], warnings: [], results: [] };
       },
     );
 
@@ -849,6 +1189,7 @@ describePostgres('deck sharing endpoints', () => {
       flagged: [],
       warnings: [],
       reason: 'refused',
+      results: [],
     });
     await post(userA, '/api/decks/working/publish').expect(422);
     expect(await db.select().from(publishedDecks)).toEqual([before]);

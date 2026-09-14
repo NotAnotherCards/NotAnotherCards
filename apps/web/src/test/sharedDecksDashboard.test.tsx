@@ -168,4 +168,67 @@ describe('Shared Decks Dashboard Feed', () => {
     // Button restores its state
     await waitFor(() => expect(importBtn).not.toBeDisabled());
   });
+
+  it('lets a signed-in user report a community deck', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string, init?: RequestInit) => {
+        if (
+          url.endsWith('/api/shared/decks') &&
+          (!init || init.method === 'GET')
+        ) {
+          return Promise.resolve(response({ decks: mockDecks }));
+        }
+        if (
+          url.includes('/api/shared/decks/deck-1/report') &&
+          init?.method === 'POST'
+        ) {
+          return Promise.resolve(
+            response({
+              report: {
+                id: 'report-1',
+                deckId: 'deck-1',
+                reporterUserId: 'user-123',
+                reason: 'The answer contains targeted abuse.',
+                snapshotPublishedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+              },
+              recheck: 'queued',
+            }),
+          );
+        }
+        return Promise.reject(new Error(`unmocked request: ${url}`));
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+    await act(async () => {
+      await router.navigate({ to: '/dashboard' });
+    });
+    await screen.findByText('Spanish Basics');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Report Spanish Basics' }),
+    );
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'Reason for report' }),
+      {
+        target: { value: 'The answer contains targeted abuse.' },
+      },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Submit report' }));
+
+    expect(
+      await screen.findByText('Thank you. Your report was recorded.'),
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/shared/decks/deck-1/report',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          reason: 'The answer contains targeted abuse.',
+        }),
+      }),
+    );
+  });
 });

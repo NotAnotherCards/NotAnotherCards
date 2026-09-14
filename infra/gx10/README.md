@@ -99,6 +99,7 @@ Which model for what (measured, see
 | `mistral-small` | second opinion, dense-model style      | older results, rerun pending                                                                                        |
 | `fact-check`    | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no                                                                  |
 | `moderation`    | content screening                      | qwen3guard verdicts: Safe, Unsafe, or Controversial, plus categories                                                |
+| `moderation-thorough` | report re-check                 | independent ShieldGemma 2B; native `Yes` (unsafe) / `No` (safe) contract; final round-two selection pending        |
 | `embeddings`    | vectors (bge-m3)                       | embeddings API, not chat                                                                                            |
 
 Good to know:

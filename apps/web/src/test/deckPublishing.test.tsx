@@ -80,7 +80,7 @@ describe('Deck Publishing Controls', () => {
 
     // Resolve the promise
     await act(async () => {
-      completePublish(response({ visibility: 'public' }));
+      completePublish(response({ visibility: 'public', warnings: [] }));
     });
 
     await waitFor(() => {
@@ -214,7 +214,7 @@ describe('Deck Publishing Controls', () => {
 
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(response({ visibility: 'public' }));
+      .mockResolvedValue(response({ visibility: 'public', warnings: [] }));
     vi.stubGlobal('fetch', fetchMock);
 
     render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
@@ -241,6 +241,166 @@ describe('Deck Publishing Controls', () => {
 
     // Ensure syncNow was called twice (once before publish, once after publish)
     expect(mockSyncController.syncNow).toHaveBeenCalledTimes(2);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      fetchMock.mock.calls.filter(([url]) =>
+        String(url).includes('/api/decks/deck-1/publish'),
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('shows the stored takedown verdict to the owner', async () => {
+    mockDeck.visibility = 'public';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/api/decks/deck-1/moderation')) {
+          return Promise.resolve(
+            response({
+              status: 'blocked',
+              reason: 'Reported deck did not pass the thorough check.',
+              flagged: [
+                {
+                  cardId: 'card-123456789',
+                  reason: 'Harassment',
+                  classifier: 'moderation-thorough',
+                },
+              ],
+              warnings: [
+                {
+                  cardId: 'card-warning-123',
+                  reason: 'Sensitive topic',
+                  classifier: 'moderation',
+                },
+              ],
+              results: [
+                {
+                  cardId: 'card-123456789',
+                  classifier: 'moderation',
+                  verdict: 'safe',
+                  categories: [],
+                },
+                {
+                  cardId: 'card-123456789',
+                  classifier: 'moderation-thorough',
+                  verdict: 'unsafe',
+                  categories: null,
+                },
+              ],
+              moderatedAt: new Date().toISOString(),
+            }),
+          );
+        }
+        return Promise.reject(new Error(`unmocked request: ${url}`));
+      }),
+    );
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+
+    expect(await screen.findByText('Deck taken down')).toBeInTheDocument();
+    expect(
+      screen.getByText('Reported deck did not pass the thorough check.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Classifier results')).toBeInTheDocument();
+    expect(screen.getByText('safe')).toBeInTheDocument();
+    expect(screen.getByText('unsafe')).toBeInTheDocument();
+    expect(screen.getByText('Categories: none')).toBeInTheDocument();
+    expect(screen.getByText('No category supplied')).toBeInTheDocument();
+    expect(screen.getByText('moderation')).toBeInTheDocument();
+    expect(screen.getByText('moderation-thorough')).toBeInTheDocument();
+    // The server has made it private, so even a stale local public row offers
+    // the recovery path instead of an ineffective Unpublish action.
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeInTheDocument();
+  });
+
+  it('shows publish warnings and streams an on-demand explanation', async () => {
+    const encoder = new TextEncoder();
+    const explanationResponse = {
+      ok: true,
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              'data: {"type":"delta","delta":"The context may be sensitive. "}\n\n',
+            ),
+          );
+          controller.enqueue(
+            encoder.encode(
+              'data: {"type":"result","explanation":"The context may be sensitive. Rephrase it neutrally."}\n\n',
+            ),
+          );
+        },
+      }),
+    } as Response;
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/moderation/explain')) {
+        return Promise.resolve(explanationResponse);
+      }
+      if (url.includes('/moderation')) {
+        return Promise.resolve(response({ status: 'clear' }));
+      }
+      if (url.includes('/publish')) {
+        return Promise.resolve(
+          response({
+            visibility: 'public',
+            warnings: [{ cardId: 'card-warning-123', reason: 'Violence' }],
+          }),
+        );
+      }
+      return Promise.reject(new Error(`unmocked request: ${url}`));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+
+    expect(
+      await screen.findByText('Published with moderation warnings'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Violence')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Why?' }));
+
+    expect(
+      await screen.findByText(
+        'The context may be sensitive. Rephrase it neutrally.',
+      ),
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/decks/deck-1/moderation/explain',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          cardId: 'card-warning-123',
+          reason: 'Violence',
+          source: 'published',
+        }),
+      }),
+    );
+  });
+
+  it('restores stored publish warnings when the owner reopens the deck', async () => {
+    mockDeck.visibility = 'public';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/api/decks/deck-1/moderation')) {
+          return Promise.resolve(
+            response({
+              status: 'visible',
+              warnings: [
+                { cardId: 'card-warning-123', reason: 'Sensitive topic' },
+              ],
+            }),
+          );
+        }
+        return Promise.reject(new Error(`unmocked request: ${url}`));
+      }),
+    );
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+
+    expect(
+      await screen.findByText('Published with moderation warnings'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Sensitive topic')).toBeInTheDocument();
   });
 });

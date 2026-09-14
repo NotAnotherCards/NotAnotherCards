@@ -2,7 +2,12 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { AI_MODELS } from './ai';
 
-const NON_GENERATORS = ['embeddings', 'moderation', 'fact-check'];
+const NON_GENERATORS = [
+  'embeddings',
+  'moderation',
+  'moderation-thorough',
+  'fact-check',
+];
 
 describe('litellm config', () => {
   it('lists exactly the models in AI_MODELS', () => {
