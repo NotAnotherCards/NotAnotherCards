@@ -59,9 +59,10 @@ export function CardList({
   const rowVirtualizer = useVirtualizer({
     count: filteredCards.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 100, // Estimated height per row (adjusts dynamically)
+    estimateSize: () => 61, // Estimated height per row (adjusts dynamically)
     overscan: 5,
     initialRect: { width: 800, height: 800 },
+    getItemKey: (index) => filteredCards[index]?.id ?? index,
   });
 
   if (store.isTakenOver) {
@@ -170,20 +171,33 @@ export function CardList({
             ) : null}
           </div>
         ) : (
-          <div className="flex flex-col">
+          <div
+            className="flex flex-col"
+            role="table"
+            aria-label="Card Catalog"
+            aria-rowcount={filteredCards.length + 1}
+          >
             {/* Header row (visible on desktop) */}
-            <div className="hidden md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
-              <div>Front / Question</div>
-              <div>Back / Answer</div>
-              <div className="text-right">Actions</div>
+            <div role="rowgroup">
+              <div
+                role="row"
+                className="hidden md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+              >
+                <div role="columnheader">Front / Question</div>
+                <div role="columnheader">Back / Answer</div>
+                <div role="columnheader" className="text-right">
+                  Actions
+                </div>
+              </div>
             </div>
 
             {/* Scrollable container for virtualized list */}
             <div
               ref={parentRef}
-              className="h-[calc(100vh-250px)] min-h-100 overflow-auto"
+              className="max-h-[calc(100vh-250px)] overflow-auto"
             >
               <div
+                role="rowgroup"
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
                   width: '100%',
