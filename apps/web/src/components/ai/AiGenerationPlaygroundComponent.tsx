@@ -215,6 +215,7 @@ export function AiGenerationPlaygroundComponent() {
         return;
       }
     } catch (error) {
+      setLoading(false)
       if (!request.signal.aborted) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Unable to create.',
@@ -311,6 +312,7 @@ export function AiGenerationPlaygroundComponent() {
             jobId={currentJob?.id}
             status={currentJob?.status ?? 'processing'}
             error={currentJob?.error}
+            type={currentJob?.type}
           />
         ) : (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md">
