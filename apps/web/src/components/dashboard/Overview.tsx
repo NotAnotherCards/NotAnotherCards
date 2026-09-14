@@ -43,6 +43,8 @@ type OverviewProps = {
   onChooseDeck: () => void;
 };
 
+const NOTIFIED_STORAGE_KEY = 'gamification_notified_today';
+
 function DashboardSyncStatus() {
   const controller = useSyncController();
   const state = useSyncState();
@@ -173,7 +175,6 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     DailyChallengeProgress[] | null
   >(null);
   const [notifications, setNotifications] = useState<string[]>([]);
-  const notifiedChallenges = useRef<Set<string>>(new Set());
 
   // Derive immediate progress locally
   const localActivity = useMemo(() => {
@@ -226,32 +227,54 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
   // Handle notifications
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Only process notifications once the local DB is fully initialized
+    if (!store.ready) return;
+
+    // We use UTC date to match the gamification reset logic
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    let notifiedState = { date: '', codes: [] as string[] };
+    try {
+      const stored = localStorage.getItem(NOTIFIED_STORAGE_KEY);
+      if (stored) {
+        notifiedState = JSON.parse(stored);
+      }
+    } catch {
+      // Ignore parse errors
+    }
+
+    if (notifiedState.date !== todayStr) {
+      notifiedState = { date: todayStr, codes: [] };
+    }
+
     const newCompletions: string[] = [];
+    let updatedStorage = false;
+
     challenges.forEach((challenge) => {
       if (
         challenge.completed &&
-        !notifiedChallenges.current.has(challenge.code)
+        !notifiedState.codes.includes(challenge.code)
       ) {
-        notifiedChallenges.current.add(challenge.code);
+        notifiedState.codes.push(challenge.code);
         newCompletions.push(challenge.code);
+        updatedStorage = true;
       }
     });
+
+    if (updatedStorage) {
+      localStorage.setItem(NOTIFIED_STORAGE_KEY, JSON.stringify(notifiedState));
+    }
 
     if (newCompletions.length > 0) {
       setNotifications((prev) => [...prev, ...newCompletions]);
 
-      timer = setTimeout(() => {
+      setTimeout(() => {
         setNotifications((prev) =>
           prev.filter((n) => !newCompletions.includes(n)),
         );
       }, 5000);
     }
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [challenges]);
+  }, [challenges, store.ready]);
 
   // Map to dailyGoals format
   const dailyGoals = challenges.map((challenge, index) => {
