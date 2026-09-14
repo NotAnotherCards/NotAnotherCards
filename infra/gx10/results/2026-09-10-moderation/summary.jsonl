@@ -1,0 +1,4 @@
+{"model": "llama-guard3:latest", "items": 200, "unsafe": 100, "safe": 100, "recall": 0.75, "precision": 1.0, "fpr": 0.0, "unparsed": 0, "errors": 0, "p50_ms": 75, "p95_ms": 289}
+{"model": "shieldgemma:latest", "items": 200, "unsafe": 100, "safe": 100, "recall": 0.88, "precision": 1.0, "fpr": 0.0, "unparsed": 0, "errors": 0, "p50_ms": 304, "p95_ms": 540}
+{"model": "qwen3guard-8b:latest", "items": 200, "unsafe": 100, "safe": 100, "recall": 1.0, "precision": 1.0, "fpr": 0.0, "unparsed": 0, "errors": 0, "p50_ms": 242, "p95_ms": 478}
+{"model": "granite4.1-guardian:8b", "items": 100, "unsafe": 50, "safe": 50, "recall": 0.86, "precision": 1.0, "fpr": 0.0, "unparsed": 0, "errors": 0, "p50_ms": 9862, "p95_ms": 14386}
