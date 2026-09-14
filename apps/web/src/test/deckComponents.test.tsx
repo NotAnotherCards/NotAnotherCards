@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen, act } from '@testing-library/react';
 import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
+import { CardList } from '../components/deck/CardList';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
@@ -284,5 +285,50 @@ describe('FlashcardModal Component', () => {
     expect(
       screen.queryByRole('button', { name: /next|prev/i }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('CardList Component - Virtualization & Large Decks', () => {
+  it('only renders a virtualized slice of DOM rows for a 1,000-card deck and updates on filter', () => {
+    const largeDeckCards: Card[] = Array.from({ length: 1000 }, (_, i) => ({
+      id: `card-large-${i}`,
+      note_id: `note-large-${i}`,
+      template_key: 'front-back',
+      active: true,
+      front: i === 999 ? 'UniqueTargetFront' : `Card Front ${i}`,
+      back: i === 999 ? 'UniqueTargetBack' : `Card Back ${i}`,
+      due_at: Date.now(),
+      scheduled_interval_minutes: 0,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    }));
+
+    render(
+      <CardList
+        cards={largeDeckCards}
+        onEditCard={vi.fn()}
+        onRemoveFromDeck={vi.fn()}
+        onAddCard={vi.fn()}
+        canEditCard={() => true}
+      />,
+    );
+
+    // Verify catalog title reflects total count of 1,000
+    expect(screen.getByText('Card Catalog (1000)')).toBeInTheDocument();
+
+    // Verify virtualization: DOM contains far fewer row elements than 1,000 (only windowed slice)
+    const renderedRows = screen.getAllByRole('row');
+    // Header row + windowed items (<= 20)
+    expect(renderedRows.length).toBeLessThan(25);
+    expect(screen.getByText('Card Front 0')).toBeInTheDocument();
+    expect(screen.queryByText('UniqueTargetFront')).not.toBeInTheDocument();
+
+    // Filter down to the unique target card
+    const searchInput = screen.getByPlaceholderText('Search front, back...');
+    fireEvent.change(searchInput, { target: { value: 'UniqueTargetFront' } });
+
+    // Verify search correctly narrows catalog to 1 card and renders it
+    expect(screen.getByText('Card Catalog (1)')).toBeInTheDocument();
+    expect(screen.getByText('UniqueTargetFront')).toBeInTheDocument();
   });
 });

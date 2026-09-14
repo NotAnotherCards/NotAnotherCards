@@ -108,17 +108,20 @@ vi.mock('@tanstack/react-virtual', async (importOriginal) => {
   return {
     ...actual,
     useVirtualizer: vi.fn().mockImplementation((options) => {
-      const items = Array.from({ length: options.count }, (_, i) => ({
+      const estimateSize = options.estimateSize?.() ?? 61;
+      const overscan = options.overscan ?? 5;
+      const maxVisible = Math.min(options.count, 10 + overscan);
+      const items = Array.from({ length: maxVisible }, (_, i) => ({
         index: i,
-        start: i * 100,
-        size: 100,
-        end: (i + 1) * 100,
-        key: i,
+        start: i * estimateSize,
+        size: estimateSize,
+        end: (i + 1) * estimateSize,
+        key: options.getItemKey ? options.getItemKey(i) : i,
         lane: 0,
       }));
       return {
         getVirtualItems: () => items,
-        getTotalSize: () => options.count * 100,
+        getTotalSize: () => options.count * estimateSize,
         measureElement: vi.fn(),
         scrollToIndex: vi.fn(),
         scrollToOffset: vi.fn(),
