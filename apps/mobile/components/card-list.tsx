@@ -8,6 +8,7 @@ import { writeErrorMessage } from '@/lib/errors';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
+import { Markdown } from './ui/markdown';
 import { CardForm } from './card-form';
 import { WordNoteForm, type WordFormValues } from './word-note-form';
 import {
@@ -225,9 +226,11 @@ function ActiveCardList({
           return (
             <Card key={card.id} role="listitem">
               <CardHeader>
-                <CardTitle>{card.front}</CardTitle>
+                <CardTitle>
+                  <Markdown content={card.front} inline />
+                </CardTitle>
                 <Text className="text-sm text-muted-foreground">
-                  {card.back}
+                  <Markdown content={card.back} inline />
                 </Text>
               </CardHeader>
               <CardContent>
