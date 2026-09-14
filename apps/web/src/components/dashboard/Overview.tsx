@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,7 +34,10 @@ import {
   getLastReviewDeckId,
 } from '@/lib/review-preferences';
 import type { SharedDeckSummary } from '@repo/schemas';
-import { useState } from 'react';
+import {
+  selectTodayChallengeActivity,
+  type DailyChallengeProgress,
+} from '@repo/offline-db/activity';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -42,6 +46,7 @@ type OverviewProps = {
 function DashboardSyncStatus() {
   const controller = useSyncController();
   const state = useSyncState();
+
   if (!controller) {
     return <span className="text-muted-foreground font-semibold">Offline</span>;
   }
@@ -164,25 +169,109 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
   ];
 
-  // Mock daily goals
-  const dailyGoals = [
-    {
-      id: 1,
-      title: 'Daily Review',
-      description: 'Review at least 20 words due today',
-      progress: '20 / 20',
-      percent: 100,
-      reward: 'Completed',
-    },
-    {
-      id: 2,
-      title: 'New Vocabulary',
-      description: 'Add 10 new words to your personal dictionary',
-      progress: '6 / 10',
-      percent: 60,
-      reward: '4 remaining',
-    },
-  ];
+  const [serverProgress, setServerProgress] = useState<
+    DailyChallengeProgress[] | null
+  >(null);
+  const [notifications, setNotifications] = useState<string[]>([]);
+  const notifiedChallenges = useRef<Set<string>>(new Set());
+
+  // Derive immediate progress locally
+  const localActivity = useMemo(() => {
+    return selectTodayChallengeActivity(
+      store.reviewEvents ?? [],
+      store.notes ?? [],
+      Date.now(),
+    );
+  }, [store.reviewEvents, store.notes]);
+
+  // Reconcile with server
+  useEffect(() => {
+    async function fetchGamification() {
+      try {
+        const res = await fetch('/api/gamification/me');
+        if (res.ok) {
+          const data = (await res.json()) as {
+            todayChallenges?: DailyChallengeProgress[];
+          };
+          if (data && data.todayChallenges) {
+            setServerProgress(data.todayChallenges);
+          }
+        }
+      } catch {
+        // Silently fallback to local progress
+      }
+    }
+    void fetchGamification();
+  }, []);
+
+  // Merge server and local progress
+  const challenges = useMemo(() => {
+    const merged = [...(localActivity.challenges || [])];
+    if (serverProgress) {
+      for (let i = 0; i < merged.length; i++) {
+        const serverMatch = serverProgress.find(
+          (c) => c.code === merged[i].code,
+        );
+        if (serverMatch && serverMatch.completed && !merged[i].completed) {
+          merged[i] = {
+            ...merged[i],
+            completed: true,
+            current: serverMatch.current,
+          };
+        }
+      }
+    }
+    return merged;
+  }, [localActivity, serverProgress]);
+
+  // Handle notifications
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const newCompletions: string[] = [];
+    challenges.forEach((challenge) => {
+      if (
+        challenge.completed &&
+        !notifiedChallenges.current.has(challenge.code)
+      ) {
+        notifiedChallenges.current.add(challenge.code);
+        newCompletions.push(challenge.code);
+      }
+    });
+
+    if (newCompletions.length > 0) {
+      setNotifications((prev) => [...prev, ...newCompletions]);
+
+      timer = setTimeout(() => {
+        setNotifications((prev) =>
+          prev.filter((n) => !newCompletions.includes(n)),
+        );
+      }, 5000);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [challenges]);
+
+  // Map to dailyGoals format
+  const dailyGoals = challenges.map((challenge, index) => {
+    const isReview = challenge.code === 'daily-review';
+    return {
+      id: index + 1,
+      title: isReview ? 'Daily Review' : 'New Vocabulary',
+      description: isReview
+        ? 'Review at least 20 words due today'
+        : 'Add 5 new words to your personal dictionary',
+      progress: `${challenge.current} / ${challenge.target}`,
+      percent: Math.min(
+        100,
+        Math.round((challenge.current / challenge.target) * 100),
+      ),
+      reward: challenge.completed
+        ? 'Completed'
+        : `${Math.max(0, challenge.target - challenge.current)} remaining`,
+    };
+  });
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Overview Layout */}
@@ -439,6 +528,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 </div>
               </div>
             ))}
+            <div className="mt-4 pt-4 border-t border-border/40 text-[10px] text-muted-foreground leading-relaxed">
+              <p>One review earns one point regardless of rating.</p>
+              <p>Daily challenges and streaks reset at 00:00 UTC.</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -519,6 +612,22 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           </Card>
         </div>
       )}
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none">
+        {notifications.map((code) => (
+          <div
+            key={code}
+            className="bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-5"
+          >
+            <Sparkles className="size-4" />
+            <div className="text-sm font-medium">
+              Challenge Completed:{' '}
+              {code === 'daily-review' ? 'Daily Review' : 'New Vocabulary'}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
