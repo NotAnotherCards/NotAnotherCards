@@ -56,9 +56,14 @@ const styles: MarkedStyles = {
 
 const blockedUrl = 'unsafe-markdown:';
 const safeUrlHooks = new MarkedHooks();
+const explicitSchemePattern = /^[a-z][a-z0-9+.-]*:/i;
+
+function canOpenUrl(url: string): boolean {
+  return isSafeUrl(url) && explicitSchemePattern.test(url);
+}
 
 function openSafeUrl(url: string): void {
-  if (!isSafeUrl(url)) return;
+  if (!canOpenUrl(url)) return;
   void Linking.openURL(url).catch(() => undefined);
 }
 
@@ -76,7 +81,7 @@ function blockUnsafeTokenUrls(value: unknown, seen = new Set<object>()): void {
     'href' in value &&
     (value.type === 'link' || value.type === 'image') &&
     typeof value.href === 'string' &&
-    !isSafeUrl(value.href)
+    (value.type === 'image' ? !isSafeUrl(value.href) : !canOpenUrl(value.href))
   ) {
     if (value.type === 'link') {
       const text =
@@ -91,8 +96,8 @@ function blockUnsafeTokenUrls(value: unknown, seen = new Set<object>()): void {
 
 // react-native-marked resolves relative links before they reach its renderer.
 // Check the original token so URL-parser whitespace cannot be hidden by that
-// resolution step. Unsafe links become plain text; unsafe images get a scheme
-// that the renderer will refuse.
+// resolution step. Unsafe or relative links become plain text; unsafe images
+// get a scheme that the renderer will refuse.
 safeUrlHooks.processAllTokens = (tokens) => {
   blockUnsafeTokenUrls(tokens);
   return tokens;
@@ -123,6 +128,60 @@ class SafeRenderer extends Renderer {
     return super.paragraph(children, style);
   }
 
+  blockquote(children: ReactNode[], style?: ViewStyle): ReactNode {
+    if (this.inline) {
+      return <Fragment key={this.getKey()}>{children}</Fragment>;
+    }
+    return super.blockquote(children, style);
+  }
+
+  code(
+    text: string,
+    language?: string,
+    containerStyle?: ViewStyle,
+    textStyle?: TextStyle,
+  ): ReactNode {
+    if (this.inline) return this.codespan(text, textStyle);
+    return super.code(text, language, containerStyle, textStyle);
+  }
+
+  hr(style?: ViewStyle): ReactNode {
+    if (this.inline) {
+      return <NativeText key={this.getKey()}> — </NativeText>;
+    }
+    return super.hr(style);
+  }
+
+  listItem(children: ReactNode[], style?: ViewStyle): ReactNode {
+    if (this.inline) {
+      return <Fragment key={this.getKey()}>{children}</Fragment>;
+    }
+    return super.listItem(children, style);
+  }
+
+  list(
+    ordered: boolean,
+    items: ReactNode[],
+    listStyle?: ViewStyle,
+    textStyle?: TextStyle,
+    startIndex = 1,
+  ): ReactNode {
+    if (!this.inline) {
+      return super.list(ordered, items, listStyle, textStyle, startIndex);
+    }
+    return (
+      <NativeText key={this.getKey()} style={this.textStyle(textStyle)}>
+        {items.map((item, index) => (
+          <Fragment key={this.getKey()}>
+            {ordered ? `${startIndex + index}. ` : '• '}
+            {item}
+            {index < items.length - 1 ? '\n' : null}
+          </Fragment>
+        ))}
+      </NativeText>
+    );
+  }
+
   escape(text: string, style?: TextStyle): ReactNode {
     return super.escape(text, this.textStyle(style));
   }
@@ -134,7 +193,7 @@ class SafeRenderer extends Renderer {
     title?: string,
   ): ReactNode {
     const safeStyle = this.textStyle(style, true);
-    if (!isSafeUrl(href)) {
+    if (!canOpenUrl(href)) {
       return super.text(children, this.textStyle(style));
     }
     return (
@@ -188,19 +247,59 @@ class SafeRenderer extends Renderer {
   ): ReactNode {
     if (!isSafeUrl(imageUrl)) return null;
     const image = this.image(imageUrl, alt, style, title ?? undefined);
-    if (!isSafeUrl(href)) {
+    if (!canOpenUrl(href)) {
       return image;
     }
     return (
-      <Pressable
-        key={this.getKey()}
-        accessibilityRole="link"
-        accessibilityHint="Opens in a new window"
-        accessibilityLabel={title ?? alt}
-        onPress={() => openSafeUrl(href)}
-      >
-        {image}
-      </Pressable>
+      <Fragment key={this.getKey()}>
+        {this.inline ? (
+          <NativeText
+            accessibilityRole="link"
+            accessibilityHint="Opens in a new window"
+            accessibilityLabel={title ?? alt}
+            onPress={() => openSafeUrl(href)}
+          >
+            {image}
+          </NativeText>
+        ) : (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityHint="Opens in a new window"
+            accessibilityLabel={title ?? alt}
+            onPress={() => openSafeUrl(href)}
+          >
+            {image}
+          </Pressable>
+        )}
+      </Fragment>
+    );
+  }
+
+  table(
+    header: ReactNode[][],
+    rows: ReactNode[][][],
+    tableStyle?: ViewStyle,
+    rowStyle?: ViewStyle,
+    cellStyle?: ViewStyle,
+  ): ReactNode {
+    if (!this.inline) {
+      return super.table(header, rows, tableStyle, rowStyle, cellStyle);
+    }
+    const tableRows = [header, ...rows];
+    return (
+      <NativeText key={this.getKey()}>
+        {tableRows.map((row, rowIndex) => (
+          <Fragment key={this.getKey()}>
+            {row.map((cell, cellIndex) => (
+              <Fragment key={this.getKey()}>
+                {cellIndex > 0 ? ' | ' : null}
+                {cell}
+              </Fragment>
+            ))}
+            {rowIndex < tableRows.length - 1 ? '\n' : null}
+          </Fragment>
+        ))}
+      </NativeText>
     );
   }
 
