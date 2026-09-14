@@ -14,14 +14,7 @@ import {
   FieldDescription,
   FieldError,
 } from '@/components/ui/field';
-import {
-  Sparkles,
-  Layers,
-  Type,
-  BookOpen,
-  ArrowRightLeft,
-} from 'lucide-react';
-import type { DeckNoteType } from '@repo/offline-db';
+import { Sparkles, Layers, Type, BookOpen, ArrowRightLeft } from 'lucide-react';
 
 interface Deck {
   id: string;
@@ -34,15 +27,6 @@ interface AiPlaygroundFormProps {
   onSubmit: (data: CreateAiJobInput) => void;
   isSubmitting: boolean;
   decks: Deck[];
-  createDeck: (
-    title: string,
-    description: string,
-    options?: {
-      noteType?: DeckNoteType;
-      nativeLanguageId?: string | null;
-      targetLanguageId?: string | null;
-    },
-  ) => Promise<{ id: string }>;
 }
 
 export function AiPlaygroundForm({

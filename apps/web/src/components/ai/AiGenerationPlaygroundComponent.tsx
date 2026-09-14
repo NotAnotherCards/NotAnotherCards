@@ -53,7 +53,7 @@ export function AiGenerationPlaygroundComponent() {
       liveOutput.current.scrollTop = liveOutput.current.scrollHeight;
   }, [streamText]);
 
-  const { decks, createCardsBatch, createDeck, createNote } = useStore();
+  const { decks, createCardsBatch, createNote } = useStore();
 
   useEffect(() => {
     if (
@@ -215,7 +215,7 @@ export function AiGenerationPlaygroundComponent() {
         return;
       }
     } catch (error) {
-      setLoading(false)
+      setLoading(false);
       if (!request.signal.aborted) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Unable to create.',
@@ -325,7 +325,6 @@ export function AiGenerationPlaygroundComponent() {
                 title: d.title,
                 note_type: d.note_type,
               }))}
-              createDeck={createDeck}
             />
           </div>
         )}

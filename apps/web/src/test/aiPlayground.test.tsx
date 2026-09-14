@@ -4,6 +4,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { AiPlaygroundForm } from '@/components/ai/AiPlaygroundForm';
 import { AiJobStatusTracker } from '@/components/ai/AiJobStatusTracker';
 import { AiResultPreview } from '@/components/ai/AiResultPreview';
+import { AiWordNotePreview } from '@/components/ai/AiWordNotePreview';
 import { AiGenerationPlaygroundComponent } from '@/components/ai/AiGenerationPlaygroundComponent';
 
 // Mock useStore hook for deck operations
@@ -53,7 +54,6 @@ describe('AI Generation Playground Test Suite', () => {
           onSubmit={vi.fn()}
           isSubmitting={false}
           decks={[]}
-          createDeck={mockCreateDeck}
         />,
       );
 
@@ -70,7 +70,6 @@ describe('AI Generation Playground Test Suite', () => {
           onSubmit={handleSubmit}
           isSubmitting={false}
           decks={[]}
-          createDeck={mockCreateDeck}
         />,
       );
 
@@ -102,7 +101,6 @@ describe('AI Generation Playground Test Suite', () => {
           onSubmit={handleSubmit}
           isSubmitting={false}
           decks={[]}
-          createDeck={mockCreateDeck}
         />,
       );
 
@@ -125,50 +123,53 @@ describe('AI Generation Playground Test Suite', () => {
       });
     });
 
-    it('submits valid form inputs for word_note mode', async () => {
+    it('submits valid form inputs and toggles translation direction for word_note mode', async () => {
       const handleSubmit = vi.fn();
       const user = userEvent.setup();
 
       render(
         <AiPlaygroundForm
-          quota={{
-            requestsUsed: 0,
-            maxRequests: 25,
-            usedTokens: 0,
-            maxTokens: 50000,
-            activePendingJobs: 0,
-            maxPendingJobs: 2,
-          }}
+          quota={null}
           onSubmit={handleSubmit}
           isSubmitting={false}
           decks={[
             { id: 'deck-1', title: 'Spanish Vocab', note_type: 'basic' },
             { id: 'deck-2', title: 'French Vocab', note_type: 'word' },
           ]}
-          createDeck={mockCreateDeck}
         />,
       );
 
       // Switch to word note mode
-      const wordNoteBtn = screen.getByRole('button', { name: /Word Note/i });
-      await user.click(wordNoteBtn);
+      await user.click(screen.getByRole('button', { name: /Word Note/i }));
+      await user.type(screen.getByLabelText(/Word \/ Translation/i), 'bonjour');
+      await user.selectOptions(
+        screen.getByLabelText(/Model Selection/i),
+        'qwen-next-80b',
+      );
 
-      const wordInput = screen.getByLabelText(/Word \/ Translation/i);
-      await user.type(wordInput, 'bonjour');
-
-      const modelSelect = screen.getByLabelText(/Model Selection/i);
-      await user.selectOptions(modelSelect, 'qwen-next-80b');
-
-      const submitBtn = screen.getByRole('button', {
-        name: /Create$/i,
-      });
-      await user.click(submitBtn);
-
+      // Submit with default (target) direction
+      await user.click(screen.getByRole('button', { name: /Create$/i }));
       expect(handleSubmit).toHaveBeenCalledWith({
         type: 'word_note',
         deckId: 'deck-2',
         word: 'bonjour',
         direction: 'target',
+        model: 'qwen-next-80b',
+      });
+
+      // Clear mock
+      handleSubmit.mockClear();
+
+      // Toggle direction to native
+      await user.click(screen.getByRole('button', { name: /^Target$/i }));
+
+      // Submit again
+      await user.click(screen.getByRole('button', { name: /Create$/i }));
+      expect(handleSubmit).toHaveBeenCalledWith({
+        type: 'word_note',
+        deckId: 'deck-2',
+        word: 'bonjour',
+        direction: 'native',
         model: 'qwen-next-80b',
       });
     });
@@ -274,6 +275,95 @@ describe('AI Generation Playground Test Suite', () => {
       });
 
       expect(screen.queryByText('Deck Saved!')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('AiWordNotePreview Component', () => {
+    const mockNote = {
+      noteType: 'word' as const,
+      fieldsVersion: 1 as const,
+      fields: {
+        word: 'bonjour',
+        translation: 'hello',
+        native_language_id: 'en',
+        target_language_id: 'fr',
+        part_of_speech: 'noun',
+        example: 'bonjour le monde',
+        example_translation: 'hello world',
+        pronunciation: 'bɔ̃.ʒuʁ',
+      },
+    };
+
+    it('previews generated word note successfully', () => {
+      render(
+        <AiWordNotePreview
+          note={mockNote}
+          deckName="French Vocab"
+          onSave={vi.fn()}
+          isSaving={false}
+        />,
+      );
+
+      expect(screen.getByText('bonjour')).toBeInTheDocument();
+      expect(screen.getByText('hello')).toBeInTheDocument();
+      expect(screen.getByText('bɔ̃.ʒuʁ')).toBeInTheDocument();
+    });
+
+    it('triggers onSave and displays toast notification when saved successfully', async () => {
+      const handleSave = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+
+      render(
+        <AiWordNotePreview
+          note={mockNote}
+          deckName="French Vocab"
+          onSave={handleSave}
+          isSaving={false}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole('button', { name: /Save Note to Deck/i }),
+      );
+
+      expect(handleSave).toHaveBeenCalled();
+
+      await waitFor(() => {
+        expect(screen.getByText('Note Saved!')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            'The word note has been added to your selected deck.',
+          ),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('does not show success toast and displays error message when onSave rejects', async () => {
+      const handleSave = vi
+        .fn()
+        .mockRejectedValue(new Error('Database write rejected'));
+      const user = userEvent.setup();
+
+      render(
+        <AiWordNotePreview
+          note={mockNote}
+          deckName="French Vocab"
+          onSave={handleSave}
+          isSaving={false}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole('button', { name: /Save Note to Deck/i }),
+      );
+
+      expect(handleSave).toHaveBeenCalled();
+
+      await waitFor(() => {
+        expect(screen.getByText('Database write rejected')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('Note Saved!')).not.toBeInTheDocument();
     });
   });
 
@@ -453,6 +543,164 @@ describe('AI Generation Playground Test Suite', () => {
 
       // Verify polling stopped (pollCallCount did not increase further)
       expect(pollCallCount).toBe(initialPollCount);
+    });
+    it('handles word_note enqueue failure correctly', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+        if (String(url).includes('/api/ai/quota')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ quota: {} }), { status: 200 }),
+          );
+        }
+        if (String(url).includes('/api/ai/jobs')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ jobs: [] }), { status: 200 }),
+          );
+        }
+        if (String(url).includes('/api/ai/generate')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ message: 'Enqueue failed' }), {
+              status: 500,
+            }),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({}), { status: 200 }),
+        );
+      });
+
+      render(<AiGenerationPlaygroundComponent />);
+
+      // Need to wait for initial fetches to resolve
+      await waitFor(() => {
+        expect(screen.getByText('Previous Jobs History')).toBeInTheDocument();
+      });
+
+      // Fill and submit word note form
+      await user.click(screen.getByRole('button', { name: /Word Note/i }));
+      await user.type(screen.getByLabelText(/Word \/ Translation/i), 'hello');
+
+      const createBtn = screen.getByRole('button', { name: /Create$/i });
+      await user.click(createBtn);
+
+      // Wait for error banner
+      await waitFor(() => {
+        expect(screen.getByText('Enqueue failed')).toBeInTheDocument();
+      });
+
+      // Verify Create button is no longer "Creating..." (loading state reset)
+      expect(
+        screen.getByRole('button', { name: /Create$/i }),
+      ).not.toBeDisabled();
+    });
+
+    it('resolves word_note polling job with object result and saves note', async () => {
+      const user = userEvent.setup();
+      const mockJobs = {
+        jobs: [
+          {
+            id: 'job-word-1',
+            type: 'word_note',
+            status: 'processing',
+            payload: {
+              word: 'bonjour',
+              deckId: 'deck-2',
+              direction: 'target',
+              nativeLanguageId: 'en',
+              nativeLanguageName: 'English',
+              targetLanguageId: 'fr',
+              targetLanguageName: 'French',
+              model: 'gemma4',
+            },
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+        if (String(url).includes('/api/ai/quota')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ quota: {} }), { status: 200 }),
+          );
+        }
+        if (String(url).includes('/api/ai/jobs/job-word-1')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                job: {
+                  id: 'job-word-1',
+                  type: 'word_note',
+                  status: 'completed',
+                  payload: {
+                    word: 'bonjour',
+                    deckId: 'deck-2',
+                    direction: 'target',
+                    nativeLanguageId: 'en',
+                    nativeLanguageName: 'English',
+                    targetLanguageId: 'fr',
+                    targetLanguageName: 'French',
+                    model: 'gemma4',
+                  },
+                  result: {
+                    noteType: 'word',
+                    fieldsVersion: 1,
+                    fields: {
+                      word: 'bonjour',
+                      translation: 'hello',
+                      native_language_id: 'en',
+                      target_language_id: 'fr',
+                      part_of_speech: 'noun',
+                      example: 'bonjour le monde',
+                      example_translation: 'hello world',
+                      pronunciation: 'bɔ̃.ʒuʁ',
+                    },
+                  },
+                  createdAt: new Date().toISOString(),
+                },
+              }),
+              { status: 200 },
+            ),
+          );
+        }
+        if (String(url).includes('/api/ai/jobs')) {
+          return Promise.resolve(
+            new Response(JSON.stringify(mockJobs), { status: 200 }),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({}), { status: 200 }),
+        );
+      });
+
+      render(<AiGenerationPlaygroundComponent />);
+
+      // Click on the processing job to select it and trigger polling effect
+      await waitFor(() => {
+        expect(screen.getByText('bonjour')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText('bonjour'));
+
+      // Verify AiWordNotePreview rendered and fields are present
+      await waitFor(() => {
+        expect(screen.getByText('Creation Results')).toBeInTheDocument();
+        expect(screen.getByText('hello')).toBeInTheDocument(); // The translation
+      });
+
+      // Save Note
+      await user.click(
+        screen.getByRole('button', { name: /Save Note to Deck/i }),
+      );
+
+      expect(mockCreateNote).toHaveBeenCalledWith('deck-2', 'word', 1, {
+        word: 'bonjour',
+        translation: 'hello',
+        native_language_id: 'en',
+        target_language_id: 'fr',
+        part_of_speech: 'noun',
+        example: 'bonjour le monde',
+        example_translation: 'hello world',
+        pronunciation: 'bɔ̃.ʒuʁ',
+      });
     });
   });
 });
