@@ -68,6 +68,9 @@ jobs:
       - name: Check Dependencies
         run: pnpm check:deps
 
+      - name: Check Database Docs
+        run: pnpm check:db-docs
+
       - name: Run Unit Tests
         run: pnpm test
         env:
