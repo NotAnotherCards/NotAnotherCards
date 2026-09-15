@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { Settings as SettingsIcon } from 'lucide-react-native';
+import { LogOut, Settings as SettingsIcon } from 'lucide-react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useDatabase, useQuery } from '@remelondb/core/react';
 import {
@@ -45,6 +45,8 @@ export function Settings() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const { manager } = useSessionDatabase();
+  const { colorScheme } = useColorScheme();
+  const colors = iconColors(colorScheme);
   const user = session?.user;
 
   // SessionDatabaseProvider closes the offline database when the session
@@ -89,13 +91,19 @@ export function Settings() {
             {user?.email}
           </Text>
         </View>
+        {/* Web's account menu item, as an icon button on the account row. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={onLogout}
+          className="flex-row gap-1.5"
+        >
+          <LogOut size={16} color={colors.destructive} />
+          <Text className="text-destructive">Log out</Text>
+        </Button>
       </View>
 
       {user ? <Preferences userId={user.id} /> : null}
-
-      <Button variant="outline" onPress={onLogout}>
-        <Text>Log out</Text>
-      </Button>
     </View>
   );
 }
