@@ -320,6 +320,44 @@ export function selectTodayChallengeActivity(
   );
 }
 
+export function selectDailyChallengeHistory(
+  reviewEvents: readonly ActivityReviewEvent[],
+  notes: readonly ActivityNote[],
+  now: number,
+): TodayChallengeActivity[] {
+  assertTimestamp(now, 'Now');
+  const todayOrdinal = utcDayAt(now).ordinal;
+  const reviews = uniqueReviewEvents(reviewEvents);
+  const uniqueNotes = uniqueById(notes);
+  const dates = new Map<string, number>();
+  const reviewCounts = new Map<string, number>();
+  const noteCounts = new Map<string, number>();
+
+  for (const event of reviews) {
+    const day = utcDayAt(event.reviewed_at);
+    if (day.ordinal > todayOrdinal) continue;
+    dates.set(day.key, day.ordinal);
+    reviewCounts.set(day.key, (reviewCounts.get(day.key) ?? 0) + 1);
+  }
+  for (const note of uniqueNotes) {
+    assertTimestamp(note.created_at, 'Note creation timestamp');
+    const day = utcDayAt(note.created_at);
+    if (day.ordinal > todayOrdinal) continue;
+    dates.set(day.key, day.ordinal);
+    noteCounts.set(day.key, (noteCounts.get(day.key) ?? 0) + 1);
+  }
+
+  return [...dates]
+    .sort((left, right) => left[1] - right[1])
+    .map(([utcDate]) => ({
+      utcDate,
+      challenges: [
+        challenge('daily-review', reviewCounts.get(utcDate) ?? 0),
+        challenge('new-vocabulary', noteCounts.get(utcDate) ?? 0),
+      ],
+    }));
+}
+
 export function selectEligibleBadgeCodes(
   activity: Pick<ReviewActivity, 'reviewCount'> &
     Pick<StreakActivity, 'longestStreak'>,
