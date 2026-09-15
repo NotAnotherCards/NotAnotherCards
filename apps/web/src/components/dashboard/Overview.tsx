@@ -16,6 +16,7 @@ import {
   GraduationCap,
   BookOpen,
   Sparkles,
+  Mail,
   Library,
   RefreshCw,
   Loader2,
@@ -367,9 +368,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               </CardTitle>
               <CardDescription
                 className="flex items-center gap-1 text-xs truncate max-w-50"
-                title={store?.profile?.username ?? undefined}
+                title={user.email}
               >
-                @{store?.profile?.username}
+                <Mail className="size-3" />
+                {user.email}
               </CardDescription>
             </div>
           </CardHeader>
