@@ -79,6 +79,15 @@ All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `r
 
 #### `user_decks` ([API schema](../apps/api/src/sync/schema.ts#L35), [local schema](../packages/offline-db/src/user-dictionary.ts#L126))
 
+A deck says which note contract its notes follow (`note_type`, migration
+`0011`, local schema v4) and whether it is shared (`visibility`, migration
+`0012`, local schema v5). `note_type` is insert-only and must name a
+registered type; a word deck carries the two language ids its note form
+defaults from, a basic deck carries none (check constraint). `visibility` is
+server-owned: sync accepts a row that keeps `public`, but a client cannot
+publish by pushing `public`; that happens through the sharing API, which also
+writes the snapshot in `published_decks`.
+
 ```text
 id                  text PK
 user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
@@ -86,8 +95,15 @@ rev                 bigint NOT NULL                                [server]
 deleted_at          timestamptz NULL                               [server]
 title               text NOT NULL
 description         text NULL
+note_type           text NOT NULL                    -- insert-only, registered type
+native_language_id  uuid NULL                        -- word decks only
+target_language_id  uuid NULL                        -- word decks only, differs from native
+visibility          text NOT NULL DEFAULT 'private'  -- private | public, server-owned
 created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
+
+CHECK(note_type = 'word' ? both language ids set and different : both NULL)
+CHECK(visibility in ('private', 'public'))
 ```
 
 #### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L108), [local schema](../packages/offline-db/src/user-dictionary.ts#L134))
@@ -223,6 +239,158 @@ value               bigint NOT NULL
 ```
 
 Stores persistent sync metadata. It currently records `gc_floor`, the oldest valid incremental-sync cursor after garbage collection.
+
+### Server-only application tables
+
+These tables hold application data that never enters a client's sync scope.
+Clients reach them through the API.
+
+#### `ai_generation_jobs` ([API schema](../apps/api/src/ai/schema.ts#L42), migration `0007`)
+
+The AI job queue: one row per generation or moderation request, worked by
+the API's polling worker. `type` is one of `topic_deck`, `text_cards`,
+`word_note`, `deck_moderation`; `status` moves pending → processing →
+completed | failed. `payload` and `result` are typed JSON per job type.
+
+```text
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+type                text NOT NULL
+status              text NOT NULL DEFAULT 'pending'
+payload             jsonb NOT NULL
+result              jsonb NULL
+error               text NULL
+attempts            integer NOT NULL DEFAULT 0
+max_attempts        integer NOT NULL DEFAULT 3
+locked_at           timestamptz NULL
+next_run_at         timestamptz NOT NULL DEFAULT now()
+created_at          timestamptz NOT NULL DEFAULT now()
+updated_at          timestamptz NOT NULL DEFAULT now()
+completed_at        timestamptz NULL
+
+INDEX(user_id, status), INDEX(status, attempts), INDEX(status, next_run_at)
+UNIQUE((payload->>'deckId')) WHERE type = 'deck_moderation' AND status IN ('pending', 'processing')
+```
+
+The partial unique index (migration `0014`) allows one active moderation job
+per deck.
+
+#### `ai_usage` ([API schema](../apps/api/src/ai/schema.ts#L80), migration `0007`)
+
+Token usage per model call, for quotas and cost reporting. The streaming
+preview reserves its row before the call, under the same per-user lock as
+the queue, so it counts toward the daily request quota; those rows have no
+`job_id`.
+
+```text
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+job_id              text NULL
+model               text NOT NULL
+prompt_tokens       integer NOT NULL DEFAULT 0
+completion_tokens   integer NOT NULL DEFAULT 0
+total_tokens        integer NOT NULL DEFAULT 0
+created_at          timestamptz NOT NULL DEFAULT now()
+
+INDEX(user_id, created_at)
+```
+
+#### `published_decks` ([API schema](../apps/api/src/sharing/schema.ts#L54), migrations `0013`, `0014`)
+
+The immutable snapshot readers browse and import. It is content only: the
+live deck's `visibility` and tombstone remain the gate for whether the
+snapshot is served. Publishing runs every card through moderation (#263)
+before the row is written; `moderation_status` is flipped to `blocked` by a
+takedown.
+
+```text
+deck_id             text PK                          -- the live user_decks.id
+user_id             text NOT NULL
+title               text NOT NULL
+description         text NULL
+note_type           text NOT NULL
+native_language_id  text NULL
+target_language_id  text NULL
+card_count          integer NOT NULL
+content             jsonb NOT NULL                   -- notes and cards as published
+moderation_status   text NOT NULL DEFAULT 'visible'  -- visible | blocked
+moderation_verdict  jsonb NULL
+moderated_at        timestamptz NULL
+published_at        timestamptz NOT NULL DEFAULT now()
+
+CHECK(moderation_status in ('visible', 'blocked'))
+```
+
+#### `deck_reports` ([API schema](../apps/api/src/sharing/schema.ts#L86), migration `0014`)
+
+One immutable row per person and reported deck; operator-visible only.
+`snapshot_published_at` pins which snapshot the report was about.
+
+```text
+id                     text PK
+deck_id                text NOT NULL
+reporter_user_id       text NOT NULL FK -> user.id ON DELETE CASCADE
+reason                 text NOT NULL
+snapshot_published_at  timestamptz NOT NULL
+created_at             timestamptz NOT NULL DEFAULT now()
+
+UNIQUE(reporter_user_id, deck_id)
+INDEX(deck_id, created_at), INDEX(reporter_user_id, created_at)
+```
+
+#### `deck_takedowns` ([API schema](../apps/api/src/sharing/schema.ts#L116), migration `0014`)
+
+Audit trail of takedowns, whether the moderation classifier (`automatic`) or
+an operator decided. `verdict` stores the classifier result that justified it.
+
+```text
+id                     text PK
+deck_id                text NOT NULL
+source                 text NOT NULL                 -- automatic | operator
+reason                 text NULL
+verdict                jsonb NOT NULL
+snapshot_published_at  timestamptz NOT NULL
+created_at             timestamptz NOT NULL DEFAULT now()
+
+CHECK(source in ('automatic', 'operator'))
+INDEX(deck_id, created_at)
+```
+
+#### `badge_awards` ([API schema](../apps/api/src/gamification/schema.ts#L13), migration `0015`)
+
+Persistent gamification awards (#271, #359). Projected on the server from
+durable review and note rows after a successful sync, so a client cannot
+claim a badge directly. The rules that decide eligibility are shared code in
+[`packages/offline-db/src/activity.ts`](../packages/offline-db/src/activity.ts)
+(#339). Exposed through `/api/gamification/me`; nothing cross-user enters a
+sync scope.
+
+```text
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+badge_code          text NOT NULL   -- first-review | seven-day-streak | hundred-reviews
+awarded_at          timestamptz NOT NULL DEFAULT now()
+
+PRIMARY KEY(user_id, badge_code)
+CHECK(badge_code in ('first-review', 'seven-day-streak', 'hundred-reviews'))
+INDEX(user_id, awarded_at)
+```
+
+#### `daily_challenge_completions` ([API schema](../apps/api/src/gamification/schema.ts#L37), migration `0015`)
+
+One row per user, challenge and UTC day, written when the shared rules see
+the challenge met (20 distinct reviews, 5 new notes). The UTC date is the
+v1 reset boundary.
+
+```text
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+challenge_code      text NOT NULL   -- daily-review | new-vocabulary
+utc_date            date NOT NULL
+completed_at        timestamptz NOT NULL DEFAULT now()
+
+PRIMARY KEY(user_id, challenge_code, utc_date)
+CHECK(challenge_code in ('daily-review', 'new-vocabulary'))
+INDEX(user_id, utc_date)
+```
 
 ## Note/card content model
 
