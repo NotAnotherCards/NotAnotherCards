@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from '@testing-library/react';
 import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
 import { CardList, CardListRef } from '../components/deck/CardList';
@@ -334,13 +340,28 @@ describe('CardList Component - Virtualization & Large Decks', () => {
 
   it('simulates rendering an off-screen slice in the virtualized list (scrolling)', async () => {
     // Mock dimensions so the virtualizer knows the viewport size
-    const originalGetBoundingClientRect = Element.prototype.getBoundingClientRect;
+    const originalGetBoundingClientRect =
+      Element.prototype.getBoundingClientRect;
     Element.prototype.getBoundingClientRect = vi.fn(() => ({
-      width: 800, height: 800, top: 0, left: 0, bottom: 800, right: 800, x: 0, y: 0, toJSON: () => {},
+      width: 800,
+      height: 800,
+      top: 0,
+      left: 0,
+      bottom: 800,
+      right: 800,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
     }));
 
-    const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, value: 800 });
+    const originalClientHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'clientHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      value: 800,
+    });
 
     const largeDeckCards: Card[] = Array.from({ length: 1000 }, (_, i) => ({
       id: `card-large-${i}`,
@@ -384,14 +405,18 @@ describe('CardList Component - Virtualization & Large Decks', () => {
       // Verify virtualization rendered the slice containing item 500
       expect(screen.getByText('Card Front 500')).toBeInTheDocument();
     });
-    
+
     // Ensure item 0 is NOT rendered (since it's virtualized out of the viewport)
     expect(screen.queryByText('Card Front 0')).not.toBeInTheDocument();
 
     // Cleanup
     Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
     if (originalClientHeight) {
-      Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight);
+      Object.defineProperty(
+        HTMLElement.prototype,
+        'clientHeight',
+        originalClientHeight,
+      );
     } else {
       Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
     }
