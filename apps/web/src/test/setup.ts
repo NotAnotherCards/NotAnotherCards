@@ -139,6 +139,7 @@ vi.mock('@tanstack/react-virtual', async (importOriginal) => {
         getVirtualItems: () => items,
         getTotalSize: () => options.count * estimateSize,
         measureElement: vi.fn(),
+        measure: vi.fn(),
         scrollToIndex,
         scrollToOffset: vi.fn(),
       };

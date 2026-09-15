@@ -9,6 +9,7 @@ import {
 import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
 import { CardList, CardListRef } from '../components/deck/CardList';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
@@ -420,5 +421,27 @@ describe('CardList Component - Virtualization & Large Decks', () => {
     } else {
       Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
     }
+  });
+
+  it('calls rowVirtualizer.measure() when window.matchMedia fires a change event', () => {
+    render(
+      <CardList
+        cards={[]}
+        onEditCard={vi.fn()}
+        onRemoveFromDeck={vi.fn()}
+        canEditCard={() => true}
+        onAddCard={vi.fn()}
+      />
+    );
+
+    const matchMediaMock = vi.mocked(window.matchMedia);
+    const mediaQueryList = matchMediaMock.mock.results[matchMediaMock.mock.results.length - 1].value;
+    const addEventListenerMock = mediaQueryList.addEventListener;
+    
+    const listener = addEventListenerMock.mock.calls[0][1];
+    const virtualizerInstance = vi.mocked(useVirtualizer).mock.results[vi.mocked(useVirtualizer).mock.results.length - 1].value;
+    
+    listener();
+    expect(virtualizerInstance.measure).toHaveBeenCalled();
   });
 });
