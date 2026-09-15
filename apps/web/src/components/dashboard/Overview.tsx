@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import {
   Card,
   CardContent,
@@ -15,7 +16,6 @@ import {
   GraduationCap,
   BookOpen,
   Sparkles,
-  Mail,
   Library,
   RefreshCw,
   Loader2,
@@ -548,12 +548,12 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 <p className="text-xs text-muted-foreground">
                   {quest.description}
                 </p>
-                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-linear-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
-                    style={{ width: `${quest.percent}%` }}
-                  />
-                </div>
+                <Progress
+                  value={quest.percent}
+                  aria-label={`${quest.title} progress`}
+                  className="h-1.5 w-full"
+                  indicatorClassName="bg-linear-to-r from-amber-500 to-amber-400"
+                />
                 <div className="flex justify-end">
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${

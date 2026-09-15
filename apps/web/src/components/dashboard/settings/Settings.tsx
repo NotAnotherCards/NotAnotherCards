@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { User, Settings as SettingsIcon, Shield, Database } from 'lucide-react';
-import { useStore } from '@/hooks/useStore';
 import { Profile } from './Profile';
 import { Preferences } from './Preferences';
 import { Security } from './Security';
@@ -10,7 +9,6 @@ import { ImportExport } from './ImportExport';
 
 export function Settings() {
   const { data: session } = authClient.useSession();
-  const { profile } = useStore();
   const [activeSubTab, setActiveSubTab] = useState<
     'profile' | 'preferences' | 'security' | 'import/export'
   >('profile');
