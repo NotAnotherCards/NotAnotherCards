@@ -37,7 +37,7 @@ export function initials(name: string | undefined) {
 }
 
 // Web's settings page: an account header, then sections. Preferences is the
-// first one; Profile & Languages and Security follow in later slices (#290).
+// first one; Profile & Languages follows in a later slice (#290).
 // Log out lives here, under the account it ends, as in web's account menu.
 export function Settings() {
   const router = useRouter();

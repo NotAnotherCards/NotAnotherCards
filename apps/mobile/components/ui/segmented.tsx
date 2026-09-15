@@ -5,6 +5,8 @@ import { Text } from './text';
 // The pill row the theme toggle introduced, for any small closed choice.
 // Web's Preferences uses pressed buttons for the same job. `stacked` puts
 // the icon above a small label, so three labelled tabs fit a phone width.
+// A preference is a radio group; the dashboard strip is a tab list, and
+// screen readers announce the two differently.
 export function Segmented<T extends string>({
   value,
   options,
@@ -12,6 +14,7 @@ export function Segmented<T extends string>({
   label,
   renderIcon,
   stacked = false,
+  role = 'radiogroup',
 }: {
   value: T;
   options: readonly { value: T; label: string }[];
@@ -19,11 +22,13 @@ export function Segmented<T extends string>({
   label: string;
   renderIcon?: (value: T, selected: boolean) => ReactNode;
   stacked?: boolean;
+  role?: 'radiogroup' | 'tablist';
 }) {
+  const itemRole = role === 'tablist' ? 'tab' : 'radio';
   return (
     <View
       className="w-full flex-row rounded-lg bg-muted p-1"
-      accessibilityRole="radiogroup"
+      accessibilityRole={role}
       accessibilityLabel={label}
     >
       {options.map((option) => {
@@ -32,7 +37,7 @@ export function Segmented<T extends string>({
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
-            accessibilityRole="radio"
+            accessibilityRole={itemRole}
             accessibilityState={{ selected }}
             className={`flex-1 items-center justify-center rounded-md ${
               stacked ? 'gap-1 py-2' : 'flex-row gap-1.5 py-1.5'

@@ -66,13 +66,17 @@ describe('Dashboard screen', () => {
       data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
       isPending: false,
     });
-    const { getByText, queryByText } = render(<Dashboard />);
+    const { getByText, queryByText, rerender } = render(<Dashboard />);
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(queryByText('deck-list')).toBeNull();
 
     fireEvent.press(getByText('My Library'));
     expect(getByText('deck-list')).toBeTruthy();
     expect(queryByText('Jane Doe')).toBeNull();
+
+    // A parent re-render (session refetch, theme change) keeps the tab.
+    rerender(<Dashboard />);
+    expect(getByText('deck-list')).toBeTruthy();
 
     fireEvent.press(getByText('Profile & Settings'));
     expect(getByText('settings-tab')).toBeTruthy();
