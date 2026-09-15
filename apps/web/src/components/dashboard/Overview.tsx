@@ -221,15 +221,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
           const isGamificationData = (
             d: unknown,
-          ): d is { todayChallenges: DailyChallengeProgress[] } => {
-            if (typeof d !== 'object' || d === null) return false;
-            return (
-              'todayChallenges' in d &&
-              Array.isArray((d as Record<string, unknown>).todayChallenges)
-            );
+          ): d is { todayChallenges?: DailyChallengeProgress[] } => {
+            return typeof d === 'object' && d !== null;
           };
 
-          if (isGamificationData(data)) {
+          if (isGamificationData(data) && data.todayChallenges) {
             setServerProgress(data.todayChallenges);
           }
         }
