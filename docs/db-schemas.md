@@ -375,6 +375,42 @@ CHECK(source in ('automatic', 'operator'))
 INDEX(deck_id, created_at)
 ```
 
+#### `badge_awards` ([API schema](../apps/api/src/gamification/schema.ts#L13), migration `0015`)
+
+Persistent gamification awards (#271, #359). Projected on the server from
+durable review and note rows after a successful sync, so a client cannot
+claim a badge directly. The rules that decide eligibility are shared code in
+[`packages/offline-db/src/activity.ts`](../packages/offline-db/src/activity.ts)
+(#339). Exposed through `/api/gamification/me`; nothing cross-user enters a
+sync scope.
+
+```text
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+badge_code          text NOT NULL   -- first-review | seven-day-streak | hundred-reviews
+awarded_at          timestamptz NOT NULL DEFAULT now()
+
+PRIMARY KEY(user_id, badge_code)
+CHECK(badge_code in ('first-review', 'seven-day-streak', 'hundred-reviews'))
+INDEX(user_id, awarded_at)
+```
+
+#### `daily_challenge_completions` ([API schema](../apps/api/src/gamification/schema.ts#L37), migration `0015`)
+
+One row per user, challenge and UTC day, written when the shared rules see
+the challenge met (20 distinct reviews, 5 new notes). The UTC date is the
+v1 reset boundary.
+
+```text
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+challenge_code      text NOT NULL   -- daily-review | new-vocabulary
+utc_date            date NOT NULL
+completed_at        timestamptz NOT NULL DEFAULT now()
+
+PRIMARY KEY(user_id, challenge_code, utc_date)
+CHECK(challenge_code in ('daily-review', 'new-vocabulary'))
+INDEX(user_id, utc_date)
+```
+
 ## Note/card content model
 
 Decided in the discussion on
@@ -512,16 +548,6 @@ an older client's pull.
 ## Future ideas
 
 Everything in this section is exploratory and is not part of the current database contract.
-
-### Gamification storage (#271)
-
-The activity rules (streaks, daily challenges, badges) are shared code in
-[`packages/offline-db/src/activity.ts`](../packages/offline-db/src/activity.ts)
-(#339) and are computed from `review_events` and `user_notes` on every
-client. Persistent awards do not exist yet. #271 adds server-only tables for
-badge awards and daily challenge completions with unique constraints on
-`(user_id, badge_code)` and `(user_id, challenge_code, utc_date)`, exposed
-through `/api/gamification/me`; nothing cross-user enters a sync scope.
 
 ### Proposed files/upload foundation
 
