@@ -19,9 +19,10 @@ jest.mock('expo-router', () => {
   const React = require('react');
   const { Text } = require('react-native');
   return {
-    useRouter: () => ({ replace: mockReplace }),
+    useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
+    Stack: { Screen: () => null },
   };
 });
 

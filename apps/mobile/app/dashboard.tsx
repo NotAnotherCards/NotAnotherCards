@@ -1,9 +1,9 @@
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Alert, ScrollView, View } from 'react-native';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { AccountButton } from '@/components/account-button';
 import { DeckList } from '@/components/deck-list';
 import { RequireSession } from '@/components/require-session';
 
@@ -38,6 +38,7 @@ export default function Dashboard() {
 
   return (
     <RequireSession>
+      <Stack.Screen options={{ headerRight: () => <AccountButton /> }} />
       <ScrollView
         className="flex-1 bg-background"
         contentContainerClassName="gap-4 p-6"
@@ -54,7 +55,6 @@ export default function Dashboard() {
         </View>
         <DeckList />
         <View className="gap-2 pt-4">
-          <ThemeToggle />
           <Button onPress={onLogout}>
             <Text>Log out</Text>
           </Button>
