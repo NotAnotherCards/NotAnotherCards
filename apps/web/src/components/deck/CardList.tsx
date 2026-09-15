@@ -93,6 +93,14 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
       getItemKey,
     });
 
+    useEffect(() => {
+      if (typeof window === 'undefined') return;
+      const mql = window.matchMedia('(min-width: 768px)');
+      const listener = () => rowVirtualizer.measure();
+      mql.addEventListener('change', listener);
+      return () => mql.removeEventListener('change', listener);
+    }, [rowVirtualizer]);
+
     useImperativeHandle(ref, () => ({
       scrollToIndex: (index: number) => rowVirtualizer.scrollToIndex(index),
       scrollToOffset: (offset: number) => rowVirtualizer.scrollToOffset(offset),
