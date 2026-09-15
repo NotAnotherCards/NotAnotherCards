@@ -39,6 +39,7 @@ export default function Dashboard() {
         >
           <Segmented
             label="Dashboard sections"
+            role="tablist"
             value={tab}
             options={TABS}
             onChange={setTab}
