@@ -1,23 +1,19 @@
+import {
+  DEFAULT_REVIEW_PREFERENCES,
+  parseReviewPreferences,
+  reviewPreferencesStorageKey,
+  type ReviewPreferences,
+} from '@repo/offline-db';
+
+export {
+  DEFAULT_REVIEW_PREFERENCES,
+  type ReviewPreferences,
+} from '@repo/offline-db';
+
 const LAST_REVIEW_DECK_STORAGE_PREFIX = 'not-another-cards:last-review-deck:';
-const REVIEW_PREFERENCES_STORAGE_PREFIX =
-  'not-another-cards:review-preferences:';
-
-export type ReviewPreferences = {
-  reviewMode: 'basic' | 'extended';
-  showNextReviewInterval: boolean;
-};
-
-export const DEFAULT_REVIEW_PREFERENCES: Readonly<ReviewPreferences> = {
-  reviewMode: 'basic',
-  showNextReviewInterval: false,
-};
 
 function getLastReviewDeckStorageKey(userId: string) {
   return `${LAST_REVIEW_DECK_STORAGE_PREFIX}${userId}`;
-}
-
-function getReviewPreferencesStorageKey(userId: string) {
-  return `${REVIEW_PREFERENCES_STORAGE_PREFIX}${userId}`;
 }
 
 function getReviewStorage() {
@@ -72,26 +68,9 @@ export function getReviewPreferences(
   if (!storage) return { ...DEFAULT_REVIEW_PREFERENCES };
 
   try {
-    const savedValue = storage.getItem(getReviewPreferencesStorageKey(userId));
-    if (!savedValue) return { ...DEFAULT_REVIEW_PREFERENCES };
-
-    const parsedValue: unknown = JSON.parse(savedValue);
-    if (
-      !parsedValue ||
-      typeof parsedValue !== 'object' ||
-      !('reviewMode' in parsedValue) ||
-      !('showNextReviewInterval' in parsedValue) ||
-      (parsedValue.reviewMode !== 'basic' &&
-        parsedValue.reviewMode !== 'extended') ||
-      typeof parsedValue.showNextReviewInterval !== 'boolean'
-    ) {
-      return { ...DEFAULT_REVIEW_PREFERENCES };
-    }
-
-    return {
-      reviewMode: parsedValue.reviewMode,
-      showNextReviewInterval: parsedValue.showNextReviewInterval,
-    };
+    return parseReviewPreferences(
+      storage.getItem(reviewPreferencesStorageKey(userId)),
+    );
   } catch {
     return { ...DEFAULT_REVIEW_PREFERENCES };
   }
@@ -108,7 +87,7 @@ export function saveReviewPreferences(
 
   try {
     storage.setItem(
-      getReviewPreferencesStorageKey(userId),
+      reviewPreferencesStorageKey(userId),
       JSON.stringify(preferences),
     );
   } catch {
