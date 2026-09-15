@@ -16,6 +16,7 @@ import {
   UserNoteDeckRow,
   UserNoteRow,
   UserProfileRow,
+  UserBadgeRow,
 } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import {
@@ -25,6 +26,7 @@ import {
   userNoteDecks,
   userNotes,
   userProfiles,
+  userBadges,
 } from './schema';
 import {
   createCrossValidateSyncRelationships,
@@ -65,6 +67,7 @@ export interface AppSyncStoreBundle {
   readonly crossValidateChanges: NonNullable<
     SyncEngineOptions<string>['crossValidateChanges']
   >;
+  readonly db: AppDatabase;
 }
 
 export const appSyncTables: SyncEngineConfig<string>['tables'] = {
@@ -74,6 +77,7 @@ export const appSyncTables: SyncEngineConfig<string>['tables'] = {
   user_note_decks: UserNoteDeckRow,
   review_events: ReviewEventRow,
   user_profiles: UserProfileRow,
+  user_badges: UserBadgeRow,
 };
 
 export const appSyncTableOptions: NonNullable<
@@ -154,6 +158,14 @@ export function createAppSyncStore(
         targetLanguageId: null,
       },
     }),
+    user_badges: drizzleSyncTable<string, typeof userBadges>({
+      table: userBadges,
+      id: userBadges.id,
+      rev: userBadges.rev,
+      deletedAt: userBadges.deletedAt,
+      scope: userBadges.userId,
+      insertOnly: ['unlocked_at'],
+    }),
   };
 
   const createDurableStore = (storeDb: AppDatabase | AppTx) =>
@@ -221,6 +233,7 @@ export function createAppSyncStore(
       findProfileUsernameOwners,
       now,
     ),
+    db,
   };
 }
 
@@ -236,8 +249,89 @@ export function createAppSyncEngineConfig({
   };
 }
 
+import { randomUUID } from 'node:crypto';
+import { sql } from 'drizzle-orm';
+
 export function createAppSyncEngine(bundle: AppSyncStoreBundle) {
-  return syncEngineFromOptions(createAppSyncEngineConfig(bundle));
+  const engine = syncEngineFromOptions(createAppSyncEngineConfig(bundle));
+  const originalAs = engine.as.bind(engine);
+
+  engine.as = (scope: string) => {
+    const handlers = originalAs(scope);
+    const originalPush = handlers.push.bind(handlers);
+
+    handlers.push = async (changes) => {
+      const result = await originalPush(changes);
+
+      if (changes['review_events']) {
+        const reviews = await bundle.db
+          .select({ reviewedAt: reviewEvents.reviewedAt })
+          .from(reviewEvents)
+          .where(eq(reviewEvents.userId, scope));
+
+        const dates = [
+          ...new Set(
+            reviews.map((r) => {
+              const d = new Date(r.reviewedAt);
+              return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+            }),
+          ),
+        ].sort();
+
+        const earnedBadges: string[] = [];
+        if (dates.length >= 1) earnedBadges.push('first-review');
+        if (dates.length >= 100) earnedBadges.push('hundred-reviews');
+
+        let streak = 1;
+        for (let i = 1; i < dates.length; i++) {
+          const d1 = new Date(dates[i - 1]);
+          const d2 = new Date(dates[i]);
+          if (d2.getTime() - d1.getTime() === 86400000) {
+            streak++;
+            if (streak >= 7) {
+              earnedBadges.push('seven-day-streak');
+              break;
+            }
+          } else {
+            streak = 1;
+          }
+        }
+
+        if (earnedBadges.length > 0) {
+          const existing = await bundle.db
+            .select({ badgeId: userBadges.badgeId })
+            .from(userBadges)
+            .where(eq(userBadges.userId, scope));
+
+          const existingSet = new Set(existing.map((b) => b.badgeId));
+          const toInsert = earnedBadges.filter((b) => !existingSet.has(b));
+
+          if (toInsert.length > 0) {
+            const now = Date.now();
+            await bundle.db.transaction(async (tx) => {
+              for (const badge of toInsert) {
+                await tx.insert(userBadges).values({
+                  id: randomUUID(),
+                  rev: sql<number>`nextval('remelon_rev')`,
+                  userId: scope,
+                  badgeId: badge,
+                  unlockedAt: now,
+                  createdAt: now,
+                  updatedAt: now,
+                });
+              }
+            });
+          }
+        }
+      }
+
+      return result;
+    };
+
+    return handlers;
+  };
+
+  return engine;
 }
 
 export function createAppSyncBackend(db: AppDatabase) {
