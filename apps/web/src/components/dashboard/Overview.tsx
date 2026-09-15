@@ -175,15 +175,23 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     DailyChallengeProgress[] | null
   >(null);
   const [notifications, setNotifications] = useState<string[]>([]);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Derive immediate progress locally
   const localActivity = useMemo(() => {
     return selectTodayChallengeActivity(
       store.reviewEvents ?? [],
       store.notes ?? [],
-      Date.now(),
+      currentTime,
     );
-  }, [store.reviewEvents, store.notes]);
+  }, [store.reviewEvents, store.notes, currentTime]);
 
   // Reconcile with server
   useEffect(() => {
