@@ -1,9 +1,11 @@
 import { cssInterop } from 'nativewind';
 import {
   BookOpen,
+  Globe,
   Library,
   LogOut,
   Settings,
+  User,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -20,7 +22,9 @@ function withClassName(icon: LucideIcon): LucideIcon {
 }
 
 export const BookOpenIcon = withClassName(BookOpen);
+export const GlobeIcon = withClassName(Globe);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
 export const SettingsIcon = withClassName(Settings);
+export const UserIcon = withClassName(User);
 export type { LucideIcon };
