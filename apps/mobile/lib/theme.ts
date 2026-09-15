@@ -26,13 +26,20 @@ export const navigationColors = {
   light: {
     background: '#ffffff',
     foreground: '#0a0a0a',
+    mutedForeground: '#737373',
     card: '#ffffff',
     border: '#e5e5e5',
   },
   dark: {
     background: '#0a0a0a',
     foreground: '#fafafa',
+    mutedForeground: '#a1a1a1',
     card: '#171717',
     border: '#ffffff1a',
   },
 } as const;
+
+// Lucide icons take colour values too; pick the pair for the active scheme.
+export function iconColors(colorScheme: string | undefined) {
+  return navigationColors[colorScheme === 'dark' ? 'dark' : 'light'];
+}

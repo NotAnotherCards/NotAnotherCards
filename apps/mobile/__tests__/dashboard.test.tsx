@@ -13,16 +13,28 @@ jest.mock('../lib/auth-client', () => ({
   },
 }));
 
-// The deck list has its own tests; keep this one about the session guard.
-jest.mock('../components/deck-list', () => ({ DeckList: () => null }));
+// The deck list and settings have their own tests; keep this one about the
+// session guard and the tab strip. Each tab renders a marker instead.
+jest.mock('../components/deck-list', () => {
+  const { Text } = require('react-native');
+  return { DeckList: () => <Text>deck-list</Text> };
+});
+jest.mock('../components/settings', () => {
+  const { Text } = require('react-native');
+  return { Settings: () => <Text>settings-tab</Text> };
+});
+jest.mock('lucide-react-native', () => ({
+  BookOpen: () => null,
+  Library: () => null,
+  Settings: () => null,
+}));
 jest.mock('expo-router', () => {
   const React = require('react');
   const { Text } = require('react-native');
   return {
-    useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
+    useRouter: () => ({ replace: mockReplace }),
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
-    Stack: { Screen: () => null },
   };
 });
 
@@ -52,6 +64,24 @@ describe('Dashboard screen', () => {
     const { getByText } = render(<Dashboard />);
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(getByText(/jane@example.com/)).toBeTruthy();
+  });
+
+  it('opens on Overview and switches to the library and settings tabs', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('Jane Doe')).toBeTruthy();
+    expect(queryByText('deck-list')).toBeNull();
+
+    fireEvent.press(getByText('My Library'));
+    expect(getByText('deck-list')).toBeTruthy();
+    expect(queryByText('Jane Doe')).toBeNull();
+
+    fireEvent.press(getByText('Profile & Settings'));
+    expect(getByText('settings-tab')).toBeTruthy();
+    expect(queryByText('deck-list')).toBeNull();
   });
 
   it('offers a retry instead of redirecting when the session fetch fails', () => {
