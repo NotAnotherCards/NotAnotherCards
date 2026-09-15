@@ -85,6 +85,7 @@ export const appSyncTableOptions: NonNullable<
 export function createAppSyncStore(
   db: AppDatabase,
   now: () => number = () => Date.now(),
+  afterSuccessfulPush?: (userId: string) => Promise<void>,
 ): AppSyncStoreBundle {
   const tables = {
     user_decks: drizzleSyncTable<string, typeof userDecks>({
@@ -155,13 +156,29 @@ export function createAppSyncStore(
     }),
   };
 
-  const store = withSyncCascadingDeletes(
+  const durableStore = withSyncCascadingDeletes(
     createDrizzleStore<string>({
       db: db,
       tables,
       lockKey: syncScopeLockKey,
     }),
   );
+
+  const store: AppSyncStore = {
+    transaction: async (scope, mode, work) => {
+      const result = await durableStore.transaction(scope, mode, work);
+      const conflict =
+        typeof result === 'object' &&
+        result !== null &&
+        'conflict' in result &&
+        result.conflict === true;
+      if (mode === 'push' && !conflict && afterSuccessfulPush) {
+        await afterSuccessfulPush(scope);
+      }
+      return result;
+    },
+    gc: (floor) => durableStore.gc(floor),
+  };
 
   const findProfileUsernameOwners: ProfileUsernameOwnerLookup = async (
     usernames,
