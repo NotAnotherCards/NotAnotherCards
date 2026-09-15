@@ -177,6 +177,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const [notifications, setNotifications] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
+  const syncState = useSyncState();
+  const lastSuccessfulSync = syncState.lastSyncAt;
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
@@ -195,9 +197,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
   // Reconcile with server
   useEffect(() => {
+    const ac = new AbortController();
+
     async function fetchGamification() {
       try {
-        const res = await fetch('/api/gamification/me');
+        const res = await fetch('/api/gamification/me', { signal: ac.signal });
         if (res.ok) {
           const data = (await res.json()) as unknown;
 
@@ -211,12 +215,16 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             setServerProgress(data.todayChallenges);
           }
         }
-      } catch {
-        // Silently fallback to local progress
+      } catch (e) {
+        if (e instanceof Error && e.name !== 'AbortError') {
+          // Silently fallback to local progress
+        }
       }
     }
     void fetchGamification();
-  }, []);
+
+    return () => ac.abort();
+  }, [lastSuccessfulSync]);
 
   // Merge server and local progress
   const challenges = useMemo(() => {
