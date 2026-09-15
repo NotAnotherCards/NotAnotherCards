@@ -15,7 +15,7 @@ import {
   loadReviewPreferences,
   saveReviewPreferences,
 } from '@/lib/review-preferences';
-import { navigationColors } from '@/lib/theme';
+import { iconColors } from '@/lib/theme';
 import { ThemeToggle } from './theme-toggle';
 import {
   Card,
@@ -93,8 +93,7 @@ const INTERVAL_OPTIONS = [
 
 function Preferences({ userId }: { userId: string }) {
   const { colorScheme } = useColorScheme();
-  const iconColor =
-    navigationColors[colorScheme === 'dark' ? 'dark' : 'light'].foreground;
+  const iconColor = iconColors(colorScheme).foreground;
   const [preferences, setPreferences] = useState(() =>
     loadReviewPreferences(userId),
   );
