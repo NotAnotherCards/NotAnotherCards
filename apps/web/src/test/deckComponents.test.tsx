@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, screen, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from '@testing-library/react';
 import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
+import { CardList, CardListRef } from '../components/deck/CardList';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
@@ -142,16 +150,14 @@ describe('CardItem Component', () => {
 
   it('renders card front and back inside a table context', () => {
     render(
-      <table>
-        <tbody>
-          <CardItem
-            card={mockCard}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={mockCard}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+        />
+      </div>,
     );
 
     expect(screen.getByText('Hola')).toBeInTheDocument();
@@ -160,20 +166,18 @@ describe('CardItem Component', () => {
 
   it('keeps word examples as a smaller second paragraph without restyling basic cards', () => {
     const { rerender } = render(
-      <table>
-        <tbody>
-          <CardItem
-            card={{
-              ...mockCard,
-              template_key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
-              back: 'old\n\nAn old house',
-            }}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={{
+            ...mockCard,
+            template_key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
+            back: 'old\n\nAn old house',
+          }}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+        />
+      </div>,
     );
 
     const wordBack = screen
@@ -183,16 +187,14 @@ describe('CardItem Component', () => {
     expect(wordBack).toHaveClass('[&_p+p]:text-xs');
 
     rerender(
-      <table>
-        <tbody>
-          <CardItem
-            card={{ ...mockCard, back: 'answer\n\nMore detail' }}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={{ ...mockCard, back: 'answer\n\nMore detail' }}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+        />
+      </div>,
     );
 
     expect(
@@ -206,16 +208,14 @@ describe('CardItem Component', () => {
     const onViewCard = vi.fn();
 
     render(
-      <table>
-        <tbody>
-          <CardItem
-            card={mockCard}
-            onEditCard={onEditCard}
-            onRemoveFromDeck={onRemoveFromDeck}
-            onViewCard={onViewCard}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={mockCard}
+          onEditCard={onEditCard}
+          onRemoveFromDeck={onRemoveFromDeck}
+          onViewCard={onViewCard}
+        />
+      </div>,
     );
 
     // Click View button
@@ -233,17 +233,15 @@ describe('CardItem Component', () => {
 
   it('hides the basic front/back editor for structured-note cards', () => {
     render(
-      <table>
-        <tbody>
-          <CardItem
-            card={mockCard}
-            onEditCard={vi.fn()}
-            onRemoveFromDeck={vi.fn()}
-            onViewCard={vi.fn()}
-            canEdit={false}
-          />
-        </tbody>
-      </table>,
+      <div>
+        <CardItem
+          card={mockCard}
+          onEditCard={vi.fn()}
+          onRemoveFromDeck={vi.fn()}
+          onViewCard={vi.fn()}
+          canEdit={false}
+        />
+      </div>,
     );
 
     expect(screen.queryByTitle('Edit Card')).not.toBeInTheDocument();
@@ -294,5 +292,160 @@ describe('FlashcardModal Component', () => {
     expect(
       screen.queryByRole('button', { name: /next|prev/i }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('CardList Component - Virtualization & Large Decks', () => {
+  it('only renders a virtualized slice of DOM rows for a 1,000-card deck and updates on filter', () => {
+    const largeDeckCards: Card[] = Array.from({ length: 1000 }, (_, i) => ({
+      id: `card-large-${i}`,
+      note_id: `note-large-${i}`,
+      template_key: 'front-back',
+      active: true,
+      front: i === 999 ? 'UniqueTargetFront' : `Card Front ${i}`,
+      back: i === 999 ? 'UniqueTargetBack' : `Card Back ${i}`,
+      due_at: Date.now(),
+      scheduled_interval_minutes: 0,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    }));
+
+    render(
+      <CardList
+        cards={largeDeckCards}
+        onEditCard={vi.fn()}
+        onRemoveFromDeck={vi.fn()}
+        onAddCard={vi.fn()}
+        canEditCard={() => true}
+      />,
+    );
+
+    // Verify catalog title reflects total count of 1,000
+    expect(screen.getByText('Card Catalog (1000)')).toBeInTheDocument();
+
+    // Verify virtualization: DOM contains far fewer row elements than 1,000 (only windowed slice)
+    const renderedRows = screen.getAllByRole('row');
+    // Header row + windowed items (<= 20)
+    expect(renderedRows.length).toBeLessThan(25);
+    expect(screen.getByText('Card Front 0')).toBeInTheDocument();
+    expect(screen.queryByText('UniqueTargetFront')).not.toBeInTheDocument();
+
+    // Filter down to the unique target card
+    const searchInput = screen.getByPlaceholderText('Search front, back...');
+    fireEvent.change(searchInput, { target: { value: 'UniqueTargetFront' } });
+
+    // Verify search correctly narrows catalog to 1 card and renders it
+    expect(screen.getByText('Card Catalog (1)')).toBeInTheDocument();
+    expect(screen.getByText('UniqueTargetFront')).toBeInTheDocument();
+  });
+
+  it('simulates rendering an off-screen slice in the virtualized list (scrolling)', async () => {
+    // Mock dimensions so the virtualizer knows the viewport size
+    const originalGetBoundingClientRect =
+      Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      width: 800,
+      height: 800,
+      top: 0,
+      left: 0,
+      bottom: 800,
+      right: 800,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
+    }));
+
+    const originalClientHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'clientHeight',
+    );
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      value: 800,
+    });
+
+    const largeDeckCards: Card[] = Array.from({ length: 1000 }, (_, i) => ({
+      id: `card-large-${i}`,
+      note_id: `note-large-${i}`,
+      template_key: 'front-back',
+      active: true,
+      front: `Card Front ${i}`,
+      back: `Card Back ${i}`,
+      due_at: Date.now(),
+      scheduled_interval_minutes: 0,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    }));
+
+    const listRef = { current: null as CardListRef | null };
+
+    render(
+      <CardList
+        ref={listRef}
+        cards={largeDeckCards}
+        onEditCard={vi.fn()}
+        onRemoveFromDeck={vi.fn()}
+        onAddCard={vi.fn()}
+        canEditCard={() => true}
+      />,
+    );
+
+    // Initially, item 500 should NOT be in the document
+    expect(screen.queryByText('Card Front 500')).not.toBeInTheDocument();
+
+    // Programmatically scroll to item 500 using the exposed ref
+    vi.useFakeTimers();
+    act(() => {
+      listRef.current?.scrollToIndex(500);
+      vi.runAllTimers();
+    });
+    vi.useRealTimers();
+
+    // Wait for the virtualizer to process the scroll offset and update the DOM
+    await waitFor(() => {
+      // Verify virtualization rendered the slice containing item 500
+      expect(screen.getByText('Card Front 500')).toBeInTheDocument();
+    });
+
+    // Ensure item 0 is NOT rendered (since it's virtualized out of the viewport)
+    expect(screen.queryByText('Card Front 0')).not.toBeInTheDocument();
+
+    // Cleanup
+    Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    if (originalClientHeight) {
+      Object.defineProperty(
+        HTMLElement.prototype,
+        'clientHeight',
+        originalClientHeight,
+      );
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+    }
+  });
+
+  it('calls rowVirtualizer.measure() when window.matchMedia fires a change event', () => {
+    render(
+      <CardList
+        cards={[]}
+        onEditCard={vi.fn()}
+        onRemoveFromDeck={vi.fn()}
+        canEditCard={() => true}
+        onAddCard={vi.fn()}
+      />,
+    );
+
+    const matchMediaMock = vi.mocked(window.matchMedia);
+    const mediaQueryList =
+      matchMediaMock.mock.results[matchMediaMock.mock.results.length - 1].value;
+    const addEventListenerMock = mediaQueryList.addEventListener;
+
+    const listener = addEventListenerMock.mock.calls[0][1];
+    const virtualizerInstance =
+      vi.mocked(useVirtualizer).mock.results[
+        vi.mocked(useVirtualizer).mock.results.length - 1
+      ].value;
+
+    listener();
+    expect(virtualizerInstance.measure).toHaveBeenCalled();
   });
 });
