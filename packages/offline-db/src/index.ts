@@ -163,6 +163,7 @@ export * from './note-constants.js';
 export * from './review-scheduler.js';
 export * from './review-queue.js';
 export * from './review-answers.js';
+export * from './review-preferences.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
 export * from './queries.js';
