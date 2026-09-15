@@ -22,10 +22,10 @@ jest.mock('../components/settings', () => {
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
-jest.mock('lucide-react-native', () => ({
-  BookOpen: () => null,
-  Library: () => null,
-  Settings: () => null,
+jest.mock('../components/ui/icon', () => ({
+  BookOpenIcon: () => null,
+  LibraryIcon: () => null,
+  SettingsIcon: () => null,
 }));
 jest.mock('expo-router', () => {
   const React = require('react');
