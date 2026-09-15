@@ -19,7 +19,11 @@ describe('App', () => {
       'https://app.notanothercards.com/login',
     );
 
-    for (const name of ['Get started', 'Get started free', 'Create your account']) {
+    for (const name of [
+      'Get started',
+      'Get started free',
+      'Create your account',
+    ]) {
       expect(screen.getByRole('link', { name })).toHaveAttribute(
         'href',
         'https://app.notanothercards.com/register',
@@ -35,28 +39,39 @@ describe('App', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
 
-    for (const element of Array.from(document.querySelectorAll('[href], [src]'))) {
+    for (const element of Array.from(
+      document.querySelectorAll('[href], [src]'),
+    )) {
       const value = element.getAttribute('href') ?? element.getAttribute('src');
       expect(value).not.toMatch(/^\/(?:api|sync)(?:\/|$)/);
     }
   });
 
   it('ships the approved metadata and canonical URL', () => {
-    const metadataDocument = new DOMParser().parseFromString(indexHtml, 'text/html');
+    const metadataDocument = new DOMParser().parseFromString(
+      indexHtml,
+      'text/html',
+    );
 
     expect(metadataDocument.title).toBe(
       'NotAnotherCards — Learn the words that matter most',
     );
     expect(
-      metadataDocument.querySelector('meta[name="description"]')?.getAttribute('content'),
+      metadataDocument
+        .querySelector('meta[name="description"]')
+        ?.getAttribute('content'),
     ).toBe(
       'Build useful vocabulary with smart flashcards, AI-powered context, offline learning, and sync across devices.',
     );
     expect(
-      metadataDocument.querySelector('link[rel="canonical"]')?.getAttribute('href'),
+      metadataDocument
+        .querySelector('link[rel="canonical"]')
+        ?.getAttribute('href'),
     ).toBe('https://notanothercards.com/');
     expect(
-      metadataDocument.querySelector('meta[property="og:url"]')?.getAttribute('content'),
+      metadataDocument
+        .querySelector('meta[property="og:url"]')
+        ?.getAttribute('content'),
     ).toBe('https://notanothercards.com/');
   });
 });

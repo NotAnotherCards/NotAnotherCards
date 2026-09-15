@@ -9,7 +9,11 @@ export function App() {
   const isEmbeddedPreview = previewParams.get('preview') === 'embedded';
   const forcedTheme = previewParams.get('theme');
 
-  if (import.meta.env.DEV && import.meta.env.MODE !== 'test' && !isEmbeddedPreview) {
+  if (
+    import.meta.env.DEV &&
+    import.meta.env.MODE !== 'test' &&
+    !isEmbeddedPreview
+  ) {
     return <DeveloperPreview />;
   }
 
@@ -48,7 +52,10 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
             </picture>
           )}
         </a>
-        <nav className="flex shrink-0 items-center gap-2" aria-label="Account actions">
+        <nav
+          className="flex shrink-0 items-center gap-2"
+          aria-label="Account actions"
+        >
           <Button asChild variant="ghost" size="lg" className="px-1 sm:px-4">
             <a href={`${APP_URL}/login`}>Log in</a>
           </Button>
@@ -79,39 +86,60 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
             <p className="mt-1 text-muted">aprender</p>
             <div className="my-5 border-t border-border" />
             <div className="learning-card-labels flex gap-2 text-xs font-medium">
-              <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">Frequency</span>
-              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">Examples</span>
+              <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
+                Frequency
+              </span>
+              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">
+                Examples
+              </span>
             </div>
             <p className="mt-3 text-sm leading-5 text-muted">
               A little practice,
-              <span className="card-overlap-break"><br /></span>{' '}
+              <span className="card-overlap-break">
+                <br />
+              </span>{' '}
               <span className="whitespace-nowrap">every day.</span>
             </p>
           </article>
           <article className="learning-card learning-card-two z-20 rotate-[2deg] rounded-2xl border border-sage-border bg-background p-5 shadow-card sm:p-6">
-            <h2 className="text-3xl font-bold tracking-[-0.06em]">to remember</h2>
+            <h2 className="text-3xl font-bold tracking-[-0.06em]">
+              to remember
+            </h2>
             <p className="mt-1 text-muted">recordar</p>
             <div className="my-5 border-t border-border" />
             <div className="learning-card-labels flex gap-2 text-xs font-medium">
-              <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">Memorization</span>
-              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">Etymology</span>
+              <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
+                Memorization
+              </span>
+              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">
+                Etymology
+              </span>
             </div>
             <p className="mt-3 text-sm leading-5 text-muted">
               Make the word
-              <span className="card-overlap-break"><br /></span>{' '}
+              <span className="card-overlap-break">
+                <br />
+              </span>{' '}
               <span className="whitespace-nowrap">easier to recall.</span>
             </p>
           </article>
           <article className="learning-card learning-card-three z-30 -rotate-[1deg] rounded-2xl border border-sage-border bg-background p-5 shadow-card sm:p-6">
-            <h2 className="text-3xl font-bold tracking-[-0.06em]">to practise</h2>
+            <h2 className="text-3xl font-bold tracking-[-0.06em]">
+              to practise
+            </h2>
             <p className="mt-1 text-muted">practicar</p>
             <div className="my-5 border-t border-border" />
             <div className="learning-card-labels flex gap-2 text-xs font-medium">
-              <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">Similar words</span>
-              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">Pronunciation</span>
+              <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
+                Similar words
+              </span>
+              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">
+                Pronunciation
+              </span>
             </div>
             <p className="mt-3 text-sm leading-5 text-muted">
-              Notice links <span className="whitespace-nowrap">between languages.</span>
+              Notice links{' '}
+              <span className="whitespace-nowrap">between languages.</span>
             </p>
           </article>
           <p className="session-badge z-40 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted shadow-card">
@@ -137,7 +165,11 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
               description="AI adds frequency, origins, examples, language connections, and memory cues that make a word stick."
             />
             <ValueProposition
-              icon={<span className="relative -top-px text-3xl leading-none">↻</span>}
+              icon={
+                <span className="relative -top-px text-3xl leading-none">
+                  ↻
+                </span>
+              }
               title="Study offline. Sync later."
               description="Keep learning without internet. Your progress synchronizes across devices when you reconnect."
             />
@@ -155,14 +187,23 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
             or information you want to remember.
           </p>
         </div>
-        <ul className="mx-auto mt-8 flex max-w-none flex-wrap justify-center gap-2" aria-label="Supported learning material">
-          {['Useful phrases', 'Grammar patterns', 'Cultural context', 'Your own study material'].map(
-            (item) => (
-              <li key={item} className="rounded-full border border-sage-border bg-surface-soft px-4 py-2 text-sm font-medium text-sage-foreground">
-                {item}
-              </li>
-            ),
-          )}
+        <ul
+          className="mx-auto mt-8 flex max-w-none flex-wrap justify-center gap-2"
+          aria-label="Supported learning material"
+        >
+          {[
+            'Useful phrases',
+            'Grammar patterns',
+            'Cultural context',
+            'Your own study material',
+          ].map((item) => (
+            <li
+              key={item}
+              className="rounded-full border border-sage-border bg-surface-soft px-4 py-2 text-sm font-medium text-sage-foreground"
+            >
+              {item}
+            </li>
+          ))}
         </ul>
       </section>
 
@@ -181,7 +222,8 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
       </section>
 
       <footer className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted sm:px-8">
-        © 2026 NotAnotherCards <span aria-hidden="true">·</span> Learn at your own pace.
+        © 2026 NotAnotherCards <span aria-hidden="true">·</span> Learn at your
+        own pace.
       </footer>
     </main>
   );
@@ -199,7 +241,10 @@ function ValueProposition({
   return (
     <article className="rounded-2xl border border-sage-border bg-background p-6 shadow-card">
       <div className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-sage-border bg-surface-soft text-primary" aria-hidden="true">
+        <span
+          className="grid size-10 shrink-0 place-items-center rounded-lg border border-sage-border bg-surface-soft text-primary"
+          aria-hidden="true"
+        >
           {icon}
         </span>
         <h3 className="text-xl font-semibold tracking-[-0.035em]">{title}</h3>
@@ -243,7 +288,9 @@ function DeveloperPreview() {
         <button
           type="button"
           aria-pressed={isDark}
-          onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+          onClick={() =>
+            setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
+          }
           className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
             isDark
               ? 'bg-primary text-primary-foreground'
