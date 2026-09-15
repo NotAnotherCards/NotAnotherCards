@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useColorScheme } from 'nativewind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  BookOpen,
-  Library,
-  Settings as SettingsIcon,
-  type LucideIcon,
-} from 'lucide-react-native';
 import { authClient } from '@/lib/auth-client';
-import { iconColors } from '@/lib/theme';
+import {
+  BookOpenIcon,
+  LibraryIcon,
+  SettingsIcon,
+  type LucideIcon,
+} from '@/components/ui/icon';
 import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
 import { DeckList } from '@/components/deck-list';
@@ -22,15 +20,13 @@ import { Settings } from '@/components/settings';
 type Tab = 'overview' | 'library' | 'settings';
 
 const TABS: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
-  { value: 'overview', label: 'Overview', icon: BookOpen },
-  { value: 'library', label: 'My Library', icon: Library },
+  { value: 'overview', label: 'Overview', icon: BookOpenIcon },
+  { value: 'library', label: 'My Library', icon: LibraryIcon },
   { value: 'settings', label: 'Profile & Settings', icon: SettingsIcon },
 ];
 
 export default function Dashboard() {
   const { data: session } = authClient.useSession();
-  const { colorScheme } = useColorScheme();
-  const colors = iconColors(colorScheme);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('overview');
 
@@ -52,7 +48,9 @@ export default function Dashboard() {
               return (
                 <Icon
                   size={18}
-                  color={selected ? colors.foreground : colors.mutedForeground}
+                  className={
+                    selected ? 'text-foreground' : 'text-muted-foreground'
+                  }
                 />
               );
             }}

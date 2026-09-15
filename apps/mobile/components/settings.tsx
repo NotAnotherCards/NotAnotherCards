@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useColorScheme } from 'nativewind';
-import { LogOut, Settings as SettingsIcon } from 'lucide-react-native';
+import { LogOutIcon, SettingsIcon } from './ui/icon';
 import type { DatabaseManager } from '@remelondb/core';
 import { useDatabase, useQuery } from '@remelondb/core/react';
 import {
@@ -16,7 +15,6 @@ import {
   loadReviewPreferences,
   saveReviewPreferences,
 } from '@/lib/review-preferences';
-import { iconColors } from '@/lib/theme';
 import { ThemeToggle } from './theme-toggle';
 import { Button } from './ui/button';
 import {
@@ -45,8 +43,6 @@ export function Settings() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const { manager } = useSessionDatabase();
-  const { colorScheme } = useColorScheme();
-  const colors = iconColors(colorScheme);
   const user = session?.user;
 
   // SessionDatabaseProvider closes the offline database when the session
@@ -93,12 +89,12 @@ export function Settings() {
         </View>
         {/* Web's account menu item, as an icon button on the account row. */}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onPress={onLogout}
           className="flex-row gap-1.5"
         >
-          <LogOut size={16} color={colors.destructive} />
+          <LogOutIcon size={16} className="text-destructive" />
           <Text className="text-destructive">Log out</Text>
         </Button>
       </View>
@@ -133,8 +129,6 @@ const INTERVAL_OPTIONS = [
 ] as const;
 
 function Preferences({ userId }: { userId: string }) {
-  const { colorScheme } = useColorScheme();
-  const iconColor = iconColors(colorScheme).foreground;
   const [preferences, setPreferences] = useState(() =>
     loadReviewPreferences(userId),
   );
@@ -147,7 +141,7 @@ function Preferences({ userId }: { userId: string }) {
   return (
     <Card>
       <CardHeader className="flex-row items-center gap-3">
-        <SettingsIcon size={20} color={iconColor} />
+        <SettingsIcon size={20} className="text-foreground" />
         <View>
           <CardTitle>Preferences</CardTitle>
           <CardDescription>
