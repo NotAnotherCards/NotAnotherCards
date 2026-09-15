@@ -1,12 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
 
 describe('App', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('sends account calls to action to the canonical application subdomain', () => {
     render(<App />);
 
@@ -35,8 +39,6 @@ describe('App', () => {
       const value = element.getAttribute('href') ?? element.getAttribute('src');
       expect(value).not.toMatch(/^\/(?:api|sync)(?:\/|$)/);
     }
-
-    vi.unstubAllGlobals();
   });
 
   it('ships the approved metadata and canonical URL', () => {

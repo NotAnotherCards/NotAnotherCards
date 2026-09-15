@@ -194,9 +194,11 @@
 
 @media (min-width: 46rem) {
   .hero-section {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     align-items: center;
     gap: clamp(1.5rem, 4vw, 3rem);
+    padding-top: 6rem;
+    padding-bottom: 6rem;
   }
 
   .hero-copy {
@@ -206,14 +208,6 @@
 
   .hero-copy > p {
     margin-left: 0;
-  }
-}
-
-@media (min-width: 46rem) {
-  .hero-section {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    padding-top: 6rem;
-    padding-bottom: 6rem;
   }
 
   .hero-copy h1 {
@@ -228,29 +222,16 @@
     --grid-width: 96cqw;
     height: clamp(28rem, 50vw, 32rem);
   }
-
-  .learning-card {
-    height: 16rem;
-  }
-
 }
 
 @media (min-width: 60rem) and (max-width: 71.999rem) {
   .card-scene {
-    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
-    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
     --triple-card-height: 16rem;
     height: 34rem;
   }
 
-  .learning-card {
-    width: var(--triple-card-width);
-    height: var(--triple-card-height);
-  }
-
   .learning-card-three {
     display: block;
-    top: 14rem;
   }
 
   .hero-copy > p {
@@ -265,38 +246,12 @@
 
 @media (min-width: 72rem) and (max-width: 79.999rem) {
   .card-scene {
-    width: 100%;
-    max-width: none;
-    --grid-width: 96cqw;
-    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
-    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
     --triple-card-height: clamp(16rem, calc(50vw - 20rem), 18rem);
     height: 34rem;
   }
 
-  .learning-card {
-    width: var(--triple-card-width);
-    height: var(--triple-card-height);
-  }
-
-  .learning-card h2 {
-    font-size: 1.25rem;
-  }
-
-  .learning-card-one {
-    top: 4rem;
-    left: 4%;
-  }
-
-  .learning-card-two {
-    top: 9rem;
-    left: 31.5%;
-  }
-
   .learning-card-three {
     display: block;
-    top: 14rem;
-    left: 59%;
   }
 
   .session-badge {
@@ -323,32 +278,12 @@
   .card-scene {
     width: min(100%, 48rem);
     --grid-width: 96cqw;
-    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
-    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
     --triple-card-height: clamp(16rem, calc(25cqw + 6rem), 18rem);
-    --triple-step: 2.75rem;
     height: 34rem;
-  }
-
-  .learning-card {
-    width: var(--triple-card-width);
-    height: var(--triple-card-height);
-  }
-
-  .learning-card-one {
-    top: 4rem;
-    left: 4%;
-  }
-
-  .learning-card-two {
-    top: 9rem;
-    left: 31.5%;
   }
 
   .learning-card-three {
     display: block;
-    top: 14rem;
-    left: 59%;
   }
 
   .session-badge {
@@ -374,53 +309,13 @@
 }
 
 @media (min-width: 80rem) {
-  .hero-section {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    padding-top: 6rem;
-    padding-bottom: 6rem;
-  }
-
-  .hero-copy h1 {
-    font-size: clamp(2.75rem, calc(1.1rem + 3.15vw), 3.75rem);
-  }
-
   .card-scene {
-    width: 100%;
-    max-width: none;
-    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
-    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
     --triple-card-height: clamp(16rem, calc(50vw - 20rem), 18rem);
     height: 34rem;
   }
 
-  .learning-grid {
-    top: 2rem;
-    --grid-width: 96cqw;
-  }
-
-  .learning-card {
-    width: var(--triple-card-width);
-    height: var(--triple-card-height);
-  }
-
-  .learning-card h2 {
-    font-size: 1.25rem;
-  }
-
-  .learning-card-one {
-    top: 4rem;
-    left: 4%;
-  }
-
-  .learning-card-two {
-    top: 9rem;
-    left: 31.5%;
-  }
-
   .learning-card-three {
     display: block;
-    top: 14rem;
-    left: 59%;
   }
 
   .session-badge {
@@ -438,6 +333,13 @@
 @media (min-width: 72rem), (min-width: 60rem) and (max-width: 71.999rem), (min-width: 38rem) and (max-width: 45.999rem) {
   .card-scene {
     --triple-overlap: 1rem;
+    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
+    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
+  }
+
+  .learning-card {
+    width: var(--triple-card-width);
+    height: var(--triple-card-height);
   }
 
   .learning-card-one {
