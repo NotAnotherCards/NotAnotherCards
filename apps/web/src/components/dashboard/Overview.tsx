@@ -19,10 +19,12 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
+  Flag,
 } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useSharedDecks } from '@/hooks/useSharedDecks';
 import { useImportDeck } from '@/hooks/useImportDeck';
+import { useReportDeck } from '@/hooks/useReportDeck';
 import { useStore } from '@/hooks/useStore';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
 import { useNavigate } from '@tanstack/react-router';
@@ -30,6 +32,8 @@ import {
   clearLastReviewDeckId,
   getLastReviewDeckId,
 } from '@/lib/review-preferences';
+import type { SharedDeckSummary } from '@repo/schemas';
+import { useState } from 'react';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -90,6 +94,17 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     error: sharedDecksError,
   } = useSharedDecks();
   const { importDeck, importingIds, error: importError } = useImportDeck();
+  const {
+    reportDeck,
+    reportingIds,
+    error: reportError,
+    setError: setReportError,
+  } = useReportDeck();
+  const [reportingDeck, setReportingDeck] = useState<SharedDeckSummary | null>(
+    null,
+  );
+  const [reportReason, setReportReason] = useState('');
+  const [reportSubmitted, setReportSubmitted] = useState(false);
 
   const user = session?.user || {
     name: 'Legendary Learner',
@@ -277,10 +292,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            {importError && (
+            {(importError || (reportError && !reportingDeck)) && (
               <div className="mx-6 mt-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20 flex items-center gap-2">
                 <AlertCircle className="size-4" />
-                {importError}
+                {importError ?? reportError}
               </div>
             )}
             <div className="overflow-x-auto">
@@ -334,24 +349,41 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                           </span>
                         </td>
                         <td className="px-6 py-3.5 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="cursor-pointer min-w-17.5"
-                            disabled={importingIds.has(deck.id)}
-                            onClick={async () => {
-                              const result = await importDeck(deck.id);
-                              if (result) {
-                                controller?.syncNow();
-                              }
-                            }}
-                          >
-                            {importingIds.has(deck.id) ? (
-                              <Loader2 className="size-4 animate-spin" />
-                            ) : (
-                              'Import'
-                            )}
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="cursor-pointer"
+                              disabled={reportingIds.has(deck.id)}
+                              aria-label={`Report ${deck.title || 'deck'}`}
+                              onClick={() => {
+                                setReportError(null);
+                                setReportReason('');
+                                setReportSubmitted(false);
+                                setReportingDeck(deck);
+                              }}
+                            >
+                              <Flag className="size-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="cursor-pointer min-w-17.5"
+                              disabled={importingIds.has(deck.id)}
+                              onClick={async () => {
+                                const result = await importDeck(deck.id);
+                                if (result) {
+                                  controller?.syncNow();
+                                }
+                              }}
+                            >
+                              {importingIds.has(deck.id) ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                'Import'
+                              )}
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -410,6 +442,83 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           </CardContent>
         </Card>
       </div>
+
+      {reportingDeck && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="report-deck-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          onClick={() => setReportingDeck(null)}
+        >
+          <Card
+            className="w-full max-w-md shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <CardHeader>
+              <CardTitle
+                id="report-deck-title"
+                className="flex items-center gap-2"
+              >
+                <Flag className="size-5 text-destructive" />
+                Report {reportingDeck.title || 'deck'}
+              </CardTitle>
+              <CardDescription>
+                Tell the moderation team what is wrong. A report may queue a
+                thorough automatic re-check, but the report alone never hides
+                the deck.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {reportSubmitted ? (
+                <p className="text-sm">Thank you. Your report was recorded.</p>
+              ) : (
+                <textarea
+                  aria-label="Reason for report"
+                  value={reportReason}
+                  maxLength={2000}
+                  onChange={(event) => setReportReason(event.target.value)}
+                  className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder="Describe the problem with this deck"
+                />
+              )}
+              {reportError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {reportError}
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setReportingDeck(null)}
+                >
+                  {reportSubmitted ? 'Close' : 'Cancel'}
+                </Button>
+                {!reportSubmitted && (
+                  <Button
+                    disabled={
+                      !reportReason.trim() || reportingIds.has(reportingDeck.id)
+                    }
+                    onClick={async () => {
+                      const result = await reportDeck(
+                        reportingDeck.id,
+                        reportReason.trim(),
+                      );
+                      if (result) setReportSubmitted(true);
+                    }}
+                  >
+                    {reportingIds.has(reportingDeck.id) ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      'Submit report'
+                    )}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

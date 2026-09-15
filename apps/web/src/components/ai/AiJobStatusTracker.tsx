@@ -8,12 +8,14 @@ interface AiJobStatusTrackerProps {
   jobId?: string;
   status: JobStatus;
   error?: string | null;
+  type?: string;
 }
 
 export function AiJobStatusTracker({
   jobId,
   status,
   error,
+  type,
 }: AiJobStatusTrackerProps) {
   const steps = [
     {
@@ -26,7 +28,14 @@ export function AiJobStatusTracker({
       label: 'Processing LLM',
       desc: 'Querying model and formatting structured output',
     },
-    { key: 'completed', label: 'Done', desc: 'Cards generated successfully' },
+    {
+      key: 'completed',
+      label: 'Done',
+      desc:
+        type === 'word_note'
+          ? 'Note created successfully'
+          : 'Cards created successfully',
+    },
   ].filter((step) => jobId || step.key !== 'pending');
 
   const getStepState = (stepKey: string) => {
@@ -47,13 +56,8 @@ export function AiJobStatusTracker({
 
       <div className="text-center space-y-2">
         <h3 className="text-lg font-semibold tracking-tight">
-          Generating Your Deck
+          {type === 'word_note' ? 'Creating Your Note' : 'Creating Your Deck'}
         </h3>
-        {jobId && (
-          <p className="text-xs text-muted-foreground font-mono">
-            Job ID: {jobId}
-          </p>
-        )}
       </div>
 
       <div className="flex justify-center py-4">

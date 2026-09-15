@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DATABASE_CONNECTION } from '../database/database-connection';
 import { aiGenerationJobs, type GenerationPayload } from './schema';
@@ -110,7 +110,12 @@ export class AiQueueService {
     const [job] = await this.db
       .select()
       .from(aiGenerationJobs)
-      .where(eq(aiGenerationJobs.id, jobId));
+      .where(
+        and(
+          eq(aiGenerationJobs.id, jobId),
+          ne(aiGenerationJobs.type, 'deck_moderation'),
+        ),
+      );
 
     if (!job) {
       throw new NotFoundException(`Job with ID "${jobId}" not found`);
@@ -129,7 +134,12 @@ export class AiQueueService {
     const jobs = await this.db
       .select()
       .from(aiGenerationJobs)
-      .where(eq(aiGenerationJobs.userId, userId))
+      .where(
+        and(
+          eq(aiGenerationJobs.userId, userId),
+          ne(aiGenerationJobs.type, 'deck_moderation'),
+        ),
+      )
       .orderBy(desc(aiGenerationJobs.createdAt))
       .limit(limit);
 

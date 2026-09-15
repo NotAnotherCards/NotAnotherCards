@@ -46,6 +46,19 @@ describe('AiGatewayService', () => {
     expect(result.model).toContain('mock');
   });
 
+  it('streams mock explanation text', async () => {
+    const deltas: string[] = [];
+    const result = await service.generateText('system', 'card', 'gemma4', {
+      onDelta: (delta) => {
+        deltas.push(delta);
+      },
+    });
+
+    expect(result.text).toContain('flagged');
+    expect(deltas.join('')).toBe(result.text);
+    expect(result.usage.totalTokens).toBeGreaterThan(0);
+  });
+
   it('throws when AI_API_BASE is unset and AI_MOCK is not enabled', async () => {
     const unconfiguredConfig = {
       get: jest.fn(() => undefined),

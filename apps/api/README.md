@@ -120,7 +120,7 @@ Server-side 2FA uses Better Auth's `twoFactor` plugin (`issuer:
 and backup codes are encrypted at rest (`BETTER_AUTH_SECRET`); they are
 returned once at enrollment and never logged.
 
-Schema impact (migration `0014_nasty_harry_osborn.sql`, generated from
+Schema impact (migration `0015_nasty_harry_osborn.sql`, generated from
 `auth-config.ts`):
 
 - `user.two_factor_enabled` boolean (`default false`) marks the account as

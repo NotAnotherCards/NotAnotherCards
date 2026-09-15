@@ -11,6 +11,7 @@ import {
 import {
   AlertCircle,
   ArrowLeft,
+  HelpCircle,
   Loader2,
   Plus,
   RefreshCw,
@@ -30,6 +31,11 @@ import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { usePublishing } from '@/hooks/usePublishing';
 import { useSyncController } from '@/offline/syncProvider';
+import { useOwnerModerationStatus } from '@/hooks/useOwnerModerationStatus';
+import {
+  type ExplainableFinding,
+  useModerationExplanation,
+} from '@/hooks/useModerationExplanation';
 
 interface DeckDetailProps {
   deckId: string;
@@ -45,9 +51,19 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [writeError, setWriteError] = useState<string | null>(null);
   const [isPendingPublishAction, setIsPendingPublishAction] = useState(false);
   const isBusyRef = useRef(false);
-  const { publish, unpublish, isPublishing, isUnpublishing, error, setError } =
-    usePublishing();
+  const {
+    publish,
+    unpublish,
+    isPublishing,
+    isUnpublishing,
+    error,
+    setError,
+    warnings: publishWarnings,
+  } = usePublishing();
   const controller = useSyncController();
+  const { status: moderationStatus, refresh: refreshModerationStatus } =
+    useOwnerModerationStatus(deckId);
+  const explanation = useModerationExplanation(deckId);
 
   if (store.isTakenOver) {
     return (
@@ -105,7 +121,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
   const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
-  const isPublic = deck?.visibility === 'public';
+  const isPublic =
+    deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
   const editingWordFields = (() => {
@@ -132,6 +149,159 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   const cards = store.getCardsForDeck(deckId);
+  const visibleWarnings =
+    publishWarnings.length > 0
+      ? publishWarnings
+      : moderationStatus.status === 'visible'
+        ? moderationStatus.warnings
+        : [];
+
+  const findingList = (
+    findings: ExplainableFinding[],
+    title?: string,
+    source: 'working' | 'published' = 'published',
+  ) => (
+    <div className="space-y-2">
+      {title && <p className="text-sm font-semibold">{title}</p>}
+      <ul className="space-y-2 text-sm">
+        {findings.map((finding, index) => {
+          const key = `${finding.cardId}:${finding.reason}`;
+          const isActive = explanation.activeKey === `${source}:${key}`;
+          return (
+            <li
+              key={`${key}:${index}`}
+              className="rounded-lg border border-border/60 bg-background/60 p-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-muted-foreground">
+                  {finding.cardId.slice(0, 8)}
+                </span>
+                <span className="grow text-foreground">{finding.reason}</span>
+                {finding.classifier && (
+                  <span className="text-xs text-muted-foreground">
+                    {finding.classifier}
+                  </span>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 cursor-pointer gap-1"
+                  onClick={() => void explanation.explain(finding, source)}
+                  disabled={isActive && explanation.isLoading}
+                >
+                  {isActive && explanation.isLoading ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <HelpCircle className="size-3.5" />
+                  )}
+                  Why?
+                </Button>
+              </div>
+              {isActive && (explanation.text || explanation.error) && (
+                <p
+                  className={`mt-2 border-t border-border/50 pt-2 ${
+                    explanation.error
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                  }`}
+                  aria-live="polite"
+                >
+                  {explanation.error ?? explanation.text}
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
+  const classifierResultList = () => {
+    if (moderationStatus.status !== 'blocked') return null;
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold">Classifier results</p>
+        <ul className="space-y-2 text-sm">
+          {moderationStatus.results.map((result, index) => {
+            const reason = result.categories?.length
+              ? result.categories.join(', ')
+              : result.verdict[0].toUpperCase() + result.verdict.slice(1);
+            const finding = {
+              cardId: result.cardId,
+              reason,
+              classifier: result.classifier,
+            };
+            const key = `${result.cardId}:${reason}`;
+            const isActive = explanation.activeKey === `published:${key}`;
+            const canExplain =
+              result.verdict === 'unsafe' || result.verdict === 'controversial';
+            return (
+              <li
+                key={`${result.classifier}:${result.cardId}:${index}`}
+                className="rounded-lg border border-border/60 bg-background/60 p-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-muted-foreground">
+                    {result.cardId.slice(0, 8)}
+                  </span>
+                  <span className="font-semibold capitalize">
+                    {result.verdict}
+                  </span>
+                  <span className="grow text-foreground">
+                    {result.categories === null
+                      ? 'No category supplied'
+                      : result.categories.length > 0
+                        ? result.categories.join(', ')
+                        : 'Categories: none'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {result.classifier}
+                  </span>
+                  {canExplain && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 cursor-pointer gap-1"
+                      onClick={() =>
+                        void explanation.explain(finding, 'published')
+                      }
+                      disabled={isActive && explanation.isLoading}
+                    >
+                      {isActive && explanation.isLoading ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <HelpCircle className="size-3.5" />
+                      )}
+                      Why?
+                    </Button>
+                  )}
+                </div>
+                {result.error && (
+                  <p className="mt-2 text-xs text-destructive">
+                    Check failed: {result.error}
+                  </p>
+                )}
+                {isActive && (explanation.text || explanation.error) && (
+                  <p
+                    className={`mt-2 border-t border-border/50 pt-2 ${
+                      explanation.error
+                        ? 'text-destructive'
+                        : 'text-muted-foreground'
+                    }`}
+                    aria-live="polite"
+                  >
+                    {explanation.error ?? explanation.text}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  };
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
@@ -274,10 +444,11 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   setIsPendingPublishAction(true);
                   try {
                     await controller?.syncNow();
-                    await publish(
+                    const published = await publish(
                       deckId,
                       () => controller?.syncNow() || Promise.resolve(),
                     );
+                    if (published) await refreshModerationStatus();
                   } finally {
                     setIsPendingPublishAction(false);
                     isBusyRef.current = false;
@@ -305,6 +476,59 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           </p>
         )}
       </div>
+
+      {visibleWarnings.length > 0 && (
+        <UICard role="status" className="border-amber-500/40 bg-amber-500/5">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-amber-800 dark:text-amber-300">
+              <AlertCircle className="size-5" />
+              Published with moderation warnings
+            </CardTitle>
+            <CardDescription>
+              Your deck is public, but these cards may cover sensitive or
+              controversial material. You can review the reason without
+              unpublishing it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {findingList(visibleWarnings, 'Warnings')}
+          </CardContent>
+        </UICard>
+      )}
+
+      {moderationStatus.status === 'blocked' && (
+        <UICard role="alert" className="border-destructive/40 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
+              <AlertCircle className="size-5" />
+              Deck taken down
+            </CardTitle>
+            <CardDescription>
+              This deck is no longer visible to the community. Review the
+              moderation result, edit the working copy, and publish again when
+              it is ready.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0">
+            <FormErrorMessage
+              message={
+                moderationStatus.reason ??
+                'The reported deck did not pass moderation.'
+              }
+            />
+            {moderationStatus.results.length > 0 ? (
+              classifierResultList()
+            ) : (
+              <>
+                {moderationStatus.flagged.length > 0 &&
+                  findingList(moderationStatus.flagged, 'Flagged cards')}
+                {moderationStatus.warnings.length > 0 &&
+                  findingList(moderationStatus.warnings, 'Warnings')}
+              </>
+            )}
+          </CardContent>
+        </UICard>
+      )}
 
       {/* Library View (Search & Card Table via CardList) */}
       <CardList
@@ -459,17 +683,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
               {error.flagged && error.flagged.length > 0 && (
                 <div className="bg-muted/50 rounded-lg p-4 border border-border text-sm max-h-48 overflow-y-auto">
-                  <p className="font-semibold mb-2">Flagged Cards:</p>
-                  <ul className="list-disc pl-5 space-y-2">
-                    {error.flagged.map((flag, idx) => (
-                      <li key={idx}>
-                        <span className="font-mono bg-background px-1.5 py-0.5 rounded text-muted-foreground mr-1.5 border border-border/50">
-                          {flag.cardId.slice(0, 8)}
-                        </span>
-                        <span className="text-foreground">{flag.reason}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {findingList(error.flagged, 'Flagged cards', 'working')}
                 </div>
               )}
               <div className="flex justify-end pt-2">

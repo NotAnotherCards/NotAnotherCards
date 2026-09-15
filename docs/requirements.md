@@ -106,7 +106,7 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 ### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — done — 100%
 
-- Generate text or images from user input. **done**: card generation jobs, `apps/api/src/ai`; gemma4 is the default and the benchmarked models are selectable through one shared `AI_MODELS` list (#197, merged 2026-08-31). A web playground is in review (#217).
+- Generate text or images from user input. **done**: card generation jobs, `apps/api/src/ai`; gemma4 is the default and the benchmarked models are selectable through one shared `AI_MODELS` list (#197, merged 2026-08-31). The web playground merged as #312.
 - Handle streaming responses correctly. **done**: the playground streams generation (`POST /api/ai/playground/stream`, #80); usage recorded per run. `docs/ai-generation.md` describes the whole path.
 - Implement error handling and rate limiting. **done**: job quotas (`AI_MAX_*`), gateway errors mapped, LiteLLM per-key limits.
 
@@ -130,7 +130,7 @@ base, and daily challenges — 3 of the 6 listed options.
 
 ### 4.11 Modules of choice: mobile app — Major, 2 — in progress — 25%
 
-- The module must be substantial and show technical complexity. **in progress, about 50% parity with web**: measured against #143's checklist, 8.75 of 17 items. Done: per-account offline database and sync (#151, #177), and sync now runs on Hermes after remelonDB 0.2.6 (#216, verified on a device against staging 2026-08-31 including a deck push); shared deck, card and review queries live in `@repo/offline-db` (#204, #211). In review: onboarding and route guards (#210). Built, PR pending: deck list with create, edit and delete (#68, first slice). Not started: deck detail and card CRUD, the flashcard viewer, settings, social sign-in, password recovery and change.
+- The module must be substantial and show technical complexity. **in progress, about 50% parity with web**: measured against #143's checklist, 8.75 of 17 items. Done: per-account offline database and sync (#151, #177), and sync now runs on Hermes after remelonDB 0.2.6 (#216, verified on a device against staging 2026-08-31 including a deck push); shared deck, card and review queries live in `@repo/offline-db` (#204, #211). Merged: onboarding and route guards (#210), deck list with create, edit and delete (#240), deck detail with card CRUD (#242). Not started: the flashcard viewer, settings, social sign-in (#293 open, blocked on #319), password recovery and change.
 - The README must justify: why this module, which technical challenges it addresses, how it adds value, and why it deserves Major status. **not started**: not in the README. This bullet is half the module's score, hence 25%.
 - Trivial features or shortcuts cause rejection of the module. Note for the README.
 
@@ -185,7 +185,7 @@ Decided 2026-09-03.
 
 - Implement a complete 2FA (Two-Factor Authentication) system for the users. **not started**
 
-### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — in review — 70%
+### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — in review — 90%
 
 Decided 2026-09-03.
 
@@ -194,9 +194,15 @@ Decided 2026-09-03.
   an unsafe card refuses publication and names the card and its category
   (auto moderation, auto warning); verified on staging against the real
   gateway 2026-09-10 (a harmful deck refused with 422, a clean deck
-  published). Model choice measured in `docs/model-report-moderation.md`.
-  Not yet: auto deletion (#264, takedown on report), the README module
-  section.
+  published). A signed-in report queues a thorough two-classifier re-check;
+  either classifier can automatically take down the exact public snapshot,
+  while an operator can take down content the models miss (#264). Every
+  classifier verdict, including safe opinions and nullable categories, is
+  stored and shown to the owner, with an on-demand streamed explanation,
+  and the report alone never hides a deck. The checked-in independent alias is
+  operational with ShieldGemma's tested `Yes`/`No` response contract. Do not
+  mark this complete until round two selects the final independent classifier
+  and the full report/re-check/owner-warning flow is verified on staging.
 
 ## 5. Modules not claimed
 
@@ -254,11 +260,11 @@ questions are kept below with the current status on each.
   written backup and recovery procedure, on top of the monitoring stack.
   Estimate: about 1 day.
 
-Arithmetic (2026-09-09): claimed 17. Merged 6 pts (framework, ORM, OAuth,
-monitoring — 4 modules). In review 1 pt (export/import — 1 module). In
-progress 6 pts (LLM 2, design system 1, mobile 2, activity analytics
-dashboard 1 — 4 modules). Not started 4 pts (gamification, multiple
-languages, 2FA, content moderation AI — 4 modules). To reach 14, at most 3 of
+Arithmetic (2026-09-13): claimed 17. Merged 6 pts (framework, ORM, OAuth,
+monitoring — 4 modules). In review 2 pts (export/import, content moderation
+AI — 2 modules). In progress 6 pts (LLM 2, design system 1, mobile 2,
+activity analytics dashboard 1 — 4 modules). Not started 3 pts (gamification, multiple
+languages, 2FA — 3 modules). To reach 14, at most 3 of
 the remaining 11 points may be missing at evaluation; advanced search (1) is
 an additional reserve outside the 17.
 
