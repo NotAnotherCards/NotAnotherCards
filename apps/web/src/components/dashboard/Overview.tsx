@@ -191,10 +191,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       try {
         const res = await fetch('/api/gamification/me');
         if (res.ok) {
-          const data = (await res.json()) as {
-            todayChallenges?: DailyChallengeProgress[];
+          const data = (await res.json()) as unknown;
+
+          const isGamificationData = (
+            d: unknown,
+          ): d is { todayChallenges?: DailyChallengeProgress[] } => {
+            return typeof d === 'object' && d !== null;
           };
-          if (data && data.todayChallenges) {
+
+          if (isGamificationData(data) && data.todayChallenges) {
             setServerProgress(data.todayChallenges);
           }
         }
@@ -236,8 +241,20 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     let notifiedState = { date: '', codes: [] as string[] };
     try {
       const stored = localStorage.getItem(NOTIFIED_STORAGE_KEY);
+      const isNotifiedState = (
+        d: unknown,
+      ): d is { date: string; codes: string[] } => {
+        return typeof d === 'object' && d !== null;
+      };
+
       if (stored) {
-        notifiedState = JSON.parse(stored);
+        const parsed = JSON.parse(stored) as unknown;
+        if (isNotifiedState(parsed)) {
+          notifiedState = {
+            date: typeof parsed.date === 'string' ? parsed.date : '',
+            codes: Array.isArray(parsed.codes) ? parsed.codes : [],
+          };
+        }
       }
     } catch {
       // Ignore parse errors
@@ -319,10 +336,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               </CardTitle>
               <CardDescription
                 className="flex items-center gap-1 text-xs truncate max-w-50"
-                title={user.email}
+                title={store?.profile?.username ?? undefined}
               >
-                <Mail className="size-3" />
-                {user.email}
+                @{store?.profile?.username}
               </CardDescription>
             </div>
           </CardHeader>
