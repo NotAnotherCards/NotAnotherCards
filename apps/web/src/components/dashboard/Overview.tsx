@@ -16,6 +16,7 @@ import {
   GraduationCap,
   BookOpen,
   Sparkles,
+  Mail,
   Library,
   RefreshCw,
   Loader2,
