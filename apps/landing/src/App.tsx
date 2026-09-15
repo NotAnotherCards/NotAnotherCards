@@ -7,23 +7,30 @@ const APP_URL = 'https://app.notanothercards.com';
 export function App() {
   const previewParams = new URLSearchParams(window.location.search);
   const isEmbeddedPreview = previewParams.get('preview') === 'embedded';
-  const isDarkPreview = previewParams.get('theme') === 'dark';
+  const forcedTheme = previewParams.get('theme');
 
   if (import.meta.env.DEV && import.meta.env.MODE !== 'test' && !isEmbeddedPreview) {
     return <DeveloperPreview />;
   }
 
-  return <LandingPage isDarkPreview={isDarkPreview} />;
+  return <LandingPage forcedTheme={forcedTheme} />;
 }
 
-function LandingPage({ isDarkPreview }: { isDarkPreview: boolean }) {
+function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
+  const themeClass =
+    forcedTheme === 'dark'
+      ? 'landing-dark'
+      : forcedTheme === 'light'
+        ? 'landing-light'
+        : undefined;
+
   return (
-    <main className={isDarkPreview ? 'landing-dark' : undefined}>
+    <main className={themeClass}>
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
         <a className="min-w-0" href="/" aria-label="NotAnotherCards home">
-          {isDarkPreview ? (
+          {forcedTheme === 'dark' ? (
             <img
-              className="h-[30px] w-[236px] max-w-[calc(100vw-14rem)] sm:max-w-none"
+              className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
               src="/brand/notanothercards-logo-dark.svg"
               alt="NotAnotherCards"
             />
@@ -34,7 +41,7 @@ function LandingPage({ isDarkPreview }: { isDarkPreview: boolean }) {
                 srcSet="/brand/notanothercards-logo-dark.svg"
               />
               <img
-                className="h-[30px] w-[236px] max-w-[calc(100vw-14rem)] sm:max-w-none"
+                className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
                 src="/brand/notanothercards-logo.svg"
                 alt="NotAnotherCards"
               />
@@ -75,7 +82,11 @@ function LandingPage({ isDarkPreview }: { isDarkPreview: boolean }) {
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">Frequency</span>
               <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">Examples</span>
             </div>
-            <p className="mt-3 text-sm leading-5 text-muted">A little practice, every day.</p>
+            <p className="mt-3 text-sm leading-5 text-muted">
+              A little practice,
+              <span className="card-overlap-break"><br /></span>{' '}
+              <span className="whitespace-nowrap">every day.</span>
+            </p>
           </article>
           <article className="learning-card learning-card-two z-20 rotate-[2deg] rounded-2xl border border-sage-border bg-background p-5 shadow-card sm:p-6">
             <h2 className="text-3xl font-bold tracking-[-0.06em]">to remember</h2>
@@ -85,7 +96,11 @@ function LandingPage({ isDarkPreview }: { isDarkPreview: boolean }) {
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">Memorization</span>
               <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">Etymology</span>
             </div>
-            <p className="mt-3 text-sm leading-5 text-muted">Make the word easier to recall.</p>
+            <p className="mt-3 text-sm leading-5 text-muted">
+              Make the word
+              <span className="card-overlap-break"><br /></span>{' '}
+              <span className="whitespace-nowrap">easier to recall.</span>
+            </p>
           </article>
           <article className="learning-card learning-card-three z-30 -rotate-[1deg] rounded-2xl border border-sage-border bg-background p-5 shadow-card sm:p-6">
             <h2 className="text-3xl font-bold tracking-[-0.06em]">to practise</h2>
@@ -95,7 +110,9 @@ function LandingPage({ isDarkPreview }: { isDarkPreview: boolean }) {
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">Similar words</span>
               <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">Pronunciation</span>
             </div>
-            <p className="mt-3 text-sm leading-5 text-muted">Notice links between languages.</p>
+            <p className="mt-3 text-sm leading-5 text-muted">
+              Notice links <span className="whitespace-nowrap">between languages.</span>
+            </p>
           </article>
           <p className="session-badge z-40 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted shadow-card">
             Today&apos;s session · 8 cards
@@ -110,7 +127,7 @@ function LandingPage({ isDarkPreview }: { isDarkPreview: boolean }) {
           </h2>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             <ValueProposition
-              icon={<MessageCircle aria-hidden="true" />}
+              icon={<MessageCircle className="size-5" aria-hidden="true" />}
               title="Learn words you will use"
               description="Focus on high-frequency vocabulary for the conversations and content you meet every day."
             />
@@ -120,7 +137,7 @@ function LandingPage({ isDarkPreview }: { isDarkPreview: boolean }) {
               description="AI adds frequency, origins, examples, language connections, and memory cues that make a word stick."
             />
             <ValueProposition
-              icon={<span className="text-2xl leading-none">↻</span>}
+              icon={<span className="relative -top-px text-3xl leading-none">↻</span>}
               title="Study offline. Sync later."
               description="Keep learning without internet. Your progress synchronizes across devices when you reconnect."
             />
@@ -202,10 +219,11 @@ const previewWidths: Record<PreviewSize, string> = {
 
 function DeveloperPreview() {
   const [size, setSize] = useState<PreviewSize>('desktop');
-  const [isDark, setIsDark] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const isDark = theme === 'dark';
 
   return (
-    <div className={`min-h-screen bg-surface p-4 sm:p-6 ${isDark ? 'landing-dark' : ''}`}>
+    <div className={`min-h-screen bg-surface p-4 sm:p-6 landing-${theme}`}>
       <div className="sticky top-3 z-10 mx-auto mb-4 flex w-fit rounded-xl border border-border bg-background p-1 shadow-card">
         {(Object.keys(previewWidths) as PreviewSize[]).map((option) => (
           <button
@@ -225,19 +243,19 @@ function DeveloperPreview() {
         <button
           type="button"
           aria-pressed={isDark}
-          onClick={() => setIsDark((current) => !current)}
+          onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
           className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
             isDark
               ? 'bg-primary text-primary-foreground'
               : 'text-foreground hover:bg-surface-soft'
           }`}
         >
-          Dark
+          {isDark ? 'Light' : 'Dark'}
         </button>
       </div>
       <iframe
         title={`Landing preview: ${size}`}
-        src={`/?preview=embedded${isDark ? '&theme=dark' : ''}`}
+        src={`/?preview=embedded&theme=${theme}`}
         className={`mx-auto block h-[calc(100vh-7rem)] min-h-[760px] w-full rounded-xl border border-border bg-background shadow-card ${previewWidths[size]}`}
       />
     </div>
