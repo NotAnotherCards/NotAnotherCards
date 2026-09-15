@@ -47,6 +47,10 @@
     --sage-border: #43594a;
     --shadow-card: 0 12px 30px rgb(0 0 0 / 25%);
   }
+
+  [aria-label='Supported learning material'] li {
+    color: var(--foreground);
+  }
 }
 
 .landing-dark {
@@ -62,6 +66,25 @@
   --sage-foreground: #17221a;
   --sage-border: #43594a;
   --shadow-card: 0 12px 30px rgb(0 0 0 / 25%);
+  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.landing-light {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #18181b;
+  --primary: #5865b5;
+  --primary-foreground: #ffffff;
+  --muted: #71717a;
+  --surface: #f2f6f2;
+  --surface-soft: #f4f8f4;
+  --border: #e4e4e7;
+  --sage: #dde9e0;
+  --sage-foreground: #27342c;
+  --sage-border: #d8e2da;
+  --shadow-card: 0 12px 30px rgb(24 24 27 / 8%);
   min-height: 100vh;
   background-color: var(--background);
   color: var(--foreground);
@@ -102,22 +125,28 @@
 
 .card-scene {
   position: relative;
-  --grid-width: 86%;
-  --pair-card-width: 70%;
-  --pair-overlap-half: 0.5rem;
-  width: min(100%, 34rem);
-  height: clamp(33rem, 140vw, 37rem);
+  container-type: inline-size;
+  --grid-width: 94cqw;
+  --pair-card-width: 12rem;
+  --pair-card-height: 17rem;
+  --pair-overlap-half: 1rem;
+  --triple-step: 2.75rem;
+  width: min(100%, 26rem);
+  height: clamp(27rem, 75vw, 30rem);
   margin: 0 auto;
 }
 
 .learning-grid {
   position: absolute;
-  top: clamp(2rem, 8vw, 3rem);
+  top: 2rem;
   bottom: 0;
   left: 50%;
   width: var(--grid-width);
+  width: round(down, var(--grid-width), 22px);
+  box-sizing: content-box;
   border-bottom: 1px solid var(--sage-border);
   border-left: 1px solid var(--sage-border);
+  border-right: 1px solid var(--sage-border);
   background-image: linear-gradient(to right, var(--sage-border) 1px, transparent 1px), linear-gradient(to bottom, var(--sage-border) 1px, transparent 1px);
   background-size: 22px 22px;
   transform: translateX(-50%);
@@ -126,28 +155,31 @@
 .learning-card {
   position: absolute;
   width: var(--pair-card-width);
-  height: clamp(16rem, 74vw, 18rem);
+  height: var(--pair-card-height);
 }
 
 .learning-card h2 {
-  font-size: clamp(1.5rem, 7vw, 1.875rem);
+  font-size: 1.25rem;
   white-space: nowrap;
 }
 
 .learning-card-one {
-  top: 1rem;
-  left: 0;
+  top: calc(50% - (var(--pair-card-height) / 2 + 0.75rem));
+  left: calc(50% - var(--pair-card-width) + var(--pair-overlap-half));
 }
 
 .learning-card-two {
-  top: clamp(15rem, 72vw, 16rem);
-  right: auto;
-  left: 30%;
+  top: calc(50% - (var(--pair-card-height) / 2 - 2.75rem));
+  left: calc(50% - var(--pair-overlap-half));
 }
 
 .learning-card-labels {
   flex-direction: column;
   align-items: flex-start;
+}
+
+.card-overlap-break {
+  display: none;
 }
 
 .learning-card-three {
@@ -157,44 +189,7 @@
 .session-badge {
   position: absolute;
   right: 3%;
-  bottom: -2rem;
-}
-
-@media (min-width: 40rem) {
-  .card-scene {
-    height: clamp(27rem, 75vw, 30rem);
-    --grid-width: 88%;
-    --pair-card-width: clamp(12rem, 46%, 16rem);
-  }
-
-  .learning-grid {
-    top: 2rem;
-    width: var(--grid-width);
-  }
-
-  .learning-card {
-    width: var(--pair-card-width);
-    height: 17rem;
-  }
-
-  .learning-card h2 {
-    font-size: clamp(1.25rem, 3vw, 1.5rem);
-    white-space: nowrap;
-  }
-
-  .learning-card-one {
-    top: 5.75rem;
-    left: calc(50% - var(--pair-card-width) + var(--pair-overlap-half));
-  }
-
-  .learning-card-two {
-    top: 9.25rem;
-    left: calc(50% - var(--pair-overlap-half));
-  }
-
-  .session-badge {
-    bottom: -0.5rem;
-  }
+  bottom: -0.5rem;
 }
 
 @media (min-width: 46rem) {
@@ -214,26 +209,167 @@
   }
 }
 
-@media (min-width: 60rem) {
-  .card-scene {
-    --pair-card-width: clamp(12rem, 55%, 16rem);
+@media (min-width: 46rem) {
+  .hero-section {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    padding-top: 6rem;
+    padding-bottom: 6rem;
   }
 
-  .learning-card {
-    width: var(--pair-card-width);
-    height: 17.5rem;
+  .hero-copy h1 {
+    font-size: clamp(2.75rem, calc(1.1rem + 3.15vw), 3.75rem);
   }
 
   .card-scene {
+    width: 100%;
+    max-width: none;
+    --pair-card-width: 11rem;
+    --pair-card-height: 16rem;
+    --grid-width: 96cqw;
     height: clamp(28rem, 50vw, 32rem);
   }
 
+  .learning-card {
+    height: 16rem;
+  }
+
+}
+
+@media (min-width: 60rem) and (max-width: 71.999rem) {
+  .card-scene {
+    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
+    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
+    --triple-card-height: 16rem;
+    height: 34rem;
+  }
+
+  .learning-card {
+    width: var(--triple-card-width);
+    height: var(--triple-card-height);
+  }
+
+  .learning-card-three {
+    display: block;
+    top: 14rem;
+  }
+
+  .hero-copy > p {
+    font-size: clamp(1rem, calc(0.75rem + 0.55vw), 1.125rem);
+  }
+
+  .session-badge {
+    right: 0;
+    bottom: -2rem;
+  }
+}
+
+@media (min-width: 72rem) and (max-width: 79.999rem) {
+  .card-scene {
+    width: 100%;
+    max-width: none;
+    --grid-width: 96cqw;
+    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
+    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
+    --triple-card-height: clamp(16rem, calc(50vw - 20rem), 18rem);
+    height: 34rem;
+  }
+
+  .learning-card {
+    width: var(--triple-card-width);
+    height: var(--triple-card-height);
+  }
+
+  .learning-card h2 {
+    font-size: 1.25rem;
+  }
+
   .learning-card-one {
-    top: 5.5rem;
+    top: 4rem;
+    left: 4%;
   }
 
   .learning-card-two {
     top: 9rem;
+    left: 31.5%;
+  }
+
+  .learning-card-three {
+    display: block;
+    top: 14rem;
+    left: 59%;
+  }
+
+  .session-badge {
+    right: 0;
+    bottom: -2rem;
+  }
+}
+
+@media (min-width: 46rem) and (max-width: 59.999rem) {
+  .hero-section {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+
+  .card-scene {
+    --pair-card-width: clamp(11rem, calc(36vw - 5.5rem), 16rem);
+  }
+
+  .hero-copy > p {
+    font-size: clamp(1rem, calc(0.75rem + 0.55vw), 1.125rem);
+  }
+}
+
+@media (min-width: 38rem) and (max-width: 45.999rem) {
+  .card-scene {
+    width: min(100%, 48rem);
+    --grid-width: 96cqw;
+    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
+    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
+    --triple-card-height: clamp(16rem, calc(25cqw + 6rem), 18rem);
+    --triple-step: 2.75rem;
+    height: 34rem;
+  }
+
+  .learning-card {
+    width: var(--triple-card-width);
+    height: var(--triple-card-height);
+  }
+
+  .learning-card-one {
+    top: 4rem;
+    left: 4%;
+  }
+
+  .learning-card-two {
+    top: 9rem;
+    left: 31.5%;
+  }
+
+  .learning-card-three {
+    display: block;
+    top: 14rem;
+    left: 59%;
+  }
+
+  .session-badge {
+    right: 0;
+    bottom: -2rem;
+  }
+}
+
+@media (min-width: 30rem) and (max-width: 37.999rem) {
+  .card-scene {
+    width: 100%;
+    max-width: 48rem;
+    --grid-width: 96cqw;
+    --pair-card-width: clamp(11rem, calc(50vw - 3.75rem), 15rem);
+    --pair-card-height: 17rem;
+    height: 29rem;
+  }
+
+  .session-badge {
+    right: 0;
+    bottom: -2rem;
   }
 }
 
@@ -245,47 +381,89 @@
   }
 
   .hero-copy h1 {
-    font-size: 4.5rem;
+    font-size: clamp(2.75rem, calc(1.1rem + 3.15vw), 3.75rem);
   }
 
   .card-scene {
     width: 100%;
     max-width: none;
+    --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
+    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
+    --triple-card-height: clamp(16rem, calc(50vw - 20rem), 18rem);
     height: 34rem;
   }
 
   .learning-grid {
     top: 2rem;
-    width: 96%;
+    --grid-width: 96cqw;
   }
 
   .learning-card {
-    width: min(33%, 15rem);
-    height: 18rem;
+    width: var(--triple-card-width);
+    height: var(--triple-card-height);
   }
 
   .learning-card h2 {
-    font-size: 1.875rem;
+    font-size: 1.25rem;
   }
 
   .learning-card-one {
     top: 4rem;
-    left: 3%;
+    left: 4%;
   }
 
   .learning-card-two {
     top: 9rem;
-    left: 34%;
+    left: 31.5%;
   }
 
   .learning-card-three {
     display: block;
     top: 14rem;
-    left: 65%;
+    left: 59%;
   }
 
   .session-badge {
     right: 0;
     bottom: -2rem;
+  }
+}
+
+@media (max-width: 75.999rem) {
+  .card-overlap-break {
+    display: inline;
+  }
+}
+
+@media (min-width: 72rem), (min-width: 60rem) and (max-width: 71.999rem), (min-width: 38rem) and (max-width: 45.999rem) {
+  .card-scene {
+    --triple-overlap: 1rem;
+  }
+
+  .learning-card-one {
+    left: 50%;
+    translate: calc(-150% + var(--triple-overlap)) 0;
+  }
+
+  .learning-card-two {
+    left: 50%;
+    translate: -50% 0;
+  }
+
+  .learning-card-three {
+    left: 50%;
+    translate: calc(50% - var(--triple-overlap)) 0;
+  }
+
+  .learning-card-one {
+    top: calc(50% - (var(--triple-card-height) / 2 + var(--triple-step) - 1rem));
+  }
+
+  .learning-card-two {
+    top: calc(50% - (var(--triple-card-height) / 2 - 1rem));
+  }
+
+  .learning-card-three {
+    top: calc(50% - (var(--triple-card-height) / 2 - var(--triple-step) - 1rem));
   }
 }
