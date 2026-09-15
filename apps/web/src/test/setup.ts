@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { vi, afterEach } from 'vitest';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -109,7 +109,6 @@ vi.mock('@tanstack/react-virtual', async (importOriginal) => {
   return {
     ...actual,
     useVirtualizer: vi.fn().mockImplementation((options) => {
-      const { useState, useCallback } = require('react');
       // A simplistic stateful mock of the virtualizer's start index
       const [startIndex, setStartIndex] = useState(0);
 
