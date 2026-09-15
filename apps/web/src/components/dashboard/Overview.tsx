@@ -255,8 +255,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     const todayStr = new Date().toISOString().split('T')[0];
 
     let notifiedState = { date: '', codes: [] as string[] };
+    const storageKey = `${NOTIFIED_STORAGE_KEY}_${session?.user.id}`;
     try {
-      const stored = localStorage.getItem(NOTIFIED_STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey);
       const isNotifiedState = (
         d: unknown,
       ): d is { date: string; codes: string[] } => {
@@ -295,7 +296,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     });
 
     if (updatedStorage) {
-      localStorage.setItem(NOTIFIED_STORAGE_KEY, JSON.stringify(notifiedState));
+      localStorage.setItem(storageKey, JSON.stringify(notifiedState));
     }
 
     if (newCompletions.length > 0) {
