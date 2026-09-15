@@ -15,7 +15,7 @@ describe('gamification API schemas', () => {
         currentStreak: 2,
         longestStreak: 7,
         badges: [{ code: 'first-review', awardedAt: 1_789_488_000_000 }],
-        dailyChallenges: [
+        todayChallenges: [
           {
             code: 'daily-review',
             current: 20,
@@ -56,5 +56,24 @@ describe('gamification API schemas', () => {
       'points',
       'isCurrentUser',
     ]);
+  });
+
+  it('rejects unknown private fields at the response boundary', () => {
+    expect(() =>
+      gamificationLeaderboardSchema.parse({
+        entries: [
+          {
+            rank: 1,
+            username: 'learner',
+            points: 42,
+            isCurrentUser: true,
+            userId: 'private-id',
+          },
+        ],
+        currentUser: null,
+        limit: 50,
+        offset: 0,
+      }),
+    ).toThrow();
   });
 });

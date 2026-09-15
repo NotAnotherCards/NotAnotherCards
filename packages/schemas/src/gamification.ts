@@ -11,7 +11,7 @@ export const dailyChallengeCodeSchema = z.enum([
   'new-vocabulary',
 ]);
 
-export const gamificationMeSchema = z.object({
+export const gamificationMeSchema = z.strictObject({
   utcDate: z.iso.date(),
   points: z.number().int().nonnegative(),
   reviewCount: z.number().int().nonnegative(),
@@ -19,13 +19,13 @@ export const gamificationMeSchema = z.object({
   currentStreak: z.number().int().nonnegative(),
   longestStreak: z.number().int().nonnegative(),
   badges: z.array(
-    z.object({
+    z.strictObject({
       code: badgeCodeSchema,
       awardedAt: z.number().int().nonnegative(),
     }),
   ),
-  dailyChallenges: z.array(
-    z.object({
+  todayChallenges: z.array(
+    z.strictObject({
       code: dailyChallengeCodeSchema,
       current: z.number().int().nonnegative(),
       target: z.number().int().positive(),
@@ -35,14 +35,14 @@ export const gamificationMeSchema = z.object({
   ),
 });
 
-export const leaderboardEntrySchema = z.object({
+export const leaderboardEntrySchema = z.strictObject({
   rank: z.number().int().positive(),
   username: z.string(),
   points: z.number().int().nonnegative(),
   isCurrentUser: z.boolean(),
 });
 
-export const gamificationLeaderboardSchema = z.object({
+export const gamificationLeaderboardSchema = z.strictObject({
   entries: z.array(leaderboardEntrySchema),
   currentUser: leaderboardEntrySchema.nullable(),
   limit: z.number().int().positive(),

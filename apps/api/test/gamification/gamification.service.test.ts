@@ -98,7 +98,7 @@ describePostgres('GamificationService', () => {
     expect(first).toEqual(replay);
     expect(first.points).toBe(20);
     expect(first.badges.map((badge) => badge.code)).toEqual(['first-review']);
-    expect(first.dailyChallenges).toEqual([
+    expect(first.todayChallenges).toEqual([
       expect.objectContaining({
         code: 'daily-review',
         current: 20,
@@ -161,7 +161,7 @@ describePostgres('GamificationService', () => {
     const completions = await db.select().from(dailyChallengeCompletions);
 
     expect(
-      today.dailyChallenges.every((challenge) => !challenge.completed),
+      today.todayChallenges.every((challenge) => !challenge.completed),
     ).toBe(true);
     expect(
       completions

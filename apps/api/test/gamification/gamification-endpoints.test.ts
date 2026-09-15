@@ -4,13 +4,23 @@ import {
   gamificationLeaderboardSchema,
   gamificationMeSchema,
 } from '@repo/schemas';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { AppModule } from '../../src/app.module';
 import { DATABASE_CONNECTION } from '../../src/database/database-connection';
 import { badgeAwards } from '../../src/gamification/schema';
+import { GamificationService } from '../../src/gamification/gamification.service';
 import { reviewEvents, userCards, userProfiles } from '../../src/sync/schema';
 import {
   db,
@@ -107,6 +117,10 @@ describePostgres('gamification endpoints', () => {
     ]);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   afterAll(async () => {
     await app?.close();
     await tearDownPostgres();
@@ -155,6 +169,23 @@ describePostgres('gamification endpoints', () => {
       .get('/api/gamification/leaderboard?limit=999&offset=-1')
       .set('Cookie', userA.cookie)
       .expect(200);
+    const rawLeaderboard = leaderboard.body as {
+      entries: Record<string, unknown>[];
+      currentUser: Record<string, unknown> | null;
+    };
+    const rawRows = [
+      ...rawLeaderboard.entries,
+      ...(rawLeaderboard.currentUser ? [rawLeaderboard.currentUser] : []),
+    ];
+    for (const entry of rawRows) {
+      expect(Object.keys(entry).sort()).toEqual([
+        'isCurrentUser',
+        'points',
+        'rank',
+        'username',
+      ]);
+    }
+
     const parsed = gamificationLeaderboardSchema.parse(leaderboard.body);
     expect(parsed.limit).toBe(100);
     expect(parsed.offset).toBe(0);
@@ -162,18 +193,10 @@ describePostgres('gamification endpoints', () => {
       { rank: 1, username: 'alpha', points: 2, isCurrentUser: false },
       { rank: 2, username: 'zebra', points: 1, isCurrentUser: true },
     ]);
-    for (const entry of parsed.entries) {
-      expect(Object.keys(entry)).toEqual([
-        'rank',
-        'username',
-        'points',
-        'isCurrentUser',
-      ]);
-    }
     expect(JSON.stringify(leaderboard.body)).not.toContain('@example.test');
   });
 
-  it('refreshes awards after an accepted sync push without syncing them', async () => {
+  it('atomically rolls back a push when award refresh fails, then accepts its replay', async () => {
     await db.insert(userCards).values({
       id: `${userA.id}-card`,
       userId: userA.id,
@@ -208,6 +231,23 @@ describePostgres('gamification endpoints', () => {
         },
       },
     };
+    const refresh = vi
+      .spyOn(app.get(GamificationService), 'refreshAwardsInTransaction')
+      .mockRejectedValueOnce(new Error('simulated award refresh failure'));
+
+    await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userA.cookie)
+      .send(pushBody)
+      .expect(500);
+    expect(
+      await db
+        .select()
+        .from(reviewEvents)
+        .where(eq(reviewEvents.id, 'synced-review')),
+    ).toEqual([]);
+    expect(await db.select().from(badgeAwards)).toEqual([]);
+
     const response = await request(app.getHttpServer())
       .post('/sync/push')
       .set('Cookie', userA.cookie)
@@ -218,8 +258,9 @@ describePostgres('gamification endpoints', () => {
     };
     expect(responseBody.rejected ?? {}).toEqual({});
 
-    // The client can repeat a request after losing its response. The sync
-    // protocol may answer conflict, but neither the point nor award doubles.
+    expect(refresh).toHaveBeenCalledTimes(2);
+
+    // Repeating the now-committed request cannot double the point or award.
     await request(app.getHttpServer())
       .post('/sync/push')
       .set('Cookie', userA.cookie)

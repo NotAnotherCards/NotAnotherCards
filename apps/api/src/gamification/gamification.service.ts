@@ -48,97 +48,105 @@ export class GamificationService {
         sql`select pg_advisory_xact_lock(${syncScopeLockKey(userId).toString()})`,
       );
 
-      const records = await this.activityRecords(tx, userId);
-      const summary = selectActivitySummary({ ...records, now });
-      const awardedAt = new Date(now);
-
-      if (summary.eligibleBadgeCodes.length > 0) {
-        await tx
-          .insert(badgeAwards)
-          .values(
-            summary.eligibleBadgeCodes.map((badgeCode) => ({
-              userId,
-              badgeCode,
-              awardedAt,
-            })),
-          )
-          .onConflictDoNothing();
-      }
-
-      const completedChallenges = selectDailyChallengeHistory(
-        records.reviewEvents,
-        records.notes,
-        now,
-      ).flatMap((day) =>
-        day.challenges
-          .filter((challenge) => challenge.completed)
-          .map((challenge) => ({ ...challenge, utcDate: day.utcDate })),
-      );
-      if (completedChallenges.length > 0) {
-        await tx
-          .insert(dailyChallengeCompletions)
-          .values(
-            completedChallenges.map((challenge) => ({
-              userId,
-              challengeCode: challenge.code,
-              utcDate: challenge.utcDate,
-              completedAt: awardedAt,
-            })),
-          )
-          .onConflictDoNothing();
-      }
-
-      const persistedBadges = await tx
-        .select({
-          code: badgeAwards.badgeCode,
-          awardedAt: badgeAwards.awardedAt,
-        })
-        .from(badgeAwards)
-        .where(eq(badgeAwards.userId, userId));
-      const persistedChallenges = await tx
-        .select({
-          code: dailyChallengeCompletions.challengeCode,
-          completedAt: dailyChallengeCompletions.completedAt,
-        })
-        .from(dailyChallengeCompletions)
-        .where(
-          and(
-            eq(dailyChallengeCompletions.userId, userId),
-            eq(dailyChallengeCompletions.utcDate, summary.utcDate),
-          ),
-        );
-
-      const badgeByCode = new Map(
-        persistedBadges.map((award) => [award.code, award.awardedAt]),
-      );
-      const challengeByCode = new Map(
-        persistedChallenges.map((completion) => [
-          completion.code,
-          completion.completedAt,
-        ]),
-      );
-
-      return {
-        utcDate: summary.utcDate,
-        points: summary.reviewPoints,
-        reviewCount: summary.reviewCount,
-        learnedNoteCount: summary.learnedNoteCount,
-        currentStreak: summary.currentStreak,
-        longestStreak: summary.longestStreak,
-        badges: BADGE_CODES.flatMap((code) => {
-          const timestamp = badgeByCode.get(code);
-          return timestamp ? [{ code, awardedAt: timestamp.getTime() }] : [];
-        }),
-        dailyChallenges: summary.todayChallenges.map((challenge) => {
-          const completedAt = challengeByCode.get(challenge.code);
-          return {
-            ...challenge,
-            completed: challenge.completed || completedAt !== undefined,
-            completedAt: completedAt?.getTime() ?? null,
-          };
-        }),
-      };
+      return this.refreshAwardsInTransaction(tx, userId, now);
     });
+  }
+
+  async refreshAwardsInTransaction(
+    tx: AppTransaction,
+    userId: string,
+    now: number = Date.now(),
+  ): Promise<GamificationMe> {
+    const records = await this.activityRecords(tx, userId);
+    const summary = selectActivitySummary({ ...records, now });
+    const awardedAt = new Date(now);
+
+    if (summary.eligibleBadgeCodes.length > 0) {
+      await tx
+        .insert(badgeAwards)
+        .values(
+          summary.eligibleBadgeCodes.map((badgeCode) => ({
+            userId,
+            badgeCode,
+            awardedAt,
+          })),
+        )
+        .onConflictDoNothing();
+    }
+
+    const completedChallenges = selectDailyChallengeHistory(
+      records.reviewEvents,
+      records.notes,
+      now,
+    ).flatMap((day) =>
+      day.challenges
+        .filter((challenge) => challenge.completed)
+        .map((challenge) => ({ ...challenge, utcDate: day.utcDate })),
+    );
+    if (completedChallenges.length > 0) {
+      await tx
+        .insert(dailyChallengeCompletions)
+        .values(
+          completedChallenges.map((challenge) => ({
+            userId,
+            challengeCode: challenge.code,
+            utcDate: challenge.utcDate,
+            completedAt: awardedAt,
+          })),
+        )
+        .onConflictDoNothing();
+    }
+
+    const persistedBadges = await tx
+      .select({
+        code: badgeAwards.badgeCode,
+        awardedAt: badgeAwards.awardedAt,
+      })
+      .from(badgeAwards)
+      .where(eq(badgeAwards.userId, userId));
+    const persistedChallenges = await tx
+      .select({
+        code: dailyChallengeCompletions.challengeCode,
+        completedAt: dailyChallengeCompletions.completedAt,
+      })
+      .from(dailyChallengeCompletions)
+      .where(
+        and(
+          eq(dailyChallengeCompletions.userId, userId),
+          eq(dailyChallengeCompletions.utcDate, summary.utcDate),
+        ),
+      );
+
+    const badgeByCode = new Map(
+      persistedBadges.map((award) => [award.code, award.awardedAt]),
+    );
+    const challengeByCode = new Map(
+      persistedChallenges.map((completion) => [
+        completion.code,
+        completion.completedAt,
+      ]),
+    );
+
+    return {
+      utcDate: summary.utcDate,
+      points: summary.reviewPoints,
+      reviewCount: summary.reviewCount,
+      learnedNoteCount: summary.learnedNoteCount,
+      currentStreak: summary.currentStreak,
+      longestStreak: summary.longestStreak,
+      badges: BADGE_CODES.flatMap((code) => {
+        const timestamp = badgeByCode.get(code);
+        return timestamp ? [{ code, awardedAt: timestamp.getTime() }] : [];
+      }),
+      todayChallenges: summary.todayChallenges.map((challenge) => {
+        const completedAt = challengeByCode.get(challenge.code);
+        return {
+          ...challenge,
+          completed: challenge.completed || completedAt !== undefined,
+          completedAt: completedAt?.getTime() ?? null,
+        };
+      }),
+    };
   }
 
   async leaderboard(
