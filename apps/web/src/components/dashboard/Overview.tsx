@@ -126,7 +126,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     }
 
     const lastDeckId = getLastReviewDeckId(userId);
-    const lastDeckStillExists = store.decks.some(
+    const lastDeckStillExists = (store.decks || []).some(
       (deck) => deck.id === lastDeckId,
     );
 
@@ -143,14 +143,14 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const stats = [
     {
       title: "Today's Reviews",
-      value: `${store.dueCards.length} cards`,
+      value: `${store.dueCards?.length ?? 0} cards`,
       description: 'Due for review',
       icon: Clock,
       color: 'text-emerald-500 bg-emerald-500/10',
     },
     {
       title: 'Personal Dictionary',
-      value: `${new Set(store.noteDecks.map((nd) => nd.note_id)).size} words`,
+      value: `${new Set((store.noteDecks || []).map((nd) => nd.note_id)).size} words`,
       description: 'Added to your collection',
       icon: BookMarked,
       color: 'text-blue-500 bg-blue-500/10',
