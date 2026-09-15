@@ -13,6 +13,7 @@ import {
   userNoteDecks,
   reviewEvents,
   userProfiles,
+  userBadges,
 } from './user-dictionary.js';
 import { BASIC_NOTE_TYPE } from './note-constants.js';
 import { PRIVATE_DECK } from './user-dictionary.js';
@@ -36,7 +37,7 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 5,
+  version: 6,
   tables: [
     userDecks,
     userNotes,
@@ -44,6 +45,7 @@ export const schema = appSchema({
     userNoteDecks,
     reviewEvents,
     userProfiles,
+    userBadges,
   ],
 });
 
@@ -151,6 +153,20 @@ export const migrations = schemaMigrations({
         ),
       ],
     },
+    {
+      toVersion: 6,
+      steps: [
+        createTable({
+          name: 'user_badges',
+          columns: {
+            badge_id: column.string().indexed(),
+            unlocked_at: column.number(),
+            created_at: column.number(),
+            updated_at: column.number(),
+          },
+        }),
+      ],
+    },
   ],
 });
 
@@ -173,3 +189,4 @@ export * from './queries.js';
 export * from './export-import-types.js';
 export * from './export.js';
 export * from './import.js';
+export * from './activity.js';
