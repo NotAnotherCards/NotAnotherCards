@@ -38,6 +38,9 @@ import {
   selectTodayChallengeActivity,
   type DailyChallengeProgress,
 } from '@repo/offline-db/activity';
+import { useQuery, useDatabase } from '@remelondb/core/react';
+import { Q, type Database } from '@remelondb/core';
+import { ReviewEvent, type ReviewEventRecord } from '@repo/offline-db';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -179,6 +182,18 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
   const syncState = useSyncState();
   const lastSuccessfulSync = syncState.lastSyncAt;
+
+  const db = useDatabase() as Database | null;
+
+  const midnightUTC = useMemo(() => {
+    const d = new Date(currentTime);
+    d.setUTCHours(0, 0, 0, 0);
+    return d.getTime();
+  }, [currentTime]);
+
+  const { data: reviewEvents } = useQuery<ReviewEventRecord>(
+    db && db.get(ReviewEvent).query(Q.where('reviewed_at', Q.gte(midnightUTC)))
+  );
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
@@ -186,14 +201,13 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Derive immediate progress locally
   const localActivity = useMemo(() => {
     return selectTodayChallengeActivity(
-      store.reviewEvents ?? [],
+      reviewEvents ?? [],
       store.notes ?? [],
       currentTime,
     );
-  }, [store.reviewEvents, store.notes, currentTime]);
+  }, [reviewEvents, store.notes, currentTime]);
 
   // Reconcile with server
   useEffect(() => {
@@ -207,11 +221,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
           const isGamificationData = (
             d: unknown,
-          ): d is { todayChallenges?: DailyChallengeProgress[] } => {
-            return typeof d === 'object' && d !== null;
+          ): d is { todayChallenges: DailyChallengeProgress[] } => {
+            return (
+              typeof d === 'object' &&
+              d !== null &&
+              Array.isArray((d as any).todayChallenges)
+            );
           };
 
-          if (isGamificationData(data) && data.todayChallenges) {
+          if (isGamificationData(data)) {
             setServerProgress(data.todayChallenges);
           }
         }
