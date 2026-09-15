@@ -90,7 +90,7 @@ export const UserProfileRow = z.object({
   updated_at: z.number().int().nonnegative(),
 });
 
-export const UserBadgesRow = z.object({
+export const UserBadgeRow = z.object({
   badge_id: z.string(),
   unlocked_at: z.number().int().nonnegative(),
   created_at: z.number().int().nonnegative(),
@@ -121,7 +121,7 @@ export const userProfiles = zodTable('user_profiles', UserProfileRow, {
   indexed: ['updated_at'],
 });
 
-export const userBadges = zodTable('user_badges', UserBadgesRow, {
+export const userBadges = zodTable('user_badges', UserBadgeRow, {
   indexed: ['badge_id'],
 })
 

@@ -2,7 +2,7 @@ import { syncSchemas } from '@remelondb/core/zod';
 import { z } from 'zod';
 import {
   ReviewEventRow,
-  UserBadgesRow,
+  UserBadgeRow,
   UserCardRow,
   UserDeckRow,
   UserNoteDeckRow,
@@ -18,7 +18,7 @@ const baseSyncWireSchemas = syncSchemas({
   user_note_decks: UserNoteDeckRow,
   review_events: ReviewEventRow,
   user_profiles: UserProfileRow,
-  user_badges: UserBadgesRow,
+  user_badges: UserBadgeRow,
 });
 
 const UserNoteWireRow = z
