@@ -33,7 +33,13 @@ export default function RootLayout() {
         <Stack.Screen name="login" options={{ title: 'Log in' }} />
         <Stack.Screen name="register" options={{ title: 'Register' }} />
         <Stack.Screen name="onboarding" options={{ title: 'Set up profile' }} />
-        <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
+        {/* The tab strip is the dashboard's top bar, as on web. Screens
+            pushed from it (deck, review) keep the native header and its
+            back arrow. */}
+        <Stack.Screen
+          name="dashboard"
+          options={{ title: 'Dashboard', headerShown: false }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </SessionDatabaseProvider>
