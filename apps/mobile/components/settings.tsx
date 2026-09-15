@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { Settings as SettingsIcon } from 'lucide-react-native';
 import type { DatabaseManager } from '@remelondb/core';
@@ -17,6 +18,7 @@ import {
 } from '@/lib/review-preferences';
 import { iconColors } from '@/lib/theme';
 import { ThemeToggle } from './theme-toggle';
+import { Button } from './ui/button';
 import {
   Card,
   CardContent,
@@ -38,10 +40,37 @@ export function initials(name: string | undefined) {
 
 // Web's settings page: an account header, then sections. Preferences is the
 // first one; Profile & Languages and Security follow in later slices (#290).
+// Log out lives here, under the account it ends, as in web's account menu.
 export function Settings() {
+  const router = useRouter();
   const { data: session } = authClient.useSession();
   const { manager } = useSessionDatabase();
   const user = session?.user;
+
+  // SessionDatabaseProvider closes the offline database when the session
+  // goes away; nothing to do here beyond signing out.
+  //
+  // @better-auth/expo clears the stored session while the request is being
+  // built (its init hook), so whatever the server answers, this device is
+  // already logged out and /login is the only coherent destination. What
+  // we owe the user is the truth when the server was not reached: the
+  // server-side session then lives on until it expires (#237).
+  const onLogout = async () => {
+    let failed = false;
+    try {
+      const result = await authClient.signOut();
+      failed = result?.error != null;
+    } catch {
+      failed = true;
+    }
+    if (failed) {
+      Alert.alert(
+        'Signed out on this device only',
+        'The server could not be reached, so your session elsewhere may stay active until it expires.',
+      );
+    }
+    router.replace('/login');
+  };
 
   return (
     <View className="gap-4">
@@ -63,6 +92,10 @@ export function Settings() {
       </View>
 
       {user ? <Preferences userId={user.id} /> : null}
+
+      <Button variant="outline" onPress={onLogout}>
+        <Text>Log out</Text>
+      </Button>
     </View>
   );
 }

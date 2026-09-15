@@ -1,11 +1,19 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Settings, initials } from '@/components/settings';
 import { loadReviewPreferences } from '@/lib/review-preferences';
 
 const mockUseSession = jest.fn();
+const mockSignOut = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('../lib/auth-client', () => ({
-  authClient: { useSession: () => mockUseSession() },
+  authClient: {
+    useSession: () => mockUseSession(),
+    signOut: (...args: unknown[]) => mockSignOut(...args),
+  },
+}));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace }),
 }));
 // No account database in this test: the header renders without @username
 // and the preferences only need the session's user id.
@@ -55,5 +63,36 @@ describe('Settings', () => {
       showNextReviewInterval: true,
     });
     expect(getByText('Extended').props.className).toContain('font-semibold');
+  });
+
+  // The sign-out cases moved here from the dashboard with the button (#237).
+  it('signs out and returns to login', async () => {
+    mockSignOut.mockResolvedValueOnce({ data: { success: true }, error: null });
+    const alertSpy = jest
+      .spyOn(require('react-native').Alert, 'alert')
+      .mockImplementation(() => {});
+    const { getByText } = render(<Settings />);
+    fireEvent.press(getByText('Log out'));
+
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+    expect(mockReplace).toHaveBeenCalledWith('/login');
+    expect(alertSpy).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('tells the truth when sign-out fails, and still returns to login', async () => {
+    mockSignOut.mockResolvedValueOnce({ error: { status: 500 } });
+    const alertSpy = jest
+      .spyOn(require('react-native').Alert, 'alert')
+      .mockImplementation(() => {});
+    const { getByText } = render(<Settings />);
+    fireEvent.press(getByText('Log out'));
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/login'));
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Signed out on this device only',
+      expect.stringMatching(/may stay active/),
+    );
+    alertSpy.mockRestore();
   });
 });
