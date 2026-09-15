@@ -123,7 +123,7 @@ export const userProfiles = zodTable('user_profiles', UserProfileRow, {
 
 export const userBadges = zodTable('user_badges', UserBadgeRow, {
   indexed: ['badge_id'],
-})
+});
 
 export class UserDeck extends ModelFor(userDecks) {
   static associations = {
