@@ -20,7 +20,10 @@ jest.mock('expo-router', () => ({
 jest.mock('../lib/database-provider', () => ({
   useSessionDatabase: () => ({ manager: null, syncController: null }),
 }));
-jest.mock('lucide-react-native', () => ({ Settings: () => null }));
+jest.mock('lucide-react-native', () => ({
+  LogOut: () => null,
+  Settings: () => null,
+}));
 
 describe('initials', () => {
   it('takes the first letters of up to two words', () => {
