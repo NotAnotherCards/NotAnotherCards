@@ -240,6 +240,38 @@ export const userProfiles = pgTable(
   ],
 );
 
+export const userBadges = pgTable(
+  'user_badges',
+  {
+    id: text('id').primaryKey(),
+    rev: bigint('rev', { mode: 'number' }).notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    badgeId: text('badge_id').notNull(),
+    unlockedAt: doublePrecision('unlocked_at').notNull(),
+    createdAt: doublePrecision('created_at').notNull(),
+    updatedAt: doublePrecision('updated_at').notNull(),
+  },
+  (table) => [
+    index('user_badges_user_rev_idx').on(table.userId, table.rev),
+    index('user_badges_user_updated_idx').on(table.userId, table.updatedAt),
+    check(
+      'user_badges_created_at_safe_integer_check',
+      sql`${table.createdAt} >= 0 and ${table.createdAt} <= 9007199254740991 and ${table.createdAt} = trunc(${table.createdAt})`,
+    ),
+    check(
+      'user_badges_updated_at_safe_integer_check',
+      sql`${table.updatedAt} >= 0 and ${table.updatedAt} <= 9007199254740991 and ${table.updatedAt} = trunc(${table.updatedAt})`,
+    ),
+    check(
+      'user_badges_unlocked_at_safe_integer_check',
+      sql`${table.unlockedAt} >= 0 and ${table.unlockedAt} <= 9007199254740991 and ${table.unlockedAt} = trunc(${table.unlockedAt})`,
+    ),
+  ],
+);
+
 export const userDecksRelations = relations(userDecks, ({ one, many }) => ({
   user: one(user, {
     fields: [userDecks.userId],
@@ -299,5 +331,12 @@ export const reviewEventsRelations = relations(reviewEvents, ({ one }) => ({
   card: one(userCards, {
     fields: [reviewEvents.userCardId],
     references: [userCards.id],
+  }),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(user, {
+    fields: [userBadges.userId],
+    references: [user.id],
   }),
 }));
