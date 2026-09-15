@@ -8,6 +8,7 @@ import { SyncModule } from './sync/sync.module';
 import { AiModule } from './ai/ai.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { SharingModule } from './sharing/sharing.module';
+import { GamificationModule } from './gamification/gamification.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SharingModule } from './sharing/sharing.module';
     AiModule,
     MetricsModule,
     SharingModule,
+    GamificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
