@@ -58,17 +58,17 @@ describe('ReviewSession', () => {
   it('waits for the database manager', () => {
     mockManager = null;
     expect(
-      render(<ReviewSession deckId="d1" />).queryByText('**gato**'),
+      render(<ReviewSession deckId="d1" />).queryByText('gato'),
     ).toBeNull();
   });
 
-  it('shows the back alone after flipping and records a rating', async () => {
+  it('renders Markdown, shows the back alone after flipping, and records a rating', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 
-    expect(await result.findByText('**gato**')).toBeTruthy();
+    expect(await result.findByText('gato')).toHaveStyle({ fontWeight: 'bold' });
     fireEvent.press(result.getByText('Show answer'));
-    expect(result.queryByText('**gato**')).toBeNull();
-    expect(result.getByText('`cat`')).toBeTruthy();
+    expect(result.queryByText('gato')).toBeNull();
+    expect(result.getByText('cat')).toHaveStyle({ fontFamily: 'monospace' });
 
     expect(result.getByText('Forgot')).toBeTruthy();
     expect(result.getByText('Remembered')).toBeTruthy();
@@ -93,12 +93,12 @@ describe('ReviewSession', () => {
     mockRecord.mockRejectedValueOnce(new Error('disk full'));
     const result = render(<ReviewSession deckId="d1" />);
 
-    await result.findByText('**gato**');
+    await result.findByText('gato');
     fireEvent.press(result.getByText('Show answer'));
     fireEvent.press(result.getByText('Forgot'));
 
     expect(await result.findByText('disk full')).toBeTruthy();
-    expect(result.getByText('`cat`')).toBeTruthy();
+    expect(result.getByText('cat')).toBeTruthy();
     expect(result.getByText('Forgot')).toBeTruthy();
   });
 });

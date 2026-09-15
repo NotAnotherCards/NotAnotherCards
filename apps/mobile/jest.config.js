@@ -7,11 +7,15 @@ const preset = require('jest-expo/jest-preset');
 // single copy. Do not remove: a lockfile change silently reintroduces the split.
 // @remelondb packages and uuid ship ESM-only builds, and @rn-primitives (the
 // behaviour layer under the react-native-reusables components) ships untranspiled
-// JSX. Two things keep jest from parsing them: the preset ignores their inner
+// JSX. react-native-marked and its parser dependencies also ship ESM. Two
+// things keep jest from parsing them: the preset ignores their inner
 // node_modules path segments, and its transform only matches .js/.ts. Whitelist
-// them and send .mjs through the same babel transformer.
+// those dependencies and send .mjs through the same babel transformer.
 const transformIgnorePatterns = preset.transformIgnorePatterns.map((pattern) =>
-  pattern.replace('(?!(.pnpm|', '(?!(.pnpm|@remelondb|@rn-primitives|uuid|'),
+  pattern.replace(
+    '(?!(.pnpm|',
+    '(?!(.pnpm|@jsamr|@remelondb|@rn-primitives|github-slugger|html-entities|marked|react-native-marked|react-native-reanimated-table|svg-parser|uuid|',
+  ),
 );
 
 module.exports = {
