@@ -1,8 +1,9 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import DeckScreen from '@/app/deck/[id]';
 
 const mockUseSession = jest.fn();
+const mockPush = jest.fn();
 jest.mock('../lib/auth-client', () => ({
   authClient: { useSession: () => mockUseSession() },
 }));
@@ -18,6 +19,7 @@ jest.mock('expo-router', () => {
   const { Text } = require('react-native');
   return {
     useLocalSearchParams: () => ({ id: 'd42' }),
+    useRouter: () => ({ push: mockPush }),
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
     Stack: { Screen: () => null },
@@ -36,6 +38,17 @@ describe('Deck screen', () => {
     expect(mockCardList).toHaveBeenCalledWith(
       expect.objectContaining({ deckId: 'd42' }),
     );
+  });
+
+  it('opens review for this deck', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { onBoardingComplete: true } },
+      isPending: false,
+    });
+    const result = render(<DeckScreen />);
+
+    fireEvent.press(result.getByText('Review due cards'));
+    expect(mockPush).toHaveBeenCalledWith('/review/d42');
   });
 
   it('redirects to login without a session and to onboarding with an unfinished profile', () => {
