@@ -112,6 +112,51 @@ npx @better-auth/cli generate --config auth-config.ts --output src/database/sche
 Other tables (decks, cards, ...) can be added as `schema.ts` files in their
 module folder, drizzle picks up everything matching `src/**/schema.ts`.
 
+## Two-factor authentication (TOTP + backup codes)
+
+Server-side 2FA uses Better Auth's `twoFactor` plugin (`issuer:
+'NotAnotherCards'`, verification required on enable, passwordless disabled,
+5-attempt / 15-minute account lockout, 10 encrypted backup codes). Secrets
+and backup codes are encrypted at rest (`BETTER_AUTH_SECRET`); they are
+returned once at enrollment and never logged.
+
+Schema impact (migration `0015_nasty_harry_osborn.sql`, generated from
+`auth-config.ts`):
+
+- `user.two_factor_enabled` boolean (`default false`) marks the account as
+  2FA-protected.
+- `two_factor` table — one row per enrolled user: `secret` and `backup_codes`
+  (both encrypted), `user_id` FK, `verified`, `failed_verification_count`
+  and `locked_until` for the attempt lockout. Indexed on `secret` and
+  `user_id`.
+
+The plugin only intercepts credential sign-ins in better-auth 1.6.26, so
+`src/auth/two-factor-oauth.hook.ts` extends the identical pending-challenge
+treatment to OAuth sign-ins (`/callback/:id`,
+`/oauth2/callback/:providerId`, `/sign-in/social` idToken flow): a linked
+provider never mints a usable session for a 2FA-enabled account — the user
+completes the same TOTP/backup-code challenge instead. The after-hook
+redirects the challenge back to the *original* `callbackURL` (recovered from
+the request-scoped OAuth state via `getOAuthState`) with an added
+`?twoFactorRequired=true` flag, so an Expo deep link (`notanothercards://…`)
+survives to the native app. The `@better-auth/expo` server plugin then
+relays the challenge `Set-Cookie` onto that non-http redirect as a
+`cookie=` query param — the mechanism native apps use to obtain the
+challenge cookie from an ASWebAuthenticationSession-style flow. On the
+impossible path where the state is gone, the hook falls back to
+`/two-factor`. The hook uses only public `better-auth/*` imports except the
+`two_factor` challenge-cookie name, which has no public export;
+`test/two-factor-oauth.e2e-spec.ts` (fake loopback OAuth provider, no real
+Google/Facebook traffic) is the upgrade tripwire for that coupling, and
+`src/test/two-factor-oauth.hook.spec.ts` pins the `/callback/:id` production
+route matcher that e2e cannot reach without live provider traffic.
+
+`src/auth/two-factor-enrollment.hook.ts` guards `/two-factor/enable`:
+re-enrolling an already-*verified* account returns 400 ("already enabled")
+until the existing setup is disabled — otherwise the plugin would silently
+rotate the secret under a setup the user may no longer be able to reproduce.
+A stale unverified row (aborted first enrollment) stays restartable.
+
 After any schema change, regenerate the migration and commit it together with
 the schema. Don't edit the SQL files in `drizzle/` by hand.
 
