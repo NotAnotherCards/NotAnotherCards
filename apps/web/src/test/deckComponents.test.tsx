@@ -431,16 +431,20 @@ describe('CardList Component - Virtualization & Large Decks', () => {
         onRemoveFromDeck={vi.fn()}
         canEditCard={() => true}
         onAddCard={vi.fn()}
-      />
+      />,
     );
 
     const matchMediaMock = vi.mocked(window.matchMedia);
-    const mediaQueryList = matchMediaMock.mock.results[matchMediaMock.mock.results.length - 1].value;
+    const mediaQueryList =
+      matchMediaMock.mock.results[matchMediaMock.mock.results.length - 1].value;
     const addEventListenerMock = mediaQueryList.addEventListener;
-    
+
     const listener = addEventListenerMock.mock.calls[0][1];
-    const virtualizerInstance = vi.mocked(useVirtualizer).mock.results[vi.mocked(useVirtualizer).mock.results.length - 1].value;
-    
+    const virtualizerInstance =
+      vi.mocked(useVirtualizer).mock.results[
+        vi.mocked(useVirtualizer).mock.results.length - 1
+      ].value;
+
     listener();
     expect(virtualizerInstance.measure).toHaveBeenCalled();
   });
