@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogOutIcon, SettingsIcon } from './ui/icon';
 import type { DatabaseManager } from '@remelondb/core';
@@ -15,6 +15,8 @@ import {
   loadReviewPreferences,
   saveReviewPreferences,
 } from '@/lib/review-preferences';
+import { profileWrites } from '@/lib/profile';
+import { ProfileForm } from './profile-form';
 import { ThemeToggle } from './theme-toggle';
 import { Button } from './ui/button';
 import {
@@ -44,6 +46,7 @@ export function Settings() {
   const { data: session } = authClient.useSession();
   const { manager } = useSessionDatabase();
   const user = session?.user;
+  const [section, setSection] = useState<'profile' | 'preferences'>('profile');
 
   // SessionDatabaseProvider closes the offline database when the session
   // goes away; nothing to do here beyond signing out.
@@ -99,8 +102,51 @@ export function Settings() {
         </Button>
       </View>
 
-      {user ? <Preferences userId={user.id} /> : null}
+      {/* Web's settings sub-tabs, same order: profile first. */}
+      <Segmented
+        label="Settings sections"
+        role="tablist"
+        value={section}
+        options={SECTIONS}
+        onChange={setSection}
+      />
+
+      {section === 'profile' &&
+        (manager ? (
+          <ProfileSection manager={manager} />
+        ) : (
+          <View className="items-center py-6">
+            <ActivityIndicator />
+          </View>
+        ))}
+      {section === 'preferences' && user ? (
+        <Preferences userId={user.id} />
+      ) : null}
     </View>
+  );
+}
+
+const SECTIONS = [
+  { value: 'profile', label: 'Profile & Languages' },
+  { value: 'preferences', label: 'Preferences' },
+] as const;
+
+// The synced profile row and the shared write, once the account database
+// is open. The form itself is pure and tested on its own.
+function ProfileSection({ manager }: { manager: DatabaseManager }) {
+  const { syncController } = useSessionDatabase();
+  const db = useDatabase(manager);
+  const profiles = useQuery<UserProfileRecord>(db && getUserProfileQuery(db));
+  if (!db || profiles.isLoading) {
+    return (
+      <View className="items-center py-6">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+  const writes = profileWrites(db, syncController);
+  return (
+    <ProfileForm profile={profiles.data[0] ?? null} onSave={writes.update} />
   );
 }
 

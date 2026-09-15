@@ -50,6 +50,7 @@ describe('Settings', () => {
 
   it('shows the account header and the saved preferences', () => {
     const { getByText, getByLabelText } = render(<Settings />);
+    fireEvent.press(getByText('Preferences'));
     expect(getByText('JD')).toBeTruthy();
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(getByText(/jane@example.com/)).toBeTruthy();
@@ -59,6 +60,7 @@ describe('Settings', () => {
 
   it('persists a changed review mode and interval choice for the user', () => {
     const { getByText } = render(<Settings />);
+    fireEvent.press(getByText('Preferences'));
     fireEvent.press(getByText('Extended'));
     fireEvent.press(getByText('Show'));
     expect(loadReviewPreferences('user-settings')).toEqual({
