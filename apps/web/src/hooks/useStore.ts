@@ -389,6 +389,7 @@ export function useStore() {
     decks,
     cards,
     notes,
+    noteDecks,
     dueCards,
     reviewEvents,
     status,

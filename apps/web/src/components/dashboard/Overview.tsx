@@ -150,7 +150,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
     {
       title: 'Personal Dictionary',
-      value: `${store.cards.length} cards`,
+      value: `${new Set(store.noteDecks.map((nd) => nd.note_id)).size} words`,
       description: 'Added to your collection',
       icon: BookMarked,
       color: 'text-blue-500 bg-blue-500/10',
