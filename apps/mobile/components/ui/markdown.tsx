@@ -57,8 +57,10 @@ const styles: MarkedStyles = {
 const blockedUrl = 'unsafe-markdown:';
 const safeUrlHooks = new MarkedHooks();
 const explicitSchemePattern = /^[a-z][a-z0-9+.-]*:/i;
+const dataSchemePattern = /^data:/i;
 
 function canOpenUrl(url: string): boolean {
+  if (dataSchemePattern.test(url)) return false;
   return isSafeUrl(url) && explicitSchemePattern.test(url);
 }
 

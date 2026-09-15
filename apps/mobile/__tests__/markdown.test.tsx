@@ -33,6 +33,18 @@ describe('Markdown', () => {
     );
   });
 
+  it.each([
+    ['image', 'data:image/png;base64,iVBORw0KGgo='],
+    ['audio', 'data:audio/mpeg;base64,SUQz'],
+  ])('does not open a data %s URL as a link', (_kind, url) => {
+    const result = render(<Markdown content={`[data link](${url})`} inline />);
+
+    expect(result.getByText('data link')).toBeTruthy();
+    expect(result.queryByRole('link')).toBeNull();
+    fireEvent.press(result.getByText('data link'));
+    expect(openUrl).not.toHaveBeenCalled();
+  });
+
   it('preserves nested formatting when a relative link becomes noninteractive', () => {
     const result = render(<Markdown content="[**Next**](page2.html)" inline />);
 
