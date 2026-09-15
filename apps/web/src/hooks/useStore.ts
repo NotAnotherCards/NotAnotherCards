@@ -139,6 +139,7 @@ export function useStore() {
     notesLoading ||
     noteDecksLoading ||
     profileLoading;
+
   const { ready, showSpinner } = useDelayedLoading(isLoading);
 
   const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(
@@ -381,6 +382,8 @@ export function useStore() {
     db,
     decks,
     cards,
+    notes,
+    noteDecks,
     dueCards,
     status,
     isTakenOver: status === 'taken-over',

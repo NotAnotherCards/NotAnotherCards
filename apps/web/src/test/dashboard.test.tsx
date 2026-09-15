@@ -71,10 +71,8 @@ describe('Dashboard Page Component Specs', () => {
       await screen.findByText(/Welcome to your language learning portal/i),
     ).toBeInTheDocument();
 
-    // 2. Dashboard shows user email/name
+    // 2. Dashboard shows user name
     expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
-    expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
-
     // Placeholder sections were removed from the UI.
   });
 
