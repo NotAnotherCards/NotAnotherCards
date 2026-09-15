@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, screen, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
-import { CardList } from '../components/deck/CardList';
+import { CardList, CardListRef } from '../components/deck/CardList';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
@@ -330,5 +330,70 @@ describe('CardList Component - Virtualization & Large Decks', () => {
     // Verify search correctly narrows catalog to 1 card and renders it
     expect(screen.getByText('Card Catalog (1)')).toBeInTheDocument();
     expect(screen.getByText('UniqueTargetFront')).toBeInTheDocument();
+  });
+
+  it('simulates rendering an off-screen slice in the virtualized list (scrolling)', async () => {
+    // Mock dimensions so the virtualizer knows the viewport size
+    const originalGetBoundingClientRect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      width: 800, height: 800, top: 0, left: 0, bottom: 800, right: 800, x: 0, y: 0, toJSON: () => {},
+    }));
+
+    const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, value: 800 });
+
+    const largeDeckCards: Card[] = Array.from({ length: 1000 }, (_, i) => ({
+      id: `card-large-${i}`,
+      note_id: `note-large-${i}`,
+      template_key: 'front-back',
+      active: true,
+      front: `Card Front ${i}`,
+      back: `Card Back ${i}`,
+      due_at: Date.now(),
+      scheduled_interval_minutes: 0,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    }));
+
+    const listRef = { current: null as CardListRef | null };
+
+    render(
+      <CardList
+        ref={listRef}
+        cards={largeDeckCards}
+        onEditCard={vi.fn()}
+        onRemoveFromDeck={vi.fn()}
+        onAddCard={vi.fn()}
+        canEditCard={() => true}
+      />,
+    );
+
+    // Initially, item 500 should NOT be in the document
+    expect(screen.queryByText('Card Front 500')).not.toBeInTheDocument();
+
+    // Programmatically scroll to item 500 using the exposed ref
+    vi.useFakeTimers();
+    act(() => {
+      listRef.current?.scrollToIndex(500);
+      vi.runAllTimers();
+    });
+    vi.useRealTimers();
+
+    // Wait for the virtualizer to process the scroll offset and update the DOM
+    await waitFor(() => {
+      // Verify virtualization rendered the slice containing item 500
+      expect(screen.getByText('Card Front 500')).toBeInTheDocument();
+    });
+    
+    // Ensure item 0 is NOT rendered (since it's virtualized out of the viewport)
+    expect(screen.queryByText('Card Front 0')).not.toBeInTheDocument();
+
+    // Cleanup
+    Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    if (originalClientHeight) {
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight);
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+    }
   });
 });

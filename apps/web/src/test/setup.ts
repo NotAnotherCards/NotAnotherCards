@@ -103,27 +103,40 @@ vi.mock('@/offline/db', () => {
 
 // Mock @tanstack/react-virtual for JSDOM
 vi.mock('@tanstack/react-virtual', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@tanstack/react-virtual')>();
+  const actual = await importOriginal<typeof import('@tanstack/react-virtual')>();
+  
   return {
     ...actual,
     useVirtualizer: vi.fn().mockImplementation((options) => {
+      const { useState, useCallback } = require('react');
+      // A simplistic stateful mock of the virtualizer's start index
+      const [startIndex, setStartIndex] = useState(0);
+
       const estimateSize = options.estimateSize?.() ?? 61;
       const overscan = options.overscan ?? 5;
-      const maxVisible = Math.min(options.count, 10 + overscan);
-      const items = Array.from({ length: maxVisible }, (_, i) => ({
-        index: i,
-        start: i * estimateSize,
-        size: estimateSize,
-        end: (i + 1) * estimateSize,
-        key: options.getItemKey ? options.getItemKey(i) : i,
-        lane: 0,
-      }));
+      const maxVisible = Math.min(options.count - startIndex, 10 + overscan);
+      
+      const items = Array.from({ length: maxVisible }, (_, i) => {
+        const index = startIndex + i;
+        return {
+          index: index,
+          start: index * estimateSize,
+          size: estimateSize,
+          end: (index + 1) * estimateSize,
+          key: options.getItemKey ? options.getItemKey(index) : index,
+          lane: 0,
+        };
+      });
+
+      const scrollToIndex = useCallback((index: number) => {
+        setStartIndex(Math.min(index, Math.max(0, options.count - 1)));
+      }, [options.count]);
+
       return {
         getVirtualItems: () => items,
         getTotalSize: () => options.count * estimateSize,
         measureElement: vi.fn(),
-        scrollToIndex: vi.fn(),
+        scrollToIndex,
         scrollToOffset: vi.fn(),
       };
     }),

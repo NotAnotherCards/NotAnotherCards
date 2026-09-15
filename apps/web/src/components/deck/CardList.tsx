@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, useStore } from '@/hooks/useStore';
 import { Input } from '@/components/ui/input';
@@ -31,39 +31,71 @@ interface CardListProps {
   onAddCard: () => void;
   isLoading?: boolean;
   error?: string | null;
+  initialScrollOffset?: number;
 }
 
-export function CardList({
-  cards,
-  onEditCard,
-  onRemoveFromDeck,
-  canEditCard,
-  canAddCard = true,
-  canRemoveCard = true,
-  onAddCard,
-  isLoading,
-  error,
-}: CardListProps) {
+export interface CardListRef {
+  scrollToIndex: (index: number) => void;
+  scrollToOffset: (offset: number) => void;
+}
+
+export const CardList = forwardRef<CardListRef, CardListProps>(
+  (
+    {
+      cards,
+      onEditCard,
+      onRemoveFromDeck,
+      canEditCard,
+      canAddCard = true,
+      canRemoveCard = true,
+      onAddCard,
+      isLoading,
+      error,
+      initialScrollOffset,
+    },
+    ref,
+  ) => {
   const store = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
 
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const filteredCards = cards.filter(
-    (c) =>
-      c.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.back.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredCards = useMemo(() => {
+    return cards.filter(
+      (c) =>
+        c.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.back.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [cards, searchTerm]);
+
+  const getItemKey = useCallback(
+    (index: number) => filteredCards[index]?.id ?? index,
+    [filteredCards],
   );
 
   const rowVirtualizer = useVirtualizer({
     count: filteredCards.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 61, // Estimated height per row (adjusts dynamically)
+    estimateSize: () =>
+      typeof window !== 'undefined' && window.innerWidth < 768 ? 149 : 61,
     overscan: 5,
     initialRect: { width: 800, height: 800 },
-    getItemKey: (index) => filteredCards[index]?.id ?? index,
+    initialOffset: initialScrollOffset,
+    getItemKey,
   });
+
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index: number) => rowVirtualizer.scrollToIndex(index),
+    scrollToOffset: (offset: number) => rowVirtualizer.scrollToOffset(offset),
+  }));
+
+  // For testing purposes: allow forcing a scroll position on mount
+  useEffect(() => {
+    if (initialScrollOffset !== undefined && parentRef.current) {
+      rowVirtualizer.scrollToOffset(initialScrollOffset);
+    }
+  }, [initialScrollOffset, rowVirtualizer]);
 
   if (store.isTakenOver) {
     return (
@@ -181,7 +213,7 @@ export function CardList({
             <div role="rowgroup">
               <div
                 role="row"
-                className="hidden md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
               >
                 <div role="columnheader">Front / Question</div>
                 <div role="columnheader">Back / Answer</div>
@@ -195,6 +227,7 @@ export function CardList({
             <div
               ref={parentRef}
               className="max-h-[calc(100vh-250px)] overflow-auto"
+              data-testid="scroll-container"
             >
               <div
                 role="rowgroup"
@@ -241,4 +274,4 @@ export function CardList({
       )}
     </UICard>
   );
-}
+});
