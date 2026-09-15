@@ -192,7 +192,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   }, [currentTime]);
 
   const { data: reviewEvents } = useQuery<ReviewEventRecord>(
-    db && db.get(ReviewEvent).query(Q.where('reviewed_at', Q.gte(midnightUTC)))
+    db && db.get(ReviewEvent).query(Q.where('reviewed_at', Q.gte(midnightUTC))),
   );
   useEffect(() => {
     const interval = setInterval(() => {
