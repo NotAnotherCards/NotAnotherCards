@@ -34,7 +34,7 @@ import {
   clearLastReviewDeckId,
   getLastReviewDeckId,
 } from '@/lib/review-preferences';
-import type { SharedDeckSummary } from '@repo/schemas';
+import { gamificationMeSchema, type SharedDeckSummary } from '@repo/schemas';
 import {
   selectTodayChallengeActivity,
   type DailyChallengeProgress,
@@ -218,16 +218,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       try {
         const res = await fetch('/api/gamification/me', { signal: ac.signal });
         if (res.ok) {
-          const data = (await res.json()) as unknown;
-
-          const isGamificationData = (
-            d: unknown,
-          ): d is { todayChallenges?: DailyChallengeProgress[] } => {
-            return typeof d === 'object' && d !== null;
-          };
-
-          if (isGamificationData(data) && data.todayChallenges) {
-            setServerProgress(data.todayChallenges);
+          const parsed = gamificationMeSchema.safeParse(await res.json());
+          if (parsed.success) {
+            setServerProgress(parsed.data.todayChallenges);
           }
         }
       } catch (e) {
