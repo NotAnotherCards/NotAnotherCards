@@ -90,6 +90,13 @@ export const UserProfileRow = z.object({
   updated_at: z.number().int().nonnegative(),
 });
 
+export const UserBadgesRow = z.object({
+  badge_id: z.string(),
+  unlocked_at: z.number().int().nonnegative(),
+  created_at: z.number().int().nonnegative(),
+  updated_at: z.number().int().nonnegative(),
+});
+
 export const userDecks = zodTable('user_decks', UserDeckRow, {
   indexed: ['updated_at'],
 });
@@ -113,6 +120,10 @@ export const reviewEvents = zodTable('review_events', ReviewEventRow, {
 export const userProfiles = zodTable('user_profiles', UserProfileRow, {
   indexed: ['updated_at'],
 });
+
+export const userBadges = zodTable('user_badges', UserBadgesRow, {
+  indexed: ['badge_id'],
+})
 
 export class UserDeck extends ModelFor(userDecks) {
   static associations = {
@@ -149,6 +160,8 @@ export class ReviewEvent extends ModelFor(reviewEvents) {
 
 export class UserProfile extends ModelFor(userProfiles) {}
 
+export class UserBadge extends ModelFor(userBadges) {}
+
 export type UserDeckRowType = z.infer<typeof UserDeckRow>;
 export type UserNoteRowType = z.infer<typeof UserNoteRow>;
 export type UserNoteDeckRowType = z.infer<typeof UserNoteDeckRow>;
@@ -162,3 +175,4 @@ export type UserNoteDeckRecord = InferRecord<typeof userNoteDecks>;
 export type UserCardRecord = InferRecord<typeof userCards>;
 export type ReviewEventRecord = InferRecord<typeof reviewEvents>;
 export type UserProfileRecord = InferRecord<typeof userProfiles>;
+export type UserBadgeRecord = InferRecord<typeof userBadges>;
