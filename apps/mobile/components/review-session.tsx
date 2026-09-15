@@ -14,6 +14,7 @@ import { writeErrorMessage } from '@/lib/errors';
 import { useReviewDeck } from '@/lib/review';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
+import { Markdown } from './ui/markdown';
 import { Text } from './ui/text';
 
 type ReviewBatch = {
@@ -199,7 +200,7 @@ function ActiveReviewSession({
           </Text>
         </CardHeader>
         <CardContent>
-          <Text>{isFlipped ? card.back : card.front}</Text>
+          <Markdown content={isFlipped ? card.back : card.front} />
         </CardContent>
       </Card>
 

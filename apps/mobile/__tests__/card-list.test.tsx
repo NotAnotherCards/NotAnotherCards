@@ -104,6 +104,23 @@ describe('CardList', () => {
     expect(getByText('adiós')).toBeTruthy();
   });
 
+  it('renders card fronts and backs as markdown', () => {
+    mockCardsState.cards = [
+      {
+        id: 'c1',
+        note_id: 'n1',
+        front: '**gato** (m.)',
+        back: '`cat`',
+      },
+    ];
+
+    const result = render(<CardList deckId="d1" />);
+
+    expect(result.getByText('gato')).toHaveStyle({ fontWeight: 'bold' });
+    expect(result.getByText('cat')).toHaveStyle({ fontFamily: 'monospace' });
+    expect(result.queryByText('**gato** (m.)')).toBeNull();
+  });
+
   it('shows the empty state and the not-on-device state', () => {
     mockCardsState.cards = [];
     const r = render(<CardList deckId="d1" />);
