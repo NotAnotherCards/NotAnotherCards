@@ -6,9 +6,11 @@ import { Profile } from './Profile';
 import { Preferences } from './Preferences';
 import { Security } from './Security';
 import { ImportExport } from './ImportExport';
+import { useStore } from '@/hooks/useStore';
 
 export function Settings() {
   const { data: session } = authClient.useSession();
+  const { profile } = useStore();
   const [activeSubTab, setActiveSubTab] = useState<
     'profile' | 'preferences' | 'security' | 'import/export'
   >('profile');
@@ -32,7 +34,7 @@ export function Settings() {
             {session?.user?.name || 'Legendary Learner'}
           </h3>
           <p className="text-xs text-muted-foreground truncate mb-6">
-            {session?.user.email || 'email'}
+            @{profile?.username || 'user'}
           </p>
 
           {/* Navigation subtabs */}

@@ -14,7 +14,6 @@ import {
   WordNoteFieldsV1,
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
-  ReviewEventRecord,
 } from '@repo/offline-db';
 import { useQuery } from '@remelondb/core/react';
 import { useSyncController } from '@/offline/syncProvider';
@@ -24,7 +23,6 @@ import {
   getNotesQuery,
   getNoteDecksQuery,
   getUserProfileQuery,
-  getReviewHistoryQuery,
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
   deleteDeck as dbDeleteDeck,
@@ -134,17 +132,13 @@ export function useStore() {
   const { data: profiles, isLoading: profileLoading } =
     useQuery<UserProfileRecord>(db && getUserProfileQuery(db));
 
-  const { data: reviewEvents, isLoading: reviewLoading } =
-    useQuery<ReviewEventRecord>(db && getReviewHistoryQuery(db));
-
   const isLoading =
     isInitializing ||
     decksLoading ||
     cardsLoading ||
     notesLoading ||
     noteDecksLoading ||
-    profileLoading ||
-    reviewLoading;
+    profileLoading;
 
   const { ready, showSpinner } = useDelayedLoading(isLoading);
 
@@ -391,7 +385,6 @@ export function useStore() {
     notes,
     noteDecks,
     dueCards,
-    reviewEvents,
     status,
     isTakenOver: status === 'taken-over',
     ready,
