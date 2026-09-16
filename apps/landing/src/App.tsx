@@ -1,56 +1,29 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const APP_URL = 'https://app.notanothercards.com';
 
 export function App() {
-  const previewParams = new URLSearchParams(window.location.search);
-  const isEmbeddedPreview = previewParams.get('preview') === 'embedded';
-  const forcedTheme = previewParams.get('theme');
-
-  if (
-    import.meta.env.DEV &&
-    import.meta.env.MODE !== 'test' &&
-    !isEmbeddedPreview
-  ) {
-    return <DeveloperPreview />;
-  }
-
-  return <LandingPage forcedTheme={forcedTheme} />;
+  return <LandingPage />;
 }
 
-function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
-  const themeClass =
-    forcedTheme === 'dark'
-      ? 'landing-dark'
-      : forcedTheme === 'light'
-        ? 'landing-light'
-        : undefined;
-
+function LandingPage() {
   return (
-    <main className={themeClass}>
+    <main>
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
         <a className="min-w-0" href="/" aria-label="NotAnotherCards home">
-          {forcedTheme === 'dark' ? (
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcSet="/brand/notanothercards-logo-dark.svg"
+            />
             <img
               className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
-              src="/brand/notanothercards-logo-dark.svg"
+              src="/brand/notanothercards-logo.svg"
               alt="NotAnotherCards"
             />
-          ) : (
-            <picture>
-              <source
-                media="(prefers-color-scheme: dark)"
-                srcSet="/brand/notanothercards-logo-dark.svg"
-              />
-              <img
-                className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
-                src="/brand/notanothercards-logo.svg"
-                alt="NotAnotherCards"
-              />
-            </picture>
-          )}
+          </picture>
         </a>
         <nav
           className="flex shrink-0 items-center gap-2"
@@ -89,7 +62,7 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
                 Frequency
               </span>
-              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">
+              <span className="card-secondary-label rounded-md border border-sage-border bg-surface px-2 py-1">
                 Examples
               </span>
             </div>
@@ -111,7 +84,7 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
                 Memorization
               </span>
-              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">
+              <span className="card-secondary-label rounded-md border border-sage-border bg-surface px-2 py-1">
                 Etymology
               </span>
             </div>
@@ -133,7 +106,7 @@ function LandingPage({ forcedTheme }: { forcedTheme: string | null }) {
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
                 Similar words
               </span>
-              <span className="rounded-md bg-surface px-2 py-1 text-sage-foreground">
+              <span className="card-secondary-label rounded-md border border-sage-border bg-surface px-2 py-1">
                 Pronunciation
               </span>
             </div>
@@ -251,60 +224,5 @@ function ValueProposition({
       </div>
       <p className="mt-3 leading-7 text-muted">{description}</p>
     </article>
-  );
-}
-
-type PreviewSize = 'desktop' | 'tablet' | 'mobile';
-
-const previewWidths: Record<PreviewSize, string> = {
-  desktop: 'max-w-[1440px]',
-  tablet: 'max-w-[768px]',
-  mobile: 'max-w-[390px]',
-};
-
-function DeveloperPreview() {
-  const [size, setSize] = useState<PreviewSize>('desktop');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const isDark = theme === 'dark';
-
-  return (
-    <div className={`min-h-screen bg-surface p-4 sm:p-6 landing-${theme}`}>
-      <div className="sticky top-3 z-10 mx-auto mb-4 flex w-fit rounded-xl border border-border bg-background p-1 shadow-card">
-        {(Object.keys(previewWidths) as PreviewSize[]).map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={size === option}
-            onClick={() => setSize(option)}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-              size === option
-                ? 'bg-primary text-primary-foreground'
-                : 'text-foreground hover:bg-surface-soft'
-            }`}
-          >
-            {option}
-          </button>
-        ))}
-        <button
-          type="button"
-          aria-pressed={isDark}
-          onClick={() =>
-            setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
-          }
-          className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-            isDark
-              ? 'bg-primary text-primary-foreground'
-              : 'text-foreground hover:bg-surface-soft'
-          }`}
-        >
-          {isDark ? 'Light' : 'Dark'}
-        </button>
-      </div>
-      <iframe
-        title={`Landing preview: ${size}`}
-        src={`/?preview=embedded&theme=${theme}`}
-        className={`mx-auto block h-[calc(100vh-7rem)] min-h-[760px] w-full rounded-xl border border-border bg-background shadow-card ${previewWidths[size]}`}
-      />
-    </div>
   );
 }

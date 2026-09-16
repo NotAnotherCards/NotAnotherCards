@@ -53,50 +53,14 @@
   }
 }
 
-.landing-dark {
-  --background: #18181b;
-  --foreground: #fafafa;
-  --primary: #9da8ec;
-  --primary-foreground: #171827;
-  --muted: #a1a1aa;
-  --surface: #202023;
-  --surface-soft: #26342d;
-  --border: #3f3f46;
-  --sage: #a6bbb0;
-  --sage-foreground: #17221a;
-  --sage-border: #43594a;
-  --shadow-card: 0 12px 30px rgb(0 0 0 / 25%);
-  min-height: 100vh;
-  background-color: var(--background);
-  color: var(--foreground);
+.card-secondary-label {
+  color: var(--sage-foreground);
 }
 
-.landing-light {
-  color-scheme: light;
-  --background: #ffffff;
-  --foreground: #18181b;
-  --primary: #5865b5;
-  --primary-foreground: #ffffff;
-  --muted: #71717a;
-  --surface: #f2f6f2;
-  --surface-soft: #f4f8f4;
-  --border: #e4e4e7;
-  --sage: #dde9e0;
-  --sage-foreground: #27342c;
-  --sage-border: #d8e2da;
-  --shadow-card: 0 12px 30px rgb(24 24 27 / 8%);
-  min-height: 100vh;
-  background-color: var(--background);
-  color: var(--foreground);
-}
-
-.landing-dark .learning-card,
-.landing-dark .session-badge {
-  background-color: var(--surface);
-}
-
-.landing-dark [aria-label='Supported learning material'] li {
-  color: var(--foreground);
+@media (prefers-color-scheme: dark) {
+  .card-secondary-label {
+    color: var(--foreground);
+  }
 }
 
 @layer base {

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -73,5 +73,28 @@ describe('App', () => {
         .querySelector('meta[property="og:url"]')
         ?.getAttribute('content'),
     ).toBe('https://notanothercards.com/');
+    expect(
+      metadataDocument
+        .querySelector('meta[property="og:image"]')
+        ?.getAttribute('content'),
+    ).toBe('https://notanothercards.com/brand/og-image.png');
+    expect(
+      metadataDocument
+        .querySelector('meta[property="og:image:width"]')
+        ?.getAttribute('content'),
+    ).toBe('1200');
+    expect(
+      metadataDocument
+        .querySelector('meta[property="og:image:height"]')
+        ?.getAttribute('content'),
+    ).toBe('630');
+    expect(
+      metadataDocument
+        .querySelector('meta[property="og:image:alt"]')
+        ?.getAttribute('content'),
+    ).toBe('NotAnotherCards flashcards for learning useful vocabulary');
+    expect(
+      existsSync(resolve(process.cwd(), 'public/brand/og-image.png')),
+    ).toBe(true);
   });
 });
