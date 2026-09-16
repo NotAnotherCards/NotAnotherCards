@@ -121,8 +121,12 @@ visibility          text NOT NULL DEFAULT 'private'  -- private | public, server
 created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 
-CHECK(note_type = 'word' ? both language ids set and different : both NULL)
-CHECK(visibility in ('private', 'public'))
+INDEX(user_id, rev)
+INDEX(user_id, updated_at)
+CHECK user_decks_visibility_check: visibility in ('private', 'public')
+CHECK user_decks_languages_match_note_type_check: case when note_type = 'word' then native_language_id is not null and target_language_id is not null and native_language_id <> target_language_id else native_language_id is null and target_language_id is null end
+CHECK user_decks_created_at_safe_integer_check: created_at >= 0 and created_at <= 9007199254740991 and created_at = trunc(created_at)
+CHECK user_decks_updated_at_safe_integer_check: updated_at >= 0 and updated_at <= 9007199254740991 and updated_at = trunc(updated_at)
 ```
 
 #### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L108), [local schema](../packages/offline-db/src/user-dictionary.ts#L134))
@@ -143,6 +147,9 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 
 INDEX(user_id, rev)
+INDEX(user_id, updated_at)
+CHECK user_notes_created_at_safe_integer_check: created_at >= 0 and created_at <= 9007199254740991 and created_at = trunc(created_at)
+CHECK user_notes_updated_at_safe_integer_check: updated_at >= 0 and updated_at <= 9007199254740991 and updated_at = trunc(updated_at)
 ```
 
 #### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L63), [local schema](../packages/offline-db/src/user-dictionary.ts#L130))
@@ -167,8 +174,13 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 
 INDEX(user_id, rev)
+INDEX(user_id, updated_at)
 INDEX(note_id)
 INDEX(user_id, due_at)
+CHECK user_cards_due_at_safe_integer_check: due_at >= 0 and due_at <= 9007199254740991 and due_at = trunc(due_at)
+CHECK user_cards_scheduled_interval_minutes_range_check: scheduled_interval_minutes between 0 and 172800
+CHECK user_cards_created_at_safe_integer_check: created_at >= 0 and created_at <= 9007199254740991 and created_at = trunc(created_at)
+CHECK user_cards_updated_at_safe_integer_check: updated_at >= 0 and updated_at <= 9007199254740991 and updated_at = trunc(updated_at)
 ```
 
 #### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L138), [local schema](../packages/offline-db/src/user-dictionary.ts#L138))
@@ -188,8 +200,11 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 
 INDEX(user_id, rev)
+INDEX(user_id, updated_at)
 INDEX(note_id)
 INDEX(deck_id)
+CHECK user_note_decks_created_at_safe_integer_check: created_at >= 0 and created_at <= 9007199254740991 and created_at = trunc(created_at)
+CHECK user_note_decks_updated_at_safe_integer_check: updated_at >= 0 and updated_at <= 9007199254740991 and updated_at = trunc(updated_at)
 ```
 
 The note/card and note/deck relations are declared in Drizzle. As with the
@@ -208,6 +223,11 @@ deleted_at          timestamptz NULL                               [server]
 user_card_id        text NOT NULL relation -> user_cards.id
 rating              integer NOT NULL CHECK (rating BETWEEN 1 AND 4)
 reviewed_at         number (integer Unix ms) NOT NULL
+
+INDEX(user_id, rev)
+INDEX(user_id, user_card_id)
+CHECK review_events_rating_check: rating between 1 and 4
+CHECK review_events_reviewed_at_safe_integer_check: reviewed_at >= 0 and reviewed_at <= 9007199254740991 and reviewed_at = trunc(reviewed_at)
 ```
 
 Review events are append-only in the sync configuration.
@@ -227,6 +247,11 @@ native_language_id  uuid NULL
 target_language_id  uuid NULL
 created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
+
+INDEX(user_id, rev)
+INDEX(user_id, updated_at)
+CHECK user_profiles_created_at_safe_integer_check: created_at >= 0 and created_at <= 9007199254740991 and created_at = trunc(created_at)
+CHECK user_profiles_updated_at_safe_integer_check: updated_at >= 0 and updated_at <= 9007199254740991 and updated_at = trunc(updated_at)
 ```
 
 The three UUID fields are currently values only; no `files` or `languages` tables or foreign-key constraints exist yet.
@@ -287,8 +312,10 @@ created_at          timestamptz NOT NULL DEFAULT now()
 updated_at          timestamptz NOT NULL DEFAULT now()
 completed_at        timestamptz NULL
 
-INDEX(user_id, status), INDEX(status, attempts), INDEX(status, next_run_at)
-UNIQUE((payload->>'deckId')) WHERE type = 'deck_moderation' AND status IN ('pending', 'processing')
+INDEX(user_id, status)
+INDEX(status, attempts)
+INDEX(status, next_run_at)
+UNIQUE(("payload" ->> 'deckId')) WHERE type = 'deck_moderation' and status in ('pending', 'processing')
 ```
 
 The partial unique index (migration `0014`) allows one active moderation job
@@ -337,7 +364,7 @@ moderation_verdict  jsonb NULL
 moderated_at        timestamptz NULL
 published_at        timestamptz NOT NULL DEFAULT now()
 
-CHECK(moderation_status in ('visible', 'blocked'))
+CHECK published_decks_moderation_status_check: moderation_status in ('visible', 'blocked')
 ```
 
 #### `deck_reports` ([API schema](../apps/api/src/sharing/schema.ts#L86), migration `0014`)
@@ -354,7 +381,8 @@ snapshot_published_at  timestamptz NOT NULL
 created_at             timestamptz NOT NULL DEFAULT now()
 
 UNIQUE(reporter_user_id, deck_id)
-INDEX(deck_id, created_at), INDEX(reporter_user_id, created_at)
+INDEX(deck_id, created_at)
+INDEX(reporter_user_id, created_at)
 ```
 
 #### `deck_takedowns` ([API schema](../apps/api/src/sharing/schema.ts#L116), migration `0014`)
@@ -371,8 +399,8 @@ verdict                jsonb NOT NULL
 snapshot_published_at  timestamptz NOT NULL
 created_at             timestamptz NOT NULL DEFAULT now()
 
-CHECK(source in ('automatic', 'operator'))
 INDEX(deck_id, created_at)
+CHECK deck_takedowns_source_check: source in ('automatic', 'operator')
 ```
 
 #### `badge_awards` ([API schema](../apps/api/src/gamification/schema.ts#L13), migration `0015`)
@@ -389,9 +417,9 @@ user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
 badge_code          text NOT NULL   -- first-review | seven-day-streak | hundred-reviews
 awarded_at          timestamptz NOT NULL DEFAULT now()
 
-PRIMARY KEY(user_id, badge_code)
-CHECK(badge_code in ('first-review', 'seven-day-streak', 'hundred-reviews'))
 INDEX(user_id, awarded_at)
+PRIMARY KEY(user_id, badge_code)
+CHECK badge_awards_code_check: badge_code in ('first-review', 'seven-day-streak', 'hundred-reviews')
 ```
 
 #### `daily_challenge_completions` ([API schema](../apps/api/src/gamification/schema.ts#L37), migration `0015`)
@@ -406,9 +434,9 @@ challenge_code      text NOT NULL   -- daily-review | new-vocabulary
 utc_date            date NOT NULL
 completed_at        timestamptz NOT NULL DEFAULT now()
 
-PRIMARY KEY(user_id, challenge_code, utc_date)
-CHECK(challenge_code in ('daily-review', 'new-vocabulary'))
 INDEX(user_id, utc_date)
+PRIMARY KEY(user_id, challenge_code, utc_date)
+CHECK daily_challenge_completions_code_check: challenge_code in ('daily-review', 'new-vocabulary')
 ```
 
 ## Note/card content model
