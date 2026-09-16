@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { vi, afterEach } from 'vitest';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -98,5 +98,51 @@ vi.mock('@/offline/db', () => {
     manager,
     createUserDatabaseManager: vi.fn(() => manager),
     closeUserDatabase: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+// Mock @tanstack/react-virtual for JSDOM
+vi.mock('@tanstack/react-virtual', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tanstack/react-virtual')>();
+
+  return {
+    ...actual,
+    useVirtualizer: vi.fn().mockImplementation((options) => {
+      // A simplistic stateful mock of the virtualizer's start index
+      const [startIndex, setStartIndex] = useState(0);
+
+      const estimateSize = options.estimateSize?.() ?? 61;
+      const overscan = options.overscan ?? 5;
+      const maxVisible = Math.min(options.count - startIndex, 10 + overscan);
+
+      const items = Array.from({ length: maxVisible }, (_, i) => {
+        const index = startIndex + i;
+        return {
+          index: index,
+          start: index * estimateSize,
+          size: estimateSize,
+          end: (index + 1) * estimateSize,
+          key: options.getItemKey ? options.getItemKey(index) : index,
+          lane: 0,
+        };
+      });
+
+      const scrollToIndex = useCallback(
+        (index: number) => {
+          setStartIndex(Math.min(index, Math.max(0, options.count - 1)));
+        },
+        [options.count],
+      );
+
+      return {
+        getVirtualItems: () => items,
+        getTotalSize: () => options.count * estimateSize,
+        measureElement: vi.fn(),
+        measure: vi.fn(),
+        scrollToIndex,
+        scrollToOffset: vi.fn(),
+      };
+    }),
   };
 });

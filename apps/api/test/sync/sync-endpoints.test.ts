@@ -235,7 +235,7 @@ describePostgres('authenticated remelonDB endpoints', () => {
 
   beforeEach(async () => {
     await db.execute(`
-      truncate table review_events, user_note_decks, user_cards, user_notes, user_decks cascade;
+      truncate table daily_challenge_completions, badge_awards, review_events, user_note_decks, user_cards, user_notes, user_decks cascade;
       delete from remelon_revision_checkpoints;
       delete from remelon_sync_meta;
       alter sequence remelon_rev restart with 1;

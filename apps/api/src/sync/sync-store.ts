@@ -85,6 +85,7 @@ export const appSyncTableOptions: NonNullable<
 export function createAppSyncStore(
   db: AppDatabase,
   now: () => number = () => Date.now(),
+  beforePushCommit?: (tx: AppTx, userId: string) => Promise<void>,
 ): AppSyncStoreBundle {
   const tables = {
     user_decks: drizzleSyncTable<string, typeof userDecks>({
@@ -155,13 +156,39 @@ export function createAppSyncStore(
     }),
   };
 
-  const store = withSyncCascadingDeletes(
-    createDrizzleStore<string>({
-      db: db,
-      tables,
-      lockKey: syncScopeLockKey,
-    }),
-  );
+  const createDurableStore = (storeDb: AppDatabase | AppTx) =>
+    withSyncCascadingDeletes(
+      createDrizzleStore<string>({
+        db: storeDb,
+        tables,
+        lockKey: syncScopeLockKey,
+      }),
+    );
+  const durableStore = createDurableStore(db);
+
+  const store: AppSyncStore = {
+    transaction: async (scope, mode, work) => {
+      if (mode !== 'push' || !beforePushCommit) {
+        return durableStore.transaction(scope, mode, work);
+      }
+
+      // The store owns its normal push transaction. Nesting it in this outer
+      // transaction turns that boundary into a savepoint and lets the award
+      // projection commit or roll back with the pushed rows as one unit.
+      return db.transaction(async (tx) => {
+        const transactionalStore = createDurableStore(tx);
+        const result = await transactionalStore.transaction(scope, mode, work);
+        const conflict =
+          typeof result === 'object' &&
+          result !== null &&
+          'conflict' in result &&
+          result.conflict === true;
+        if (!conflict) await beforePushCommit(tx, scope);
+        return result;
+      });
+    },
+    gc: (floor) => durableStore.gc(floor),
+  };
 
   const findProfileUsernameOwners: ProfileUsernameOwnerLookup = async (
     usernames,

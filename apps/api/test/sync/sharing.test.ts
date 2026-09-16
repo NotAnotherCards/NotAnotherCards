@@ -304,7 +304,7 @@ describePostgres('deck sharing endpoints', () => {
 
   beforeEach(async () => {
     await db.execute(`
-      truncate table deck_takedowns, deck_reports, published_decks, user_profiles, review_events, user_note_decks, user_cards, user_notes, user_decks, ai_generation_jobs, ai_usage cascade;
+      truncate table daily_challenge_completions, badge_awards, deck_takedowns, deck_reports, published_decks, user_profiles, review_events, user_note_decks, user_cards, user_notes, user_decks, ai_generation_jobs, ai_usage cascade;
       delete from remelon_revision_checkpoints;
       delete from remelon_sync_meta;
       alter sequence remelon_rev restart with 1;

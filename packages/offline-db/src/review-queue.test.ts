@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { selectReviewBatch, type ReviewQueueCard } from './review-queue.js';
+import {
+  selectDueCards,
+  selectReviewBatch,
+  type ReviewQueueCard,
+} from './review-queue.js';
 
 function makeCard(id: string, noteId: string): ReviewQueueCard {
   return { id, note_id: noteId, due_at: 1 };
@@ -27,5 +31,21 @@ describe('selectReviewBatch', () => {
     ];
 
     expect(selectReviewBatch(siblings)).toEqual([siblings[0]]);
+  });
+});
+
+describe('selectDueCards', () => {
+  it('keeps cards due at or before now, earliest first', () => {
+    const cards = [
+      { id: 'later', note_id: 'n1', due_at: 300 },
+      { id: 'future', note_id: 'n2', due_at: 501 },
+      { id: 'now', note_id: 'n3', due_at: 500 },
+      { id: 'earliest', note_id: 'n4', due_at: 100 },
+    ];
+    expect(selectDueCards(cards, 500).map((card) => card.id)).toEqual([
+      'earliest',
+      'later',
+      'now',
+    ]);
   });
 });
