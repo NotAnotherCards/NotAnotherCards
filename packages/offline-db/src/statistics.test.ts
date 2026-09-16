@@ -210,7 +210,8 @@ describe('statistics selectors', () => {
         [note('note-1', '2026-09-16T09:00:00.000Z')],
         [membership('note-1', 'deck-a')],
       ),
-    ).toMatchObject({ reviewEvents: [], cards: [] });
+      // The card is gone from the study picture, its history is not.
+    ).toMatchObject({ reviewEvents: reviews, cards: [] });
   });
 
   it('attributes a note and its cards to every active deck membership', () => {

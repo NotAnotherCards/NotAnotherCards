@@ -43,16 +43,12 @@ export function selectStatisticsRowsForDeck(
   memberships: readonly StatisticsMembership[],
   deckId?: string,
 ): StatisticsRows {
+  // Inactive cards leave the forecast and the maturity picture, but their
+  // past reviews still happened: deleting a card must not lower a streak
+  // or a per-day count.
   const activeCards = cards.filter((card) => card.active !== false);
   if (deckId === undefined) {
-    const cardIds = new Set(activeCards.map((card) => card.id));
-    return {
-      reviewEvents: reviewEvents.filter((event) =>
-        cardIds.has(event.user_card_id),
-      ),
-      cards: activeCards,
-      notes,
-    };
+    return { reviewEvents, cards: activeCards, notes };
   }
 
   const noteIds = new Set(
@@ -63,7 +59,9 @@ export function selectStatisticsRowsForDeck(
       .map((membership) => membership.note_id),
   );
   const scopedCards = activeCards.filter((card) => noteIds.has(card.note_id));
-  const cardIds = new Set(scopedCards.map((card) => card.id));
+  const cardIds = new Set(
+    cards.filter((card) => noteIds.has(card.note_id)).map((card) => card.id),
+  );
 
   return {
     reviewEvents: reviewEvents.filter((event) =>
