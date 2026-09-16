@@ -19,6 +19,7 @@ type UseReviewCardInteractionOptions = {
   isBlocked: boolean;
   reviewMode: ReviewMode;
   onReveal: () => void;
+  onHide: () => void;
   onAnswer: (answer: Exclude<ReviewAnswer, 'very-easy'>) => void;
   onDelete: () => void;
 };
@@ -35,6 +36,7 @@ export function useReviewCardInteraction({
   isBlocked,
   reviewMode,
   onReveal,
+  onHide,
   onAnswer,
   onDelete,
 }: UseReviewCardInteractionOptions) {
@@ -87,7 +89,10 @@ export function useReviewCardInteraction({
         didHandleSwipe.current = false;
         return;
       }
-      if (!isFlipped) onReveal();
+      // Tapping the card toggles: read the answer, tap again for the
+      // question. "Show answer" and the keyboard shortcut only reveal.
+      if (isFlipped) onHide();
+      else onReveal();
     },
     handlePointerDown: (event: PointerEvent<HTMLDivElement>) => {
       if (isBlocked || isReviewCardControl(event.target)) return;

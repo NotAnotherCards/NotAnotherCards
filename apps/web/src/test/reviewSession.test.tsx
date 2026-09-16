@@ -103,6 +103,18 @@ describe('ReviewSession', () => {
     expect(screen.getByText('to go')).toBeInTheDocument();
   });
 
+  it('flips back to the question when the card is clicked again', () => {
+    renderSession();
+    const flip = screen.getByTestId('review-card-flip');
+    expect(flip).toHaveAttribute('data-flipped', 'false');
+
+    revealCard();
+    expect(flip).toHaveAttribute('data-flipped', 'true');
+
+    revealCard();
+    expect(flip).toHaveAttribute('data-flipped', 'false');
+  });
+
   it('renders Markdown on the current card, answer, and next-card preview', () => {
     renderSession([
       {
