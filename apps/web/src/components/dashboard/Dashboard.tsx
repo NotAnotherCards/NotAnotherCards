@@ -65,19 +65,6 @@ export function DashboardComponent() {
         </Button>
         <Button
           role="tab"
-          aria-selected={activeTab === 'statistics'}
-          variant={activeTab === 'statistics' ? 'secondary' : 'ghost'}
-          size="sm"
-          onClick={() => {
-            setActiveTab('statistics');
-          }}
-          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
-        >
-          <BarChart3 className="size-3.5 mr-1.5" />
-          Statistics
-        </Button>
-        <Button
-          role="tab"
           aria-selected={activeTab === 'playground'}
           variant={activeTab === 'playground' ? 'secondary' : 'ghost'}
           size="sm"
@@ -88,6 +75,19 @@ export function DashboardComponent() {
         >
           <BookOpen className="size-3.5 mr-1.5" />
           Playground
+        </Button>
+        <Button
+          role="tab"
+          aria-selected={activeTab === 'statistics'}
+          variant={activeTab === 'statistics' ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={() => {
+            setActiveTab('statistics');
+          }}
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
+        >
+          <BarChart3 className="size-3.5 mr-1.5" />
+          Statistics
         </Button>
         <Button
           role="tab"
