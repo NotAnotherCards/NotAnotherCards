@@ -40,9 +40,9 @@ const seriesNoun: Record<SeriesKey, string> = {
 };
 
 const RANGES = [
-  { value: '7d', label: '7 days' },
-  { value: '30d', label: '30 days' },
-  { value: '1y', label: '1 year' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'year', label: 'Year' },
 ] as const;
 
 const monthLabel = (utcMonth: string) =>
@@ -143,7 +143,7 @@ export function Statistics() {
   const { data: reviewEvents } = useQuery<ReviewEventRecord>(
     store.db && getReviewHistoryQuery(store.db),
   );
-  const [range, setRange] = useState<'7d' | '30d' | '1y'>('7d');
+  const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [deckId, setDeckId] = useState('');
   const now = Date.now();
   const rows = useMemo(
@@ -158,7 +158,7 @@ export function Statistics() {
     [deckId, reviewEvents, store.cards, store.noteDecks, store.notes],
   );
   const series: SeriesRow[] =
-    range === '1y'
+    range === 'year'
       ? selectMonthlyCounts(rows.reviewEvents, rows.notes, {
           months: 12,
           now,
@@ -168,7 +168,7 @@ export function Statistics() {
           label: monthLabel(row.utcMonth),
         }))
       : selectDailyCounts(rows.reviewEvents, rows.notes, {
-          days: range === '7d' ? 7 : 30,
+          days: range === 'week' ? 7 : 30,
           now,
         }).map((row) => ({
           ...row,
