@@ -8,18 +8,18 @@ overrides:
   typescript: 5.9.3
   react: 19.2.3
   react-dom: 19.2.3
-  '@remelondb/core': 0.3.0
+  '@remelondb/core': 0.3.1-dev.0
 
 importers:
 
   .:
     devDependencies:
       '@remelondb/core':
-        specifier: 0.3.0
-        version: 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       '@remelondb/driver-web':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
       eslint:
         specifier: ^10.6.0
         version: 10.8.1(jiti@2.7.0)
@@ -54,17 +54,17 @@ importers:
         specifier: ^11.0.1
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
       '@remelondb/core':
-        specifier: 0.3.0
-        version: 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       '@remelondb/nestjs':
-        specifier: 0.3.0
-        version: 0.3.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(@remelondb/server@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(zod@4.4.3)
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(@remelondb/server@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(zod@4.4.3)
       '@remelondb/server':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))
       '@remelondb/store-drizzle':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/server@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(better-sqlite3@12.11.1)(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(kysely@0.29.4)(pg@8.23.0))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/server@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(better-sqlite3@12.11.1)(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(kysely@0.29.4)(pg@8.23.0))
       '@repo/offline-db':
         specifier: workspace:*
         version: link:../../packages/offline-db
@@ -112,8 +112,8 @@ importers:
         specifier: ^11.0.1
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-express@11.1.28)
       '@remelondb/driver-node':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.6
@@ -199,11 +199,11 @@ importers:
         specifier: ^5.4.0
         version: 5.7.1(@sinclair/typebox@0.34.52)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(react-hook-form@7.85.0(react@19.2.3))(valibot@1.4.2(typescript@5.9.3))(zod@4.4.3)
       '@remelondb/core':
-        specifier: 0.3.0
-        version: 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       '@remelondb/driver-rn':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))
       '@repo/offline-db':
         specifier: workspace:*
         version: link:../../packages/offline-db
@@ -299,8 +299,8 @@ importers:
         specifier: ^9.18.0
         version: 9.39.5
       '@remelondb/driver-node':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -353,11 +353,11 @@ importers:
         specifier: ^5.4.0
         version: 5.7.1(@sinclair/typebox@0.34.52)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(react-hook-form@7.85.0(react@19.2.3))(valibot@1.4.2(typescript@5.9.3))(zod@4.4.3)
       '@remelondb/core':
-        specifier: 0.3.0
-        version: 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       '@remelondb/driver-web':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
       '@repo/offline-db':
         specifier: workspace:*
         version: link:../../packages/offline-db
@@ -420,8 +420,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@remelondb/driver-node':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -501,8 +501,8 @@ importers:
   packages/offline-db:
     dependencies:
       '@remelondb/core':
-        specifier: 0.3.0
-        version: 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       '@repo/schemas':
         specifier: workspace:*
         version: link:../schemas
@@ -514,8 +514,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@remelondb/driver-node':
-        specifier: 0.3.0
-        version: 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
+        specifier: 0.3.1-dev.0
+        version: 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -3581,8 +3581,8 @@ packages:
       '@types/react':
         optional: true
 
-  '@remelondb/core@0.3.0':
-    resolution: {integrity: sha512-r9ERxPKbUfOdj82DpLu3oi8Zg1fWKgdOaztuTZA7yWvYX1GUFTkIsQmGgRyNy+0hGyyo/21BQRTDyE+Q6HAvmQ==}
+  '@remelondb/core@0.3.1-dev.0':
+    resolution: {integrity: sha512-QUqcC1OVQK1pk4K7eeXg8Cb2p8TXO3XYzlK0mTwRN081NRbUV/4S2mZfYZqT5cm6h6UCQ2ibzd/vFIjVn+H//A==}
     peerDependencies:
       react: 19.2.3
       vitest: '>=3'
@@ -3595,43 +3595,43 @@ packages:
       zod:
         optional: true
 
-  '@remelondb/driver-node@0.3.0':
-    resolution: {integrity: sha512-FY4qHA6ndnQ0ZRGO/gUMr+yRB5SZXYgGRDSB0f2xdpws5BYVpd9XOkiBj0WDM1vCc2eVAJg0LiKDdF2TBqnQJA==}
+  '@remelondb/driver-node@0.3.1-dev.0':
+    resolution: {integrity: sha512-YBsSA5zwT8VDtAs3lG1qOyCBAfkkiRmOx5TXl/2KZ3dCWfjj0VarNQKWZzY30YhKstkgFC+7JY1auhaMH3VcwQ==}
     peerDependencies:
-      '@remelondb/core': 0.3.0
+      '@remelondb/core': 0.3.1-dev.0
 
-  '@remelondb/driver-rn@0.3.0':
-    resolution: {integrity: sha512-znYCE2LAmqSFILNhp4NDSL80UJwmx0EN5zL9URZ5yZxtiZb6zlfeLDelqAQrJ/N6iIvDfARCTtP4tIwGLh4wfA==}
+  '@remelondb/driver-rn@0.3.1-dev.0':
+    resolution: {integrity: sha512-DM28HUx6Zm6KyTyeCx2pq7lKmNt5Bg1g2I1VVz4vAv8E2F9V8nkTwufGff+/UlxLbKqqqCUo4Nml4NfmO192/A==}
     peerDependencies:
-      '@remelondb/core': 0.3.0
+      '@remelondb/core': 0.3.1-dev.0
       expo-sqlite: '>=15.0.0'
 
-  '@remelondb/driver-web@0.3.0':
-    resolution: {integrity: sha512-/d//SMXeHg+k3UUbogyS6UBrqKn+80udpr/VHWKRcqVYp6oY0mAsTtzBgOBqktvHJDhcQ/FcOvACo2daiMNmFQ==}
+  '@remelondb/driver-web@0.3.1-dev.0':
+    resolution: {integrity: sha512-MW1zrJ9a55BhtZ2ZCZmQoSBWRHz/j2lfWZQ3cPAl4ZRDgj7Qjcgcpx4KO3rPaoFYto4YKKsHc5dlk0NoLLDTjw==}
     peerDependencies:
-      '@remelondb/core': 0.3.0
+      '@remelondb/core': 0.3.1-dev.0
 
-  '@remelondb/nestjs@0.3.0':
-    resolution: {integrity: sha512-YsYFL6sb3/wjaM/Bjv0JwEUHOvi7UDTS1Qq2zXtFISc36F48Wb36uEgoAJrsJqw6hefcX23gn7McJLbNgdLMCg==}
+  '@remelondb/nestjs@0.3.1-dev.0':
+    resolution: {integrity: sha512-Z5kifSilwMOMW6mpIv46tS2tZkyeBYrAKR2feMLx41I2N8cuSv3tOqtUDMX0gFNj2JK/ZqynObByYvCHpakI9g==}
     peerDependencies:
       '@nestjs/common': '>=10'
-      '@remelondb/core': 0.3.0
-      '@remelondb/server': 0.3.0
+      '@remelondb/core': 0.3.1-dev.0
+      '@remelondb/server': 0.3.1-dev.0
       zod: ~4.4.3
 
-  '@remelondb/server@0.3.0':
-    resolution: {integrity: sha512-HnOkp67etg6B85QqqLOg0Dv6pF0tW4Y7+SXO2PuvcN9uHL69nOD6pHnKQQeL35NyjI6FY08chy6xWaWxPrF6SA==}
+  '@remelondb/server@0.3.1-dev.0':
+    resolution: {integrity: sha512-Lc3fhRo/EKujikQgawBqJrHcfy87/liF93BXjNH8paTNGXtUYXGBjjTbp6rz43QHjvA+StpNCNK8tsSr6t6BFw==}
     peerDependencies:
-      '@remelondb/core': 0.3.0
+      '@remelondb/core': 0.3.1-dev.0
       vitest: '>=3'
     peerDependenciesMeta:
       vitest:
         optional: true
 
-  '@remelondb/store-drizzle@0.3.0':
-    resolution: {integrity: sha512-HBn32MoR38HJSGUaRdJyKQiwXAHAaHcnk9KXOq0aCpbzm8VetXWV7viu5u7W3Ulv92AeC/AWTiyHMIruq4Gbow==}
+  '@remelondb/store-drizzle@0.3.1-dev.0':
+    resolution: {integrity: sha512-9TMSQccCORGM+48HmnxZOeVLa662D52COgNetcx+F3SGfDJEMvSmg6h+GIhpIQ2jYO8sRYI8SUCTuDBX6o6rbA==}
     peerDependencies:
-      '@remelondb/server': 0.3.0
+      '@remelondb/server': 0.3.1-dev.0
       drizzle-orm: '>=0.40.0'
 
   '@rn-primitives/label@1.5.2':
@@ -11148,7 +11148,7 @@ snapshots:
       ws: 8.21.3
       zod: 3.25.76
     optionalDependencies:
-      expo-router: 57.0.19(99a4240710281df1f870dd860ee7179a)
+      expo-router: 57.0.19(ef386b5869895ab18df9790afe6e70e9)
       react-native: 0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
     transitivePeerDependencies:
       - '@expo/dom-webview'
@@ -11425,7 +11425,7 @@ snapshots:
       react: 19.2.3
     optionalDependencies:
       '@expo/metro-runtime': 57.0.8(@expo/log-box@57.0.4)(expo@57.0.20)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
-      expo-router: 57.0.19(99a4240710281df1f870dd860ee7179a)
+      expo-router: 57.0.19(ef386b5869895ab18df9790afe6e70e9)
       react-dom: 19.2.3(react@19.2.3)
     transitivePeerDependencies:
       - supports-color
@@ -13272,87 +13272,87 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.18
 
-  '@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
+  '@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
     optionalDependencies:
       react: 19.2.3
       vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
       zod: 4.4.3
 
-  '@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
+  '@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
     optionalDependencies:
       react: 19.2.3
       vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
       zod: 4.4.3
 
-  '@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
+  '@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
     optionalDependencies:
       react: 19.2.3
       vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
       zod: 4.4.3
 
-  '@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
+  '@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
     optionalDependencies:
       react: 19.2.3
       vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
       zod: 4.4.3
 
-  '@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
+  '@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)':
     optionalDependencies:
       react: 19.2.3
       vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
       zod: 4.4.3
 
-  '@remelondb/driver-node@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
+  '@remelondb/driver-node@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       better-sqlite3: 12.11.1
 
-  '@remelondb/driver-node@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
+  '@remelondb/driver-node@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       better-sqlite3: 12.11.1
 
-  '@remelondb/driver-node@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
+  '@remelondb/driver-node@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       better-sqlite3: 12.11.1
 
-  '@remelondb/driver-node@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
+  '@remelondb/driver-node@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       better-sqlite3: 12.11.1
 
-  '@remelondb/driver-rn@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))':
+  '@remelondb/driver-rn@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@1.21.7)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       expo-sqlite: 57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
 
-  '@remelondb/driver-web@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
+  '@remelondb/driver-web@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       '@sqlite.org/sqlite-wasm': 3.53.0-build1
 
-  '@remelondb/driver-web@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
+  '@remelondb/driver-web@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
       '@sqlite.org/sqlite-wasm': 3.53.0-build1
 
-  '@remelondb/nestjs@0.3.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(@remelondb/server@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(zod@4.4.3)':
+  '@remelondb/nestjs@0.3.1-dev.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(@remelondb/server@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(zod@4.4.3)':
     dependencies:
       '@nestjs/common': 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
-      '@remelondb/server': 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/server': 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))
       zod: 4.4.3
 
-  '@remelondb/server@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))':
+  '@remelondb/server@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))':
     dependencies:
-      '@remelondb/core': 0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
+      '@remelondb/core': 0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3)
     optionalDependencies:
       vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
 
-  '@remelondb/store-drizzle@0.3.0(@remelondb/server@0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(better-sqlite3@12.11.1)(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(kysely@0.29.4)(pg@8.23.0))':
+  '@remelondb/store-drizzle@0.3.1-dev.0(@remelondb/server@0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))))(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(better-sqlite3@12.11.1)(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(kysely@0.29.4)(pg@8.23.0))':
     dependencies:
-      '@remelondb/server': 0.3.0(@remelondb/core@0.3.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))
+      '@remelondb/server': 0.3.1-dev.0(@remelondb/core@0.3.1-dev.0(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(better-sqlite3@12.11.1)(expo-sqlite@57.0.2(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(kysely@0.29.4)(pg@8.23.0)
 
   '@rn-primitives/label@1.5.2(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)':
@@ -13657,6 +13657,19 @@ snapshots:
       redent: 3.0.0
     optionalDependencies:
       jest: 29.7.0(@types/node@26.2.0)(ts-node@10.9.2(@types/node@26.2.0)(typescript@5.9.3))
+
+  '@testing-library/react-native@13.3.3(jest@30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react-test-renderer@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      jest-matcher-utils: 30.4.1
+      picocolors: 1.1.1
+      pretty-format: 30.4.1
+      react: 19.2.3
+      react-native: 0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
+      react-test-renderer: 19.2.3(react@19.2.3)
+      redent: 3.0.0
+    optionalDependencies:
+      jest: 30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3))
+    optional: true
 
   '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
@@ -15067,7 +15080,7 @@ snapshots:
 
   chrome-launcher@0.15.2:
     dependencies:
-      '@types/node': 26.2.0
+      '@types/node': 26.5.1
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -15078,7 +15091,7 @@ snapshots:
 
   chromium-edge-launcher@0.3.0:
     dependencies:
-      '@types/node': 26.2.0
+      '@types/node': 26.5.1
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -16203,6 +16216,55 @@ snapshots:
       - expo-font
       - react-native-worklets
       - supports-color
+
+  expo-router@57.0.19(ef386b5869895ab18df9790afe6e70e9):
+    dependencies:
+      '@expo/log-box': 57.0.4(@expo/dom-webview@57.0.1)(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      '@expo/metro-runtime': 57.0.8(@expo/log-box@57.0.4)(expo@57.0.20)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      '@expo/schema-utils': 57.0.2
+      '@expo/ui': 57.0.16(@babel/core@7.29.7)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(expo@57.0.20)(react-dom@19.2.3(react@19.2.3))(react-native-worklets@0.10.1(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-slot': 1.3.3(@types/react@19.2.18)(react@19.2.3)
+      '@radix-ui/react-tabs': 1.1.21(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@react-native-masked-view/masked-view': 0.3.2(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      client-only: 0.0.1
+      color: 4.2.3
+      debug: 4.4.3
+      escape-string-regexp: 4.0.0
+      expo: 57.0.20(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.8)(expo-router@57.0.19)(react-dom@19.2.3(react@19.2.3))(react-native-worklets@0.10.1(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+      expo-constants: 57.0.17(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))
+      expo-glass-effect: 57.0.1(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      expo-linking: 57.0.9(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      expo-server: 57.0.3
+      expo-symbols: 57.0.2(expo-font@57.0.3)(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      fast-deep-equal: 3.1.3
+      invariant: 2.2.4
+      nanoid: 3.3.18
+      query-string: 7.1.3
+      react: 19.2.3
+      react-fast-compare: 3.2.2
+      react-is: 19.2.8
+      react-native: 0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
+      react-native-drawer-layout: 4.2.10(142641c943fa3fc72afcf25327c120c2)
+      react-native-safe-area-context: 5.7.0(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      react-native-screens: 4.26.2(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      server-only: 0.0.1
+      sf-symbols-typescript: 2.2.0
+      shallowequal: 1.1.0
+      standard-navigation: 0.0.5
+      vaul: 1.1.2(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+    optionalDependencies:
+      '@testing-library/react-native': 13.3.3(jest@30.4.2(@types/node@24.13.3)(ts-node@10.9.2(@types/node@24.13.3)(typescript@5.9.3)))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react-test-renderer@19.2.3(react@19.2.3))(react@19.2.3)
+      react-dom: 19.2.3(react@19.2.3)
+      react-native-gesture-handler: 3.1.0(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+      react-native-reanimated: 4.5.3(react-native-worklets@0.10.1(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/react'
+      - '@types/react-dom'
+      - expo-font
+      - react-native-worklets
+      - supports-color
+    optional: true
 
   expo-secure-store@57.0.3(expo@57.0.20):
     dependencies:
