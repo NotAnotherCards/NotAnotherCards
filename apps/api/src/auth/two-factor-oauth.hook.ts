@@ -38,13 +38,20 @@ export function withTwoFactorFlag(target: string): string {
     );
     return url.toString();
   } catch {
-    const flag = `${TWO_FACTOR_REQUIRED_FLAG_NAME}=${TWO_FACTOR_REQUIRED_FLAG_VALUE}`;
     const hashIndex = target.indexOf('#');
     const queryPortion = hashIndex === -1 ? target : target.slice(0, hashIndex);
     const fragment = hashIndex === -1 ? '' : target.slice(hashIndex);
-    const withFlag = queryPortion.includes('?')
-      ? `${queryPortion}&${flag}`
-      : `${queryPortion}?${flag}`;
+    const queryIndex = queryPortion.indexOf('?');
+    const path =
+      queryIndex === -1 ? queryPortion : queryPortion.slice(0, queryIndex);
+    const searchParams = new URLSearchParams(
+      queryIndex === -1 ? '' : queryPortion.slice(queryIndex + 1),
+    );
+    searchParams.set(
+      TWO_FACTOR_REQUIRED_FLAG_NAME,
+      TWO_FACTOR_REQUIRED_FLAG_VALUE,
+    );
+    const withFlag = `${path}?${searchParams.toString()}`;
     return `${withFlag}${fragment}`;
   }
 }

@@ -227,6 +227,10 @@ describe('withTwoFactorFlag', () => {
     // (Better Auth accepts relative callback URLs).
     ['/app#section', '/app?twoFactorRequired=true#section'],
     ['/app?from=x#section', '/app?from=x&twoFactorRequired=true#section'],
+    [
+      '/app?twoFactorRequired=false#section',
+      '/app?twoFactorRequired=true#section',
+    ],
   ])('puts the flag into the query string of %s', (target, expected) => {
     expect(withTwoFactorFlag(target)).toBe(expected);
   });
