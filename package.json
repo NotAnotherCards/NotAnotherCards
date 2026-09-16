@@ -8,6 +8,7 @@
     "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/monitoring/validate.sh && bash infra/vps/validate-ai-gateway.sh",
     "check:cycles": "node scripts/check-cycles.mjs",
     "check:db-docs": "node scripts/check-db-docs.mjs",
+    "check:schema-fresh": "node scripts/check-schema-fresh.mjs",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\"",
