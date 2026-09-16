@@ -94,6 +94,18 @@ describe('Statistics dashboard', () => {
     ).toHaveTextContent('1Next 7 days');
     expect(screen.getAllByTestId('reviews-bar')).toHaveLength(7);
     expect(screen.getByTitle('2026-09-16: 50%')).toBeInTheDocument();
+    // Annotations: a scale, a described series, and the range ending today.
+    expect(
+      within(screen.getByLabelText('Reviews per day')).getByText('max 2'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: /reviews per day, .* highest 2/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText('Reviews per day')).getByText(
+        /Sep 16 \(today\)/,
+      ),
+    ).toBeInTheDocument();
 
     await user.selectOptions(
       screen.getByLabelText('Statistics deck'),

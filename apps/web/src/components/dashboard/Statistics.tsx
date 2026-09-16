@@ -24,6 +24,27 @@ import {
 
 type SeriesKey = 'reviews' | 'notesAdded' | 'forgotRate';
 
+// One chart token per series, so the three strips are told apart at a
+// glance: reviews, notes added, forgot rate. See docs/design.md, Charts.
+const seriesTone: Record<SeriesKey, string> = {
+  reviews: 'bg-chart-1',
+  notesAdded: 'bg-chart-2',
+  forgotRate: 'bg-chart-3',
+};
+
+const seriesNoun: Record<SeriesKey, string> = {
+  reviews: 'reviews',
+  notesAdded: 'notes added',
+  forgotRate: 'forgot rate',
+};
+
+const shortDate = (utcDate: string) =>
+  new Date(`${utcDate}T00:00:00Z`).toLocaleDateString('en', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+
 function BarSeries({
   rows,
   valueKey,
@@ -34,7 +55,8 @@ function BarSeries({
   percentage?: boolean;
 }) {
   const values = rows.map((row) => row[valueKey]);
-  const ceiling = percentage ? 1 : Math.max(...values, 1);
+  const peak = Math.max(...values, 0);
+  const ceiling = percentage ? 1 : Math.max(peak, 1);
   const format = (value: number) =>
     percentage
       ? new Intl.NumberFormat('en', {
@@ -42,25 +64,55 @@ function BarSeries({
           maximumFractionDigits: 1,
         }).format(value)
       : value.toLocaleString();
+  // Values fit above the bars in the 7-day range only; 30 bars are too narrow.
+  const showValues = rows.length <= 7;
+  const today = rows.at(-1)?.utcDate;
+
+  if (peak === 0) {
+    return (
+      <p className="flex h-36 items-center justify-center text-sm text-muted-foreground">
+        No {seriesNoun[valueKey]} in this range
+      </p>
+    );
+  }
 
   return (
-    <div className="flex h-36 items-end gap-1" aria-label="Daily values">
-      {rows.map((row) => {
-        const value = row[valueKey];
-        return (
-          <div
-            key={row.utcDate}
-            className="flex min-w-0 flex-1 items-end self-stretch"
-            title={`${row.utcDate}: ${format(value)}`}
-            data-testid={`${valueKey}-bar`}
-          >
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground">max {format(ceiling)}</p>
+      <div
+        className="flex h-36 items-end gap-1"
+        role="img"
+        aria-label={`${seriesNoun[valueKey]} per day, ${shortDate(rows[0].utcDate)} to ${shortDate(rows[rows.length - 1].utcDate)}, highest ${format(peak)}`}
+      >
+        {rows.map((row) => {
+          const value = row[valueKey];
+          const isToday = row.utcDate === today;
+          return (
             <div
-              className="w-full min-w-1 rounded-t bg-primary/75"
-              style={{ height: `${(value / ceiling) * 100}%` }}
-            />
-          </div>
-        );
-      })}
+              key={row.utcDate}
+              className="flex min-w-0 flex-1 flex-col items-center justify-end self-stretch"
+              title={`${row.utcDate}: ${format(value)}`}
+              data-testid={`${valueKey}-bar`}
+            >
+              {showValues && (
+                <span className="text-[10px] leading-4 text-muted-foreground">
+                  {format(value)}
+                </span>
+              )}
+              <div
+                className={`w-full min-w-1 rounded-t ${seriesTone[valueKey]} ${
+                  isToday ? '' : 'opacity-70'
+                }`}
+                style={{ height: `${(value / ceiling) * 100}%` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{shortDate(rows[0].utcDate)}</span>
+        <span>{shortDate(rows[rows.length - 1].utcDate)} (today)</span>
+      </div>
     </div>
   );
 }
