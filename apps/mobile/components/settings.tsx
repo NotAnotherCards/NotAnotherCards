@@ -188,7 +188,7 @@ function Preferences({ userId }: { userId: string }) {
     <Card>
       <CardHeader className="flex-row items-center gap-3">
         <SettingsIcon size={20} className="text-foreground" />
-        <View>
+        <View className="flex-1">
           <CardTitle>Preferences</CardTitle>
           <CardDescription>
             How the app looks and how you review
