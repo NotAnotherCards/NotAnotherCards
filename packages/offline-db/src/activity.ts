@@ -25,6 +25,8 @@
  * calendar days and daylight-saving behavior are deferred.
  */
 
+import { utcDayAt } from './statistics.js';
+
 export const SUCCESSFUL_REVIEW_RATING_MIN = 2;
 
 export const DAILY_CHALLENGE_CODES = [
@@ -119,13 +121,6 @@ export interface ActivitySummary extends ReviewActivity, StreakActivity {
   readonly eligibleBadgeCodes: readonly BadgeCode[];
 }
 
-const MILLISECONDS_PER_DAY = 86_400_000;
-
-interface UtcDay {
-  readonly key: string;
-  readonly ordinal: number;
-}
-
 function assertTimestamp(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value < 0) {
     throw new Error(`${field} must be a non-negative safe integer timestamp`);
@@ -162,13 +157,6 @@ function uniqueReviewEvents(
 ): ActivityReviewEvent[] {
   for (const event of reviewEvents) assertReviewEvent(event);
   return uniqueById(reviewEvents);
-}
-
-function utcDayAt(timestamp: number): UtcDay {
-  return {
-    key: new Date(timestamp).toISOString().slice(0, 10),
-    ordinal: Math.floor(timestamp / MILLISECONDS_PER_DAY),
-  };
 }
 
 function reviewActivityFromUniqueEvents(
