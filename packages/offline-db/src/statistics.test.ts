@@ -183,6 +183,36 @@ describe('statistics selectors', () => {
     ).toEqual({ new: 1, learning: 1, young: 2, mature: 1 });
   });
 
+  it('excludes inactive cards from scoping, forecast, and maturity', () => {
+    const inactive = {
+      ...card('inactive', 'note-1', at('2026-09-16T10:00:00.000Z'), 30_240),
+      active: false,
+    };
+    const reviews = [
+      review('inactive-review', '2026-09-16T11:00:00.000Z', 3, inactive.id),
+    ];
+
+    expect(selectDueForecast([inactive], { now })).toEqual({
+      today: 0,
+      tomorrow: 0,
+      nextSevenDays: 0,
+    });
+    expect(selectMaturity([inactive])).toEqual({
+      new: 0,
+      learning: 0,
+      young: 0,
+      mature: 0,
+    });
+    expect(
+      selectStatisticsRowsForDeck(
+        reviews,
+        [inactive],
+        [note('note-1', '2026-09-16T09:00:00.000Z')],
+        [membership('note-1', 'deck-a')],
+      ),
+    ).toMatchObject({ reviewEvents: [], cards: [] });
+  });
+
   it('attributes a note and its cards to every active deck membership', () => {
     const notes = [note('shared', '2026-09-16T09:00:00.000Z')];
     const cards = [card('shared-card', 'shared')];

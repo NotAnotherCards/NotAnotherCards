@@ -60,7 +60,17 @@ export function selectStatisticsRowsForDeck(
   memberships: readonly StatisticsMembership[],
   deckId?: string,
 ): StatisticsRows {
-  if (deckId === undefined) return { reviewEvents, cards, notes };
+  const activeCards = cards.filter((card) => card.active !== false);
+  if (deckId === undefined) {
+    const cardIds = new Set(activeCards.map((card) => card.id));
+    return {
+      reviewEvents: reviewEvents.filter((event) =>
+        cardIds.has(event.user_card_id),
+      ),
+      cards: activeCards,
+      notes,
+    };
+  }
 
   const noteIds = new Set(
     memberships
@@ -69,7 +79,7 @@ export function selectStatisticsRowsForDeck(
       )
       .map((membership) => membership.note_id),
   );
-  const scopedCards = cards.filter((card) => noteIds.has(card.note_id));
+  const scopedCards = activeCards.filter((card) => noteIds.has(card.note_id));
   const cardIds = new Set(scopedCards.map((card) => card.id));
 
   return {
@@ -189,6 +199,7 @@ export function selectDueForecast(
   let nextSevenDays = 0;
 
   for (const card of cards) {
+    if (card.active === false) continue;
     if (card.due_at < endOfToday) dueToday += 1;
     else if (card.due_at < endOfTomorrow) tomorrow += 1;
     else if (card.due_at < endOfNextSevenDays) nextSevenDays += 1;
@@ -201,6 +212,7 @@ export function selectMaturity(cards: readonly StatisticsCard[]) {
   const counts = { new: 0, learning: 0, young: 0, mature: 0 };
 
   for (const card of cards) {
+    if (card.active === false) continue;
     const interval = card.scheduled_interval_minutes;
     // Sync validation keeps intervals non-negative; a bad row that slipped
     // through should not blank the statistics tab, so it counts as new.
