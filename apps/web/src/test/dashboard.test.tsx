@@ -61,6 +61,7 @@ describe('Dashboard Page Component Specs', () => {
   afterEach(() => {});
 
   it('renders welcome text, user email/name, and placeholder feature sections', async () => {
+    const user = userEvent.setup();
     render(<App />);
     await act(async () => {
       await router.navigate({ to: '/dashboard' });
@@ -79,6 +80,20 @@ describe('Dashboard Page Component Specs', () => {
     expect(screen.getByText('Notes reviewed successfully')).toBeInTheDocument();
     expect(screen.queryByText('1,240 / 10,000')).not.toBeInTheDocument();
     expect(screen.queryByText('12.4% total progress')).not.toBeInTheDocument();
+
+    expect(
+      screen.getAllByRole('tab').map((tab) => tab.textContent?.trim()),
+    ).toEqual([
+      'Overview',
+      'My Library',
+      'Statistics',
+      'Playground',
+      'Profile & Settings',
+    ]);
+    await user.click(screen.getByRole('tab', { name: 'Statistics' }));
+    expect(
+      screen.getByRole('heading', { name: 'Your statistics' }),
+    ).toBeInTheDocument();
 
     // Placeholder sections were removed from the UI.
   });
