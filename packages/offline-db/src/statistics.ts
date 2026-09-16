@@ -1,5 +1,6 @@
+import { MILLISECONDS_PER_DAY, utcDayAt } from './utc-day.js';
+
 const MINUTES_PER_DAY = 1_440;
-const MILLISECONDS_PER_DAY = 86_400_000;
 const MATURE_INTERVAL_MINUTES = 21 * MINUTES_PER_DAY;
 
 export interface StatisticsReviewEvent {
@@ -39,18 +40,6 @@ export interface DailyStatistics {
   readonly reviews: number;
   readonly notesAdded: number;
   readonly forgotRate: number;
-}
-
-export interface UtcDay {
-  readonly key: string;
-  readonly ordinal: number;
-}
-
-export function utcDayAt(timestamp: number): UtcDay {
-  return {
-    key: new Date(timestamp).toISOString().slice(0, 10),
-    ordinal: Math.floor(timestamp / MILLISECONDS_PER_DAY),
-  };
 }
 
 export function selectStatisticsRowsForDeck(
