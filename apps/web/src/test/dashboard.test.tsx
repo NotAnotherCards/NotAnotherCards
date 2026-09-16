@@ -75,6 +75,11 @@ describe('Dashboard Page Component Specs', () => {
     expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
     expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
 
+    expect(screen.getByText('0 Days')).toBeInTheDocument();
+    expect(screen.getByText('Notes reviewed successfully')).toBeInTheDocument();
+    expect(screen.queryByText('1,240 / 10,000')).not.toBeInTheDocument();
+    expect(screen.queryByText('12.4% total progress')).not.toBeInTheDocument();
+
     // Placeholder sections were removed from the UI.
   });
 
