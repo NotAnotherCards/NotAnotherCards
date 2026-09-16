@@ -82,7 +82,7 @@ export function ProfileForm({
       <Card>
         <CardHeader className="flex-row items-center gap-3">
           <UserIcon size={20} className="text-foreground" />
-          <View>
+          <View className="flex-1">
             <CardTitle>Profile Details</CardTitle>
             <CardDescription>Your public screen username</CardDescription>
           </View>
@@ -102,7 +102,7 @@ export function ProfileForm({
       <Card>
         <CardHeader className="flex-row items-center gap-3">
           <GlobeIcon size={20} className="text-foreground" />
-          <View>
+          <View className="flex-1">
             <CardTitle>Language Preferences</CardTitle>
             <CardDescription>
               Your native language and the language you study
