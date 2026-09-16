@@ -1,24 +1,18 @@
+import type {
+  ActivityCard,
+  ActivityNote,
+  ActivityReviewEvent,
+} from './activity.js';
 import { MILLISECONDS_PER_DAY, utcDayAt } from './utc-day.js';
 
 const MINUTES_PER_DAY = 1_440;
 const MATURE_INTERVAL_MINUTES = 21 * MINUTES_PER_DAY;
 
-export interface StatisticsReviewEvent {
-  readonly id: string;
-  readonly user_card_id: string;
-  readonly rating: number;
-  readonly reviewed_at: number;
-}
+export type StatisticsReviewEvent = ActivityReviewEvent;
 
-export interface StatisticsNote {
-  readonly id: string;
-  readonly created_at: number;
-}
+export type StatisticsNote = ActivityNote;
 
-export interface StatisticsCard {
-  readonly id: string;
-  readonly note_id: string;
-  readonly active?: boolean;
+export interface StatisticsCard extends ActivityCard {
   readonly due_at: number;
   readonly scheduled_interval_minutes: number;
 }
