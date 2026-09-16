@@ -93,15 +93,13 @@ describe('Statistics dashboard', () => {
       within(screen.getByLabelText('Due forecast')).getByText('Next 7 days'),
     ).toHaveTextContent('1Next 7 days');
     expect(screen.getAllByTestId('reviews-bar')).toHaveLength(7);
-    expect(screen.getByTitle('2026-09-16: 50%')).toBeInTheDocument();
+    expect(screen.getByTitle('Sep 16: 50%')).toBeInTheDocument();
     // Annotations: a described series and the range ending today.
     expect(
-      screen.getByRole('img', { name: /reviews per day, .* highest 2/ }),
+      screen.getByRole('img', { name: /reviews, .* highest 2/ }),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByLabelText('Reviews per day')).getByText(
-        /Sep 16 \(today\)/,
-      ),
+      within(screen.getByLabelText('Reviews per day')).getByText('Sep 16'),
     ).toBeInTheDocument();
 
     await user.selectOptions(
@@ -118,5 +116,9 @@ describe('Statistics dashboard', () => {
 
     await user.click(screen.getByRole('button', { name: '30 days' }));
     expect(screen.getAllByTestId('reviews-bar')).toHaveLength(30);
+
+    await user.click(screen.getByRole('button', { name: '1 year' }));
+    expect(screen.getAllByTestId('reviews-bar')).toHaveLength(12);
+    expect(screen.getAllByTitle(/Sep 26: /).length).toBeGreaterThan(0);
   });
 });
