@@ -114,10 +114,10 @@ describe('Statistics dashboard', () => {
         .previousSibling,
     ).toHaveTextContent('0');
 
-    await user.click(screen.getByRole('button', { name: '30 days' }));
+    await user.click(screen.getByRole('button', { name: 'Month' }));
     expect(screen.getAllByTestId('reviews-bar')).toHaveLength(30);
 
-    await user.click(screen.getByRole('button', { name: '1 year' }));
+    await user.click(screen.getByRole('button', { name: 'Year' }));
     expect(screen.getAllByTestId('reviews-bar')).toHaveLength(12);
     expect(screen.getAllByTitle(/Sep 26: /).length).toBeGreaterThan(0);
   });

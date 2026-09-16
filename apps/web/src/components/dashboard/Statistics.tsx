@@ -40,9 +40,9 @@ const seriesNoun: Record<SeriesKey, string> = {
 };
 
 const RANGES = [
-  { value: '7d', label: '7 days' },
-  { value: '30d', label: '30 days' },
-  { value: '1y', label: '1 year' },
+  { value: '7d', label: 'Week' },
+  { value: '30d', label: 'Month' },
+  { value: '1y', label: 'Year' },
 ] as const;
 
 const monthLabel = (utcMonth: string) =>
