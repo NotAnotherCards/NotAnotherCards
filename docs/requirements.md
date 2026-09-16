@@ -171,8 +171,13 @@ point count change.
   - Forgot rate is the share of a UTC day's reviews rated 1.
   - Due forecast groups active cards by `due_at`: overdue through today,
     tomorrow, and the following seven UTC days.
-  - Card maturity groups active cards by `scheduled_interval_minutes`: new,
-    learning, young, and mature.
+  - Card maturity groups active cards by `scheduled_interval_minutes`: new
+    (0, never reviewed), learning (under a day), young (1 to 20 days),
+    mature (21 days and up).
+  - The per-day series cover 7 or 30 days; the one-year range sums the same
+    figures into 12 UTC months.
+  - Reset progress from plan A11 is deliberately not built: it deletes
+    review history across synced devices and the module does not need it.
 
 All figures are derived from reactive local remelonDB queries and work
 offline. The optional deck filter follows active note-to-deck memberships;
