@@ -3,14 +3,17 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 type TotpCodeInputProps = {
-  value: string;
-  onChange: (value: string) => void;
+  value: readonly string[];
+  onChange: (value: string[]) => void;
   disabled?: boolean;
   errorId?: string;
   autoFocus?: boolean;
 };
 
 const CODE_LENGTH = 6;
+
+export const emptyTotpDigits = (): string[] =>
+  Array.from({ length: CODE_LENGTH }, () => '');
 
 export function TotpCodeInput({
   value,
@@ -20,19 +23,31 @@ export function TotpCodeInput({
   autoFocus = false,
 }: TotpCodeInputProps) {
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  const digits = value.replace(/\D/g, '').slice(0, CODE_LENGTH);
+  const digits = Array.from(
+    { length: CODE_LENGTH },
+    (_, index) => value[index]?.replace(/\D/g, '').slice(-1) ?? '',
+  );
 
   const updateDigit = (index: number, rawValue: string) => {
     const incoming = rawValue.replace(/\D/g, '');
-    if (incoming.length >= CODE_LENGTH) {
-      onChange(incoming.slice(0, CODE_LENGTH));
-      inputs.current[CODE_LENGTH - 1]?.focus();
+    if (incoming.length > 1) {
+      const next = [...digits];
+      incoming
+        .slice(0, CODE_LENGTH - index)
+        .split('')
+        .forEach((digit, offset) => {
+          next[index + offset] = digit;
+        });
+      onChange(next);
+      inputs.current[
+        Math.min(index + incoming.length, CODE_LENGTH) - 1
+      ]?.focus();
       return;
     }
 
-    const next = digits.split('');
+    const next = [...digits];
     next[index] = incoming.slice(-1);
-    onChange(next.join('').slice(0, CODE_LENGTH));
+    onChange(next);
     if (incoming && index < CODE_LENGTH - 1) {
       inputs.current[index + 1]?.focus();
     }
@@ -61,12 +76,36 @@ export function TotpCodeInput({
                 .replace(/\D/g, '');
               if (!pasted) return;
               event.preventDefault();
-              onChange(pasted.slice(0, CODE_LENGTH));
-              inputs.current[Math.min(pasted.length, CODE_LENGTH) - 1]?.focus();
+              const next = [...digits];
+              pasted
+                .slice(0, CODE_LENGTH - index)
+                .split('')
+                .forEach((digit, offset) => {
+                  next[index + offset] = digit;
+                });
+              onChange(next);
+              inputs.current[
+                Math.min(index + pasted.length, CODE_LENGTH) - 1
+              ]?.focus();
             }}
             onKeyDown={(event) => {
-              if (event.key === 'Backspace' && !digits[index] && index > 0) {
-                inputs.current[index - 1]?.focus();
+              if (event.key === 'Backspace') {
+                event.preventDefault();
+                const next = [...digits];
+                if (digits[index]) {
+                  next[index] = '';
+                  onChange(next);
+                } else if (index > 0) {
+                  next[index - 1] = '';
+                  onChange(next);
+                  inputs.current[index - 1]?.focus();
+                }
+              }
+              if (event.key === 'Delete') {
+                event.preventDefault();
+                const next = [...digits];
+                next[index] = '';
+                onChange(next);
               }
               if (event.key === 'ArrowLeft' && index > 0) {
                 event.preventDefault();

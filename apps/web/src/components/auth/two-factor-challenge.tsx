@@ -3,7 +3,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { KeyRound, ShieldCheck } from 'lucide-react';
 import { AuthCard } from '@/components/auth/auth-card';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
-import { TotpCodeInput } from '@/components/auth/totp-code-input';
+import {
+  emptyTotpDigits,
+  TotpCodeInput,
+} from '@/components/auth/totp-code-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,20 +47,22 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
     [redirect],
   );
   const [mode, setMode] = useState<ChallengeMode>('totp');
-  const [code, setCode] = useState('');
+  const [totpDigits, setTotpDigits] = useState(emptyTotpDigits);
+  const [backupCode, setBackupCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const changeMode = (nextMode: ChallengeMode) => {
     setMode(nextMode);
-    setCode('');
+    setTotpDigits(emptyTotpDigits());
+    setBackupCode('');
     setError(null);
   };
 
   const verify = async (event: FormEvent) => {
     event.preventDefault();
     const normalizedCode =
-      mode === 'totp' ? code.replace(/\D/g, '') : code.trim();
+      mode === 'totp' ? totpDigits.join('') : backupCode.trim();
     if (mode === 'totp' && normalizedCode.length !== 6) {
       setError('Enter the six-digit code from your authenticator app.');
       return;
@@ -143,8 +148,8 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
       <form onSubmit={verify} className="space-y-4" noValidate>
         {mode === 'totp' ? (
           <TotpCodeInput
-            value={code}
-            onChange={setCode}
+            value={totpDigits}
+            onChange={setTotpDigits}
             disabled={isSubmitting}
             errorId={error ? 'challenge-error' : undefined}
             autoFocus
@@ -154,8 +159,8 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
             <Label htmlFor="backup-code">Backup code</Label>
             <Input
               id="backup-code"
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
+              value={backupCode}
+              onChange={(event) => setBackupCode(event.target.value)}
               autoComplete="one-time-code"
               spellCheck={false}
               autoCapitalize="none"
