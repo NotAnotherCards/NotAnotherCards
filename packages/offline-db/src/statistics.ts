@@ -144,10 +144,9 @@ export function selectMaturity(cards: readonly StatisticsCard[]) {
 
   for (const card of cards) {
     const interval = card.scheduled_interval_minutes;
-    if (!Number.isFinite(interval) || interval < 0) {
-      throw new Error('Scheduled interval must be a non-negative number');
-    }
-    if (interval === 0) counts.new += 1;
+    // Sync validation keeps intervals non-negative; a bad row that slipped
+    // through should not blank the statistics tab, so it counts as new.
+    if (!Number.isFinite(interval) || interval <= 0) counts.new += 1;
     else if (interval < MINUTES_PER_DAY) counts.learning += 1;
     else if (interval < MATURE_INTERVAL_MINUTES) counts.young += 1;
     else counts.mature += 1;
