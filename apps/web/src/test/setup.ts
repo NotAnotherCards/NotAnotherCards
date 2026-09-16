@@ -22,6 +22,7 @@ vi.mock('@/lib/auth-client', async (importOriginal) => {
       })),
       signIn: {
         email: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        social: vi.fn(() => Promise.resolve({ data: null, error: null })),
       },
       signUp: {
         email: vi.fn(() => Promise.resolve({ data: null, error: null })),
@@ -31,6 +32,23 @@ vi.mock('@/lib/auth-client', async (importOriginal) => {
       ),
       resetPassword: vi.fn(() => Promise.resolve({ data: null, error: null })),
       changePassword: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      listAccounts: vi.fn(() =>
+        Promise.resolve({
+          data: [{ id: 'account-1', providerId: 'credential' }],
+          error: null,
+        }),
+      ),
+      twoFactor: {
+        enable: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        disable: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        verifyTotp: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        verifyBackupCode: vi.fn(() =>
+          Promise.resolve({ data: null, error: null }),
+        ),
+        generateBackupCodes: vi.fn(() =>
+          Promise.resolve({ data: null, error: null }),
+        ),
+      },
       signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
     },
     checkUsernameAvailable: vi.fn(actual.checkUsernameAvailable),

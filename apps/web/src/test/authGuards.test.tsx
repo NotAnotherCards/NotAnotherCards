@@ -42,6 +42,34 @@ describe('Auth Guards', () => {
   beforeEach(async () => {
     // Reset router history and path
     window.history.pushState(null, '', '/');
+    window.sessionStorage.clear();
+  });
+
+  it('keeps a pending challenge out of protected routes and preserves the intended destination', async () => {
+    vi.mocked(authClient.getSession).mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    window.sessionStorage.setItem(
+      'notanothercards.pending-two-factor',
+      JSON.stringify({ returnTo: '/dashboard' }),
+    );
+
+    render(<App />);
+    await act(async () => {
+      await router.navigate({
+        to: '/deck-review',
+        search: { deckId: 'deck-1' },
+      });
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: 'Two-factor verification' }),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/two-factor');
+    expect(window.location.search).toContain(
+      'redirect=%2Fdeck-review%3FdeckId%3Ddeck-1',
+    );
   });
 
   it('redirects logged-out users from dashboard to login', async () => {
