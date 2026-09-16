@@ -2,11 +2,13 @@
 // drizzle-kit writes a snapshot of the whole schema next to each migration;
 // the latest one is the truth this compares the doc against (#360).
 //
-// Scope: table and column names under "## Current architecture", plus a
-// column's type and its NOT NULL / NULL marker where the document states
-// them. Indexes, constraints, foreign keys and defaults are prose in that
-// document, so they stay with the pull-request checklist and review; the
-// offline (remelonDB) schema is not checked here either.
+// Scope: under "## Current architecture", every table, its columns with
+// their type and NOT NULL / NULL marker, its indexes, unique indexes,
+// composite primary keys, foreign keys and the NAMES of its check
+// constraints. A check's expression stays prose for the reader; the name is
+// what this compares, so the document reads
+// `CHECK user_decks_visibility_check: visibility in ('private', 'public')`.
+// Column defaults and the offline (remelonDB) schema are not checked.
 // scripts/check-schema-fresh.mjs makes sure the snapshot itself is current.
 import { readFileSync } from 'node:fs';
 
@@ -34,15 +36,49 @@ const typeWords = new Map([
   ['number', 'double precision'],
 ]);
 
+// The snapshot quotes identifiers as PostgreSQL does; the document spells
+// them the way a reader would.
+const plainSql = (sql) =>
+  sql
+    .replace(/"[a-z_]+"\."([a-z_]+)"/g, '$1')
+    .replace(/"/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const columnList = (columns) =>
+  columns.map((column) => column.expression ?? column).join(', ');
+
 const actual = new Map(
   Object.values(snapshot.tables).map((table) => [
     table.name,
-    new Map(
-      Object.values(table.columns).map((column) => [
-        column.name,
-        { type: column.type, notNull: column.notNull === true },
+    {
+      columns: new Map(
+        Object.values(table.columns).map((column) => [
+          column.name,
+          { type: column.type, notNull: column.notNull === true },
+        ]),
+      ),
+      // Index and key names are generated; the shape is what a reader needs.
+      structure: new Set([
+        ...Object.values(table.indexes ?? {}).map(
+          (index) =>
+            `${index.isUnique ? 'UNIQUE' : 'INDEX'}(${columnList(index.columns)})` +
+            // A partial index without its condition reads as a stricter
+            // rule than it is, so the document states it.
+            (index.where ? ` WHERE ${plainSql(index.where)}` : ''),
+        ),
+        ...Object.values(table.compositePrimaryKeys ?? {}).map(
+          (key) => `PRIMARY KEY(${(key.columns ?? []).join(', ')})`,
+        ),
+        ...Object.values(table.foreignKeys ?? {}).map(
+          (key) =>
+            `FK(${key.columnsFrom.join(', ')} -> ${key.tableTo}.${key.columnsTo.join(', ')})`,
+        ),
+        ...Object.values(table.checkConstraints ?? {}).map(
+          (check) => `CHECK ${check.name}`,
+        ),
       ]),
-    ),
+    },
   ]),
 );
 
@@ -56,10 +92,40 @@ const tableBlock =
   /^#### `([a-z_]+)`[^\n]*\n((?:(?!^#### )[\s\S])*?)```text\n([\s\S]*?)```/gm;
 for (const match of doc.matchAll(tableBlock)) {
   const columns = new Map();
-  for (const line of match[3].split('\n')) {
-    const [name, typeWord] = line.trim().split(/\s+/);
-    if (!name || /^(INDEX|UNIQUE|CHECK|PRIMARY|FOREIGN)\b/.test(name)) continue;
+  const structure = new Set();
+  for (const rawLine of match[3].split('\n')) {
+    const line = rawLine.trim();
+    const structural =
+      // Greedy so an expression index keeps its own brackets:
+      // UNIQUE(("payload" ->> 'deckId')).
+      /^(INDEX|UNIQUE)\((.*)\)(\s+WHERE\s+.*)?$/.exec(line) ??
+      /^(PRIMARY KEY)\((.*)\)\s*$/.exec(line);
+    if (structural) {
+      structure.add(
+        `${structural[1]}(${structural[2]
+          .split(',')
+          .map((part) => part.trim())
+          .join(', ')})${(structural[3] ?? '').replace(/\s+/g, ' ').trimEnd()}`,
+      );
+      continue;
+    }
+    const check = /^CHECK\s+([a-z0-9_]+)\s*:/.exec(line);
+    if (check) {
+      structure.add(`CHECK ${check[1]}`);
+      continue;
+    }
+    if (/^(CHECK|FOREIGN)\b/.test(line)) {
+      structure.add(`UNPARSEABLE: ${line}`);
+      continue;
+    }
+    const [name, typeWord] = line.split(/\s+/);
+    if (!name) continue;
     const rest = line.slice(line.indexOf(name) + name.length);
+    // "FK -> user.id ON DELETE CASCADE" sits on the column line.
+    const foreignKey = /FK\s*->\s*([a-z_]+)\.([a-z_]+)/.exec(rest);
+    if (foreignKey) {
+      structure.add(`FK(${name} -> ${foreignKey[1]}.${foreignKey[2]})`);
+    }
     columns.set(name, {
       typeWord,
       // "NOT NULL" and a bare "NULL" are the two markers the document uses;
@@ -71,15 +137,33 @@ for (const match of doc.matchAll(tableBlock)) {
           : undefined,
     });
   }
-  documented.set(match[1], columns);
+  documented.set(match[1], { columns, structure });
 }
 
 const problems = [];
-for (const [table, columns] of actual) {
-  const docColumns = documented.get(table);
-  if (!docColumns) {
+for (const [table, { columns, structure }] of actual) {
+  const documentedTable = documented.get(table);
+  if (!documentedTable) {
     problems.push(`table ${table} is not documented`);
     continue;
+  }
+  const docColumns = documentedTable.columns;
+  for (const item of structure) {
+    if (!documentedTable.structure.has(item)) {
+      problems.push(`${table} has ${item} but the document does not`);
+    }
+  }
+  for (const item of documentedTable.structure) {
+    if (item.startsWith('UNPARSEABLE: ')) {
+      problems.push(
+        `${table}: "${item.slice('UNPARSEABLE: '.length)}" is not in a form ` +
+          `this check understands (name your checks: CHECK <name>: <expression>)`,
+      );
+    } else if (!structure.has(item)) {
+      problems.push(
+        `${table} documents ${item} but the schema does not have it`,
+      );
+    }
   }
   for (const [column, actualColumn] of columns) {
     const documentedColumn = docColumns.get(column);
