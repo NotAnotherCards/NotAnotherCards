@@ -223,11 +223,15 @@ describe('withTwoFactorFlag', () => {
       'notanothercards://dashboard#reviews',
       'notanothercards://dashboard?twoFactorRequired=true#reviews',
     ],
+    // Relative targets make `new URL` throw, exercising the manual fallback
+    // (Better Auth accepts relative callback URLs).
+    ['/app#section', '/app?twoFactorRequired=true#section'],
+    ['/app?from=x#section', '/app?from=x&twoFactorRequired=true#section'],
   ])('puts the flag into the query string of %s', (target, expected) => {
     expect(withTwoFactorFlag(target)).toBe(expected);
   });
 
-  it('falls back to concatenation for unparseable targets', () => {
+  it('falls back to manual handling for unparseable relative targets', () => {
     expect(withTwoFactorFlag('/two-factor')).toBe(
       '/two-factor?twoFactorRequired=true',
     );

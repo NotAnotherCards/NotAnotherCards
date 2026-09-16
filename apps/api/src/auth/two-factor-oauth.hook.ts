@@ -25,8 +25,9 @@ const isSocialSignInPath = (path: string): boolean =>
  * Appends the ?twoFactorRequired=true flag to the callback target. Built on
  * URL + searchParams so the flag lands in the query string even when the
  * target already has one or carries a fragment (string concatenation would
- * drop the flag after `#fragment`). Fall back to concatenation only for
- * unparseable targets, which cannot host a fragment anyway.
+ * drop the flag after `#fragment`). Fall back to manual string handling for
+ * relative targets, which `new URL` refuses — but still insert the flag
+ * before any `#fragment` so it stays a query parameter.
  */
 export function withTwoFactorFlag(target: string): string {
   try {
@@ -38,7 +39,13 @@ export function withTwoFactorFlag(target: string): string {
     return url.toString();
   } catch {
     const flag = `${TWO_FACTOR_REQUIRED_FLAG_NAME}=${TWO_FACTOR_REQUIRED_FLAG_VALUE}`;
-    return target.includes('?') ? `${target}&${flag}` : `${target}?${flag}`;
+    const hashIndex = target.indexOf('#');
+    const queryPortion = hashIndex === -1 ? target : target.slice(0, hashIndex);
+    const fragment = hashIndex === -1 ? '' : target.slice(hashIndex);
+    const withFlag = queryPortion.includes('?')
+      ? `${queryPortion}&${flag}`
+      : `${queryPortion}?${flag}`;
+    return `${withFlag}${fragment}`;
   }
 }
 
