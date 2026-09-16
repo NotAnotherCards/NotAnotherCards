@@ -105,7 +105,7 @@ export function ProfileForm({
           <View className="flex-1">
             <CardTitle>Language Preferences</CardTitle>
             <CardDescription>
-              Your native language and the language you study
+              Native language and language of study
             </CardDescription>
           </View>
         </CardHeader>
