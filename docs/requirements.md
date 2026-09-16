@@ -149,7 +149,7 @@ base, and daily challenges — 3 of the 6 listed options.
 - Secure access to Grafana. **done**: #162 requires admin credentials and serves
   Grafana through the HTTPS nginx endpoint.
 
-### 4.13 User Management: user activity analytics and insights dashboard — Minor, 1 — in progress — 50%
+### 4.13 User Management: user activity analytics and insights dashboard — Minor, 1 — done — 100%
 
 Reclassified 2026-09-03. This was tracked as the Data and Analytics
 "advanced analytics dashboard" (Major, 2: interactive charts,
@@ -161,14 +161,22 @@ learned words, due cards, streak, points by day, added words by day, reset
 progress. The implementation work is unchanged; only the module and the
 point count change.
 
-- User activity analytics and insights dashboard. **in progress**:
-  `apps/web/src/components/dashboard/Overview.tsx` shows the due-card count
-  and the personal dictionary size, both computed live from the store. The
-  learning streak (`7 Days`), words learned (`1,240 / 10,000`, `12.4%`) and
-  the ready-made dictionary progress are still string literals from the
-  concept mockup. The streak and the words-learned figure are computable
-  today from `getReviewHistoryQuery`; replacing the literals is the
-  remaining work. No issue exists yet.
+- User activity analytics and insights dashboard. **done** (#361):
+  - Due today counts active cards whose `due_at` has passed.
+  - Personal dictionary size counts active cards.
+  - Current and longest streaks count distinct UTC dates with reviews.
+  - Learned notes count notes with a rating 2–4 review on one of their cards.
+  - Reviews per day count review events by `reviewed_at` UTC date.
+  - Notes added per day count distinct notes by `created_at` UTC date.
+  - Forgot rate is the share of a UTC day's reviews rated 1.
+  - Due forecast groups active cards by `due_at`: overdue through today,
+    tomorrow, and the following seven UTC days.
+  - Card maturity groups active cards by `scheduled_interval_minutes`: new,
+    learning, young, and mature.
+
+All figures are derived from reactive local remelonDB queries and work
+offline. The optional deck filter follows active note-to-deck memberships;
+a note shared by several decks contributes to each of them.
 
 ### 4.14 Accessibility and Internationalization: multiple languages — Minor, 1 — not started — 0%
 
