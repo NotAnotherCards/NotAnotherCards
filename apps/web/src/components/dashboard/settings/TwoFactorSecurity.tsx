@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Check,
@@ -11,7 +11,10 @@ import {
   ShieldOff,
 } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
-import { TotpCodeInput } from '@/components/auth/totp-code-input';
+import {
+  emptyTotpDigits,
+  TotpCodeInput,
+} from '@/components/auth/totp-code-input';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -111,16 +114,14 @@ function BackupCodes({
 
 function Enrollment({
   onCancel,
-  onComplete,
+  onVerified,
 }: {
   onCancel: () => void;
-  onComplete: () => void;
+  onVerified: (backupCodes: string[]) => void | Promise<void>;
 }) {
-  const { refetch } = authClient.useSession();
   const [password, setPassword] = useState('');
   const [material, setMaterial] = useState<EnrollmentMaterial | null>(null);
-  const [code, setCode] = useState('');
-  const [verified, setVerified] = useState(false);
+  const [code, setCode] = useState(emptyTotpDigits);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
@@ -169,39 +170,32 @@ function Enrollment({
 
   const verify = async (event: FormEvent) => {
     event.preventDefault();
-    if (code.length !== 6) {
+    if (!material) return;
+    const normalizedCode = code.join('');
+    if (normalizedCode.length !== 6) {
       setError('Enter the six-digit code from your authenticator app.');
       return;
     }
     setError(null);
     setIsSubmitting(true);
     try {
-      const response = await authClient.twoFactor.verifyTotp({ code });
+      const response = await authClient.twoFactor.verifyTotp({
+        code: normalizedCode,
+      });
       if (response.error) {
         setError('That code is invalid or has expired. Try the current code.');
         return;
       }
-      setVerified(true);
-      setCode('');
-      await refetch();
+      const backupCodes = [...material.backupCodes];
+      setMaterial(null);
+      setCode(emptyTotpDigits());
+      await onVerified(backupCodes);
     } catch {
       setError('Could not verify the code. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (verified && material) {
-    return (
-      <BackupCodes
-        codes={material.backupCodes}
-        onDone={() => {
-          setMaterial(null);
-          onComplete();
-        }}
-      />
-    );
-  }
 
   if (!material) {
     return (
@@ -324,6 +318,7 @@ function Enrollment({
 }
 
 export function TwoFactorSecurity() {
+  const navigate = useNavigate();
   const { data: session, refetch } = authClient.useSession();
   const [enabledOverride, setEnabledOverride] = useState<boolean | null>(null);
   const [hasCredential, setHasCredential] = useState<boolean | null>(null);
@@ -331,8 +326,13 @@ export function TwoFactorSecurity() {
   const [action, setAction] = useState<'regenerate' | 'disable' | null>(null);
   const [password, setPassword] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [backupCodesTitle, setBackupCodesTitle] = useState(
+    'Save your backup codes',
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingCredential, setIsCreatingCredential] = useState(false);
+  const [credentialError, setCredentialError] = useState<string | null>(null);
   const isEnabled = enabledOverride ?? Boolean(session?.user.twoFactorEnabled);
 
   useEffect(() => {
@@ -364,6 +364,31 @@ export function TwoFactorSecurity() {
     setBackupCodes(null);
   };
 
+  const startCredentialCreation = async () => {
+    setCredentialError(null);
+    setIsCreatingCredential(true);
+    try {
+      const response = await authClient.signOut();
+      if (response.error) {
+        setCredentialError(
+          response.error.message ||
+            'Could not sign out. Please try again before creating a password.',
+        );
+        return;
+      }
+      await navigate({
+        to: '/forgot-password',
+        search: { email: session?.user.email },
+      });
+    } catch {
+      setCredentialError(
+        'Could not sign out. Please try again before creating a password.',
+      );
+    } finally {
+      setIsCreatingCredential(false);
+    }
+  };
+
   const manage = async (event: FormEvent) => {
     event.preventDefault();
     if (!password) {
@@ -387,6 +412,7 @@ export function TwoFactorSecurity() {
           return;
         }
         setBackupCodes([...response.data.backupCodes]);
+        setBackupCodesTitle('Your new backup codes');
         setPassword('');
       } else if (action === 'disable') {
         const response = await authClient.twoFactor.disable({ password });
@@ -417,7 +443,11 @@ export function TwoFactorSecurity() {
           <KeyRound className="size-5" aria-hidden="true" />
         </div>
         <div>
-          <CardTitle className="text-base font-bold">
+          <CardTitle
+            role="heading"
+            aria-level={3}
+            className="text-base font-bold"
+          >
             Two-factor authentication
           </CardTitle>
           <CardDescription className="text-xs">
@@ -453,24 +483,36 @@ export function TwoFactorSecurity() {
             <p className="font-semibold">A password is required</p>
             <p className="text-muted-foreground">
               Social-only accounts cannot enable two-factor authentication yet.
-              Create a password for this email first using the{' '}
-              <Link
-                to="/forgot-password"
-                className="font-medium text-primary underline"
-              >
-                password reset flow
-              </Link>
-              .
+              Sign out, then create a password for this email through the
+              password reset flow.
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3"
+              onClick={startCredentialCreation}
+              disabled={isCreatingCredential}
+            >
+              {isCreatingCredential && <Spinner />}
+              {isCreatingCredential
+                ? 'Signing out...'
+                : 'Sign out and create a password'}
+            </Button>
+            <FormErrorMessage className="mt-3" message={credentialError} />
           </div>
         )}
 
         {!isEnabled && showEnrollment && (
           <Enrollment
             onCancel={() => setShowEnrollment(false)}
-            onComplete={() => {
+            onVerified={async (codes) => {
+              // Lift the one-time codes before refreshing the shared session.
+              // The refresh changes twoFactorEnabled and unmounts Enrollment.
+              setBackupCodes(codes);
+              setBackupCodesTitle('Save your backup codes');
               setShowEnrollment(false);
               setEnabledOverride(true);
+              await refetch();
             }}
           />
         )}
@@ -488,7 +530,7 @@ export function TwoFactorSecurity() {
 
         {isEnabled && backupCodes && (
           <BackupCodes
-            title="Your new backup codes"
+            title={backupCodesTitle}
             codes={backupCodes}
             onDone={resetAction}
           />

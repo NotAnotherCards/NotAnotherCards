@@ -10,9 +10,12 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest --watch"
   },
   "devDependencies": {
+    "@better-auth/utils": "0.4.2",
+    "@playwright/test": "^1.63.0",
     "@remelondb/driver-node": "0.3.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
