@@ -129,16 +129,9 @@ function Enrollment({
     [material],
   );
 
-  useEffect(
-    () => () => {
-      // Enrollment material is intentionally component-local. Unmounting on
-      // cancel, navigation, or tab change removes it from application state.
-      setMaterial(null);
-      setPassword('');
-      setCode('');
-    },
-    [],
-  );
+  // Enrollment material is intentionally component-local. Canceling, leaving
+  // Security settings, refreshing, or navigating back unmounts this component
+  // and removes the secret and codes from application state.
 
   const enable = async (event: FormEvent) => {
     event.preventDefault();
@@ -361,8 +354,6 @@ export function TwoFactorSecurity() {
       });
     return () => {
       active = false;
-      setBackupCodes(null);
-      setPassword('');
     };
   }, []);
 

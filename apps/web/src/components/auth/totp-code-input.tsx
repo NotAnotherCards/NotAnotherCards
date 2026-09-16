@@ -43,7 +43,10 @@ export function TotpCodeInput({
       <legend className="mb-2 text-sm font-medium">
         Six-digit authentication code
       </legend>
-      <div className="flex gap-2" aria-describedby={errorId}>
+      <div
+        className="grid grid-cols-6 gap-1.5 sm:gap-2"
+        aria-describedby={errorId}
+      >
         {Array.from({ length: CODE_LENGTH }, (_, index) => (
           <Input
             key={index}
@@ -84,7 +87,7 @@ export function TotpCodeInput({
             disabled={disabled}
             autoFocus={autoFocus && index === 0}
             className={cn(
-              'h-12 w-10 px-0 text-center text-lg font-semibold sm:w-12',
+              'h-11 w-full px-0 text-center text-lg font-semibold sm:h-12',
               errorId && 'border-destructive',
             )}
           />

@@ -123,6 +123,39 @@ describe('two-factor security settings', () => {
     ).toHaveAttribute('href', '/forgot-password');
   });
 
+  it('does not restore enrollment material after leaving the setup screen', async () => {
+    const user = userEvent.setup();
+    vi.mocked(authClient.twoFactor.enable).mockResolvedValue({
+      data: {
+        totpURI:
+          'otpauth://totp/NotAnotherCards:learner?secret=EPHEMERALKEY&issuer=NotAnotherCards',
+        backupCodes: ['ephemeral-recovery'],
+      },
+      error: null,
+    } as Awaited<ReturnType<typeof authClient.twoFactor.enable>>);
+
+    const view = render(<TwoFactorSecurity />);
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Enable two-factor authentication',
+      }),
+    );
+    await user.type(screen.getByLabelText('Current password'), 'Password123!');
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByDisplayValue('EPHEMERALKEY')).toBeInTheDocument();
+
+    view.unmount();
+    render(<TwoFactorSecurity />);
+
+    expect(screen.queryByDisplayValue('EPHEMERALKEY')).not.toBeInTheDocument();
+    expect(screen.queryByText('ephemeral-recovery')).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', {
+        name: 'Enable two-factor authentication',
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('regenerates backup codes and warns that existing codes stop working', async () => {
     const user = userEvent.setup();
     mockSession(true);
