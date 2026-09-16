@@ -63,6 +63,22 @@ describe('two-factor security settings', () => {
 
   it('enrolls, verifies setup, and reveals backup codes only after verification', async () => {
     const user = userEvent.setup();
+    let liveSession = session(false);
+    const view: { current?: ReturnType<typeof render> } = {};
+    const refetch = vi.fn(async () => {
+      liveSession = session(true);
+      view.current?.rerender(<TwoFactorSecurity />);
+    });
+    vi.mocked(authClient.useSession).mockImplementation(
+      () =>
+        ({
+          data: liveSession,
+          isPending: false,
+          isRefetching: false,
+          error: null,
+          refetch,
+        }) as unknown as ReturnType<typeof authClient.useSession>,
+    );
     vi.mocked(authClient.twoFactor.enable).mockResolvedValue({
       data: {
         totpURI:
@@ -76,7 +92,7 @@ describe('two-factor security settings', () => {
       error: null,
     } as Awaited<ReturnType<typeof authClient.twoFactor.verifyTotp>>);
 
-    render(<TwoFactorSecurity />);
+    view.current = render(<TwoFactorSecurity />);
 
     await user.click(
       await screen.findByRole('button', {
@@ -104,11 +120,16 @@ describe('two-factor security settings', () => {
     expect(screen.queryByText('recovery-one')).not.toBeInTheDocument();
   });
 
-  it('disables enrollment for a social-only account and explains how to add a credential', async () => {
+  it('signs a social-only user out before opening the password creation flow', async () => {
+    const user = userEvent.setup();
     vi.mocked(authClient.listAccounts).mockResolvedValue({
       data: [{ id: 'account-1', providerId: 'google' }],
       error: null,
     } as Awaited<ReturnType<typeof authClient.listAccounts>>);
+    vi.mocked(authClient.signOut).mockResolvedValue({
+      data: { success: true },
+      error: null,
+    } as Awaited<ReturnType<typeof authClient.signOut>>);
 
     render(<TwoFactorSecurity />);
 
@@ -118,9 +139,16 @@ describe('two-factor security settings', () => {
     expect(
       screen.getByRole('button', { name: 'Enable two-factor authentication' }),
     ).toBeDisabled();
-    expect(
-      screen.getByRole('link', { name: 'password reset flow' }),
-    ).toHaveAttribute('href', '/forgot-password');
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Sign out and create a password',
+      }),
+    );
+    expect(authClient.signOut).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/forgot-password',
+      search: { email: 'learner@example.com' },
+    });
   });
 
   it('does not restore enrollment material after leaving the setup screen', async () => {
@@ -248,12 +276,14 @@ describe('two-factor sign-in challenge', () => {
       clipboardData: { getData: () => '123 456' },
     });
     expect(screen.getByLabelText('Digit 6 of 6')).toHaveFocus();
+    await user.click(screen.getByLabelText('Digit 3 of 6'));
+    await user.keyboard('{Backspace}9');
     await user.click(
       screen.getByRole('button', { name: 'Verify and continue' }),
     );
 
     expect(authClient.twoFactor.verifyTotp).toHaveBeenCalledWith({
-      code: '123456',
+      code: '129456',
       trustDevice: false,
     });
     expect(navigate).toHaveBeenCalledWith({
