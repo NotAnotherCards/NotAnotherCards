@@ -3,6 +3,7 @@ import type { ActivityNote, ActivityReviewEvent } from './activity.js';
 import {
   selectDailyCounts,
   selectDueForecast,
+  selectMonthlyCounts,
   selectMaturity,
   selectStatisticsRowsForDeck,
   type StatisticsCard,
@@ -112,6 +113,46 @@ describe('statistics selectors', () => {
         forgotRate: 0.5,
       },
     ]);
+  });
+
+  it('buckets by UTC month, oldest first, with a zero rate for empty months', () => {
+    const rows = selectMonthlyCounts(
+      [
+        {
+          id: 'r1',
+          user_card_id: 'c',
+          rating: 3,
+          reviewed_at: Date.UTC(2026, 6, 31, 23, 59),
+        },
+        {
+          id: 'r2',
+          user_card_id: 'c',
+          rating: 1,
+          reviewed_at: Date.UTC(2026, 8, 1),
+        },
+        {
+          id: 'r3',
+          user_card_id: 'c',
+          rating: 3,
+          reviewed_at: Date.UTC(2026, 8, 16),
+        },
+      ],
+      [{ id: 'n1', created_at: Date.UTC(2026, 7, 15) }],
+      { months: 3, now: Date.UTC(2026, 8, 16, 12) },
+    );
+
+    expect(rows.map((row) => row.utcMonth)).toEqual([
+      '2026-07',
+      '2026-08',
+      '2026-09',
+    ]);
+    expect(rows[0]).toMatchObject({ reviews: 1, notesAdded: 0, forgotRate: 0 });
+    expect(rows[1]).toMatchObject({ reviews: 0, notesAdded: 1, forgotRate: 0 });
+    expect(rows[2]).toMatchObject({
+      reviews: 2,
+      notesAdded: 0,
+      forgotRate: 0.5,
+    });
   });
 
   it('splits due cards into non-overlapping UTC forecast buckets', () => {

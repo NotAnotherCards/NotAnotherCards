@@ -118,6 +118,64 @@ export function selectDailyCounts(
   }));
 }
 
+export interface MonthlyStatistics {
+  /** `YYYY-MM`, the UTC month. */
+  readonly utcMonth: string;
+  readonly reviews: number;
+  readonly notesAdded: number;
+  readonly forgotRate: number;
+}
+
+function utcMonthKey(timestamp: number): string {
+  return new Date(timestamp).toISOString().slice(0, 7);
+}
+
+/** The last `months` UTC months, oldest first, for the year view. */
+export function selectMonthlyCounts(
+  reviewEvents: readonly StatisticsReviewEvent[],
+  notes: readonly StatisticsNote[],
+  options: { readonly months: number; readonly now: number },
+): MonthlyStatistics[] {
+  if (!Number.isInteger(options.months) || options.months < 1) {
+    throw new Error('Statistics months must be a positive integer');
+  }
+
+  const end = new Date(options.now);
+  const rows = Array.from({ length: options.months }, (_, index) => {
+    const month = new Date(
+      Date.UTC(
+        end.getUTCFullYear(),
+        end.getUTCMonth() - (options.months - 1 - index),
+        1,
+      ),
+    );
+    return {
+      utcMonth: month.toISOString().slice(0, 7),
+      reviews: 0,
+      notesAdded: 0,
+      forgotRate: 0,
+      forgotten: 0,
+    };
+  });
+  const byMonth = new Map(rows.map((row) => [row.utcMonth, row]));
+
+  for (const event of reviewEvents) {
+    const row = byMonth.get(utcMonthKey(event.reviewed_at));
+    if (!row) continue;
+    row.reviews += 1;
+    if (event.rating === 1) row.forgotten += 1;
+  }
+  for (const note of notes) {
+    const row = byMonth.get(utcMonthKey(note.created_at));
+    if (row) row.notesAdded += 1;
+  }
+
+  return rows.map(({ forgotten, ...row }) => ({
+    ...row,
+    forgotRate: row.reviews === 0 ? 0 : forgotten / row.reviews,
+  }));
+}
+
 export function selectDueForecast(
   cards: readonly StatisticsCard[],
   options: { readonly now: number },

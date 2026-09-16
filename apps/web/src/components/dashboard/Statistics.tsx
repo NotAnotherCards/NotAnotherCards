@@ -6,6 +6,7 @@ import {
   selectDailyCounts,
   selectDueForecast,
   selectMaturity,
+  selectMonthlyCounts,
   selectStatisticsRowsForDeck,
 } from '@repo/offline-db';
 import {
@@ -38,6 +39,19 @@ const seriesNoun: Record<SeriesKey, string> = {
   forgotRate: 'forgot rate',
 };
 
+const RANGES = [
+  { value: '7d', label: '7 days' },
+  { value: '30d', label: '30 days' },
+  { value: '1y', label: '1 year' },
+] as const;
+
+const monthLabel = (utcMonth: string) =>
+  new Date(`${utcMonth}-01T00:00:00Z`).toLocaleDateString('en', {
+    month: 'short',
+    year: '2-digit',
+    timeZone: 'UTC',
+  });
+
 const shortDate = (utcDate: string) =>
   new Date(`${utcDate}T00:00:00Z`).toLocaleDateString('en', {
     day: 'numeric',
@@ -45,12 +59,20 @@ const shortDate = (utcDate: string) =>
     timeZone: 'UTC',
   });
 
+type SeriesRow = {
+  readonly key: string;
+  readonly label: string;
+  readonly reviews: number;
+  readonly notesAdded: number;
+  readonly forgotRate: number;
+};
+
 function BarSeries({
   rows,
   valueKey,
   percentage = false,
 }: {
-  rows: ReturnType<typeof selectDailyCounts>;
+  rows: readonly SeriesRow[];
   valueKey: SeriesKey;
   percentage?: boolean;
 }) {
@@ -66,7 +88,7 @@ function BarSeries({
       : value.toLocaleString();
   // Values fit above the bars in the 7-day range only; 30 bars are too narrow.
   const showValues = rows.length <= 7;
-  const today = rows.at(-1)?.utcDate;
+  const latest = rows.at(-1)?.key;
 
   if (peak === 0) {
     return (
@@ -81,16 +103,16 @@ function BarSeries({
       <div
         className="flex h-36 items-end gap-1"
         role="img"
-        aria-label={`${seriesNoun[valueKey]} per day, ${shortDate(rows[0].utcDate)} to ${shortDate(rows[rows.length - 1].utcDate)}, highest ${format(peak)}`}
+        aria-label={`${seriesNoun[valueKey]}, ${rows[0].label} to ${rows[rows.length - 1].label}, highest ${format(peak)}`}
       >
         {rows.map((row) => {
           const value = row[valueKey];
-          const isToday = row.utcDate === today;
+          const isLatest = row.key === latest;
           return (
             <div
-              key={row.utcDate}
+              key={row.key}
               className="flex min-w-0 flex-1 flex-col items-center justify-end self-stretch"
-              title={`${row.utcDate}: ${format(value)}`}
+              title={`${row.label}: ${format(value)}`}
               data-testid={`${valueKey}-bar`}
             >
               {showValues && (
@@ -100,7 +122,7 @@ function BarSeries({
               )}
               <div
                 className={`w-full min-w-1 rounded-t ${seriesTone[valueKey]} ${
-                  isToday ? '' : 'opacity-70'
+                  isLatest ? '' : 'opacity-70'
                 }`}
                 style={{ height: `${(value / ceiling) * 100}%` }}
               />
@@ -109,8 +131,8 @@ function BarSeries({
         })}
       </div>
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{shortDate(rows[0].utcDate)}</span>
-        <span>{shortDate(rows[rows.length - 1].utcDate)} (today)</span>
+        <span>{rows[0].label}</span>
+        <span>{rows[rows.length - 1].label}</span>
       </div>
     </div>
   );
@@ -121,7 +143,7 @@ export function Statistics() {
   const { data: reviewEvents } = useQuery<ReviewEventRecord>(
     store.db && getReviewHistoryQuery(store.db),
   );
-  const [days, setDays] = useState<7 | 30>(7);
+  const [range, setRange] = useState<'7d' | '30d' | '1y'>('7d');
   const [deckId, setDeckId] = useState('');
   const now = Date.now();
   const rows = useMemo(
@@ -135,10 +157,24 @@ export function Statistics() {
       ),
     [deckId, reviewEvents, store.cards, store.noteDecks, store.notes],
   );
-  const daily = selectDailyCounts(rows.reviewEvents, rows.notes, {
-    days,
-    now,
-  });
+  const series: SeriesRow[] =
+    range === '1y'
+      ? selectMonthlyCounts(rows.reviewEvents, rows.notes, {
+          months: 12,
+          now,
+        }).map((row) => ({
+          ...row,
+          key: row.utcMonth,
+          label: monthLabel(row.utcMonth),
+        }))
+      : selectDailyCounts(rows.reviewEvents, rows.notes, {
+          days: range === '7d' ? 7 : 30,
+          now,
+        }).map((row) => ({
+          ...row,
+          key: row.utcDate,
+          label: shortDate(row.utcDate),
+        }));
   const streak = selectStreakActivity(rows.reviewEvents, now);
   const learnedNotes = selectLearnedNoteCount(
     rows.reviewEvents,
@@ -179,7 +215,7 @@ export function Statistics() {
         <Card aria-label="Learning streak">
           <CardHeader>
             <CardTitle>Learning streak</CardTitle>
-            <CardDescription>Consecutive UTC learning days</CardDescription>
+            <CardDescription>Consecutive learning days</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
             <p className="text-2xl font-bold">
@@ -242,22 +278,17 @@ export function Statistics() {
       </div>
 
       <div className="flex gap-2" aria-label="Statistics range">
-        <Button
-          size="sm"
-          variant={days === 7 ? 'secondary' : 'ghost'}
-          aria-pressed={days === 7}
-          onClick={() => setDays(7)}
-        >
-          7 days
-        </Button>
-        <Button
-          size="sm"
-          variant={days === 30 ? 'secondary' : 'ghost'}
-          aria-pressed={days === 30}
-          onClick={() => setDays(30)}
-        >
-          30 days
-        </Button>
+        {RANGES.map(({ value, label }) => (
+          <Button
+            key={value}
+            size="sm"
+            variant={range === value ? 'secondary' : 'ghost'}
+            aria-pressed={range === value}
+            onClick={() => setRange(value)}
+          >
+            {label}
+          </Button>
+        ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -266,7 +297,7 @@ export function Statistics() {
             <CardTitle>Reviews per day</CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={daily} valueKey="reviews" />
+            <BarSeries rows={series} valueKey="reviews" />
           </CardContent>
         </Card>
         <Card aria-label="Notes added per day">
@@ -274,7 +305,7 @@ export function Statistics() {
             <CardTitle>Notes added per day</CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={daily} valueKey="notesAdded" />
+            <BarSeries rows={series} valueKey="notesAdded" />
           </CardContent>
         </Card>
         <Card aria-label="Forgot rate per day">
@@ -282,7 +313,7 @@ export function Statistics() {
             <CardTitle>Forgot rate per day</CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={daily} valueKey="forgotRate" percentage />
+            <BarSeries rows={series} valueKey="forgotRate" percentage />
           </CardContent>
         </Card>
       </div>
