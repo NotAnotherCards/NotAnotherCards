@@ -57,7 +57,13 @@ export default function Dashboard() {
             }}
           />
         </View>
-        <ScrollView className="flex-1" contentContainerClassName="gap-4 p-6">
+        {/* Settings holds the only text input on this screen; without this
+            the first tap on Save only dismisses the keyboard. */}
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-4 p-6"
+          keyboardShouldPersistTaps="handled"
+        >
           {tab === 'overview' && (
             <View className="gap-1">
               <Text className="text-base">
