@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ReviewSession } from '@/components/review-session';
+import { saveReviewPreferences } from '@/lib/review-preferences';
 
 const manager = { tag: 'manager' };
 let mockManager: unknown = manager;
@@ -15,6 +16,7 @@ let mockReviewState: {
     front: string;
     back: string;
     due_at: number;
+    scheduled_interval_minutes: number;
   }>;
   isLoading: boolean;
   error: Error | null;
@@ -23,6 +25,9 @@ let mockReviewState: {
 
 jest.mock('../lib/database-provider', () => ({
   useSessionDatabase: () => ({ manager: mockManager }),
+}));
+jest.mock('../lib/auth-client', () => ({
+  authClient: { useSession: () => ({ data: { user: { id: 'user-1' } } }) },
 }));
 jest.mock('../lib/review', () => ({
   useReviewDeck: () => mockReviewState,
@@ -46,12 +51,18 @@ beforeEach(() => {
         front: '**gato**',
         back: '`cat`',
         due_at: 1,
+        scheduled_interval_minutes: 0,
       },
     ],
     isLoading: false,
     error: null,
     writes: { record: mockRecord },
   };
+  // The kv-store mock is shared across tests in this file.
+  saveReviewPreferences('user-1', {
+    reviewMode: 'basic',
+    showNextReviewInterval: false,
+  });
 });
 
 describe('ReviewSession', () => {
@@ -60,6 +71,23 @@ describe('ReviewSession', () => {
     expect(
       render(<ReviewSession deckId="d1" />).queryByText('gato'),
     ).toBeNull();
+  });
+
+  it('follows the saved review preference: four labels and the next interval', async () => {
+    saveReviewPreferences('user-1', {
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
+    const result = render(<ReviewSession deckId="d1" />);
+
+    fireEvent.press(await result.findByText('Show answer'));
+    expect(result.getByText('Again')).toBeTruthy();
+    expect(result.getByText('Hard')).toBeTruthy();
+    expect(result.getByText('Good')).toBeTruthy();
+    expect(result.getByText('Easy')).toBeTruthy();
+    // A new card: Again schedules 5 minutes, Good three days.
+    expect(result.getByText('5 min')).toBeTruthy();
+    expect(result.getByText('3 days')).toBeTruthy();
   });
 
   it('renders Markdown, shows the back alone after flipping, and records a rating', async () => {
