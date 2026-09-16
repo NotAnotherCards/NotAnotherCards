@@ -25,7 +25,7 @@
  * calendar days and daylight-saving behavior are deferred.
  */
 
-import { utcDayAt } from './statistics.js';
+import { utcDayAt } from './utc-day.js';
 
 export const SUCCESSFUL_REVIEW_RATING_MIN = 2;
 
