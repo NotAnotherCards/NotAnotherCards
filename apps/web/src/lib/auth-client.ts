@@ -1,10 +1,14 @@
 import { usernameAvailabilitySchema } from '@repo/schemas';
 import { createAuthClient } from 'better-auth/react';
-import { inferAdditionalFields } from 'better-auth/client/plugins';
+import {
+  inferAdditionalFields,
+  twoFactorClient,
+} from 'better-auth/client/plugins';
 
 export const authClient = createAuthClient({
   baseURL: window.location.origin,
   plugins: [
+    twoFactorClient(),
     inferAdditionalFields({
       user: {
         timezone: {
