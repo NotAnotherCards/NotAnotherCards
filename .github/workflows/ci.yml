@@ -71,6 +71,9 @@ jobs:
       - name: Check Database Docs
         run: pnpm check:db-docs
 
+      - name: Check Schema Freshness
+        run: pnpm check:schema-fresh
+
       - name: Run Unit Tests
         run: pnpm test
         env:
