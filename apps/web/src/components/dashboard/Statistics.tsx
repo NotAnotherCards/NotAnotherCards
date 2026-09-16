@@ -78,7 +78,6 @@ function BarSeries({
 
   return (
     <div className="space-y-1">
-      <p className="text-xs text-muted-foreground">max {format(ceiling)}</p>
       <div
         className="flex h-36 items-end gap-1"
         role="img"
