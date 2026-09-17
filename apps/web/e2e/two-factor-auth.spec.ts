@@ -38,7 +38,12 @@ async function signUpAndOnboard(page: Page, email: string, username: string) {
   });
   expect(onboarding.ok()).toBe(true);
 
-  await page.goto('/dashboard');
+  const signedOut = await page.request.post('/api/auth/sign-out', {
+    headers: { Origin: appOrigin },
+  });
+  expect(signedOut.ok()).toBe(true);
+
+  await signIn(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(
     page.getByRole('button', { name: 'Profile & Settings' }),
