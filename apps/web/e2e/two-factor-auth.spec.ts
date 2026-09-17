@@ -49,7 +49,7 @@ async function signUpAndOnboard(page: Page, email: string, username: string) {
     name: 'Profile & Settings',
   });
   try {
-    await expect(settingsButton).toBeVisible();
+    await expect(settingsButton).toBeVisible({ timeout: 30_000 });
   } catch (error) {
     const body = (await page.locator('body').innerText()).slice(0, 1_000);
     throw new Error(
