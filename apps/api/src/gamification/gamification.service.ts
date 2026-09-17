@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   BADGE_CODES,
@@ -17,6 +18,7 @@ import {
   userCards,
   userNotes,
   userProfiles,
+  userBadges,
 } from '../sync/schema';
 import { syncScopeLockKey } from '../sync/sync-store';
 import { badgeAwards, dailyChallengeCompletions } from './schema';
@@ -62,7 +64,7 @@ export class GamificationService {
     const awardedAt = new Date(now);
 
     if (summary.eligibleBadgeCodes.length > 0) {
-      await tx
+      const inserted = await tx
         .insert(badgeAwards)
         .values(
           summary.eligibleBadgeCodes.map((badgeCode) => ({
@@ -71,7 +73,22 @@ export class GamificationService {
             awardedAt,
           })),
         )
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ badgeCode: badgeAwards.badgeCode });
+
+      if (inserted.length > 0) {
+        await tx.insert(userBadges).values(
+          inserted.map(({ badgeCode }) => ({
+            id: randomUUID(),
+            rev: sql<number>`nextval('remelon_rev')`,
+            userId,
+            badgeId: badgeCode,
+            unlockedAt: now,
+            createdAt: now,
+            updatedAt: now,
+          }))
+        );
+      }
     }
 
     const completedChallenges = selectDailyChallengeHistory(
