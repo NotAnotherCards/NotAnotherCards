@@ -62,6 +62,9 @@ export function ReviewSession({
   const revealAnswer = () => {
     setIsFlipped(true);
   };
+  const hideAnswer = () => {
+    setIsFlipped(false);
+  };
   const openCreateCardForm = () => {
     setCreateCardError(null);
     setIsCreateCardOpen(true);
@@ -192,6 +195,7 @@ export function ReviewSession({
     isBlocked: Boolean(exitDirection) || isSavingReview,
     reviewMode: reviewMode === 'basic' ? 'two' : 'four',
     onReveal: revealAnswer,
+    onHide: hideAnswer,
     onAnswer: (answer) => void answerCard(answer),
     onDelete: () => startCardExit('delete'),
   });
