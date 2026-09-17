@@ -14,39 +14,18 @@ import {
 import { FloatingBannerContainer } from '@/components/FloatingBannerContainer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 export function ProtectedLayoutComponent() {
   const { manager, syncController } = useSessionDatabase();
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: session, refetch: refetchSession } = authClient.useSession();
-  const recoveredSessionFor = useRef<string | null>(null);
+  const { data: session } = authClient.useSession();
 
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (manager || location.pathname === '/onboarding' || !session) {
-      return;
-    }
-
-    if (recoveredSessionFor.current === session.user.id) {
-      return;
-    }
-    recoveredSessionFor.current = session.user.id;
-    void refetchSession();
-  }, [location.pathname, manager, refetchSession, session]);
-
   if (!manager && location.pathname !== '/onboarding') {
-    return (
-      <div
-        role="status"
-        className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground"
-      >
-        <RefreshCw className="size-4 animate-spin" aria-hidden="true" />
-        Preparing your offline workspace…
-      </div>
-    );
+    return null;
   }
 
   const user = session?.user;

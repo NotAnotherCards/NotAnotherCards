@@ -45,8 +45,8 @@ async function signUpAndOnboard(page: Page, email: string, username: string) {
 
   await signIn(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
-  const settingsButton = page.getByRole('button', {
-    name: 'Profile & Settings',
+  const settingsButton = page.locator('button', {
+    hasText: 'Profile & Settings',
   });
   try {
     await expect(settingsButton).toBeVisible({ timeout: 30_000 });
@@ -68,7 +68,7 @@ async function signUp(page: Page, email: string) {
 }
 
 async function openSecuritySettings(page: Page) {
-  await page.getByRole('button', { name: 'Profile & Settings' }).click();
+  await page.locator('button', { hasText: 'Profile & Settings' }).click();
   await page.getByRole('button', { name: 'Security', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Two-factor authentication' }),
