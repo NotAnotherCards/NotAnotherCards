@@ -175,9 +175,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
   ];
 
-  const [serverProgress, setServerProgress] = useState<
-    DailyChallengeProgress[] | null
-  >(null);
+  const [serverProgress, setServerProgress] = useState<{
+    utcDate: string;
+    challenges: DailyChallengeProgress[];
+  } | null>(null);
   const [notifications, setNotifications] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -213,14 +214,16 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   // Reconcile with server
   useEffect(() => {
     const ac = new AbortController();
-
     async function fetchGamification() {
       try {
         const res = await fetch('/api/gamification/me', { signal: ac.signal });
         if (res.ok) {
           const parsed = gamificationMeSchema.safeParse(await res.json());
           if (parsed.success) {
-            setServerProgress(parsed.data.todayChallenges);
+            setServerProgress({
+              utcDate: parsed.data.utcDate,
+              challenges: parsed.data.todayChallenges,
+            });
           }
         }
       } catch (e) {
@@ -229,17 +232,18 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         }
       }
     }
+    setServerProgress(null);
     void fetchGamification();
 
     return () => ac.abort();
-  }, [lastSuccessfulSync]);
+  }, [lastSuccessfulSync, localActivity.utcDate]);
 
   // Merge server and local progress
   const challenges = useMemo(() => {
     const merged = [...(localActivity.challenges || [])];
-    if (serverProgress) {
+    if (serverProgress && serverProgress.utcDate === localActivity.utcDate) {
       for (let i = 0; i < merged.length; i++) {
-        const serverMatch = serverProgress.find(
+        const serverMatch = serverProgress.challenges.find(
           (c) => c.code === merged[i].code,
         );
         if (serverMatch && serverMatch.completed && !merged[i].completed) {
