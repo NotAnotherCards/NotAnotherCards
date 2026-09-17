@@ -34,6 +34,15 @@ import {
 } from '@/lib/review-preferences';
 import type { SharedDeckSummary } from '@repo/schemas';
 import { useState } from 'react';
+import { useQuery } from '@remelondb/core/react';
+import {
+  getReviewHistoryQuery,
+  type ReviewEventRecord,
+} from '@repo/offline-db';
+import {
+  selectLearnedNoteCount,
+  selectStreakActivity,
+} from '@repo/offline-db/activity';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -84,6 +93,9 @@ function DashboardSyncStatus() {
 
 export function Overview({ onChooseDeck }: OverviewProps) {
   const store = useStore();
+  const { data: reviewEvents } = useQuery<ReviewEventRecord>(
+    store.db && getReviewHistoryQuery(store.db),
+  );
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
@@ -105,6 +117,12 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   );
   const [reportReason, setReportReason] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const streak = selectStreakActivity(reviewEvents, Date.now()).currentStreak;
+  const learnedNotes = selectLearnedNoteCount(
+    reviewEvents,
+    store.cards,
+    store.notes,
+  );
 
   const user = session?.user || {
     name: 'Legendary Learner',
@@ -150,15 +168,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
     {
       title: 'Learning Streak',
-      value: '7 Days',
+      value: `${streak} ${streak === 1 ? 'Day' : 'Days'}`,
       description: 'Daily learning-day streak',
       icon: Flame,
       color: 'text-orange-500 bg-orange-500/10',
     },
     {
       title: 'Words Learned',
-      value: '1,240 / 10,000',
-      description: '12.4% total progress',
+      value: learnedNotes.toLocaleString(),
+      description: 'Notes reviewed successfully',
       icon: GraduationCap,
       color: 'text-purple-500 bg-purple-500/10',
     },

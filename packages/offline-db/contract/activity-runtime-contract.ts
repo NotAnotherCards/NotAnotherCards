@@ -1,4 +1,9 @@
 import { selectActivitySummary } from '../src/activity.js';
+import {
+  selectDailyCounts,
+  selectDueForecast,
+  selectMaturity,
+} from '../src/statistics.js';
 
 const fixtureInputs = [
   {
@@ -92,6 +97,65 @@ const expectedResults = [
   },
 ];
 
+// The statistics selectors (#361) share the UTC day rule; one fixture over
+// four days with an overdue, a same-day, a tomorrow and a next-week card.
+const statisticsFixture = {
+  now: 1_774_864_800_000,
+  reviewEvents: [
+    ...fixtureInputs[0].reviewEvents,
+    {
+      id: 'utc-day-4-forgot',
+      user_card_id: 'card-1',
+      rating: 1,
+      reviewed_at: 1_774_861_200_000,
+    },
+  ],
+  notes: fixtureInputs[0].notes,
+  cards: [
+    {
+      id: 'c1',
+      note_id: 'n',
+      due_at: 1_774_800_000_000,
+      scheduled_interval_minutes: 0,
+    },
+    {
+      id: 'c2',
+      note_id: 'n',
+      due_at: 1_774_900_000_000,
+      scheduled_interval_minutes: 600,
+    },
+    {
+      id: 'c3',
+      note_id: 'n',
+      due_at: 1_774_950_000_000,
+      scheduled_interval_minutes: 7_200,
+    },
+    {
+      id: 'c4',
+      note_id: 'n',
+      due_at: 1_775_300_000_000,
+      scheduled_interval_minutes: 43_200,
+    },
+    {
+      id: 'c5',
+      note_id: 'n',
+      due_at: 1_776_000_000_000,
+      scheduled_interval_minutes: 30_240,
+    },
+  ],
+};
+
+const expectedStatistics = {
+  daily: [
+    { utcDate: '2026-03-27', reviews: 1, notesAdded: 0, forgotRate: 0 },
+    { utcDate: '2026-03-28', reviews: 1, notesAdded: 0, forgotRate: 0 },
+    { utcDate: '2026-03-29', reviews: 1, notesAdded: 1, forgotRate: 0 },
+    { utcDate: '2026-03-30', reviews: 1, notesAdded: 0, forgotRate: 1 },
+  ],
+  forecast: { today: 2, tomorrow: 1, nextSevenDays: 1 },
+  maturity: { new: 1, learning: 1, young: 1, mature: 2 },
+};
+
 export function runActivityRuntimeContract() {
   const actual = fixtureInputs.map((input) => selectActivitySummary(input));
   if (JSON.stringify(actual) !== JSON.stringify(expectedResults)) {
@@ -99,7 +163,23 @@ export function runActivityRuntimeContract() {
       `Activity runtime contract mismatch: ${JSON.stringify(actual)}`,
     );
   }
-  return actual;
+  const statistics = {
+    daily: selectDailyCounts(
+      statisticsFixture.reviewEvents,
+      statisticsFixture.notes,
+      { days: 4, now: statisticsFixture.now },
+    ),
+    forecast: selectDueForecast(statisticsFixture.cards, {
+      now: statisticsFixture.now,
+    }),
+    maturity: selectMaturity(statisticsFixture.cards),
+  };
+  if (JSON.stringify(statistics) !== JSON.stringify(expectedStatistics)) {
+    throw new Error(
+      `Statistics runtime contract mismatch: ${JSON.stringify(statistics)}`,
+    );
+  }
+  return { activity: actual, statistics };
 }
 
 const output = JSON.stringify(runActivityRuntimeContract());
