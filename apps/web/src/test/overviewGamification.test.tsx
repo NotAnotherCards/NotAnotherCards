@@ -38,6 +38,7 @@ const mockSession = {
     updatedAt: new Date(),
     onBoardingComplete: true,
     timezone: null,
+    twoFactorEnabled: false,
   },
 };
 
