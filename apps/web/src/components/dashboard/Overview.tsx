@@ -37,11 +37,17 @@ import {
 import { gamificationMeSchema, type SharedDeckSummary } from '@repo/schemas';
 import {
   selectTodayChallengeActivity,
+  selectLearnedNoteCount,
+  selectStreakActivity,
   type DailyChallengeProgress,
 } from '@repo/offline-db/activity';
 import { useQuery, useDatabase } from '@remelondb/core/react';
 import { Q, type Database } from '@remelondb/core';
-import { ReviewEvent, type ReviewEventRecord } from '@repo/offline-db';
+import {
+  ReviewEvent,
+  getReviewHistoryQuery,
+  type ReviewEventRecord,
+} from '@repo/offline-db';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -95,6 +101,9 @@ function DashboardSyncStatus() {
 
 export function Overview({ onChooseDeck }: OverviewProps) {
   const store = useStore();
+  const { data: reviewEvents } = useQuery<ReviewEventRecord>(
+    store.db && getReviewHistoryQuery(store.db),
+  );
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
@@ -116,6 +125,12 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   );
   const [reportReason, setReportReason] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const streak = selectStreakActivity(reviewEvents, Date.now()).currentStreak;
+  const learnedNotes = selectLearnedNoteCount(
+    reviewEvents,
+    store.cards,
+    store.notes,
+  );
 
   const user = session?.user || {
     name: 'Legendary Learner',
@@ -161,15 +176,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
     {
       title: 'Learning Streak',
-      value: '7 Days',
+      value: `${streak} ${streak === 1 ? 'Day' : 'Days'}`,
       description: 'Daily learning-day streak',
       icon: Flame,
       color: 'text-orange-500 bg-orange-500/10',
     },
     {
       title: 'Words Learned',
-      value: '1,240 / 10,000',
-      description: '12.4% total progress',
+      value: learnedNotes.toLocaleString(),
+      description: 'Notes reviewed successfully',
       icon: GraduationCap,
       color: 'text-purple-500 bg-purple-500/10',
     },
@@ -193,7 +208,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     return d.getTime();
   }, [currentTime]);
 
-  const { data: reviewEvents } = useQuery<ReviewEventRecord>(
+  const { data: todayReviewEvents } = useQuery<ReviewEventRecord>(
     db && db.get(ReviewEvent).query(Q.where('reviewed_at', Q.gte(midnightUTC))),
   );
   useEffect(() => {
@@ -205,11 +220,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
   const localActivity = useMemo(() => {
     return selectTodayChallengeActivity(
-      reviewEvents ?? [],
+      todayReviewEvents ?? [],
       store.notes ?? [],
       currentTime,
     );
-  }, [reviewEvents, store.notes, currentTime]);
+  }, [todayReviewEvents, store.notes, currentTime]);
 
   // Reconcile with server
   useEffect(() => {

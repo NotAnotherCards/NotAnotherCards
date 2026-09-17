@@ -67,7 +67,9 @@ describe('Onboarding Flow and Guard Specs', () => {
       profile: null,
       decks: [],
       cards: [],
+      notes: [],
       dueCards: [],
+      db: null,
       getCardsCount: () => 0,
     } as unknown as ReturnType<typeof useStore>);
 
