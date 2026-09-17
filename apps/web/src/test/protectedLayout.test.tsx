@@ -1,8 +1,10 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App, router } from '../App';
 import { authClient } from '@/lib/auth-client';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+
+let mockManager: unknown = { state: { status: 'ready', error: null } };
 
 vi.mock('@remelondb/core/react', () => ({
   useDatabaseState: () => ({ status: 'ready', error: null }),
@@ -13,7 +15,7 @@ vi.mock('@remelondb/core/react', () => ({
   // without a manager. These tests are about routing, not the database
   // lifecycle, so a stand-in is enough.
   useSessionDatabase: () => ({
-    manager: { state: { status: 'ready', error: null } },
+    manager: mockManager,
     syncController: null,
     closeError: null,
   }),
@@ -56,6 +58,7 @@ const mockSession = {
 describe('Protected Layout Guards', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockManager = { state: { status: 'ready', error: null } };
     // Reset router history and path directly to the dashboard
     window.history.pushState(null, '', '/dashboard');
 
@@ -83,6 +86,28 @@ describe('Protected Layout Guards', () => {
     expect(
       await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
     ).toBeInTheDocument();
+  });
+
+  it('refreshes a stale reactive session while the database owner is missing', async () => {
+    const refetch = vi.fn().mockResolvedValue(undefined);
+    mockManager = null;
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: mockSession,
+      isPending: false,
+      isRefetching: false,
+      error: null,
+      refetch,
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    render(<App />);
+    await act(async () => {
+      await router.navigate({ to: '/dashboard' });
+    });
+
+    expect(
+      await screen.findByText('Preparing your offline workspace…'),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(refetch).toHaveBeenCalledTimes(1));
   });
 
   it('renders the persistent account menu trigger with user name and initials', async () => {

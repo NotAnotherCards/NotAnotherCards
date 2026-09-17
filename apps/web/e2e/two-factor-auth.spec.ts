@@ -45,9 +45,18 @@ async function signUpAndOnboard(page: Page, email: string, username: string) {
 
   await signIn(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(
-    page.getByRole('button', { name: 'Profile & Settings' }),
-  ).toBeVisible();
+  const settingsButton = page.getByRole('button', {
+    name: 'Profile & Settings',
+  });
+  try {
+    await expect(settingsButton).toBeVisible();
+  } catch (error) {
+    const body = (await page.locator('body').innerText()).slice(0, 1_000);
+    throw new Error(
+      `Dashboard did not become ready at ${page.url()}. Rendered text: ${JSON.stringify(body)}`,
+      { cause: error },
+    );
+  }
 }
 
 async function signUp(page: Page, email: string) {
