@@ -32,7 +32,7 @@ const mockSession = {
   user: {
     id: 'user-123',
     email: 'test@example.com',
-    name: 'Test User',
+    name: 'Legendary Learner',
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),

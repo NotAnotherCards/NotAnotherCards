@@ -22,6 +22,8 @@ import {
   Loader2,
   AlertCircle,
   Flag,
+  Trophy,
+  Medal,
 } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useSharedDecks } from '@/hooks/useSharedDecks';
@@ -45,6 +47,8 @@ import { useQuery } from '@remelondb/core/react';
 import {
   getReviewHistoryQuery,
   type ReviewEventRecord,
+  UserBadge,
+  type UserBadgeRecord,
 } from '@repo/offline-db';
 
 type OverviewProps = {
@@ -52,6 +56,31 @@ type OverviewProps = {
 };
 
 const NOTIFIED_STORAGE_KEY = 'gamification_notified_today';
+const BADGE_NOTIFIED_STORAGE_KEY = 'gamification_badges_notified';
+
+const BADGES = [
+  {
+    id: 'first-review',
+    name: 'First Step',
+    rule: 'Complete your first review',
+    description: 'The journey of a thousand miles begins with a single step.',
+    icon: Medal,
+  },
+  {
+    id: 'seven-day-streak',
+    name: 'Week Warrior',
+    rule: '7-day streak',
+    description: 'You reviewed 7 days in a row! Consistency is key.',
+    icon: Flame,
+  },
+  {
+    id: 'hundred-reviews',
+    name: 'Century Mark',
+    rule: '100 distinct reviews',
+    description: 'You have completed 100 distinct reviews. Incredible dedication!',
+    icon: Trophy,
+  },
+];
 
 function DashboardSyncStatus() {
   const controller = useSyncController();
@@ -101,6 +130,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const store = useStore();
   const { data: reviewEvents } = useQuery<ReviewEventRecord>(
     store.db && getReviewHistoryQuery(store.db),
+  );
+  const { data: userBadges } = useQuery<UserBadgeRecord>(
+    store.db && store.db.get(UserBadge).query(),
   );
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
@@ -193,6 +225,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     challenges: DailyChallengeProgress[];
   } | null>(null);
   const [notifications, setNotifications] = useState<string[]>([]);
+  const [badgeNotifications, setBadgeNotifications] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   const syncState = useSyncState();
@@ -323,6 +356,41 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       // Ignore parse and storage errors
     }
   }, [challenges, store.ready, session?.user?.id, localActivity.utcDate]);
+
+  // Handle Badge Notifications
+  useEffect(() => {
+    if (!store.ready || !userBadges) return;
+
+    const storageKey = `${BADGE_NOTIFIED_STORAGE_KEY}_${session?.user.id}`;
+    let notifiedBadges: string[] = [];
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        notifiedBadges = JSON.parse(stored) as string[];
+      }
+    } catch {
+      // Ignore parse errors
+    }
+
+    const newBadges: string[] = [];
+    userBadges.forEach((badge) => {
+      if (!notifiedBadges.includes(badge.badge_id)) {
+        notifiedBadges.push(badge.badge_id);
+        newBadges.push(badge.badge_id);
+      }
+    });
+
+    if (newBadges.length > 0) {
+      localStorage.setItem(storageKey, JSON.stringify(notifiedBadges));
+      setBadgeNotifications((prev) => [...prev, ...newBadges]);
+
+      setTimeout(() => {
+        setBadgeNotifications((prev) =>
+          prev.filter((b) => !newBadges.includes(b)),
+        );
+      }, 6000);
+    }
+  }, [userBadges, store.ready, session?.user.id]);
 
   // Map to dailyGoals format
   const dailyGoals = challenges.map((challenge, index) => {
@@ -607,6 +675,68 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         </Card>
       </div>
 
+      {/* Achievements */}
+      <Card className="border border-border/60 hover:shadow-md transition-all duration-300">
+        <CardHeader className="border-b border-border/40 pb-4">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <Trophy className="size-4 text-primary" />
+            Achievements
+          </CardTitle>
+          <CardDescription>
+            Badges you've earned along your language learning journey.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {BADGES.map((badgeDef) => {
+              const earned = userBadges?.find((b) => b.badge_id === badgeDef.id);
+              const Icon = badgeDef.icon;
+              return (
+                <div
+                  key={badgeDef.id}
+                  className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
+                    earned
+                      ? 'bg-primary/5 border-primary/20 hover:bg-primary/10'
+                      : 'bg-muted/30 border-border/40 opacity-70 grayscale'
+                  }`}
+                >
+                  <div
+                    className={`p-3 rounded-full shrink-0 ${
+                      earned
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <Icon className="size-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                      {badgeDef.name}
+                      {!earned && (
+                        <span className="text-[10px] font-normal px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                          Locked
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-tight">
+                      {badgeDef.description}
+                    </p>
+                    <p className="text-[10px] font-medium pt-1 text-foreground/70">
+                      {badgeDef.rule}
+                    </p>
+                    {earned && (
+                      <p className="text-[10px] text-primary/80 pt-1">
+                        Unlocked: {new Date(earned.unlocked_at).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {reportingDeck && (
         <div
           role="dialog"
@@ -685,19 +815,47 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       )}
 
       {/* Toast Notifications */}
-      <div className="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none">
+      <div
+        aria-live="polite"
+        className="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"
+      >
         {notifications.map((code) => (
           <div
             key={code}
             className="bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-5"
           >
-            <Sparkles className="size-4" />
+            <Sparkles className="size-4 shrink-0" />
             <div className="text-sm font-medium">
               Challenge Completed:{' '}
               {code === 'daily-review' ? 'Daily Review' : 'New Vocabulary'}
             </div>
           </div>
         ))}
+
+        {badgeNotifications.map((badgeId) => {
+          const badgeDef = BADGES.find((b) => b.id === badgeId);
+          if (!badgeDef) return null;
+          const Icon = badgeDef.icon;
+          return (
+            <div
+              key={badgeId}
+              className="bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-5"
+            >
+              <div className="bg-primary-foreground/20 p-2 rounded-full shrink-0">
+                <Icon className="size-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold flex items-center gap-1.5">
+                  <Trophy className="size-3.5 text-yellow-300" />
+                  New Badge Unlocked!
+                </div>
+                <div className="text-xs text-primary-foreground/90 mt-0.5 font-medium">
+                  {badgeDef.name}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
