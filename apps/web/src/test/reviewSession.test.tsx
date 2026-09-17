@@ -115,6 +115,24 @@ describe('ReviewSession', () => {
     expect(flip).toHaveAttribute('data-flipped', 'false');
   });
 
+  it('keeps the answer visible after a swipe that stopped short', () => {
+    renderSession();
+    const flip = screen.getByTestId('review-card-flip');
+    const reviewCard = screen.getByTestId('review-card');
+    revealCard();
+    expect(flip).toHaveAttribute('data-flipped', 'true');
+
+    // A 30 px drag is under the 48 px swipe threshold: the card recenters
+    // and the browser still fires a click.
+    fireEvent.pointerDown(reviewCard, { clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(reviewCard, { clientX: 230, clientY: 200 });
+    fireEvent.pointerUp(reviewCard, { clientX: 230, clientY: 200 });
+    fireEvent.click(reviewCard);
+
+    expect(flip).toHaveAttribute('data-flipped', 'true');
+    expect(screen.getByText('to go')).toBeInTheDocument();
+  });
+
   it('renders Markdown on the current card, answer, and next-card preview', () => {
     renderSession([
       {

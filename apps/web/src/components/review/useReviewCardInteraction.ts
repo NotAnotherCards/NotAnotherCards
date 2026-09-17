@@ -10,6 +10,9 @@ export type ReviewCardSwipeDirection =
   Exclude<ReviewAnswer, 'very-easy'> | 'delete';
 
 const SWIPE_THRESHOLD_PX = 48;
+// A pointer that travelled further than this was a drag, however short,
+// and the click the browser fires after it must not flip the card.
+const TAP_TOLERANCE_PX = 8;
 const SWIPE_FEEDBACK_THRESHOLD_PX = 1;
 const MAX_DRAG_DISTANCE_X_PX = 96;
 const MAX_DRAG_DISTANCE_Y_PX = 72;
@@ -47,6 +50,7 @@ export function useReviewCardInteraction({
   const [isSettlingDrag, setIsSettlingDrag] = useState(false);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const didHandleSwipe = useRef(false);
+  const didDrag = useRef(false);
 
   const getSwipeDirection = (
     horizontalDistance: number,
@@ -108,6 +112,7 @@ export function useReviewCardInteraction({
       event.currentTarget.setPointerCapture?.(event.pointerId);
       pointerStart.current = { x: event.clientX, y: event.clientY };
       didHandleSwipe.current = false;
+      didDrag.current = false;
       setDragDirection(null);
       setDragOffset({ x: 0, y: 0 });
       setIsSettlingDrag(false);
@@ -119,6 +124,12 @@ export function useReviewCardInteraction({
 
       const horizontalDistance = event.clientX - pointerStart.current.x;
       const verticalDistance = event.clientY - pointerStart.current.y;
+      if (
+        Math.max(Math.abs(horizontalDistance), Math.abs(verticalDistance)) >
+        TAP_TOLERANCE_PX
+      ) {
+        didDrag.current = true;
+      }
       const isHorizontalDrag =
         Math.abs(horizontalDistance) >= Math.abs(verticalDistance);
       const nextDirection = getSwipeDirection(
@@ -157,6 +168,9 @@ export function useReviewCardInteraction({
         SWIPE_THRESHOLD_PX,
       );
       if (!direction) {
+        // An aborted swipe recenters the card; the click that follows it
+        // is not a tap, so it must not flip the card back.
+        didHandleSwipe.current = didDrag.current;
         settleCardAtCenter();
         return;
       }
