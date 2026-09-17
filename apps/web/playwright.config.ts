@@ -13,6 +13,8 @@ export default defineConfig({
   outputDir: 'test-results',
   use: {
     baseURL: 'http://localhost:5173',
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
     screenshot: 'off',
     trace: 'off',
     video: 'off',

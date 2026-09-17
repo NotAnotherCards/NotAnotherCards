@@ -28,12 +28,21 @@ async function fillTotp(page: Page, code: string) {
 async function signUpAndOnboard(page: Page, email: string, username: string) {
   await signUp(page, email);
 
-  await page.goto('/onboarding');
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Native Language').selectOption(englishId);
-  await page.getByLabel('Target Language').selectOption(spanishId);
-  await page.getByRole('button', { name: 'Complete registration' }).click();
+  const onboarding = await page.request.post('/api/auth/onboard', {
+    headers: { Origin: appOrigin },
+    data: {
+      username,
+      native_language_id: englishId,
+      target_language_id: spanishId,
+    },
+  });
+  expect(onboarding.ok()).toBe(true);
+
+  await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(
+    page.getByRole('button', { name: 'Profile & Settings' }),
+  ).toBeVisible();
 }
 
 async function signUp(page: Page, email: string) {
