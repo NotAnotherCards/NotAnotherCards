@@ -9,7 +9,7 @@ WORKDIR /app
 
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter api... build && pnpm --filter web... build
+RUN pnpm --filter api... build && pnpm --filter web... build && pnpm --filter landing... build
 
 FROM node:24-alpine AS api
 
@@ -31,5 +31,12 @@ FROM nginx:1.28-alpine AS web
 
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+FROM nginx:1.28-alpine AS landing
+
+COPY ./landing.nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/landing/dist /usr/share/nginx/html
 
 EXPOSE 80
