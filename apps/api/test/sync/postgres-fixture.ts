@@ -20,12 +20,10 @@ let tearingDown = false;
 
 export let db: AppDatabase;
 
-// `end()` resolves once the pool has asked its clients to close, which is not
-// the same as the server having reaped them. The forced drop in teardown then
-// terminates whatever is still registered, and that FATAL (57P01) lands on a
-// client the pool has already discarded. pg re-emits it on the pool, and with
-// no listener it surfaces as an unhandled error that fails the entire run.
-// Expected while tearing down, a genuine fault at any other time.
+// Teardown waits for server-side connections to close before a normal drop.
+// Keep this pool-level guard for errors during the forced-cleanup fallback;
+// it cannot catch errors on clients that no longer forward to this pool.
+// Pool errors outside teardown must still fail the run.
 function absorbTeardownErrors(pool: Pool): Pool {
   pool.on('error', (error) => {
     if (!tearingDown) throw error;
@@ -85,8 +83,43 @@ export async function tearDownPostgres(): Promise<void> {
   testPool = undefined;
 
   if (adminPool && testDatabaseName) {
-    await adminPool.query(`DROP DATABASE "${testDatabaseName}" WITH (FORCE)`);
-    await adminPool.end();
+    try {
+      // Pool.end() can resolve before PostgreSQL has closed its backends.
+      // Include connections from pools owned by Nest and individual tests.
+      const deadline = performance.now() + 5_000;
+      let force = false;
+      for (;;) {
+        const { rows } = await adminPool.query<{ count: string }>(
+          'SELECT count(*) FROM pg_stat_activity WHERE datname = $1',
+          [testDatabaseName],
+        );
+        if (Number(rows[0].count) === 0) break;
+        if (performance.now() >= deadline) {
+          const remaining = await adminPool.query(
+            `SELECT pid, application_name, state, backend_start, state_change,
+                    wait_event_type, wait_event
+             FROM pg_stat_activity WHERE datname = $1`,
+            [testDatabaseName],
+          );
+          console.warn(
+            `PostgreSQL teardown timed out waiting for connections to ${testDatabaseName}; forcing cleanup`,
+            remaining.rows,
+          );
+          await adminPool.query(
+            'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1',
+            [testDatabaseName],
+          );
+          force = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      await adminPool.query(
+        `DROP DATABASE "${testDatabaseName}"${force ? ' WITH (FORCE)' : ''}`,
+      );
+    } finally {
+      await adminPool.end();
+    }
   }
   adminPool = undefined;
   testDatabaseName = undefined;
