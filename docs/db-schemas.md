@@ -18,6 +18,7 @@ created_at          timestamp NOT NULL DEFAULT now()
 updated_at          timestamp NOT NULL
 timezone            text NULL DEFAULT 'UTC'
 on_boarding_complete boolean NOT NULL DEFAULT false
+two_factor_enabled  boolean NULL DEFAULT false
 ```
 
 #### `session` ([API schema](../apps/api/src/database/schema.ts#L19))
@@ -66,6 +67,24 @@ created_at          timestamp NOT NULL DEFAULT now()
 updated_at          timestamp NOT NULL DEFAULT now()
 
 INDEX(identifier)
+```
+
+#### `two_factor` ([API schema](../apps/api/src/database/schema.ts#L86))
+
+Managed by Better Auth's `twoFactor` plugin (see the API README). `secret`
+and `backup_codes` are encrypted at rest; never read them for display or
+logging.
+
+```text
+id                        text PK
+secret                    text NOT NULL             (encrypted)
+backup_codes              text NOT NULL             (encrypted)
+user_id                   text NOT NULL FK -> user.id ON DELETE CASCADE
+verified                  boolean NULL DEFAULT true
+failed_verification_count integer NULL DEFAULT 0
+locked_until              timestamp NULL
+
+INDEX(secret), INDEX(user_id)
 ```
 
 ### Synchronized application tables
