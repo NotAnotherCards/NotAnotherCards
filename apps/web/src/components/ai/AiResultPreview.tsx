@@ -42,6 +42,16 @@ export function AiResultPreview({
     }
   }, [decks, selectedDeckId]);
 
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    if (savedSuccess) {
+      timeout = setTimeout(() => setSavedSuccess(false), 3000);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [savedSuccess]);
+
   const handleSave = async () => {
     setSaveError(null);
     try {
@@ -53,7 +63,6 @@ export function AiResultPreview({
         await onSave(newDeckTitle.trim(), true);
       }
       setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to save cards';
       setSaveError(msg);

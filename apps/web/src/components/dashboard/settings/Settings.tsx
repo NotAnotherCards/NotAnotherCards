@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { User, Settings as SettingsIcon, Shield, Database } from 'lucide-react';
-import { useStore } from '@/hooks/useStore';
 import { Profile } from './Profile';
 import { Preferences } from './Preferences';
 import { Security } from './Security';
 import { ImportExport } from './ImportExport';
+import { useStore } from '@/hooks/useStore';
 
 export function Settings() {
   const { data: session } = authClient.useSession();
@@ -34,7 +34,7 @@ export function Settings() {
             {session?.user?.name || 'Legendary Learner'}
           </h3>
           <p className="text-xs text-muted-foreground truncate mb-6">
-            @{profile?.username || 'username'}
+            @{profile?.username || 'user'}
           </p>
 
           {/* Navigation subtabs */}
