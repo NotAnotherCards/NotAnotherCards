@@ -9,6 +9,7 @@ const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
 describe('App', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    window.history.replaceState({}, '', '/');
   });
 
   it('sends account calls to action to the canonical application subdomain', () => {
@@ -45,6 +46,47 @@ describe('App', () => {
       const value = element.getAttribute('href') ?? element.getAttribute('src');
       expect(value).not.toMatch(/^\/(?:api|sync)(?:\/|$)/);
     }
+  });
+
+  it('links the public landing footer to the privacy policy', () => {
+    render(<App />);
+
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
+  });
+
+  it('renders the public privacy route without API or sync links', () => {
+    window.history.replaceState({}, '', '/privacy');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Privacy Policy', level: 1 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Data deletion', level: 2 }),
+    ).toHaveAttribute('id', 'privacy-data-deletion');
+    expect(document.querySelector('#data-deletion')).toBeInTheDocument();
+    expect(document.title).toBe('NotAnotherCards — Privacy Policy');
+    expect(
+      screen
+        .getAllByRole('link', { name: 'notanothercards@gmail.com' })
+        .map((link) => link.getAttribute('href')),
+    ).toEqual([
+      'mailto:notanothercards@gmail.com',
+      'mailto:notanothercards@gmail.com?subject=NotAnotherCards%20data%20deletion%20request',
+    ]);
+    expect(
+      screen.getByText(/We do not receive your Facebook password/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Removing NotAnotherCards from Facebook does not automatically/i),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('renders word cards for an unknown route instead of the landing page', () => {
