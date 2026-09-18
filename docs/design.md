@@ -14,8 +14,16 @@ the `prefers-color-scheme: dark` media query (mobile).
 Web defines them in `apps/web/src/style.css`, in oklch. Mobile defines them in
 `apps/mobile/global.css`, in hex, because React Native does not parse oklch.
 Mobile is a subset of web: every token mobile defines exists on web under the
-same name, and as of this writing every shared value is the same colour once
-web's oklch is converted to sRGB (17 tokens, light and dark, 34 of 34).
+same name, and every shared value is the same colour once web's oklch is
+converted to sRGB, with one deliberate exception (33 of 34).
+
+The exception is light-mode `--card`. Web keeps it white like the page and
+separates a card with `shadow-md` and a hairline ring. On Android a shadow
+needs `elevation` and renders unevenly, and nativewind has no ring utility,
+so a white card on a white page had no visible edge. Mobile sets `--card` to
+the muted tone (`245 245 245`) instead, which is how native settings screens
+separate a panel. Dark mode needs none of this: its card tone is already
+lighter than its background on both clients.
 
 ### Shared tokens
 
