@@ -16,6 +16,7 @@ import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { z } from 'zod';
 import { authClient } from '@/lib/auth-client';
 import { CheckCircle2 } from 'lucide-react';
+import { useSearch } from '@tanstack/react-router';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -23,6 +24,7 @@ const forgotPasswordSchema = z.object({
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPasswordComponent() {
+  const search = useSearch({ from: '/_auth/forgot-password' });
   const [apiError, setApiError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [countdown, setCountdown] = useState(30);
@@ -32,7 +34,7 @@ export function ForgotPasswordComponent() {
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      email: '',
+      email: search.email ?? '',
     },
   });
 
