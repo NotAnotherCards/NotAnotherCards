@@ -51,10 +51,9 @@ describe('App', () => {
   it('links the public landing footer to the privacy policy', () => {
     render(<App />);
 
-    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute(
-      'href',
-      '/privacy',
-    );
+    expect(
+      screen.getByRole('link', { name: 'Privacy Policy' }),
+    ).toHaveAttribute('href', '/privacy');
   });
 
   it('renders the public privacy route without API or sync links', () => {
@@ -84,7 +83,9 @@ describe('App', () => {
       screen.getByText(/We do not receive your Facebook password/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Removing NotAnotherCards from Facebook does not automatically/i),
+      screen.getByText(
+        /Removing NotAnotherCards from Facebook does not automatically/i,
+      ),
     ).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
