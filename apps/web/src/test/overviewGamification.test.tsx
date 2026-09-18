@@ -211,17 +211,26 @@ describe('Overview Gamification', () => {
   });
 
   it('clears stale server progress when the UTC date changes', async () => {
-    // Server responds with yesterday's date
+    // 1. Initial state: Server responds with today's date (2026-09-17)
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () =>
-        gamificationResponse('2026-09-16', { dailyReviewCurrent: 20 }),
+        gamificationResponse('2026-09-17', { dailyReviewCurrent: 20 }),
     });
 
     render(<Overview onChooseDeck={() => {}} />);
 
-    // With a date mismatch, server challenges should NOT merge:
-    // local stays at 0/20 because reviewEvents is empty
+    // Wait for the merge to show 20/20
+    await waitFor(() => {
+      expect(screen.getByText('20 / 20')).toBeInTheDocument();
+    });
+
+    // 2. Advance time by 24 hours to trigger the interval update and date change
+    act(() => {
+      vi.advanceTimersByTime(24 * 60 * 60 * 1000);
+    });
+
+    // 3. With a date mismatch, the server data should clear and local stays at 0/20
     await waitFor(() => {
       expect(screen.getByText('0 / 20')).toBeInTheDocument();
     });

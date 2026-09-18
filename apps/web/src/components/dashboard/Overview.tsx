@@ -41,10 +41,8 @@ import {
   selectStreakActivity,
   type DailyChallengeProgress,
 } from '@repo/offline-db/activity';
-import { useQuery, useDatabase } from '@remelondb/core/react';
-import { Q, type Database } from '@remelondb/core';
+import { useQuery } from '@remelondb/core/react';
 import {
-  ReviewEvent,
   getReviewHistoryQuery,
   type ReviewEventRecord,
 } from '@repo/offline-db';
@@ -200,17 +198,6 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   const syncState = useSyncState();
   const lastSuccessfulSync = syncState.lastSyncAt;
 
-  const db = useDatabase() as Database | null;
-
-  const midnightUTC = useMemo(() => {
-    const d = new Date(currentTime);
-    d.setUTCHours(0, 0, 0, 0);
-    return d.getTime();
-  }, [currentTime]);
-
-  const { data: todayReviewEvents } = useQuery<ReviewEventRecord>(
-    db && db.get(ReviewEvent).query(Q.where('reviewed_at', Q.gte(midnightUTC))),
-  );
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
@@ -220,11 +207,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
 
   const localActivity = useMemo(() => {
     return selectTodayChallengeActivity(
-      todayReviewEvents ?? [],
+      reviewEvents ?? [],
       store.notes ?? [],
       currentTime,
     );
-  }, [todayReviewEvents, store.notes, currentTime]);
+  }, [reviewEvents, store.notes, currentTime]);
 
   // Reconcile with server
   useEffect(() => {
@@ -276,13 +263,13 @@ export function Overview({ onChooseDeck }: OverviewProps) {
   // Handle notifications
   useEffect(() => {
     // Only process notifications once the local DB is fully initialized
-    if (!store.ready) return;
+    if (!store.ready || !session?.user?.id) return;
 
     // We use UTC date to match the gamification reset logic
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = localActivity.utcDate;
 
     let notifiedState = { date: '', codes: [] as string[] };
-    const storageKey = `${NOTIFIED_STORAGE_KEY}_${session?.user.id}`;
+    const storageKey = `${NOTIFIED_STORAGE_KEY}_${session.user.id}`;
     try {
       const stored = localStorage.getItem(storageKey);
       const isNotifiedState = (
@@ -300,42 +287,42 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           };
         }
       }
-    } catch {
-      // Ignore parse errors
-    }
 
-    if (notifiedState.date !== todayStr) {
-      notifiedState = { date: todayStr, codes: [] };
-    }
-
-    const newCompletions: string[] = [];
-    let updatedStorage = false;
-
-    challenges.forEach((challenge) => {
-      if (
-        challenge.completed &&
-        !notifiedState.codes.includes(challenge.code)
-      ) {
-        notifiedState.codes.push(challenge.code);
-        newCompletions.push(challenge.code);
-        updatedStorage = true;
+      if (notifiedState.date !== todayStr) {
+        notifiedState = { date: todayStr, codes: [] };
       }
-    });
 
-    if (updatedStorage) {
-      localStorage.setItem(storageKey, JSON.stringify(notifiedState));
+      const newCompletions: string[] = [];
+      let updatedStorage = false;
+
+      challenges.forEach((challenge) => {
+        if (
+          challenge.completed &&
+          !notifiedState.codes.includes(challenge.code)
+        ) {
+          notifiedState.codes.push(challenge.code);
+          newCompletions.push(challenge.code);
+          updatedStorage = true;
+        }
+      });
+
+      if (updatedStorage) {
+        localStorage.setItem(storageKey, JSON.stringify(notifiedState));
+      }
+
+      if (newCompletions.length > 0) {
+        setNotifications((prev) => [...prev, ...newCompletions]);
+
+        setTimeout(() => {
+          setNotifications((prev) =>
+            prev.filter((n) => !newCompletions.includes(n)),
+          );
+        }, 5000);
+      }
+    } catch {
+      // Ignore parse and storage errors
     }
-
-    if (newCompletions.length > 0) {
-      setNotifications((prev) => [...prev, ...newCompletions]);
-
-      setTimeout(() => {
-        setNotifications((prev) =>
-          prev.filter((n) => !newCompletions.includes(n)),
-        );
-      }, 5000);
-    }
-  }, [challenges, store.ready]);
+  }, [challenges, store.ready, session?.user?.id, localActivity.utcDate]);
 
   // Map to dailyGoals format
   const dailyGoals = challenges.map((challenge, index) => {
