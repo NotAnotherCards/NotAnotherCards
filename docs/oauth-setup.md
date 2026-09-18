@@ -113,10 +113,13 @@ FACEBOOK_CLIENT_SECRET=your_facebook_app_secret
 ## 4. 🌐 Deployed Environments (Production/Staging)
 
 To get social logins working on a deployed instance:
-1. **Google Console Credentials**: In the same Google client configuration (or a new production-specific client), add your deployment's URLs:
+1. **Meta App Dashboard public URLs**: In **App Settings → Basic**, set:
+   - **Privacy Policy URL**: `https://notanothercards.com/privacy`
+   - **User Data Deletion → Data deletion instructions URL**: `https://notanothercards.com/privacy#data-deletion`
+2. **Google Console Credentials**: In the same Google client configuration (or a new production-specific client), add your deployment's URLs:
    - **Authorized JavaScript origins**: `https://cards.dustyway.org`
    - **Authorized redirect URIs**: `https://cards.dustyway.org/api/auth/callback/google` (and Facebook callback URI `https://cards.dustyway.org/api/auth/callback/facebook` for Facebook).
-2. **Environment Variables**: Configure the `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`, and `FACEBOOK_CLIENT_SECRET` environment variables in your server's deployment or Docker Compose configuration exactly as shown in [Section 3](#3-environment-configuration).
+3. **Environment Variables**: Configure the `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`, and `FACEBOOK_CLIENT_SECRET` environment variables in your server's deployment or Docker Compose configuration exactly as shown in [Section 3](#3-environment-configuration).
 
 ---
 
