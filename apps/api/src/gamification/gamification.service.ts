@@ -86,7 +86,7 @@ export class GamificationService {
             unlockedAt: now,
             createdAt: now,
             updatedAt: now,
-          }))
+          })),
         );
       }
     }

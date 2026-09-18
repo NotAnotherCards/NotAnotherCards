@@ -370,10 +370,7 @@ describe('badge eligibility acceptance criteria', () => {
       review(`review-${i}`, '2026-09-08T10:00:00.000Z'),
     );
 
-    expect(eligibleBadges(events)).toEqual([
-      'first-review',
-      'hundred-reviews',
-    ]);
+    expect(eligibleBadges(events)).toEqual(['first-review', 'hundred-reviews']);
   });
 
   it('unlocks seven-day-streak from reviews on 7 consecutive UTC dates', () => {
