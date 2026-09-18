@@ -83,6 +83,28 @@ function gamificationResponse(
   };
 }
 
+/**
+ * Override useQuery so the first call per render (reviewEvents) returns []
+ * and the second (userBadges) returns the supplied badge records.
+ */
+function mockUseQueryWithBadges(
+  badges: Array<{
+    id: string;
+    badge_id: string;
+    unlocked_at: number;
+    created_at: number;
+    updated_at: number;
+  }>,
+) {
+  let callIndex = 0;
+  vi.spyOn(dbReact, 'useQuery').mockImplementation(
+    () =>
+      ({
+        data: ++callIndex % 2 === 0 ? badges : [],
+      }) as unknown as ReturnType<typeof dbReact.useQuery>,
+  );
+}
+
 describe('Overview Gamification', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
   let originalFetch: typeof globalThis.fetch;
@@ -265,6 +287,7 @@ describe('Overview Gamification', () => {
       localStorage.getItem('gamification_notified_today_user-456'),
     ).toBeNull();
   });
+
 
   it('records a completion delivered after wall-clock midnight but before the local tick under the local activity date', async () => {
     vi.setSystemTime(new Date('2026-09-17T23:59:30Z'));
@@ -506,5 +529,133 @@ describe('Overview Gamification', () => {
     expect(bar).toBeTruthy();
     expect(bar.getAttribute('aria-valuenow')).toBe('100');
     expect(bar.getAttribute('data-state')).toBe('complete');
+
+  it('renders all three badges in locked state when no badges are earned', async () => {
+    render(<Overview onChooseDeck={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('First Step')).toBeInTheDocument();
+      expect(screen.getByText('Week Warrior')).toBeInTheDocument();
+      expect(screen.getByText('Century Mark')).toBeInTheDocument();
+    });
+
+    const lockedLabels = screen.getAllByText('Locked');
+    expect(lockedLabels).toHaveLength(3);
+
+    expect(screen.getByText('Complete your first review')).toBeInTheDocument();
+    expect(screen.getByText('7-day streak')).toBeInTheDocument();
+    expect(screen.getByText('100 distinct reviews')).toBeInTheDocument();
+  });
+
+  it('renders unlocked badge with unlock date and removes Locked label', async () => {
+    const unlockTime = new Date('2026-09-15T10:00:00Z').getTime();
+    mockUseQueryWithBadges([
+      {
+        id: 'badge-record-1',
+        badge_id: 'first-review',
+        unlocked_at: unlockTime,
+        created_at: unlockTime,
+        updated_at: unlockTime,
+      },
+    ]);
+
+    render(<Overview onChooseDeck={() => {}} />);
+
+    const expectedDate = new Date(unlockTime).toLocaleDateString();
+    await waitFor(() => {
+      expect(
+        screen.getByText(`Unlocked: ${expectedDate}`),
+      ).toBeInTheDocument();
+    });
+
+    // Only the 2 remaining badges should show "Locked"
+    const lockedLabels = screen.getAllByText('Locked');
+    expect(lockedLabels).toHaveLength(2);
+  });
+
+  it('shows badge notification toast with accessible screen reader text', async () => {
+    const unlockTime = new Date('2026-09-17T09:00:00Z').getTime();
+    mockUseQueryWithBadges([
+      {
+        id: 'badge-record-1',
+        badge_id: 'first-review',
+        unlocked_at: unlockTime,
+        created_at: unlockTime,
+        updated_at: unlockTime,
+      },
+    ]);
+
+    render(<Overview onChooseDeck={() => {}} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Badge unlocked: First Step'),
+      ).toBeInTheDocument();
+    });
+
+    // The toast should use role="status" for ARIA live announcement
+    const statusElements = screen.getAllByRole('status');
+    expect(
+      statusElements.some((el) =>
+        el.textContent?.includes('Badge unlocked: First Step'),
+      ),
+    ).toBe(true);
+  });
+
+  it('persists badge notification acknowledgement in localStorage', async () => {
+    const unlockTime = new Date('2026-09-17T09:00:00Z').getTime();
+    mockUseQueryWithBadges([
+      {
+        id: 'badge-record-1',
+        badge_id: 'first-review',
+        unlocked_at: unlockTime,
+        created_at: unlockTime,
+        updated_at: unlockTime,
+      },
+    ]);
+
+    render(<Overview onChooseDeck={() => {}} />);
+
+    const storageKey = 'gamification_badges_notified_user-123';
+
+    await waitFor(() => {
+      const stored = localStorage.getItem(storageKey);
+      expect(stored).toBeTruthy();
+      const parsed = JSON.parse(stored!);
+      expect(parsed).toContain('first-review');
+    });
+  });
+
+  it('does not replay badge notification after localStorage acknowledgement', async () => {
+    const unlockTime = new Date('2026-09-17T09:00:00Z').getTime();
+
+    // Pre-acknowledge the badge in localStorage
+    localStorage.setItem(
+      'gamification_badges_notified_user-123',
+      JSON.stringify(['first-review']),
+    );
+
+    mockUseQueryWithBadges([
+      {
+        id: 'badge-record-1',
+        badge_id: 'first-review',
+        unlocked_at: unlockTime,
+        created_at: unlockTime,
+        updated_at: unlockTime,
+      },
+    ]);
+
+    render(<Overview onChooseDeck={() => {}} />);
+
+    // Wait for badge grid to render
+    await waitFor(() => {
+      expect(screen.getByText('First Step')).toBeInTheDocument();
+    });
+
+    // The notification toast should NOT appear since it was already acknowledged
+    expect(
+      screen.queryByText('Badge unlocked: First Step'),
+    ).not.toBeInTheDocument();
+
   });
 });
