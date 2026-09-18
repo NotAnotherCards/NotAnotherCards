@@ -17,6 +17,7 @@ const USER_CARDS = 'user_cards';
 const USER_NOTE_DECKS = 'user_note_decks';
 const REVIEW_EVENTS = 'review_events';
 const USER_PROFILES = 'user_profiles';
+const USER_BADGES = 'user_badges';
 
 export type ProfileUsernameOwnerLookup = (
   usernames: readonly string[],
@@ -148,6 +149,9 @@ export function createCrossValidateSyncRelationships(
     const membershipRows = changes[USER_NOTE_DECKS]?.rows ?? [];
     const reviewRows = changes[REVIEW_EVENTS]?.rows ?? [];
     const profileRows = changes[USER_PROFILES]?.rows ?? [];
+    // Badges are server-owned: reject all client-submitted badge rows
+    const badgeRows = changes[USER_BADGES]?.rows ?? [];
+    const badgeDeletes = changes[USER_BADGES]?.deleted ?? [];
 
     const deckChanges =
       membershipRows.length === 0 && deckRows.length === 0
@@ -230,6 +234,7 @@ export function createCrossValidateSyncRelationships(
       [USER_NOTE_DECKS]: memberships.rejectedMemberships.map(
         (membership) => membership.id,
       ),
+      [USER_BADGES]: [...badgeRows.map((badge) => badge.id), ...badgeDeletes],
       [REVIEW_EVENTS]: reviews.rejectedReviews.map((review) => review.id),
       [USER_PROFILES]: profileRows
         .filter((profile) => {
