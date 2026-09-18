@@ -156,6 +156,40 @@
   bottom: -0.5rem;
 }
 
+.not-found-scene {
+  position: relative;
+  width: min(100%, 30rem);
+  height: clamp(13.5rem, 58vw, 18rem);
+  --not-found-card-width: clamp(7rem, 32vw, 11rem);
+  --not-found-card-height: clamp(10.5rem, 45vw, 14rem);
+}
+
+.not-found-card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: var(--not-found-card-width);
+  height: var(--not-found-card-height);
+  top: 50%;
+  left: 50%;
+}
+
+.not-found-card-one {
+  z-index: 30;
+  transform: translate(calc(-125% + 0.2rem), -53%);
+}
+
+.not-found-card-two {
+  z-index: 20;
+  transform: translate(-50%, -58%);
+}
+
+.not-found-card-three {
+  z-index: 10;
+  transform: translate(calc(25% - 0.2rem), -50%);
+}
+
 @media (min-width: 46rem) {
   .hero-section {
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
