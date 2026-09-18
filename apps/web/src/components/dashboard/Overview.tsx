@@ -380,15 +380,28 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     }
 
     const newBadges: string[] = [];
+    let updatedStorage = false;
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
     userBadges.forEach((badge) => {
       if (!notifiedBadges.includes(badge.badge_id)) {
         notifiedBadges.push(badge.badge_id);
-        newBadges.push(badge.badge_id);
+        updatedStorage = true;
+
+        // Only show notifications for recently unlocked badges (last 24 hours)
+        // This prevents notification spam when logging into a new device
+        if (now - badge.unlocked_at < ONE_DAY_MS) {
+          newBadges.push(badge.badge_id);
+        }
       }
     });
 
-    if (newBadges.length > 0) {
+    if (updatedStorage) {
       localStorage.setItem(storageKey, JSON.stringify(notifiedBadges));
+    }
+
+    if (newBadges.length > 0) {
       setBadgeNotifications((prev) => [...prev, ...newBadges]);
 
       setTimeout(() => {
