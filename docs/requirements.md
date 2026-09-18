@@ -117,6 +117,10 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 - Import data with validation. **done**: whole-file Zod and integrity validation, a dry-run report, and `packages/offline-db/src/import.ts` (#296).
 - Support bulk operations. **done**: the whole import runs inside one `db.batch()` transaction, all-or-nothing (#296).
 
+CSV carries a card's rendered front and back plus its scheduling, so a word
+note exported to CSV and imported again comes back as a basic card. JSON is
+the lossless format and keeps the note's fields.
+
 ### 4.9 Gaming and user experience: gamification — Minor, 1 — in progress — 50%
 
 Scope decided 2026-09-03: badges, leaderboards ranked across the whole user
@@ -195,7 +199,7 @@ Decided 2026-09-03.
 
 Decided 2026-09-03.
 
-- Implement a complete 2FA (Two-Factor Authentication) system for the users. **done**: TOTP enrollment and login challenges, backup-code recovery, regeneration and disable flows, lockout, OAuth challenges, safe return redirects, and component and browser tests are merged (#324, #364). Mobile challenge support remains parity work in #278 and is not required by this web module.
+- Implement a complete 2FA (Two-Factor Authentication) system for the users. **done**: TOTP enrollment and login challenges, backup-code recovery, regeneration and disable flows, lockout, OAuth challenges, safe return redirects, and component and browser tests are merged (#324, #364). Mobile challenge support remains parity work in #278 and is not required by this web module. Until it lands, an account that enables 2FA cannot complete a fresh sign-in in the mobile app: the server answers with a two-factor redirect that the app has no screen for. Existing mobile sessions keep working.
 
 ### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — done — 100%
 
