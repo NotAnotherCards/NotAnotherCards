@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, Alert, Switch, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogOutIcon, SettingsIcon } from './ui/icon';
 import type { DatabaseManager } from '@remelondb/core';
@@ -169,11 +169,6 @@ const MODE_OPTIONS = [
   { value: 'extended', label: 'Extended' },
 ] as const;
 
-const INTERVAL_OPTIONS = [
-  { value: 'hide', label: 'Hide' },
-  { value: 'show', label: 'Show' },
-] as const;
-
 function Preferences({ userId }: { userId: string }) {
   const [preferences, setPreferences] = useState(() =>
     loadReviewPreferences(userId),
@@ -212,20 +207,19 @@ function Preferences({ userId }: { userId: string }) {
             onChange={(reviewMode) => update({ ...preferences, reviewMode })}
           />
         </View>
-        <View className="gap-2">
-          <Text className="font-medium">Next review interval</Text>
-          <Text className="text-sm text-muted-foreground">
-            Show when each answer schedules the card next
-          </Text>
-          <Segmented
-            label="Show next review interval"
-            value={preferences.showNextReviewInterval ? 'show' : 'hide'}
-            options={INTERVAL_OPTIONS}
-            onChange={(choice) =>
-              update({
-                ...preferences,
-                showNextReviewInterval: choice === 'show',
-              })
+        {/* Web's row: the label and its description left, the toggle right. */}
+        <View className="flex-row items-center justify-between gap-4">
+          <View className="flex-1 gap-1">
+            <Text className="font-medium">Next review interval</Text>
+            <Text className="text-sm text-muted-foreground">
+              Show when each answer schedules the card next
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Show next review interval"
+            value={preferences.showNextReviewInterval}
+            onValueChange={(showNextReviewInterval) =>
+              update({ ...preferences, showNextReviewInterval })
             }
           />
         </View>

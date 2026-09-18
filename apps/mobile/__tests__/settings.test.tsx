@@ -59,10 +59,10 @@ describe('Settings', () => {
   });
 
   it('persists a changed review mode and interval choice for the user', () => {
-    const { getByText } = render(<Settings />);
+    const { getByText, getByLabelText } = render(<Settings />);
     fireEvent.press(getByText('Preferences'));
     fireEvent.press(getByText('Extended'));
-    fireEvent.press(getByText('Show'));
+    fireEvent(getByLabelText('Show next review interval'), 'valueChange', true);
     expect(loadReviewPreferences('user-settings')).toEqual({
       reviewMode: 'extended',
       showNextReviewInterval: true,
