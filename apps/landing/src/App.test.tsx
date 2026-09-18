@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+const landingNginxConfig = readFileSync(
+  resolve(process.cwd(), '../../landing.nginx.conf'),
+  'utf8',
+);
 
 describe('App', () => {
   afterEach(() => {
@@ -48,12 +52,40 @@ describe('App', () => {
     }
   });
 
-  it('links the public landing footer to the privacy policy', () => {
+  it('links the public landing footer to both legal pages', () => {
     render(<App />);
 
     expect(
       screen.getByRole('link', { name: 'Privacy Policy' }),
     ).toHaveAttribute('href', '/privacy');
+    expect(
+      screen.getByRole('link', { name: 'Terms of Service' }),
+    ).toHaveAttribute('href', '/terms');
+  });
+
+  it('renders the public terms route without API or sync links', () => {
+    window.history.replaceState({}, '', '/terms');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Terms of Service', level: 1 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Free and open source', level: 2 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/available under the MIT License/i),
+    ).toBeInTheDocument();
+    for (const link of screen.getAllByRole('link', {
+      name: 'Privacy Policy',
+    })) {
+      expect(link).toHaveAttribute('href', '/privacy');
+    }
+    expect(document.title).toBe('NotAnotherCards — Terms of Service');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('renders the public privacy route without API or sync links', () => {
@@ -162,5 +194,17 @@ describe('App', () => {
     expect(
       existsSync(resolve(process.cwd(), 'public/brand/og-image.png')),
     ).toBe(true);
+  });
+
+  it('allows only the known legal page routes through the landing server', () => {
+    expect(landingNginxConfig).toMatch(
+      /location = \/privacy \{\s+rewrite \^ \/index\.html last;\s+\}/,
+    );
+    expect(landingNginxConfig).toMatch(
+      /location = \/terms \{\s+rewrite \^ \/index\.html last;\s+\}/,
+    );
+    expect(landingNginxConfig).toMatch(
+      /location \/ \{\s+try_files \$uri =404;\s+\}/,
+    );
   });
 });
