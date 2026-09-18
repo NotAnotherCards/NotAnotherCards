@@ -19,8 +19,17 @@ const profile = {
   target_language_id: '00000000-0000-0000-0000-000000000002',
 } as unknown as UserProfileRecord;
 
-const submit = async (screen: ReturnType<typeof render>) => {
-  fireEvent.press(screen.getByText('Save changes'));
+// Leaving the username field is what saves it; a language saves on tap.
+const leaveUsername = async (screen: ReturnType<typeof render>) => {
+  fireEvent(screen.getByLabelText('Username'), 'endEditing');
+  await act(async () => {});
+};
+
+const tapLanguage = async (
+  screen: ReturnType<typeof render>,
+  label: RegExp,
+) => {
+  fireEvent.press(screen.getByLabelText(label));
   await act(async () => {});
 };
 
@@ -30,8 +39,8 @@ describe('ProfileForm', () => {
     mockCheckUsername.mockResolvedValue(true);
   });
 
-  it('prefills the stored profile and disables Save until something changes', () => {
-    const { getByDisplayValue, getByRole, getByLabelText } = render(
+  it('prefills the stored profile', () => {
+    const { getByDisplayValue, getByLabelText } = render(
       <ProfileForm profile={profile} onSave={jest.fn()} />,
     );
     expect(getByDisplayValue('jane')).toBeTruthy();
@@ -39,17 +48,41 @@ describe('ProfileForm', () => {
       getByLabelText(/Native language: .*German/).props.accessibilityState
         .selected,
     ).toBe(true);
+  });
+
+  it('saves nothing while the username is being typed', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
+    fireEvent.changeText(screen.getByDisplayValue('jane'), 'jane-doe');
+    await act(async () => {});
+
+    expect(mockCheckUsername).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('refuses an invalid username and a missing language, and saves neither', async () => {
+    const onSave = jest.fn();
+    const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
+    fireEvent.changeText(screen.getByDisplayValue('jane'), 'ab');
+    await leaveUsername(screen);
+
     expect(
-      getByRole('button', { name: 'Save changes' }).props.accessibilityState
-        .disabled,
-    ).toBe(true);
+      screen.getByText('Username must be at least 3 characters'),
+    ).toBeTruthy();
+    expect(onSave).not.toHaveBeenCalled();
+
+    // Picking the target language as native empties the target, so the
+    // form is incomplete and must not be written either.
+    await tapLanguage(screen, /Native language: .*Spanish/);
+    expect(screen.getByText('Target language is required')).toBeTruthy();
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it('checks a changed username and saves through onSave', async () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
     fireEvent.changeText(screen.getByDisplayValue('jane'), 'jane-doe');
-    await submit(screen);
+    await leaveUsername(screen);
 
     expect(mockCheckUsername).toHaveBeenCalledWith('jane-doe');
     expect(onSave).toHaveBeenCalledWith({
@@ -65,18 +98,17 @@ describe('ProfileForm', () => {
     const onSave = jest.fn();
     const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
     fireEvent.changeText(screen.getByDisplayValue('jane'), 'taken');
-    await submit(screen);
+    await leaveUsername(screen);
 
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByText('Username is already taken')).toBeTruthy();
     expect(screen.getByDisplayValue('taken')).toBeTruthy();
   });
 
-  it('does not check the username when only a language changed, and reports a failed save', async () => {
+  it('saves a language on tap without checking the username, and reports a failed save', async () => {
     const onSave = jest.fn().mockRejectedValue(new Error('The write failed'));
     const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
-    fireEvent.press(screen.getByLabelText(/Target language: .*Russian/));
-    await submit(screen);
+    await tapLanguage(screen, /Target language: .*Russian/);
 
     expect(mockCheckUsername).not.toHaveBeenCalled();
     expect(onSave).toHaveBeenCalled();

@@ -6,7 +6,6 @@ import type { UserProfileRecord } from '@repo/offline-db';
 import { type ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 import { apiErrorMessage } from '@/lib/errors';
 import { checkUsernameAvailable } from '@/lib/profile';
-import { Button } from './ui/button';
 import {
   Card,
   CardContent,
@@ -27,8 +26,11 @@ function valuesOf(profile: UserProfileRecord | null): ProfileFormValues {
   };
 }
 
-// Web's Profile & Languages settings. The same fields and validation as
-// onboarding; the difference is that a profile exists and can be edited.
+// Web's Profile & Languages settings, with the same fields and validation.
+// Saving is per field, not behind a Save button (#290): a language saves on
+// tap like the preferences above it, the username when the field is left.
+// A button under a phone-height form is easy to miss, and the draft it
+// holds is what a remount loses.
 export function ProfileForm({
   profile,
   onSave,
@@ -38,13 +40,21 @@ export function ProfileForm({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const { control, handleSubmit, formState, watch, setValue, reset } =
-    useForm<ProfileFormValues>({
-      resolver: zodResolver(userProfileFormSchema),
-      defaultValues: valuesOf(profile),
-    });
+  const {
+    control,
+    formState,
+    getValues,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(userProfileFormSchema),
+    defaultValues: valuesOf(profile),
+  });
   const nativeLanguage = watch('native_language_id');
   const targetLanguage = watch('target_language_id');
+  const storedUsername = profile?.username ?? '';
 
   // A sync landing while the user types must not overwrite their edits:
   // take the stored profile only while the form is untouched.
@@ -58,11 +68,11 @@ export function ProfileForm({
     }
   }, [nativeLanguage, setValue, targetLanguage]);
 
-  const onSubmit = async (values: ProfileFormValues) => {
+  const save = async (values: ProfileFormValues) => {
     setError(null);
     setSaved(false);
     try {
-      if (values.username !== (profile?.username ?? '')) {
+      if (values.username !== storedUsername) {
         const available = await checkUsernameAvailable(values.username);
         if (!available) {
           setError('Username is already taken');
@@ -75,6 +85,18 @@ export function ProfileForm({
     } catch (err) {
       setError(apiErrorMessage(err));
     }
+  };
+
+  // handleSubmit runs the schema first, so an invalid field shows its
+  // message and nothing is written.
+  const saveNow = handleSubmit(save);
+
+  const saveLanguage = (
+    field: 'native_language_id' | 'target_language_id',
+    value: string,
+  ) => {
+    setValue(field, value, { shouldDirty: true, shouldValidate: true });
+    void saveNow();
   };
 
   return (
@@ -95,6 +117,12 @@ export function ProfileForm({
             placeholder="your-username"
             autoCapitalize="none"
             autoComplete="username"
+            returnKeyType="done"
+            // Leaving the field saves it; typing does not, so a half-typed
+            // name never reaches the availability check.
+            onEndEditing={() => {
+              if (getValues('username') !== storedUsername) void saveNow();
+            }}
           />
         </CardContent>
       </Card>
@@ -117,7 +145,7 @@ export function ProfileForm({
               <LanguageField
                 label="Native language"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(value) => saveLanguage('native_language_id', value)}
                 error={fieldState.error?.message}
               />
             )}
@@ -129,7 +157,7 @@ export function ProfileForm({
               <LanguageField
                 label="Target language"
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(value) => saveLanguage('target_language_id', value)}
                 error={fieldState.error?.message}
                 exclude={nativeLanguage}
               />
@@ -142,13 +170,6 @@ export function ProfileForm({
       {saved && !formState.isDirty && (
         <Text className="text-center text-muted-foreground">Saved</Text>
       )}
-      <Button
-        loading={formState.isSubmitting}
-        disabled={!formState.isDirty || formState.isSubmitting}
-        onPress={handleSubmit(onSubmit)}
-      >
-        <Text>Save changes</Text>
-      </Button>
     </View>
   );
 }
