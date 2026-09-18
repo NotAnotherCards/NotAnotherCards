@@ -215,6 +215,22 @@ updated_at          number (integer Unix ms) NOT NULL
 
 The three UUID fields are currently values only; no `files` or `languages` tables or foreign-key constraints exist yet.
 
+#### `user_badges` ([API schema](../apps/api/src/sync/schema.ts#L243), [local schema](../packages/offline-db/src/index.ts#L160))
+
+Stores unlocked gamification badges for users. This table is server-owned. Clients may only pull and display badges; client-side pushes are rejected by sync-validation.
+
+```text
+user_id             text PK FK -> user.id ON DELETE CASCADE
+badge_id            text PK
+rev                 bigint NOT NULL                                [server]
+deleted_at          timestamptz NULL                               [server]
+unlocked_at         number (integer Unix ms) NOT NULL
+created_at          number (integer Unix ms) NOT NULL
+updated_at          number (integer Unix ms) NOT NULL
+
+INDEX(user_id, rev)
+```
+
 ### Sync infrastructure
 
 These server-only RemelonDB bookkeeping objects were introduced by [migration `0005`](../apps/api/drizzle/0005_remelon-sync-store.sql). They support synchronization and retention and do not contain application data or exist in the local schema.
@@ -819,35 +835,6 @@ current_streak      integer DEFAULT 0
 longest_streak      integer DEFAULT 0
 last_active_date    date NULL
 updated_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `achievements`
-
-Achievement definitions.
-
-```txt
-id                  uuid PK
-code                text UNIQUE NOT NULL       -- first_review, seven_day_streak
-name                text NOT NULL
-description         text
-points              integer DEFAULT 0
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `user_achievements`
-
-Achievements unlocked by users.
-
-```txt
-user_id             uuid FK -> users.id ON DELETE CASCADE
-achievement_id      uuid FK -> achievements.id ON DELETE CASCADE
-unlocked_at         timestamptz DEFAULT now()
-
-PRIMARY KEY(user_id, achievement_id)
 ```
 
 ---

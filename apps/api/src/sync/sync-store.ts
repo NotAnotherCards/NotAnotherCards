@@ -16,6 +16,7 @@ import {
   UserNoteDeckRow,
   UserNoteRow,
   UserProfileRow,
+  UserBadgeRow,
 } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import {
@@ -25,6 +26,7 @@ import {
   userNoteDecks,
   userNotes,
   userProfiles,
+  userBadges,
 } from './schema';
 import {
   createCrossValidateSyncRelationships,
@@ -65,6 +67,7 @@ export interface AppSyncStoreBundle {
   readonly crossValidateChanges: NonNullable<
     SyncEngineOptions<string>['crossValidateChanges']
   >;
+  readonly db: AppDatabase;
 }
 
 export const appSyncTables: SyncEngineConfig<string>['tables'] = {
@@ -74,6 +77,7 @@ export const appSyncTables: SyncEngineConfig<string>['tables'] = {
   user_note_decks: UserNoteDeckRow,
   review_events: ReviewEventRow,
   user_profiles: UserProfileRow,
+  user_badges: UserBadgeRow,
 };
 
 export const appSyncTableOptions: NonNullable<
@@ -154,6 +158,14 @@ export function createAppSyncStore(
         targetLanguageId: null,
       },
     }),
+    user_badges: drizzleSyncTable<string, typeof userBadges>({
+      table: userBadges,
+      id: userBadges.id,
+      rev: userBadges.rev,
+      deletedAt: userBadges.deletedAt,
+      scope: userBadges.userId,
+      insertOnly: ['unlocked_at'],
+    }),
   };
 
   const createDurableStore = (storeDb: AppDatabase | AppTx) =>
@@ -221,6 +233,7 @@ export function createAppSyncStore(
       findProfileUsernameOwners,
       now,
     ),
+    db,
   };
 }
 
