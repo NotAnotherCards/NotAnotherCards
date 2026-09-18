@@ -367,7 +367,13 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     try {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
-        notifiedBadges = JSON.parse(stored) as string[];
+        const parsed: unknown = JSON.parse(stored);
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((item) => typeof item === 'string')
+        ) {
+          notifiedBadges = parsed;
+        }
       }
     } catch {
       // Ignore parse errors

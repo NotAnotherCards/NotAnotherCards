@@ -188,4 +188,3 @@ export * from './queries.js';
 export * from './export-import-types.js';
 export * from './export.js';
 export * from './import.js';
-export * from './activity.js';
