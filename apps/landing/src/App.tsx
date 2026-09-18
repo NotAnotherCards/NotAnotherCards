@@ -1,11 +1,15 @@
-import { type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const APP_URL = 'https://app.notanothercards.com';
 
 export function App() {
-  return <LandingPage />;
+  if (window.location.pathname === '/') {
+    return <LandingPage />;
+  }
+
+  return <NotFoundPage />;
 }
 
 function LandingPage() {
@@ -194,11 +198,100 @@ function LandingPage() {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted sm:px-8">
-        © 2026 NotAnotherCards <span aria-hidden="true">·</span> Learn at your
-        own pace.
-      </footer>
+      <LandingFooter />
     </main>
+  );
+}
+
+function NotFoundPage() {
+  useNotFoundPageMetadata();
+
+  const cards = [
+    { digit: '4', word: 'Page', className: 'not-found-card-one' },
+    { digit: '0', word: 'not', className: 'not-found-card-two' },
+    { digit: '4', word: 'found', className: 'not-found-card-three' },
+  ];
+
+  return (
+    <main className="flex min-h-screen flex-col">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
+        <a className="min-w-0" href="/" aria-label="NotAnotherCards home">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcSet="/brand/notanothercards-logo-dark.svg"
+            />
+            <img
+              className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
+              src="/brand/notanothercards-logo.svg"
+              alt="NotAnotherCards"
+            />
+          </picture>
+        </a>
+        <nav
+          className="flex shrink-0 items-center gap-2"
+          aria-label="Account actions"
+        >
+          <Button asChild variant="ghost" size="lg" className="px-1 sm:px-4">
+            <a href={`${APP_URL}/login`}>Log in</a>
+          </Button>
+          <Button asChild size="lg">
+            <a href={`${APP_URL}/register`}>Get started</a>
+          </Button>
+        </nav>
+      </header>
+
+      <section className="not-found-section flex flex-1 flex-col items-center px-5 py-14 text-center sm:px-8 sm:py-20">
+        <h1 className="sr-only">Page not found</h1>
+        <div className="not-found-scene" aria-label="Page not found word cards">
+          {cards.map(({ digit, word, className }) => (
+            <article
+              key={digit + word}
+              className={`not-found-card ${className} rounded-2xl border border-sage-border bg-background p-5 text-center shadow-card sm:p-6`}
+            >
+              <p className="grid flex-1 place-items-center text-7xl font-bold tracking-[-0.08em] text-foreground sm:text-8xl">
+                {digit}
+              </p>
+              <div>
+                <div className="border-t border-border" />
+                <p className="mt-3 text-sm font-medium text-foreground">
+                  {word}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <p className="mt-4 max-w-md text-lg leading-8 text-muted">
+          The page you are looking for does not exist or has moved.
+        </p>
+        <Button asChild size="lg" className="mt-7 h-12 px-5 text-base">
+          <a href="/">Back to home</a>
+        </Button>
+      </section>
+
+      <LandingFooter />
+    </main>
+  );
+}
+
+function useNotFoundPageMetadata() {
+  useEffect(() => {
+    const originalTitle = document.title;
+    document.title = 'NotAnotherCards — Page not found';
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, []);
+}
+
+function LandingFooter() {
+  return (
+    <footer className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted sm:px-8">
+      © 2026 NotAnotherCards <span aria-hidden="true">·</span> Learn at your
+      own pace.
+    </footer>
   );
 }
 
