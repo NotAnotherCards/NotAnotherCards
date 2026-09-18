@@ -68,11 +68,17 @@ jobs:
       - name: Check Dependencies
         run: pnpm check:deps
 
-      - name: Check Database Docs
-        run: pnpm check:db-docs
+      - name: Build Schema Check Dependencies
+        run: pnpm build:db-docs-deps
 
       - name: Check Schema Freshness
-        run: pnpm check:schema-fresh
+        run: node scripts/check-schema-fresh.mjs
+
+      - name: Check Database Docs
+        run: node scripts/check-db-docs.mjs
+
+      - name: Test Database Documentation Checks
+        run: node --test scripts/schema-docs.test.mjs
 
       - name: Run Unit Tests
         run: pnpm test

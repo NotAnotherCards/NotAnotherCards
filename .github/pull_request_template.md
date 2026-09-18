@@ -28,5 +28,5 @@ Closes #
 - [ ] `pnpm lint`
 - [ ] `pnpm test`
 - [ ] `pnpm build`
-- [ ] `docs/db-schemas.md` updated, or the change does not touch the database schema
+- [ ] `docs/db-schemas.md` updated (`pnpm docs:db:generate`), or the change does not touch the database schema
 - [ ] Other:
