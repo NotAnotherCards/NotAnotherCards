@@ -77,7 +77,8 @@ const BADGES = [
     id: 'hundred-reviews',
     name: 'Century Mark',
     rule: '100 distinct reviews',
-    description: 'You have completed 100 distinct reviews. Incredible dedication!',
+    description:
+      'You have completed 100 distinct reviews. Incredible dedication!',
     icon: Trophy,
   },
 ];
@@ -689,7 +690,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {BADGES.map((badgeDef) => {
-              const earned = userBadges?.find((b) => b.badge_id === badgeDef.id);
+              const earned = userBadges?.find(
+                (b) => b.badge_id === badgeDef.id,
+              );
               const Icon = badgeDef.icon;
               return (
                 <div
@@ -726,7 +729,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                     </p>
                     {earned && (
                       <p className="text-[10px] text-primary/80 pt-1">
-                        Unlocked: {new Date(earned.unlocked_at).toLocaleDateString()}
+                        Unlocked:{' '}
+                        {new Date(earned.unlocked_at).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -842,10 +846,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               role="status"
               className="bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-5"
             >
-              <span className="sr-only">
-                Badge unlocked: {badgeDef.name}
-              </span>
-              <div className="bg-primary-foreground/20 p-2 rounded-full shrink-0" aria-hidden="true">
+              <span className="sr-only">Badge unlocked: {badgeDef.name}</span>
+              <div
+                className="bg-primary-foreground/20 p-2 rounded-full shrink-0"
+                aria-hidden="true"
+              >
                 <Icon className="size-5" />
               </div>
               <div aria-hidden="true">

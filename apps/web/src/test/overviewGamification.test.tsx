@@ -320,9 +320,7 @@ describe('Overview Gamification', () => {
 
     const expectedDate = new Date(unlockTime).toLocaleDateString();
     await waitFor(() => {
-      expect(
-        screen.getByText(`Unlocked: ${expectedDate}`),
-      ).toBeInTheDocument();
+      expect(screen.getByText(`Unlocked: ${expectedDate}`)).toBeInTheDocument();
     });
 
     // Only the 2 remaining badges should show "Locked"

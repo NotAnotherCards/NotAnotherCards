@@ -68,12 +68,12 @@ describe('seven-day-streak badge edge cases', () => {
 
   it('awards streak badge when reviews fall at varying times across 7 consecutive UTC dates', () => {
     const events = [
-      review('early',    '2026-09-01T00:00:01.000Z'), // just past midnight
-      review('morning',  '2026-09-02T06:30:00.000Z'),
-      review('noon',     '2026-09-03T12:00:00.000Z'),
-      review('evening',  '2026-09-04T18:45:00.000Z'),
-      review('late',     '2026-09-05T23:59:59.000Z'), // just before midnight
-      review('midday',   '2026-09-06T11:11:11.000Z'),
+      review('early', '2026-09-01T00:00:01.000Z'), // just past midnight
+      review('morning', '2026-09-02T06:30:00.000Z'),
+      review('noon', '2026-09-03T12:00:00.000Z'),
+      review('evening', '2026-09-04T18:45:00.000Z'),
+      review('late', '2026-09-05T23:59:59.000Z'), // just before midnight
+      review('midday', '2026-09-06T11:11:11.000Z'),
       review('midnight', '2026-09-07T00:00:00.000Z'), // exactly midnight
     ];
 
@@ -114,10 +114,7 @@ describe('seven-day-streak badge edge cases', () => {
 
     expect(eligibleBadges(sixDays)).not.toContain('seven-day-streak');
 
-    const sevenDays = [
-      ...sixDays,
-      review('seven', '2026-09-07T12:00:00.000Z'),
-    ];
+    const sevenDays = [...sixDays, review('seven', '2026-09-07T12:00:00.000Z')];
 
     expect(eligibleBadges(sevenDays)).toContain('seven-day-streak');
   });

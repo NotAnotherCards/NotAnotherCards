@@ -10,7 +10,7 @@ import { useStore } from '@/hooks/useStore';
 
 export function Settings() {
   const { data: session } = authClient.useSession();
-  const {profile} = useStore()
+  const { profile } = useStore();
   const [activeSubTab, setActiveSubTab] = useState<
     'profile' | 'preferences' | 'security' | 'import/export'
   >('profile');
