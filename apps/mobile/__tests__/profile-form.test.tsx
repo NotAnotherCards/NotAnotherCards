@@ -115,6 +115,64 @@ describe('ProfileForm', () => {
     expect(screen.getByText('The write failed')).toBeTruthy();
   });
 
+  it('lets the newest save win when an older one is still in flight', async () => {
+    // Each check gets its own promise, and they resolve out of order: the
+    // language tapped second finishes first, so the older save must not
+    // write its stale languages afterwards.
+    const releases: (() => void)[] = [];
+    mockCheckUsername.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          releases.push(() => resolve(true));
+        }),
+    );
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
+
+    fireEvent.changeText(screen.getByDisplayValue('jane'), 'jane-doe');
+    fireEvent(screen.getByLabelText('Username'), 'endEditing');
+    await act(async () => {});
+    fireEvent.press(screen.getByLabelText(/Target language: .*Russian/));
+    await act(async () => {});
+
+    releases[1]?.();
+    await act(async () => {});
+    releases[0]?.();
+    await act(async () => {});
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target_language_id: '00000000-0000-0000-0000-000000000004',
+      }),
+    );
+  });
+
+  it('keeps a saved value when the profile prop is still the old one', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
+    fireEvent.changeText(screen.getByDisplayValue('jane'), 'jane-doe');
+    await leaveUsername(screen);
+
+    // The parent's live query has not caught up yet.
+    screen.rerender(<ProfileForm profile={profile} onSave={onSave} />);
+    expect(screen.getByDisplayValue('jane-doe')).toBeTruthy();
+  });
+
+  it('saves a username draft when the form goes away', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
+    fireEvent.changeText(screen.getByDisplayValue('jane'), 'jane-doe');
+
+    // Switching sub-tab unmounts the field without an endEditing event.
+    screen.unmount();
+    await act(async () => {});
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'jane-doe' }),
+    );
+  });
+
   it('takes a profile that arrives later only while the form is untouched', () => {
     const screen = render(<ProfileForm profile={null} onSave={jest.fn()} />);
     screen.rerender(<ProfileForm profile={profile} onSave={jest.fn()} />);
