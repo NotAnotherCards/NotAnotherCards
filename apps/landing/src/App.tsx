@@ -289,8 +289,8 @@ function useNotFoundPageMetadata() {
 function LandingFooter() {
   return (
     <footer className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted sm:px-8">
-      © 2026 NotAnotherCards <span aria-hidden="true">·</span> Learn at your
-      own pace.
+      © 2026 NotAnotherCards <span aria-hidden="true">·</span> Learn at your own
+      pace.
     </footer>
   );
 }
