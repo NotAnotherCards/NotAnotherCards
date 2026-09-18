@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AiCardOutput } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,18 @@ export function AiResultPreview({
   const [newDeckTitle, setNewDeckTitle] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (successTimer.current !== null) {
+        clearTimeout(successTimer.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedDeckId && decks.length > 0) {
@@ -52,9 +64,17 @@ export function AiResultPreview({
         if (!newDeckTitle.trim()) return;
         await onSave(newDeckTitle.trim(), true);
       }
+      if (!mounted.current) return;
       setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
+      if (successTimer.current !== null) {
+        clearTimeout(successTimer.current);
+      }
+      successTimer.current = setTimeout(() => {
+        successTimer.current = null;
+        setSavedSuccess(false);
+      }, 3000);
     } catch (err) {
+      if (!mounted.current) return;
       const msg = err instanceof Error ? err.message : 'Failed to save cards';
       setSaveError(msg);
     }
