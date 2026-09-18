@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { View } from 'react-native';
@@ -55,10 +55,19 @@ export function ProfileForm({
   const nativeLanguage = watch('native_language_id');
   const targetLanguage = watch('target_language_id');
   const storedUsername = profile?.username ?? '';
+  // Saves overlap: a slow username check can still be running when a
+  // language is tapped. Only the newest one may write, or the older one
+  // would put its stale values back.
+  const saveCount = useRef(0);
+  const takenProfile = useRef(profile);
 
-  // A sync landing while the user types must not overwrite their edits:
-  // take the stored profile only while the form is untouched.
+  // A sync landing while the user types must not overwrite their edits: take
+  // the stored profile when it actually changes, and only while the form is
+  // untouched. Reacting to isDirty alone would fire right after a save, when
+  // the parent can still be holding the profile from before it.
   useEffect(() => {
+    if (profile === takenProfile.current) return;
+    takenProfile.current = profile;
     if (!formState.isDirty) reset(valuesOf(profile));
   }, [profile, formState.isDirty, reset]);
 
@@ -69,27 +78,42 @@ export function ProfileForm({
   }, [nativeLanguage, setValue, targetLanguage]);
 
   const save = async (values: ProfileFormValues) => {
+    const save = ++saveCount.current;
+    const superseded = () => save !== saveCount.current;
     setError(null);
     setSaved(false);
     try {
       if (values.username !== storedUsername) {
         const available = await checkUsernameAvailable(values.username);
+        if (superseded()) return;
         if (!available) {
           setError('Username is already taken');
           return;
         }
       }
       await onSave(values);
+      if (superseded()) return;
       reset(values);
       setSaved(true);
     } catch (err) {
-      setError(apiErrorMessage(err));
+      if (!superseded()) setError(apiErrorMessage(err));
     }
   };
 
   // handleSubmit runs the schema first, so an invalid field shows its
   // message and nothing is written.
   const saveNow = handleSubmit(save);
+
+  const saveUsername = () => {
+    if (getValues('username') !== storedUsername) void saveNow();
+  };
+
+  // Switching sub-tab unmounts the field, and taps are handled while the
+  // keyboard is up, so onEndEditing does not always come: save what is in
+  // the field on the way out.
+  const saveUsernameOnUnmount = useRef(saveUsername);
+  saveUsernameOnUnmount.current = saveUsername;
+  useEffect(() => () => saveUsernameOnUnmount.current(), []);
 
   const saveLanguage = (
     field: 'native_language_id' | 'target_language_id',
@@ -120,9 +144,7 @@ export function ProfileForm({
             returnKeyType="done"
             // Leaving the field saves it; typing does not, so a half-typed
             // name never reaches the availability check.
-            onEndEditing={() => {
-              if (getValues('username') !== storedUsername) void saveNow();
-            }}
+            onEndEditing={saveUsername}
           />
         </CardContent>
       </Card>

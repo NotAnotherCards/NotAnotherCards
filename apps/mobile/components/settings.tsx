@@ -121,8 +121,9 @@ export function Settings() {
             <ActivityIndicator />
           </View>
         ))}
+      {/* Keyed by account: the preferences are read once per mount. */}
       {section === 'preferences' && user ? (
-        <Preferences userId={user.id} />
+        <Preferences key={user.id} userId={user.id} />
       ) : null}
     </View>
   );
