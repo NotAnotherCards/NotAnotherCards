@@ -839,12 +839,16 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           return (
             <div
               key={badgeId}
+              role="status"
               className="bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-5"
             >
-              <div className="bg-primary-foreground/20 p-2 rounded-full shrink-0">
+              <span className="sr-only">
+                Badge unlocked: {badgeDef.name}
+              </span>
+              <div className="bg-primary-foreground/20 p-2 rounded-full shrink-0" aria-hidden="true">
                 <Icon className="size-5" />
               </div>
-              <div>
+              <div aria-hidden="true">
                 <div className="text-sm font-bold flex items-center gap-1.5">
                   <Trophy className="size-3.5 text-yellow-300" />
                   New Badge Unlocked!
