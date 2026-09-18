@@ -257,10 +257,10 @@ function PrivacyPolicyPage() {
               Overview
             </h2>
             <p className="mt-4">
-              NotAnotherCards is operated by the NotAnotherCards team, based
-              in Berlin, Germany. This policy explains how we handle
-              information when you use our flashcard learning service. For
-              privacy questions, contact us at{' '}
+              NotAnotherCards is operated by the NotAnotherCards team, based in
+              Berlin, Germany. This policy explains how we handle information
+              when you use our flashcard learning service. For privacy
+              questions, contact us at{' '}
               <a
                 className="underline underline-offset-4 hover:text-foreground"
                 href="mailto:notanothercards@gmail.com"
@@ -316,9 +316,9 @@ function PrivacyPolicyPage() {
               <p>
                 If you ask NotAnotherCards to generate learning content, the
                 input you submit and the generated result are sent through our
-                server-side AI gateway to provide that feature. AI generation
-                is optional: we do not send your learning content for AI
-                generation unless you start a generation request.
+                server-side AI gateway to provide that feature. AI generation is
+                optional: we do not send your learning content for AI generation
+                unless you start a generation request.
               </p>
               <p>
                 When you publish a deck publicly, its content is checked by an
@@ -491,11 +491,13 @@ function usePrivacyPageMetadata() {
 
     document.title = 'NotAnotherCards — Privacy Policy';
     if (canonical) canonical.href = 'https://notanothercards.com/privacy';
-    if (openGraphUrl) openGraphUrl.content = 'https://notanothercards.com/privacy';
+    if (openGraphUrl)
+      openGraphUrl.content = 'https://notanothercards.com/privacy';
 
     return () => {
       document.title = originalTitle;
-      if (canonical && originalCanonicalUrl) canonical.href = originalCanonicalUrl;
+      if (canonical && originalCanonicalUrl)
+        canonical.href = originalCanonicalUrl;
       if (openGraphUrl && originalOpenGraphUrl) {
         openGraphUrl.content = originalOpenGraphUrl;
       }
@@ -521,7 +523,10 @@ function LandingFooter() {
       <span aria-hidden="true">·</span>
       <span>Learn at your own pace.</span>
       <span aria-hidden="true">·</span>
-      <a className="underline underline-offset-4 hover:text-foreground" href="/privacy">
+      <a
+        className="underline underline-offset-4 hover:text-foreground"
+        href="/privacy"
+      >
         Privacy Policy
       </a>
     </footer>
