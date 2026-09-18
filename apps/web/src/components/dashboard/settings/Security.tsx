@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,8 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 export function Security() {
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(true);
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -59,6 +61,16 @@ export function Security() {
     },
   });
 
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (successTimer.current !== null) {
+        clearTimeout(successTimer.current);
+      }
+    };
+  }, []);
+
   const onPasswordSubmit = async (data: PasswordFormValues) => {
     setSecurityError(null);
     setSecuritySuccess(null);
@@ -68,6 +80,7 @@ export function Security() {
         newPassword: data.newPassword,
         revokeOtherSessions: true,
       });
+      if (!mounted.current) return;
 
       if (error) {
         throw new Error(error.message || 'Failed to update password');
@@ -79,10 +92,15 @@ export function Security() {
         newPassword: '',
         confirmPassword: '',
       });
-      setTimeout(() => {
+      if (successTimer.current !== null) {
+        clearTimeout(successTimer.current);
+      }
+      successTimer.current = setTimeout(() => {
+        successTimer.current = null;
         setSecuritySuccess(null);
       }, 5000);
     } catch (err) {
+      if (!mounted.current) return;
       setSecurityError(
         err instanceof Error ? err.message : 'An unexpected error occurred',
       );
