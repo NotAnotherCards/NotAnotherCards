@@ -9,6 +9,7 @@ import {
   type ReviewPreferences,
   type UserProfileRecord,
 } from '@repo/offline-db';
+import { useColorScheme } from 'nativewind';
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import {
@@ -16,6 +17,7 @@ import {
   saveReviewPreferences,
 } from '@/lib/review-preferences';
 import { profileWrites } from '@/lib/profile';
+import { switchColors } from '@/lib/theme';
 import { ProfileForm } from './profile-form';
 import { ThemeToggle } from './theme-toggle';
 import { Button } from './ui/button';
@@ -170,6 +172,8 @@ const MODE_OPTIONS = [
 ] as const;
 
 function Preferences({ userId }: { userId: string }) {
+  const { colorScheme } = useColorScheme();
+  const colors = switchColors[colorScheme === 'dark' ? 'dark' : 'light'];
   const [preferences, setPreferences] = useState(() =>
     loadReviewPreferences(userId),
   );
@@ -212,11 +216,17 @@ function Preferences({ userId }: { userId: string }) {
           <View className="flex-1 gap-1">
             <Text className="font-medium">Next review interval</Text>
             <Text className="text-sm text-muted-foreground">
-              Show when each answer schedules the card next
+              Show what each answer schedules
             </Text>
           </View>
           <Switch
             accessibilityLabel="Show next review interval"
+            trackColor={{ false: colors.trackOff, true: colors.trackOn }}
+            thumbColor={
+              preferences.showNextReviewInterval
+                ? colors.thumbOn
+                : colors.thumbOff
+            }
             value={preferences.showNextReviewInterval}
             onValueChange={(showNextReviewInterval) =>
               update({ ...preferences, showNextReviewInterval })

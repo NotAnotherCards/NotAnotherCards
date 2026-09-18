@@ -36,3 +36,22 @@ export const navigationColors = {
     border: '#ffffff1a',
   },
 } as const;
+
+// The native Switch takes color values too, not class names. Android tints
+// the track at low alpha, so a light track barely changes between states:
+// the thumb carries the state instead, bright when on and dim when off,
+// against a track that only sets the tone. Same values as global.css.
+export const switchColors = {
+  light: {
+    trackOn: '#a3a3a3',
+    trackOff: '#d4d4d4',
+    thumbOn: '#171717',
+    thumbOff: '#fafafa',
+  },
+  dark: {
+    trackOn: '#a3a3a3',
+    trackOff: '#404040',
+    thumbOn: '#fafafa',
+    thumbOff: '#737373',
+  },
+} as const;
