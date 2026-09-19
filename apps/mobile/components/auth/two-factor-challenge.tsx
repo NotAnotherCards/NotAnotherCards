@@ -75,9 +75,6 @@ export function TwoFactorChallenge() {
         return;
       }
 
-      // As with the normal login screen, wait for Better Auth's session atom
-      // to observe the endpoint's Set-Cookie before mounting a guarded route.
-      // Navigating from the response races RequireSession back to /login.
       setVerifiedUserId(response.data.user.id);
     } catch {
       setError('Verification is temporarily unavailable. Please try again.');

@@ -10,6 +10,7 @@ import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
+import { useTwoFactorChallengePending } from './two-factor-challenge';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -30,12 +31,13 @@ const SessionDatabaseContext = createContext<SessionDatabase | null>(null);
  */
 export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
+  const challengePending = useTwoFactorChallengePending();
   // Null while the session check runs: useSession keeps the previous
   // user visible while it refetches, and that user's database is the
   // wrong one to open. Also null until onboarding completed: the profile
   // row the first pull expects is created by the /onboard transaction.
   const userId =
-    isPending || !session?.user.onBoardingComplete
+    isPending || challengePending || !session?.user.onBoardingComplete
       ? null
       : (session.user.id ?? null);
 
