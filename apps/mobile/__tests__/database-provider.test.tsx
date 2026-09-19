@@ -5,6 +5,10 @@ import {
   SessionDatabaseProvider,
   useSessionDatabase,
 } from '@/lib/database-provider';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+} from '@/lib/two-factor-challenge';
 
 // The lifecycle itself is remelonDB's (useSessionDatabase, tested
 // upstream against real managers). What is app-level here is the wiring:
@@ -68,6 +72,7 @@ const renderProvider = () =>
 describe('SessionDatabaseProvider', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    finishTwoFactorChallenge();
     mockSessionState = { data: null, isPending: true };
     hookResult = { manager: null, syncController: null, closeError: null };
   });
@@ -174,5 +179,20 @@ describe('SessionDatabaseProvider', () => {
     expect(mockUseSessionDatabase).toHaveBeenCalledWith(
       expect.objectContaining({ userId: null }),
     );
+  });
+
+  it('does not open an account database while a second factor is pending', () => {
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: false,
+    };
+    beginTwoFactorChallenge();
+    const view = renderProvider();
+
+    expect(mockUseSessionDatabase).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null }),
+    );
+    view.unmount();
+    finishTwoFactorChallenge();
   });
 });

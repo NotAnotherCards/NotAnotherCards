@@ -16,8 +16,13 @@ jest.mock('expo-router', () => {
 });
 
 // The real auth client pulls in native modules; mock it like web does in setup.ts.
+type MockSignInResult = {
+  data: { twoFactorRedirect?: boolean } | null;
+  error: { message?: string } | null;
+};
 const mockSignIn = jest.fn(
-  async (): Promise<{ error: { message?: string } | null }> => ({
+  async (_input?: unknown): Promise<MockSignInResult> => ({
+    data: {},
     error: null,
   }),
 );
@@ -30,7 +35,7 @@ let mockSession: {
 
 jest.mock('../lib/auth-client', () => ({
   authClient: {
-    signIn: { email: () => mockSignIn() },
+    signIn: { email: (input: unknown) => mockSignIn(input) },
     useSession: () => mockSession,
   },
 }));
@@ -99,6 +104,7 @@ describe('Login screen', () => {
 
   it('shows the server message on an API error', async () => {
     mockSignIn.mockResolvedValueOnce({
+      data: null,
       error: { message: 'Invalid email or password' },
     });
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
@@ -109,6 +115,25 @@ describe('Login screen', () => {
     fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
     fireEvent.press(getByText('Log in'));
     expect(await findByText('Invalid email or password')).toBeTruthy();
+  });
+
+  it('routes a two-factor sign-in to verification before session navigation', async () => {
+    mockSignIn.mockResolvedValueOnce({
+      data: { twoFactorRedirect: true },
+      error: null,
+    });
+    const { getByText, getByPlaceholderText } = render(<Login />);
+    fireEvent.changeText(
+      getByPlaceholderText('you@example.com'),
+      'jane@example.com',
+    );
+    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
+    fireEvent.press(getByText('Log in'));
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
+    );
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
   });
 
   it('routes to onboarding when the profile is unfinished', async () => {
