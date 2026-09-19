@@ -25,6 +25,8 @@
  * calendar days and daylight-saving behavior are deferred.
  */
 
+import { utcDayAt } from './utc-day.js';
+
 export const SUCCESSFUL_REVIEW_RATING_MIN = 2;
 
 export const DAILY_CHALLENGE_CODES = [
@@ -119,13 +121,6 @@ export interface ActivitySummary extends ReviewActivity, StreakActivity {
   readonly eligibleBadgeCodes: readonly BadgeCode[];
 }
 
-const MILLISECONDS_PER_DAY = 86_400_000;
-
-interface UtcDay {
-  readonly key: string;
-  readonly ordinal: number;
-}
-
 function assertTimestamp(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value < 0) {
     throw new Error(`${field} must be a non-negative safe integer timestamp`);
@@ -162,13 +157,6 @@ function uniqueReviewEvents(
 ): ActivityReviewEvent[] {
   for (const event of reviewEvents) assertReviewEvent(event);
   return uniqueById(reviewEvents);
-}
-
-function utcDayAt(timestamp: number): UtcDay {
-  return {
-    key: new Date(timestamp).toISOString().slice(0, 10),
-    ordinal: Math.floor(timestamp / MILLISECONDS_PER_DAY),
-  };
 }
 
 function reviewActivityFromUniqueEvents(
@@ -318,6 +306,44 @@ export function selectTodayChallengeActivity(
     notes,
     now,
   );
+}
+
+export function selectDailyChallengeHistory(
+  reviewEvents: readonly ActivityReviewEvent[],
+  notes: readonly ActivityNote[],
+  now: number,
+): TodayChallengeActivity[] {
+  assertTimestamp(now, 'Now');
+  const todayOrdinal = utcDayAt(now).ordinal;
+  const reviews = uniqueReviewEvents(reviewEvents);
+  const uniqueNotes = uniqueById(notes);
+  const dates = new Map<string, number>();
+  const reviewCounts = new Map<string, number>();
+  const noteCounts = new Map<string, number>();
+
+  for (const event of reviews) {
+    const day = utcDayAt(event.reviewed_at);
+    if (day.ordinal > todayOrdinal) continue;
+    dates.set(day.key, day.ordinal);
+    reviewCounts.set(day.key, (reviewCounts.get(day.key) ?? 0) + 1);
+  }
+  for (const note of uniqueNotes) {
+    assertTimestamp(note.created_at, 'Note creation timestamp');
+    const day = utcDayAt(note.created_at);
+    if (day.ordinal > todayOrdinal) continue;
+    dates.set(day.key, day.ordinal);
+    noteCounts.set(day.key, (noteCounts.get(day.key) ?? 0) + 1);
+  }
+
+  return [...dates]
+    .sort((left, right) => left[1] - right[1])
+    .map(([utcDate]) => ({
+      utcDate,
+      challenges: [
+        challenge('daily-review', reviewCounts.get(utcDate) ?? 0),
+        challenge('new-vocabulary', noteCounts.get(utcDate) ?? 0),
+      ],
+    }));
 }
 
 export function selectEligibleBadgeCodes(

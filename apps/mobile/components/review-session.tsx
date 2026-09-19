@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
   calculateReviewIntervalMinutes,
@@ -216,16 +216,25 @@ function ActiveReviewSession({
         </Button>
       </View>
 
-      <Card className="min-h-80 justify-center">
-        <CardHeader>
-          <Text className="text-center text-xs font-semibold uppercase text-muted-foreground">
-            {isFlipped ? 'Answer' : 'Question'}
-          </Text>
-        </CardHeader>
-        <CardContent>
-          <Markdown content={isFlipped ? card.back : card.front} />
-        </CardContent>
-      </Card>
+      {/* Tapping the card toggles: read the answer, tap again for the
+          question. "Show answer" only reveals. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isFlipped ? 'Show the question' : 'Show the answer'}
+        disabled={isSaving}
+        onPress={() => setIsFlipped((flipped) => !flipped)}
+      >
+        <Card className="min-h-80 justify-center">
+          <CardHeader>
+            <Text className="text-center text-xs font-semibold uppercase text-muted-foreground">
+              {isFlipped ? 'Answer' : 'Question'}
+            </Text>
+          </CardHeader>
+          <CardContent>
+            <Markdown content={isFlipped ? card.back : card.front} />
+          </CardContent>
+        </Card>
+      </Pressable>
 
       {saveError ? (
         <Text className="text-center text-destructive">{saveError}</Text>

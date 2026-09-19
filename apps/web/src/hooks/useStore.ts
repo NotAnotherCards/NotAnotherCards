@@ -381,6 +381,8 @@ export function useStore() {
     db,
     decks,
     cards,
+    notes,
+    noteDecks,
     dueCards,
     status,
     isTakenOver: status === 'taken-over',

@@ -22,6 +22,7 @@ import { authClient } from '@/lib/auth-client';
 import { Save, Check, Shield } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { z } from 'zod';
+import { TwoFactorSecurity } from './TwoFactorSecurity';
 
 const passwordSchema = z
   .object({
@@ -90,6 +91,7 @@ export function Security() {
 
   return (
     <div className="space-y-6">
+      <TwoFactorSecurity />
       <form
         onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
         className="space-y-6"

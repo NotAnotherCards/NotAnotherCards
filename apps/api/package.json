@@ -49,6 +49,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@better-auth/utils": "0.4.2",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -106,6 +107,7 @@
     },
     "moduleNameMapper": {
       "^@repo/offline-db$": "<rootDir>/../../../packages/offline-db/src/index.ts",
+      "^@repo/offline-db/activity$": "<rootDir>/../../../packages/offline-db/src/activity.ts",
       "^@repo/schemas$": "<rootDir>/../../../packages/schemas/src/index.ts",
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },

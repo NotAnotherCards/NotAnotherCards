@@ -90,6 +90,18 @@ describe('ReviewSession', () => {
     expect(result.getByText('3 days')).toBeTruthy();
   });
 
+  it('flips back to the question when the card is tapped again', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    expect(await result.findByText('gato')).toBeTruthy();
+    fireEvent.press(result.getByLabelText('Show the answer'));
+    expect(result.getByText('cat')).toBeTruthy();
+
+    fireEvent.press(result.getByLabelText('Show the question'));
+    expect(result.queryByText('cat')).toBeNull();
+    expect(result.getByText('gato')).toBeTruthy();
+  });
+
   it('renders Markdown, shows the back alone after flipping, and records a rating', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 

@@ -13,6 +13,7 @@ vi.mock('@tanstack/react-router', () => ({
     component: () => null,
   }),
   useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
 }));
 
 const expectErrorToShow = async (text: string) => {

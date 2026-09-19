@@ -11,6 +11,7 @@ docker-compose.override.yml
 .cache
 server/dist
 public/dist
+playwright-report
+test-results
 infra/monitoring/secrets/
 infra/monitoring/.env
-

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   selectActivitySummary,
+  selectDailyChallengeHistory,
   selectStreakActivity,
   type ActivityCard,
   type ActivityNote,
@@ -295,6 +296,38 @@ describe('shared activity and gamification rules', () => {
         current: 5,
         target: 5,
         completed: true,
+      },
+    ]);
+  });
+
+  it('projects historical UTC challenge days for delayed sync', () => {
+    const result = selectDailyChallengeHistory(
+      Array.from({ length: 20 }, (_, index) =>
+        review(`yesterday-${index}`, '2026-09-07T23:59:59.000Z'),
+      ),
+      Array.from({ length: 5 }, (_, index) =>
+        note(`yesterday-note-${index}`, '2026-09-07T00:00:00.000Z'),
+      ),
+      at('2026-09-08T12:00:00.000Z'),
+    );
+
+    expect(result).toEqual([
+      {
+        utcDate: '2026-09-07',
+        challenges: [
+          {
+            code: 'daily-review',
+            current: 20,
+            target: 20,
+            completed: true,
+          },
+          {
+            code: 'new-vocabulary',
+            current: 5,
+            target: 5,
+            completed: true,
+          },
+        ],
       },
     ]);
   });

@@ -10,9 +10,12 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest --watch"
   },
   "devDependencies": {
+    "@better-auth/utils": "0.4.2",
+    "@playwright/test": "^1.63.0",
     "@remelondb/driver-node": "0.3.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
@@ -52,6 +55,7 @@
     "lucide-react": "^1.23.0",
     "marked": "^18.0.11",
     "next-themes": "^0.4.6",
+    "qrcode.react": "^4.2.0",
     "radix-ui": "^1.6.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

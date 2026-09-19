@@ -54,7 +54,11 @@ decision, not an oversight to fix.
   surface yet; the first React Native Reusables component that needs one adds
   the pair to `global.css` with web's values.
 - **Sidebar.** `--sidebar` and its seven companions. Desktop navigation only.
-- **Charts.** `--chart-1` to `--chart-5`. Web statistics only.
+- **Charts.** `--chart-1` to `--chart-5`. Web statistics only. The first
+  three carry a hue each so a reader tells the series apart (reviews, notes
+  added, forgot rate); `--chart-4` and `--chart-5` are still neutral. This is
+  the only place the palette leaves greyscale, and only because a chart
+  without distinguishable series is unreadable.
 - **Radius scale.** `--radius` (0.625rem) and `--radius-sm` to `--radius-4xl`
   derived from it. Mobile gains `--radius` with the kit; see Spacing and radius.
 - **`--color-*`.** Tailwind 4's `@theme` bridge, one per token above. These are
