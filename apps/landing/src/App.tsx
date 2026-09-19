@@ -12,6 +12,9 @@ export function App() {
   if (window.location.pathname === '/privacy') {
     return <PrivacyPolicyPage />;
   }
+  if (window.location.pathname === '/terms') {
+    return <TermsOfServicePage />;
+  }
 
   return <NotFoundPage />;
 }
@@ -200,6 +203,86 @@ function LandingPage() {
             <a href={`${APP_URL}/register`}>Create your account</a>
           </Button>
         </div>
+      </section>
+
+      <LandingFooter />
+    </main>
+  );
+}
+
+function NotFoundPage() {
+  useNotFoundPageMetadata();
+
+  const cards = [
+    { digit: '4', word: 'Page', className: 'not-found-card-one' },
+    {
+      digit: '0',
+      word: 'not',
+      className: 'not-found-card-two',
+    },
+    {
+      digit: '4',
+      word: 'found',
+      className: 'not-found-card-three',
+    },
+  ];
+
+  return (
+    <main className="flex min-h-screen flex-col">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
+        <a className="min-w-0" href="/" aria-label="NotAnotherCards home">
+          <picture>
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcSet="/brand/notanothercards-logo-dark.svg"
+            />
+            <img
+              className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
+              src="/brand/notanothercards-logo.svg"
+              alt="NotAnotherCards"
+            />
+          </picture>
+        </a>
+        <nav
+          className="flex shrink-0 items-center gap-2"
+          aria-label="Account actions"
+        >
+          <Button asChild variant="ghost" size="lg" className="px-1 sm:px-4">
+            <a href={`${APP_URL}/login`}>Log in</a>
+          </Button>
+          <Button asChild size="lg">
+            <a href={`${APP_URL}/register`}>Get started</a>
+          </Button>
+        </nav>
+      </header>
+
+      <section className="not-found-section flex flex-1 flex-col items-center px-5 py-14 text-center sm:px-8 sm:py-20">
+        <h1 className="sr-only">Page not found</h1>
+        <div className="not-found-scene" aria-label="Page not found word cards">
+          {cards.map(({ digit, word, className }) => (
+            <article
+              key={digit + word}
+              className={`not-found-card ${className} rounded-2xl border border-sage-border bg-background p-5 text-center shadow-card sm:p-6`}
+            >
+              <p className="grid flex-1 place-items-center text-7xl font-bold tracking-[-0.08em] text-foreground sm:text-8xl">
+                {digit}
+              </p>
+              <div>
+                <div className="border-t border-border" />
+                <p className="mt-3 text-sm font-medium text-foreground">
+                  {word}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <p className="mt-4 max-w-md text-lg leading-8 text-muted">
+          The page you are looking for does not exist or has moved.
+        </p>
+        <Button asChild size="lg" className="mt-7 h-12 px-5 text-base">
+          <a href="/">Back to home</a>
+        </Button>
       </section>
 
       <LandingFooter />
@@ -397,26 +480,40 @@ function PrivacyPolicyPage() {
   );
 }
 
-function NotFoundPage() {
-  useNotFoundPageMetadata();
+function usePrivacyPageMetadata() {
+  useEffect(() => {
+    const originalTitle = document.title;
+    const canonical = document.querySelector<HTMLLinkElement>(
+      'link[rel="canonical"]',
+    );
+    const openGraphUrl = document.querySelector<HTMLMetaElement>(
+      'meta[property="og:url"]',
+    );
+    const originalCanonicalUrl = canonical?.href;
+    const originalOpenGraphUrl = openGraphUrl?.content;
 
-  const cards = [
-    { digit: '4', word: 'Page', className: 'not-found-card-one' },
-    {
-      digit: '0',
-      word: 'not',
-      className: 'not-found-card-two',
-    },
-    {
-      digit: '4',
-      word: 'found',
-      className: 'not-found-card-three',
-    },
-  ];
+    document.title = 'NotAnotherCards — Privacy Policy';
+    if (canonical) canonical.href = 'https://notanothercards.com/privacy';
+    if (openGraphUrl)
+      openGraphUrl.content = 'https://notanothercards.com/privacy';
+
+    return () => {
+      document.title = originalTitle;
+      if (canonical && originalCanonicalUrl)
+        canonical.href = originalCanonicalUrl;
+      if (openGraphUrl && originalOpenGraphUrl) {
+        openGraphUrl.content = originalOpenGraphUrl;
+      }
+    };
+  }, []);
+}
+
+function TermsOfServicePage() {
+  useTermsPageMetadata();
 
   return (
-    <main className="flex min-h-screen flex-col">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
+    <main>
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
         <a className="min-w-0" href="/" aria-label="NotAnotherCards home">
           <picture>
             <source
@@ -443,41 +540,264 @@ function NotFoundPage() {
         </nav>
       </header>
 
-      <section className="not-found-section flex flex-1 flex-col items-center px-5 py-14 text-center sm:px-8 sm:py-20">
-        <h1 className="sr-only">Page not found</h1>
-        <div className="not-found-scene" aria-label="Page not found word cards">
-          {cards.map(({ digit, word, className }) => (
-            <article
-              key={digit + word}
-              className={`not-found-card ${className} rounded-2xl border border-sage-border bg-background p-5 text-center shadow-card sm:p-6`}
-            >
-              <p className="grid flex-1 place-items-center text-7xl font-bold tracking-[-0.08em] text-foreground sm:text-8xl">
-                {digit}
-              </p>
-              <div>
-                <div className="border-t border-border" />
-                <p className="mt-3 text-sm font-medium text-foreground">
-                  {word}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <p className="mt-4 max-w-md text-lg leading-8 text-muted">
-          The page you are looking for does not exist or has moved.
+      <article className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
+        <p className="text-sm font-medium text-primary">NotAnotherCards</p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-[-0.06em] sm:text-5xl">
+          Terms of Service
+        </h1>
+        <p className="mt-5 text-sm leading-6 text-muted">
+          Effective date: September 18, 2026
         </p>
-        <Button asChild size="lg" className="mt-7 h-12 px-5 text-base">
-          <a href="/">Back to home</a>
-        </Button>
-      </section>
+
+        <div className="mt-12 space-y-10 text-base leading-7 text-muted">
+          <section aria-labelledby="terms-overview">
+            <h2
+              id="terms-overview"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Agreement and eligibility
+            </h2>
+            <div className="mt-4 space-y-4">
+              <p>
+                NotAnotherCards is a free flashcard learning service operated by
+                the NotAnotherCards team, based in Berlin, Germany. These Terms
+                govern your use of the website, application, and related
+                services. By creating an account or using the service, you agree
+                to them. For questions, contact us at{' '}
+                <a
+                  className="underline underline-offset-4 hover:text-foreground"
+                  href="mailto:notanothercards@gmail.com"
+                >
+                  notanothercards@gmail.com
+                </a>
+                .
+              </p>
+              <p>
+                You may use the service only if you can legally enter this
+                agreement where you live. If you are not old enough to do so, a
+                parent or legal guardian must review and accept these Terms for
+                you.
+              </p>
+            </div>
+          </section>
+
+          <section aria-labelledby="terms-open-source">
+            <h2
+              id="terms-open-source"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Free and open source
+            </h2>
+            <p className="mt-4">
+              NotAnotherCards is a free and open-source project. Its source code
+              is available under the MIT License. The MIT License applies to the
+              project source code; it does not replace these Terms or transfer
+              ownership of content created by service users.
+            </p>
+          </section>
+
+          <section aria-labelledby="terms-accounts">
+            <h2
+              id="terms-accounts"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Accounts and security
+            </h2>
+            <div className="mt-4 space-y-4">
+              <p>
+                Give accurate account information and keep your password and
+                access to your account secure. You are responsible for activity
+                that happens through your account. Tell us promptly if you
+                believe it has been used without your permission.
+              </p>
+              <p>
+                You may sign in with Google or Facebook when those options are
+                available. Their own terms and privacy rules apply to those
+                sign-in services. We do not receive your Google or Facebook
+                password, and we do not post to those services for you.
+              </p>
+            </div>
+          </section>
+
+          <section aria-labelledby="terms-acceptable-use">
+            <h2
+              id="terms-acceptable-use"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Acceptable use and moderation
+            </h2>
+            <div className="mt-4 space-y-4">
+              <p>
+                Do not use NotAnotherCards for unlawful, harmful, abusive,
+                deceptive, or infringing content or activity. Do not interfere
+                with other users, the service, or its security; attempt to
+                access accounts or systems without permission; or bypass,
+                disable, or evade publication moderation.
+              </p>
+              <p>
+                Public decks are checked by automated moderation before
+                publication. We may refuse, remove, restrict, or review content
+                or accounts when reasonably necessary to enforce these Terms,
+                protect users, comply with law, or operate the service.
+                Automated checks can make mistakes, so a moderation decision is
+                not a guarantee that content is lawful, accurate, or safe.
+              </p>
+            </div>
+          </section>
+
+          <section aria-labelledby="terms-content">
+            <h2
+              id="terms-content"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Your content and public decks
+            </h2>
+            <div className="mt-4 space-y-4">
+              <p>
+                You keep ownership of the decks, notes, cards, and other
+                learning content you create. To operate NotAnotherCards, you
+                give us a limited, non-exclusive permission to store,
+                synchronize, process, moderate, and display that content only as
+                needed to provide, secure, and improve the service.
+              </p>
+              <p>
+                A deck remains private unless you deliberately choose to publish
+                it. Once published, its deck information and learning content
+                can be viewed by other people through NotAnotherCards. Other
+                users may import a published deck as their own separate private
+                copy; later changes to either copy do not change the other one.
+                You can unpublish a deck to stop making its published version
+                available to new viewers and imports.
+              </p>
+              <p>
+                You are responsible for having the rights and permissions needed
+                to create, upload, or publish your content. Do not publish
+                material that violates another person&apos;s rights.
+              </p>
+            </div>
+          </section>
+
+          <section aria-labelledby="terms-ai">
+            <h2
+              id="terms-ai"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              AI-generated content
+            </h2>
+            <p className="mt-4">
+              AI generation is optional. Generated cards and other AI output may
+              be inaccurate, incomplete, biased, unsuitable, or infringe rights.
+              Review and edit it before relying on it, sharing it, or publishing
+              it. You remain responsible for content you save or publish,
+              including content based on AI output.
+            </p>
+          </section>
+
+          <section aria-labelledby="terms-third-parties">
+            <h2
+              id="terms-third-parties"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Third-party services
+            </h2>
+            <p className="mt-4">
+              NotAnotherCards relies on third-party services to provide some
+              features. These include Google and Facebook for optional social
+              sign-in, and Resend for transactional emails such as password
+              reset messages. Your use of those services may also be governed by
+              their own terms and privacy policies. We are not responsible for
+              third-party services outside our control.
+            </p>
+          </section>
+
+          <section aria-labelledby="terms-availability">
+            <h2
+              id="terms-availability"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Availability, changes, and ending access
+            </h2>
+            <div className="mt-4 space-y-4">
+              <p>
+                We may change, suspend, or end any part of the service when
+                needed for maintenance, security, legal compliance, or project
+                development. We may also suspend or terminate access if you
+                break these Terms or create a risk for the service or others.
+              </p>
+              <p>
+                We will make reasonable efforts to give notice of material
+                changes through the service or by email when practical. The
+                current version and its effective date will always appear on
+                this page. Continuing to use the service after the effective
+                date means you accept the updated Terms.
+              </p>
+            </div>
+          </section>
+
+          <section aria-labelledby="terms-liability">
+            <h2
+              id="terms-liability"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Disclaimers and liability
+            </h2>
+            <p className="mt-4">
+              NotAnotherCards is provided free of charge and on an “as is” and
+              “as available” basis. To the extent permitted by law, we do not
+              promise that the service will always be available, secure,
+              error-free, or suitable for a particular purpose. We are not
+              liable for indirect, incidental, special, consequential, or lost
+              profit damages arising from use of the service. Nothing in these
+              Terms excludes liability that cannot legally be excluded,
+              including liability for intent, gross negligence, or injury to
+              life, body, or health.
+            </p>
+          </section>
+
+          <section aria-labelledby="terms-law">
+            <h2
+              id="terms-law"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Governing law
+            </h2>
+            <p className="mt-4">
+              These Terms are governed by the laws of Germany, excluding the
+              United Nations Convention on Contracts for the International Sale
+              of Goods. If you are a consumer, this choice does not take away
+              protections that cannot be excluded under the law of your usual
+              place of residence.
+            </p>
+          </section>
+
+          <section aria-labelledby="terms-privacy">
+            <h2
+              id="terms-privacy"
+              className="text-2xl font-semibold tracking-[-0.04em] text-foreground"
+            >
+              Privacy
+            </h2>
+            <p className="mt-4">
+              Our{' '}
+              <a
+                className="underline underline-offset-4 hover:text-foreground"
+                href="/privacy"
+              >
+                Privacy Policy
+              </a>{' '}
+              explains how we process personal information when you use
+              NotAnotherCards.
+            </p>
+          </section>
+        </div>
+      </article>
 
       <LandingFooter />
     </main>
   );
 }
 
-function usePrivacyPageMetadata() {
+function useTermsPageMetadata() {
   useEffect(() => {
     const originalTitle = document.title;
     const canonical = document.querySelector<HTMLLinkElement>(
@@ -489,10 +809,10 @@ function usePrivacyPageMetadata() {
     const originalCanonicalUrl = canonical?.href;
     const originalOpenGraphUrl = openGraphUrl?.content;
 
-    document.title = 'NotAnotherCards — Privacy Policy';
-    if (canonical) canonical.href = 'https://notanothercards.com/privacy';
+    document.title = 'NotAnotherCards — Terms of Service';
+    if (canonical) canonical.href = 'https://notanothercards.com/terms';
     if (openGraphUrl)
-      openGraphUrl.content = 'https://notanothercards.com/privacy';
+      openGraphUrl.content = 'https://notanothercards.com/terms';
 
     return () => {
       document.title = originalTitle;
@@ -528,6 +848,13 @@ function LandingFooter() {
         href="/privacy"
       >
         Privacy Policy
+      </a>
+      <span aria-hidden="true">·</span>
+      <a
+        className="underline underline-offset-4 hover:text-foreground"
+        href="/terms"
+      >
+        Terms of Service
       </a>
     </footer>
   );
