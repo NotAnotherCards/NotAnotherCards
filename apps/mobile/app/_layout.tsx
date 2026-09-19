@@ -32,6 +32,14 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: 'Log in' }} />
         <Stack.Screen name="register" options={{ title: 'Register' }} />
+        <Stack.Screen
+          name="two-factor"
+          options={{
+            title: 'Verify your sign-in',
+            headerBackVisible: false,
+            gestureEnabled: false,
+          }}
+        />
         <Stack.Screen name="onboarding" options={{ title: 'Set up profile' }} />
         {/* The tab strip is the dashboard's top bar, as on web. Screens
             pushed from it (deck, review) keep the native header and its
