@@ -47,6 +47,29 @@ describe('App', () => {
     }
   });
 
+  it('renders word cards for an unknown route instead of the landing page', () => {
+    window.history.replaceState({}, '', '/not-a-real-page');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Page not found', level: 1 }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('4')).toHaveLength(2);
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText('Page')).toBeInTheDocument();
+    expect(screen.getByText('not')).toBeInTheDocument();
+    expect(screen.getByText('found')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute(
+      'href',
+      '/',
+    );
+    expect(document.title).toBe('NotAnotherCards — Page not found');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('ships the approved metadata and canonical URL', () => {
     const metadataDocument = new DOMParser().parseFromString(
       indexHtml,
