@@ -7,10 +7,15 @@
     "test": "turbo run test",
     "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/monitoring/validate.sh && bash infra/vps/validate-ai-gateway.sh",
     "check:cycles": "node scripts/check-cycles.mjs",
+    "check:db-docs": "pnpm build:db-docs-deps && node scripts/check-db-docs.mjs",
+    "check:schema-fresh": "pnpm build:db-docs-deps && node scripts/check-schema-fresh.mjs",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,mts,mjs,js,cjs,cts}\"",
-    "check:deps": "knip"
+    "check:deps": "knip",
+    "build:db-docs-deps": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
+    "docs:db:generate": "pnpm build:db-docs-deps && node scripts/check-db-docs.mjs --write",
+    "test:db-docs": "pnpm build:db-docs-deps && node --test scripts/schema-docs.test.mjs"
   },
   "devDependencies": {
     "@remelondb/core": "0.3.0",
