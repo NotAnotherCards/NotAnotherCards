@@ -38,6 +38,19 @@ export function reviewWrites(db: Database, sync: SyncController | null) {
   };
 }
 
+export function useReviewOverview(manager: DatabaseManager) {
+  const db = useDatabase(manager);
+  const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+
+  return {
+    decks: decks.data,
+    dueCount: selectDueCards(cards.data, Date.now()).length,
+    isLoading: !db || decks.isLoading || cards.isLoading,
+    error: decks.error ?? cards.error,
+  };
+}
+
 export function useReviewDeck(manager: DatabaseManager, deckId: string) {
   const { syncController } = useSessionDatabase();
   const db = useDatabase(manager);

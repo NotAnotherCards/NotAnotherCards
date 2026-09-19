@@ -1,11 +1,30 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import Dashboard from '@/app/dashboard';
+import {
+  clearLastReviewDeckId,
+  loadLastReviewDeckId,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
 
 const mockUseSession = jest.fn();
+const mockPush = jest.fn();
+const mockManager = { tag: 'manager' };
+let mockReviewOverview = {
+  decks: [] as { id: string }[],
+  dueCount: 0,
+  isLoading: false,
+  error: null as Error | null,
+};
 
 jest.mock('../lib/auth-client', () => ({
   authClient: { useSession: () => mockUseSession() },
+}));
+jest.mock('../lib/database-provider', () => ({
+  useSessionDatabase: () => ({ manager: mockManager }),
+}));
+jest.mock('../lib/review', () => ({
+  useReviewOverview: () => mockReviewOverview,
 }));
 
 // The deck list and settings have their own tests; keep this one about the
@@ -33,11 +52,21 @@ jest.mock('expo-router', () => {
   return {
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
+    useRouter: () => ({ push: mockPush }),
   };
 });
 
 describe('Dashboard screen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    clearLastReviewDeckId('user-dashboard');
+    mockReviewOverview = {
+      decks: [],
+      dueCount: 0,
+      isLoading: false,
+      error: null,
+    };
+  });
 
   it('redirects to login when there is no session', () => {
     mockUseSession.mockReturnValue({ data: null, isPending: false });
@@ -49,6 +78,7 @@ describe('Dashboard screen', () => {
     mockUseSession.mockReturnValue({
       data: {
         user: {
+          id: 'user-dashboard',
           name: 'Jane Doe',
           email: 'jane@example.com',
           onBoardingComplete: true,
@@ -81,6 +111,75 @@ describe('Dashboard screen', () => {
     fireEvent.press(getByText('Profile & Settings'));
     expect(getByText('settings-tab')).toBeTruthy();
     expect(queryByText('deck-list')).toBeNull();
+  });
+
+  it('shows the due count and starts the saved deck review', () => {
+    mockReviewOverview = {
+      decks: [{ id: 'deck-spanish' }],
+      dueCount: 3,
+      isLoading: false,
+      error: null,
+    };
+    saveLastReviewDeckId('user-dashboard', 'deck-spanish');
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('3 cards due')).toBeTruthy();
+    fireEvent.press(getByText('Start review'));
+
+    expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
+  });
+
+  it('clears a missing saved deck and opens the library', () => {
+    saveLastReviewDeckId('user-dashboard', 'deleted-deck');
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    fireEvent.press(getByText('Start review'));
+
+    expect(getByText('deck-list')).toBeTruthy();
+    expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('does not clear the saved deck while queries are loading', () => {
+    mockReviewOverview.isLoading = true;
+    saveLastReviewDeckId('user-dashboard', 'deck-spanish');
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByRole } = render(<Dashboard />);
+    const button = getByRole('button', { name: 'Start review' });
+    expect(button.props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(button);
+
+    expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });
 
   it('offers a retry instead of redirecting when the session fetch fails', () => {
