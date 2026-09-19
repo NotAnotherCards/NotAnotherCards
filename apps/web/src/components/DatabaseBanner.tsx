@@ -15,6 +15,11 @@ function isOpfsBlocked(error: Error | null): boolean {
 
 function getFriendlyErrorMessage(error: Error | null): string {
   if (!error) return 'Failed to load database.';
+  // remelondb >=0.3.1: another window, or a worker the browser never shut
+  // down (Firefox after suspend/resume), still holds the storage handles.
+  if ('code' in error && error.code === 'OPFS_POOL_HELD') {
+    return 'Local storage is held by another window or by a worker that did not shut down. Retry; if it keeps happening, close every window of this site or restart the browser.';
+  }
   if (error.message.includes('shared worker did not answer')) {
     return 'Database connection timed out. Please retry or refresh the page.';
   }
