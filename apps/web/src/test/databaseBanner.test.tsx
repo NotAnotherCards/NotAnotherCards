@@ -99,6 +99,25 @@ describe('DatabaseBanner Component', () => {
     ).toBeInTheDocument();
   });
 
+  it('explains a held storage pool and keeps the retry (typed OPFS_POOL_HELD)', () => {
+    vi.mocked(remelonReact.useDatabaseState).mockReturnValue({
+      status: 'error',
+      error: Object.assign(
+        new Error('NoModificationAllowedError: No modification allowed'),
+        { code: 'OPFS_POOL_HELD' },
+      ),
+    });
+
+    render(<DatabaseBanner />);
+    expect(
+      screen.getByText(/held by another window or by a worker/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No modification allowed/i)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Retry/i }));
+    expect(mockReload).toHaveBeenCalled();
+  });
+
   it('renders red banner when status is error and reloads on retry click', () => {
     vi.mocked(remelonReact.useDatabaseState).mockReturnValue({
       status: 'error',
