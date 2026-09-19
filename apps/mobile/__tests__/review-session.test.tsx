@@ -1,7 +1,11 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ReviewSession } from '@/components/review-session';
-import { saveReviewPreferences } from '@/lib/review-preferences';
+import {
+  clearLastReviewDeckId,
+  loadLastReviewDeckId,
+  saveReviewPreferences,
+} from '@/lib/review-preferences';
 
 const manager = { tag: 'manager' };
 let mockManager: unknown = manager;
@@ -42,6 +46,7 @@ beforeEach(() => {
   mockRecord.mockClear();
   mockReplace.mockClear();
   mockBack.mockClear();
+  clearLastReviewDeckId('user-1');
   mockReviewState = {
     deck: { id: 'd1', title: 'Spanish' },
     dueCards: [
@@ -71,6 +76,31 @@ describe('ReviewSession', () => {
     expect(
       render(<ReviewSession deckId="d1" />).queryByText('gato'),
     ).toBeNull();
+  });
+
+  it('remembers an existing deck when review opens', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    expect(loadLastReviewDeckId('user-1')).toBe('d1');
+  });
+
+  it('does not remember a missing deck', async () => {
+    mockReviewState.deck = null;
+    const result = render(<ReviewSession deckId="missing" />);
+
+    await result.findByText('Deck not found');
+    expect(loadLastReviewDeckId('user-1')).toBeNull();
+  });
+
+  it('clears the remembered deck when review is exited', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Exit review'));
+
+    expect(loadLastReviewDeckId('user-1')).toBeNull();
+    expect(mockReplace).toHaveBeenCalledWith('/deck/d1');
   });
 
   it('follows the saved review preference: four labels and the next interval', async () => {
@@ -118,6 +148,7 @@ describe('ReviewSession', () => {
     fireEvent.press(result.getByText('Remembered'));
     await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
     expect(await result.findByText('Review complete')).toBeTruthy();
+    expect(loadLastReviewDeckId('user-1')).toBeNull();
   });
 
   it('shows a no-due-cards state and returns to the deck', async () => {
