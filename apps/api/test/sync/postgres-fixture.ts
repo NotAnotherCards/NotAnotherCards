@@ -21,8 +21,8 @@ let tearingDown = false;
 export let db: AppDatabase;
 
 // Teardown waits for server-side connections to close before a normal drop.
-// Keep this pool-level guard for errors during the forced-cleanup fallback;
-// it cannot catch errors on clients that no longer forward to this pool.
+// This guard covers the fixture's own pools while they close. It cannot cover
+// clients a test created, which is why teardown never terminates their backends.
 // Pool errors outside teardown must still fail the run.
 function absorbTeardownErrors(pool: Pool): Pool {
   pool.on('error', (error) => {
@@ -45,6 +45,17 @@ export async function setUpPostgres(): Promise<void> {
   adminPool = absorbTeardownErrors(
     new Pool({ connectionString: adminUrl.toString() }),
   );
+  // One fixture at a time: vitest.sync.config.ts sets fileParallelism: false
+  // and no Jest suite uses this fixture. Parallel runs would drop each other's
+  // database here.
+  const staleDatabases = await adminPool.query<{ datname: string }>(
+    "SELECT datname FROM pg_database WHERE datname LIKE 'notanothercards_sync_%'",
+  );
+  for (const { datname } of staleDatabases.rows) {
+    console.warn(`PostgreSQL setup: dropping stale test database ${datname}`);
+    const escapedName = datname.replaceAll('"', '""');
+    await adminPool.query(`DROP DATABASE "${escapedName}" WITH (FORCE)`);
+  }
   await adminPool.query(`CREATE DATABASE "${testDatabaseName}"`);
 
   testPool = absorbTeardownErrors(
@@ -87,7 +98,6 @@ export async function tearDownPostgres(): Promise<void> {
       // Pool.end() can resolve before PostgreSQL has closed its backends.
       // Include connections from pools owned by Nest and individual tests.
       const deadline = performance.now() + 5_000;
-      let force = false;
       for (;;) {
         const { rows } = await adminPool.query<{ count: string }>(
           'SELECT count(*) FROM pg_stat_activity WHERE datname = $1',
@@ -101,22 +111,13 @@ export async function tearDownPostgres(): Promise<void> {
              FROM pg_stat_activity WHERE datname = $1`,
             [testDatabaseName],
           );
-          console.warn(
-            `PostgreSQL teardown timed out waiting for connections to ${testDatabaseName}; forcing cleanup`,
-            remaining.rows,
+          throw new Error(
+            `PostgreSQL teardown: ${remaining.rows.length} connection(s) to ${testDatabaseName} still open after 5 s; a test leaked a client. ${JSON.stringify(remaining.rows)}`,
           );
-          await adminPool.query(
-            'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1',
-            [testDatabaseName],
-          );
-          force = true;
-          break;
         }
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
-      await adminPool.query(
-        `DROP DATABASE "${testDatabaseName}"${force ? ' WITH (FORCE)' : ''}`,
-      );
+      await adminPool.query(`DROP DATABASE "${testDatabaseName}"`);
     } finally {
       await adminPool.end();
     }

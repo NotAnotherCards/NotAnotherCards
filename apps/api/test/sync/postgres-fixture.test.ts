@@ -28,7 +28,11 @@ describe('PostgreSQL fixture teardown', () => {
       'postgresql://test:test@localhost/postgres',
     );
     mocks.admin.query.mockReset();
-    mocks.admin.query.mockResolvedValue({ rows: [{ count: '0' }] });
+    mocks.admin.query.mockImplementation((sql: string) =>
+      Promise.resolve({
+        rows: sql.startsWith('SELECT datname') ? [] : [{ count: '0' }],
+      }),
+    );
   });
 
   afterEach(() => {
@@ -43,6 +47,33 @@ describe('PostgreSQL fixture teardown', () => {
     mocks.admin.query.mockClear();
     return fixture;
   }
+
+  it('drops stale fixture databases before creating its own', async () => {
+    const staleDatabases = [
+      'notanothercards_sync_10_100',
+      'notanothercards_sync_20_200',
+    ];
+    mocks.admin.query.mockImplementation((sql: string) =>
+      Promise.resolve({
+        rows: sql.startsWith('SELECT datname')
+          ? staleDatabases.map((datname) => ({ datname }))
+          : [],
+      }),
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { setUpPostgres } = await import('./postgres-fixture.js');
+
+    await setUpPostgres();
+
+    const queries = mocks.admin.query.mock.calls.map(([sql]) => sql as string);
+    expect(queries.slice(0, 4)).toEqual([
+      expect.stringContaining('SELECT datname FROM pg_database'),
+      'DROP DATABASE "notanothercards_sync_10_100" WITH (FORCE)',
+      'DROP DATABASE "notanothercards_sync_20_200" WITH (FORCE)',
+      expect.stringMatching(/^CREATE DATABASE "notanothercards_sync_/),
+    ]);
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
 
   it('waits for server backends after pool.end resolves and drops without force', async () => {
     const { tearDownPostgres } = await fixture();
@@ -71,7 +102,7 @@ describe('PostgreSQL fixture teardown', () => {
     expect(mocks.admin.end).toHaveBeenCalledOnce();
   });
 
-  it('logs remaining backends before terminating them only after the deadline', async () => {
+  it('rejects with leaked backends after the deadline and never forces', async () => {
     const { tearDownPostgres } = await fixture();
     const backends = [
       { pid: 123, application_name: 'leaked-test', state: 'idle' },
@@ -81,24 +112,23 @@ describe('PostgreSQL fixture teardown', () => {
         rows: sql.startsWith('SELECT count') ? [{ count: '1' }] : backends,
       }),
     );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const teardown = tearDownPostgres();
+    const teardown = tearDownPostgres().catch((error: Error) => error);
     await vi.advanceTimersByTimeAsync(4_990);
-    expect(warn).not.toHaveBeenCalled();
     expect(mocks.admin.end).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(10);
-    await teardown;
+    const error = await teardown;
 
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('forcing cleanup'),
-      backends,
-    );
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain('a test leaked a client');
+    expect((error as Error).message).toContain('123');
     const queries = mocks.admin.query.mock.calls.map(([sql]) => sql as string);
-    expect(queries.slice(-3)).toEqual([
+    expect(queries).toContainEqual(
       expect.stringContaining('SELECT pid, application_name'),
-      'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1',
-      expect.stringMatching(/WITH \(FORCE\)$/),
-    ]);
+    );
+    expect(queries.some((sql) => sql.includes('pg_terminate_backend'))).toBe(
+      false,
+    );
+    expect(queries.some((sql) => sql.includes('WITH (FORCE)'))).toBe(false);
     expect(mocks.admin.end).toHaveBeenCalledOnce();
   });
 
