@@ -5,19 +5,29 @@ import { authClient } from '@/lib/auth-client';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from './ui/button';
 import { Text } from './ui/text';
+import {
+  useTwoFactorChallengeState,
+  useTwoFactorDeepLinkPending,
+} from '@/lib/two-factor-challenge';
 
 // The guard every signed-in screen needs, in one place: spinner while the
 // session loads, retry on a failed fetch (server down is not "logged out"),
 // /login without a session, /onboarding until the server-owned flag is set.
 export function RequireSession({ children }: { children: ReactNode }) {
   const { data: session, isPending, error, refetch } = authClient.useSession();
+  const challenge = useTwoFactorChallengeState();
+  const deepLinkPending = useTwoFactorDeepLinkPending();
 
-  if (isPending) {
+  if (isPending || !challenge.hydrated) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator />
       </View>
     );
+  }
+
+  if (deepLinkPending || challenge.pending) {
+    return <Redirect href="/two-factor" />;
   }
 
   if (error) {
