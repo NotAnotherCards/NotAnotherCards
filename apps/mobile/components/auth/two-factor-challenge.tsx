@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import { authClient } from '@/lib/auth-client';
 import {
   beginTwoFactorChallenge,
   finishTwoFactorChallenge,
+  isTerminalTwoFactorChallengeError,
   twoFactorChallengeError,
 } from '@/lib/two-factor-challenge';
 import { AuthCard } from './auth-card';
@@ -27,21 +28,38 @@ export function TwoFactorChallenge() {
   const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    beginTwoFactorChallenge();
+    void beginTwoFactorChallenge();
   }, []);
 
   useEffect(() => {
     if (!verifiedUserId || session?.user.id !== verifiedUserId) return;
-    finishTwoFactorChallenge();
-    router.replace(
-      session.user.onBoardingComplete ? '/dashboard' : '/onboarding',
-    );
+    void finishTwoFactorChallenge().then(() => {
+      router.replace(
+        session.user.onBoardingComplete ? '/dashboard' : '/onboarding',
+      );
+    });
   }, [verifiedUserId, session, router]);
 
   const changeMode = (next: ChallengeMode) => {
     setMode(next);
     setCode('');
     setError(null);
+  };
+
+  const leaveChallenge = async () => {
+    setIsSubmitting(true);
+    try {
+      // Clears the temporary challenge cookie from SecureStore. There is no
+      // authenticated session at this point, so no account database is
+      // selected or deleted.
+      await authClient.signOut();
+    } catch {
+      // @better-auth/expo clears local auth storage when signOut starts. The
+      // server-side challenge is short lived if the network cannot be reached.
+    } finally {
+      await finishTwoFactorChallenge();
+      router.replace('/login');
+    }
   };
 
   const verify = async () => {
@@ -71,6 +89,14 @@ export function TwoFactorChallenge() {
             });
 
       if (response.error || !response.data) {
+        if (isTerminalTwoFactorChallengeError(response.error)) {
+          Alert.alert(
+            'Sign-in could not continue',
+            twoFactorChallengeError(response.error),
+          );
+          await leaveChallenge();
+          return;
+        }
         setError(twoFactorChallengeError(response.error));
         return;
       }
@@ -80,22 +106,6 @@ export function TwoFactorChallenge() {
       setError('Verification is temporarily unavailable. Please try again.');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const cancel = async () => {
-    setIsSubmitting(true);
-    try {
-      // Clears the temporary challenge cookie from SecureStore. There is no
-      // authenticated session at this point, so no account database is
-      // selected or deleted.
-      await authClient.signOut();
-    } catch {
-      // @better-auth/expo clears local auth storage when signOut starts. The
-      // server-side challenge is short lived if the network cannot be reached.
-    } finally {
-      finishTwoFactorChallenge();
-      router.replace('/login');
     }
   };
 
@@ -176,7 +186,7 @@ export function TwoFactorChallenge() {
       <Button
         variant="ghost"
         disabled={isSubmitting || Boolean(verifiedUserId)}
-        onPress={cancel}
+        onPress={leaveChallenge}
       >
         <Text>Back to sign in</Text>
       </Button>
