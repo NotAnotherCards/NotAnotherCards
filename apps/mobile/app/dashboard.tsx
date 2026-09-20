@@ -76,15 +76,12 @@ export default function Dashboard() {
         >
           {tab === 'overview' && (
             <View className="gap-4">
-              <View className="gap-1">
-                <Text className="text-base">
-                  Welcome,{' '}
-                  <Text className="font-semibold">{session?.user.name}</Text>!
-                </Text>
-                <Text className="text-muted-foreground">
-                  Logged in as {session?.user.email}
-                </Text>
-              </View>
+              {/* The email stays in the Settings account header; the first
+                  screen is the one others see over your shoulder. */}
+              <Text className="text-base">
+                Welcome,{' '}
+                <Text className="font-semibold">{session?.user.name}</Text>!
+              </Text>
               {manager ? (
                 <ReviewOverview
                   manager={manager}

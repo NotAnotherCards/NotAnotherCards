@@ -86,9 +86,9 @@ describe('Dashboard screen', () => {
       },
       isPending: false,
     });
-    const { getByText } = render(<Dashboard />);
+    const { getByText, queryByText } = render(<Dashboard />);
     expect(getByText('Jane Doe')).toBeTruthy();
-    expect(getByText(/jane@example.com/)).toBeTruthy();
+    expect(queryByText(/jane@example.com/)).toBeNull();
   });
 
   it('opens on Overview and switches to the library and settings tabs', () => {
