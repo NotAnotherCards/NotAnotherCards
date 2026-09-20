@@ -88,17 +88,6 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
     );
   }
 
-  if (store.error) {
-    return (
-      <ReviewRecovery
-        title="Could not load your deck"
-        message={store.error}
-        actionLabel="Retry"
-        onAction={store.reconnect}
-      />
-    );
-  }
-
   if (!store.ready) {
     return (
       <main

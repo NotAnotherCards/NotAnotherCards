@@ -1,6 +1,7 @@
 import { authClient } from '@/lib/auth-client';
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import { DatabaseBanner } from '@/components/DatabaseBanner';
+import { useDatabaseState } from '@remelondb/core/react';
 import { SyncProvider } from '@/offline/syncProvider';
 import { useSessionDatabase } from '@/offline/sessionDatabase';
 import { SyncStatus } from '@/components/SyncStatus';
@@ -127,9 +128,23 @@ export function ProtectedLayoutComponent() {
         </FloatingBannerContainer>
         <SyncStatus />
         <div className="flex-1 flex flex-col">
-          <Outlet />
+          {manager ? (
+            <DatabaseGate>
+              <Outlet />
+            </DatabaseGate>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </div>
     </SyncProvider>
   );
+}
+
+// A failed database open is reported once, by the banner above. Nothing
+// under it renders, so no screen can show the same error again with its own
+// Retry (#390).
+function DatabaseGate({ children }: { children: React.ReactNode }) {
+  const { status } = useDatabaseState();
+  return status === 'error' ? null : children;
 }

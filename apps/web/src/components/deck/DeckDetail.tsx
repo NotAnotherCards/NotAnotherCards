@@ -546,7 +546,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         canRemoveCard={isKnownDeck}
         onAddCard={() => setShowCreateForm(true)}
         isLoading={!store.ready}
-        error={store.error}
       />
 
       {/* Add: the deck's note type decides which form appears */}
