@@ -21,6 +21,7 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { Save, Check, Shield } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { z } from 'zod';
 import { TwoFactorSecurity } from './TwoFactorSecurity';
 
@@ -49,7 +50,7 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 export function Security() {
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
-  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { schedule: scheduleSuccessDismiss } = useDismissTimer(5000);
   const mounted = useRef(true);
 
   const passwordForm = useForm<PasswordFormValues>({
@@ -65,9 +66,6 @@ export function Security() {
     mounted.current = true;
     return () => {
       mounted.current = false;
-      if (successTimer.current !== null) {
-        clearTimeout(successTimer.current);
-      }
     };
   }, []);
 
@@ -92,13 +90,9 @@ export function Security() {
         newPassword: '',
         confirmPassword: '',
       });
-      if (successTimer.current !== null) {
-        clearTimeout(successTimer.current);
-      }
-      successTimer.current = setTimeout(() => {
-        successTimer.current = null;
+      scheduleSuccessDismiss(() => {
         setSecuritySuccess(null);
-      }, 5000);
+      });
     } catch (err) {
       if (!mounted.current) return;
       setSecurityError(

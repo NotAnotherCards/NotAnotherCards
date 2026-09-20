@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AiWordNoteCandidate } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
+import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
@@ -19,16 +20,13 @@ export function AiWordNotePreview({
 }: AiWordNotePreviewProps) {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { schedule: scheduleSuccessDismiss } = useDismissTimer(3000);
   const mounted = useRef(true);
 
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
-      if (successTimer.current !== null) {
-        clearTimeout(successTimer.current);
-      }
     };
   }, []);
 
@@ -38,13 +36,9 @@ export function AiWordNotePreview({
       await onSave();
       if (!mounted.current) return;
       setSavedSuccess(true);
-      if (successTimer.current !== null) {
-        clearTimeout(successTimer.current);
-      }
-      successTimer.current = setTimeout(() => {
-        successTimer.current = null;
+      scheduleSuccessDismiss(() => {
         setSavedSuccess(false);
-      }, 3000);
+      });
     } catch (err) {
       if (!mounted.current) return;
       const msg = err instanceof Error ? err.message : 'Failed to save note';

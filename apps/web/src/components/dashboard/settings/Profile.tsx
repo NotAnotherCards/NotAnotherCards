@@ -23,6 +23,7 @@ import { ChevronDown, User, Globe, Save, Check } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { LANGUAGES, languageLabel } from '@repo/schemas';
 import { useStore } from '@/hooks/useStore';
+import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 
 export function Profile() {
@@ -30,7 +31,8 @@ export function Profile() {
   const { profile, updateUserProfile } = useStore();
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { clear: clearSuccessTimer, schedule: scheduleSuccessDismiss } =
+    useDismissTimer(3000);
   const mounted = useRef(true);
 
   const form = useForm<ProfileFormValues>({
@@ -66,22 +68,16 @@ export function Profile() {
   useEffect(() => {
     if (isDirty) {
       // the banner goes now, so its timer has nothing left to do
-      if (successTimer.current !== null) {
-        clearTimeout(successTimer.current);
-        successTimer.current = null;
-      }
+      clearSuccessTimer();
       setSuccessMessage(null);
       setApiError(null);
     }
-  }, [isDirty]);
+  }, [clearSuccessTimer, isDirty]);
 
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
-      if (successTimer.current !== null) {
-        clearTimeout(successTimer.current);
-      }
     };
   }, []);
 
@@ -108,13 +104,9 @@ export function Profile() {
 
       setSuccessMessage('Settings saved successfully!');
       void refetch();
-      if (successTimer.current !== null) {
-        clearTimeout(successTimer.current);
-      }
-      successTimer.current = setTimeout(() => {
-        successTimer.current = null;
+      scheduleSuccessDismiss(() => {
         setSuccessMessage(null);
-      }, 3000);
+      });
     } catch (err) {
       if (!mounted.current) return;
       setApiError(
