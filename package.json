@@ -4,6 +4,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/monitoring/validate.sh && bash infra/vps/validate-ai-gateway.sh",
     "check:cycles": "node scripts/check-cycles.mjs",
