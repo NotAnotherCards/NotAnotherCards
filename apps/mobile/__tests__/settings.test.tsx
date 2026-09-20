@@ -20,6 +20,9 @@ jest.mock('expo-router', () => ({
 jest.mock('../lib/database-provider', () => ({
   useSessionDatabase: () => ({ manager: null, syncController: null }),
 }));
+jest.mock('../components/two-factor-security', () => ({
+  TwoFactorSecurity: () => null,
+}));
 jest.mock('../components/ui/icon', () => ({
   LogOutIcon: () => null,
   SettingsIcon: () => null,

@@ -5,6 +5,10 @@ import {
   SessionDatabaseProvider,
   useSessionDatabase,
 } from '@/lib/database-provider';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+} from '@/lib/two-factor-challenge';
 
 // The lifecycle itself is remelonDB's (useSessionDatabase, tested
 // upstream against real managers). What is app-level here is the wiring:
@@ -58,9 +62,9 @@ function Consumer() {
   );
 }
 
-const renderProvider = () =>
+const renderProvider = (blockAccountAccess = false) =>
   render(
-    <SessionDatabaseProvider>
+    <SessionDatabaseProvider blockAccountAccess={blockAccountAccess}>
       <Consumer />
     </SessionDatabaseProvider>,
   );
@@ -68,6 +72,7 @@ const renderProvider = () =>
 describe('SessionDatabaseProvider', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    finishTwoFactorChallenge();
     mockSessionState = { data: null, isPending: true };
     hookResult = { manager: null, syncController: null, closeError: null };
   });
@@ -170,6 +175,33 @@ describe('SessionDatabaseProvider', () => {
       isPending: false,
     };
     renderProvider();
+
+    expect(mockUseSessionDatabase).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null }),
+    );
+  });
+
+  it('does not open an account database while a second factor is pending', () => {
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: false,
+    };
+    beginTwoFactorChallenge();
+    const view = renderProvider();
+
+    expect(mockUseSessionDatabase).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null }),
+    );
+    view.unmount();
+    finishTwoFactorChallenge();
+  });
+
+  it('does not open a cached account database on the deep-link render', () => {
+    mockSessionState = {
+      data: { user: { id: 'previous-user', onBoardingComplete: true } },
+      isPending: false,
+    };
+    renderProvider(true);
 
     expect(mockUseSessionDatabase).toHaveBeenCalledWith(
       expect.objectContaining({ userId: null }),

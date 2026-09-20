@@ -7,8 +7,15 @@ import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
+import { Link, useRouter } from 'expo-router';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+  isTwoFactorRedirect,
+} from '@/lib/two-factor-challenge';
 
 export function LoginForm() {
+  const router = useRouter();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -18,13 +25,18 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     setApiError(null);
+
+    await finishTwoFactorChallenge();
     try {
-      const { error } = await authClient.signIn.email({
+      const { data: response, error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
       });
       if (error) {
         setApiError(apiErrorMessage(error));
+      } else if (isTwoFactorRedirect(response)) {
+        await beginTwoFactorChallenge();
+        router.replace('/two-factor');
       }
     } catch (err) {
       setApiError(apiErrorMessage(err));
@@ -62,6 +74,11 @@ export function LoginForm() {
       >
         <Text>Log in</Text>
       </Button>
+      <Link href="/forgot-password" asChild>
+        <Text className="text-center font-medium text-primary">
+          Forgot your password?
+        </Text>
+      </Link>
     </>
   );
 }
