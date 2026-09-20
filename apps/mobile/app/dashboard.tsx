@@ -114,7 +114,7 @@ function ReviewOverview({
   onChooseDeck: () => void;
 }) {
   const router = useRouter();
-  const { decks, dueCount, isLoading, error } = useReviewOverview(manager);
+  const { dueDeckIds, dueCount, isLoading, error } = useReviewOverview(manager);
 
   const startReview = () => {
     if (!userId) {
@@ -123,7 +123,7 @@ function ReviewOverview({
     }
 
     const lastDeckId = loadLastReviewDeckId(userId);
-    if (lastDeckId && decks.some((deck) => deck.id === lastDeckId)) {
+    if (lastDeckId && dueDeckIds.has(lastDeckId)) {
       router.push(`/review/${lastDeckId}`);
       return;
     }

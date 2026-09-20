@@ -11,7 +11,7 @@ const mockUseSession = jest.fn();
 const mockPush = jest.fn();
 const mockManager = { tag: 'manager' };
 let mockReviewOverview = {
-  decks: [] as { id: string }[],
+  dueDeckIds: new Set<string>(),
   dueCount: 0,
   isLoading: false,
   error: null as Error | null,
@@ -61,7 +61,7 @@ describe('Dashboard screen', () => {
     jest.clearAllMocks();
     clearLastReviewDeckId('user-dashboard');
     mockReviewOverview = {
-      decks: [],
+      dueDeckIds: new Set(),
       dueCount: 0,
       isLoading: false,
       error: null,
@@ -115,7 +115,7 @@ describe('Dashboard screen', () => {
 
   it('shows the due count and starts the saved deck review', () => {
     mockReviewOverview = {
-      decks: [{ id: 'deck-spanish' }],
+      dueDeckIds: new Set(['deck-spanish']),
       dueCount: 3,
       isLoading: false,
       error: null,
@@ -141,6 +141,34 @@ describe('Dashboard screen', () => {
 
   it('clears a missing saved deck and opens the library', () => {
     saveLastReviewDeckId('user-dashboard', 'deleted-deck');
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    fireEvent.press(getByText('Start review'));
+
+    expect(getByText('deck-list')).toBeTruthy();
+    expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('skips a saved deck with nothing due and opens the library', () => {
+    // 3 cards are due, none of them in the deck reviewed last.
+    mockReviewOverview = {
+      dueDeckIds: new Set(['deck-french']),
+      dueCount: 3,
+      isLoading: false,
+      error: null,
+    };
+    saveLastReviewDeckId('user-dashboard', 'deck-spanish');
     mockUseSession.mockReturnValue({
       data: {
         user: {

@@ -40,14 +40,25 @@ export function reviewWrites(db: Database, sync: SyncController | null) {
 
 export function useReviewOverview(manager: DatabaseManager) {
   const db = useDatabase(manager);
-  const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
+  const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
   const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
 
+  const now = Date.now();
+  const due = selectDueCards(cards.data, now);
+  const dueNoteIds = new Set(due.map((card) => card.note_id));
+  // Decks with at least one due card: the Start review button only opens a
+  // deck that has work, whatever the saved preference says.
+  const dueDeckIds = new Set(
+    memberships.data
+      .filter((row) => dueNoteIds.has(row.note_id))
+      .map((row) => row.deck_id),
+  );
+
   return {
-    decks: decks.data,
-    dueCount: selectDueCards(cards.data, Date.now()).length,
-    isLoading: !db || decks.isLoading || cards.isLoading,
-    error: decks.error ?? cards.error,
+    dueDeckIds,
+    dueCount: due.length,
+    isLoading: !db || memberships.isLoading || cards.isLoading,
+    error: memberships.error ?? cards.error,
   };
 }
 
