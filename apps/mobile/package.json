@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
-    "lint": "eslint \"{app,components,lib,__tests__,__mocks__}/**/*.{ts,tsx}\"",
+    "lint": "eslint \"{app,components,lib,__tests__,__mocks__}/**/*.{ts,tsx}\" --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
     "test": "jest",
