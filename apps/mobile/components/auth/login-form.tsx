@@ -7,7 +7,7 @@ import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import {
   beginTwoFactorChallenge,
   finishTwoFactorChallenge,
@@ -26,7 +26,7 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setApiError(null);
 
-    finishTwoFactorChallenge();
+    await finishTwoFactorChallenge();
     try {
       const { data: response, error } = await authClient.signIn.email({
         email: data.email,
@@ -35,7 +35,7 @@ export function LoginForm() {
       if (error) {
         setApiError(apiErrorMessage(error));
       } else if (isTwoFactorRedirect(response)) {
-        beginTwoFactorChallenge();
+        await beginTwoFactorChallenge();
         router.replace('/two-factor');
       }
     } catch (err) {
@@ -74,6 +74,11 @@ export function LoginForm() {
       >
         <Text>Log in</Text>
       </Button>
+      <Link href="/forgot-password" asChild>
+        <Text className="text-center font-medium text-primary">
+          Forgot your password?
+        </Text>
+      </Link>
     </>
   );
 }

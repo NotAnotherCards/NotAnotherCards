@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import QRCode from 'react-native-qrcode-svg';
+import { useRouter } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
 import { Button } from './ui/button';
 import {
@@ -294,6 +295,7 @@ function Enrollment({
 }
 
 export function TwoFactorSecurity() {
+  const router = useRouter();
   const { data: session, refetch } = authClient.useSession();
   const [enabledOverride, setEnabledOverride] = useState<boolean | null>(null);
   const [hasCredential, setHasCredential] = useState<boolean | null>(null);
@@ -306,6 +308,8 @@ export function TwoFactorSecurity() {
   );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingCredential, setIsCreatingCredential] = useState(false);
+  const [credentialError, setCredentialError] = useState<string | null>(null);
   const isEnabled = enabledOverride ?? Boolean(session?.user.twoFactorEnabled);
 
   useEffect(() => {
@@ -335,6 +339,31 @@ export function TwoFactorSecurity() {
     setPassword('');
     setError(null);
     setBackupCodes(null);
+  };
+
+  const startPasswordCreation = async () => {
+    setCredentialError(null);
+    setIsCreatingCredential(true);
+    try {
+      const response = await authClient.signOut();
+      if (response.error) {
+        setCredentialError(
+          response.error.message ||
+            'Could not sign out. Please try again before creating a password.',
+        );
+        return;
+      }
+      router.replace({
+        pathname: '/forgot-password',
+        params: { email: session?.user.email ?? '' },
+      });
+    } catch {
+      setCredentialError(
+        'Could not sign out. Please try again before creating a password.',
+      );
+    } finally {
+      setIsCreatingCredential(false);
+    }
   };
 
   const manage = async () => {
@@ -407,9 +436,22 @@ export function TwoFactorSecurity() {
           <View className="gap-1 rounded-xl border border-border p-4">
             <Text className="font-semibold">A password is required</Text>
             <Text className="text-sm text-muted-foreground">
-              Create a password for this account before enabling two-factor
+              Social-only accounts need a password before enabling two-factor
               authentication.
             </Text>
+            <Button
+              variant="outline"
+              loading={isCreatingCredential}
+              onPress={startPasswordCreation}
+              className="mt-2"
+            >
+              <Text>Sign out and create a password</Text>
+            </Button>
+            {credentialError ? (
+              <Text accessibilityRole="alert" className="text-destructive">
+                {credentialError}
+              </Text>
+            ) : null}
           </View>
         ) : null}
 
