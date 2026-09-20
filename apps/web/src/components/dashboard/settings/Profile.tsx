@@ -89,7 +89,6 @@ export function Profile() {
 
       if (newUsername && newUsername !== currentUsername) {
         const available = await checkUsernameAvailable(newUsername);
-        if (!mounted.current) return;
         if (!available) {
           throw new Error('Username is already taken');
         }

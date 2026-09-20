@@ -552,6 +552,41 @@ describe('Settings Tab Component Specs', () => {
     vi.useRealTimers();
   });
 
+  it('still saves when unmounted during the username check', async () => {
+    // Switching sub-tabs unmounts Profile; a save already in flight must
+    // finish, only its state updates are dropped.
+    let finishCheck!: () => void;
+    global.fetch = vi.fn().mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          finishCheck = () =>
+            resolve({
+              ok: true,
+              json: () => Promise.resolve({ available: true }),
+            } as Response);
+        }),
+    );
+    const user = userEvent.setup();
+    const { unmount } = render(<Settings />);
+
+    const usernameInput = screen.getByLabelText(/Username/i);
+    await user.clear(usernameInput);
+    await user.type(usernameInput, 'fresh_username');
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledOnce());
+
+    unmount();
+    await act(async () => {
+      finishCheck();
+    });
+
+    await waitFor(() =>
+      expect(mockUpdateUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ username: 'fresh_username' }),
+      ),
+    );
+  });
+
   it('does not schedule the profile banner timer when unmounted during a save', async () => {
     let finishSave!: () => void;
     mockUpdateUserProfile.mockImplementationOnce(
