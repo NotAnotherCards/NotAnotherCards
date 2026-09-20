@@ -139,29 +139,9 @@ describe('Dashboard screen', () => {
     expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
   });
 
-  it('clears a missing saved deck and opens the library', () => {
-    saveLastReviewDeckId('user-dashboard', 'deleted-deck');
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'user-dashboard',
-          name: 'Jane Doe',
-          onBoardingComplete: true,
-        },
-      },
-      isPending: false,
-    });
-
-    const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Start review'));
-
-    expect(getByText('deck-list')).toBeTruthy();
-    expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  it('skips a saved deck with nothing due and opens the library', () => {
-    // 3 cards are due, none of them in the deck reviewed last.
+  it('clears a saved deck with nothing due and opens the library', () => {
+    // Deleted or finished, the branch is the same: the deck is not in the
+    // set of decks with due cards. 3 cards are due, all in another deck.
     mockReviewOverview = {
       dueDeckIds: new Set(['deck-french']),
       dueCount: 3,

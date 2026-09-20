@@ -120,6 +120,8 @@ function ReviewOverview({
     }
 
     const lastDeckId = loadLastReviewDeckId(userId);
+    // Membership in the set covers "deck still exists" too: a deleted deck
+    // loses its membership rows (see decksWithDueCards).
     if (lastDeckId && dueDeckIds.has(lastDeckId)) {
       router.push(`/review/${lastDeckId}`);
       return;

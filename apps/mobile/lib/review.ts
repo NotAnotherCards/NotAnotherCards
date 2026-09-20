@@ -16,7 +16,7 @@ import {
   type UserDeckRecord,
   type UserNoteDeckRecord,
 } from '@repo/offline-db';
-import { cardsForDeck } from './cards-in-deck';
+import { cardsForDeck, decksWithDueCards } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
 
 export function dueCardsForDeck(
@@ -44,19 +44,10 @@ export function useReviewOverview(manager: DatabaseManager) {
   const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
 
   const now = Date.now();
-  const due = selectDueCards(cards.data, now);
-  const dueNoteIds = new Set(due.map((card) => card.note_id));
-  // Decks with at least one due card: the Start review button only opens a
-  // deck that has work, whatever the saved preference says.
-  const dueDeckIds = new Set(
-    memberships.data
-      .filter((row) => dueNoteIds.has(row.note_id))
-      .map((row) => row.deck_id),
-  );
 
   return {
-    dueDeckIds,
-    dueCount: due.length,
+    dueDeckIds: decksWithDueCards(memberships.data, cards.data, now),
+    dueCount: selectDueCards(cards.data, now).length,
     isLoading: !db || memberships.isLoading || cards.isLoading,
     error: memberships.error ?? cards.error,
   };
