@@ -65,6 +65,11 @@ export function Profile() {
 
   useEffect(() => {
     if (isDirty) {
+      // the banner goes now, so its timer has nothing left to do
+      if (successTimer.current !== null) {
+        clearTimeout(successTimer.current);
+        successTimer.current = null;
+      }
       setSuccessMessage(null);
       setApiError(null);
     }
