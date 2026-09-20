@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import DeckScreen from '@/app/deck/[id]';
+import { finishTwoFactorChallenge } from '@/lib/two-factor-challenge';
 
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
@@ -27,7 +28,10 @@ jest.mock('expo-router', () => {
 });
 
 describe('Deck screen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    finishTwoFactorChallenge();
+  });
 
   it('passes the deck id from the URL to the card list', () => {
     mockUseSession.mockReturnValue({

@@ -1,6 +1,11 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import Dashboard from '@/app/dashboard';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+  TwoFactorDeepLinkProvider,
+} from '@/lib/two-factor-challenge';
 
 const mockUseSession = jest.fn();
 
@@ -37,7 +42,47 @@ jest.mock('expo-router', () => {
 });
 
 describe('Dashboard screen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    finishTwoFactorChallenge();
+  });
+
+  it('redirects a pending challenge before rendering a cached session', () => {
+    beginTwoFactorChallenge();
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
+  });
+
+  it('gates a deep-linked challenge before its persisted state is written', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(
+      <TwoFactorDeepLinkProvider pending>
+        <Dashboard />
+      </TwoFactorDeepLinkProvider>,
+    );
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
+  });
 
   it('redirects to login when there is no session', () => {
     mockUseSession.mockReturnValue({ data: null, isPending: false });

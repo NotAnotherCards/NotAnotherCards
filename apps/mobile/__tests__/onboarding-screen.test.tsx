@@ -1,6 +1,10 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Onboarding from '@/app/onboarding';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+} from '@/lib/two-factor-challenge';
 
 const mockReplace = jest.fn();
 
@@ -49,6 +53,7 @@ async function fillAndSubmit(screen: ReturnType<typeof render>) {
 }
 
 beforeEach(() => {
+  finishTwoFactorChallenge();
   mockSession = {
     data: { user: { onBoardingComplete: false } },
     isPending: false,
@@ -61,6 +66,13 @@ beforeEach(() => {
 });
 
 describe('Onboarding screen', () => {
+  it('does not expose onboarding while a second factor is pending', () => {
+    beginTwoFactorChallenge();
+    const { getByText, queryByText } = render(<Onboarding />);
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Complete setup')).toBeNull();
+  });
+
   it('submits, refetches, and navigates only once the flag flips', async () => {
     const screen = render(<Onboarding />);
     await fillAndSubmit(screen);

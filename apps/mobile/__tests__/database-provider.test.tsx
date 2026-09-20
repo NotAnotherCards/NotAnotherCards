@@ -62,9 +62,9 @@ function Consumer() {
   );
 }
 
-const renderProvider = () =>
+const renderProvider = (blockAccountAccess = false) =>
   render(
-    <SessionDatabaseProvider>
+    <SessionDatabaseProvider blockAccountAccess={blockAccountAccess}>
       <Consumer />
     </SessionDatabaseProvider>,
   );
@@ -194,5 +194,17 @@ describe('SessionDatabaseProvider', () => {
     );
     view.unmount();
     finishTwoFactorChallenge();
+  });
+
+  it('does not open a cached account database on the deep-link render', () => {
+    mockSessionState = {
+      data: { user: { id: 'previous-user', onBoardingComplete: true } },
+      isPending: false,
+    };
+    renderProvider(true);
+
+    expect(mockUseSessionDatabase).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null }),
+    );
   });
 });

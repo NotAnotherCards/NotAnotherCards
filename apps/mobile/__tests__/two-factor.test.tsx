@@ -1,11 +1,16 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { TwoFactorChallenge } from '@/components/auth/two-factor-challenge';
+import { TwoFactorLifecycle } from '@/components/two-factor-lifecycle';
 import {
   TwoFactorSecurity,
   secretFromTotpUri,
 } from '@/components/two-factor-security';
-import { finishTwoFactorChallenge } from '@/lib/two-factor-challenge';
+import {
+  finishTwoFactorChallenge,
+  getTwoFactorChallengeState,
+} from '@/lib/two-factor-challenge';
 
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => {
@@ -26,6 +31,7 @@ const mockDisable = jest.fn();
 const mockSignOut = jest.fn();
 const mockListAccounts = jest.fn();
 const mockRefetch = jest.fn();
+const mockRequestPasswordReset = jest.fn();
 type MockSession = {
   data: {
     user: {
@@ -48,13 +54,15 @@ const signedInSession: MockSession = {
   },
   refetch: mockRefetch,
 };
-let mockSession: MockSession = signedInSession;
+let mockSession: MockSession = { data: null, refetch: mockRefetch };
 
 jest.mock('../lib/auth-client', () => ({
   authClient: {
     useSession: () => mockSession,
     signOut: (...args: unknown[]) => mockSignOut(...args),
     listAccounts: (...args: unknown[]) => mockListAccounts(...args),
+    requestPasswordReset: (...args: unknown[]) =>
+      mockRequestPasswordReset(...args),
     twoFactor: {
       verifyTotp: (...args: unknown[]) => mockVerifyTotp(...args),
       verifyBackupCode: (...args: unknown[]) => mockVerifyBackupCode(...args),
@@ -87,7 +95,7 @@ describe('two-factor sign-in challenge', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     finishTwoFactorChallenge();
-    mockSession = signedInSession;
+    mockSession = { data: null, refetch: mockRefetch };
     mockVerifyTotp.mockResolvedValue({
       data: { token: 'session-token', user: { id: 'user-1' } },
       error: null,
@@ -133,7 +141,6 @@ describe('two-factor sign-in challenge', () => {
   });
 
   it('recovers with a backup code', async () => {
-    mockSession = signedInSession;
     const view = render(<TwoFactorChallenge />);
     fireEvent.press(view.getByText('Backup code'));
     fireEvent.changeText(view.getByLabelText('Backup code'), 'recovery-one');
@@ -146,15 +153,50 @@ describe('two-factor sign-in challenge', () => {
         trustDevice: false,
       }),
     );
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
+
+    mockSession = signedInSession;
+    view.rerender(<TwoFactorChallenge />);
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
   });
 
   it('clears the temporary sign-in when returning to login', async () => {
+    mockSession = { data: null, refetch: mockRefetch };
     const view = render(<TwoFactorChallenge />);
     fireEvent.press(view.getByText('Back to sign in'));
 
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
     expect(mockReplace).toHaveBeenCalledWith('/login');
+  });
+
+  it('clears terminal challenge failures and returns to login', async () => {
+    mockVerifyTotp.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'INVALID_TWO_FACTOR_COOKIE' },
+    });
+    const alertSpy = jest
+      .spyOn(require('react-native').Alert, 'alert')
+      .mockImplementation(() => {});
+    const view = render(<TwoFactorChallenge />);
+    fireEvent.changeText(view.getByLabelText('Authentication code'), '123456');
+    fireEvent.press(view.getByText('Verify and continue'));
+
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+    expect(mockReplace).toHaveBeenCalledWith('/login');
+    expect(getTwoFactorChallengeState().pending).toBe(false);
+    alertSpy.mockRestore();
+  });
+
+  it('hydrates a deep-linked challenge and routes directly to verification', async () => {
+    render(<TwoFactorLifecycle deepLinkPending />);
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
+    );
+    expect(getTwoFactorChallengeState()).toEqual({
+      pending: true,
+      hydrated: true,
+    });
   });
 });
 
@@ -176,6 +218,7 @@ describe('two-factor security settings', () => {
       data: [{ id: 'account-1', providerId: 'credential' }],
       error: null,
     });
+    mockSignOut.mockResolvedValue({ data: { success: true }, error: null });
     mockRefetch.mockResolvedValue(undefined);
   });
 
@@ -242,6 +285,47 @@ describe('two-factor security settings', () => {
       expect(mockDisable).toHaveBeenCalledWith({ password: 'Password1!' }),
     );
     expect(view.getByText('Two-factor is off')).toBeTruthy();
+  });
+
+  it('takes a social-only account through sign-out to password creation', async () => {
+    mockListAccounts.mockResolvedValueOnce({
+      data: [{ id: 'account-1', providerId: 'google' }],
+      error: null,
+    });
+    const view = render(<TwoFactorSecurity />);
+
+    expect(await view.findByText('A password is required')).toBeTruthy();
+    fireEvent.press(view.getByText('Sign out and create a password'));
+
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/forgot-password',
+      params: { email: 'learner@example.com' },
+    });
+  });
+});
+
+describe('mobile password creation entry point', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRequestPasswordReset.mockResolvedValue({
+      data: { status: true },
+      error: null,
+    });
+  });
+
+  it('requests a reset link for the prefilled social-account email', async () => {
+    const view = render(
+      <ForgotPasswordForm defaultEmail="learner@example.com" />,
+    );
+    fireEvent.press(view.getByText('Send reset link'));
+
+    await waitFor(() =>
+      expect(mockRequestPasswordReset).toHaveBeenCalledWith({
+        email: 'learner@example.com',
+      }),
+    );
+    expect(await view.findByText(/Check learner@example.com/)).toBeTruthy();
   });
 });
 

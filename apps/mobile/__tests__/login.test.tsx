@@ -1,6 +1,10 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Login from '@/app/login';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+} from '@/lib/two-factor-challenge';
 
 const mockReplace = jest.fn();
 
@@ -41,6 +45,7 @@ jest.mock('../lib/auth-client', () => ({
 }));
 
 beforeEach(() => {
+  finishTwoFactorChallenge();
   mockSession = { data: null, isPending: false };
   mockReplace.mockClear();
 });
@@ -129,6 +134,20 @@ describe('Login screen', () => {
     );
     fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
     fireEvent.press(getByText('Log in'));
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
+    );
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('does not let a cached session bypass a pending challenge', async () => {
+    beginTwoFactorChallenge();
+    mockSession = {
+      data: { user: { name: 'Previous User', onBoardingComplete: true } },
+      isPending: false,
+    };
+    render(<Login />);
 
     await waitFor(() =>
       expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
