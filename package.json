@@ -18,8 +18,8 @@
     "test:db-docs": "pnpm build:db-docs-deps && node --test scripts/schema-docs.test.mjs"
   },
   "devDependencies": {
-    "@remelondb/core": "0.3.0",
-    "@remelondb/driver-web": "0.3.0",
+    "@remelondb/core": "0.3.1",
+    "@remelondb/driver-web": "0.3.1",
     "eslint": "^10.6.0",
     "knip": "^6.34.0",
     "madge": "8.0.0",
