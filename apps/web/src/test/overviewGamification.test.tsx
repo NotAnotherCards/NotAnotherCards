@@ -471,7 +471,7 @@ describe('Overview Gamification', () => {
 
   // Open defect: the fetch effect clears serverProgress before the refetch
   // resolves, so a completed challenge regresses to local-only progress.
-  it.fails(
+  it(
     'keeps the last valid server progress while a post-sync refetch is pending',
     async () => {
       mockFetch.mockResolvedValue({
@@ -506,7 +506,7 @@ describe('Overview Gamification', () => {
 
   // Open defect: Progress destructures `value` without forwarding it to
   // Radix Root, so the rendered progressbar is always indeterminate.
-  it.fails('exposes a determinate progressbar value to assistive tech', () => {
+  it('exposes a determinate progressbar value to assistive tech', () => {
     const { container } = render(
       <Progress value={100} aria-label="Daily Review progress" />,
     );

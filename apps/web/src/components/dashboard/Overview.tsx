@@ -234,7 +234,6 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         }
       }
     }
-    setServerProgress(null);
     void fetchGamification();
 
     return () => ac.abort();
