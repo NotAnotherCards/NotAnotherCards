@@ -86,6 +86,12 @@ describe('App', () => {
     );
     expect(privacyDocument.body.textContent).toContain('OAuth access token');
     expect(privacyDocument.body.textContent).toContain('security issue');
+    expect(privacyDocument.body.textContent).toContain(
+      'Facebook Login data, and private decks',
+    );
+    expect(privacyDocument.body.textContent).toContain(
+      'Public decks may remain available',
+    );
     expect(privacyDocument.querySelector('script')).toBeNull();
   });
 
