@@ -140,8 +140,16 @@ function ReviewOverview({
             ? 'Loading cards due…'
             : `${dueCount} ${dueCount === 1 ? 'card' : 'cards'} due`}
       </Text>
-      <Button loading={isLoading} disabled={!!error} onPress={startReview}>
-        <Text>Start review</Text>
+      {/* The same button as each library row, so the two read as one action. */}
+      <Button
+        variant="outline"
+        size="lg"
+        loading={isLoading}
+        disabled={!!error}
+        onPress={startReview}
+      >
+        <BookOpenIcon size={18} className="text-foreground" />
+        <Text>Start Review</Text>
       </Button>
     </View>
   );

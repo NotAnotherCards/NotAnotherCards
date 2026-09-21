@@ -134,7 +134,7 @@ describe('Dashboard screen', () => {
 
     const { getByText } = render(<Dashboard />);
     expect(getByText('3 cards due')).toBeTruthy();
-    fireEvent.press(getByText('Start review'));
+    fireEvent.press(getByText('Start Review'));
 
     expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
   });
@@ -161,7 +161,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Start review'));
+    fireEvent.press(getByText('Start Review'));
 
     expect(getByText('deck-list')).toBeTruthy();
     expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
@@ -183,7 +183,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByRole } = render(<Dashboard />);
-    const button = getByRole('button', { name: 'Start review' });
+    const button = getByRole('button', { name: 'Start Review' });
     expect(button.props.accessibilityState.disabled).toBe(true);
     fireEvent.press(button);
 
