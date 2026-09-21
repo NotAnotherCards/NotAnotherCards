@@ -88,6 +88,7 @@ describe('Dashboard Page Component Specs', () => {
       'My Library',
       'Playground',
       'Statistics',
+      'Leaderboard',
       'Profile & Settings',
     ]);
     await user.click(screen.getByRole('tab', { name: 'Statistics' }));

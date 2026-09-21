@@ -15,7 +15,7 @@ export function useLeaderboard(limit: number, offset: number) {
     setError(null);
     try {
       const response = await fetch(
-        `/api/gamification/leaderboard?limit=${limit}&offset=${offset}`
+        `/api/gamification/leaderboard?limit=${limit}&offset=${offset}`,
       );
       if (!response.ok) {
         throw new Error('Failed to fetch leaderboard');

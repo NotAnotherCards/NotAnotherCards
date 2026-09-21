@@ -19,7 +19,12 @@ import { Leaderboard } from './Leaderboard';
 export function DashboardComponent() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'decks' | 'statistics' | 'leaderboard' | 'playground' | 'settings'
+    | 'overview'
+    | 'decks'
+    | 'statistics'
+    | 'leaderboard'
+    | 'playground'
+    | 'settings'
   >('overview');
   const [subView, setSubView] = useState<{
     type: 'list' | 'detail';

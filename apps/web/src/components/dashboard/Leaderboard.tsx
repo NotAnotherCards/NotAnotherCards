@@ -1,6 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Trophy, RefreshCcw, Info } from 'lucide-react';
@@ -12,7 +18,7 @@ export function Leaderboard() {
   const [page, setPage] = useState(0);
   const { data, isLoading, error, lastUpdated, refetch } = useLeaderboard(
     PAGE_SIZE,
-    page * PAGE_SIZE
+    page * PAGE_SIZE,
   );
 
   const currentUserInEntries = useMemo(() => {
@@ -42,7 +48,9 @@ export function Leaderboard() {
             How scoring works
           </CardTitle>
           <CardDescription>
-            One distinct completed review earns exactly one point, regardless of rating (ratings only affect scheduling). Ties are sorted by the earliest time the score was reached, and then by public username.
+            One distinct completed review earns exactly one point, regardless of
+            rating (ratings only affect scheduling). Ties are sorted by the
+            earliest time the score was reached, and then by public username.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -53,7 +61,12 @@ export function Leaderboard() {
           {lastUpdated && (
             <div className="text-xs text-muted-foreground flex items-center gap-2">
               Snapshot from {new Date(lastUpdated).toLocaleTimeString()}
-              <Button variant="ghost" size="sm" onClick={() => refetch()} className="h-6 px-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => refetch()}
+                className="h-6 px-2"
+              >
                 <RefreshCcw className="size-3 mr-1" /> Refresh
               </Button>
             </div>
@@ -66,7 +79,9 @@ export function Leaderboard() {
             </div>
           ) : error ? (
             <div className="flex flex-col h-32 items-center justify-center space-y-4">
-              <p className="text-sm text-destructive font-medium">Failed to load leaderboard</p>
+              <p className="text-sm text-destructive font-medium">
+                Failed to load leaderboard
+              </p>
               <Button onClick={() => refetch()} variant="outline" size="sm">
                 Retry
               </Button>
@@ -79,7 +94,7 @@ export function Leaderboard() {
                   <div>Username</div>
                   <div className="text-right">Points</div>
                 </div>
-                
+
                 {showFloatingCurrentUser && page > 0 && (
                   <LeaderboardRow entry={data.currentUser!} />
                 )}
@@ -138,17 +153,26 @@ export function Leaderboard() {
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   const isTop3 = entry.rank <= 3;
-  
+
   return (
     <div
       className={`grid grid-cols-[3rem_1fr_4rem] sm:grid-cols-[4rem_1fr_6rem] gap-4 p-3 items-center transition-colors
         ${entry.isCurrentUser ? 'bg-primary/10 border-l-4 border-l-primary' : 'hover:bg-muted/30 border-l-4 border-l-transparent'}`}
     >
-      <div className={`text-center font-bold ${isTop3 ? 'text-yellow-600 dark:text-yellow-500' : 'text-muted-foreground'}`}>
+      <div
+        className={`text-center font-bold ${isTop3 ? 'text-yellow-600 dark:text-yellow-500' : 'text-muted-foreground'}`}
+      >
         #{entry.rank}
       </div>
-      <div className={`font-medium truncate ${entry.isCurrentUser ? 'text-primary' : ''}`}>
-        {entry.username} {entry.isCurrentUser && <span className="ml-2 text-xs font-normal text-muted-foreground bg-background px-1.5 py-0.5 rounded-full border">You</span>}
+      <div
+        className={`font-medium truncate ${entry.isCurrentUser ? 'text-primary' : ''}`}
+      >
+        {entry.username}{' '}
+        {entry.isCurrentUser && (
+          <span className="ml-2 text-xs font-normal text-muted-foreground bg-background px-1.5 py-0.5 rounded-full border">
+            You
+          </span>
+        )}
       </div>
       <div className="text-right font-semibold">
         {entry.points.toLocaleString()}
