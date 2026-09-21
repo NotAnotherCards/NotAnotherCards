@@ -73,6 +73,23 @@ describe('ReviewSession', () => {
     ).toBeNull();
   });
 
+  it('follows the saved review preference: four labels and the next interval', async () => {
+    saveReviewPreferences('user-1', {
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
+    const result = render(<ReviewSession deckId="d1" />);
+
+    fireEvent.press(await result.findByText('Show answer'));
+    expect(result.getByText('Again')).toBeTruthy();
+    expect(result.getByText('Hard')).toBeTruthy();
+    expect(result.getByText('Good')).toBeTruthy();
+    expect(result.getByText('Easy')).toBeTruthy();
+    // A new card: Again schedules 5 minutes, Good three days.
+    expect(result.getByText('5 min')).toBeTruthy();
+    expect(result.getByText('3 days')).toBeTruthy();
+  });
+
   it('flips back to the question when the card is tapped again', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 

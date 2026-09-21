@@ -56,6 +56,9 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright Browser
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
       - name: Run Linter
         run: pnpm lint
 
@@ -113,6 +116,14 @@ jobs:
           GOOGLE_CLIENT_SECRET: dummy-google-client-secret
           FACEBOOK_CLIENT_ID: dummy-facebook-client-id
           FACEBOOK_CLIENT_SECRET: dummy-facebook-client-secret
+
+      - name: Run Web Auth E2E Tests
+        run: pnpm --filter web test:e2e
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
+          BETTER_AUTH_SECRET: ci-only-secret
+          BETTER_AUTH_URL: http://localhost:3000
+          FRONTEND_URL: http://localhost:5173
 
       - name: Validate Infrastructure Configs
         run: pnpm test:infra
