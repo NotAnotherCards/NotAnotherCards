@@ -322,6 +322,18 @@ export function useStore() {
     [cards, noteDecks],
   );
 
+  const getNotesForDeck = useCallback(
+    (deckId: string): UserNoteRecord[] => {
+      const noteIds = new Set(
+        noteDecks
+          .filter((noteDeck) => noteDeck.deck_id === deckId)
+          .map((noteDeck) => noteDeck.note_id),
+      );
+      return notes.filter((note) => noteIds.has(note.id));
+    },
+    [notes, noteDecks],
+  );
+
   const getCardsForDeck = useCallback(
     (deckId: string): UserCardRecord[] => {
       const noteIds = new Set(
@@ -406,6 +418,7 @@ export function useStore() {
     updateNoteFields,
     getCardsCount,
     getCardsForDeck,
+    getNotesForDeck,
     createUserProfile,
     updateUserProfile,
     createCardsBatch,

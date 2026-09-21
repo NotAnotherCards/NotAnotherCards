@@ -79,6 +79,30 @@ describe('WordNoteForm', () => {
     });
   });
 
+  it('offers one part of speech from a fixed list', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+
+    const select = screen.getByLabelText(/part of speech/i);
+    expect(select.tagName).toBe('SELECT');
+    expect(
+      Array.from((select as HTMLSelectElement).options).map(
+        (option) => option.text,
+      ),
+    ).toEqual([
+      'Not set',
+      'Noun',
+      'Verb',
+      'Adjective',
+      'Adverb',
+      'Pronoun',
+      'Preposition',
+      'Conjunction',
+      'Interjection',
+      'Other',
+    ]);
+  });
+
   it('opens the details already expanded when the note uses any of them', () => {
     renderForm({
       word: 'laufen',
@@ -184,5 +208,23 @@ describe('WordNoteForm gender', () => {
       translation: 'dog',
       gender: 'der',
     });
+  });
+
+  it('places gender before part of speech', () => {
+    render(
+      <WordNoteForm
+        title="Add New Word"
+        targetLanguageId={GERMAN}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+    openDetails();
+
+    const gender = screen.getByLabelText(/gender/i);
+    const partOfSpeech = screen.getByLabelText(/part of speech/i);
+    expect(
+      Boolean(gender.compareDocumentPosition(partOfSpeech) & Node.DOCUMENT_POSITION_FOLLOWING),
+    ).toBe(true);
   });
 });

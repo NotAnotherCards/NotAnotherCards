@@ -9,10 +9,15 @@ import {
 import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
 import { CardList, CardListRef } from '../components/deck/CardList';
+import { WordNoteList } from '../components/deck/WordNoteList';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
-import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
+import {
+  WORD_TO_TRANSLATION_TEMPLATE_KEY,
+  type UserNoteRecord,
+} from '@repo/offline-db';
+import { GERMAN, RUSSIAN } from '@repo/schemas';
 
 vi.mock('@/offline/db', () => {
   const manager = {
@@ -63,6 +68,28 @@ describe('DeckCard Component', () => {
       screen.getByText('Learn essential conversational Spanish verbs.'),
     ).toBeInTheDocument();
     expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('12');
+  });
+
+  it('adds a total words badge only for word decks', () => {
+    render(
+      <DeckCard
+        deck={{
+          ...mockDeck,
+          note_type: 'word',
+          native_language_id: 'ru',
+          target_language_id: 'de',
+        }}
+        totalCards={3}
+        totalWords={1}
+        onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('total-words-badge')).toHaveTextContent('1');
+    expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('3');
   });
 
   // A push sends the client's whole view of a row, so an old client
@@ -295,6 +322,127 @@ describe('FlashcardModal Component', () => {
   });
 });
 
+describe('WordNoteList Component', () => {
+  const wordNote: UserNoteRecord = {
+    id: 'word-note-1',
+    note_type: 'word',
+    fields_version: 1,
+    fields_json: JSON.stringify({
+      word: 'Hund',
+      translation: 'dog',
+      native_language_id: RUSSIAN,
+      target_language_id: GERMAN,
+      example: 'Der Hund läuft.',
+      example_translation: 'The dog runs.',
+      gender: 'der',
+      pronunciation: 'hʊnt',
+    }),
+    additional_content: null,
+    created_at: 0,
+    updated_at: 0,
+  };
+  const wordCards: Card[] = [
+    {
+      id: 'word-card',
+      note_id: 'word-note-1',
+      template_key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
+      active: true,
+      front: 'Hund',
+      back: 'dog',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    },
+    {
+      id: 'translation-card',
+      note_id: 'word-note-1',
+      template_key: 'translation-to-word',
+      active: true,
+      front: 'dog',
+      back: 'Hund',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    },
+    {
+      id: 'example-card',
+      note_id: 'word-note-1',
+      template_key: 'example-to-translation',
+      active: true,
+      front: 'Der Hund läuft.',
+      back: 'The dog runs.',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    },
+  ];
+
+  it('groups sibling cards into one word row with badges and filled details', () => {
+    render(
+      <WordNoteList
+        notes={[wordNote]}
+        cards={wordCards}
+        onViewNote={vi.fn()}
+        onViewDetails={vi.fn()}
+        onEditWord={vi.fn()}
+        onRemoveWord={vi.fn()}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Word' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Translation' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Cards' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.getByText('Hund')).toBeInTheDocument();
+    expect(screen.getByText('dog')).toBeInTheDocument();
+    expect(screen.getByText('DE → RU')).toBeInTheDocument();
+    expect(screen.getByText('RU → DE')).toBeInTheDocument();
+    expect(screen.getByText('Example → DE')).toBeInTheDocument();
+    expect(screen.getByText('3 details')).toBeInTheDocument();
+    expect(screen.queryByText('Audio')).toBeNull();
+    expect(screen.getByLabelText('3 cards').textContent).toContain(
+      'DE → RURU → DEExample → DE',
+    );
+  });
+
+  it('routes view, edit, and removal through the word-to-translation sibling', () => {
+    const onViewNote = vi.fn();
+    const onViewDetails = vi.fn();
+    const onEditWord = vi.fn();
+    const onRemoveWord = vi.fn();
+    render(
+      <WordNoteList
+        notes={[wordNote]}
+        cards={wordCards}
+        onViewNote={onViewNote}
+        onViewDetails={onViewDetails}
+        onEditWord={onEditWord}
+        onRemoveWord={onRemoveWord}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByTitle('View Note')[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'View 3 details' }));
+    fireEvent.click(screen.getByTitle('Edit Note'));
+    fireEvent.click(screen.getByTitle('Remove Word'));
+
+    expect(onViewNote).toHaveBeenCalledWith(wordCards[0]);
+    expect(onViewDetails).toHaveBeenCalledWith(wordNote);
+    expect(onEditWord).toHaveBeenCalledWith(wordCards[0]);
+    expect(onRemoveWord).toHaveBeenCalledWith(wordCards[0]);
+  });
+});
+
 describe('CardList Component - Virtualization & Large Decks', () => {
   it('only renders a virtualized slice of DOM rows for a 1,000-card deck and updates on filter', () => {
     const largeDeckCards: Card[] = Array.from({ length: 1000 }, (_, i) => ({
@@ -321,7 +469,7 @@ describe('CardList Component - Virtualization & Large Decks', () => {
     );
 
     // Verify catalog title reflects total count of 1,000
-    expect(screen.getByText('Card Catalog (1000)')).toBeInTheDocument();
+    expect(screen.getByText('1000 Cards')).toBeInTheDocument();
 
     // Verify virtualization: DOM contains far fewer row elements than 1,000 (only windowed slice)
     const renderedRows = screen.getAllByRole('row');
@@ -335,7 +483,7 @@ describe('CardList Component - Virtualization & Large Decks', () => {
     fireEvent.change(searchInput, { target: { value: 'UniqueTargetFront' } });
 
     // Verify search correctly narrows catalog to 1 card and renders it
-    expect(screen.getByText('Card Catalog (1)')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards')).toBeInTheDocument();
     expect(screen.getByText('UniqueTargetFront')).toBeInTheDocument();
   });
 

@@ -27,6 +27,9 @@ import {
 } from '@repo/offline-db';
 import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { CardList } from './CardList';
+import { WordNoteList } from './WordNoteList';
+import { WordNoteView } from './WordNoteView';
+import { WordNoteDetails } from './WordNoteDetails';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { usePublishing } from '@/hooks/usePublishing';
@@ -46,6 +49,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
+  const [viewingWordCard, setViewingWordCard] = useState<Card | null>(null);
+  const [viewingWordNoteId, setViewingWordNoteId] = useState<string | null>(
+    null,
+  );
   const [noteToRemove, setNoteToRemove] = useState<Card | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
@@ -136,6 +143,17 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       return null;
     }
   })();
+  const viewingWordFields = (() => {
+    if (!viewingWordCard || !isWordDeck) return null;
+    const note = store.noteForCard(viewingWordCard);
+    if (!note) return null;
+    try {
+      const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
+      return parsed.success ? parsed.data : null;
+    } catch {
+      return null;
+    }
+  })();
 
   if (!deck) {
     return (
@@ -149,6 +167,18 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   const cards = store.getCardsForDeck(deckId);
+  const wordNotes = isWordDeck ? store.getNotesForDeck(deckId) : [];
+  const viewingWordDetailFields = (() => {
+    if (!viewingWordNoteId || !isWordDeck) return null;
+    const note = wordNotes.find((wordNote) => wordNote.id === viewingWordNoteId);
+    if (!note) return null;
+    try {
+      const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
+      return parsed.success ? parsed.data : null;
+    } catch {
+      return null;
+    }
+  })();
   const visibleWarnings =
     publishWarnings.length > 0
       ? publishWarnings
@@ -531,23 +561,31 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       )}
 
       {/* Library View (Search & Card Table via CardList) */}
-      <CardList
-        cards={cards}
-        onEditCard={(card) => setEditingCard(card)}
-        onRemoveFromDeck={(card) => setNoteToRemove(card)}
-        canEditCard={
-          isWordDeck
-            ? store.isWordCard
-            : isBasicDeck
-              ? store.isBasicCard
-              : () => false
-        }
-        canAddCard={isKnownDeck}
-        canRemoveCard={isKnownDeck}
-        onAddCard={() => setShowCreateForm(true)}
-        isLoading={!store.ready}
-        error={store.error}
-      />
+      {isWordDeck ? (
+        <WordNoteList
+          notes={wordNotes}
+          cards={cards}
+          onViewNote={(card) => setViewingWordCard(card)}
+          onViewDetails={(note) => setViewingWordNoteId(note.id)}
+          onEditWord={(card) => setEditingCard(card)}
+          onRemoveWord={(card) => setNoteToRemove(card)}
+          canEdit={isKnownDeck}
+          canRemove={isKnownDeck}
+          onAddWord={() => setShowCreateForm(true)}
+        />
+      ) : (
+        <CardList
+          cards={cards}
+          onEditCard={(card) => setEditingCard(card)}
+          onRemoveFromDeck={(card) => setNoteToRemove(card)}
+          canEditCard={isBasicDeck ? store.isBasicCard : () => false}
+          canAddCard={isKnownDeck}
+          canRemoveCard={isKnownDeck}
+          onAddCard={() => setShowCreateForm(true)}
+          isLoading={!store.ready}
+          error={store.error}
+        />
+      )}
 
       {/* Add: the deck's note type decides which form appears */}
       {showCreateForm &&
@@ -584,7 +622,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       {editingCard &&
         (isWordDeck ? (
           <WordNoteForm
-            title="Edit Word"
+            title="Edit Note"
+            alwaysShowDetails
             targetLanguageId={editingWordFields?.target_language_id}
             nativeLanguageId={editingWordFields?.native_language_id}
             initialData={editingWordFields ?? undefined}
@@ -604,6 +643,24 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             onCancel={() => setEditingCard(null)}
           />
         ) : null)}
+
+      {viewingWordCard && viewingWordFields && (
+        <WordNoteView
+          fields={viewingWordFields}
+          onClose={() => setViewingWordCard(null)}
+          onEdit={() => {
+            setViewingWordCard(null);
+            setEditingCard(viewingWordCard);
+          }}
+        />
+      )}
+
+      {viewingWordNoteId && viewingWordDetailFields && (
+        <WordNoteDetails
+          fields={viewingWordDetailFields}
+          onClose={() => setViewingWordNoteId(null)}
+        />
+      )}
 
       {/* Remove Note Membership Confirmation */}
       {noteToRemove && (

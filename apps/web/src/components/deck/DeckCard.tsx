@@ -9,11 +9,12 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
-import { noteTypeRegistry } from '@repo/offline-db';
+import { noteTypeRegistry, WORD_NOTE_TYPE } from '@repo/offline-db';
 
 interface DeckCardProps {
   deck: Deck;
   totalCards: number;
+  totalWords?: number;
   onSelectDeck: (deckId: string) => void;
   onStartReview: (deckId: string) => void;
   onEditDeck: (deck: Deck) => void;
@@ -23,6 +24,7 @@ interface DeckCardProps {
 export function DeckCard({
   deck,
   totalCards,
+  totalWords,
   onSelectDeck,
   onStartReview,
   onEditDeck,
@@ -86,7 +88,24 @@ export function DeckCard({
 
       <CardContent className="space-y-4">
         {/* Card count tags */}
-        <div className="grid grid-cols-1 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
+        <div
+          className={`grid gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center ${
+            deck.note_type === WORD_NOTE_TYPE ? 'grid-cols-2' : 'grid-cols-1'
+          }`}
+        >
+          {deck.note_type === WORD_NOTE_TYPE && (
+            <div>
+              <div className="text-xs text-muted-foreground font-medium">
+                Total Words
+              </div>
+              <span
+                className="text-sm font-bold text-foreground"
+                data-testid="total-words-badge"
+              >
+                {totalWords ?? 0}
+              </span>
+            </div>
+          )}
           <div>
             <div className="text-xs text-muted-foreground font-medium">
               Total Cards

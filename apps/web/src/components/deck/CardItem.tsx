@@ -39,7 +39,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
         data-index={dataIndex}
         role="row"
         aria-rowindex={(dataIndex ?? 0) + 2}
-        className="flex flex-col md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+        className="flex flex-col md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_128px] gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
       >
         <div
           role="cell"
@@ -66,7 +66,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
 
         <div
           role="cell"
-          className="flex items-center justify-end md:justify-end gap-1.5 mt-2 md:mt-0"
+          className="flex items-center justify-end md:justify-center gap-1.5 mt-2 md:mt-0"
         >
           <Button
             variant="ghost"

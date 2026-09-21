@@ -22,6 +22,7 @@ import { DeckCard } from './DeckCard';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import type { DeckNoteType } from '@repo/offline-db';
+import { WORD_NOTE_TYPE } from '@repo/offline-db';
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -202,12 +203,17 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {store.decks.map((deck) => {
             const totalCards = store.getCardsCount(deck.id);
+            const totalWords =
+              deck.note_type === WORD_NOTE_TYPE
+                ? store.getNotesForDeck(deck.id).length
+                : undefined;
 
             return (
               <DeckCard
                 key={deck.id}
                 deck={deck}
                 totalCards={totalCards}
+                totalWords={totalWords}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}
