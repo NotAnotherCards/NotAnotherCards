@@ -77,17 +77,19 @@ export class GamificationService {
         .returning({ badgeCode: badgeAwards.badgeCode });
 
       if (inserted.length > 0) {
-        await tx.insert(userBadges).values(
-          inserted.map(({ badgeCode }) => ({
-            id: randomUUID(),
-            rev: sql<number>`nextval('remelon_rev')`,
-            userId,
-            badgeId: badgeCode,
-            unlockedAt: now,
-            createdAt: now,
-            updatedAt: now,
-          })),
-        );
+        await tx.insert(userBadges)
+          .values(
+            inserted.map(({ badgeCode }) => ({
+              id: randomUUID(),
+              rev: sql<number>`nextval('remelon_rev')`,
+              userId,
+              badgeId: badgeCode,
+              unlockedAt: now,
+              createdAt: now,
+              updatedAt: now,
+            })),
+          )
+          .onConflictDoNothing({ target: [userBadges.userId, userBadges.badgeId] });
       }
     }
 

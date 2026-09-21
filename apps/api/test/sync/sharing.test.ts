@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import {
   BASIC_FRONT_BACK_TEMPLATE_KEY,
@@ -482,7 +483,11 @@ describePostgres('deck sharing endpoints', () => {
   it('refuses to publish where moderation is not switched on', async () => {
     await seedDeck(userA, 'unchecked');
     const before = await storedDeck('unchecked');
-    delete process.env.MODERATION_ALLOW_ALL;
+    const config = app.get(ConfigService);
+    const getSpy = vi.spyOn(config, 'get').mockImplementation((key) => {
+      if (key === 'MODERATION_ALLOW_ALL') return undefined;
+      return process.env[key as string];
+    });
 
     const response = await post(userA, '/api/decks/unchecked/publish').expect(
       422,
@@ -492,6 +497,7 @@ describePostgres('deck sharing endpoints', () => {
       flagged: [],
     });
     expect(await storedDeck('unchecked')).toEqual(before);
+    getSpy.mockRestore();
   });
 
   it('answers 404 for someone else’s deck and for a tombstoned one', async () => {
