@@ -40,7 +40,7 @@ type DeckAction =
 
 function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
   const router = useRouter();
-  const { decks, isLoading, error, cardCount, profile, writes } =
+  const { decks, isLoading, error, cardCount, dueCount, profile, writes } =
     useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
@@ -160,7 +160,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                   <CardDescription>{deck.description}</CardDescription>
                 ) : null}
                 <Text className="text-xs text-muted-foreground">
-                  {cardCount(deck.id)} cards
+                  {cardCount(deck.id)} cards, {dueCount(deck.id)} due
                 </Text>
               </CardHeader>
             </Pressable>
@@ -193,7 +193,19 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                   </View>
                 </View>
               ) : (
-                <View className="flex-row gap-2">
+                <View className="flex-row flex-wrap gap-2">
+                  {/* Web starts a review from the deck card; here it saves the
+                      detour through the deck screen. Nothing due, nothing to
+                      start. */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={pending || dueCount(deck.id) === 0}
+                    accessibilityLabel={`Start review of ${deck.title}`}
+                    onPress={() => router.push(`/review/${deck.id}`)}
+                  >
+                    <Text className="text-primary">Start review</Text>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

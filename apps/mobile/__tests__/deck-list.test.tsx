@@ -21,6 +21,7 @@ let mockDecksState: {
   isLoading: boolean;
   error: Error | null;
   cardCount: (id: string) => number;
+  dueCount: (id: string) => number;
   profile: {
     native_language_id: string | null;
     target_language_id: string | null;
@@ -41,6 +42,7 @@ beforeEach(() => {
     isLoading: false,
     error: null,
     cardCount: (id) => (id === 'd1' ? 12 : 0),
+    dueCount: (id) => (id === 'd1' ? 3 : 0),
     profile: null,
     writes: mockWrites,
   };
@@ -66,8 +68,18 @@ describe('DeckList', () => {
     ).toHaveLength(2);
     expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('Verbs')).toBeTruthy();
-    expect(getByText('12 cards')).toBeTruthy();
-    expect(getByText('0 cards')).toBeTruthy();
+    expect(getByText('12 cards, 3 due')).toBeTruthy();
+    expect(getByText('0 cards, 0 due')).toBeTruthy();
+  });
+
+  it('starts a deck review from the list, unless nothing is due', () => {
+    const { getByLabelText } = render(<DeckList />);
+
+    const empty = getByLabelText('Start review of Yoga');
+    expect(empty.props.accessibilityState.disabled).toBe(true);
+
+    fireEvent.press(getByLabelText('Start review of Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/review/d1');
   });
 
   it('shows the empty state without decks', () => {
