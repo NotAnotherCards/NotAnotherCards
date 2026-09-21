@@ -464,48 +464,40 @@ describe('Overview Gamification', () => {
     expect(screen.queryByTestId('effect-crash')).toBeNull();
   });
 
-  // The two tests below assert intended behavior for known open defects and
-  // are marked `it.fails` until the fixes land. Once a fix is in, the test
-  // "unexpectedly passes" and the suite fails — remove the `.fails` marker
-  // in the same commit as the fix.
-
-  // Open defect: the fetch effect clears serverProgress before the refetch
-  // resolves, so a completed challenge regresses to local-only progress.
-  it(
-    'keeps the last valid server progress while a post-sync refetch is pending',
-    async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () =>
-          gamificationResponse('2026-09-17', { dailyReviewCurrent: 20 }),
-      });
-      const { rerender } = render(<Overview onChooseDeck={() => {}} />);
-      await waitFor(() => {
-        expect(screen.getByText('20 / 20')).toBeInTheDocument();
-      });
-
-      // A sync completes; the triggered refetch never resolves.
-      mockFetch.mockImplementation(() => new Promise(() => {}));
-      vi.spyOn(syncProvider, 'useSyncState').mockReturnValue({
-        status: 'idle',
-        lastSyncAt: Date.now(),
-        error: null,
-      } as unknown as ReturnType<typeof syncProvider.useSyncState>);
-      act(() => {
-        rerender(<Overview onChooseDeck={() => {}} />);
-      });
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      // The completed state must not regress while the request is in flight.
+  // The fetch effect must not clear serverProgress before the refetch
+  // resolves, so a completed challenge doesn't regress to local-only progress.
+  it('keeps the last valid server progress while a post-sync refetch is pending', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () =>
+        gamificationResponse('2026-09-17', { dailyReviewCurrent: 20 }),
+    });
+    const { rerender } = render(<Overview onChooseDeck={() => {}} />);
+    await waitFor(() => {
       expect(screen.getByText('20 / 20')).toBeInTheDocument();
-      expect(screen.queryByText('0 / 20')).not.toBeInTheDocument();
-    },
-  );
+    });
 
-  // Open defect: Progress destructures `value` without forwarding it to
-  // Radix Root, so the rendered progressbar is always indeterminate.
+    // A sync completes; the triggered refetch never resolves.
+    mockFetch.mockImplementation(() => new Promise(() => {}));
+    vi.spyOn(syncProvider, 'useSyncState').mockReturnValue({
+      status: 'idle',
+      lastSyncAt: Date.now(),
+      error: null,
+    } as unknown as ReturnType<typeof syncProvider.useSyncState>);
+    act(() => {
+      rerender(<Overview onChooseDeck={() => {}} />);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // The completed state must not regress while the request is in flight.
+    expect(screen.getByText('20 / 20')).toBeInTheDocument();
+    expect(screen.queryByText('0 / 20')).not.toBeInTheDocument();
+  });
+
+  // Progress must forward `value` to Radix Root, so the rendered progressbar
+  // is not indeterminate and exposes its value to assistive tech.
   it('exposes a determinate progressbar value to assistive tech', () => {
     const { container } = render(
       <Progress value={100} aria-label="Daily Review progress" />,
