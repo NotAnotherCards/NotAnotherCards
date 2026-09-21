@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+const privacyHtml = readFileSync(
+  resolve(process.cwd(), 'privacy.html'),
+  'utf8',
+);
 
 describe('App', () => {
   afterEach(() => {
@@ -56,38 +60,33 @@ describe('App', () => {
     ).toHaveAttribute('href', '/privacy');
   });
 
-  it('renders the public privacy route without API or sync links', () => {
-    window.history.replaceState({}, '', '/privacy');
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
+  it('ships a static privacy policy for Meta crawlers', () => {
+    const privacyDocument = new DOMParser().parseFromString(
+      privacyHtml,
+      'text/html',
+    );
 
-    render(<App />);
-
+    expect(privacyDocument.title).toBe('NotAnotherCards — Privacy Policy');
     expect(
-      screen.getByRole('heading', { name: 'Privacy Policy', level: 1 }),
-    ).toBeInTheDocument();
+      privacyDocument
+        .querySelector('link[rel="canonical"]')
+        ?.getAttribute('href'),
+    ).toBe('https://notanothercards.com/privacy');
     expect(
-      screen.getByRole('heading', { name: 'Data deletion', level: 2 }),
-    ).toHaveAttribute('id', 'privacy-data-deletion');
-    expect(document.querySelector('#data-deletion')).toBeInTheDocument();
-    expect(document.title).toBe('NotAnotherCards — Privacy Policy');
-    expect(
-      screen
-        .getAllByRole('link', { name: 'notanothercards@gmail.com' })
-        .map((link) => link.getAttribute('href')),
-    ).toEqual([
-      'mailto:notanothercards@gmail.com',
-      'mailto:notanothercards@gmail.com?subject=NotAnotherCards%20data%20deletion%20request',
-    ]);
-    expect(
-      screen.getByText(/We do not receive your Facebook password/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Removing NotAnotherCards from Facebook does not automatically/i,
-      ),
-    ).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+      privacyDocument
+        .querySelector('meta[property="og:url"]')
+        ?.getAttribute('content'),
+    ).toBe('https://notanothercards.com/privacy');
+    expect(privacyDocument.querySelector('h1')?.textContent?.trim()).toBe(
+      'Privacy Policy',
+    );
+    expect(privacyDocument.querySelector('#data-deletion')).not.toBeNull();
+    expect(privacyDocument.body.textContent).toContain(
+      'app-scoped Facebook user ID',
+    );
+    expect(privacyDocument.body.textContent).toContain('OAuth access token');
+    expect(privacyDocument.body.textContent).toContain('security issue');
+    expect(privacyDocument.querySelector('script')).toBeNull();
   });
 
   it('renders word cards for an unknown route instead of the landing page', () => {
