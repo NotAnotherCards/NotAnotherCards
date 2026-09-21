@@ -17,7 +17,14 @@ const mockWrites = {
   remove: jest.fn(() => Promise.resolve(undefined)),
 };
 let mockDecksState: {
-  decks: { id: string; title: string; description: string | null }[];
+  decks: {
+    id: string;
+    title: string;
+    description: string | null;
+    note_type: string;
+    native_language_id?: string | null;
+    target_language_id?: string | null;
+  }[];
   isLoading: boolean;
   error: Error | null;
   cardCount: (id: string) => number;
@@ -36,8 +43,15 @@ beforeEach(() => {
   mockSessionDb = { manager };
   mockDecksState = {
     decks: [
-      { id: 'd1', title: 'Spanish', description: 'Verbs' },
-      { id: 'd2', title: 'Yoga', description: null },
+      {
+        id: 'd1',
+        title: 'Spanish',
+        description: 'Verbs',
+        note_type: 'word',
+        native_language_id: '00000000-0000-0000-0000-000000000003',
+        target_language_id: '00000000-0000-0000-0000-000000000002',
+      },
+      { id: 'd2', title: 'Yoga', description: null, note_type: 'basic' },
     ],
     isLoading: false,
     error: null,
@@ -60,7 +74,8 @@ describe('DeckList', () => {
   });
 
   it('lists decks with their card counts', () => {
-    const { getByText, UNSAFE_getAllByProps } = render(<DeckList />);
+    const { getByText, getByTestId, getByLabelText, UNSAFE_getAllByProps } =
+      render(<DeckList />);
     expect(
       UNSAFE_getAllByProps({ role: 'listitem' }).filter(
         (el) => typeof el.type === 'string',
@@ -68,8 +83,18 @@ describe('DeckList', () => {
     ).toHaveLength(2);
     expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('Verbs')).toBeTruthy();
-    expect(getByText('12 cards, 3 due')).toBeTruthy();
-    expect(getByText('0 cards, 0 due')).toBeTruthy();
+    expect(getByText('12')).toBeTruthy();
+    // the kind pill names the deck the way web does
+    expect(getByLabelText('🇩🇪 German → 🇪🇸 Spanish')).toBeTruthy();
+    expect(getByLabelText('Card deck')).toBeTruthy();
+    // the deck with work is accented, the empty one stays muted
+    expect(getByTestId('deck-due-d1')).toHaveTextContent('3');
+    expect(getByTestId('deck-due-d1').props.className).toContain(
+      'text-primary',
+    );
+    expect(getByTestId('deck-due-d2').props.className).toContain(
+      'text-muted-foreground',
+    );
   });
 
   it('starts a deck review from the list, unless nothing is due', () => {

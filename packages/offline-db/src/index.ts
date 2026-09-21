@@ -160,6 +160,7 @@ export * from './note-reconcile.js';
 export * from './note-writes.js';
 export * from './ids.js';
 export * from './note-constants.js';
+export * from './deck-kind.js';
 export * from './review-scheduler.js';
 export * from './review-queue.js';
 export * from './review-answers.js';
