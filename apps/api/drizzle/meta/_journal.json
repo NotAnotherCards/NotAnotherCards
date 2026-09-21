@@ -134,6 +134,13 @@
       "when": 1789981721090,
       "tag": "0018_familiar_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790007333968,
+      "tag": "0019_backfill_badges",
+      "breakpoints": true
     }
   ]
 }
