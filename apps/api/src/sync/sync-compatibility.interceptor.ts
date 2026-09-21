@@ -8,8 +8,8 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 /**
- * Strips the 'user_badges' table from sync pull responses if the client
- * does not explicitly send the 'x-sync-version: 2' header. This prevents
+ * Strips the 'user_badges' table from sync responses if the client
+ * does not explicitly send an 'x-sync-version' header >= 2. This prevents
  * older clients (which strictly reject unknown tables) from crashing.
  */
 @Injectable()
@@ -21,15 +21,16 @@ export class SyncCompatibilityInterceptor implements NestInterceptor {
     const request = context
       .switchToHttp()
       .getRequest<{ path: string; headers: Record<string, string> }>();
-    if (request.path !== '/sync/pull') {
+    if (!request.path.startsWith('/sync/')) {
       return next.handle();
     }
-    const isV2 = request.headers['x-sync-version'] === '2';
+    const versionHeader = request.headers['x-sync-version'];
+    const isLegacy = !versionHeader || parseInt(versionHeader, 10) < 2;
 
     return next.handle().pipe(
       map((data: Record<string, any>) => {
         const changes = data.changes as Record<string, any> | undefined;
-        if (!isV2 && data && changes && changes.user_badges) {
+        if (isLegacy && data && changes && changes.user_badges) {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { user_badges, ...restChanges } = changes;
           return {
