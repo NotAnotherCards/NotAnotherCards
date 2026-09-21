@@ -88,7 +88,7 @@ export function DeckCard({
 
       <CardContent className="space-y-4">
         {/* Card count tags */}
-        <div className="grid grid-cols-2 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
+        <div className="grid grid-cols-2 divide-x divide-border/40 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
           <div>
             <div className="text-xs text-muted-foreground font-medium">
               Total Cards
@@ -102,8 +102,13 @@ export function DeckCard({
           </div>
           <div>
             <div className="text-xs text-muted-foreground font-medium">Due</div>
+            {/* A deck with work reads at a glance; zero stays quiet. */}
             <span
-              className="text-sm font-bold text-foreground"
+              className={
+                dueCount > 0
+                  ? 'text-sm font-bold text-primary'
+                  : 'text-sm font-bold text-muted-foreground'
+              }
               data-testid="due-cards-badge"
             >
               {dueCount}

@@ -34,6 +34,9 @@ describe('DeckList', () => {
   it('shows the number of due cards in each deck', () => {
     render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
 
-    expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
+    const badge = screen.getByTestId('due-cards-badge');
+    expect(badge).toHaveTextContent('2');
+    // a deck with work is emphasised, an empty one is not
+    expect(badge).toHaveClass('text-primary');
   });
 });
