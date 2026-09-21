@@ -23,13 +23,13 @@
     "test:runtime-contract": "node scripts/runtime-contract.mjs"
   },
   "dependencies": {
-    "@remelondb/core": "0.3.0",
+    "@remelondb/core": "0.3.1",
     "@repo/schemas": "workspace:*",
     "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@remelondb/driver-node": "0.3.0",
+    "@remelondb/driver-node": "0.3.1",
     "@repo/typescript-config": "workspace:*",
     "esbuild": "0.28.2",
     "hermes-engine-cli": "0.12.0",
