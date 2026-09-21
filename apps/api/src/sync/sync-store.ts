@@ -89,7 +89,10 @@ export const appSyncTableOptions: NonNullable<
 export function createAppSyncStore(
   db: AppDatabase,
   now: () => number = () => Date.now(),
-  beforePushCommit?: (tx: AppTx, userId: string) => Promise<void>,
+  beforePushCommit?: (
+    tx: AppTx,
+    userId: string,
+  ) => Promise<typeof userBadges.$inferSelect[] | void>,
 ): AppSyncStoreBundle {
   const tables = {
     user_decks: drizzleSyncTable<string, typeof userDecks>({
@@ -195,7 +198,32 @@ export function createAppSyncStore(
           result !== null &&
           'conflict' in result &&
           result.conflict === true;
-        if (!conflict) await beforePushCommit(tx, scope);
+        if (!conflict && beforePushCommit) {
+          const newlyUnlocked = await beforePushCommit(tx, scope);
+          if (
+            newlyUnlocked &&
+            newlyUnlocked.length > 0 &&
+            typeof result === 'object' &&
+            result !== null
+          ) {
+            const resultAny = result as any;
+            if (!resultAny.changes) {
+              resultAny.changes = {};
+            }
+            if (!resultAny.changes.user_badges) {
+              resultAny.changes.user_badges = { created: [], updated: [], deleted: [] };
+            }
+            resultAny.changes.user_badges.created.push(
+              ...newlyUnlocked.map((row) => ({
+                id: row.id,
+                badge_id: row.badgeId,
+                unlocked_at: row.unlockedAt,
+                created_at: row.createdAt,
+                updated_at: row.updatedAt,
+              })),
+            );
+          }
+        }
         return result;
       });
     },
