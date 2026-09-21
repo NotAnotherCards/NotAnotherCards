@@ -92,7 +92,7 @@ export function createAppSyncStore(
   beforePushCommit?: (
     tx: AppTx,
     userId: string,
-  ) => Promise<typeof userBadges.$inferSelect[] | void>,
+  ) => Promise<(typeof userBadges.$inferSelect)[] | void>,
 ): AppSyncStoreBundle {
   const tables = {
     user_decks: drizzleSyncTable<string, typeof userDecks>({
@@ -206,14 +206,20 @@ export function createAppSyncStore(
             typeof result === 'object' &&
             result !== null
           ) {
-            const resultAny = result as any;
-            if (!resultAny.changes) {
-              resultAny.changes = {};
+            const resObj = result as Record<string, unknown>;
+            if (!resObj.changes) {
+              resObj.changes = {};
             }
-            if (!resultAny.changes.user_badges) {
-              resultAny.changes.user_badges = { created: [], updated: [], deleted: [] };
+            const changes = resObj.changes as Record<string, unknown>;
+            if (!changes.user_badges) {
+              changes.user_badges = {
+                created: [],
+                updated: [],
+                deleted: [],
+              };
             }
-            resultAny.changes.user_badges.created.push(
+            const userBadges = changes.user_badges as { created: unknown[] };
+            userBadges.created.push(
               ...newlyUnlocked.map((row) => ({
                 id: row.id,
                 badge_id: row.badgeId,

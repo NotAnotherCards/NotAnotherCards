@@ -10,7 +10,6 @@ import {
   type AppSyncEngine,
   type AppSyncStoreBundle,
 } from './sync-store';
-import { userBadges } from './schema';
 
 export const REMELON_SYNC_STORE = Symbol('REMELON_SYNC_STORE');
 export const REMELON_SYNC_ENGINE = Symbol('REMELON_SYNC_ENGINE');

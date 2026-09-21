@@ -20,7 +20,6 @@ import {
   setUpPostgres,
   tearDownPostgres,
 } from './postgres-fixture';
-import { userBadges } from '../../src/sync/schema';
 import { badgeAwards } from '../../src/gamification/schema';
 import { sql } from 'drizzle-orm';
 
@@ -724,10 +723,8 @@ describePostgres('authenticated remelonDB endpoints', () => {
       })
       .expect(200);
 
-    const changes = (pushResponse.body as Record<string, any>).changes as Record<
-      string,
-      any
-    >;
+    const changes = (pushResponse.body as Record<string, any>)
+      .changes as Record<string, any>;
     const badges = changes.user_badges as Record<string, unknown[]> | undefined;
     const deliveredBadges = [
       ...(badges?.created || []),
@@ -773,9 +770,8 @@ describePostgres('authenticated remelonDB endpoints', () => {
     >;
     const badges = changes.user_badges as Record<string, unknown[]> | undefined;
     const deliveredBadges = [
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       ...(badges?.created || []),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       ...(badges?.updated || []),
     ];
 

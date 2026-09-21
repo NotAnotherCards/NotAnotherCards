@@ -59,11 +59,14 @@ export class GamificationService {
     tx: AppTransaction,
     userId: string,
     now: number = Date.now(),
-  ): Promise<{ me: GamificationMe; newlyUnlocked: typeof userBadges.$inferSelect[] }> {
+  ): Promise<{
+    me: GamificationMe;
+    newlyUnlocked: (typeof userBadges.$inferSelect)[];
+  }> {
     const records = await this.activityRecords(tx, userId);
     const summary = selectActivitySummary({ ...records, now });
     const awardedAt = new Date(now);
-    let newlyUnlocked: typeof userBadges.$inferSelect[] = [];
+    let newlyUnlocked: (typeof userBadges.$inferSelect)[] = [];
 
     if (summary.eligibleBadgeCodes.length > 0) {
       const inserted = await tx
