@@ -20,6 +20,7 @@ import {
   setUpPostgres,
   tearDownPostgres,
 } from './postgres-fixture';
+import { userBadges } from '../../src/sync/schema';
 
 interface TestUser {
   readonly id: string;
@@ -730,6 +731,48 @@ describePostgres('authenticated remelonDB endpoints', () => {
     expect(deliveredBadges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ badge_id: 'first-review' }),
+      ]),
+    );
+  });
+
+  it('delivers pre-existing awards on initial sync', async () => {
+    // Simulate an award backfilled by migration before the user's first sync
+    const now = Date.now();
+    const existingBadgeId = 'pioneer';
+
+    // Bypass gamification service to act as a raw database backfill
+    await db.insert(userBadges).values({
+      id: `existing-award-${Date.now()}`,
+      userId: userB.id,
+      badgeId: existingBadgeId,
+      rev: 1, // Will be reassigned by trigger, but required by schema
+      unlockedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const initial = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userB.cookie)
+      .set('x-sync-version', '2')
+      .send(pullBody(null))
+      .expect(200);
+
+    const changes = (initial.body as Record<string, any>).changes as Record<
+      string,
+      any
+    >;
+    const badges = changes.user_badges as Record<string, unknown[]> | undefined;
+    const deliveredBadges = [
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      ...(badges?.created || []),
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      ...(badges?.updated || []),
+    ];
+
+    expect(deliveredBadges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ badge_id: existingBadgeId }),
       ]),
     );
   });

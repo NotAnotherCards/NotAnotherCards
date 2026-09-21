@@ -400,6 +400,7 @@ created_at          number (integer Unix ms) NOT NULL
 updated_at          number (integer Unix ms) NOT NULL
 
 INDEX(user_id, rev)
+UNIQUE(user_id, badge_id)
 ```
 
 ### Sync infrastructure
