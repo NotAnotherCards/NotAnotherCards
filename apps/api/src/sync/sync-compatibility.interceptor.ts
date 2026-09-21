@@ -18,17 +18,20 @@ export class SyncCompatibilityInterceptor implements NestInterceptor {
     if (context.getType() !== 'http') {
       return next.handle();
     }
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ path: string; headers: Record<string, string> }>();
     if (request.path !== '/sync/pull') {
       return next.handle();
     }
-    const isV2 = request?.headers?.['x-sync-version'] === '2';
+    const isV2 = request.headers['x-sync-version'] === '2';
 
     return next.handle().pipe(
-      map((data) => {
-        if (!isV2 && data && data.changes && data.changes.user_badges) {
+      map((data: Record<string, any>) => {
+        const changes = data.changes as Record<string, any> | undefined;
+        if (!isV2 && data && changes && changes.user_badges) {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { user_badges, ...restChanges } = data.changes;
+          const { user_badges, ...restChanges } = changes;
           return {
             ...data,
             changes: restChanges,

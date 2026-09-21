@@ -77,7 +77,8 @@ export class GamificationService {
         .returning({ badgeCode: badgeAwards.badgeCode });
 
       if (inserted.length > 0) {
-        await tx.insert(userBadges)
+        await tx
+          .insert(userBadges)
           .values(
             inserted.map(({ badgeCode }) => ({
               id: randomUUID(),
@@ -89,7 +90,9 @@ export class GamificationService {
               updatedAt: now,
             })),
           )
-          .onConflictDoNothing({ target: [userBadges.userId, userBadges.badgeId] });
+          .onConflictDoNothing({
+            target: [userBadges.userId, userBadges.badgeId],
+          });
       }
     }
 

@@ -677,7 +677,9 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody(null))
       .expect(200);
 
-    expect((pullV2.body as any).changes).toHaveProperty('user_badges');
+    expect((pullV2.body as Record<string, any>).changes).toHaveProperty(
+      'user_badges',
+    );
 
     const pullLegacy = await request(app.getHttpServer())
       .post('/sync/pull')
@@ -685,7 +687,9 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody(null))
       .expect(200);
 
-    expect((pullLegacy.body as any).changes).not.toHaveProperty('user_badges');
+    expect((pullLegacy.body as Record<string, any>).changes).not.toHaveProperty(
+      'user_badges',
+    );
   });
 
   it('delivers first-review badge on the next pull after pushing a review', async () => {
@@ -713,8 +717,16 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody((initial.body as { cursor: string }).cursor))
       .expect(200);
 
-    const badges = (followUp.body as any).changes.user_badges;
-    const deliveredBadges = [...(badges?.created || []), ...(badges?.updated || [])];
+    const changes = (followUp.body as Record<string, any>).changes as Record<
+      string,
+      any
+    >;
+    const badges = changes.user_badges as Record<string, unknown[]> | undefined;
+    const deliveredBadges = [
+      ...(badges?.created || []),
+
+      ...(badges?.updated || []),
+    ];
     expect(deliveredBadges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ badge_id: 'first-review' }),

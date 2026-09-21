@@ -400,7 +400,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       try {
         localStorage.setItem(storageKey, JSON.stringify(notifiedBadges));
       } catch (err) {
-        console.error('Failed to save badge notifications to localStorage:', err);
+        console.error(
+          'Failed to save badge notifications to localStorage:',
+          err,
+        );
       }
     }
 
