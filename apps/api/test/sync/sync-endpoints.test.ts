@@ -21,6 +21,8 @@ import {
   tearDownPostgres,
 } from './postgres-fixture';
 import { userBadges } from '../../src/sync/schema';
+import { badgeAwards } from '../../src/gamification/schema';
+import { sql } from 'drizzle-orm';
 
 interface TestUser {
   readonly id: string;
@@ -691,9 +693,19 @@ describePostgres('authenticated remelonDB endpoints', () => {
     expect((pullLegacy.body as Record<string, any>).changes).not.toHaveProperty(
       'user_badges',
     );
+
+    const pushLegacy = await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userA.cookie)
+      .send({ cursor: '0', changes: {} })
+      .expect(200);
+
+    expect((pushLegacy.body as Record<string, any>).changes).not.toHaveProperty(
+      'user_badges',
+    );
   });
 
-  it('delivers first-review badge on the next pull after pushing a review', async () => {
+  it('delivers first-review badge directly in the push response', async () => {
     const now = Date.now();
     const initial = await request(app.getHttpServer())
       .post('/sync/pull')
@@ -702,30 +714,23 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody(null))
       .expect(200);
 
-    await request(app.getHttpServer())
+    const pushResponse = await request(app.getHttpServer())
       .post('/sync/push')
       .set('Cookie', userB.cookie)
+      .set('x-sync-version', '2')
       .send({
         cursor: (initial.body as { cursor: string }).cursor,
         changes: modelChanges(now, 'first-review'),
       })
       .expect(200);
 
-    const followUp = await request(app.getHttpServer())
-      .post('/sync/pull')
-      .set('Cookie', userB.cookie)
-      .set('x-sync-version', '2')
-      .send(pullBody((initial.body as { cursor: string }).cursor))
-      .expect(200);
-
-    const changes = (followUp.body as Record<string, any>).changes as Record<
+    const changes = (pushResponse.body as Record<string, any>).changes as Record<
       string,
       any
     >;
     const badges = changes.user_badges as Record<string, unknown[]> | undefined;
     const deliveredBadges = [
       ...(badges?.created || []),
-
       ...(badges?.updated || []),
     ];
     expect(deliveredBadges).toEqual(
@@ -736,20 +741,24 @@ describePostgres('authenticated remelonDB endpoints', () => {
   });
 
   it('delivers pre-existing awards on initial sync', async () => {
-    // Simulate an award backfilled by migration before the user's first sync
+    // Simulate an award inserted before the user_badges table existed
     const now = Date.now();
-    const existingBadgeId = 'pioneer';
+    const existingBadgeId = 'hundred-reviews';
 
-    // Bypass gamification service to act as a raw database backfill
-    await db.insert(userBadges).values({
-      id: `existing-award-${Date.now()}`,
+    await db.insert(badgeAwards).values({
       userId: userB.id,
-      badgeId: existingBadgeId,
-      rev: 1, // Will be reassigned by trigger, but required by schema
-      unlockedAt: now,
-      createdAt: now,
-      updatedAt: now,
+      badgeCode: existingBadgeId,
+      awardedAt: new Date(now),
     });
+
+    const { readFileSync } = await import('fs');
+    const { resolve } = await import('path');
+    const migrationSql = readFileSync(
+      resolve(__dirname, '../../drizzle/0019_backfill_badges.sql'),
+      'utf-8',
+    );
+    await db.execute(sql.raw(migrationSql));
+    await db.execute(sql.raw(migrationSql)); // Second run to prove it's repeatable
 
     const initial = await request(app.getHttpServer())
       .post('/sync/pull')
