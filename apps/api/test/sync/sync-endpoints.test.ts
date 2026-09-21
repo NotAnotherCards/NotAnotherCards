@@ -669,4 +669,56 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .expect(200);
     expect(expired.body).toEqual({ resyncRequired: true });
   });
+  it('omits user_badges from pull response when x-sync-version is not 2', async () => {
+    const pullV2 = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userA.cookie)
+      .set('x-sync-version', '2')
+      .send(pullBody(null))
+      .expect(200);
+
+    expect((pullV2.body as any).changes).toHaveProperty('user_badges');
+
+    const pullLegacy = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userA.cookie)
+      .send(pullBody(null))
+      .expect(200);
+
+    expect((pullLegacy.body as any).changes).not.toHaveProperty('user_badges');
+  });
+
+  it('delivers first-review badge on the next pull after pushing a review', async () => {
+    const now = Date.now();
+    const initial = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userB.cookie)
+      .set('x-sync-version', '2')
+      .send(pullBody(null))
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userB.cookie)
+      .send({
+        cursor: (initial.body as { cursor: string }).cursor,
+        changes: modelChanges(now, 'first-review'),
+      })
+      .expect(200);
+
+    const followUp = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userB.cookie)
+      .set('x-sync-version', '2')
+      .send(pullBody((initial.body as { cursor: string }).cursor))
+      .expect(200);
+
+    const badges = (followUp.body as any).changes.user_badges;
+    const deliveredBadges = [...(badges?.created || []), ...(badges?.updated || [])];
+    expect(deliveredBadges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ badge_id: 'first-review' }),
+      ]),
+    );
+  });
 });
