@@ -389,19 +389,28 @@ The three UUID fields are currently values only; no `files` or `languages` table
 
 Stores unlocked gamification badges for users. This table is server-owned. Clients may only pull and display badges; client-side pushes are rejected by sync-validation.
 
-```text
-id                  text PK
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
-badge_id            text NOT NULL
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-unlocked_at         number (integer Unix ms) NOT NULL
-created_at          number (integer Unix ms) NOT NULL
-updated_at          number (integer Unix ms) NOT NULL
+<!-- schema:table:public.user_badges -->
 
-INDEX(user_id, rev)
-UNIQUE(user_id, badge_id)
+```text
+TABLE "public"."user_badges" RLS DISABLED
+"badge_id" text NOT NULL
+"created_at" double precision NOT NULL
+"deleted_at" timestamp with time zone NULL
+"id" text NOT NULL PRIMARY KEY
+"rev" bigint NOT NULL
+"unlocked_at" double precision NOT NULL
+"updated_at" double precision NOT NULL
+"user_id" text NOT NULL
+INDEX "user_badges_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+INDEX "user_badges_user_updated_idx" USING btree ("user_id" ASC NULLS LAST, "updated_at" ASC NULLS LAST)
+UNIQUE "user_badges_user_badge_uk" ("user_id", "badge_id") NULLS DISTINCT
+FOREIGN KEY "user_badges_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "user_badges_created_at_safe_integer_check": "user_badges"."created_at" >= 0 and "user_badges"."created_at" <= 9007199254740991 and "user_badges"."created_at" = trunc("user_badges"."created_at")
+CHECK "user_badges_unlocked_at_safe_integer_check": "user_badges"."unlocked_at" >= 0 and "user_badges"."unlocked_at" <= 9007199254740991 and "user_badges"."unlocked_at" = trunc("user_badges"."unlocked_at")
+CHECK "user_badges_updated_at_safe_integer_check": "user_badges"."updated_at" >= 0 and "user_badges"."updated_at" <= 9007199254740991 and "user_badges"."updated_at" = trunc("user_badges"."updated_at")
 ```
+
+<!-- /schema -->
 
 ### Sync infrastructure
 
@@ -733,12 +742,18 @@ top.
 <!-- schema:local-schema -->
 
 ```text
-LOCAL SCHEMA VERSION 5
+LOCAL SCHEMA VERSION 6
 
 TABLE review_events SYNCED
 rating number NOT NULL
 reviewed_at number NOT NULL
 user_card_id string NOT NULL INDEXED
+
+TABLE user_badges SYNCED
+badge_id string NOT NULL INDEXED
+created_at number NOT NULL
+unlocked_at number NOT NULL
+updated_at number NOT NULL
 
 TABLE user_cards SYNCED
 active boolean NOT NULL
