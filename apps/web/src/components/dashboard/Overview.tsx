@@ -397,7 +397,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     });
 
     if (updatedStorage) {
-      localStorage.setItem(storageKey, JSON.stringify(notifiedBadges));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(notifiedBadges));
+      } catch (err) {
+        console.error('Failed to save badge notifications to localStorage:', err);
+      }
     }
 
     if (newBadges.length > 0) {
