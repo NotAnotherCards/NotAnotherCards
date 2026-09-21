@@ -390,8 +390,9 @@ The three UUID fields are currently values only; no `files` or `languages` table
 Stores unlocked gamification badges for users. This table is server-owned. Clients may only pull and display badges; client-side pushes are rejected by sync-validation.
 
 ```text
-user_id             text PK FK -> user.id ON DELETE CASCADE
-badge_id            text PK
+id                  text PK
+user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
+badge_id            text NOT NULL
 rev                 bigint NOT NULL                                [server]
 deleted_at          timestamptz NULL                               [server]
 unlocked_at         number (integer Unix ms) NOT NULL

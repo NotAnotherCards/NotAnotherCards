@@ -1,0 +1,1 @@
+ALTER TABLE "user_badges" ADD CONSTRAINT "user_badges_user_badge_uk" UNIQUE("user_id","badge_id");

@@ -127,6 +127,13 @@
       "when": 1789631000040,
       "tag": "0017_special_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789981721090,
+      "tag": "0018_familiar_power_pack",
+      "breakpoints": true
     }
   ]
 }

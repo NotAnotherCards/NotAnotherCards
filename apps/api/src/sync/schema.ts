@@ -10,6 +10,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/offline-db';
@@ -257,6 +258,7 @@ export const userBadges = pgTable(
   (table) => [
     index('user_badges_user_rev_idx').on(table.userId, table.rev),
     index('user_badges_user_updated_idx').on(table.userId, table.updatedAt),
+    unique('user_badges_user_badge_uk').on(table.userId, table.badgeId),
     check(
       'user_badges_created_at_safe_integer_check',
       sql`${table.createdAt} >= 0 and ${table.createdAt} <= 9007199254740991 and ${table.createdAt} = trunc(${table.createdAt})`,
