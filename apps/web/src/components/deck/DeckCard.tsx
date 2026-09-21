@@ -14,6 +14,7 @@ import { noteTypeRegistry } from '@repo/offline-db';
 interface DeckCardProps {
   deck: Deck;
   totalCards: number;
+  dueCount: number;
   onSelectDeck: (deckId: string) => void;
   onStartReview: (deckId: string) => void;
   onEditDeck: (deck: Deck) => void;
@@ -23,6 +24,7 @@ interface DeckCardProps {
 export function DeckCard({
   deck,
   totalCards,
+  dueCount,
   onSelectDeck,
   onStartReview,
   onEditDeck,
@@ -86,7 +88,7 @@ export function DeckCard({
 
       <CardContent className="space-y-4">
         {/* Card count tags */}
-        <div className="grid grid-cols-1 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
+        <div className="grid grid-cols-2 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
           <div>
             <div className="text-xs text-muted-foreground font-medium">
               Total Cards
@@ -96,6 +98,15 @@ export function DeckCard({
               data-testid="total-cards-badge"
             >
               {totalCards}
+            </span>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground font-medium">Due</div>
+            <span
+              className="text-sm font-bold text-foreground"
+              data-testid="due-cards-badge"
+            >
+              {dueCount}
             </span>
           </div>
         </div>
