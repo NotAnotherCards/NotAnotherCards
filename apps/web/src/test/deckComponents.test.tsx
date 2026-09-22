@@ -51,6 +51,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={12}
+        dueCount={3}
         onSelectDeck={vi.fn()}
         onStartReview={vi.fn()}
         onEditDeck={vi.fn()}
@@ -74,6 +75,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={{ ...mockDeck, note_type: 'cloze' }}
         totalCards={0}
+        dueCount={0}
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
@@ -90,6 +92,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={0}
+        dueCount={0}
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
@@ -110,6 +113,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={12}
+        dueCount={3}
         onSelectDeck={onSelectDeck}
         onStartReview={onStartReview}
         onEditDeck={onEditDeck}
