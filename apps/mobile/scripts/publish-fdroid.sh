@@ -3,13 +3,13 @@
 # Run build-release.sh first. Needs fdroidserver (pipx install fdroidserver)
 # and the repository checkout with its keystore, kept outside this repo.
 #
-#   NAC_FDROID_DIR   fdroid repository (default ~/.local/share/nac-fdroid)
+#   NAC_FDROID_DIR   the fdroid repository checkout
 #   NAC_FDROID_HOST  rsync target (default Hel:nac-fdroid/repo/)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 apk="android/app/build/outputs/apk/release/app-release.apk"
-fdroid_dir="${NAC_FDROID_DIR:-$HOME/.local/share/nac-fdroid}"
+fdroid_dir="${NAC_FDROID_DIR:?NAC_FDROID_DIR is not set}"
 target="${NAC_FDROID_HOST:-Hel:nac-fdroid/repo/}"
 
 package="$(node -p 'require("./app.json").expo.android.package')"

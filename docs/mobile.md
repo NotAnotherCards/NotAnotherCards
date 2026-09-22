@@ -291,12 +291,13 @@ Two scripts in `apps/mobile/scripts`, run from anywhere:
 1. `build-release.sh` reads the version from `app.json`, derives the
    versionCode (major * 1000000 + minor * 1000 + patch), prebuilds, builds
    `assembleRelease` with Java 21 and signs it with the release keystore. It
-   needs `EXPO_PUBLIC_API_URL` (https only) and `NAC_KEYSTORE_PASSWORD`. The
-   keystore is the permanent APK signing key and lives outside the repository;
-   losing it means no installed copy can ever update.
-2. `publish-fdroid.sh` copies the APK into the F-Droid repository checkout,
-   runs `fdroid update`, which signs the index, and rsyncs `repo/` to the
-   server. The repository's own signing key also lives outside this repository.
+   needs `EXPO_PUBLIC_API_URL` (https only), `NAC_KEYSTORE` and
+   `NAC_KEYSTORE_PASSWORD`. The keystore is the permanent APK signing key and
+   lives outside the repository; losing it means no installed copy can ever
+   update.
+2. `publish-fdroid.sh` copies the APK into the F-Droid repository checkout
+   (`NAC_FDROID_DIR`), runs `fdroid update`, which signs the index, and rsyncs
+   `repo/` to the server. The repository's own signing key also lives outside this repository.
 
 Bump `version` in `app.json` before building; the release is that commit.
 
