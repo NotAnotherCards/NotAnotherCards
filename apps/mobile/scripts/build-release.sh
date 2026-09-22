@@ -8,6 +8,7 @@
 #   NAC_KEYSTORE             path to the keystore (default ~/.local/share/nac-mobile/release.keystore)
 #   NAC_KEY_ALIAS            key alias (default nac-release)
 #   JAVA_HOME                defaults to /usr/lib/jvm/java-21-openjdk
+#   NAC_ARCHS                gradle reactNativeArchitectures (default arm64-v8a; x86_64 for the emulator)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -36,6 +37,7 @@ npx expo prebuild --platform android --clean --no-install
 sed -i "s/^\(\s*\)versionCode .*/\1versionCode $version_code/" android/app/build.gradle
 
 (cd android && ./gradlew --quiet assembleRelease \
+  -PreactNativeArchitectures="${NAC_ARCHS:-arm64-v8a}" \
   -Pandroid.injected.signing.store.file="$keystore" \
   -Pandroid.injected.signing.store.password="$NAC_KEYSTORE_PASSWORD" \
   -Pandroid.injected.signing.key.alias="$alias" \
