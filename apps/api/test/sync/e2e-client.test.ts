@@ -16,6 +16,7 @@ import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
   ReviewEvent,
+  UserBadge,
   UserCard,
   UserDeck,
   UserNote,
@@ -83,6 +84,7 @@ describePostgres('client-server sync, end to end', () => {
         UserNoteDeck,
         ReviewEvent,
         UserProfile,
+        UserBadge,
       ],
       name: ':memory:',
     });
@@ -109,10 +111,15 @@ describePostgres('client-server sync, end to end', () => {
   const syncClient = (db: Database, cookie: string) =>
     synchronize({
       database: db,
+      migrationsEnabledAtVersion: 1,
       pullChanges: async (args) => {
         const response = await fetch(`${base}/sync/pull`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', cookie },
+          headers: {
+            'content-type': 'application/json',
+            cookie,
+            'x-sync-version': '2',
+          },
           body: JSON.stringify(args),
         });
         expect(response.status, await response.clone().text()).toBe(200);
@@ -121,7 +128,11 @@ describePostgres('client-server sync, end to end', () => {
       pushChanges: async (args) => {
         const response = await fetch(`${base}/sync/push`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', cookie },
+          headers: {
+            'content-type': 'application/json',
+            cookie,
+            'x-sync-version': '2',
+          },
           body: JSON.stringify(args),
         });
         expect(response.status, await response.clone().text()).toBe(200);
@@ -211,6 +222,14 @@ describePostgres('client-server sync, end to end', () => {
       user_card_id: userCardId,
       rating: 3,
     });
+
+    const aBadges = await a.get(UserBadge).query().fetch();
+    expect(aBadges).toHaveLength(1);
+    expect(aBadges[0].badge_id).toBe('first-review');
+
+    const bBadges = await b.get(UserBadge).query().fetch();
+    expect(bBadges).toHaveLength(1);
+    expect(bBadges[0].badge_id).toBe('first-review');
 
     const updatedDueAt = now + 90 * 60_000;
     await b.write(async () => {
