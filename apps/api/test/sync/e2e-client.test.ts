@@ -144,7 +144,10 @@ describePostgres('client-server sync, end to end', () => {
         const result = wire.pushResult.parse(await response.json());
         if ('rejected' in result && result.rejected) {
           const rejectedIds = Object.values(result.rejected).flat();
-          expect(rejectedIds, `Server rejected pushed rows: ${rejectedIds.join(', ')}`).toHaveLength(0);
+          expect(
+            rejectedIds,
+            `Server rejected pushed rows: ${rejectedIds.join(', ')}`,
+          ).toHaveLength(0);
         }
         return result;
       },
