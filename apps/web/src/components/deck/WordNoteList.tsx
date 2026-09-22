@@ -279,7 +279,12 @@ export function WordNoteList({
                   <div role="cell" className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-2 @[556px]:flex @[556px]:items-center @[556px]:gap-2 @[1030px]:block" aria-label={`${row.cards.length} cards`}>
                     <span className="text-xs font-semibold text-muted-foreground @[1030px]:hidden">Cards:</span>
                     <p className="min-w-0 text-xs leading-6 text-muted-foreground @[1030px]:hidden">
-                      {row.badges.join(' · ')}
+                      {row.badges.map((badge, index) => (
+                        <span key={badge} className="whitespace-nowrap">
+                          {index > 0 && ' · '}
+                          {badge}
+                        </span>
+                      ))}
                     </p>
                     <div className="hidden min-w-[13.375rem] flex-wrap gap-1.5 @[1030px]:flex">
                       {row.badges.map((badge) => (
