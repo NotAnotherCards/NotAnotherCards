@@ -51,7 +51,7 @@ lines.forEach((raw, i) => {
     exampleTranslation,
   ] = parts;
   // the same word may appear once per sense, e.g. mañana as adverb and as noun
-  const key = `${word}|${article}`;
+  const key = `${word}|${partOfSpeech}`;
   if (seen.has(key)) {
     console.error(`${source}:${i + 1}: duplicate word ${word}`);
     process.exit(1);

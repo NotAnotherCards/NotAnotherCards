@@ -1,7 +1,7 @@
 # title: Spanish A1
 # languages: 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000002
 # Spanish A1 for English speakers. One entry per line:
-# word | translation | part of speech | article (el/la for nouns, el/la for common gender, empty otherwise) | example | example translation
+# word | translation | part of speech | article (el/la/los/las for nouns, el/la for common gender, empty otherwise) | example | example translation
 # Spanish of Spain, American English.
 # Lines starting with # are ignored.
 
@@ -201,7 +201,7 @@ pierna | leg | noun | la | Tengo las piernas cansadas. | My legs are tired.
 espalda | back | noun | la | Me duele la espalda. | My back hurts.
 corazón | heart | noun | el | El corazón late rápido. | The heart beats fast.
 dedo | finger, toe | noun | el | Tengo un anillo en el dedo. | I have a ring on my finger.
-cuerpo | body | noun | el | El deporte es bueno para el cuerpo. | Sport is good for the body.
+cuerpo | body | noun | el | El deporte es bueno para el cuerpo. | Sports are good for the body.
 enfermo | sick, ill | adjective | | Hoy estoy enfermo. | I am sick today.
 sano | healthy | adjective | | Mi abuelo está muy sano. | My grandfather is very healthy.
 cansado | tired | adjective | | Estoy muy cansado. | I am very tired.
@@ -229,7 +229,7 @@ naranja | orange | noun | la | Las naranjas son de Valencia. | The oranges are f
 plátano | banana | noun | el | El plátano es amarillo. | The banana is yellow.
 verdura | vegetable | noun | la | Las verduras son sanas. | Vegetables are healthy.
 tomate | tomato | noun | el | La ensalada lleva tomate. | The salad has tomato.
-patata | potato | noun | la | La tortilla lleva patatas. | The omelette has potatoes.
+patata | potato | noun | la | La tortilla lleva patatas. | The omelet has potatoes.
 carne | meat | noun | la | No como carne. | I don't eat meat.
 pollo | chicken | noun | el | El pollo está muy rico. | The chicken is delicious.
 pescado | fish (food) | noun | el | Los viernes comemos pescado. | On Fridays we eat fish.
@@ -245,7 +245,7 @@ helado | ice cream | noun | el | El helado de chocolate es mi favorito. | Chocol
 restaurante | restaurant | noun | el | Cenamos en un restaurante. | We have dinner at a restaurant.
 bar | bar | noun | el | Tomamos algo en el bar. | We have a drink at the bar.
 cuenta | check (restaurant), account | noun | la | La cuenta, por favor. | The check, please.
-menú | menu | noun | el | ¿Me trae el menú? | Can you bring me the menu?
+menú | set menu (menú del día) | noun | el | El menú del día cuesta doce euros. | The set menu costs twelve euros.
 mesa | table | noun | la | Una mesa para dos, por favor. | A table for two, please.
 vaso | glass | noun | el | Un vaso de agua, por favor. | A glass of water, please.
 botella | bottle | noun | la | Una botella de agua, por favor. | A bottle of water, please.
@@ -274,7 +274,7 @@ teléfono | telephone | noun | el | Mi teléfono no funciona. | My phone doesn't
 móvil | cell phone | noun | el | Llámame al móvil. | Call me on my cell phone.
 ordenador | computer | noun | el | Trabajo con el ordenador. | I work with the computer.
 libro | book | noun | el | Leo un libro interesante. | I'm reading an interesting book.
-mesa de noche | nightstand | noun | la | El libro está en la mesa de noche. | The book is on the nightstand.
+mesilla | nightstand | noun | la | El libro está en la mesilla. | The book is on the nightstand.
 cosa | thing | noun | la | Tengo muchas cosas que hacer. | I have many things to do.
 
 # city and places
@@ -503,7 +503,8 @@ más | more | adverb | | Quiero más agua. | I want more water.
 menos | less | adverb | | Hoy hay menos tráfico. | Today there is less traffic.
 bastante | quite, enough | adverb | | La casa es bastante grande. | The house is quite big.
 demasiado | too much | adverb | | El café está demasiado caliente. | The coffee is too hot.
-solo | only; alone | adverb, adjective | | Solo tengo cinco euros. | I only have five euros.
+solo | only | adverb | | Solo tengo cinco euros. | I only have five euros.
+solo | alone | adjective | | Vivo solo. | I live alone.
 casi | almost | adverb | | Casi siempre voy en bici. | I almost always go by bike.
 ya | already | adverb | | Ya he comido. | I have already eaten.
 todavía | still, yet | adverb | | Todavía no sé. | I don't know yet.
@@ -546,7 +547,7 @@ deporte | sport | noun | el | Mi deporte favorito es el fútbol. | My favorite s
 fútbol | soccer | noun | el | Juego al fútbol con mis amigos. | I play soccer with my friends.
 juego | game | noun | el | Es un juego para niños. | It is a game for children.
 correo electrónico | email | noun | el | ¿Cuál es tu correo electrónico? | What is your email?
-carta | letter | noun | la | Escribo una carta a mi abuela. | I write a letter to my grandmother.
+carta | menu (in a restaurant); letter | noun | la | ¿Me trae la carta, por favor? | Can you bring me the menu, please?
 periódico | newspaper | noun | el | Leo el periódico cada día. | I read the newspaper every day.
 vida | life | noun | la | La vida en el pueblo es tranquila. | Life in the village is quiet.
 verdad | truth | noun | la | Es verdad. | It is true.

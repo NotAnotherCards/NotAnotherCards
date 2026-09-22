@@ -7,7 +7,7 @@ one note per line. Build the import file and load it under Settings > Import:
 
 The JSON is not committed. Fields per line, separated by `|`:
 
-    word | translation | part of speech | article (el/la, empty for non-nouns) | example | example translation
+    word | translation | part of speech | article (el/la/los/las, empty for non-nouns) | example | example translation
 
 Two header comments name the deck and its languages (ids from
 `packages/schemas/src/user-profile.ts`):

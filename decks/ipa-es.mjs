@@ -2,13 +2,13 @@
 // yeísmo (ll and y as ʝ), stress from the written-accent rules. Allophones
 // (β ð ɣ, nasal assimilation) are left out on purpose, this is for learners.
 const ONSETS = new Set([
-  'pr',
-  'br',
-  'tr',
-  'dr',
-  'kr',
-  'gr',
-  'fr',
+  'pɾ',
+  'bɾ',
+  'tɾ',
+  'dɾ',
+  'kɾ',
+  'gɾ',
+  'fɾ',
   'pl',
   'bl',
   'kl',
@@ -17,6 +17,8 @@ const ONSETS = new Set([
 ]);
 const VOWELS = 'aeiouáéíóúü';
 const WEAK = 'iuü';
+// ''.includes('') is true, so an end-of-word neighbour must not match anything
+const has = (set, ch) => ch !== '' && set.includes(ch);
 
 function letters(word) {
   const w = word.toLowerCase();
@@ -25,6 +27,7 @@ function letters(word) {
     const c = w[i],
       n = w[i + 1] ?? '',
       p = w[i - 1] ?? '';
+    const frontVowel = (ch) => has('eiéí', ch);
     const next = (s) => {
       out.push(s);
     };
@@ -40,15 +43,14 @@ function letters(word) {
     } else if (c === 'q' && n === 'u') {
       next('k');
       i++;
-    } else if (c === 'g' && n === 'u' && 'eiéí'.includes(w[i + 2] ?? '')) {
+    } else if (c === 'g' && n === 'u' && frontVowel(w[i + 2] ?? '')) {
       next('g');
       i++;
     } else if (c === 'g' && n === 'ü') {
-      next('g');
-      next('w');
+      next('gw');
       i++;
-    } else if (c === 'g' && 'eiéí'.includes(n)) next('x');
-    else if (c === 'c' && 'eiéí'.includes(n)) next('θ');
+    } else if (c === 'g' && frontVowel(n)) next('x');
+    else if (c === 'c' && frontVowel(n)) next('θ');
     else if (c === 'c') next('k');
     else if (c === 'z') next('θ');
     else if (c === 'j') next('x');
@@ -58,7 +60,8 @@ function letters(word) {
     else if (c === 'x') {
       next('k');
       next('s');
-    } else if (c === 'y') next(n === '' || !VOWELS.includes(n) ? 'i' : 'ʝ');
+    } else if (c === 'y')
+      next(has(VOWELS, n) ? 'ʝ' : has(VOWELS, p) ? 'j' : 'i');
     else if (c === 'r') next(i === 0 || 'nls'.includes(p) ? 'r' : 'ɾ');
     else if (c === 'ü') next('u');
     else next(c);
@@ -102,11 +105,14 @@ export function ipa(word) {
     start = nuclei[stressed].start - onsetLen;
   }
   const plain = segs.map((s) => ACCENT[s] ?? s);
-  // an unstressed weak vowel before another vowel is a glide: bueno ˈbweno
+  // an unstressed weak vowel next to another vowel is a glide: bueno ˈbweno,
+  // seis sejs; when both are weak only the first glides: muy mwi
   for (const n of nuclei) {
-    for (let i = n.start; i < n.end; i++) {
-      if (plain[i] === 'i' && !ACCENT[segs[i]]) plain[i] = 'j';
-      if (plain[i] === 'u' && !ACCENT[segs[i]]) plain[i] = 'w';
+    for (let i = n.start; i <= n.end; i++) {
+      if (n.start === n.end || ACCENT[segs[i]] || !WEAK.includes(plain[i]))
+        continue;
+      if (i > n.start && WEAK.includes(segs[i - 1])) continue;
+      plain[i] = plain[i] === 'i' ? 'j' : 'w';
     }
   }
   // monosyllables carry no stress mark
