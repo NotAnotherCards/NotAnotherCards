@@ -61,10 +61,11 @@ cuándo | when | adverb | | ¿Cuándo es tu cumpleaños? | When is your birthday
 cómo | how | adverb | | ¿Cómo se dice esto en español? | How do you say this in Spanish?
 por qué | why | adverb | | ¿Por qué estudias español? | Why do you study Spanish?
 porque | because | conjunction | | Estudio porque me gusta. | I study because I like it.
-cuánto | how much, how many | adjective | | ¿Cuánto cuesta esto? | How much does this cost?
+cuánto | how much, how many | adverb, adjective | | ¿Cuánto cuesta esto? | How much does this cost?
 cuál | which | pronoun | | ¿Cuál prefieres? | Which one do you prefer?
 
 # numbers
+cero | zero | numeral | | El resultado es cero. | The result is zero.
 uno | one | numeral | | Tengo uno solo. | I have only one.
 dos | two | numeral | | Dos cafés, por favor. | Two coffees, please.
 tres | three | numeral | | Tengo tres hermanos. | I have three siblings.
@@ -78,7 +79,7 @@ diez | ten | numeral | | Tengo diez euros. | I have ten euros.
 once | eleven | numeral | | Son las once de la noche. | It is eleven at night.
 doce | twelve | numeral | | Un año tiene doce meses. | A year has twelve months.
 trece | thirteen | numeral | | Mi sobrino tiene trece años. | My nephew is thirteen years old.
-catorce | fourteen | numeral | | Son las catorce horas. | It is two p.m. (fourteen hours).
+catorce | fourteen | numeral | | Tengo catorce primos. | I have fourteen cousins.
 quince | fifteen | numeral | | Quince minutos, por favor. | Fifteen minutes, please.
 dieciséis | sixteen | numeral | | Tengo dieciséis euros. | I have sixteen euros.
 diecisiete | seventeen | numeral | | Hay diecisiete estudiantes. | There are seventeen students.
@@ -135,7 +136,7 @@ junio | June | noun | el | En junio terminan las clases. | In June classes end.
 julio | July | noun | el | En julio vamos a la playa. | In July we go to the beach.
 agosto | August | noun | el | En agosto hace mucho calor. | In August it is very hot.
 septiembre | September | noun | el | En septiembre vuelvo al trabajo. | In September I go back to work.
-octubre | October | noun | el | En octubre empieza el otoño. | In October fall begins.
+octubre | October | noun | el | En octubre empieza a hacer frío. | In October it starts getting cold.
 noviembre | November | noun | el | En noviembre hace frío. | In November it is cold.
 diciembre | December | noun | el | Mi cumpleaños es en diciembre. | My birthday is in December.
 primavera | spring | noun | la | En primavera hay flores. | In spring there are flowers.
@@ -502,7 +503,7 @@ muy | very | adverb | | Estoy muy cansado. | I am very tired.
 más | more | adverb | | Quiero más agua. | I want more water.
 menos | less | adverb | | Hoy hay menos tráfico. | Today there is less traffic.
 bastante | quite, enough | adverb | | La casa es bastante grande. | The house is quite big.
-demasiado | too much | adverb | | El café está demasiado caliente. | The coffee is too hot.
+demasiado | too, too much | adverb | | El café está demasiado caliente. | The coffee is too hot.
 solo | only | adverb | | Solo tengo cinco euros. | I only have five euros.
 solo | alone | adjective | | Vivo solo. | I live alone.
 casi | almost | adverb | | Casi siempre voy en bici. | I almost always go by bike.

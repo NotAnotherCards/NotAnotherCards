@@ -92,7 +92,11 @@ export function ipa(word) {
   let stressed = nuclei.findIndex((n) => n.accented);
   if (stressed === -1) {
     const last = segs[segs.length - 1];
-    const endsOpen = VOWELS.includes(last) || last === 'n' || last === 's';
+    // a final n or s only counts after a vowel: robots roˈbots
+    const beforeLast = segs[segs.length - 2] ?? '';
+    const endsOpen =
+      VOWELS.includes(last) ||
+      ((last === 'n' || last === 's') && VOWELS.includes(beforeLast));
     stressed = endsOpen ? Math.max(0, nuclei.length - 2) : nuclei.length - 1;
   }
   // the stressed syllable starts after the previous nucleus, at the onset
