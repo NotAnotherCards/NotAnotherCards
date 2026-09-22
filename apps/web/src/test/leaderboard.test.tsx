@@ -100,7 +100,7 @@ describe('Leaderboard Component Specs', () => {
     expect(await screen.findByText('Bob')).toBeInTheDocument();
 
     // Current user that is outside the first page should be rendered
-    const youRows = await screen.findAllByText(/You/i);
-    expect(youRows.length).toBeGreaterThan(0);
+    expect(await screen.findByText('#42')).toBeInTheDocument();
+    expect(await screen.findByText('You')).toBeInTheDocument();
   });
 });

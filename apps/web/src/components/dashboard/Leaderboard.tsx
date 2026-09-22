@@ -16,10 +16,8 @@ const PAGE_SIZE = 20;
 
 export function Leaderboard() {
   const [page, setPage] = useState(0);
-  const { data, isLoading, error, lastUpdated, refetch } = useLeaderboard(
-    PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
+  const { data, hasMore, isLoading, error, lastUpdated, refetch } =
+    useLeaderboard(PAGE_SIZE, page * PAGE_SIZE);
 
   const currentUserInEntries = useMemo(() => {
     return data?.entries.some((entry) => entry.isCurrentUser) ?? false;
@@ -89,37 +87,55 @@ export function Leaderboard() {
           ) : data ? (
             <div className="space-y-4">
               <div className="rounded-xl border bg-card overflow-hidden">
-                <div className="grid grid-cols-[3rem_1fr_4rem] sm:grid-cols-[4rem_1fr_6rem] gap-4 p-3 bg-muted/50 text-xs font-semibold uppercase text-muted-foreground border-b">
-                  <div className="text-center">Rank</div>
-                  <div>Username</div>
-                  <div className="text-right">Points</div>
-                </div>
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted/50 text-xs font-semibold uppercase text-muted-foreground border-b">
+                    <tr>
+                      <th className="p-3 text-center w-16">Rank</th>
+                      <th className="p-3">Username</th>
+                      <th className="p-3 text-right w-24">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {showFloatingCurrentUser && page > 0 && (
+                      <LeaderboardRow entry={data.currentUser!} />
+                    )}
+                    {showFloatingCurrentUser && page > 0 && (
+                      <tr>
+                        <td
+                          colSpan={3}
+                          className="p-0 border-b border-dashed border-border"
+                        />
+                      </tr>
+                    )}
 
-                {showFloatingCurrentUser && page > 0 && (
-                  <LeaderboardRow entry={data.currentUser!} />
-                )}
-                {showFloatingCurrentUser && page > 0 && (
-                  <div className="border-b border-dashed border-border" />
-                )}
+                    {data.entries.length > 0 ? (
+                      data.entries.map((entry) => (
+                        <LeaderboardRow key={entry.rank} entry={entry} />
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={3}
+                          className="p-8 text-center text-muted-foreground"
+                        >
+                          No learners found on this page.
+                        </td>
+                      </tr>
+                    )}
 
-                <div className="divide-y">
-                  {data.entries.length > 0 ? (
-                    data.entries.map((entry) => (
-                      <LeaderboardRow key={entry.rank} entry={entry} />
-                    ))
-                  ) : (
-                    <div className="p-8 text-center text-muted-foreground text-sm">
-                      No learners found on this page.
-                    </div>
-                  )}
-                </div>
-
-                {showFloatingCurrentUser && page === 0 && (
-                  <div className="border-t border-dashed border-border" />
-                )}
-                {showFloatingCurrentUser && page === 0 && (
-                  <LeaderboardRow entry={data.currentUser!} />
-                )}
+                    {showFloatingCurrentUser && page === 0 && (
+                      <tr>
+                        <td
+                          colSpan={3}
+                          className="p-0 border-t border-dashed border-border"
+                        />
+                      </tr>
+                    )}
+                    {showFloatingCurrentUser && page === 0 && (
+                      <LeaderboardRow entry={data.currentUser!} />
+                    )}
+                  </tbody>
+                </table>
               </div>
 
               <div className="flex items-center justify-between">
@@ -137,7 +153,7 @@ export function Leaderboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={data.entries.length < PAGE_SIZE}
+                  disabled={!hasMore}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   Next
@@ -155,17 +171,26 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   const isTop3 = entry.rank <= 3;
 
   return (
-    <div
-      className={`grid grid-cols-[3rem_1fr_4rem] sm:grid-cols-[4rem_1fr_6rem] gap-4 p-3 items-center transition-colors
-        ${entry.isCurrentUser ? 'bg-primary/10 border-l-4 border-l-primary' : 'hover:bg-muted/30 border-l-4 border-l-transparent'}`}
+    <tr
+      className={`transition-colors ${
+        entry.isCurrentUser
+          ? 'bg-primary/10 relative after:absolute after:inset-y-0 after:left-0 after:w-1 after:bg-primary'
+          : 'hover:bg-muted/30 relative after:absolute after:inset-y-0 after:left-0 after:w-1 after:bg-transparent'
+      }`}
     >
-      <div
-        className={`text-center font-bold ${isTop3 ? 'text-yellow-600 dark:text-yellow-500' : 'text-muted-foreground'}`}
+      <td
+        className={`p-3 text-center font-bold ${
+          isTop3
+            ? 'text-yellow-600 dark:text-yellow-500'
+            : 'text-muted-foreground'
+        }`}
       >
         #{entry.rank}
-      </div>
-      <div
-        className={`font-medium truncate ${entry.isCurrentUser ? 'text-primary' : ''}`}
+      </td>
+      <td
+        className={`p-3 font-medium truncate ${
+          entry.isCurrentUser ? 'text-primary' : ''
+        }`}
       >
         {entry.username}{' '}
         {entry.isCurrentUser && (
@@ -173,10 +198,10 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
             You
           </span>
         )}
-      </div>
-      <div className="text-right font-semibold">
+      </td>
+      <td className="p-3 text-right font-semibold">
         {entry.points.toLocaleString()}
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
