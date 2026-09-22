@@ -174,7 +174,6 @@ export function WordNoteList({
       translation.toLowerCase().includes(search)
     );
   });
-
   return (
     <UICard className="border border-border/60">
       <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
@@ -213,12 +212,14 @@ export function WordNoteList({
             <div role="rowgroup">
               <div
                 role="row"
-                className="sr-only xl:not-sr-only xl:grid xl:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_466px_76px_108px] gap-4 xl:!px-6 xl:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                className="sr-only lg:not-sr-only lg:grid lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_230px_76px_108px] xl:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_466px_76px_108px] gap-4 lg:!px-6 lg:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
               >
                 <div role="columnheader">Word</div>
                 <div role="columnheader">Translation</div>
-                <div role="columnheader">Cards</div>
-                <div role="columnheader">Details</div>
+                <div role="columnheader" className="text-center">
+                  Cards
+                </div>
+                <div role="columnheader" className="text-center">Extra info</div>
                 <div role="columnheader" className="text-center">Actions</div>
               </div>
             </div>
@@ -228,9 +229,9 @@ export function WordNoteList({
                   key={row.note.id}
                   role="row"
                   aria-rowindex={index + 2}
-                  className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_466px_76px_108px] gap-3 xl:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+                  className="@container grid grid-cols-1 lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_230px_76px_108px] xl:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_466px_76px_108px] gap-3 lg:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
                 >
-                  <div role="cell" className="font-medium min-w-0 truncate md:col-span-3 xl:col-auto" title={row.word}>
+                  <div role="cell" className="min-w-0 truncate font-medium" title={row.word}>
                     {row.actionCard ? (
                       <button
                         type="button"
@@ -244,45 +245,62 @@ export function WordNoteList({
                       row.word
                     )}
                   </div>
-                  <div role="cell" className="text-muted-foreground min-w-0 truncate md:col-span-3 xl:col-auto" title={row.translation}>
-                    {row.translation}
-                  </div>
-                  <div role="cell" className="grid grid-cols-[repeat(2,7rem)] gap-1.5 min-[850px]:flex min-[850px]:flex-nowrap md:col-span-4 xl:col-auto" aria-label={`${row.cards.length} cards`}>
-                    {row.badges.map((badge) => (
-                      <span
-                        key={badge}
-                        className="inline-flex h-7 w-28 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/35 px-2 text-xs font-medium text-muted-foreground"
-                      >
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
-                  <div role="cell" className="flex items-center gap-1.5 md:col-span-2 md:justify-end xl:contents">
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground hover:text-primary cursor-pointer xl:self-center"
-                      onClick={() => onViewDetails(row.note)}
-                      aria-label={`View ${row.detailsCount} details`}
-                    >
-                      {row.detailsCount} details
-                    </button>
-                    <div role="cell" className="flex items-center gap-1.5 xl:justify-center">
-                      {row.actionCard && (
-                        <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onViewNote(row.actionCard!)} title="View Note">
-                          <Eye className="size-3.5" />
-                        </Button>
-                      )}
-                      {canEdit && row.actionCard && (
-                        <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onEditWord(row.actionCard!)} title="Edit Note">
-                          <Edit className="size-3.5" />
-                        </Button>
-                      )}
-                      {canRemove && row.actionCard && (
-                        <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => onRemoveWord(row.actionCard!)} title="Remove Word">
-                          <Unlink className="size-3.5" />
-                        </Button>
-                      )}
+                  <div role="cell" className="text-muted-foreground min-w-0 truncate" title={row.translation}>{row.translation}</div>
+                  <div className="grid grid-cols-1 gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[556px]:items-center @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 lg:contents">
+                  <div role="cell" className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-2 @[556px]:flex @[556px]:items-center @[556px]:gap-2 lg:block" aria-label={`${row.cards.length} cards`}>
+                    <span className="text-xs font-semibold text-muted-foreground lg:hidden">Cards:</span>
+                    <p className="min-w-0 text-xs leading-6 text-muted-foreground lg:hidden">
+                      {row.badges.join(' · ')}
+                    </p>
+                    <p className="hidden text-xs leading-6 text-muted-foreground lg:block xl:hidden">
+                      {row.badges.join(' · ')}
+                    </p>
+                    <div className="@container hidden min-w-0 xl:block">
+                      <div className="grid grid-cols-[repeat(2,6.5rem)] gap-1.5 @[324px]:grid-cols-[repeat(3,6.5rem)] @[434px]:grid-cols-[repeat(4,6.5rem)]">
+                      {row.badges.map((badge) => (
+                        <span
+                          key={badge}
+                          className="inline-flex h-7 w-[6.5rem] shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/35 px-2 text-xs font-medium text-muted-foreground"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                      </div>
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 @[556px]:contents">
+                    <div role="cell" className="flex min-w-0 items-center justify-center gap-2 lg:justify-self-center">
+                      <span className="text-xs font-semibold text-muted-foreground lg:hidden">Extra info:</span>
+                      <button
+                        type="button"
+                        className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
+                        onClick={() => onViewDetails(row.note)}
+                        aria-label={`View ${row.detailsCount} details`}
+                      >
+                        {row.detailsCount}
+                      </button>
+                    </div>
+                    <div role="cell" className="flex min-w-0 items-center justify-end gap-2 lg:justify-center">
+                      <span className="text-xs font-semibold text-muted-foreground lg:hidden">Actions:</span>
+                      <div className="flex items-center gap-1.5">
+                        {row.actionCard && (
+                          <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onViewNote(row.actionCard!)} title="View Note">
+                            <Eye className="size-3.5" />
+                          </Button>
+                        )}
+                        {canEdit && row.actionCard && (
+                          <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onEditWord(row.actionCard!)} title="Edit Note">
+                            <Edit className="size-3.5" />
+                          </Button>
+                        )}
+                        {canRemove && row.actionCard && (
+                          <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => onRemoveWord(row.actionCard!)} title="Remove Word">
+                            <Unlink className="size-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   </div>
                 </div>
               ))}

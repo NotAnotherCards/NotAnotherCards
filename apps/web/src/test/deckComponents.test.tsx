@@ -406,13 +406,13 @@ describe('WordNoteList Component', () => {
     expect(screen.getByRole('columnheader', { name: 'Word' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Translation' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Cards' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Extra info' })).toBeInTheDocument();
     expect(screen.getByText('Hund')).toBeInTheDocument();
     expect(screen.getByText('dog')).toBeInTheDocument();
     expect(screen.getByText('DE → RU')).toBeInTheDocument();
     expect(screen.getByText('RU → DE')).toBeInTheDocument();
     expect(screen.getByText('Example → DE')).toBeInTheDocument();
-    expect(screen.getByText('3 details')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View 3 details' })).toHaveTextContent('3');
     expect(screen.queryByText('Audio')).toBeNull();
     expect(screen.getByLabelText('3 cards').textContent).toContain(
       'DE → RURU → DEExample → DE',

@@ -16,16 +16,10 @@ interface WordNoteViewProps {
   onEdit: () => void;
 }
 
-const detailFields = [
-  ['Part of speech', 'part_of_speech'],
-  ['Gender', 'gender'],
-  ['Pronunciation', 'pronunciation'],
-  ['Example', 'example'],
-  ['Example translation', 'example_translation'],
-  ['Notes', 'notes'],
-] as const;
-
 export function WordNoteView({ fields, onClose, onEdit }: WordNoteViewProps) {
+  const displayFieldClass =
+    'min-h-9 rounded-lg border border-input bg-background px-3 py-2 text-sm whitespace-pre-wrap break-words';
+
   return (
     <div
       onClick={onClose}
@@ -42,23 +36,52 @@ export function WordNoteView({ fields, onClose, onEdit }: WordNoteViewProps) {
           </CardTitle>
           <CardDescription>All details saved for this word.</CardDescription>
         </CardHeader>
-        <CardContent className="max-h-[60vh] overflow-y-auto pt-4 space-y-4">
-          <dl className="space-y-4 text-sm">
+        <CardContent className="max-h-[60vh] overflow-y-auto pt-4">
+          <dl className="space-y-4">
             <div>
               <dt className="text-xs font-medium text-muted-foreground">Word</dt>
-              <dd className="mt-1 font-medium break-words">{fields.word}</dd>
+              <dd className={`mt-1.5 ${displayFieldClass}`}>{fields.word}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium text-muted-foreground">Translation</dt>
-              <dd className="mt-1 break-words">{fields.translation}</dd>
+              <dd className={`mt-1.5 ${displayFieldClass}`}>{fields.translation}</dd>
             </div>
-            {detailFields.map(([label, key]) =>
-              fields[key] ? (
-                <div key={key}>
-                  <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-                  <dd className="mt-1 whitespace-pre-wrap break-words">{fields[key]}</dd>
-                </div>
-              ) : null,
+            {fields.pronunciation && (
+              <div>
+                <dt className="text-xs font-medium text-muted-foreground">Pronunciation</dt>
+                <dd className={`mt-1.5 ${displayFieldClass}`}>{fields.pronunciation}</dd>
+              </div>
+            )}
+            {fields.gender && (
+              <div>
+                <dt className="text-xs font-medium text-muted-foreground">Gender</dt>
+                <dd className={`mt-1.5 ${displayFieldClass}`}>{fields.gender}</dd>
+              </div>
+            )}
+            {fields.part_of_speech && (
+              <div>
+                <dt className="text-xs font-medium text-muted-foreground">Part of speech</dt>
+                <dd className={`mt-1.5 ${displayFieldClass}`}>{fields.part_of_speech}</dd>
+              </div>
+            )}
+            {(fields.example || fields.example_translation) && (
+              <div>
+                <dt className="text-xs font-medium text-muted-foreground">Example</dt>
+                <dd className={`mt-1.5 ${displayFieldClass}`}>
+                  {fields.example && <p>{fields.example}</p>}
+                  {fields.example_translation && (
+                    <p className={fields.example ? 'mt-2 border-t border-border/60 pt-2 text-muted-foreground' : 'text-muted-foreground'}>
+                      {fields.example_translation}
+                    </p>
+                  )}
+                </dd>
+              </div>
+            )}
+            {fields.notes && (
+              <div>
+                <dt className="text-xs font-medium text-muted-foreground">Notes</dt>
+                <dd className={`mt-1.5 ${displayFieldClass}`}>{fields.notes}</dd>
+              </div>
             )}
           </dl>
         </CardContent>
