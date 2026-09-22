@@ -280,6 +280,10 @@ Fingerprint:
 The current builds talk to the staging server at cards.dustyway.org and are
 arm64 only. Updates arrive through the client like any other app.
 
+The same APK is attached to a GitHub Release tagged `mobile-v<version>`, with
+its SHA-256 in the notes. Obtainium can follow those releases instead:
+add `https://github.com/NotAnotherCards/NotAnotherCards` as an app source.
+
 ### Cutting a release
 
 Two scripts in `apps/mobile/scripts`, run from anywhere:
