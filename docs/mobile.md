@@ -265,6 +265,42 @@ SDK): `pnpm start --go`, then scan the QR code from the phone.
 iPhones can't use `adb reverse`, so the API is reached over shared Wi-Fi: set
 `EXPO_PUBLIC_API_URL` to your machine's LAN IP.
 
+## Installing a release build
+
+Android release builds are distributed through an own F-Droid repository, so
+no dev machine or app store is needed (issues #365 and #366). In the F-Droid
+client, add the repository under Settings, Repositories:
+
+    https://fdroid.dustyway.org/repo
+
+Fingerprint:
+
+    F575B1E6A8EAF886DECB02E5EDEB6A18FD7CD10D041BA2BC218CD05BE813DD39
+
+The current builds talk to the staging server at cards.dustyway.org and are
+arm64 only. Updates arrive through the client like any other app.
+
+The same APK is attached to a GitHub Release tagged `mobile-v<version>`, with
+its SHA-256 in the notes. Obtainium can follow those releases instead:
+add `https://github.com/NotAnotherCards/NotAnotherCards` as an app source.
+
+### Cutting a release
+
+Two scripts in `apps/mobile/scripts`, run from anywhere:
+
+1. `build-release.sh` reads the version from `app.json`, derives the
+   versionCode (major * 1000000 + minor * 1000 + patch), prebuilds, builds
+   `assembleRelease` with Java 21 and signs it with the release keystore. It
+   needs `EXPO_PUBLIC_API_URL` (https only), `NAC_KEYSTORE` and
+   `NAC_KEYSTORE_PASSWORD`. The keystore is the permanent APK signing key and
+   lives outside the repository; losing it means no installed copy can ever
+   update.
+2. `publish-fdroid.sh` copies the APK into the F-Droid repository checkout
+   (`NAC_FDROID_DIR`), runs `fdroid update`, which signs the index, and rsyncs
+   `repo/` to the server. The repository's own signing key also lives outside this repository.
+
+Bump `version` in `app.json` before building; the release is that commit.
+
 ## Simulator/emulator log noise
 
 Both the iOS Simulator and the Android emulator spam harmless errors that are
