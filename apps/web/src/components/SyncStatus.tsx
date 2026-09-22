@@ -1,3 +1,4 @@
+import { rejectedSummary } from '@repo/offline-db';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
 
 const LABELS: Record<string, string> = {
@@ -8,19 +9,6 @@ const LABELS: Record<string, string> = {
   'resync-required': 'Recovered from a server reset',
 };
 
-const TABLE_LABELS: Record<string, string> = {
-  user_decks: 'deck',
-  user_notes: 'note',
-  user_cards: 'card',
-  user_note_decks: 'deck membership',
-  review_events: 'review',
-  user_profiles: 'profile',
-  user_badges: 'badge',
-};
-
-const REJECTION_EXPLANATION =
-  'The server refused these changes. They stay on this device and are sent again with the next sync.';
-
 export function SyncStatus() {
   const controller = useSyncController();
   const state = useSyncState();
@@ -29,18 +17,7 @@ export function SyncStatus() {
   }
 
   const retryable = state.status === 'error' || state.status === 'offline';
-  const rejected =
-    state.status === 'idle' ? (state.lastResult?.rejected ?? 0) : 0;
-  const rejectionDetails = rejected
-    ? Object.entries(state.lastResult?.rejectedRecords ?? {})
-        .filter(([, ids]) => ids.length > 0)
-        .map(([table, ids]) => {
-          const label = TABLE_LABELS[table] ?? 'change';
-          return `${ids.length} ${label}${ids.length === 1 ? '' : 's'}`;
-        })
-        .concat(REJECTION_EXPLANATION)
-        .join('. ')
-    : undefined;
+  const { count: rejected, details: rejectionDetails } = rejectedSummary(state);
   return (
     <div
       className="fixed bottom-4 right-4 z-40 flex items-center gap-2.5 px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-background/90 backdrop-blur-xs border border-border/80 rounded-full shadow-md transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-2"
