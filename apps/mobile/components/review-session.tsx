@@ -16,7 +16,11 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
-import { loadReviewPreferences } from '@/lib/review-preferences';
+import {
+  clearLastReviewDeckId,
+  loadReviewPreferences,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
 import { useReviewDeck } from '@/lib/review';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
@@ -63,6 +67,7 @@ export function ReviewSession({ deckId }: { deckId: string }) {
     <ActiveReviewSession
       manager={manager}
       deckId={deckId}
+      userId={authSession?.user.id}
       preferences={loadReviewPreferences(authSession?.user.id ?? '')}
     />
   );
@@ -71,10 +76,12 @@ export function ReviewSession({ deckId }: { deckId: string }) {
 function ActiveReviewSession({
   manager,
   deckId,
+  userId,
   preferences,
 }: {
   manager: DatabaseManager;
   deckId: string;
+  userId: string | undefined;
   preferences: ReviewPreferences;
 }) {
   const answers =
@@ -90,6 +97,10 @@ function ActiveReviewSession({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (deck && userId) saveLastReviewDeckId(userId, deck.id);
+  }, [deck, userId]);
 
   useEffect(() => {
     if (!isLoading && deck && session?.deckId !== deckId) {
@@ -154,6 +165,7 @@ function ActiveReviewSession({
       setCardIndex(0);
       return;
     }
+    if (userId) clearLastReviewDeckId(userId);
     setIsComplete(true);
   };
 
@@ -173,6 +185,10 @@ function ActiveReviewSession({
   };
 
   const leave = () => router.replace(`/deck/${deckId}`);
+  const exit = () => {
+    if (userId) clearLastReviewDeckId(userId);
+    leave();
+  };
 
   if (isComplete) {
     return (
@@ -211,7 +227,7 @@ function ActiveReviewSession({
         <Text className="text-sm font-semibold text-muted-foreground">
           Card {cardIndex + 1} of {session.cards.length}
         </Text>
-        <Button variant="ghost" size="sm" onPress={leave} disabled={isSaving}>
+        <Button variant="ghost" size="sm" onPress={exit} disabled={isSaving}>
           <Text>Exit review</Text>
         </Button>
       </View>

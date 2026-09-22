@@ -16,7 +16,7 @@ import {
   type UserDeckRecord,
   type UserNoteDeckRecord,
 } from '@repo/offline-db';
-import { cardsForDeck } from './cards-in-deck';
+import { cardsForDeck, decksWithDueCards } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
 
 export function dueCardsForDeck(
@@ -35,6 +35,21 @@ export function reviewWrites(db: Database, sync: SyncController | null) {
       sync?.notifyLocalWrite();
       return review;
     },
+  };
+}
+
+export function useReviewOverview(manager: DatabaseManager) {
+  const db = useDatabase(manager);
+  const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+
+  const now = Date.now();
+
+  return {
+    dueDeckIds: decksWithDueCards(memberships.data, cards.data, now),
+    dueCount: selectDueCards(cards.data, now).length,
+    isLoading: !db || memberships.isLoading || cards.isLoading,
+    error: memberships.error ?? cards.error,
   };
 }
 

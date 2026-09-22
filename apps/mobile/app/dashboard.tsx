@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { DatabaseManager } from '@remelondb/core';
 import { authClient } from '@/lib/auth-client';
 import {
   BookOpenIcon,
@@ -10,9 +12,16 @@ import {
 } from '@/components/ui/icon';
 import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
 import { DeckList } from '@/components/deck-list';
 import { RequireSession } from '@/components/require-session';
 import { Settings } from '@/components/settings';
+import { useSessionDatabase } from '@/lib/database-provider';
+import {
+  clearLastReviewDeckId,
+  loadLastReviewDeckId,
+} from '@/lib/review-preferences';
+import { useReviewOverview } from '@/lib/review';
 
 // Web's dashboard strip: Overview, My Library, Profile & Settings, same
 // icons. Tab state lives here like web's, no native tab navigator. The
@@ -27,6 +36,7 @@ const TABS: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
 
 export default function Dashboard() {
   const { data: session } = authClient.useSession();
+  const { manager } = useSessionDatabase();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('overview');
 
@@ -65,14 +75,22 @@ export default function Dashboard() {
           keyboardShouldPersistTaps="handled"
         >
           {tab === 'overview' && (
-            <View className="gap-1">
+            <View className="gap-4">
+              {/* The email stays in the Settings account header; the first
+                  screen is the one others see over your shoulder. */}
               <Text className="text-base">
                 Welcome,{' '}
                 <Text className="font-semibold">{session?.user.name}</Text>!
               </Text>
-              <Text className="text-muted-foreground">
-                Logged in as {session?.user.email}
-              </Text>
+              {manager ? (
+                <ReviewOverview
+                  manager={manager}
+                  userId={session?.user.id}
+                  onChooseDeck={() => setTab('library')}
+                />
+              ) : (
+                <ActivityIndicator accessibilityLabel="Loading review overview" />
+              )}
             </View>
           )}
           {tab === 'library' && <DeckList />}
@@ -80,5 +98,59 @@ export default function Dashboard() {
         </ScrollView>
       </View>
     </RequireSession>
+  );
+}
+
+function ReviewOverview({
+  manager,
+  userId,
+  onChooseDeck,
+}: {
+  manager: DatabaseManager;
+  userId: string | undefined;
+  onChooseDeck: () => void;
+}) {
+  const router = useRouter();
+  const { dueDeckIds, dueCount, isLoading, error } = useReviewOverview(manager);
+
+  const startReview = () => {
+    if (!userId) {
+      onChooseDeck();
+      return;
+    }
+
+    const lastDeckId = loadLastReviewDeckId(userId);
+    // Membership in the set covers "deck still exists" too: a deleted deck
+    // loses its membership rows (see decksWithDueCards).
+    if (lastDeckId && dueDeckIds.has(lastDeckId)) {
+      router.push(`/review/${lastDeckId}`);
+      return;
+    }
+
+    if (lastDeckId) clearLastReviewDeckId(userId);
+    onChooseDeck();
+  };
+
+  return (
+    <View className="gap-3">
+      <Text className={error ? 'text-destructive' : 'text-muted-foreground'}>
+        {error
+          ? `Could not load cards due: ${error.message}`
+          : isLoading
+            ? 'Loading cards due…'
+            : `${dueCount} ${dueCount === 1 ? 'card' : 'cards'} due`}
+      </Text>
+      {/* The same button as each library row, so the two read as one action. */}
+      <Button
+        variant="outline"
+        size="lg"
+        loading={isLoading}
+        disabled={!!error}
+        onPress={startReview}
+      >
+        <BookOpenIcon size={18} className="text-foreground" />
+        <Text>Start Review</Text>
+      </Button>
+    </View>
   );
 }

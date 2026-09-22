@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_REVIEW_PREFERENCES,
+  lastReviewDeckStorageKey,
   parseReviewPreferences,
   reviewPreferencesStorageKey,
 } from './review-preferences.js';
@@ -31,6 +32,14 @@ describe('reviewPreferencesStorageKey', () => {
   it('scopes the key to the user', () => {
     expect(reviewPreferencesStorageKey('user-1')).toBe(
       'not-another-cards:review-preferences:user-1',
+    );
+  });
+});
+
+describe('lastReviewDeckStorageKey', () => {
+  it('scopes the key to the user', () => {
+    expect(lastReviewDeckStorageKey('user-1')).toBe(
+      'not-another-cards:last-review-deck:user-1',
     );
   });
 });
