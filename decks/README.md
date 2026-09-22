@@ -15,7 +15,9 @@ Two header comments name the deck and its languages (ids from
     # title: Spanish A1
     # languages: <native language id> <target language id>
 
-Nouns get their article on the card ("la mesa"). A word can appear once per
+Nouns get their article on the card ("la mesa"). The pronunciation field is
+filled by `ipa-es.mjs`, a rule-based broad IPA for Spanish of Spain (θ for c/z,
+ʝ for ll/y, stress from the accent rules); other languages need their own. A word can appear once per
 sense, for example `mañana` as an adverb and as a noun.
 
 Decks so far:

@@ -9,6 +9,7 @@
 // comments name the deck and its native/target language ids.
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { ipaPhrase } from './ipa-es.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -69,6 +70,7 @@ lines.forEach((raw, i) => {
       part_of_speech: partOfSpeech,
       example,
       example_translation: exampleTranslation,
+      pronunciation: ipaPhrase(word),
       ...(article ? { gender: article } : {}),
     },
     additional_content: null,
