@@ -26,6 +26,8 @@ const detailFields = [
 
 export function WordNoteDetails({ fields, onClose }: WordNoteDetailsProps) {
   const filledDetails = detailFields.filter(([, key]) => fields[key]);
+  const displayFieldClass =
+    'min-h-9 rounded-lg border border-input bg-background px-3 py-2 text-sm whitespace-pre-wrap break-words';
 
   return (
     <div
@@ -47,13 +49,13 @@ export function WordNoteDetails({ fields, onClose }: WordNoteDetailsProps) {
         </CardHeader>
         <CardContent className="max-h-[60vh] overflow-y-auto pt-4">
           {filledDetails.length > 0 ? (
-            <dl className="space-y-4 text-sm">
+          <dl className="space-y-4">
               {filledDetails.map(([label, key]) => (
                 <div key={key}>
                   <dt className="text-xs font-medium text-muted-foreground">
                     {label}
                   </dt>
-                  <dd className="mt-1 whitespace-pre-wrap break-words">
+                  <dd className={`mt-1.5 ${displayFieldClass}`}>
                     {fields[key]}
                   </dd>
                 </div>

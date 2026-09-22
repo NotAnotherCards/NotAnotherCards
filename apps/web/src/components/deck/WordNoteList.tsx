@@ -275,10 +275,10 @@ export function WordNoteList({
                     )}
                   </div>
                   <div role="cell" className="text-muted-foreground min-w-0 truncate" title={row.translation}>{row.translation}</div>
-                  <div className="grid grid-cols-1 gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[556px]:items-center @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 @[848px]:contents">
-                  <div role="cell" className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-2 @[556px]:flex @[556px]:items-center @[556px]:gap-2 @[848px]:block" aria-label={`${row.cards.length} cards`}>
+                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)] items-center gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 @[848px]:contents">
+                  <div role="cell" className="flex min-w-0 items-center gap-2 @[848px]:block" aria-label={`${row.cards.length} cards`}>
                     <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Cards:</span>
-                    <p className="min-w-0 text-xs leading-6 text-muted-foreground @[848px]:hidden">
+                    <p className="hidden min-w-0 text-xs leading-6 text-muted-foreground @[556px]:block @[848px]:hidden">
                       {row.badges.map((badge, index) => (
                         <span key={badge} className="whitespace-nowrap">
                           {index > 0 && ' · '}
@@ -286,6 +286,9 @@ export function WordNoteList({
                         </span>
                       ))}
                     </p>
+                    <span className="text-xs text-muted-foreground @[556px]:hidden">
+                      {row.cards.length}
+                    </span>
                     <span className="hidden text-center text-xs text-muted-foreground @[848px]:block @[1030px]:hidden">
                       {row.cards.length}
                     </span>
@@ -300,7 +303,7 @@ export function WordNoteList({
                       ))}
                       </div>
                     </div>
-                  <div className="flex items-center justify-between gap-3 @[556px]:contents">
+                  <div className="contents">
                     <div role="cell" className="flex min-w-0 items-center justify-center gap-2 @[848px]:justify-self-center">
                       <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Extra info:</span>
                       <button
