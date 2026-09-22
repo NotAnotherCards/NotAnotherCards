@@ -392,6 +392,7 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
+        dueCount={0}
         onViewNote={vi.fn()}
         onViewDetails={vi.fn()}
         onEditWord={vi.fn()}
@@ -403,6 +404,8 @@ describe('WordNoteList Component', () => {
     );
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('3 Cards Total')).toBeInTheDocument();
+    expect(screen.getByText('0 Cards Due')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Word' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Translation' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Cards' })).toBeInTheDocument();
@@ -428,6 +431,7 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
+        dueCount={0}
         onViewNote={onViewNote}
         onViewDetails={onViewDetails}
         onEditWord={onEditWord}

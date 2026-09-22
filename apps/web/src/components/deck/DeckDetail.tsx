@@ -168,6 +168,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
   const cards = store.getCardsForDeck(deckId);
   const wordNotes = isWordDeck ? store.getNotesForDeck(deckId) : [];
+  const dueCardIds = new Set((store.dueCards ?? []).map((card) => card.id));
+  const dueCount = cards.filter((card) => dueCardIds.has(card.id)).length;
   const viewingWordDetailFields = (() => {
     if (!viewingWordNoteId || !isWordDeck) return null;
     const note = wordNotes.find((wordNote) => wordNote.id === viewingWordNoteId);
@@ -565,6 +567,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <WordNoteList
           notes={wordNotes}
           cards={cards}
+          dueCount={dueCount}
           onViewNote={(card) => setViewingWordCard(card)}
           onViewDetails={(note) => setViewingWordNoteId(note.id)}
           onEditWord={(card) => setEditingCard(card)}

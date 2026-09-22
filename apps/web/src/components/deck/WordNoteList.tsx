@@ -21,6 +21,7 @@ import { languageFor } from '@repo/schemas';
 interface WordNoteListProps {
   notes: UserNoteRecord[];
   cards: Card[];
+  dueCount: number;
   onViewNote: (card: Card) => void;
   onViewDetails: (note: UserNoteRecord) => void;
   onEditWord: (card: Card) => void;
@@ -151,6 +152,7 @@ function toWordRow(note: UserNoteRecord, cards: Card[]): WordRow | null {
 export function WordNoteList({
   notes,
   cards,
+  dueCount,
   onViewNote,
   onViewDetails,
   onEditWord,
@@ -194,10 +196,14 @@ export function WordNoteList({
   return (
     <UICard className="border border-border/60">
       <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <CardTitle className="text-base font-bold flex items-center gap-2">
-          <Library className="size-4 text-primary" />
-          {filteredRows.length} Words
-        </CardTitle>
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-base font-bold">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <Library className="size-4 text-primary" />
+            {filteredRows.length} Words
+          </CardTitle>
+          <span>{cards.length} Cards Total</span>
+          <span>{dueCount} Cards Due</span>
+        </div>
         <div className="relative w-full md:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
