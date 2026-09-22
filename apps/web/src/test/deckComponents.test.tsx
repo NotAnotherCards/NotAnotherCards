@@ -415,7 +415,15 @@ describe('WordNoteList Component', () => {
     expect(screen.getAllByText(/DE → RU/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/RU → DE/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Example → DE/).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'View 3 details' })).toHaveTextContent('3');
+    expect(
+      screen
+        .getAllByRole('button', { name: 'View 3 details' })
+        .some((button) => button.textContent === '3'),
+    ).toBe(true);
+    fireEvent.click(screen.getAllByRole('button', { name: 'View 3 cards' })[0]);
+    expect(
+      screen.getByText('Cards created to review this word.'),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Audio')).toBeNull();
     expect(screen.getByLabelText('3 cards').textContent).toContain(
       'DE → RURU → DEExample → DE',
@@ -443,7 +451,7 @@ describe('WordNoteList Component', () => {
     );
 
     fireEvent.click(screen.getAllByTitle('View Note')[0]);
-    fireEvent.click(screen.getByRole('button', { name: 'View 3 details' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'View 3 details' })[0]);
     fireEvent.click(screen.getByTitle('Edit Note'));
     fireEvent.click(screen.getByTitle('Remove Word'));
 

@@ -17,6 +17,7 @@ import {
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { languageFor } from '@repo/schemas';
+import { WordNoteCards } from './WordNoteCards';
 
 interface WordNoteListProps {
   notes: UserNoteRecord[];
@@ -162,6 +163,9 @@ export function WordNoteList({
   onAddWord,
 }: WordNoteListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewingCards, setViewingCards] = useState<readonly string[] | null>(
+    null,
+  );
   const rows = useMemo(
     () =>
       notes
@@ -277,18 +281,35 @@ export function WordNoteList({
                   <div role="cell" className="text-muted-foreground min-w-0 truncate" title={row.translation}>{row.translation}</div>
                   <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)] items-center gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 @[848px]:contents">
                   <div role="cell" className="flex min-w-0 items-center gap-2 @[848px]:block" aria-label={`${row.cards.length} cards`}>
-                    <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Cards:</span>
-                    <p className="hidden min-w-0 text-xs leading-6 text-muted-foreground @[556px]:block @[848px]:hidden">
+                    <button
+                      type="button"
+                      className="text-left text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
+                      onClick={() => setViewingCards(row.badges)}
+                      aria-label={`View ${row.cards.length} cards`}
+                    >
+                      Cards:
+                    </button>
+                    <button
+                      type="button"
+                      className="hidden min-w-0 text-left text-xs leading-6 text-muted-foreground hover:text-primary cursor-pointer @[556px]:block @[848px]:hidden"
+                      onClick={() => setViewingCards(row.badges)}
+                      aria-label={`View ${row.cards.length} cards`}
+                    >
                       {row.badges.map((badge, index) => (
                         <span key={badge} className="whitespace-nowrap">
                           {index > 0 && ' · '}
                           {badge}
                         </span>
                       ))}
-                    </p>
-                    <span className="text-xs text-muted-foreground @[556px]:hidden">
+                    </button>
+                    <button
+                      type="button"
+                      className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer @[556px]:hidden"
+                      onClick={() => setViewingCards(row.badges)}
+                      aria-label={`View ${row.cards.length} cards`}
+                    >
                       {row.cards.length}
-                    </span>
+                    </button>
                     <span className="hidden text-center text-xs text-muted-foreground @[848px]:block @[1030px]:hidden">
                       {row.cards.length}
                     </span>
@@ -305,7 +326,14 @@ export function WordNoteList({
                     </div>
                   <div className="contents">
                     <div role="cell" className="flex min-w-0 items-center justify-center gap-2 @[848px]:justify-self-center">
-                      <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Extra info:</span>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
+                        onClick={() => onViewDetails(row.note)}
+                        aria-label={`View ${row.detailsCount} details`}
+                      >
+                        Extra info:
+                      </button>
                       <button
                         type="button"
                         className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
@@ -344,6 +372,12 @@ export function WordNoteList({
           </div>
         )}
       </CardContent>
+      {viewingCards && (
+        <WordNoteCards
+          cards={viewingCards}
+          onClose={() => setViewingCards(null)}
+        />
+      )}
     </UICard>
   );
 }
