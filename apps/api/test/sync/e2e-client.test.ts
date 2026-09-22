@@ -141,7 +141,12 @@ describePostgres('client-server sync, end to end', () => {
           body: JSON.stringify(args),
         });
         expect(response.status, await response.clone().text()).toBe(200);
-        return wire.pushResult.parse(await response.json());
+        const result = wire.pushResult.parse(await response.json());
+        if ('rejected' in result && result.rejected) {
+          const rejectedIds = Object.values(result.rejected).flat();
+          expect(rejectedIds, `Server rejected pushed rows: ${rejectedIds.join(', ')}`).toHaveLength(0);
+        }
+        return result;
       },
     });
 
@@ -451,7 +456,7 @@ describePostgres('client-server sync, end to end', () => {
     }
   }, 60_000);
 
-  it('imports a backup and syncs it to the server without rejection', async () => {
+  it('imports JSON and CSV backups and syncs them to the server without rejection', async () => {
     const cookie = await register('import');
     const a = await openClient();
 
@@ -483,29 +488,40 @@ describePostgres('client-server sync, end to end', () => {
       review_events: [],
     });
 
-    const report = await validateAndImportData(a, backupJson, {
+    const jsonReport = await validateAndImportData(a, backupJson, {
       format: 'json',
     });
-    expect(report.success).toBe(true);
-    expect(report.errors).toHaveLength(0);
+    expect(jsonReport.success).toBe(true);
+    expect(jsonReport.errors).toHaveLength(0);
+
+    const csvData = `front,back,deck\ncsv front,csv back,Imported CSV Deck`;
+    const csvReport = await validateAndImportData(a, csvData, {
+      format: 'csv',
+    });
+    expect(csvReport.success).toBe(true);
+    expect(csvReport.errors).toHaveLength(0);
 
     // If the server rejected the deck due to missing visibility,
-    // it would not be broadcast to client B.
+    // the push result inside syncClient will explicitly assert rejected === 0,
+    // and it would not be broadcast to client B.
     await syncClient(a, cookie);
 
     const b = await openClient();
     await syncClient(b, cookie);
 
     const decks = await b.get(UserDeck).query().fetch();
-    expect(decks).toHaveLength(1);
-    expect(decks[0].title).toBe('Imported E2E Deck');
+    expect(decks).toHaveLength(2);
+    const deckTitles = decks.map((d) => d.title).sort();
+    expect(deckTitles).toEqual(['Imported CSV Deck', 'Imported E2E Deck']);
     expect(decks[0].visibility).toBe('private');
+    expect(decks[1].visibility).toBe('private');
 
     const memberships = await b.get(UserNoteDeck).query().fetch();
-    expect(memberships).toHaveLength(1);
+    expect(memberships).toHaveLength(2);
 
     const cards = await b.get(UserCard).query().fetch();
-    expect(cards).toHaveLength(1);
-    expect(cards[0].front).toBe('imported f');
+    expect(cards).toHaveLength(2);
+    const cardFronts = cards.map((c) => c.front).sort();
+    expect(cardFronts).toEqual(['csv front', 'imported f']);
   });
 });
