@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import type { Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,6 +174,23 @@ export function WordNoteList({
       translation.toLowerCase().includes(search)
     );
   });
+  const maximumBadgeCount = Math.max(
+    2,
+    ...rows.map((row) => row.badges.length),
+  );
+  const cardsColumnFullWidth =
+    maximumBadgeCount === 4
+      ? '27.125rem'
+      : maximumBadgeCount === 3
+        ? '20.25rem'
+        : '13.375rem';
+  const cardsColumnThreeBadgesWidth =
+    maximumBadgeCount === 4 ? '20.25rem' : cardsColumnFullWidth;
+  const tableStyle = {
+    '--cards-column-full': cardsColumnFullWidth,
+    '--cards-column-three': cardsColumnThreeBadgesWidth,
+  } satisfies CSSProperties &
+    Record<'--cards-column-full' | '--cards-column-three', string>;
   return (
     <UICard className="border border-border/60">
       <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
@@ -208,11 +225,17 @@ export function WordNoteList({
             )}
           </div>
         ) : (
-          <div role="table" aria-label="Word Catalog">
+          <div className="@container">
+          <div
+            role="table"
+            aria-label="Word Catalog"
+            style={tableStyle}
+            className="[--cards-column:13.375rem] @[1140px]:[--cards-column:var(--cards-column-three)] @[1250px]:[--cards-column:var(--cards-column-full)]"
+          >
             <div role="rowgroup">
               <div
                 role="row"
-                className="sr-only lg:not-sr-only lg:grid lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_230px_76px_108px] xl:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_466px_76px_108px] gap-4 lg:!px-6 lg:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                className="sr-only @[1030px]:not-sr-only @[1030px]:grid @[1030px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-4 @[1030px]:!px-6 @[1030px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
               >
                 <div role="columnheader">Word</div>
                 <div role="columnheader">Translation</div>
@@ -229,7 +252,7 @@ export function WordNoteList({
                   key={row.note.id}
                   role="row"
                   aria-rowindex={index + 2}
-                  className="@container grid grid-cols-1 lg:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_230px_76px_108px] xl:grid-cols-[minmax(110px,1fr)_minmax(110px,1fr)_466px_76px_108px] gap-3 lg:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+                  className="grid grid-cols-1 @[1030px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-3 @[1030px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
                 >
                   <div role="cell" className="min-w-0 truncate font-medium" title={row.word}>
                     {row.actionCard ? (
@@ -246,17 +269,13 @@ export function WordNoteList({
                     )}
                   </div>
                   <div role="cell" className="text-muted-foreground min-w-0 truncate" title={row.translation}>{row.translation}</div>
-                  <div className="grid grid-cols-1 gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[556px]:items-center @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 lg:contents">
-                  <div role="cell" className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-2 @[556px]:flex @[556px]:items-center @[556px]:gap-2 lg:block" aria-label={`${row.cards.length} cards`}>
-                    <span className="text-xs font-semibold text-muted-foreground lg:hidden">Cards:</span>
-                    <p className="min-w-0 text-xs leading-6 text-muted-foreground lg:hidden">
+                  <div className="grid grid-cols-1 gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[556px]:items-center @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 @[1030px]:contents">
+                  <div role="cell" className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-2 @[556px]:flex @[556px]:items-center @[556px]:gap-2 @[1030px]:block" aria-label={`${row.cards.length} cards`}>
+                    <span className="text-xs font-semibold text-muted-foreground @[1030px]:hidden">Cards:</span>
+                    <p className="min-w-0 text-xs leading-6 text-muted-foreground @[1030px]:hidden">
                       {row.badges.join(' · ')}
                     </p>
-                    <p className="hidden text-xs leading-6 text-muted-foreground lg:block xl:hidden">
-                      {row.badges.join(' · ')}
-                    </p>
-                    <div className="@container hidden min-w-0 xl:block">
-                      <div className="grid grid-cols-[repeat(2,6.5rem)] gap-1.5 @[324px]:grid-cols-[repeat(3,6.5rem)] @[434px]:grid-cols-[repeat(4,6.5rem)]">
+                    <div className="hidden min-w-[13.375rem] flex-wrap gap-1.5 @[1030px]:flex">
                       {row.badges.map((badge) => (
                         <span
                           key={badge}
@@ -267,10 +286,9 @@ export function WordNoteList({
                       ))}
                       </div>
                     </div>
-                  </div>
                   <div className="flex items-center justify-between gap-3 @[556px]:contents">
-                    <div role="cell" className="flex min-w-0 items-center justify-center gap-2 lg:justify-self-center">
-                      <span className="text-xs font-semibold text-muted-foreground lg:hidden">Extra info:</span>
+                    <div role="cell" className="flex min-w-0 items-center justify-center gap-2 @[1030px]:justify-self-center">
+                      <span className="text-xs font-semibold text-muted-foreground @[1030px]:hidden">Extra info:</span>
                       <button
                         type="button"
                         className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
@@ -280,8 +298,8 @@ export function WordNoteList({
                         {row.detailsCount}
                       </button>
                     </div>
-                    <div role="cell" className="flex min-w-0 items-center justify-end gap-2 lg:justify-center">
-                      <span className="text-xs font-semibold text-muted-foreground lg:hidden">Actions:</span>
+                    <div role="cell" className="flex min-w-0 items-center justify-end gap-2 @[1030px]:justify-center">
+                      <span className="text-xs font-semibold text-muted-foreground @[1030px]:hidden">Actions:</span>
                       <div className="flex items-center gap-1.5">
                         {row.actionCard && (
                           <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onViewNote(row.actionCard!)} title="View Note">
@@ -305,6 +323,7 @@ export function WordNoteList({
                 </div>
               ))}
             </div>
+          </div>
           </div>
         )}
       </CardContent>
