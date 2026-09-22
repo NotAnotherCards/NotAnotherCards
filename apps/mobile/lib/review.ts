@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type {
   Database,
   DatabaseManager,
@@ -73,9 +73,22 @@ export function useReviewDeck(manager: DatabaseManager, deckId: string) {
     [db, syncController],
   );
 
+  // The rendered `dueCards` are a snapshot of the last query result, so a
+  // batch built from them misses anything that became due, synced in or was
+  // deleted since. This reads the database at the moment it is called.
+  const readDueCards = useCallback(async () => {
+    if (!db) return [];
+    const [memberRows, cardRows] = await Promise.all([
+      getNoteDecksQuery(db).fetch(),
+      getPersonalDictionaryQuery(db).fetch(),
+    ]);
+    return dueCardsForDeck(memberRows, cardRows, deckId);
+  }, [db, deckId]);
+
   return {
     deck,
     dueCards,
+    readDueCards,
     isLoading: decks.isLoading || memberships.isLoading || cards.isLoading,
     error: decks.error ?? memberships.error ?? cards.error,
     writes,

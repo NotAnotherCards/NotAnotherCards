@@ -30,7 +30,6 @@ import { Text } from './ui/text';
 type ReviewBatch = {
   deckId: string;
   cards: UserCardRecord[];
-  remaining: UserCardRecord[];
 };
 
 // Web's two modes, same labels: basic asks whether you knew it, extended
@@ -44,13 +43,7 @@ const EXTENDED_ANSWERS: ReviewAnswer[] = [
 ];
 
 function makeBatch(deckId: string, cards: UserCardRecord[]): ReviewBatch {
-  const batch = selectReviewBatch(cards);
-  const selectedIds = new Set(batch.map((card) => card.id));
-  return {
-    deckId,
-    cards: batch,
-    remaining: cards.filter((card) => !selectedIds.has(card.id)),
-  };
+  return { deckId, cards: selectReviewBatch(cards) };
 }
 
 export function ReviewSession({ deckId }: { deckId: string }) {
@@ -87,10 +80,8 @@ function ActiveReviewSession({
   const answers =
     preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS;
   const router = useRouter();
-  const { deck, dueCards, isLoading, error, writes } = useReviewDeck(
-    manager,
-    deckId,
-  );
+  const { deck, dueCards, readDueCards, isLoading, error, writes } =
+    useReviewDeck(manager, deckId);
   const [session, setSession] = useState<ReviewBatch | null>(null);
   const [cardIndex, setCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -153,13 +144,16 @@ function ActiveReviewSession({
   }
 
   const card = session.cards[cardIndex];
-  const advance = () => {
+  // The batch in hand stays as it is; the next one comes from a fresh read,
+  // so cards that became due, arrived through sync or were deleted during the
+  // session are taken into account.
+  const advance = async () => {
     if (cardIndex < session.cards.length - 1) {
       setCardIndex((index) => index + 1);
       return;
     }
 
-    const next = makeBatch(deckId, session.remaining);
+    const next = makeBatch(deckId, await readDueCards());
     if (next.cards.length > 0) {
       setSession(next);
       setCardIndex(0);
@@ -176,7 +170,7 @@ function ActiveReviewSession({
     try {
       await writes.record(card.id, reviewRatingByAnswer[answer]);
       setIsFlipped(false);
-      advance();
+      await advance();
     } catch (cause) {
       setSaveError(writeErrorMessage(cause, 'Could not save your answer'));
     } finally {
