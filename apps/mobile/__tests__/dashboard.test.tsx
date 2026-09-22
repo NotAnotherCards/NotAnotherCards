@@ -1,35 +1,43 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import Dashboard from '@/app/dashboard';
 
 const mockUseSession = jest.fn();
-const mockSignOut = jest.fn();
-const mockReplace = jest.fn();
 
 jest.mock('../lib/auth-client', () => ({
-  authClient: {
-    useSession: () => mockUseSession(),
-    signOut: (...args: unknown[]) => mockSignOut(...args),
-  },
+  authClient: { useSession: () => mockUseSession() },
 }));
 
-// The deck list has its own tests; keep this one about the session guard.
-jest.mock('../components/deck-list', () => ({ DeckList: () => null }));
+// The deck list and settings have their own tests; keep this one about the
+// session guard and the tab strip. Each tab renders a marker instead.
+jest.mock('../components/deck-list', () => {
+  const { Text } = require('react-native');
+  return { DeckList: () => <Text>deck-list</Text> };
+});
+jest.mock('../components/settings', () => {
+  const { Text } = require('react-native');
+  return { Settings: () => <Text>settings-tab</Text> };
+});
+// No SafeAreaProvider in tests; the strip only reads the top inset.
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+jest.mock('../components/ui/icon', () => ({
+  BookOpenIcon: () => null,
+  LibraryIcon: () => null,
+  SettingsIcon: () => null,
+}));
 jest.mock('expo-router', () => {
   const React = require('react');
   const { Text } = require('react-native');
   return {
-    useRouter: () => ({ replace: mockReplace }),
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
   };
 });
 
 describe('Dashboard screen', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockSignOut.mockResolvedValue(undefined);
-  });
+  beforeEach(() => jest.clearAllMocks());
 
   it('redirects to login when there is no session', () => {
     mockUseSession.mockReturnValue({ data: null, isPending: false });
@@ -53,6 +61,28 @@ describe('Dashboard screen', () => {
     expect(getByText(/jane@example.com/)).toBeTruthy();
   });
 
+  it('opens on Overview and switches to the library and settings tabs', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+    const { getByText, queryByText, rerender } = render(<Dashboard />);
+    expect(getByText('Jane Doe')).toBeTruthy();
+    expect(queryByText('deck-list')).toBeNull();
+
+    fireEvent.press(getByText('My Library'));
+    expect(getByText('deck-list')).toBeTruthy();
+    expect(queryByText('Jane Doe')).toBeNull();
+
+    // A parent re-render (session refetch, theme change) keeps the tab.
+    rerender(<Dashboard />);
+    expect(getByText('deck-list')).toBeTruthy();
+
+    fireEvent.press(getByText('Profile & Settings'));
+    expect(getByText('settings-tab')).toBeTruthy();
+    expect(queryByText('deck-list')).toBeNull();
+  });
+
   it('offers a retry instead of redirecting when the session fetch fails', () => {
     const mockRefetch = jest.fn();
     mockUseSession.mockReturnValue({
@@ -68,79 +98,6 @@ describe('Dashboard screen', () => {
     expect(queryByText('redirect:/login')).toBeNull();
     fireEvent.press(getByText('Retry'));
     expect(mockRefetch).toHaveBeenCalled();
-  });
-
-  it('signs out and returns to login', async () => {
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'user-a',
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          onBoardingComplete: true,
-        },
-      },
-      isPending: false,
-    });
-
-    const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Log out'));
-
-    await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
-    expect(mockReplace).toHaveBeenCalledWith('/login');
-  });
-
-  it('tells the truth when sign-out fails, and still returns to login', async () => {
-    const alertSpy = jest
-      .spyOn(require('react-native').Alert, 'alert')
-      .mockImplementation(() => {});
-    mockSignOut.mockResolvedValueOnce({ error: { status: 500 } });
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'user-a',
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          onBoardingComplete: true,
-        },
-      },
-      isPending: false,
-    });
-
-    const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Log out'));
-
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/login'));
-    expect(alertSpy).toHaveBeenCalledWith(
-      'Signed out on this device only',
-      expect.stringMatching(/may stay active/),
-    );
-    alertSpy.mockRestore();
-  });
-
-  it('shows no warning when sign-out succeeds', async () => {
-    const alertSpy = jest
-      .spyOn(require('react-native').Alert, 'alert')
-      .mockImplementation(() => {});
-    mockSignOut.mockResolvedValueOnce({ data: { success: true }, error: null });
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'user-a',
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          onBoardingComplete: true,
-        },
-      },
-      isPending: false,
-    });
-
-    const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Log out'));
-
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/login'));
-    expect(alertSpy).not.toHaveBeenCalled();
-    alertSpy.mockRestore();
   });
 
   it('redirects to onboarding when the profile is unfinished', () => {

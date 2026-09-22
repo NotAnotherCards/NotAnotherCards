@@ -139,6 +139,7 @@ export function useStore() {
     notesLoading ||
     noteDecksLoading ||
     profileLoading;
+
   const { ready, showSpinner } = useDelayedLoading(isLoading);
 
   const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(

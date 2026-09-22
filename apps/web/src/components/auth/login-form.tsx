@@ -14,13 +14,20 @@ import { LoginFormData, loginSchema } from '@repo/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthCard } from '@/components/auth/auth-card';
 import { authClient } from '@/lib/auth-client';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { SocialLoginButton } from '@/components/auth/social-login-button';
+import {
+  isTwoFactorRedirect,
+  rememberPendingChallenge,
+  safeReturnTo,
+} from '@/lib/two-factor-challenge';
 
 export function LoginComponent() {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/_auth/login' });
+  const returnTo = safeReturnTo(search.redirect);
   const [apiError, setApiError] = useState<string | null>(null);
   const [oauthProvider, setOauthProvider] = useState<
     'google' | 'facebook' | null
@@ -54,8 +61,8 @@ export function LoginComponent() {
     try {
       const { error } = await authClient.signIn.social({
         provider,
-        callbackURL: `${window.location.origin}/dashboard`,
-        errorCallbackURL: `${window.location.origin}/login`,
+        callbackURL: `${window.location.origin}${returnTo}`,
+        errorCallbackURL: `${window.location.origin}/login?redirect=${encodeURIComponent(returnTo)}`,
       });
 
       if (error) {
@@ -80,15 +87,21 @@ export function LoginComponent() {
 
   const onSubmit = async (data: LoginFormData) => {
     setApiError(null);
-    const { error } = await authClient.signIn.email({
+    const { data: response, error } = await authClient.signIn.email({
       email: data.email,
       password: data.password,
     });
 
     if (error) {
       setApiError(error.message || 'An unexpected error occurred');
+    } else if (isTwoFactorRedirect(response)) {
+      rememberPendingChallenge(returnTo);
+      void navigate({
+        to: '/two-factor',
+        search: { redirect: returnTo },
+      });
     } else {
-      void navigate({ to: '/dashboard' });
+      void navigate({ href: returnTo });
     }
   };
 

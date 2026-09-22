@@ -56,6 +56,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={12}
+        dueCount={3}
         onSelectDeck={vi.fn()}
         onStartReview={vi.fn()}
         onEditDeck={vi.fn()}
@@ -81,6 +82,7 @@ describe('DeckCard Component', () => {
         }}
         totalCards={3}
         totalWords={1}
+        dueCount={2}
         onSelectDeck={vi.fn()}
         onStartReview={vi.fn()}
         onEditDeck={vi.fn()}
@@ -90,6 +92,8 @@ describe('DeckCard Component', () => {
 
     expect(screen.getByTestId('total-words-badge')).toHaveTextContent('1');
     expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('3');
+    expect(screen.getByText('Cards Due')).toBeInTheDocument();
+    expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
   });
 
   // A push sends the client's whole view of a row, so an old client
@@ -101,6 +105,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={{ ...mockDeck, note_type: 'cloze' }}
         totalCards={0}
+        dueCount={0}
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
@@ -117,6 +122,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={0}
+        dueCount={0}
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
@@ -137,6 +143,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={12}
+        dueCount={3}
         onSelectDeck={onSelectDeck}
         onStartReview={onStartReview}
         onEditDeck={onEditDeck}

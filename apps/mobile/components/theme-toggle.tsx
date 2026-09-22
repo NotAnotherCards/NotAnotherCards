@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { Text } from './ui/text';
+import { Segmented } from './ui/segmented';
 import {
   loadThemePreference,
   setThemePreference,
@@ -23,26 +22,11 @@ export function ThemeToggle() {
   };
 
   return (
-    <View className="flex-row rounded-lg bg-muted p-1">
-      {OPTIONS.map(({ value, label }) => (
-        <Pressable
-          key={value}
-          onPress={() => select(value)}
-          className={`flex-1 items-center rounded-md py-1.5 ${
-            value === preference ? 'bg-background' : ''
-          }`}
-        >
-          <Text
-            className={
-              value === preference
-                ? 'font-semibold text-foreground'
-                : 'text-muted-foreground'
-            }
-          >
-            {label}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
+    <Segmented
+      label="Theme"
+      value={preference}
+      options={OPTIONS}
+      onChange={select}
+    />
   );
 }

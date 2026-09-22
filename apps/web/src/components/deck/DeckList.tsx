@@ -21,8 +21,11 @@ import { DeckForm } from './DeckForm';
 import { DeckCard } from './DeckCard';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
-import type { DeckNoteType } from '@repo/offline-db';
-import { WORD_NOTE_TYPE } from '@repo/offline-db';
+import {
+  countCardsPerDeck,
+  type DeckNoteType,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -36,6 +39,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
+  const dueCardsPerDeck = countCardsPerDeck(
+    store.noteDecks ?? [],
+    store.dueCards ?? [],
+  );
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
@@ -214,6 +221,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                 deck={deck}
                 totalCards={totalCards}
                 totalWords={totalWords}
+                dueCount={dueCardsPerDeck.get(deck.id) ?? 0}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}

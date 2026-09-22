@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#D8E2DA" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#18181B" flood-opacity=".10"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="#FFFFFF"/>
+  <rect x="590" y="58" width="540" height="514" fill="url(#grid)" stroke="#D8E2DA"/>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <g transform="translate(72 70)">
+      <rect width="46" height="50" rx="12" fill="#5865B5"/>
+      <rect x="30" y="-5" width="46" height="50" rx="12" fill="#DDE9E0"/>
+      <rect x="60" y="6" width="46" height="50" rx="12" fill="#4F6B68"/>
+      <text x="15" y="33" fill="#FFFFFF" font-size="23" font-weight="700">N</text>
+      <text x="45" y="28" fill="#27342C" font-size="23" font-weight="700">A</text>
+      <text x="75" y="39" fill="#FFFFFF" font-size="23" font-weight="700">C</text>
+      <text x="132" y="35" fill="#18181B" font-size="29" font-weight="700" letter-spacing="-1.4">NotAnotherCards</text>
+    </g>
+
+    <text x="72" y="255" fill="#18181B" font-size="64" font-weight="700" letter-spacing="-4">Learn the words</text>
+    <text x="72" y="326" fill="#18181B" font-size="64" font-weight="700" letter-spacing="-4">that matter most.</text>
+    <text x="76" y="390" fill="#71717A" font-size="25">Smart flashcards for everyday learning.</text>
+  </g>
+
+  <g filter="url(#shadow)" font-family="Inter, Arial, sans-serif">
+    <g transform="translate(548 160)">
+      <rect width="260" height="282" rx="24" fill="#FFFFFF" stroke="#D8E2DA" stroke-width="2"/>
+      <text x="30" y="62" fill="#18181B" font-size="31" font-weight="700" letter-spacing="-1.8">to learn</text>
+      <text x="30" y="96" fill="#71717A" font-size="21">aprender</text>
+      <path d="M30 128H230" stroke="#E4E4E7" stroke-width="2"/>
+      <rect x="30" y="151" width="105" height="33" rx="9" fill="#EEF0FC" stroke="#CDD3F5"/>
+      <text x="43" y="173" fill="#5865B5" font-size="15" font-weight="700">Frequency</text>
+      <rect x="30" y="194" width="90" height="33" rx="9" fill="#F2F6F2"/>
+      <text x="43" y="216" fill="#27342C" font-size="15" font-weight="700">Examples</text>
+      <text x="30" y="258" fill="#71717A" font-size="17">A little practice, every day.</text>
+    </g>
+
+    <g transform="translate(760 208) rotate(2 135 145)">
+      <rect width="270" height="292" rx="24" fill="#FFFFFF" stroke="#D8E2DA" stroke-width="2"/>
+      <text x="30" y="62" fill="#18181B" font-size="31" font-weight="700" letter-spacing="-1.8">to remember</text>
+      <text x="30" y="96" fill="#71717A" font-size="21">recordar</text>
+      <path d="M30 128H240" stroke="#E4E4E7" stroke-width="2"/>
+      <rect x="30" y="151" width="124" height="33" rx="9" fill="#EEF0FC" stroke="#CDD3F5"/>
+      <text x="43" y="173" fill="#5865B5" font-size="15" font-weight="700">Memorization</text>
+      <rect x="30" y="194" width="93" height="33" rx="9" fill="#F2F6F2"/>
+      <text x="43" y="216" fill="#27342C" font-size="15" font-weight="700">Etymology</text>
+      <text x="30" y="258" fill="#71717A" font-size="17">Make the word easier to recall.</text>
+    </g>
+
+    <g transform="translate(944 274) rotate(-1 120 135)">
+      <rect width="230" height="270" rx="24" fill="#FFFFFF" stroke="#D8E2DA" stroke-width="2"/>
+      <text x="27" y="58" fill="#18181B" font-size="29" font-weight="700" letter-spacing="-1.7">to practise</text>
+      <text x="27" y="91" fill="#71717A" font-size="20">practicar</text>
+      <path d="M27 122H203" stroke="#E4E4E7" stroke-width="2"/>
+      <rect x="27" y="145" width="111" height="33" rx="9" fill="#EEF0FC" stroke="#CDD3F5"/>
+      <text x="40" y="167" fill="#5865B5" font-size="15" font-weight="700">Similar words</text>
+      <rect x="27" y="188" width="119" height="33" rx="9" fill="#F2F6F2"/>
+      <text x="40" y="210" fill="#27342C" font-size="15" font-weight="700">Pronunciation</text>
+    </g>
+  </g>
+</svg>
