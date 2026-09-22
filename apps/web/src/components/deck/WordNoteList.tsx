@@ -236,12 +236,12 @@ export function WordNoteList({
             role="table"
             aria-label="Word Catalog"
             style={tableStyle}
-            className="[--cards-column:13.375rem] @[1140px]:[--cards-column:var(--cards-column-three)] @[1250px]:[--cards-column:var(--cards-column-full)]"
+            className="[--cards-column:2rem] @[1030px]:[--cards-column:13.375rem] @[1140px]:[--cards-column:var(--cards-column-three)] @[1250px]:[--cards-column:var(--cards-column-full)]"
           >
             <div role="rowgroup">
               <div
                 role="row"
-                className="sr-only @[1030px]:not-sr-only @[1030px]:grid @[1030px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-4 @[1030px]:!px-6 @[1030px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                className="sr-only @[848px]:not-sr-only @[848px]:grid @[848px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-4 @[848px]:!px-6 @[848px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
               >
                 <div role="columnheader">Word</div>
                 <div role="columnheader">Translation</div>
@@ -258,7 +258,7 @@ export function WordNoteList({
                   key={row.note.id}
                   role="row"
                   aria-rowindex={index + 2}
-                  className="grid grid-cols-1 @[1030px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-3 @[1030px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+                  className="grid grid-cols-1 @[848px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-3 @[848px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
                 >
                   <div role="cell" className="min-w-0 truncate font-medium" title={row.word}>
                     {row.actionCard ? (
@@ -275,10 +275,10 @@ export function WordNoteList({
                     )}
                   </div>
                   <div role="cell" className="text-muted-foreground min-w-0 truncate" title={row.translation}>{row.translation}</div>
-                  <div className="grid grid-cols-1 gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[556px]:items-center @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 @[1030px]:contents">
-                  <div role="cell" className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-2 @[556px]:flex @[556px]:items-center @[556px]:gap-2 @[1030px]:block" aria-label={`${row.cards.length} cards`}>
-                    <span className="text-xs font-semibold text-muted-foreground @[1030px]:hidden">Cards:</span>
-                    <p className="min-w-0 text-xs leading-6 text-muted-foreground @[1030px]:hidden">
+                  <div className="grid grid-cols-1 gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[556px]:items-center @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 @[848px]:contents">
+                  <div role="cell" className="grid min-w-0 grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-2 @[556px]:flex @[556px]:items-center @[556px]:gap-2 @[848px]:block" aria-label={`${row.cards.length} cards`}>
+                    <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Cards:</span>
+                    <p className="min-w-0 text-xs leading-6 text-muted-foreground @[848px]:hidden">
                       {row.badges.map((badge, index) => (
                         <span key={badge} className="whitespace-nowrap">
                           {index > 0 && ' · '}
@@ -286,6 +286,9 @@ export function WordNoteList({
                         </span>
                       ))}
                     </p>
+                    <span className="hidden text-center text-xs text-muted-foreground @[848px]:block @[1030px]:hidden">
+                      {row.cards.length}
+                    </span>
                     <div className="hidden min-w-[13.375rem] flex-wrap gap-1.5 @[1030px]:flex">
                       {row.badges.map((badge) => (
                         <span
@@ -298,8 +301,8 @@ export function WordNoteList({
                       </div>
                     </div>
                   <div className="flex items-center justify-between gap-3 @[556px]:contents">
-                    <div role="cell" className="flex min-w-0 items-center justify-center gap-2 @[1030px]:justify-self-center">
-                      <span className="text-xs font-semibold text-muted-foreground @[1030px]:hidden">Extra info:</span>
+                    <div role="cell" className="flex min-w-0 items-center justify-center gap-2 @[848px]:justify-self-center">
+                      <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Extra info:</span>
                       <button
                         type="button"
                         className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
@@ -309,8 +312,8 @@ export function WordNoteList({
                         {row.detailsCount}
                       </button>
                     </div>
-                    <div role="cell" className="flex min-w-0 items-center justify-end gap-2 @[1030px]:justify-center">
-                      <span className="text-xs font-semibold text-muted-foreground @[1030px]:hidden">Actions:</span>
+                    <div role="cell" className="flex min-w-0 items-center justify-end gap-2 @[848px]:justify-center">
+                      <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Actions:</span>
                       <div className="flex items-center gap-1.5">
                         {row.actionCard && (
                           <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onViewNote(row.actionCard!)} title="View Note">
