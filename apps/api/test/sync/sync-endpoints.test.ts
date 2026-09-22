@@ -20,6 +20,8 @@ import {
   setUpPostgres,
   tearDownPostgres,
 } from './postgres-fixture';
+import { badgeAwards } from '../../src/gamification/schema';
+import { sql } from 'drizzle-orm';
 
 interface TestUser {
   readonly id: string;
@@ -668,5 +670,115 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody('0'))
       .expect(200);
     expect(expired.body).toEqual({ resyncRequired: true });
+  });
+  it('omits user_badges from pull response when x-sync-version is not 2', async () => {
+    const pullV2 = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userA.cookie)
+      .set('x-sync-version', '2')
+      .send(pullBody(null))
+      .expect(200);
+
+    expect((pullV2.body as Record<string, any>).changes).toHaveProperty(
+      'user_badges',
+    );
+
+    const pullLegacy = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userA.cookie)
+      .send(pullBody(null))
+      .expect(200);
+
+    expect((pullLegacy.body as Record<string, any>).changes).not.toHaveProperty(
+      'user_badges',
+    );
+
+    const pushLegacy = await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userA.cookie)
+      .send({ cursor: '0', changes: {} })
+      .expect(200);
+
+    expect((pushLegacy.body as Record<string, any>).changes).not.toHaveProperty(
+      'user_badges',
+    );
+  });
+
+  it('delivers first-review badge directly in the push response', async () => {
+    const now = Date.now();
+    const initial = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userB.cookie)
+      .set('x-sync-version', '2')
+      .send(pullBody(null))
+      .expect(200);
+
+    const pushResponse = await request(app.getHttpServer())
+      .post('/sync/push')
+      .set('Cookie', userB.cookie)
+      .set('x-sync-version', '2')
+      .send({
+        cursor: (initial.body as { cursor: string }).cursor,
+        changes: modelChanges(now, 'first-review'),
+      })
+      .expect(200);
+
+    const changes = (pushResponse.body as Record<string, any>)
+      .changes as Record<string, any>;
+    const badges = changes.user_badges as Record<string, unknown[]> | undefined;
+    const deliveredBadges = [
+      ...(badges?.created || []),
+      ...(badges?.updated || []),
+    ];
+    expect(deliveredBadges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ badge_id: 'first-review' }),
+      ]),
+    );
+  });
+
+  it('delivers pre-existing awards on initial sync', async () => {
+    // Simulate an award inserted before the user_badges table existed
+    const now = Date.now();
+    const existingBadgeId = 'hundred-reviews';
+
+    await db.insert(badgeAwards).values({
+      userId: userB.id,
+      badgeCode: existingBadgeId,
+      awardedAt: new Date(now),
+    });
+
+    const { readFileSync } = await import('fs');
+    const { resolve } = await import('path');
+    const migrationSql = readFileSync(
+      resolve(__dirname, '../../drizzle/0019_backfill_badges.sql'),
+      'utf-8',
+    );
+    await db.execute(sql.raw(migrationSql));
+    await db.execute(sql.raw(migrationSql)); // Second run to prove it's repeatable
+
+    const initial = await request(app.getHttpServer())
+      .post('/sync/pull')
+      .set('Cookie', userB.cookie)
+      .set('x-sync-version', '2')
+      .send(pullBody(null))
+      .expect(200);
+
+    const changes = (initial.body as Record<string, any>).changes as Record<
+      string,
+      any
+    >;
+    const badges = changes.user_badges as Record<string, unknown[]> | undefined;
+    const deliveredBadges = [
+      ...(badges?.created || []),
+
+      ...(badges?.updated || []),
+    ];
+
+    expect(deliveredBadges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ badge_id: existingBadgeId }),
+      ]),
+    );
   });
 });

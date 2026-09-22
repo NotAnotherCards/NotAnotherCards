@@ -50,7 +50,7 @@ describe('@repo/offline-db wiring on web', () => {
       fieldsVersion: 1,
       templateKey: 'front-back',
     });
-    expect(schema.version).toBe(5);
+    expect(schema.version).toBe(6);
     expect(schema.tables.user_cards).toBeDefined();
     expect(schema.tables.user_decks).toBeDefined();
     // v4: a deck says which note contract its notes follow, and a word

@@ -34,7 +34,7 @@ export function Settings() {
             {session?.user?.name || 'Legendary Learner'}
           </h3>
           <p className="text-xs text-muted-foreground truncate mb-6">
-            @{profile?.username || 'user'}
+            {profile?.username || 'user'}
           </p>
 
           {/* Navigation subtabs */}

@@ -10,6 +10,7 @@ import { selectDueCards, selectReviewBatch } from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useSyncController } from '@/offline/syncProvider';
 import { ReviewSession } from './ReviewSession';
 
 type DeckReviewPageProps = {
@@ -59,8 +60,15 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
     ? activeSession.cards
     : selectReviewBatch(dueCards);
 
+  const syncController = useSyncController();
+
   const clearSavedDeckPreference = () => {
     if (session?.user.id) clearLastReviewDeckId(session.user.id);
+  };
+
+  const handleComplete = () => {
+    clearSavedDeckPreference();
+    syncController?.syncNow();
   };
 
   const exitReview = () => {
@@ -136,7 +144,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       cards={sessionCards}
       deckTitle={deck.title}
       onExit={exitReview}
-      onComplete={clearSavedDeckPreference}
+      onComplete={handleComplete}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}
