@@ -7,6 +7,7 @@ import {
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
   getUserProfileQuery,
+  selectDueCards,
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
@@ -37,6 +38,14 @@ export function useDecks(manager: DatabaseManager) {
   );
   const cardCount = (deckId: string) => cardCounts.get(deckId) ?? 0;
 
+  // The same count over the due cards only, so the list shows where the work
+  // is. The Overview's total (#381) is the sum across decks.
+  const dueCounts = useMemo(
+    () => countCardsPerDeck(memberships.data, selectDueCards(cards.data)),
+    [cards.data, memberships.data],
+  );
+  const dueCount = (deckId: string) => dueCounts.get(deckId) ?? 0;
+
   return {
     db,
     decks: decks.data,
@@ -47,6 +56,7 @@ export function useDecks(manager: DatabaseManager) {
       profiles.isLoading,
     error: decks.error ?? memberships.error ?? cards.error ?? profiles.error,
     cardCount,
+    dueCount,
     profile: profiles.data[0] ?? null,
     writes: db ? deckWrites(db, syncController) : null,
   };

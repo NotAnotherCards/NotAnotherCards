@@ -1,5 +1,5 @@
 import { Deck } from '@/hooks/useStore';
-import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
+import { deckKindClassName } from './deck-kind';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -9,7 +9,7 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
-import { noteTypeRegistry } from '@repo/offline-db';
+import { deckKind, deckKindShort, noteTypeRegistry } from '@repo/offline-db';
 
 interface DeckCardProps {
   deck: Deck;
