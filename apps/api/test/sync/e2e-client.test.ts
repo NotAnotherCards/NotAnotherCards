@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Database, Q, randomId, synchronize, appSchema } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { randomBytes } from 'node:crypto';
+import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -375,69 +376,77 @@ describePostgres('client-server sync, end to end', () => {
     const userCardId = cardId(noteId, BASIC_FRONT_BACK_TEMPLATE_KEY);
     const reviewId = randomId();
 
-    // 1. Start as a legacy (v5) client
-    const legacyDb = await openLegacyClient(dbPath);
-    await legacyDb.write(async () => {
-      await legacyDb.batch([
-        legacyDb.get(UserNote).prepareCreate({
-          id: noteId,
-          note_type: BASIC_NOTE_TYPE,
-          fields_version: BASIC_NOTE_FIELDS_VERSION,
-          fields_json: JSON.stringify({ front: 'f', back: 'b' }),
-          created_at: now,
-          updated_at: now,
-        }),
-        legacyDb.get(UserCard).prepareCreate({
-          id: userCardId,
-          note_id: noteId,
-          template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
-          active: true,
-          front: 'f',
-          back: 'b',
-          due_at: now,
-          scheduled_interval_minutes: 30,
-          created_at: now,
-          updated_at: now,
-        }),
-        legacyDb.get(ReviewEvent).prepareCreate({
-          id: reviewId,
-          user_card_id: userCardId,
-          rating: 3,
-          reviewed_at: now,
-        }),
-      ]);
-    });
+    // 1. Start as a legacy (v5) client. `db` is whichever handle is open.
+    let db = await openLegacyClient(dbPath);
+    try {
+      await db.write(async () => {
+        await db.batch([
+          db.get(UserNote).prepareCreate({
+            id: noteId,
+            note_type: BASIC_NOTE_TYPE,
+            fields_version: BASIC_NOTE_FIELDS_VERSION,
+            fields_json: JSON.stringify({ front: 'f', back: 'b' }),
+            created_at: now,
+            updated_at: now,
+          }),
+          db.get(UserCard).prepareCreate({
+            id: userCardId,
+            note_id: noteId,
+            template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+            active: true,
+            front: 'f',
+            back: 'b',
+            due_at: now,
+            scheduled_interval_minutes: 30,
+            created_at: now,
+            updated_at: now,
+          }),
+          db.get(ReviewEvent).prepareCreate({
+            id: reviewId,
+            user_card_id: userCardId,
+            rating: 3,
+            reviewed_at: now,
+          }),
+        ]);
+      });
 
-    // 2. Sync as legacy (pushes the review, but we don't get the badge back)
-    await syncLegacyClient(legacyDb, cookie);
-    // (We cannot query UserBadge on legacyDb because it's not in the schema)
+      // 2. Sync as legacy (pushes the review, but we don't get the badge back)
+      await syncLegacyClient(db, cookie);
+      // (We cannot query UserBadge on the legacy handle because it's not in the schema)
 
-    // Simulating app closing / restarting
-    // (No explicit close method on RemelonDB Database, but we can just open a new one)
+      // the app restarts: close the legacy handle before reopening the file
+      await db.close();
 
-    // 3. Re-open as a v6 client (triggers migration sync)
-    const v6Db = await Database.open({
-      driver: new NodeSqliteDriver(),
-      schema,
-      migrations,
-      modelClasses: [
-        UserDeck,
-        UserNote,
-        UserCard,
-        UserNoteDeck,
-        ReviewEvent,
-        UserProfile,
-        UserBadge,
-      ],
-      name: dbPath,
-    });
+      // 3. Re-open as a v6 client (triggers migration sync)
+      db = await Database.open({
+        driver: new NodeSqliteDriver(),
+        schema,
+        migrations,
+        modelClasses: [
+          UserDeck,
+          UserNote,
+          UserCard,
+          UserNoteDeck,
+          ReviewEvent,
+          UserProfile,
+          UserBadge,
+        ],
+        name: dbPath,
+      });
 
-    // 4. Sync as v6
-    await syncClient(v6Db, cookie);
+      // 4. Sync as v6
+      await syncClient(db, cookie);
 
-    // 5. Assert the badge was backfilled on the client!
-    const badges = await v6Db.get(UserBadge).query().fetch();
-    expect(badges).toHaveLength(1);
-    expect(badges[0].badge_id).toBe('first-review');
+      // 5. Assert the badge was backfilled on the client!
+      const badges = await db.get(UserBadge).query().fetch();
+      expect(badges).toHaveLength(1);
+      expect(badges[0].badge_id).toBe('first-review');
+    } finally {
+      // closing an already closed handle (v6 open failed) must not mask the error
+      await db.close().catch(() => undefined);
+      for (const suffix of ['', '-wal', '-shm']) {
+        rmSync(`${dbPath}${suffix}`, { force: true });
+      }
+    }
   }, 60_000);
 });
