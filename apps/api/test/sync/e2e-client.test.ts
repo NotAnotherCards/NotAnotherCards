@@ -31,6 +31,7 @@ import {
   noteDeckId,
   schema,
   syncWireSchemas,
+  validateAndImportData,
 } from '@repo/offline-db';
 import {
   getTestConnectionString,
@@ -449,4 +450,62 @@ describePostgres('client-server sync, end to end', () => {
       }
     }
   }, 60_000);
+
+  it('imports a backup and syncs it to the server without rejection', async () => {
+    const cookie = await register('import');
+    const a = await openClient();
+
+    const backupJson = JSON.stringify({
+      format: 1,
+      decks: [
+        {
+          source_id: 'd1',
+          title: 'Imported E2E Deck',
+          note_type: 'basic',
+        },
+      ],
+      notes: [
+        {
+          note_type: 'basic',
+          fields: { front: 'imported f', back: 'imported b' },
+          decks: ['d1'],
+          cards: [
+            {
+              source_id: 'c1',
+              template_key: 'front-back',
+              active: true,
+              due_at: 0,
+              scheduled_interval_minutes: 0,
+            },
+          ],
+        },
+      ],
+      review_events: [],
+    });
+
+    const report = await validateAndImportData(a, backupJson, {
+      format: 'json',
+    });
+    expect(report.success).toBe(true);
+    expect(report.errors).toHaveLength(0);
+
+    // If the server rejected the deck due to missing visibility,
+    // it would not be broadcast to client B.
+    await syncClient(a, cookie);
+
+    const b = await openClient();
+    await syncClient(b, cookie);
+
+    const decks = await b.get(UserDeck).query().fetch();
+    expect(decks).toHaveLength(1);
+    expect(decks[0].title).toBe('Imported E2E Deck');
+    expect(decks[0].visibility).toBe('private');
+
+    const memberships = await b.get(UserNoteDeck).query().fetch();
+    expect(memberships).toHaveLength(1);
+
+    const cards = await b.get(UserCard).query().fetch();
+    expect(cards).toHaveLength(1);
+    expect(cards[0].front).toBe('imported f');
+  });
 });
