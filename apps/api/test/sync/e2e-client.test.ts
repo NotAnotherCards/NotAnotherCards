@@ -146,7 +146,7 @@ describePostgres('client-server sync, end to end', () => {
   const v5Schema = appSchema({
     version: 5,
     tables: Object.values(schema.tables).filter(
-      (t: any) => t.name !== 'user_badges',
+      (t: { name: string }) => t.name !== 'user_badges',
     ),
   });
 
