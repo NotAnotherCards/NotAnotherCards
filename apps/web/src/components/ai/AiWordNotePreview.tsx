@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AiWordNoteCandidate } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -20,12 +20,21 @@ export function AiWordNotePreview({
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    if (savedSuccess) {
+      timeout = setTimeout(() => setSavedSuccess(false), 3000);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [savedSuccess]);
+
   const handleSave = async () => {
     setSaveError(null);
     try {
       await onSave();
       setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to save note';
       setSaveError(msg);
