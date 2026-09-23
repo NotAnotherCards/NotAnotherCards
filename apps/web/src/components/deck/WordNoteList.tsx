@@ -200,12 +200,12 @@ export function WordNoteList({
   return (
     <UICard className="border border-border/60">
       <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-base font-bold">
+        <div className="flex flex-nowrap items-center gap-x-4 text-base font-bold whitespace-nowrap">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Library className="size-4 text-primary" />
             {filteredRows.length} Words
           </CardTitle>
-          <span>{cards.length} Cards Total</span>
+          <span>{cards.length} Cards</span>
           <span>{dueCount} Cards Due</span>
         </div>
         <div className="relative w-full md:max-w-xs">
@@ -279,8 +279,8 @@ export function WordNoteList({
                     )}
                   </div>
                   <div role="cell" className="text-muted-foreground min-w-0 truncate" title={row.translation}>{row.translation}</div>
-                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)] items-center gap-3 @[556px]:grid-cols-[260px_minmax(96px,1fr)_176px] @[636px]:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)] @[804px]:grid-cols-3 @[848px]:contents">
-                  <div role="cell" className="flex min-w-0 items-center gap-2 @[848px]:block" aria-label={`${row.cards.length} cards`}>
+                  <div className="grid grid-cols-[minmax(4.5rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] items-center gap-3 @[556px]:grid-cols-[minmax(15.625rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] @[848px]:contents">
+                  <div role="cell" className="flex min-w-0 items-center gap-2 @[848px]:block @[848px]:self-center" aria-label={`${row.cards.length} cards`}>
                     <button
                       type="button"
                       className="text-left text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
@@ -325,7 +325,7 @@ export function WordNoteList({
                       </div>
                     </div>
                   <div className="contents">
-                    <div role="cell" className="flex min-w-0 items-center justify-center gap-2 @[848px]:justify-self-center">
+                    <div role="cell" className="flex min-w-0 items-center justify-start gap-2 @[848px]:justify-self-center">
                       <button
                         type="button"
                         className="text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
@@ -343,7 +343,7 @@ export function WordNoteList({
                         {row.detailsCount}
                       </button>
                     </div>
-                    <div role="cell" className="flex min-w-0 items-center justify-end gap-2 @[848px]:justify-center">
+                    <div role="cell" className="flex min-w-0 items-center justify-start gap-2 @[848px]:justify-center">
                       <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Actions:</span>
                       <div className="flex items-center gap-1.5">
                         {row.actionCard && (
