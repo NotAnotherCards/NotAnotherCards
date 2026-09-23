@@ -84,7 +84,12 @@ export async function deckDeletionSummary(db: Database, deckId: string) {
     ...new Set(memberships.map((membership) => membership.note_id)),
   ];
   if (noteIds.length === 0) {
-    return { orphanedNoteIds: [], sharedNoteCount: 0 };
+    return {
+      orphanedNoteIds: [],
+      sharedNoteCount: 0,
+      orphanedCardCount: 0,
+      sharedCardCount: 0,
+    };
   }
   const otherMemberships = await db
     .get(UserNoteDeck)
@@ -97,9 +102,18 @@ export async function deckDeletionSummary(db: Database, deckId: string) {
   const sharedNoteIds = new Set(
     otherMemberships.map((membership) => membership.note_id),
   );
+  const cards = await db
+    .get(UserCard)
+    .query(Q.where('note_id', Q.oneOf(noteIds)))
+    .fetch();
+  const sharedCardCount = cards.filter((card) =>
+    sharedNoteIds.has(card.note_id),
+  ).length;
   return {
     orphanedNoteIds: noteIds.filter((noteId) => !sharedNoteIds.has(noteId)),
     sharedNoteCount: sharedNoteIds.size,
+    orphanedCardCount: cards.length - sharedCardCount,
+    sharedCardCount,
   };
 }
 
@@ -191,6 +205,7 @@ export async function deleteDeckWithNotes(db: Database, deckId: string) {
       .get(UserNoteDeck)
       .query(Q.where('deck_id', deckId))
       .fetch();
+    // ponytail: four reads per orphan; bulk-fetch with Q.oneOf if large decks make deletion slow.
     const noteDeletions = await Promise.all(
       orphanedNoteIds.map(async (noteId) => {
         const note = await db.get(UserNote).find(noteId);

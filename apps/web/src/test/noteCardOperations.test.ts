@@ -106,6 +106,8 @@ describe('note, card, and membership operations', () => {
       [onlyHere.note_id, inactiveElsewhere.note_id].sort(),
     );
     expect(summary.sharedNoteCount).toBe(1);
+    expect(summary.orphanedCardCount).toBe(2);
+    expect(summary.sharedCardCount).toBe(1);
     expect(await db.get(UserNote).query().fetch()).toHaveLength(3);
     expect(await db.get(UserCard).query().fetch()).toHaveLength(3);
   });
@@ -141,6 +143,8 @@ describe('note, card, and membership operations', () => {
     expect(await deckDeletionSummary(db, deck.id)).toEqual({
       orphanedNoteIds: [orphan.note_id],
       sharedNoteCount: 0,
+      orphanedCardCount: 1,
+      sharedCardCount: 0,
     });
   });
 
@@ -151,6 +155,31 @@ describe('note, card, and membership operations', () => {
     expect(await deckDeletionSummary(db, deck.id)).toEqual({
       orphanedNoteIds: [],
       sharedNoteCount: 0,
+      orphanedCardCount: 0,
+      sharedCardCount: 0,
+    });
+  });
+
+  it('counts sibling cards including disabled cards, but not deleted cards', async () => {
+    const db = await openDatabase();
+    const deck = await createDeck(db, 'Deck');
+    const otherDeck = await createDeck(db, 'Other deck');
+    const orphan = await createCard(db, deck.id, 'Orphan', 'back');
+    const disabled = await createSibling(db, orphan.note_id, 'back-front');
+    await disableCard(db, disabled.id);
+    const deleted = await createSibling(db, orphan.note_id, 'deleted');
+    await db.write(async () => {
+      await db.batch([deleted.prepareMarkAsDeleted()]);
+    });
+    const shared = await createCard(db, deck.id, 'Shared', 'back');
+    await createSibling(db, shared.note_id, 'back-front');
+    await createMembership(db, shared.note_id, otherDeck.id);
+
+    expect(await deckDeletionSummary(db, deck.id)).toEqual({
+      orphanedNoteIds: [orphan.note_id],
+      sharedNoteCount: 1,
+      orphanedCardCount: 2,
+      sharedCardCount: 2,
     });
   });
 

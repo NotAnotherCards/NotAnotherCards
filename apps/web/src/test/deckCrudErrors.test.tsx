@@ -15,6 +15,8 @@ import type { Deck } from '../hooks/useStore';
 const createDeck = vi.fn();
 const updateDeck = vi.fn();
 const deleteDeck = vi.fn();
+const deleteDeckWithNotes = vi.fn();
+const deckDeletionSummary = vi.fn();
 
 const existingDeck: Deck = {
   id: 'deck-1',
@@ -54,12 +56,14 @@ vi.mock('@/hooks/useStore', () => ({
     createDeck,
     updateDeck,
     deleteDeck,
+    deleteDeckWithNotes,
+    deckDeletionSummary,
   }),
 }));
 
 const saveButton = () => screen.queryByRole('button', { name: /save deck/i });
 const confirmDeleteButton = () =>
-  screen.queryByRole('button', { name: /delete permanently/i });
+  screen.queryByRole('button', { name: /delete deck only/i });
 
 const fillTitleAndSubmit = (title: string) => {
   fireEvent.change(screen.getByLabelText(/title/i), {
@@ -73,6 +77,13 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 describe('deck CRUD error handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    deckDeletionSummary.mockResolvedValue({
+      orphanedNoteIds: ['note-1'],
+      sharedNoteCount: 1,
+      orphanedCardCount: 3,
+      sharedCardCount: 2,
+    });
+    deleteDeckWithNotes.mockResolvedValue(undefined);
     decks = [];
   });
 
@@ -130,6 +141,108 @@ describe('deck CRUD error handling', () => {
   });
 
   describe('delete', () => {
+    const openDelete = () => {
+      decks = [existingDeck];
+      render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
+      fireEvent.click(screen.getByTitle('Delete Deck'));
+    };
+
+    it('shows card counts and requires a second confirmation', async () => {
+      openDelete();
+      const destructive = await screen.findByRole('button', {
+        name: 'Delete deck and 3 cards',
+      });
+      expect(
+        screen.getByText(/2 cards are also in other decks/),
+      ).toBeInTheDocument();
+      fireEvent.click(destructive);
+      expect(screen.getByRole('dialog')).toHaveAccessibleName(
+        'Delete 3 cards and their review history?',
+      );
+      expect(deleteDeckWithNotes).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+      expect(deleteDeckWithNotes).not.toHaveBeenCalled();
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Delete deck and 3 cards' }),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      );
+      expect(deleteDeckWithNotes).toHaveBeenCalledExactlyOnceWith('deck-1');
+      expect(deleteDeck).not.toHaveBeenCalled();
+    });
+
+    it('keeps the second confirmation open on failure and allows retry', async () => {
+      deleteDeckWithNotes.mockRejectedValueOnce(new Error('Deletion failed'));
+      openDelete();
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Delete deck and 3 cards' }),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      await screen.findByRole('alert');
+      expect(screen.getByRole('alert')).toHaveTextContent('Deletion failed');
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      );
+      expect(deleteDeckWithNotes).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not dismiss or submit twice while deletion is pending', async () => {
+      let resolve!: () => void;
+      deleteDeckWithNotes.mockReturnValueOnce(
+        new Promise<void>((done) => {
+          resolve = done;
+        }),
+      );
+      openDelete();
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Delete deck and 3 cards' }),
+      );
+      const button = screen.getByRole('button', {
+        name: 'Delete',
+      });
+      fireEvent.click(button);
+      expect(button).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Back' })).toBeDisabled();
+      fireEvent.click(button);
+      fireEvent.click(screen.getByRole('dialog').parentElement!);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(deleteDeckWithNotes).toHaveBeenCalledTimes(1);
+      resolve();
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      );
+    });
+
+    it('deletes only the deck without a second confirmation', async () => {
+      deleteDeck.mockResolvedValueOnce(undefined);
+      openDelete();
+      fireEvent.click(confirmDeleteButton()!);
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      );
+      expect(deleteDeck).toHaveBeenCalledExactlyOnceWith('deck-1');
+      expect(deleteDeckWithNotes).not.toHaveBeenCalled();
+    });
+
+    it('blocks card deletion when counts fail and allows cancellation', async () => {
+      deckDeletionSummary.mockRejectedValueOnce(new Error('Count failed'));
+      openDelete();
+      expect(
+        screen.getByRole('button', { name: 'Delete deck and cards' }),
+      ).toBeDisabled();
+      await screen.findByRole('alert');
+      expect(screen.getByRole('alert')).toHaveTextContent('Count failed');
+      expect(
+        screen.getByRole('button', { name: 'Delete deck and cards' }),
+      ).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(deleteDeckWithNotes).not.toHaveBeenCalled();
+    });
+
     it('keeps the confirmation open when the write fails', async () => {
       deleteDeck.mockRejectedValue(new Error('database not initialized'));
       decks = [existingDeck];
