@@ -196,7 +196,7 @@ export function WordNoteList({
                     >
                       {row.translation}
                     </div>
-                    <div className="grid grid-cols-[minmax(4.5rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] items-center gap-3 @[556px]:grid-cols-[minmax(15.625rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] @[848px]:contents">
+                    <div className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)_minmax(max-content,1fr)] items-center gap-3 @[556px]:grid-cols-[minmax(15.625rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] @[848px]:contents">
                       <div
                         role="cell"
                         className="flex min-w-0 items-center gap-2 @[848px]:block @[848px]:self-center"
