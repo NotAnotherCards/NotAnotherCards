@@ -24,6 +24,7 @@ export function useLeaderboard(limit: number, offset: number) {
     setError(null);
     if (prevOffsetRef.current !== offset) {
       setData(null); // Clear previous data only if the page number changed
+      setLastUpdated(null);
       prevOffsetRef.current = offset;
     }
 
