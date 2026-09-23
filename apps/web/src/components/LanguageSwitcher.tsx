@@ -28,6 +28,7 @@ export function LanguageSwitcher({
   return (
     <Select value={i18n.resolvedLanguage} onValueChange={handleLanguageChange}>
       <SelectTrigger
+        aria-label={t('preferences.language')}
         className={
           variant === 'icon'
             ? 'w-fit border-none shadow-none px-2 focus:ring-0'
