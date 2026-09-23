@@ -31,6 +31,16 @@ async function addCard(page: Page, front: string, back: string) {
   );
 }
 
+async function useExtendedReviewMode(page: Page) {
+  await page.locator('button', { hasText: 'Profile & Settings' }).click();
+  await page.getByRole('button', { name: 'Preferences', exact: true }).click();
+  const extended = page
+    .getByRole('group', { name: 'Review mode' })
+    .getByRole('button', { name: 'Extended', exact: true });
+  await extended.click();
+  await expect(extended).toHaveAttribute('aria-pressed', 'true');
+}
+
 test('a created card becomes due again at its scheduled time and can be reviewed again', async ({
   page,
 }) => {
@@ -89,15 +99,16 @@ test('a created card becomes due again at its scheduled time and can be reviewed
     await expect(page.getByTestId('review-card-front-content')).toHaveText(
       'Hasta mañana',
     );
-    await expect(
-      page.getByRole('button', { name: 'Show answer', exact: true }),
-    ).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByTestId('review-card-flip')).toHaveAttribute(
+      'data-flipped',
+      'false',
+    );
   }
 
   await page.getByRole('button', { name: 'Show answer', exact: true }).click();
   await page
     .getByTestId('review-answer-buttons')
-    .getByRole('button', { name: 'Knew it', exact: true })
+    .getByRole('button', { name: 'Remembered', exact: true })
     .click();
   await expect(
     page.getByRole('heading', { name: 'Review complete', exact: true }),
@@ -196,6 +207,7 @@ test('reveal and rate every card, then retain the completed schedule after reloa
   page,
 }) => {
   await registerAndOnboard(page);
+  await useExtendedReviewMode(page);
   await createDeck(page, 'Review practice');
   const cards = new Map([
     ['Uno', 'One'],
@@ -212,12 +224,13 @@ test('reveal and rate every card, then retain the completed schedule after reloa
   await expect(page).toHaveURL(/\/deck-review\?deckId=/);
 
   const reviewed = new Set<string>();
-  for (const rating of ['Forgot', 'Struggled', 'Remembered', 'Knew it']) {
+  for (const rating of ['Again', 'Hard', 'Good', 'Easy']) {
     const reveal = page.getByRole('button', {
       name: 'Show answer',
       exact: true,
     });
-    await expect(reveal).toHaveAttribute('aria-pressed', 'false');
+    const flip = page.getByTestId('review-card-flip');
+    await expect(flip).toHaveAttribute('data-flipped', 'false');
     const front = (
       await page.getByTestId('review-card-front-content').innerText()
     ).trim();
@@ -226,9 +239,7 @@ test('reveal and rate every card, then retain the completed schedule after reloa
       false,
     );
     await reveal.click();
-    await expect(
-      page.getByRole('button', { name: 'Answer is shown', exact: true }),
-    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(flip).toHaveAttribute('data-flipped', 'true');
     await expect(page.getByTestId('review-card-back-content')).toHaveText(
       cards.get(front)!,
     );

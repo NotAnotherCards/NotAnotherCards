@@ -80,9 +80,10 @@ The first run builds the web and API images and applies database migrations auto
 The #252 suite covers registration/onboarding, dashboard reload, deck and card
 edits, review ratings and due-time boundaries, isolation and sync across three
 browser contexts, account switching, word-note validation and optional-field
-removal, and persisted Markdown XSS input. Playwright
+removal, persisted Markdown XSS input, and the two-factor lifecycle. Playwright
 runs the production web bundle in stable Google Chrome at desktop and phone
-widths. Warnings, console errors, and uncaught browser exceptions fail the test.
+widths. Warnings, console errors, uncaught browser exceptions, and a page that
+scrolls sideways fail the test.
 
 The scheduling scenario creates a card and reviews it, then uses Playwright's
 browser clock to cross the five-minute and three-day due boundaries. It checks
@@ -134,6 +135,3 @@ The `Browser tests` workflow runs independently of the unit/API suites, using
 its own Postgres service. It runs for pull requests and pushes to `main`, from
 the Actions **Run workflow** button, and every day at 04:00 Europe/Berlin. It
 currently uses API + Vite preview; Compose/nginx coverage remains with #251.
-#318's long-content assertions await the product decision. Agents can explore
-this disposable environment and propose regression tests; CI executes reviewed,
-fixed assertions.

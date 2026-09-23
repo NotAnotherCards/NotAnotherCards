@@ -38,6 +38,7 @@ export const test = base.extend<{
   browserErrors: string[];
   newContext: () => Promise<BrowserContext>;
   cleanConsole: void;
+  fitsViewport: void;
 }>({
   extraHTTPHeaders: async ({ baseURL, extraHTTPHeaders }, use) => {
     await use(clientHeaders(baseURL, extraHTTPHeaders));
@@ -95,9 +96,28 @@ export const test = base.extend<{
     },
     { auto: true },
   ],
+  fitsViewport: [
+    async ({ page }, use) => {
+      await use();
+      if (!page.isClosed()) await expectNoHorizontalOverflow(page);
+    },
+    { auto: true },
+  ],
 });
 
 export { expect };
+
+/** Fails when the page scrolls sideways, the usual sign of a broken phone layout. */
+export async function expectNoHorizontalOverflow(page: Page) {
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(
+    scrollWidth,
+    `Page is wider than the viewport at ${page.url()}`,
+  ).toBeLessThanOrEqual(clientWidth);
+}
 
 export async function expectDashboardReady(page: Page) {
   await expect(page).toHaveURL('/dashboard');
@@ -108,4 +128,5 @@ export async function expectDashboardReady(page: Page) {
     page.getByRole('button', { name: 'My Library', exact: true }),
   ).toBeEnabled();
   await expect(page.getByTestId('sync-status')).toHaveText('Synced');
+  await expectNoHorizontalOverflow(page);
 }

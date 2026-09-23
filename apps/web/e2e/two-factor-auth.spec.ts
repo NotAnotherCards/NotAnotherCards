@@ -1,8 +1,9 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { base32 } from '@better-auth/utils/base32';
 import { createOTP } from '@better-auth/utils/otp';
+import { expect, test } from './fixtures.js';
 
-const appOrigin = 'http://localhost:5173';
+const appOrigin = 'http://localhost:4173';
 const password = 'TestPassword123!';
 const englishId = '00000000-0000-0000-0000-000000000001';
 const spanishId = '00000000-0000-0000-0000-000000000002';
