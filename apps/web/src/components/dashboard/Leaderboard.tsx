@@ -75,7 +75,7 @@ export function Leaderboard() {
             <div className="flex h-32 items-center justify-center">
               <Spinner className="size-6 text-muted-foreground" />
             </div>
-          ) : error ? (
+          ) : error && !data ? (
             <div className="flex flex-col h-32 items-center justify-center space-y-4">
               <p className="text-sm text-destructive font-medium">
                 Failed to load leaderboard
@@ -86,6 +86,21 @@ export function Leaderboard() {
             </div>
           ) : data ? (
             <div className="space-y-4">
+              {error && (
+                <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md flex items-center justify-between">
+                  <span>
+                    Failed to refresh leaderboard. Showing latest snapshot.
+                  </span>
+                  <Button
+                    onClick={() => refetch()}
+                    variant="outline"
+                    size="sm"
+                    className="h-7"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
               <div className="rounded-xl border bg-card overflow-hidden">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-muted/50 text-xs font-semibold uppercase text-muted-foreground border-b">

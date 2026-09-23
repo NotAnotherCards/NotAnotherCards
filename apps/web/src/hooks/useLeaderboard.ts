@@ -11,6 +11,7 @@ export function useLeaderboard(limit: number, offset: number) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const prevOffsetRef = useRef<number>(offset);
 
   const fetchLeaderboard = useCallback(async () => {
     if (abortControllerRef.current) {
@@ -21,7 +22,10 @@ export function useLeaderboard(limit: number, offset: number) {
 
     setIsLoading(true);
     setError(null);
-    setData(null); // Clear previous data so it doesn't linger under new page numbers
+    if (prevOffsetRef.current !== offset) {
+      setData(null); // Clear previous data only if the page number changed
+      prevOffsetRef.current = offset;
+    }
 
     try {
       // Request limit + 1 to check if there is a next page
