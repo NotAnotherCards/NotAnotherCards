@@ -15,6 +15,7 @@ import {
   createCard,
   createCardsBatch,
   createDeck,
+  deckDeletionSummary,
   deleteNote,
   disableCard,
   getPersonalDictionaryQuery,
@@ -79,6 +80,78 @@ afterEach(async () => {
 });
 
 describe('note, card, and membership operations', () => {
+  it('counts only active memberships when summarizing deck deletion', async () => {
+    const db = await openDatabase();
+    const deck = await createDeck(db, 'Deck');
+    const otherDeck = await createDeck(db, 'Other deck');
+    const thirdDeck = await createDeck(db, 'Third deck');
+    const onlyHere = await createCard(db, deck.id, 'Only here', 'back');
+    const shared = await createCard(db, deck.id, 'Shared', 'back');
+    const inactiveElsewhere = await createCard(
+      db,
+      deck.id,
+      'Inactive elsewhere',
+      'back',
+    );
+    await createMembership(db, shared.note_id, otherDeck.id);
+    await createMembership(db, shared.note_id, thirdDeck.id);
+    await createMembership(db, inactiveElsewhere.note_id, otherDeck.id);
+    await removeNoteFromDeck(db, inactiveElsewhere.note_id, otherDeck.id);
+
+    const summary = await deckDeletionSummary(db, deck.id);
+
+    expect(summary.orphanedNoteIds.sort()).toEqual(
+      [onlyHere.note_id, inactiveElsewhere.note_id].sort(),
+    );
+    expect(summary.sharedNoteCount).toBe(1);
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(3);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(3);
+  });
+
+  it('ignores deleted memberships and notes removed from the selected deck', async () => {
+    const db = await openDatabase();
+    const deck = await createDeck(db, 'Deck');
+    const otherDeck = await createDeck(db, 'Other deck');
+    const orphan = await createCard(db, deck.id, 'Orphan', 'back');
+    const deletedElsewhere = await createMembership(
+      db,
+      orphan.note_id,
+      otherDeck.id,
+    );
+    const removed = await createCard(db, deck.id, 'Removed', 'back');
+    await removeNoteFromDeck(db, removed.note_id, deck.id);
+    const deletedHere = await createCard(
+      db,
+      deck.id,
+      'Deleted membership',
+      'back',
+    );
+    const deletedMembership = await db
+      .get(UserNoteDeck)
+      .find(noteDeckId(deletedHere.note_id, deck.id));
+    await db.write(async () => {
+      await db.batch([
+        deletedElsewhere.prepareMarkAsDeleted(),
+        deletedMembership.prepareMarkAsDeleted(),
+      ]);
+    });
+
+    expect(await deckDeletionSummary(db, deck.id)).toEqual({
+      orphanedNoteIds: [orphan.note_id],
+      sharedNoteCount: 0,
+    });
+  });
+
+  it('returns an empty deletion summary for an empty deck', async () => {
+    const db = await openDatabase();
+    const deck = await createDeck(db, 'Empty deck');
+
+    expect(await deckDeletionSummary(db, deck.id)).toEqual({
+      orphanedNoteIds: [],
+      sharedNoteCount: 0,
+    });
+  });
+
   it('removes only the selected deck membership', async () => {
     const db = await openDatabase();
     const firstDeck = await createDeck(db, 'First deck');

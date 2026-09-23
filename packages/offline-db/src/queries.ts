@@ -75,6 +75,34 @@ export function getNoteDecksQuery(db: Database) {
   return db.get(UserNoteDeck).query(Q.where('active', true));
 }
 
+export async function deckDeletionSummary(db: Database, deckId: string) {
+  const memberships = await db
+    .get(UserNoteDeck)
+    .query(Q.where('deck_id', deckId), Q.where('active', true))
+    .fetch();
+  const noteIds = [
+    ...new Set(memberships.map((membership) => membership.note_id)),
+  ];
+  if (noteIds.length === 0) {
+    return { orphanedNoteIds: [], sharedNoteCount: 0 };
+  }
+  const otherMemberships = await db
+    .get(UserNoteDeck)
+    .query(
+      Q.where('note_id', Q.oneOf(noteIds)),
+      Q.where('deck_id', Q.notEq(deckId)),
+      Q.where('active', true),
+    )
+    .fetch();
+  const sharedNoteIds = new Set(
+    otherMemberships.map((membership) => membership.note_id),
+  );
+  return {
+    orphanedNoteIds: noteIds.filter((noteId) => !sharedNoteIds.has(noteId)),
+    sharedNoteCount: sharedNoteIds.size,
+  };
+}
+
 // ==========================================
 // LOCAL WRITES
 // ==========================================
