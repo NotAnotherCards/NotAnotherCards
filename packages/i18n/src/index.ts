@@ -11,7 +11,7 @@ export const catalogs = {
 } as const;
 
 export type SupportedLocale = keyof typeof catalogs;
-export const supportedLocales: SupportedLocale[] = ['en', 'es', 'de'];
+export const supportedLocales = ['en', 'es', 'de'] as const satisfies readonly SupportedLocale[];
 export const defaultLocale: SupportedLocale = 'en';
 
 export const localeMetadata: Record<SupportedLocale, { flag: string; nativeName: string }> = {
