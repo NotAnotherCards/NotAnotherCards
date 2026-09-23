@@ -27,4 +27,11 @@ describe('i18n catalog parity', () => {
   it('de should have all keys from en', () => {
     checkKeysParity(en, de);
   });
+  it('es should not have extra keys missing from en', () => {
+    checkKeysParity(es, en);
+  });
+
+  it('de should not have extra keys missing from en', () => {
+    checkKeysParity(de, en);
+  });
 });

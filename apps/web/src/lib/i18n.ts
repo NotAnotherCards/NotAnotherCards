@@ -24,12 +24,12 @@ i18n
 
 // Update the html lang attribute when the language changes
 i18n.on('languageChanged', (lng) => {
-  document.documentElement.lang = lng;
+  document.documentElement.lang = i18n.resolvedLanguage ?? lng;
 });
 
 // Set the initial lang attribute based on the detected language
 if (i18n.language) {
-  document.documentElement.lang = i18n.language;
+  document.documentElement.lang = i18n.resolvedLanguage ?? i18n.language
 }
 
 export default i18n;

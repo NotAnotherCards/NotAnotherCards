@@ -26,7 +26,7 @@ export function LanguageSwitcher({
   };
 
   return (
-    <Select value={i18n.language} onValueChange={handleLanguageChange}>
+    <Select value={i18n.resolvedLanguage} onValueChange={handleLanguageChange}>
       <SelectTrigger
         className={
           variant === 'icon'
