@@ -181,6 +181,7 @@ export * from './review-queue.js';
 export * from './review-answers.js';
 export * from './review-preferences.js';
 export * from './cards-by-deck.js';
+export * from './deck-counts.js';
 export * from './statistics.js';
 export { utcDayAt, type UtcDay } from './utc-day.js';
 export * from './sync-schemas.js';

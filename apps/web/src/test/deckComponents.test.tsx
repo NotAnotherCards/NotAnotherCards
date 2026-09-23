@@ -406,10 +406,18 @@ describe('WordNoteList Component', () => {
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('3 Cards')).toBeInTheDocument();
     expect(screen.getByText('0 Cards Due')).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Word' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Translation' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Cards' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Extra info' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Word' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Translation' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Cards' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Extra info' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Hund')).toBeInTheDocument();
     expect(screen.getByText('dog')).toBeInTheDocument();
     expect(screen.getAllByText(/DE → RU/).length).toBeGreaterThan(0);
@@ -420,14 +428,22 @@ describe('WordNoteList Component', () => {
         .getAllByRole('button', { name: 'View 3 details' })
         .some((button) => button.textContent === '3'),
     ).toBe(true);
-    fireEvent.click(screen.getAllByRole('button', { name: 'View 3 cards' })[0]);
+    const cardsTrigger = screen.getAllByRole('button', {
+      name: 'View 3 cards',
+    })[0];
+    cardsTrigger.focus();
+    fireEvent.click(cardsTrigger);
     expect(
       screen.getByText('Cards created to review this word.'),
     ).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Cards' })).toBeInTheDocument();
     expect(screen.queryByText('Audio')).toBeNull();
     expect(screen.getByLabelText('3 cards').textContent).toContain(
       'DE → RURU → DEExample → DE',
     );
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Cards' })).toBeNull();
+    expect(cardsTrigger).toHaveFocus();
   });
 
   it('routes view, edit, and removal through the word-to-translation sibling', () => {
@@ -451,7 +467,9 @@ describe('WordNoteList Component', () => {
     );
 
     fireEvent.click(screen.getAllByTitle('View Note')[0]);
-    fireEvent.click(screen.getAllByRole('button', { name: 'View 3 details' })[0]);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'View 3 details' })[0],
+    );
     fireEvent.click(screen.getByTitle('Edit Note'));
     fireEvent.click(screen.getByTitle('Remove Word'));
 

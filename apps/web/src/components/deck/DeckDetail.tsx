@@ -21,6 +21,7 @@ import { CardForm } from './CardForm';
 import { WordNoteForm, type WordFormValues } from './WordNoteForm';
 import {
   BASIC_NOTE_TYPE,
+  countDueCards,
   WordNoteFieldsV1,
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
@@ -168,11 +169,12 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
   const cards = store.getCardsForDeck(deckId);
   const wordNotes = isWordDeck ? store.getNotesForDeck(deckId) : [];
-  const dueCardIds = new Set((store.dueCards ?? []).map((card) => card.id));
-  const dueCount = cards.filter((card) => dueCardIds.has(card.id)).length;
+  const dueCount = countDueCards(cards, store.dueCards ?? []);
   const viewingWordDetailFields = (() => {
     if (!viewingWordNoteId || !isWordDeck) return null;
-    const note = wordNotes.find((wordNote) => wordNote.id === viewingWordNoteId);
+    const note = wordNotes.find(
+      (wordNote) => wordNote.id === viewingWordNoteId,
+    );
     if (!note) return null;
     try {
       const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));

@@ -9,15 +9,24 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Edit, Eye, HelpCircle, Library, Search, Unlink } from 'lucide-react';
-import {
-  EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY,
-  TRANSLATION_TO_WORD_TEMPLATE_KEY,
-  WORD_TO_TRANSLATION_TEMPLATE_KEY,
-  WordNoteFieldsV1,
-  type UserNoteRecord,
-} from '@repo/offline-db';
-import { languageFor } from '@repo/schemas';
+import { countCards, countWords, type UserNoteRecord } from '@repo/offline-db';
 import { WordNoteCards } from './WordNoteCards';
+import { toWordRow, type WordRow } from './word-note-rows';
+
+// These container thresholds preserve readable Word and Translation columns
+// before Cards changes from badges to a number and then to the post-row view.
+const WORD_TABLE_LAYOUT = {
+  postRow: '848px',
+  compactCards: '1030px',
+  threeBadges: '1140px',
+  allBadges: '1250px',
+  wordColumnMinimum: '260px',
+  extraInfoColumn: '76px',
+  actionsColumn: '108px',
+  twoBadgesWidth: '13.375rem',
+  threeBadgesWidth: '20.25rem',
+  fourBadgesWidth: '27.125rem',
+} as const;
 
 interface WordNoteListProps {
   notes: UserNoteRecord[];
@@ -30,124 +39,6 @@ interface WordNoteListProps {
   canEdit: boolean;
   canRemove: boolean;
   onAddWord: () => void;
-}
-
-type WordCardBadge = 'Word' | 'Translation' | 'Example' | 'Audio';
-
-interface WordRow {
-  readonly note: UserNoteRecord;
-  readonly word: string;
-  readonly translation: string;
-  readonly cards: Card[];
-  readonly detailsCount: number;
-  readonly badges: string[];
-  readonly actionCard: Card | null;
-}
-
-const badgeForTemplateKey: Readonly<Record<string, WordCardBadge>> = {
-  [WORD_TO_TRANSLATION_TEMPLATE_KEY]: 'Word',
-  [TRANSLATION_TO_WORD_TEMPLATE_KEY]: 'Translation',
-  [EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY]: 'Example',
-  audio: 'Audio',
-  listen: 'Audio',
-};
-
-const badgeOrder: readonly WordCardBadge[] = [
-  'Word',
-  'Translation',
-  'Example',
-  'Audio',
-];
-
-const languageCodeForName: Readonly<Record<string, string>> = {
-  English: 'EN',
-  Spanish: 'ES',
-  German: 'DE',
-  Russian: 'RU',
-};
-
-function languageCode(languageId: string): string {
-  const language = languageFor(languageId);
-  return language ? (languageCodeForName[language.name] ?? '??') : '??';
-}
-
-function badgeLabel(
-  badge: WordCardBadge,
-  nativeLanguageId: string,
-  targetLanguageId: string,
-): string {
-  const native = languageCode(nativeLanguageId);
-  const target = languageCode(targetLanguageId);
-
-  switch (badge) {
-    case 'Word':
-      return `${target} → ${native}`;
-    case 'Translation':
-      return `${native} → ${target}`;
-    case 'Example':
-      return `Example → ${target}`;
-    case 'Audio':
-      return 'Audio';
-  }
-}
-
-function countDetails(fields: Record<string, string | undefined>): number {
-  const hasExample =
-    fields.example !== undefined || fields.example_translation !== undefined;
-  const detailKeys = [
-    'part_of_speech',
-    'gender',
-    'pronunciation',
-    'notes',
-    'image',
-    'word_audio',
-  ] as const;
-
-  return (
-    Number(hasExample) +
-    detailKeys.filter((key) => fields[key] !== undefined).length
-  );
-}
-
-function toWordRow(note: UserNoteRecord, cards: Card[]): WordRow | null {
-  try {
-    const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
-    if (!parsed.success) return null;
-
-    const fields = parsed.data;
-    const noteCards = cards.filter((card) => card.note_id === note.id);
-    const existingBadges = new Set(
-      noteCards.flatMap((card) => {
-        const badge = badgeForTemplateKey[card.template_key];
-        return badge ? [badge] : [];
-      }),
-    );
-    const badges = badgeOrder
-      .filter((badge) => existingBadges.has(badge))
-      .map((badge) =>
-        badgeLabel(
-          badge,
-          fields.native_language_id,
-          fields.target_language_id,
-        ),
-      );
-    const actionCard =
-      noteCards.find(
-        (card) => card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY,
-      ) ?? noteCards[0] ?? null;
-
-    return {
-      note,
-      word: fields.word,
-      translation: fields.translation,
-      cards: noteCards,
-      badges,
-      actionCard,
-      detailsCount: countDetails(fields),
-    };
-  } catch {
-    return null;
-  }
 }
 
 export function WordNoteList({
@@ -186,29 +77,41 @@ export function WordNoteList({
   );
   const cardsColumnFullWidth =
     maximumBadgeCount === 4
-      ? '27.125rem'
+      ? WORD_TABLE_LAYOUT.fourBadgesWidth
       : maximumBadgeCount === 3
-        ? '20.25rem'
-        : '13.375rem';
+        ? WORD_TABLE_LAYOUT.threeBadgesWidth
+        : WORD_TABLE_LAYOUT.twoBadgesWidth;
   const cardsColumnThreeBadgesWidth =
-    maximumBadgeCount === 4 ? '20.25rem' : cardsColumnFullWidth;
-  const tableStyle = {
+    maximumBadgeCount === 4
+      ? WORD_TABLE_LAYOUT.threeBadgesWidth
+      : cardsColumnFullWidth;
+  const tableStyle: CSSProperties &
+    Record<
+      | '--cards-column-full'
+      | '--cards-column-three'
+      | '--word-column-min'
+      | '--extra-info-column'
+      | '--actions-column',
+      string
+    > = {
     '--cards-column-full': cardsColumnFullWidth,
     '--cards-column-three': cardsColumnThreeBadgesWidth,
-  } satisfies CSSProperties &
-    Record<'--cards-column-full' | '--cards-column-three', string>;
+    '--word-column-min': WORD_TABLE_LAYOUT.wordColumnMinimum,
+    '--extra-info-column': WORD_TABLE_LAYOUT.extraInfoColumn,
+    '--actions-column': WORD_TABLE_LAYOUT.actionsColumn,
+  };
   return (
     <UICard className="border border-border/60">
-      <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <CardHeader className="border-b border-border/40 pb-4">
         <div className="flex flex-nowrap items-center gap-x-4 text-base font-bold whitespace-nowrap">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Library className="size-4 text-primary" />
-            {filteredRows.length} Words
+            {countWords(filteredRows)} Words
           </CardTitle>
-          <span>{cards.length} Cards</span>
+          <span>{countCards(cards)} Cards</span>
           <span>{dueCount} Cards Due</span>
         </div>
-        <div className="relative w-full md:max-w-xs">
+        <div className="relative mt-4 w-full md:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
             placeholder="Search word, translation..."
@@ -236,139 +139,183 @@ export function WordNoteList({
           </div>
         ) : (
           <div className="@container">
-          <div
-            role="table"
-            aria-label="Word Catalog"
-            style={tableStyle}
-            className="[--cards-column:2rem] @[1030px]:[--cards-column:13.375rem] @[1140px]:[--cards-column:var(--cards-column-three)] @[1250px]:[--cards-column:var(--cards-column-full)]"
-          >
-            <div role="rowgroup">
-              <div
-                role="row"
-                className="sr-only @[848px]:not-sr-only @[848px]:grid @[848px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-4 @[848px]:!px-6 @[848px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
-              >
-                <div role="columnheader">Word</div>
-                <div role="columnheader">Translation</div>
-                <div role="columnheader" className="text-center">
-                  Cards
+            <div
+              role="table"
+              aria-label="Word Catalog"
+              style={tableStyle}
+              className="[--cards-column:2rem] @[1030px]:[--cards-column:13.375rem] @[1140px]:[--cards-column:var(--cards-column-three)] @[1250px]:[--cards-column:var(--cards-column-full)]"
+            >
+              <div role="rowgroup">
+                <div
+                  role="row"
+                  className="sr-only @[848px]:not-sr-only @[848px]:grid @[848px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-4 @[848px]:!px-6 @[848px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                >
+                  <div role="columnheader">Word</div>
+                  <div role="columnheader">Translation</div>
+                  <div role="columnheader" className="text-center">
+                    Cards
+                  </div>
+                  <div role="columnheader" className="text-center">
+                    Extra info
+                  </div>
+                  <div role="columnheader" className="text-center">
+                    Actions
+                  </div>
                 </div>
-                <div role="columnheader" className="text-center">Extra info</div>
-                <div role="columnheader" className="text-center">Actions</div>
+              </div>
+              <div role="rowgroup">
+                {filteredRows.map((row, index) => (
+                  <div
+                    key={row.note.id}
+                    role="row"
+                    aria-rowindex={index + 2}
+                    className="grid grid-cols-1 @[848px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-3 @[848px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+                  >
+                    <div
+                      role="cell"
+                      className="min-w-0 truncate font-medium"
+                      title={row.word}
+                    >
+                      {row.actionCard ? (
+                        <button
+                          type="button"
+                          className="max-w-full cursor-pointer truncate text-left hover:text-primary"
+                          onClick={() => onViewNote(row.actionCard!)}
+                          title="View Note"
+                        >
+                          {row.word}
+                        </button>
+                      ) : (
+                        row.word
+                      )}
+                    </div>
+                    <div
+                      role="cell"
+                      className="text-muted-foreground min-w-0 truncate"
+                      title={row.translation}
+                    >
+                      {row.translation}
+                    </div>
+                    <div className="grid grid-cols-[minmax(4.5rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] items-center gap-3 @[556px]:grid-cols-[minmax(15.625rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] @[848px]:contents">
+                      <div
+                        role="cell"
+                        className="flex min-w-0 items-center gap-2 @[848px]:block @[848px]:self-center"
+                        aria-label={`${row.cards.length} cards`}
+                      >
+                        <button
+                          type="button"
+                          className="text-left text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
+                          onClick={() => setViewingCards(row.badges)}
+                          aria-label={`View ${row.cards.length} cards`}
+                        >
+                          Cards:
+                        </button>
+                        <span className="hidden min-w-0 text-left text-xs leading-6 text-muted-foreground @[556px]:block @[848px]:hidden">
+                          {row.badges.map((badge, index) => (
+                            <span key={badge} className="whitespace-nowrap">
+                              {index > 0 && ' · '}
+                              {badge}
+                            </span>
+                          ))}
+                        </span>
+                        <button
+                          type="button"
+                          className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer @[556px]:hidden"
+                          onClick={() => setViewingCards(row.badges)}
+                          aria-label={`View ${row.cards.length} cards`}
+                        >
+                          {row.cards.length}
+                        </button>
+                        <button
+                          type="button"
+                          className="hidden text-center text-xs text-muted-foreground hover:text-primary cursor-pointer @[848px]:block @[1030px]:hidden"
+                          onClick={() => setViewingCards(row.badges)}
+                          aria-label={`View ${row.cards.length} cards`}
+                        >
+                          {row.cards.length}
+                        </button>
+                        <div className="hidden min-w-[13.375rem] flex-wrap gap-1.5 @[1030px]:flex">
+                          {row.badges.map((badge) => (
+                            <span
+                              key={badge}
+                              className="inline-flex h-7 w-[6.5rem] shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/35 px-2 text-xs font-medium text-muted-foreground"
+                            >
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="contents">
+                        <div
+                          role="cell"
+                          className="flex min-w-0 items-center justify-center gap-2 @[848px]:justify-self-center"
+                        >
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
+                            onClick={() => onViewDetails(row.note)}
+                            aria-label={`View ${row.detailsCount} details`}
+                          >
+                            Extra info:
+                          </button>
+                          <button
+                            type="button"
+                            className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
+                            onClick={() => onViewDetails(row.note)}
+                            aria-label={`View ${row.detailsCount} details`}
+                          >
+                            {row.detailsCount}
+                          </button>
+                        </div>
+                        <div
+                          role="cell"
+                          className="flex min-w-0 items-center justify-start gap-2 @[848px]:justify-center"
+                        >
+                          <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">
+                            Actions:
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {row.actionCard && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
+                                onClick={() => onViewNote(row.actionCard!)}
+                                title="View Note"
+                              >
+                                <Eye className="size-3.5" />
+                              </Button>
+                            )}
+                            {canEdit && row.actionCard && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
+                                onClick={() => onEditWord(row.actionCard!)}
+                                title="Edit Note"
+                              >
+                                <Edit className="size-3.5" />
+                              </Button>
+                            )}
+                            {canRemove && row.actionCard && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => onRemoveWord(row.actionCard!)}
+                                title="Remove Word"
+                              >
+                                <Unlink className="size-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div role="rowgroup">
-              {filteredRows.map((row, index) => (
-                <div
-                  key={row.note.id}
-                  role="row"
-                  aria-rowindex={index + 2}
-                  className="grid grid-cols-1 @[848px]:grid-cols-[minmax(260px,1fr)_minmax(260px,1fr)_var(--cards-column)_76px_108px] gap-3 @[848px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
-                >
-                  <div role="cell" className="min-w-0 truncate font-medium" title={row.word}>
-                    {row.actionCard ? (
-                      <button
-                        type="button"
-                        className="max-w-full cursor-pointer truncate text-left hover:text-primary"
-                        onClick={() => onViewNote(row.actionCard!)}
-                        title="View Note"
-                      >
-                        {row.word}
-                      </button>
-                    ) : (
-                      row.word
-                    )}
-                  </div>
-                  <div role="cell" className="text-muted-foreground min-w-0 truncate" title={row.translation}>{row.translation}</div>
-                  <div className="grid grid-cols-[minmax(4.5rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] items-center gap-3 @[556px]:grid-cols-[minmax(15.625rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] @[848px]:contents">
-                  <div role="cell" className="flex min-w-0 items-center gap-2 @[848px]:block @[848px]:self-center" aria-label={`${row.cards.length} cards`}>
-                    <button
-                      type="button"
-                      className="text-left text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
-                      onClick={() => setViewingCards(row.badges)}
-                      aria-label={`View ${row.cards.length} cards`}
-                    >
-                      Cards:
-                    </button>
-                    <button
-                      type="button"
-                      className="hidden min-w-0 text-left text-xs leading-6 text-muted-foreground hover:text-primary cursor-pointer @[556px]:block @[848px]:hidden"
-                      onClick={() => setViewingCards(row.badges)}
-                      aria-label={`View ${row.cards.length} cards`}
-                    >
-                      {row.badges.map((badge, index) => (
-                        <span key={badge} className="whitespace-nowrap">
-                          {index > 0 && ' · '}
-                          {badge}
-                        </span>
-                      ))}
-                    </button>
-                    <button
-                      type="button"
-                      className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer @[556px]:hidden"
-                      onClick={() => setViewingCards(row.badges)}
-                      aria-label={`View ${row.cards.length} cards`}
-                    >
-                      {row.cards.length}
-                    </button>
-                    <span className="hidden text-center text-xs text-muted-foreground @[848px]:block @[1030px]:hidden">
-                      {row.cards.length}
-                    </span>
-                    <div className="hidden min-w-[13.375rem] flex-wrap gap-1.5 @[1030px]:flex">
-                      {row.badges.map((badge) => (
-                        <span
-                          key={badge}
-                          className="inline-flex h-7 w-[6.5rem] shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/35 px-2 text-xs font-medium text-muted-foreground"
-                        >
-                          {badge}
-                        </span>
-                      ))}
-                      </div>
-                    </div>
-                  <div className="contents">
-                    <div role="cell" className="flex min-w-0 items-center justify-start gap-2 @[848px]:justify-self-center">
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
-                        onClick={() => onViewDetails(row.note)}
-                        aria-label={`View ${row.detailsCount} details`}
-                      >
-                        Extra info:
-                      </button>
-                      <button
-                        type="button"
-                        className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
-                        onClick={() => onViewDetails(row.note)}
-                        aria-label={`View ${row.detailsCount} details`}
-                      >
-                        {row.detailsCount}
-                      </button>
-                    </div>
-                    <div role="cell" className="flex min-w-0 items-center justify-start gap-2 @[848px]:justify-center">
-                      <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">Actions:</span>
-                      <div className="flex items-center gap-1.5">
-                        {row.actionCard && (
-                          <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onViewNote(row.actionCard!)} title="View Note">
-                            <Eye className="size-3.5" />
-                          </Button>
-                        )}
-                        {canEdit && row.actionCard && (
-                          <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onEditWord(row.actionCard!)} title="Edit Note">
-                            <Edit className="size-3.5" />
-                          </Button>
-                        )}
-                        {canRemove && row.actionCard && (
-                          <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => onRemoveWord(row.actionCard!)} title="Remove Word">
-                            <Unlink className="size-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
           </div>
         )}
       </CardContent>
