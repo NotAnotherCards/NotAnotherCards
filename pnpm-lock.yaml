@@ -446,6 +446,9 @@ importers:
       '@remelondb/driver-web':
         specifier: 0.3.1
         version: 0.3.1(@remelondb/core@0.3.1(react@19.2.3)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0)))(zod@4.4.3))
+      '@repo/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@repo/offline-db':
         specifier: workspace:*
         version: link:../../packages/offline-db
@@ -594,6 +597,18 @@ importers:
       eslint-plugin-regexp:
         specifier: ^3.3.0
         version: 3.3.0(eslint@10.8.1(jiti@2.7.0))
+
+  packages/i18n:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@29.1.1(@noble/hashes@2.3.0))(vite@8.2.1(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.11)(yaml@2.9.0))
 
   packages/offline-db:
     dependencies:
@@ -20666,7 +20681,6 @@ snapshots:
       jsdom: 29.1.1(@noble/hashes@2.3.0)
     transitivePeerDependencies:
       - msw
-    optional: true
 
   vlq@1.0.1: {}
 

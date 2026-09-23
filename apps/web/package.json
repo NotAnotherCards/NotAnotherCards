@@ -43,6 +43,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@remelondb/core": "0.3.1",
     "@remelondb/driver-web": "0.3.1",
+    "@repo/i18n": "workspace:*",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
     "@tanstack/react-router": "^1.170.17",
