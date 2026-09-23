@@ -66,8 +66,11 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
 
         <div
           role="cell"
-          className="flex items-center justify-end md:justify-center gap-1.5 mt-2 md:mt-0"
+          className="flex items-center justify-start md:justify-center gap-1.5 mt-2 md:mt-0"
         >
+          <span className="text-xs font-semibold text-muted-foreground md:hidden">
+            Actions:
+          </span>
           <Button
             variant="ghost"
             size="sm"
