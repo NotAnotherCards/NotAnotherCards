@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/card';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { ThemeChanger } from '@/components/ThemeChanger';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { authClient } from '@/lib/auth-client';
@@ -48,6 +49,17 @@ export function Preferences() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-foreground">
+              Language
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Select your preferred language
+            </span>
+            <div className="mt-1">
+              <LanguageSwitcher />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 border-t border-border/60 pt-6">
             <span className="text-sm font-medium text-foreground">Theme</span>
             <span className="text-xs text-muted-foreground">
               Select how the application looks to you
