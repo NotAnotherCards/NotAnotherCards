@@ -14,11 +14,17 @@ import { Settings } from './settings/Settings';
 import { Overview } from './Overview';
 import { Statistics } from './Statistics';
 import { AiGenerationPlaygroundComponent } from '../ai/AiGenerationPlaygroundComponent';
+import { Leaderboard } from './Leaderboard';
 
 export function DashboardComponent() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'decks' | 'statistics' | 'playground' | 'settings'
+    | 'overview'
+    | 'decks'
+    | 'statistics'
+    | 'leaderboard'
+    | 'playground'
+    | 'settings'
   >('overview');
   const [subView, setSubView] = useState<{
     type: 'list' | 'detail';
@@ -88,6 +94,19 @@ export function DashboardComponent() {
         >
           <BarChart3 className="size-3.5 mr-1.5" />
           Statistics
+        </Button>{' '}
+        <Button
+          role="tab"
+          aria-selected={activeTab === 'leaderboard'}
+          variant={activeTab === 'leaderboard' ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={() => {
+            setActiveTab('leaderboard');
+          }}
+          className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
+        >
+          <BarChart3 className="size-3.5 mr-1.5" />
+          Leaderboard
         </Button>
         <Button
           role="tab"
@@ -133,6 +152,7 @@ export function DashboardComponent() {
       )}
 
       {activeTab === 'statistics' && <Statistics />}
+      {activeTab === 'leaderboard' && <Leaderboard />}
       {activeTab === 'playground' && <AiGenerationPlaygroundComponent />}
       {activeTab === 'settings' && <Settings />}
     </PageContainer>
