@@ -1,0 +1,22 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "loading": "Wird geladen..."
+  },
+  "preferences": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "systemDefault": "Systemstandard"
+  },
+  "locales": {
+    "en": "Englisch",
+    "es": "Spanisch",
+    "de": "Deutsch"
+  },
+  "nav": {
+    "home": "Startseite",
+    "login": "Anmelden",
+    "logout": "Abmelden"
+  }
+}

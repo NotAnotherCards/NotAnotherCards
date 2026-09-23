@@ -1,0 +1,22 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading..."
+  },
+  "preferences": {
+    "title": "Preferences",
+    "language": "Language",
+    "systemDefault": "System Default"
+  },
+  "locales": {
+    "en": "English",
+    "es": "Español",
+    "de": "Deutsch"
+  },
+  "nav": {
+    "home": "Home",
+    "login": "Login",
+    "logout": "Logout"
+  }
+}
