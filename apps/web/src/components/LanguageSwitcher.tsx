@@ -16,7 +16,7 @@ export function LanguageSwitcher({
   const { t, i18n } = useTranslation();
 
   const handleLanguageChange = (value: string) => {
-    i18n.changeLanguage(value);
+    void i18n.changeLanguage(value);
   };
 
   return (
@@ -36,7 +36,9 @@ export function LanguageSwitcher({
           <SelectItem key={locale} value={locale}>
             <span className="flex items-center gap-2">
               <span className="text-base">{localeMetadata[locale].flag}</span>
-              {variant === 'full' && <span>{localeMetadata[locale].nativeName}</span>}
+              {variant === 'full' && (
+                <span>{localeMetadata[locale].nativeName}</span>
+              )}
             </span>
           </SelectItem>
         ))}

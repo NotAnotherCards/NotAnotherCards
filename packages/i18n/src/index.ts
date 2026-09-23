@@ -11,10 +11,17 @@ export const catalogs = {
 } as const;
 
 export type SupportedLocale = keyof typeof catalogs;
-export const supportedLocales = ['en', 'es', 'de'] as const satisfies readonly SupportedLocale[];
+export const supportedLocales = [
+  'en',
+  'es',
+  'de',
+] as const satisfies readonly SupportedLocale[];
 export const defaultLocale: SupportedLocale = 'en';
 
-export const localeMetadata: Record<SupportedLocale, { flag: string; nativeName: string }> = {
+export const localeMetadata: Record<
+  SupportedLocale,
+  { flag: string; nativeName: string }
+> = {
   en: { flag: '🇺🇸', nativeName: 'English' },
   es: { flag: '🇪🇸', nativeName: 'Español' },
   de: { flag: '🇩🇪', nativeName: 'Deutsch' },
@@ -25,4 +32,3 @@ export type I18nKeys = typeof en;
 export function isSupportedLocale(locale: string): locale is SupportedLocale {
   return supportedLocales.includes(locale as SupportedLocale);
 }
-

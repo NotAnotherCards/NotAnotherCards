@@ -10,6 +10,6 @@ if (!rootElement.innerHTML) {
   root.render(
     <Suspense fallback={null}>
       <App />
-    </Suspense>
-);
+    </Suspense>,
+  );
 }
