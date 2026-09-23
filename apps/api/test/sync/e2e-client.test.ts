@@ -66,6 +66,15 @@ describePostgres('client-server sync, end to end', () => {
       imports: [AppModule],
     }).compile();
     app = moduleRef.createNestApplication({ logger: false });
+
+    // The forced database drop during teardown causes Postgres to emit FATAL errors to
+    // clients that haven't been fully reaped by the server yet. We must catch these
+    // on the application's pool so they don't surface as UnhandledRejections in Vitest.
+    const pool = app.get<import('pg').Pool>('database_pg_pool');
+    pool.on('error', () => {
+      // Absorb teardown errors
+    });
+
     await app.listen(0);
     const server = app.getHttpServer() as import('node:http').Server;
     const { port } = server.address() as AddressInfo;
