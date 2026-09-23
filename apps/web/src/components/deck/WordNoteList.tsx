@@ -204,12 +204,15 @@ export function WordNoteList({
                       >
                         <button
                           type="button"
-                          className="text-left text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
+                          className="text-left text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[556px]:hidden"
                           onClick={() => setViewingCards(row.badges)}
                           aria-label={`View ${row.cards.length} cards`}
                         >
                           Cards:
                         </button>
+                        <span className="hidden text-left text-xs font-semibold text-muted-foreground @[556px]:block @[848px]:hidden">
+                          Cards:
+                        </span>
                         <span className="hidden min-w-0 text-left text-xs leading-6 text-muted-foreground @[556px]:block @[848px]:hidden">
                           {row.badges.map((badge, index) => (
                             <span key={badge} className="whitespace-nowrap">
@@ -228,7 +231,7 @@ export function WordNoteList({
                         </button>
                         <button
                           type="button"
-                          className="hidden text-center text-xs text-muted-foreground hover:text-primary cursor-pointer @[848px]:block @[1030px]:hidden"
+                          className="hidden mx-auto text-center text-xs text-muted-foreground hover:text-primary cursor-pointer @[848px]:block @[1030px]:hidden"
                           onClick={() => setViewingCards(row.badges)}
                           aria-label={`View ${row.cards.length} cards`}
                         >
