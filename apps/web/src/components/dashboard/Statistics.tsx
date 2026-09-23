@@ -22,6 +22,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Activity,
+  Brain,
+  CalendarClock,
+  FilePlus,
+  Flame,
+  Sprout,
+  TrendingDown,
+} from 'lucide-react';
 
 type SeriesKey = 'reviews' | 'notesAdded' | 'forgotRate';
 
@@ -214,7 +223,10 @@ export function Statistics() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card aria-label="Learning streak">
           <CardHeader>
-            <CardTitle>Learning streak</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Flame className="h-5 w-5 text-orange-500" />
+              Learning streak
+            </CardTitle>
             <CardDescription>Consecutive learning days</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
@@ -229,7 +241,10 @@ export function Statistics() {
 
         <Card aria-label="Learned notes">
           <CardHeader>
-            <CardTitle>Learned notes</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-blue-500" />
+              Learned notes
+            </CardTitle>
             <CardDescription>Notes with a successful review</CardDescription>
           </CardHeader>
           <CardContent>
@@ -241,7 +256,10 @@ export function Statistics() {
 
         <Card aria-label="Due forecast">
           <CardHeader>
-            <CardTitle>Due forecast</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-purple-500" />
+              Due forecast
+            </CardTitle>
             <CardDescription>Upcoming review workload</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-3 gap-2 text-center">
@@ -260,7 +278,10 @@ export function Statistics() {
 
         <Card aria-label="Card maturity">
           <CardHeader>
-            <CardTitle>Card maturity</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Sprout className="h-5 w-5 text-green-500" />
+              Card maturity
+            </CardTitle>
             <CardDescription>By scheduled review interval</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
@@ -294,7 +315,10 @@ export function Statistics() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card aria-label="Reviews per day">
           <CardHeader>
-            <CardTitle>Reviews per day</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-chart-1" />
+              Reviews per day
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <BarSeries rows={series} valueKey="reviews" />
@@ -302,7 +326,10 @@ export function Statistics() {
         </Card>
         <Card aria-label="Notes added per day">
           <CardHeader>
-            <CardTitle>Notes added per day</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FilePlus className="h-5 w-5 text-chart-2" />
+              Notes added per day
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <BarSeries rows={series} valueKey="notesAdded" />
@@ -310,7 +337,10 @@ export function Statistics() {
         </Card>
         <Card aria-label="Forgot rate per day">
           <CardHeader>
-            <CardTitle>Forgot rate per day</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-chart-3" />
+              Forgot rate per day
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <BarSeries rows={series} valueKey="forgotRate" percentage />
