@@ -272,11 +272,8 @@ export function WordNoteList({
                         </div>
                         <div
                           role="cell"
-                          className="flex min-w-0 items-center justify-start gap-2 @[848px]:justify-center"
+                          className="flex min-w-0 items-center justify-end @[848px]:justify-center"
                         >
-                          <span className="text-xs font-semibold text-muted-foreground @[848px]:hidden">
-                            Actions:
-                          </span>
                           <div className="flex items-center gap-1.5">
                             {row.actionCard && (
                               <Button
