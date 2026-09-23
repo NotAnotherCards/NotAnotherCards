@@ -108,21 +108,28 @@
             <div class="mt-4 space-y-4">
               <p>
                 We process the account details you provide, such as your email
-                address and display name. When you choose Facebook Login, we
-                process your app-scoped Facebook user ID, name, email address
-                when available, profile picture, the permissions (scopes) you
-                grant, and the OAuth access token. We use these data to
-                authenticate you and to create or link your NotAnotherCards
-                account. We do not receive your Facebook password and we do not
-                post to Facebook on your behalf.
+                address, display name, username, bio, and profile picture. Your
+                username is visible to other users on public decks and the
+                leaderboard. When you choose Facebook Login, we process your
+                app-scoped Facebook user ID, name, email address when available,
+                profile picture, the permissions (scopes) you grant, and the
+                OAuth access token. When you choose Google Login, we process your
+                Google account ID, name, email address when available, profile
+                picture, granted permissions, and authentication tokens provided
+                by Google. We use these data to authenticate you and to create or
+                link your NotAnotherCards account. We do not receive your Google
+                or Facebook password and we do not post to either service on your
+                behalf. We send password-reset emails using Resend or an SMTP
+                email provider.
               </p>
               <p>
                 We also process the learning content and settings you create,
                 including decks, notes, cards, review events, and profile
                 preferences. To support offline learning, a copy of this data
-                may be stored in your browser's local database. After you sign
-                in, the learning data synchronizes with our server and
-                PostgreSQL database so it can be available on your devices.
+                may be stored in your browser's local database or on your mobile
+                device. After you sign in, the learning data synchronizes with
+                our server and PostgreSQL database so it can be available on
+                your devices.
                 Passwords, session tokens, and OAuth access tokens are not part
                 of this local learning-data store.
               </p>
@@ -181,9 +188,10 @@
                 verify that you own the account. We will confirm the request,
                 verify your identity before deleting data, delete your account,
                 Facebook Login data, and private decks, and confirm when the
-                deletion has been completed. Public decks may remain available
-                to other users without your name, profile picture, account ID,
-                profile links, or other information that identifies you.
+                deletion has been completed. After account deletion, the
+                author&apos;s public decks are no longer listed in the public
+                browse, but their published snapshots remain in our database.
+                Copies imported by other users remain in their libraries.
               </p>
               <p>
                 Removing NotAnotherCards from Facebook does not automatically

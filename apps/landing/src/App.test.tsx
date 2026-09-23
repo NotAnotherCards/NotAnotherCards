@@ -65,6 +65,7 @@ describe('App', () => {
       privacyHtml,
       'text/html',
     );
+    const privacyText = privacyDocument.body.textContent?.replace(/\s+/g, ' ');
 
     expect(privacyDocument.title).toBe('NotAnotherCards — Privacy Policy');
     expect(
@@ -81,17 +82,23 @@ describe('App', () => {
       'Privacy Policy',
     );
     expect(privacyDocument.querySelector('#data-deletion')).not.toBeNull();
-    expect(privacyDocument.body.textContent).toContain(
-      'app-scoped Facebook user ID',
-    );
-    expect(privacyDocument.body.textContent).toContain('OAuth access token');
-    expect(privacyDocument.body.textContent).toContain('security issue');
-    expect(privacyDocument.body.textContent).toContain(
+    expect(privacyText).toContain('app-scoped Facebook user ID');
+    expect(privacyText).toContain('OAuth access token');
+    expect(privacyText).toContain('security issue');
+    expect(privacyText).toContain(
       'Facebook Login data, and private decks',
     );
-    expect(privacyDocument.body.textContent).toContain(
-      'Public decks may remain available',
+    expect(privacyText).toContain(
+      "After account deletion, the author's public decks are no longer listed",
     );
+    expect(privacyText).toContain('Google Login');
+    expect(privacyText).toContain(
+      'granted permissions, and authentication tokens provided by Google',
+    );
+    expect(privacyText).toContain(
+      'Resend or an SMTP email provider',
+    );
+    expect(privacyText).toContain('on your mobile device');
     expect(privacyDocument.querySelector('script')).toBeNull();
   });
 
