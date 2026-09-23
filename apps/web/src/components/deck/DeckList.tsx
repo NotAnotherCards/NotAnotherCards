@@ -302,7 +302,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
               >
                 <Trash2 className="size-5" />
                 {confirmCards
-                  ? `Delete ${deletionSummary?.orphanedCardCount} cards and their review history?`
+                  ? `Delete ${deletionSummary?.orphanedCardCount} ${deletionSummary?.orphanedCardCount === 1 ? 'card and its' : 'cards and their'} review history?`
                   : `Delete "${store.decks.find((deck) => deck.id === deckToDelete)?.title}"?`}
               </CardTitle>
               <CardDescription id="delete-deck-description">
@@ -310,11 +310,23 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   'This cannot be undone.'
                 ) : deletionSummary ? (
                   <>
-                    {deletionSummary.orphanedCardCount} cards are only in this
-                    deck. Deleting the deck and cards also deletes their review
-                    history. {deletionSummary.sharedCardCount} cards are also in
-                    other decks and will be kept. Deleting only the deck keeps
-                    all cards and their review history.
+                    {deletionSummary.orphanedCardCount}{' '}
+                    {deletionSummary.orphanedCardCount === 1
+                      ? 'card is'
+                      : 'cards are'}{' '}
+                    only in this deck. Deleting the deck and cards also deletes
+                    their review history.{' '}
+                    {deletionSummary.sharedCardCount > 0 && (
+                      <>
+                        {deletionSummary.sharedCardCount}{' '}
+                        {deletionSummary.sharedCardCount === 1
+                          ? 'card is'
+                          : 'cards are'}{' '}
+                        also in other decks and will be kept.{' '}
+                      </>
+                    )}
+                    Deleting only the deck keeps all cards and their review
+                    history.
                   </>
                 ) : writeError ? (
                   'Card counts could not be loaded. Close this dialog and try again.'
@@ -344,6 +356,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                     variant="outline"
                     disabled={isDeleting}
                     onClick={() => void handleDeleteDeck(false)}
+                    className="cursor-pointer"
                   >
                     Delete deck only
                   </Button>
@@ -360,7 +373,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   {confirmCards
                     ? 'Delete'
                     : deletionSummary
-                      ? `Delete deck and ${deletionSummary.orphanedCardCount} cards`
+                      ? `Delete deck and ${deletionSummary.orphanedCardCount} ${deletionSummary.orphanedCardCount === 1 ? 'card' : 'cards'}`
                       : 'Delete deck and cards'}
                 </Button>
               </div>

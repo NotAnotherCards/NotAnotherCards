@@ -147,6 +147,37 @@ describe('deck CRUD error handling', () => {
       fireEvent.click(screen.getByTitle('Delete Deck'));
     };
 
+    it.each([0, 1])(
+      'uses singular wording and handles %i shared cards',
+      async (sharedCardCount) => {
+        deckDeletionSummary.mockResolvedValueOnce({
+          orphanedNoteIds: ['note-1'],
+          sharedNoteCount: sharedCardCount,
+          orphanedCardCount: 1,
+          sharedCardCount,
+        });
+        openDelete();
+        const button = await screen.findByRole('button', {
+          name: 'Delete deck and 1 card',
+        });
+        expect(
+          screen.getByText(/1 card is only in this deck/),
+        ).toBeInTheDocument();
+        if (sharedCardCount === 0)
+          expect(
+            screen.queryByText(/also in other decks/),
+          ).not.toBeInTheDocument();
+        else
+          expect(
+            screen.getByText(/1 card is also in other decks/),
+          ).toBeInTheDocument();
+        fireEvent.click(button);
+        expect(screen.getByRole('dialog')).toHaveAccessibleName(
+          'Delete 1 card and its review history?',
+        );
+      },
+    );
+
     it('shows card counts and requires a second confirmation', async () => {
       openDelete();
       const destructive = await screen.findByRole('button', {
