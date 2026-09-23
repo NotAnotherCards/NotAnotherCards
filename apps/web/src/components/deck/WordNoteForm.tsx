@@ -306,27 +306,31 @@ export function WordNoteForm({
                 )}
 
                 {showDetails &&
-                  DETAIL_FIELDS.slice(0, 1).map(([name, label, placeholder]) => (
-                    <Controller
-                      key={name}
-                      name={name}
-                      control={form.control}
-                      render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-                          <textarea
-                            {...field}
-                            value={field.value ?? ''}
-                            id={field.name}
-                            placeholder={placeholder}
-                            aria-invalid={fieldState.invalid}
-                            className={textAreaClass(fieldState.invalid)}
-                          />
-                          <FieldError errors={[fieldState.error]} />
-                        </Field>
-                      )}
-                    />
-                  ))}
+                  DETAIL_FIELDS.slice(0, 1).map(
+                    ([name, label, placeholder]) => (
+                      <Controller
+                        key={name}
+                        name={name}
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={field.name}>
+                              {label}
+                            </FieldLabel>
+                            <textarea
+                              {...field}
+                              value={field.value ?? ''}
+                              id={field.name}
+                              placeholder={placeholder}
+                              aria-invalid={fieldState.invalid}
+                              className={textAreaClass(fieldState.invalid)}
+                            />
+                            <FieldError errors={[fieldState.error]} />
+                          </Field>
+                        )}
+                      />
+                    ),
+                  )}
 
                 {showDetails && genders.length > 0 && (
                   <Controller

@@ -224,7 +224,10 @@ describe('WordNoteForm gender', () => {
     const gender = screen.getByLabelText(/gender/i);
     const partOfSpeech = screen.getByLabelText(/part of speech/i);
     expect(
-      Boolean(gender.compareDocumentPosition(partOfSpeech) & Node.DOCUMENT_POSITION_FOLLOWING),
+      Boolean(
+        gender.compareDocumentPosition(partOfSpeech) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
     ).toBe(true);
   });
 });
