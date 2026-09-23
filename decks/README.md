@@ -1,0 +1,26 @@
+# Sample decks
+
+Decks to import for demos and onboarding (#404). Each `.txt` file is one deck,
+one note per line. Build the import file and load it under Settings > Import:
+
+    node decks/build.mjs decks/spanish-a1.txt > spanish-a1.json
+
+The JSON is not committed. Fields per line, separated by `|`:
+
+    word | translation | part of speech | article (el/la/los/las, empty for non-nouns) | example | example translation
+
+Two header comments name the deck and its languages (ids from
+`packages/schemas/src/user-profile.ts`):
+
+    # title: Spanish A1
+    # languages: <native language id> <target language id>
+
+Nouns get their article on the card ("la mesa"). The pronunciation field is
+filled by `ipa-es.mjs`, a rule-based broad IPA for Spanish of Spain (θ for c/z,
+ʝ for ll/y, stress from the accent rules); other languages need their own. A word can appear once per
+part of speech, for example `mañana` as an adverb and as a noun; two noun
+senses share one line.
+
+Decks so far:
+
+- `spanish-a1.txt`: Spanish A1 for English speakers, about 500 words. Spanish of Spain, American English.
