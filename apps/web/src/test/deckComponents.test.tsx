@@ -471,7 +471,7 @@ describe('WordNoteList Component', () => {
       screen.getAllByRole('button', { name: 'View 3 details' })[0],
     );
     fireEvent.click(screen.getByTitle('Edit Note'));
-    fireEvent.click(screen.getByTitle('Remove Word'));
+    fireEvent.click(screen.getByTitle('Remove word from this deck'));
 
     expect(onViewNote).toHaveBeenCalledWith(wordCards[0]);
     expect(onViewDetails).toHaveBeenCalledWith(wordNote);

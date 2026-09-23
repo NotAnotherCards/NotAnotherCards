@@ -303,7 +303,7 @@ export function WordNoteList({
                                 size="icon"
                                 className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => onRemoveWord(row.actionCard!)}
-                                title="Remove Word"
+                                title="Remove word from this deck"
                               >
                                 <Unlink className="size-3.5" />
                               </Button>

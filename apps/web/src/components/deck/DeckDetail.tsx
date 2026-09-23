@@ -667,7 +667,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         />
       )}
 
-      {/* Remove Note Membership Confirmation */}
+      {/* Remove deck membership confirmation */}
       {noteToRemove && (
         <div
           onClick={() => setNoteToRemove(null)}
@@ -680,12 +680,24 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             <CardHeader>
               <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
                 <Unlink className="size-5" />
-                Remove Note from Deck?
+                {isWordDeck
+                  ? 'Remove Word from Deck?'
+                  : 'Remove Note from Deck?'}
               </CardTitle>
               <CardDescription>
-                This removes every study card generated from this note from “
-                {deck.title}”. The note, its cards, schedule, and review history
-                will remain in your personal dictionary.
+                {isWordDeck ? (
+                  <>
+                    This removes every study card generated from this word from
+                    “{deck.title}”. The word, its cards, schedule, and review
+                    history will remain in your personal dictionary.
+                  </>
+                ) : (
+                  <>
+                    This removes every study card generated from this note from
+                    “{deck.title}”. The note, its cards, schedule, and review
+                    history will remain in your personal dictionary.
+                  </>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
