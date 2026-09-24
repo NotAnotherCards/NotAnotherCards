@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RemelonSyncModule } from '@remelondb/nestjs';
 import type { Request } from 'express';
 import { AuthModule } from '../auth/auth.module';
@@ -8,6 +9,7 @@ import {
   createAppSyncEngineConfig,
   type AppSyncStoreBundle,
 } from './sync-store';
+import { SyncCompatibilityInterceptor } from './sync-compatibility.interceptor';
 
 @Module({
   imports: [
@@ -20,6 +22,12 @@ import {
           authService.userIdFromHeaders((request as Request).headers),
       }),
     }),
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SyncCompatibilityInterceptor,
+    },
   ],
 })
 export class SyncModule {}
