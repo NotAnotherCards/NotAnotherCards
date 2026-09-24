@@ -25,8 +25,8 @@ async function resetToEnglish() {
 // 1. @repo/i18n package exports
 // ---------------------------------------------------------------------------
 describe('@repo/i18n package exports', () => {
-  it('exports exactly three supported locales', () => {
-    expect(supportedLocales).toEqual(['en', 'es', 'de']);
+  it('exports exactly four supported locales', () => {
+    expect(supportedLocales).toEqual(['en', 'es', 'de', 'ru']);
   });
 
   it('defaults to English', () => {
@@ -37,6 +37,7 @@ describe('@repo/i18n package exports', () => {
     expect(isSupportedLocale('en')).toBe(true);
     expect(isSupportedLocale('es')).toBe(true);
     expect(isSupportedLocale('de')).toBe(true);
+    expect(isSupportedLocale('ru')).toBe(true);
     expect(isSupportedLocale('fr')).toBe(false);
     expect(isSupportedLocale('en-US')).toBe(false);
     expect(isSupportedLocale('')).toBe(false);
@@ -55,6 +56,7 @@ describe('@repo/i18n package exports', () => {
     expect(localeMetadata.en.nativeName).toBe('English');
     expect(localeMetadata.es.nativeName).toBe('Español');
     expect(localeMetadata.de.nativeName).toBe('Deutsch');
+    expect(localeMetadata.ru.nativeName).toBe('Русский');
   });
 });
 

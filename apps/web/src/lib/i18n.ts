@@ -10,6 +10,7 @@ void i18n
     resources: catalogs,
     fallbackLng: defaultLocale,
     supportedLngs: supportedLocales,
+    showSupportNotice: false,
 
     interpolation: {
       escapeValue: false, // not needed for react
