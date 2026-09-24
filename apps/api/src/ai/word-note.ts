@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   aiWordNoteCandidateSchema,
+  CARD_SIDE_MAX_LENGTH,
   gendersFor,
   type AiWordNoteCandidate,
   type WordNotePayload,
@@ -15,10 +16,10 @@ const generatedText = (max: number) => z.string().trim().min(1).max(max);
 
 export const wordNoteModelOutputSchema = z.object({
   word: generatedText(100).optional(),
-  translation: generatedText(1000).optional(),
+  translation: generatedText(CARD_SIDE_MAX_LENGTH).optional(),
   part_of_speech: generatedText(100),
-  example: generatedText(1000),
-  example_translation: generatedText(1000),
+  example: generatedText(CARD_SIDE_MAX_LENGTH),
+  example_translation: generatedText(CARD_SIDE_MAX_LENGTH),
   pronunciation: generatedText(200),
   gender: z.string().nullish(),
 });
