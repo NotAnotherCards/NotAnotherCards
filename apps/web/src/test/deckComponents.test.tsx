@@ -393,7 +393,7 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
-        dueCount={0}
+        dueCards={[]}
         onViewNote={vi.fn()}
         onViewDetails={vi.fn()}
         onEditWord={vi.fn()}
@@ -470,7 +470,7 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote, secondWordNote]}
         cards={[...wordCards, secondWordCard]}
-        dueCount={0}
+        dueCards={[wordCards[0], secondWordCard]}
         onViewNote={vi.fn()}
         onViewDetails={vi.fn()}
         onEditWord={vi.fn()}
@@ -488,6 +488,7 @@ describe('WordNoteList Component', () => {
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('1 Cards')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
   });
 
   it('routes view, edit, and removal through the word note', () => {
@@ -499,7 +500,7 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
-        dueCount={0}
+        dueCards={[]}
         onViewNote={onViewNote}
         onViewDetails={onViewDetails}
         onEditWord={onEditWord}
@@ -531,7 +532,7 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={[]}
-        dueCount={0}
+        dueCards={[]}
         onViewNote={onViewNote}
         onViewDetails={vi.fn()}
         onEditWord={onEditWord}

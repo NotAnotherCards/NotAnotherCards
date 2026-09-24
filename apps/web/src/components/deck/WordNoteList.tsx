@@ -9,7 +9,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Edit, Eye, HelpCircle, Library, Search, Unlink } from 'lucide-react';
-import { countCards, countWords, type UserNoteRecord } from '@repo/offline-db';
+import {
+  countCards,
+  countDueCards,
+  countWords,
+  type UserNoteRecord,
+} from '@repo/offline-db';
 import { WordNoteCards } from './WordNoteCards';
 import { toWordRow, type WordRow } from './word-note-rows';
 
@@ -24,7 +29,7 @@ const WORD_TABLE_LAYOUT = {
 interface WordNoteListProps {
   notes: UserNoteRecord[];
   cards: Card[];
-  dueCount: number;
+  dueCards: Card[];
   onViewNote: (note: UserNoteRecord) => void;
   onViewDetails: (note: UserNoteRecord) => void;
   onEditWord: (note: UserNoteRecord) => void;
@@ -37,7 +42,7 @@ interface WordNoteListProps {
 export function WordNoteList({
   notes,
   cards,
-  dueCount,
+  dueCards,
   onViewNote,
   onViewDetails,
   onEditWord,
@@ -64,6 +69,8 @@ export function WordNoteList({
       translation.toLowerCase().includes(search)
     );
   });
+  const filteredCards = filteredRows.flatMap((row) => row.cards);
+  const filteredDueCount = countDueCards(filteredCards, dueCards);
   const tableStyle: CSSProperties &
     Record<
       | '--word-column-min'
@@ -85,10 +92,8 @@ export function WordNoteList({
             <Library className="size-4 text-primary" />
             {countWords(filteredRows)} Words
           </CardTitle>
-          <span>
-            {countCards(filteredRows.flatMap((row) => row.cards))} Cards
-          </span>
-          <span>{dueCount} Cards Due</span>
+          <span>{countCards(filteredCards)} Cards</span>
+          <span>{filteredDueCount} Cards Due</span>
         </div>
         <div className="relative mt-4 w-full md:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
