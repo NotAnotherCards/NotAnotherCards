@@ -1,5 +1,6 @@
 import type { DatabaseManager } from '@remelondb/core';
 import { useDatabase, useQuery } from '@remelondb/core/react';
+import { useNow } from './use-now';
 import {
   getNotesQuery,
   getPersonalDictionaryQuery,
@@ -86,20 +87,16 @@ export function useOverviewStats(manager: DatabaseManager) {
   );
   const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
   const notes = useQuery<UserNoteRecord>(db && getNotesQuery(db));
+  const now = useNow();
 
-  // Computed on every render, not memoized: the streak depends on the day,
-  // and a memo keyed on the data would keep yesterday's until the next
-  // review. The selectors throw on a malformed review event instead of
-  // counting it; report that like a failed query rather than crash.
+  // Recomputed on each render and at least every minute (useNow), so the
+  // streak and the goals follow the UTC day. The selectors throw on a
+  // malformed review event instead of counting it; report that like a
+  // failed query rather than crash.
   let stats: OverviewStats | null = null;
   let selectorError: Error | null = null;
   try {
-    stats = overviewStats(
-      reviewEvents.data,
-      cards.data,
-      notes.data,
-      Date.now(),
-    );
+    stats = overviewStats(reviewEvents.data, cards.data, notes.data, now);
   } catch (error) {
     selectorError = error instanceof Error ? error : new Error(String(error));
   }
