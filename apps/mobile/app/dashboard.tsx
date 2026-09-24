@@ -5,11 +5,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DatabaseManager } from '@remelondb/core';
 import { authClient } from '@/lib/auth-client';
 import {
+  BookMarkedIcon,
   BookOpenIcon,
+  FlameIcon,
+  GraduationCapIcon,
   LibraryIcon,
   SettingsIcon,
   type LucideIcon,
 } from '@/components/ui/icon';
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -22,6 +31,7 @@ import {
   loadLastReviewDeckId,
 } from '@/lib/review-preferences';
 import { useReviewOverview } from '@/lib/review';
+import { useOverviewStats } from '@/lib/overview-stats';
 
 // Web's dashboard strip: Overview, My Library, Profile & Settings, same
 // icons. Tab state lives here like web's, no native tab navigator. The
@@ -83,11 +93,14 @@ export default function Dashboard() {
                 <Text className="font-semibold">{session?.user.name}</Text>!
               </Text>
               {manager ? (
-                <ReviewOverview
-                  manager={manager}
-                  userId={session?.user.id}
-                  onChooseDeck={() => setTab('library')}
-                />
+                <>
+                  <ReviewOverview
+                    manager={manager}
+                    userId={session?.user.id}
+                    onChooseDeck={() => setTab('library')}
+                  />
+                  <OverviewStatTiles manager={manager} />
+                </>
               ) : (
                 <ActivityIndicator accessibilityLabel="Loading review overview" />
               )}
@@ -151,6 +164,89 @@ function ReviewOverview({
         <BookOpenIcon size={18} className="text-foreground" />
         <Text>Start Review</Text>
       </Button>
+    </View>
+  );
+}
+
+// Web's Overview stat tiles, with web's titles, descriptions and colours.
+// The colours are raw palette values like web's, which docs/design.md rules
+// out; both clients move to semantic tokens together (#396). Full class
+// names, not concatenated: nativewind only sees classes written out whole.
+function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
+  const { stats, isLoading, error } = useOverviewStats(manager);
+
+  if (error) {
+    return (
+      <Text className="text-destructive">
+        Could not load your statistics: {error.message}
+      </Text>
+    );
+  }
+  if (isLoading || !stats) {
+    return <ActivityIndicator accessibilityLabel="Loading statistics" />;
+  }
+
+  const tiles: readonly {
+    title: string;
+    value: string;
+    description: string;
+    icon: LucideIcon;
+    iconClass: string;
+    iconBoxClass: string;
+  }[] = [
+    {
+      title: 'Personal Dictionary',
+      value: `${stats.dictionarySize} ${stats.dictionarySize === 1 ? 'card' : 'cards'}`,
+      description: 'Added to your collection',
+      icon: BookMarkedIcon,
+      iconClass: 'text-blue-500',
+      iconBoxClass: 'bg-blue-500/10',
+    },
+    {
+      title: 'Learning Streak',
+      value: `${stats.streak} ${stats.streak === 1 ? 'Day' : 'Days'}`,
+      description: 'Daily learning-day streak',
+      icon: FlameIcon,
+      iconClass: 'text-orange-500',
+      iconBoxClass: 'bg-orange-500/10',
+    },
+    {
+      title: 'Words Learned',
+      value: stats.wordsLearned.toLocaleString(),
+      description: 'Notes reviewed successfully',
+      icon: GraduationCapIcon,
+      iconClass: 'text-purple-500',
+      iconBoxClass: 'bg-purple-500/10',
+    },
+  ];
+
+  return (
+    <View role="list" className="gap-3">
+      {tiles.map(
+        ({
+          title,
+          value,
+          description,
+          icon: Icon,
+          iconClass,
+          iconBoxClass,
+        }) => (
+          <Card key={title} role="listitem" className="py-4">
+            <CardHeader className="flex-row items-start justify-between gap-3">
+              <View className="flex-1 gap-1">
+                <CardDescription>{title}</CardDescription>
+                <CardTitle className="text-2xl">{value}</CardTitle>
+                <CardDescription className="text-xs">
+                  {description}
+                </CardDescription>
+              </View>
+              <View className={`rounded-xl p-2 ${iconBoxClass}`}>
+                <Icon size={20} className={iconClass} />
+              </View>
+            </CardHeader>
+          </Card>
+        ),
+      )}
     </View>
   );
 }

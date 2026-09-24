@@ -26,6 +26,18 @@ jest.mock('../lib/database-provider', () => ({
 jest.mock('../lib/review', () => ({
   useReviewOverview: () => mockReviewOverview,
 }));
+let mockOverviewStats = {
+  stats: { dictionarySize: 0, streak: 0, wordsLearned: 0 } as {
+    dictionarySize: number;
+    streak: number;
+    wordsLearned: number;
+  } | null,
+  isLoading: false,
+  error: null as Error | null,
+};
+jest.mock('../lib/overview-stats', () => ({
+  useOverviewStats: () => mockOverviewStats,
+}));
 
 // The deck list and settings have their own tests; keep this one about the
 // session guard and the tab strip. Each tab renders a marker instead.
@@ -42,7 +54,10 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('../components/ui/icon', () => ({
+  BookMarkedIcon: () => null,
   BookOpenIcon: () => null,
+  FlameIcon: () => null,
+  GraduationCapIcon: () => null,
   LibraryIcon: () => null,
   SettingsIcon: () => null,
 }));
@@ -63,6 +78,11 @@ describe('Dashboard screen', () => {
     mockReviewOverview = {
       dueDeckIds: new Set(),
       dueCount: 0,
+      isLoading: false,
+      error: null,
+    };
+    mockOverviewStats = {
+      stats: { dictionarySize: 0, streak: 0, wordsLearned: 0 },
       isLoading: false,
       error: null,
     };
@@ -166,6 +186,49 @@ describe('Dashboard screen', () => {
     expect(getByText('deck-list')).toBeTruthy();
     expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("shows web's three stat tiles on the Overview", () => {
+    mockOverviewStats.stats = {
+      dictionarySize: 1540,
+      streak: 1,
+      wordsLearned: 12,
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('Personal Dictionary')).toBeTruthy();
+    expect(getByText('1540 cards')).toBeTruthy();
+    expect(getByText('Learning Streak')).toBeTruthy();
+    expect(getByText('1 Day')).toBeTruthy();
+    expect(getByText('Words Learned')).toBeTruthy();
+    expect(getByText('12')).toBeTruthy();
+  });
+
+  it('reports a statistics error and keeps Start Review usable', () => {
+    mockOverviewStats = {
+      stats: null,
+      isLoading: false,
+      error: new Error('Unsupported review rating: 9'),
+    };
+    mockReviewOverview.dueCount = 2;
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, getByRole } = render(<Dashboard />);
+    expect(
+      getByText(/Could not load your statistics: Unsupported review rating: 9/),
+    ).toBeTruthy();
+    expect(getByText('2 cards due')).toBeTruthy();
+    expect(
+      getByRole('button', { name: 'Start Review' }).props.accessibilityState
+        .disabled,
+    ).toBeFalsy();
   });
 
   it('does not clear the saved deck while queries are loading', () => {

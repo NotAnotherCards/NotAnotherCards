@@ -1,7 +1,10 @@
 import { cssInterop } from 'nativewind';
 import {
+  BookMarked,
   BookOpen,
+  Flame,
   Globe,
+  GraduationCap,
   Library,
   LogOut,
   Settings,
@@ -21,8 +24,11 @@ function withClassName(icon: LucideIcon): LucideIcon {
   return icon;
 }
 
+export const BookMarkedIcon = withClassName(BookMarked);
 export const BookOpenIcon = withClassName(BookOpen);
+export const FlameIcon = withClassName(Flame);
 export const GlobeIcon = withClassName(Globe);
+export const GraduationCapIcon = withClassName(GraduationCap);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
 export const SettingsIcon = withClassName(Settings);
