@@ -3,12 +3,12 @@ import {
   EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY,
   TRANSLATION_TO_WORD_TEMPLATE_KEY,
   WORD_TO_TRANSLATION_TEMPLATE_KEY,
-  WordNoteFieldsV1,
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { languageFor } from '@repo/schemas';
+import { parseWordFields } from './word-note-fields';
 
-type WordCardBadge = 'Word' | 'Translation' | 'Example' | 'Audio';
+type WordCardBadge = 'Word' | 'Translation' | 'Example';
 
 export interface WordRow {
   readonly note: UserNoteRecord;
@@ -17,32 +17,17 @@ export interface WordRow {
   readonly cards: Card[];
   readonly detailsCount: number;
   readonly badges: string[];
-  readonly actionCard: Card | null;
 }
 
 const badgeForTemplateKey: Readonly<Record<string, WordCardBadge>> = {
   [WORD_TO_TRANSLATION_TEMPLATE_KEY]: 'Word',
   [TRANSLATION_TO_WORD_TEMPLATE_KEY]: 'Translation',
   [EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY]: 'Example',
-  audio: 'Audio',
-  listen: 'Audio',
 };
-const badgeOrder: readonly WordCardBadge[] = [
-  'Word',
-  'Translation',
-  'Example',
-  'Audio',
-];
-const languageCodeForName: Readonly<Record<string, string>> = {
-  English: 'EN',
-  Spanish: 'ES',
-  German: 'DE',
-  Russian: 'RU',
-};
-
+const badgeOrder: readonly WordCardBadge[] = ['Word', 'Translation', 'Example'];
 function languageCode(languageId: string): string {
   const language = languageFor(languageId);
-  return language ? (languageCodeForName[language.name] ?? '??') : '??';
+  return language?.code ?? '??';
 }
 
 function badgeLabel(
@@ -54,8 +39,7 @@ function badgeLabel(
   const target = languageCode(targetLanguageId);
   if (badge === 'Word') return `${target} → ${native}`;
   if (badge === 'Translation') return `${native} → ${target}`;
-  if (badge === 'Example') return `Example → ${target}`;
-  return 'Audio';
+  return `Example → ${native}`;
 }
 
 export function countWordDetails(
@@ -77,37 +61,26 @@ export function countWordDetails(
 }
 
 export function toWordRow(note: UserNoteRecord, cards: Card[]): WordRow | null {
-  try {
-    const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
-    if (!parsed.success) return null;
-    const fields = parsed.data;
-    const noteCards = cards.filter((card) => card.note_id === note.id);
-    const existing = new Set(
-      noteCards.flatMap((card) => {
-        const badge = badgeForTemplateKey[card.template_key];
-        return badge ? [badge] : [];
-      }),
+  const fields = parseWordFields(note);
+  if (!fields) return null;
+  const noteCards = cards.filter((card) => card.note_id === note.id);
+  const existing = new Set(
+    noteCards.flatMap((card) => {
+      const badge = badgeForTemplateKey[card.template_key];
+      return badge ? [badge] : [];
+    }),
+  );
+  const badges = badgeOrder
+    .filter((badge) => existing.has(badge))
+    .map((badge) =>
+      badgeLabel(badge, fields.native_language_id, fields.target_language_id),
     );
-    const badges = badgeOrder
-      .filter((badge) => existing.has(badge))
-      .map((badge) =>
-        badgeLabel(badge, fields.native_language_id, fields.target_language_id),
-      );
-    return {
-      note,
-      word: fields.word,
-      translation: fields.translation,
-      cards: noteCards,
-      badges,
-      detailsCount: countWordDetails(fields),
-      actionCard:
-        noteCards.find(
-          (card) => card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY,
-        ) ??
-        noteCards[0] ??
-        null,
-    };
-  } catch {
-    return null;
-  }
+  return {
+    note,
+    word: fields.word,
+    translation: fields.translation,
+    cards: noteCards,
+    badges,
+    detailsCount: countWordDetails(fields),
+  };
 }

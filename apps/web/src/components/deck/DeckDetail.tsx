@@ -22,7 +22,7 @@ import { WordNoteForm, type WordFormValues } from './WordNoteForm';
 import {
   BASIC_NOTE_TYPE,
   countDueCards,
-  WordNoteFieldsV1,
+  type UserNoteRecord,
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
 } from '@repo/offline-db';
@@ -31,6 +31,7 @@ import { CardList } from './CardList';
 import { WordNoteList } from './WordNoteList';
 import { WordNoteView } from './WordNoteView';
 import { WordNoteDetails } from './WordNoteDetails';
+import { parseWordFields } from './word-note-fields';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { usePublishing } from '@/hooks/usePublishing';
@@ -50,11 +51,16 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
-  const [viewingWordCard, setViewingWordCard] = useState<Card | null>(null);
+  const [editingWordNote, setEditingWordNote] = useState<UserNoteRecord | null>(
+    null,
+  );
+  const [viewingWordNote, setViewingWordNote] = useState<UserNoteRecord | null>(
+    null,
+  );
   const [viewingWordNoteId, setViewingWordNoteId] = useState<string | null>(
     null,
   );
-  const [noteToRemove, setNoteToRemove] = useState<Card | null>(null);
+  const [noteIdToRemove, setNoteIdToRemove] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [isPendingPublishAction, setIsPendingPublishAction] = useState(false);
@@ -133,28 +139,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
-  const editingWordFields = (() => {
-    if (!editingCard || !isWordDeck) return null;
-    const note = store.noteForCard(editingCard);
-    if (!note) return null;
-    try {
-      const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
-      return parsed.success ? parsed.data : null;
-    } catch {
-      return null;
-    }
-  })();
-  const viewingWordFields = (() => {
-    if (!viewingWordCard || !isWordDeck) return null;
-    const note = store.noteForCard(viewingWordCard);
-    if (!note) return null;
-    try {
-      const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
-      return parsed.success ? parsed.data : null;
-    } catch {
-      return null;
-    }
-  })();
+  const editingWordFields =
+    editingWordNote && isWordDeck ? parseWordFields(editingWordNote) : null;
+  const viewingWordFields =
+    viewingWordNote && isWordDeck ? parseWordFields(viewingWordNote) : null;
 
   if (!deck) {
     return (
@@ -170,19 +158,15 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const cards = store.getCardsForDeck(deckId);
   const wordNotes = isWordDeck ? store.getNotesForDeck(deckId) : [];
   const dueCount = countDueCards(cards, store.dueCards ?? []);
-  const viewingWordDetailFields = (() => {
-    if (!viewingWordNoteId || !isWordDeck) return null;
-    const note = wordNotes.find(
-      (wordNote) => wordNote.id === viewingWordNoteId,
-    );
-    if (!note) return null;
-    try {
-      const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
-      return parsed.success ? parsed.data : null;
-    } catch {
-      return null;
-    }
-  })();
+  const viewingWordDetailFields =
+    viewingWordNoteId && isWordDeck
+      ? (() => {
+          const note = wordNotes.find(
+            (wordNote) => wordNote.id === viewingWordNoteId,
+          );
+          return note ? parseWordFields(note) : null;
+        })()
+      : null;
   const visibleWarnings =
     publishWarnings.length > 0
       ? publishWarnings
@@ -366,10 +350,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   };
 
   const handleEditWordNote = async (values: WordFormValues) => {
-    if (!editingCard || !editingWordFields) return;
+    if (!editingWordNote || !editingWordFields) return;
     setWriteError(null);
     try {
-      await store.updateNoteFields(editingCard.note_id, {
+      await store.updateNoteFields(editingWordNote.id, {
         ...values,
         native_language_id: editingWordFields.native_language_id,
         target_language_id: editingWordFields.target_language_id,
@@ -378,7 +362,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           ? { word_audio: editingWordFields.word_audio }
           : {}),
       });
-      setEditingCard(null);
+      setEditingWordNote(null);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'Failed to update card'));
     }
@@ -396,12 +380,12 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   };
 
   const handleRemoveFromDeck = async () => {
-    if (!noteToRemove) return;
+    if (!noteIdToRemove) return;
     setIsRemoving(true);
     setWriteError(null);
     try {
-      await store.removeNoteFromDeck(noteToRemove.note_id, deckId);
-      setNoteToRemove(null);
+      await store.removeNoteFromDeck(noteIdToRemove, deckId);
+      setNoteIdToRemove(null);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'Failed to remove note from deck'));
     } finally {
@@ -570,10 +554,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           notes={wordNotes}
           cards={cards}
           dueCount={dueCount}
-          onViewNote={(card) => setViewingWordCard(card)}
+          onViewNote={(note) => setViewingWordNote(note)}
           onViewDetails={(note) => setViewingWordNoteId(note.id)}
-          onEditWord={(card) => setEditingCard(card)}
-          onRemoveWord={(card) => setNoteToRemove(card)}
+          onEditWord={(note) => setEditingWordNote(note)}
+          onRemoveWord={(note) => setNoteIdToRemove(note.id)}
           canEdit={isKnownDeck}
           canRemove={isKnownDeck}
           onAddWord={() => setShowCreateForm(true)}
@@ -582,7 +566,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <CardList
           cards={cards}
           onEditCard={(card) => setEditingCard(card)}
-          onRemoveFromDeck={(card) => setNoteToRemove(card)}
+          onRemoveFromDeck={(card) => setNoteIdToRemove(card.note_id)}
           canEditCard={isBasicDeck ? store.isBasicCard : () => false}
           canAddCard={isKnownDeck}
           canRemoveCard={isKnownDeck}
@@ -624,38 +608,37 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
       {/* Edit: a word note is edited through its own fields, not through
           the front and back a template rendered from them */}
-      {editingCard &&
-        (isWordDeck ? (
-          <WordNoteForm
-            title="Edit Note"
-            alwaysShowDetails
-            targetLanguageId={editingWordFields?.target_language_id}
-            nativeLanguageId={editingWordFields?.native_language_id}
-            initialData={editingWordFields ?? undefined}
-            onSubmit={handleEditWordNote}
-            error={writeError}
-            onCancel={() => setEditingCard(null)}
-          />
-        ) : isBasicDeck ? (
-          <CardForm
-            title="Edit Card"
-            initialData={{
-              front: editingCard.front,
-              back: editingCard.back,
-            }}
-            onSubmit={handleEditCard}
-            error={writeError}
-            onCancel={() => setEditingCard(null)}
-          />
-        ) : null)}
+      {editingWordNote && isWordDeck ? (
+        <WordNoteForm
+          title="Edit Word"
+          alwaysShowDetails
+          targetLanguageId={editingWordFields?.target_language_id}
+          nativeLanguageId={editingWordFields?.native_language_id}
+          initialData={editingWordFields ?? undefined}
+          onSubmit={handleEditWordNote}
+          error={writeError}
+          onCancel={() => setEditingWordNote(null)}
+        />
+      ) : editingCard && isBasicDeck ? (
+        <CardForm
+          title="Edit Card"
+          initialData={{
+            front: editingCard.front,
+            back: editingCard.back,
+          }}
+          onSubmit={handleEditCard}
+          error={writeError}
+          onCancel={() => setEditingCard(null)}
+        />
+      ) : null}
 
-      {viewingWordCard && viewingWordFields && (
+      {viewingWordNote && viewingWordFields && (
         <WordNoteView
           fields={viewingWordFields}
-          onClose={() => setViewingWordCard(null)}
+          onClose={() => setViewingWordNote(null)}
           onEdit={() => {
-            setViewingWordCard(null);
-            setEditingCard(viewingWordCard);
+            setViewingWordNote(null);
+            setEditingWordNote(viewingWordNote);
           }}
         />
       )}
@@ -668,9 +651,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       )}
 
       {/* Remove deck membership confirmation */}
-      {noteToRemove && (
+      {noteIdToRemove && (
         <div
-          onClick={() => setNoteToRemove(null)}
+          onClick={() => setNoteIdToRemove(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
         >
           <UICard
@@ -705,7 +688,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setNoteToRemove(null)}
+                  onClick={() => setNoteIdToRemove(null)}
                   className="cursor-pointer"
                 >
                   Cancel

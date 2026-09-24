@@ -32,10 +32,10 @@ interface WordNoteListProps {
   notes: UserNoteRecord[];
   cards: Card[];
   dueCount: number;
-  onViewNote: (card: Card) => void;
+  onViewNote: (note: UserNoteRecord) => void;
   onViewDetails: (note: UserNoteRecord) => void;
-  onEditWord: (card: Card) => void;
-  onRemoveWord: (card: Card) => void;
+  onEditWord: (note: UserNoteRecord) => void;
+  onRemoveWord: (note: UserNoteRecord) => void;
   canEdit: boolean;
   canRemove: boolean;
   onAddWord: () => void;
@@ -178,18 +178,14 @@ export function WordNoteList({
                       className="min-w-0 truncate font-medium"
                       title={row.word}
                     >
-                      {row.actionCard ? (
-                        <button
-                          type="button"
-                          className="max-w-full cursor-pointer truncate text-left hover:text-primary"
-                          onClick={() => onViewNote(row.actionCard!)}
-                          title="View Note"
-                        >
-                          {row.word}
-                        </button>
-                      ) : (
-                        row.word
-                      )}
+                      <button
+                        type="button"
+                        className="max-w-full cursor-pointer truncate text-left hover:text-primary"
+                        onClick={() => onViewNote(row.note)}
+                        title="View Word"
+                      >
+                        {row.word}
+                      </button>
                     </div>
                     <div
                       role="cell"
@@ -277,34 +273,32 @@ export function WordNoteList({
                           className="flex min-w-0 items-center justify-end @[848px]:justify-center"
                         >
                           <div className="flex items-center gap-1.5">
-                            {row.actionCard && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
+                              onClick={() => onViewNote(row.note)}
+                              title="View Word"
+                            >
+                              <Eye className="size-3.5" />
+                            </Button>
+                            {canEdit && (
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
-                                onClick={() => onViewNote(row.actionCard!)}
-                                title="View Note"
-                              >
-                                <Eye className="size-3.5" />
-                              </Button>
-                            )}
-                            {canEdit && row.actionCard && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
-                                onClick={() => onEditWord(row.actionCard!)}
-                                title="Edit Note"
+                                onClick={() => onEditWord(row.note)}
+                                title="Edit Word"
                               >
                                 <Edit className="size-3.5" />
                               </Button>
                             )}
-                            {canRemove && row.actionCard && (
+                            {canRemove && (
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => onRemoveWord(row.actionCard!)}
+                                onClick={() => onRemoveWord(row.note)}
                                 title="Remove word from this deck"
                               >
                                 <Unlink className="size-3.5" />

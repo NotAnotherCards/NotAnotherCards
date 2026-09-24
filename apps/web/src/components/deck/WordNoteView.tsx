@@ -22,11 +22,11 @@ export function WordNoteView({ fields, onClose, onEdit }: WordNoteViewProps) {
     'min-h-9 rounded-lg border border-input bg-background px-3 py-2 text-sm whitespace-pre-wrap break-words';
 
   return (
-    <WordNoteDialog label="View Note" onClose={onClose}>
+    <WordNoteDialog label="View Word" onClose={onClose}>
       <CardHeader className="border-b border-border/40 pb-4">
         <CardTitle className="text-lg font-bold flex items-center gap-2">
           <Eye className="size-4.5 text-primary" />
-          View Note
+          View Word
         </CardTitle>
         <CardDescription>All details saved for this word.</CardDescription>
       </CardHeader>
@@ -58,7 +58,7 @@ export function WordNoteView({ fields, onClose, onEdit }: WordNoteViewProps) {
         </Button>
         <Button type="button" className="flex-1 gap-1.5" onClick={onEdit}>
           <Pencil className="size-3.5" />
-          Edit Note
+          Edit Word
         </Button>
       </CardFooter>
     </WordNoteDialog>

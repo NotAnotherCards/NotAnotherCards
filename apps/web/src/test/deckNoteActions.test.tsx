@@ -132,7 +132,7 @@ describe('deck note actions', () => {
     ]);
 
     render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTitle('Edit Note'));
+    fireEvent.click(screen.getByTitle('Edit Word'));
     fireEvent.change(screen.getByLabelText(/^word$/i), {
       target: { value: 'Hunde' },
     });

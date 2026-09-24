@@ -34,24 +34,28 @@ export const LANGUAGES = [
   {
     value: '00000000-0000-0000-0000-000000000001',
     name: 'English',
+    code: 'EN',
     flag: '🇺🇸',
     genders: [],
   },
   {
     value: '00000000-0000-0000-0000-000000000002',
     name: 'Spanish',
+    code: 'ES',
     flag: '🇪🇸',
     genders: ['el', 'la'],
   },
   {
     value: '00000000-0000-0000-0000-000000000003',
     name: 'German',
+    code: 'DE',
     flag: '🇩🇪',
     genders: ['der', 'die', 'das'],
   },
   {
     value: '00000000-0000-0000-0000-000000000004',
     name: 'Russian',
+    code: 'RU',
     flag: '🇷🇺',
     genders: ['м.', 'ж.', 'ср.'],
   },

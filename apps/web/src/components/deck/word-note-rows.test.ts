@@ -41,7 +41,7 @@ const cards: Card[] = [
 ];
 
 describe('word note rows', () => {
-  it('creates one display row and uses the word card for word actions', () => {
+  it('creates one display row with the correct word-card badge', () => {
     const row = toWordRow(note, cards);
 
     expect(row).toMatchObject({
@@ -49,8 +49,20 @@ describe('word note rows', () => {
       translation: 'dog',
       detailsCount: 2,
       badges: ['DE → RU'],
-      actionCard: cards[0],
     });
+  });
+
+  it('labels example cards with the native-language translation', () => {
+    const row = toWordRow(note, [
+      ...cards,
+      {
+        ...cards[0],
+        id: 'example-card-1',
+        template_key: 'example-to-translation',
+      },
+    ]);
+
+    expect(row?.badges).toContain('Example → RU');
   });
 
   it('counts an example and its translation as one extra detail', () => {

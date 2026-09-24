@@ -423,7 +423,7 @@ describe('WordNoteList Component', () => {
     expect(screen.getByText('dog')).toBeInTheDocument();
     expect(screen.getAllByText(/DE → RU/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/RU → DE/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Example → DE/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Example → RU/).length).toBeGreaterThan(0);
     expect(
       screen
         .getAllByRole('button', { name: 'View 3 details' })
@@ -440,7 +440,7 @@ describe('WordNoteList Component', () => {
     expect(screen.getByRole('dialog', { name: 'Cards' })).toBeInTheDocument();
     expect(screen.queryByText('Audio')).toBeNull();
     expect(screen.getByLabelText('3 cards').textContent).toContain(
-      'DE → RURU → DEExample → DE',
+      'DE → RURU → DEExample → RU',
     );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Cards' })).toBeNull();
@@ -490,7 +490,7 @@ describe('WordNoteList Component', () => {
     expect(screen.getByText('1 Cards')).toBeInTheDocument();
   });
 
-  it('routes view, edit, and removal through the word-to-translation sibling', () => {
+  it('routes view, edit, and removal through the word note', () => {
     const onViewNote = vi.fn();
     const onViewDetails = vi.fn();
     const onEditWord = vi.fn();
@@ -510,17 +510,45 @@ describe('WordNoteList Component', () => {
       />,
     );
 
-    fireEvent.click(screen.getAllByTitle('View Note')[0]);
+    fireEvent.click(screen.getAllByTitle('View Word')[0]);
     fireEvent.click(
       screen.getAllByRole('button', { name: 'View 3 details' })[0],
     );
-    fireEvent.click(screen.getByTitle('Edit Note'));
+    fireEvent.click(screen.getByTitle('Edit Word'));
     fireEvent.click(screen.getByTitle('Remove word from this deck'));
 
-    expect(onViewNote).toHaveBeenCalledWith(wordCards[0]);
+    expect(onViewNote).toHaveBeenCalledWith(wordNote);
     expect(onViewDetails).toHaveBeenCalledWith(wordNote);
-    expect(onEditWord).toHaveBeenCalledWith(wordCards[0]);
-    expect(onRemoveWord).toHaveBeenCalledWith(wordCards[0]);
+    expect(onEditWord).toHaveBeenCalledWith(wordNote);
+    expect(onRemoveWord).toHaveBeenCalledWith(wordNote);
+  });
+
+  it('keeps word actions available when the word has no cards', () => {
+    const onViewNote = vi.fn();
+    const onEditWord = vi.fn();
+    const onRemoveWord = vi.fn();
+    render(
+      <WordNoteList
+        notes={[wordNote]}
+        cards={[]}
+        dueCount={0}
+        onViewNote={onViewNote}
+        onViewDetails={vi.fn()}
+        onEditWord={onEditWord}
+        onRemoveWord={onRemoveWord}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByTitle('View Word')[0]);
+    fireEvent.click(screen.getByTitle('Edit Word'));
+    fireEvent.click(screen.getByTitle('Remove word from this deck'));
+
+    expect(onViewNote).toHaveBeenCalledWith(wordNote);
+    expect(onEditWord).toHaveBeenCalledWith(wordNote);
+    expect(onRemoveWord).toHaveBeenCalledWith(wordNote);
   });
 });
 
