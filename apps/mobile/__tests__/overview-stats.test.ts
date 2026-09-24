@@ -1,4 +1,4 @@
-import { overviewStats } from '@/lib/overview-stats';
+import { dailyGoals, overviewStats } from '@/lib/overview-stats';
 
 const DAY = 86_400_000;
 // Noon UTC, so "yesterday" and "today" are unambiguous UTC days.
@@ -19,10 +19,14 @@ const review = (
 
 describe('overviewStats', () => {
   it('is all zeros for a new account', () => {
-    expect(overviewStats([], [], [], now)).toEqual({
+    expect(overviewStats([], [], [], now)).toMatchObject({
       dictionarySize: 0,
       streak: 0,
       wordsLearned: 0,
+      challenges: [
+        { code: 'daily-review', current: 0, target: 20, completed: false },
+        { code: 'new-vocabulary', current: 0, target: 5, completed: false },
+      ],
     });
   });
 
@@ -63,5 +67,53 @@ describe('overviewStats', () => {
     expect(() =>
       overviewStats(events, [card('c1', 'n1')], [note('n1')], now),
     ).toThrow('Unsupported review rating');
+  });
+});
+
+describe('today in the daily challenges', () => {
+  it("counts today's reviews and today's new notes, not yesterday's", () => {
+    const cards = [card('c1', 'n1')];
+    const notes = [
+      { id: 'n1', created_at: now - 60_000 },
+      { id: 'n2', created_at: now - DAY },
+    ];
+    const events = [
+      review('r1', 'c1', 3, now - 60_000),
+      review('r2', 'c1', 1, now - 30_000),
+      review('r3', 'c1', 3, now - DAY),
+    ];
+    const [reviews, vocabulary] = overviewStats(
+      events,
+      cards,
+      notes,
+      now,
+    ).challenges;
+    // A failed answer still counts: one review, one point
+    expect(reviews.current).toBe(2);
+    expect(vocabulary.current).toBe(1);
+  });
+});
+
+describe('dailyGoals', () => {
+  it("uses web's copy, progress and remaining count", () => {
+    const [review, vocabulary] = dailyGoals([
+      { code: 'daily-review', current: 12, target: 20, completed: false },
+      { code: 'new-vocabulary', current: 7, target: 5, completed: true },
+    ]);
+    expect(review).toMatchObject({
+      title: 'Daily Review',
+      description: 'Review at least 20 words due today',
+      progress: '12 / 20',
+      percent: 60,
+      reward: '8 remaining',
+    });
+    // Past the target: the bar stops full, the goal reads completed
+    expect(vocabulary).toMatchObject({
+      title: 'New Vocabulary',
+      description: 'Add 5 new words to your personal dictionary',
+      percent: 100,
+      completed: true,
+      reward: 'Completed',
+    });
   });
 });

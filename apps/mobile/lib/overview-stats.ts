@@ -11,17 +11,57 @@ import {
 import {
   selectLearnedNoteCount,
   selectStreakActivity,
+  selectTodayChallengeActivity,
   type ActivityCard,
   type ActivityNote,
   type ActivityReviewEvent,
+  type DailyChallengeProgress,
 } from '@repo/offline-db/activity';
 
 // Web's Overview tiles, less "Today's Reviews": that one is the due count,
-// which the review overview above the tiles already shows.
+// which the review overview above the tiles already shows. Plus today's
+// daily challenges, counted locally only: web also asks the server, but
+// review events sync between devices, and the phone must work offline.
 export interface OverviewStats {
   dictionarySize: number;
   streak: number;
   wordsLearned: number;
+  challenges: readonly DailyChallengeProgress[];
+}
+
+// Web's copy for each challenge (Overview's dailyGoals).
+export interface DailyGoal {
+  code: DailyChallengeProgress['code'];
+  title: string;
+  description: string;
+  progress: string;
+  percent: number;
+  completed: boolean;
+  reward: string;
+}
+
+export function dailyGoals(
+  challenges: readonly DailyChallengeProgress[],
+): DailyGoal[] {
+  return challenges.map((challenge) => {
+    const isReview = challenge.code === 'daily-review';
+    return {
+      code: challenge.code,
+      title: isReview ? 'Daily Review' : 'New Vocabulary',
+      description: isReview
+        ? `Review at least ${challenge.target} words due today`
+        : `Add ${challenge.target} new words to your personal dictionary`,
+      progress: `${challenge.current} / ${challenge.target}`,
+      percent: Math.min(
+        100,
+        Math.round((challenge.current / challenge.target) * 100),
+      ),
+      completed: challenge.completed,
+      reward: challenge.completed
+        ? 'Completed'
+        : `${Math.max(0, challenge.target - challenge.current)} remaining`,
+    };
+  });
 }
 
 export function overviewStats(
@@ -34,6 +74,8 @@ export function overviewStats(
     dictionarySize: cards.length,
     streak: selectStreakActivity(reviewEvents, now).currentStreak,
     wordsLearned: selectLearnedNoteCount(reviewEvents, cards, notes),
+    challenges: selectTodayChallengeActivity(reviewEvents, notes, now)
+      .challenges,
   };
 }
 

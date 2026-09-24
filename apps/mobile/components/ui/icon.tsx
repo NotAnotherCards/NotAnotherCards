@@ -5,9 +5,11 @@ import {
   Flame,
   Globe,
   GraduationCap,
+  Info,
   Library,
   LogOut,
   Settings,
+  Sparkles,
   User,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -29,8 +31,10 @@ export const BookOpenIcon = withClassName(BookOpen);
 export const FlameIcon = withClassName(Flame);
 export const GlobeIcon = withClassName(Globe);
 export const GraduationCapIcon = withClassName(GraduationCap);
+export const InfoIcon = withClassName(Info);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
 export const SettingsIcon = withClassName(Settings);
+export const SparklesIcon = withClassName(Sparkles);
 export const UserIcon = withClassName(User);
 export type { LucideIcon };

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DatabaseManager } from '@remelondb/core';
 import { authClient } from '@/lib/auth-client';
@@ -9,11 +15,20 @@ import {
   BookOpenIcon,
   FlameIcon,
   GraduationCapIcon,
+  InfoIcon,
   LibraryIcon,
   SettingsIcon,
+  SparklesIcon,
   type LucideIcon,
 } from '@/components/ui/icon';
-import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -27,7 +42,7 @@ import {
   loadLastReviewDeckId,
 } from '@/lib/review-preferences';
 import { useReviewOverview } from '@/lib/review';
-import { useOverviewStats } from '@/lib/overview-stats';
+import { dailyGoals, useOverviewStats } from '@/lib/overview-stats';
 
 // Web's dashboard strip: Overview, My Library, Profile & Settings, same
 // icons. Tab state lives here like web's, no native tab navigator. The
@@ -229,39 +244,143 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
   ];
 
   return (
-    // One row of three: a third of a phone has room for icon, value and
-    // title, not for web's description line, which screen readers still get.
-    <View role="list" className="flex-row gap-3">
-      {tiles.map(
-        ({
-          title,
-          value,
-          description,
-          icon: Icon,
-          iconClass,
-          iconBoxClass,
-        }) => (
-          <Card
-            key={title}
-            role="listitem"
-            accessible
-            accessibilityLabel={`${title}: ${value}. ${description}`}
-            className="flex-1 gap-2 px-3 py-3"
-          >
-            <View className={`self-start rounded-xl p-2 ${iconBoxClass}`}>
-              <Icon size={18} className={iconClass} />
-            </View>
-            <CardTitle
-              className="text-lg"
-              numberOfLines={1}
-              adjustsFontSizeToFit
+    <View className="gap-4">
+      {/* One row of three: a third of a phone has room for icon, value
+          and title, not for web's description line, which screen readers
+          still get. */}
+      <View role="list" className="flex-row gap-3">
+        {tiles.map(
+          ({
+            title,
+            value,
+            description,
+            icon: Icon,
+            iconClass,
+            iconBoxClass,
+          }) => (
+            <Card
+              key={title}
+              role="listitem"
+              accessible
+              accessibilityLabel={`${title}: ${value}. ${description}`}
+              className="flex-1 gap-2 px-3 py-3"
             >
-              {value}
-            </CardTitle>
-            <CardDescription className="text-xs">{title}</CardDescription>
-          </Card>
-        ),
-      )}
+              <View className={`self-start rounded-xl p-2 ${iconBoxClass}`}>
+                <Icon size={18} className={iconClass} />
+              </View>
+              <CardTitle
+                className="text-lg"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {value}
+              </CardTitle>
+              <CardDescription className="text-xs">{title}</CardDescription>
+            </Card>
+          ),
+        )}
+      </View>
+      <DailyGoalsCard challenges={stats.challenges} />
     </View>
+  );
+}
+
+// Web's Daily Learning Goals card: the two challenges with web's copy,
+// bar colours and footnote. The track takes the page colour: on mobile a
+// card is the muted tone already (docs/design.md), so web's muted track
+// would not show.
+function DailyGoalsCard({
+  challenges,
+}: {
+  challenges: Parameters<typeof dailyGoals>[0];
+}) {
+  // Web prints the rules under the goals every time; on a phone they are
+  // read once, so they open over the screen from the info button and give
+  // the card's space back when closed.
+  const [showRules, setShowRules] = useState(false);
+
+  return (
+    <Card className="gap-4 py-4">
+      <CardHeader className="gap-1 px-4">
+        <View className="flex-row items-center gap-2">
+          <SparklesIcon size={16} className="text-amber-500" />
+          <CardTitle className="flex-1 text-base">
+            Daily Learning Goals
+          </CardTitle>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="How daily goals count"
+            onPress={() => setShowRules(true)}
+            hitSlop={12}
+          >
+            <InfoIcon size={18} className="text-muted-foreground" />
+          </Pressable>
+        </View>
+        <CardDescription className="text-xs">
+          Complete daily tasks to unlock achievements and progress your fluency.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="gap-4 px-4">
+        {dailyGoals(challenges).map((goal) => (
+          <View key={goal.code} className="gap-1.5">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm font-semibold">{goal.title}</Text>
+              <Text className="text-xs text-muted-foreground">
+                {goal.progress}
+              </Text>
+            </View>
+            <Text className="text-xs text-muted-foreground">
+              {goal.description}
+            </Text>
+            <Progress
+              value={goal.percent}
+              accessibilityLabel={`${goal.title} progress`}
+              className="h-1.5 bg-background"
+              indicatorClassName="bg-amber-500"
+            />
+            <View
+              className={`self-end rounded-full px-2 py-0.5 ${
+                goal.completed ? 'bg-emerald-500/10' : 'bg-amber-500/10'
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  goal.completed
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-amber-600 dark:text-amber-400'
+                }`}
+              >
+                {goal.reward}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </CardContent>
+      {showRules && (
+        <Modal
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowRules(false)}
+        >
+          {/* An info panel, not a dialog: a tap anywhere closes it, like the
+              back button. */}
+          <Pressable
+            accessibilityLabel="Close"
+            className="flex-1 items-center justify-center bg-black/50 p-6"
+            onPress={() => setShowRules(false)}
+          >
+            <Card className="w-full gap-3 px-5 py-5">
+              <CardTitle className="text-base">How daily goals count</CardTitle>
+              <Text className="text-sm text-muted-foreground">
+                One review earns one point regardless of rating.
+              </Text>
+              <Text className="text-sm text-muted-foreground">
+                Daily challenges and streaks reset at 00:00 UTC.
+              </Text>
+            </Card>
+          </Pressable>
+        </Modal>
+      )}
+    </Card>
   );
 }

@@ -40,16 +40,23 @@ jest.mock('../lib/database-provider', () => ({
 jest.mock('../lib/review', () => ({
   useReviewOverview: () => mockReviewOverview,
 }));
+const NO_STATS = {
+  dictionarySize: 0,
+  streak: 0,
+  wordsLearned: 0,
+  challenges: [
+    { code: 'daily-review', current: 0, target: 20, completed: false },
+    { code: 'new-vocabulary', current: 0, target: 5, completed: false },
+  ],
+};
 let mockOverviewStats = {
-  stats: { dictionarySize: 0, streak: 0, wordsLearned: 0 } as {
-    dictionarySize: number;
-    streak: number;
-    wordsLearned: number;
-  } | null,
+  stats: { ...NO_STATS } as typeof NO_STATS | null,
   isLoading: false,
   error: null as Error | null,
 };
+// Only the hook is faked: dailyGoals is the real copy the card renders.
 jest.mock('../lib/overview-stats', () => ({
+  ...jest.requireActual('../lib/overview-stats'),
   useOverviewStats: () => mockOverviewStats,
 }));
 
@@ -72,8 +79,10 @@ jest.mock('../components/ui/icon', () => ({
   BookOpenIcon: () => null,
   FlameIcon: () => null,
   GraduationCapIcon: () => null,
+  InfoIcon: () => null,
   LibraryIcon: () => null,
   SettingsIcon: () => null,
+  SparklesIcon: () => null,
 }));
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -96,7 +105,7 @@ describe('Dashboard screen', () => {
       error: null,
     };
     mockOverviewStats = {
-      stats: { dictionarySize: 0, streak: 0, wordsLearned: 0 },
+      stats: { ...NO_STATS },
       isLoading: false,
       error: null,
     };
@@ -204,6 +213,7 @@ describe('Dashboard screen', () => {
 
   it("shows web's three stat tiles on the Overview", () => {
     mockOverviewStats.stats = {
+      ...NO_STATS,
       dictionarySize: 1540,
       streak: 1,
       wordsLearned: 12,
@@ -220,6 +230,50 @@ describe('Dashboard screen', () => {
     expect(getByText('1 Day')).toBeTruthy();
     expect(getByText('Words Learned')).toBeTruthy();
     expect(getByText('12')).toBeTruthy();
+  });
+
+  it("shows today's goals with web's copy under the tiles", () => {
+    mockOverviewStats.stats = {
+      ...NO_STATS,
+      challenges: [
+        { code: 'daily-review', current: 20, target: 20, completed: true },
+        { code: 'new-vocabulary', current: 2, target: 5, completed: false },
+      ],
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, getByLabelText } = render(<Dashboard />);
+    expect(getByText('Daily Learning Goals')).toBeTruthy();
+    expect(getByText('20 / 20')).toBeTruthy();
+    expect(getByText('Completed')).toBeTruthy();
+    expect(getByText('2 / 5')).toBeTruthy();
+    expect(getByText('3 remaining')).toBeTruthy();
+    expect(
+      getByLabelText('New Vocabulary progress').props.accessibilityValue,
+    ).toMatchObject({ now: 40 });
+  });
+
+  it('opens the goal rules over the screen from the info button', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByLabelText, getByText, queryByText } = render(<Dashboard />);
+    expect(queryByText(/One review earns one point/)).toBeNull();
+
+    fireEvent.press(getByLabelText('How daily goals count'));
+    expect(getByText(/One review earns one point/)).toBeTruthy();
+    // A tap anywhere closes it: on the panel or beside it
+    fireEvent.press(getByText(/One review earns one point/));
+    expect(queryByText(/One review earns one point/)).toBeNull();
+
+    fireEvent.press(getByLabelText('How daily goals count'));
+    fireEvent.press(getByLabelText('Close'));
+    expect(queryByText(/One review earns one point/)).toBeNull();
   });
 
   it('reports a statistics error and keeps Start Review usable', () => {
