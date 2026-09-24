@@ -1,28 +1,7 @@
 {
-  "common": {
-    "save": "Сохранить",
-    "cancel": "Отмена",
-    "loading": "Загрузка...",
-    "retry": "Повторить",
-    "close": "Закрыть",
-    "previous": "Назад",
-    "next": "Далее",
-    "page": "Страница {{page}}"
-  },
   "preferences": {
     "title": "Настройки",
-    "language": "Язык",
-    "systemDefault": "По умолчанию"
-  },
-  "locales": {
-    "en": "Английский",
-    "es": "Испанский",
-    "de": "Немецкий"
-  },
-  "nav": {
-    "home": "Главная",
-    "login": "Вход",
-    "logout": "Выход"
+    "language": "Язык"
   },
   "auth": {
     "error": {

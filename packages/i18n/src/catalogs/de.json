@@ -1,28 +1,7 @@
 {
-  "common": {
-    "save": "Speichern",
-    "cancel": "Abbrechen",
-    "loading": "Wird geladen...",
-    "retry": "Wiederholen",
-    "close": "Schließen",
-    "previous": "Zurück",
-    "next": "Weiter",
-    "page": "Seite {{page}}"
-  },
   "preferences": {
     "title": "Einstellungen",
-    "language": "Sprache",
-    "systemDefault": "Systemstandard"
-  },
-  "locales": {
-    "en": "Englisch",
-    "es": "Spanisch",
-    "de": "Deutsch"
-  },
-  "nav": {
-    "home": "Startseite",
-    "login": "Anmelden",
-    "logout": "Abmelden"
+    "language": "Sprache"
   },
   "auth": {
     "error": {
