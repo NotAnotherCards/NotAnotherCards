@@ -249,7 +249,7 @@ export function WordNoteForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>{wordLabel}</FieldLabel>
-                      <textarea
+                      <input
                         {...field}
                         id={field.name}
                         placeholder="the word you are learning"
@@ -257,7 +257,7 @@ export function WordNoteForm({
                         aria-describedby={
                           fieldState.invalid ? 'word-error' : undefined
                         }
-                        className={textAreaClass(fieldState.invalid)}
+                        className={inputClass(fieldState.invalid)}
                         autoFocus
                       />
                       <FieldError id="word-error" errors={[fieldState.error]} />
@@ -273,7 +273,7 @@ export function WordNoteForm({
                       <FieldLabel htmlFor={field.name}>
                         {translationLabel}
                       </FieldLabel>
-                      <textarea
+                      <input
                         {...field}
                         id={field.name}
                         placeholder="what it means in your language"
@@ -281,7 +281,7 @@ export function WordNoteForm({
                         aria-describedby={
                           fieldState.invalid ? 'translation-error' : undefined
                         }
-                        className={textAreaClass(fieldState.invalid)}
+                        className={inputClass(fieldState.invalid)}
                       />
                       <FieldError
                         id="translation-error"

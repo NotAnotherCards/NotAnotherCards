@@ -40,6 +40,16 @@ describe('WordNoteForm', () => {
     expect(screen.queryByLabelText(/language/i)).toBeNull();
   });
 
+  it('keeps word and translation single-line while examples stay multiline', () => {
+    renderForm();
+
+    expect(screen.getByLabelText(/^word( in \w+)?$/i).tagName).toBe('INPUT');
+    expect(screen.getByLabelText(/translation/i).tagName).toBe('INPUT');
+
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+    expect(screen.getByLabelText(/^example$/i).tagName).toBe('TEXTAREA');
+  });
+
   it('will not submit without a word or a translation', async () => {
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
