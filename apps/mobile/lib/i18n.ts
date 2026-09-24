@@ -35,6 +35,7 @@ void i18n.use(initReactI18next).init({
   lng: loadSavedLocale(),
   fallbackLng: defaultLocale,
   supportedLngs: [...supportedLocales],
+  showSupportNotice: false, // Suppress the Locize promotional banner in console
 
   interpolation: {
     escapeValue: false, // React Native handles escaping
