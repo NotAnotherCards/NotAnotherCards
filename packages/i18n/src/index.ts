@@ -1,3 +1,4 @@
+import 'i18next';
 import en from './catalogs/en.json';
 import es from './catalogs/es.json';
 import de from './catalogs/de.json';
@@ -26,6 +27,15 @@ export const localeMetadata: Record<
 };
 
 export type I18nKeys = typeof en;
+
+declare module 'i18next' {
+  interface CustomTypeOptions {
+    defaultNS: 'translation';
+    resources: {
+      translation: I18nKeys;
+    };
+  }
+}
 
 export function isSupportedLocale(locale: string): locale is SupportedLocale {
   return supportedLocales.includes(locale as SupportedLocale);
