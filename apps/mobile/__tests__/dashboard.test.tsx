@@ -10,6 +10,17 @@ import {
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
 const mockManager = { tag: 'manager' };
+let mockSyncController: {
+  state: {
+    status: string;
+    lastSyncAt: null;
+    error: null;
+    cause: null;
+    lastResult: null;
+  };
+  subscribe: () => () => void;
+  syncNow: jest.Mock;
+} | null = null;
 let mockReviewOverview = {
   dueDeckIds: new Set<string>(),
   dueCount: 0,
@@ -21,7 +32,10 @@ jest.mock('../lib/auth-client', () => ({
   authClient: { useSession: () => mockUseSession() },
 }));
 jest.mock('../lib/database-provider', () => ({
-  useSessionDatabase: () => ({ manager: mockManager }),
+  useSessionDatabase: () => ({
+    manager: mockManager,
+    syncController: mockSyncController,
+  }),
 }));
 jest.mock('../lib/review', () => ({
   useReviewOverview: () => mockReviewOverview,
@@ -86,6 +100,7 @@ describe('Dashboard screen', () => {
       isLoading: false,
       error: null,
     };
+    mockSyncController = null;
   });
 
   it('redirects to login when there is no session', () => {
@@ -153,8 +168,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    expect(getByText('3 cards due')).toBeTruthy();
-    fireEvent.press(getByText('Start Review'));
+    fireEvent.press(getByText('Start Review · 3 due'));
 
     expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
   });
@@ -181,7 +195,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Start Review'));
+    fireEvent.press(getByText('Start Review · 3 due'));
 
     expect(getByText('deck-list')).toBeTruthy();
     expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
@@ -224,11 +238,47 @@ describe('Dashboard screen', () => {
     expect(
       getByText(/Could not load your statistics: Unsupported review rating: 9/),
     ).toBeTruthy();
-    expect(getByText('2 cards due')).toBeTruthy();
     expect(
-      getByRole('button', { name: 'Start Review' }).props.accessibilityState
-        .disabled,
+      getByRole('button', { name: 'Start Review · 2 due' }).props
+        .accessibilityState.disabled,
     ).toBeFalsy();
+  });
+
+  it('shows the sync status next to the greeting, with a retry after a failure', () => {
+    mockSyncController = {
+      state: {
+        status: 'error',
+        lastSyncAt: null,
+        error: null,
+        cause: null,
+        lastResult: null,
+      },
+      subscribe: () => () => {},
+      syncNow: jest.fn(),
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('Jane Doe')).toBeTruthy();
+    expect(getByText('Sync failed')).toBeTruthy();
+    fireEvent.press(getByText('Retry'));
+    expect(mockSyncController.syncNow).toHaveBeenCalled();
+  });
+
+  it('keeps Start Review to the Overview tab', () => {
+    mockReviewOverview.dueCount = 4;
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('Start Review · 4 due')).toBeTruthy();
+    fireEvent.press(getByText('My Library'));
+    expect(queryByText(/Start Review/)).toBeNull();
   });
 
   it('does not clear the saved deck while queries are loading', () => {

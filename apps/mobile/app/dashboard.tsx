@@ -13,18 +13,14 @@ import {
   SettingsIcon,
   type LucideIcon,
 } from '@/components/ui/icon';
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { DeckList } from '@/components/deck-list';
 import { RequireSession } from '@/components/require-session';
 import { Settings } from '@/components/settings';
+import { SyncStatus } from '@/components/sync-status';
 import { useSessionDatabase } from '@/lib/database-provider';
 import {
   clearLastReviewDeckId,
@@ -86,21 +82,17 @@ export default function Dashboard() {
         >
           {tab === 'overview' && (
             <View className="gap-4">
-              {/* The email stays in the Settings account header; the first
-                  screen is the one others see over your shoulder. */}
-              <Text className="text-base">
-                Welcome,{' '}
-                <Text className="font-semibold">{session?.user.name}</Text>!
-              </Text>
+              <View className="flex-row items-center justify-between gap-3">
+                {/* The email stays in the Settings account header; the first
+                    screen is the one others see over your shoulder. */}
+                <Text className="flex-1 text-base" numberOfLines={1}>
+                  Welcome,{' '}
+                  <Text className="font-semibold">{session?.user.name}</Text>!
+                </Text>
+                <SyncStatus />
+              </View>
               {manager ? (
-                <>
-                  <ReviewOverview
-                    manager={manager}
-                    userId={session?.user.id}
-                    onChooseDeck={() => setTab('library')}
-                  />
-                  <OverviewStatTiles manager={manager} />
-                </>
+                <OverviewStatTiles manager={manager} />
               ) : (
                 <ActivityIndicator accessibilityLabel="Loading review overview" />
               )}
@@ -109,12 +101,25 @@ export default function Dashboard() {
           {tab === 'library' && <DeckList />}
           {tab === 'settings' && <Settings />}
         </ScrollView>
+        {/* Start Review sits under the thumb, below the scrolling content. */}
+        {tab === 'overview' && manager && (
+          <View
+            className="border-t border-border bg-card px-6 pt-3"
+            style={{ paddingBottom: insets.bottom + 12 }}
+          >
+            <StartReviewBar
+              manager={manager}
+              userId={session?.user.id}
+              onChooseDeck={() => setTab('library')}
+            />
+          </View>
+        )}
       </View>
     </RequireSession>
   );
 }
 
-function ReviewOverview({
+function StartReviewBar({
   manager,
   userId,
   onChooseDeck,
@@ -145,15 +150,14 @@ function ReviewOverview({
   };
 
   return (
-    <View className="gap-3">
-      <Text className={error ? 'text-destructive' : 'text-muted-foreground'}>
-        {error
-          ? `Could not load cards due: ${error.message}`
-          : isLoading
-            ? 'Loading cards due…'
-            : `${dueCount} ${dueCount === 1 ? 'card' : 'cards'} due`}
-      </Text>
-      {/* The same button as each library row, so the two read as one action. */}
+    <View className="gap-2">
+      {error && (
+        <Text className="text-sm text-destructive">
+          Could not load cards due: {error.message}
+        </Text>
+      )}
+      {/* The same button as each library row, so the two read as one
+          action; the due count rides along instead of a line of its own. */}
       <Button
         variant="outline"
         size="lg"
@@ -162,13 +166,17 @@ function ReviewOverview({
         onPress={startReview}
       >
         <BookOpenIcon size={18} className="text-foreground" />
-        <Text>Start Review</Text>
+        <Text>
+          {isLoading || error
+            ? 'Start Review'
+            : `Start Review · ${dueCount} due`}
+        </Text>
       </Button>
     </View>
   );
 }
 
-// Web's Overview stat tiles, with web's titles, descriptions and colours.
+// Web's Overview stat tiles, with web's titles and colours.
 // The colours are raw palette values like web's, which docs/design.md rules
 // out; both clients move to semantic tokens together (#396). Full class
 // names, not concatenated: nativewind only sees classes written out whole.
@@ -221,7 +229,9 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
   ];
 
   return (
-    <View role="list" className="gap-3">
+    // One row of three: a third of a phone has room for icon, value and
+    // title, not for web's description line, which screen readers still get.
+    <View role="list" className="flex-row gap-3">
       {tiles.map(
         ({
           title,
@@ -231,19 +241,24 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
           iconClass,
           iconBoxClass,
         }) => (
-          <Card key={title} role="listitem" className="py-4">
-            <CardHeader className="flex-row items-start justify-between gap-3">
-              <View className="flex-1 gap-1">
-                <CardDescription>{title}</CardDescription>
-                <CardTitle className="text-2xl">{value}</CardTitle>
-                <CardDescription className="text-xs">
-                  {description}
-                </CardDescription>
-              </View>
-              <View className={`rounded-xl p-2 ${iconBoxClass}`}>
-                <Icon size={20} className={iconClass} />
-              </View>
-            </CardHeader>
+          <Card
+            key={title}
+            role="listitem"
+            accessible
+            accessibilityLabel={`${title}: ${value}. ${description}`}
+            className="flex-1 gap-2 px-3 py-3"
+          >
+            <View className={`self-start rounded-xl p-2 ${iconBoxClass}`}>
+              <Icon size={18} className={iconClass} />
+            </View>
+            <CardTitle
+              className="text-lg"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {value}
+            </CardTitle>
+            <CardDescription className="text-xs">{title}</CardDescription>
           </Card>
         ),
       )}
