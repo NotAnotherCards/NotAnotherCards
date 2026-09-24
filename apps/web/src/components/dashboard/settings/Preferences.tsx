@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/card';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { ThemeChanger } from '@/components/ThemeChanger';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { authClient } from '@/lib/auth-client';
@@ -16,6 +15,11 @@ import {
   saveReviewPreferences,
   type ReviewPreferences,
 } from '@/lib/review-preferences';
+import {
+  getUiPreferences,
+  saveUiPreferences,
+  type UiPreferences,
+} from '@/lib/ui-preferences';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -25,14 +29,23 @@ export function Preferences() {
   const [reviewPreferences, setReviewPreferences] = useState(() =>
     getReviewPreferences(session?.user.id),
   );
+  const [uiPreferences, setUiPreferences] = useState(() =>
+    getUiPreferences(session?.user.id),
+  );
 
   useEffect(() => {
     setReviewPreferences(getReviewPreferences(session?.user.id));
+    setUiPreferences(getUiPreferences(session?.user.id));
   }, [session?.user.id]);
 
   const updateReviewPreferences = (nextPreferences: ReviewPreferences) => {
     setReviewPreferences(nextPreferences);
     saveReviewPreferences(session?.user.id, nextPreferences);
+  };
+
+  const updateUiPreferences = (nextPreferences: UiPreferences) => {
+    setUiPreferences(nextPreferences);
+    saveUiPreferences(session?.user.id, nextPreferences);
   };
 
   return (
@@ -43,7 +56,9 @@ export function Preferences() {
             <SettingsIcon className="size-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-bold">{t('dashboard.settings.preferences.title')}</CardTitle>
+            <CardTitle className="text-base font-bold">
+              {t('dashboard.settings.preferences.title')}
+            </CardTitle>
             <CardDescription className="text-xs">
               {t('dashboard.settings.preferences.description')}
             </CardDescription>
@@ -52,17 +67,33 @@ export function Preferences() {
         <CardContent className="space-y-6">
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-foreground">
-              {t('dashboard.settings.preferences.language')}
+              {t('dashboard.settings.preferences.use_target_language')}
             </span>
             <span className="text-xs text-muted-foreground">
-              {t('dashboard.settings.preferences.language_description')}
+              {t(
+                'dashboard.settings.preferences.use_target_language_description',
+              )}
             </span>
             <div className="mt-1">
-              <LanguageSwitcher />
+              <Switch
+                id="use-target-language"
+                checked={uiPreferences.useTargetLanguageForUi}
+                onCheckedChange={(useTargetLanguageForUi) =>
+                  updateUiPreferences({
+                    ...uiPreferences,
+                    useTargetLanguageForUi,
+                  })
+                }
+                aria-label={t(
+                  'dashboard.settings.preferences.use_target_language',
+                )}
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2 border-t border-border/60 pt-6">
-            <span className="text-sm font-medium text-foreground">{t('dashboard.settings.preferences.theme')}</span>
+            <span className="text-sm font-medium text-foreground">
+              {t('dashboard.settings.preferences.theme')}
+            </span>
             <span className="text-xs text-muted-foreground">
               {t('dashboard.settings.preferences.theme_description')}
             </span>
@@ -127,7 +158,9 @@ export function Preferences() {
                 {t('dashboard.settings.preferences.show_next_review')}
               </label>
               <span className="text-xs text-muted-foreground">
-                {t('dashboard.settings.preferences.show_next_review_description')}
+                {t(
+                  'dashboard.settings.preferences.show_next_review_description',
+                )}
               </span>
             </div>
             <Switch

@@ -15,15 +15,44 @@ import {
 import { FloatingBannerContainer } from '@/components/FloatingBannerContainer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useStore } from '@/hooks/useStore';
+import { getUiPreferences } from '@/lib/ui-preferences';
+import { languageFor } from '@repo/schemas';
+import { useTranslation } from 'react-i18next';
 
 export function ProtectedLayoutComponent() {
   const { manager, syncController } = useSessionDatabase();
   const location = useLocation();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
+  const { profile } = useStore();
+  const { i18n } = useTranslation();
 
   const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const enforceLanguage = () => {
+      if (!profile) return;
+      const preferences = getUiPreferences(session?.user.id);
+      const languageId = preferences.useTargetLanguageForUi
+        ? profile.target_language_id
+        : profile.native_language_id;
+
+      if (languageId) {
+        const locale = languageFor(languageId)?.locale;
+        if (locale && i18n.resolvedLanguage !== locale) {
+          void i18n.changeLanguage(locale);
+        }
+      }
+    };
+
+    enforceLanguage();
+    window.addEventListener('uiPreferencesChanged', enforceLanguage);
+    return () => {
+      window.removeEventListener('uiPreferencesChanged', enforceLanguage);
+    };
+  }, [profile, session?.user.id, i18n]);
 
   if (!manager && location.pathname !== '/onboarding') {
     return null;
