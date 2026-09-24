@@ -117,10 +117,11 @@ export default function Dashboard() {
           {tab === 'library' && <DeckList />}
           {tab === 'settings' && <Settings />}
         </ScrollView>
-        {/* Start Review sits under the thumb, below the scrolling content. */}
+        {/* Start Review sits under the thumb, below the scrolling content,
+            on the page colour; the line marks where content scrolls under. */}
         {tab === 'overview' && manager && (
           <View
-            className="border-t border-border bg-card px-6 pt-3"
+            className="border-t border-border bg-background px-6 pt-3"
             style={{ paddingBottom: insets.bottom + 12 }}
           >
             <StartReviewBar
