@@ -365,6 +365,17 @@ describe('Dashboard screen', () => {
     expect(mockSyncController.syncNow).toHaveBeenCalled();
   });
 
+  it('says Offline in plain text while no sync runs, as web does', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('Offline')).toBeTruthy();
+    expect(queryByText('Retry')).toBeNull();
+  });
+
   it('keeps Start Review to the Overview tab', () => {
     mockReviewOverview.dueCount = 4;
     mockUseSession.mockReturnValue({

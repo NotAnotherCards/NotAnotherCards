@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import type { SyncController, SyncControllerState } from '@remelondb/core';
+import { useEffect, useState } from 'react';
+import type { SyncControllerState } from '@remelondb/core';
 import { rejectedSummary } from '@repo/offline-db';
 
 // Web's Overview sync badge (DashboardSyncStatus): same labels, same order
@@ -21,19 +21,7 @@ const LABELS: Record<SyncControllerState['status'], string> = {
   'resync-required': 'Reset required',
 };
 
-export function syncStatusView(
-  state: SyncControllerState | null,
-): SyncStatusView {
-  // No controller: signed out or the database is not open yet
-  if (!state) {
-    return {
-      label: 'Offline',
-      tone: 'warning',
-      retryable: false,
-      details: undefined,
-    };
-  }
-
+export function syncStatusView(state: SyncControllerState): SyncStatusView {
   const { count: rejected, details } = rejectedSummary(state);
   return {
     label: rejected
@@ -59,11 +47,11 @@ export function syncStatusView(
 export const SYNCING_SHOW_DELAY_MS = 1_000;
 
 export function useSettledSyncState(
-  state: SyncControllerState | null,
-): SyncControllerState | null {
+  state: SyncControllerState,
+): SyncControllerState {
   const [shown, setShown] = useState(state);
   useEffect(() => {
-    if (state?.status !== 'syncing') {
+    if (state.status !== 'syncing') {
       setShown(state);
       return;
     }
@@ -71,17 +59,4 @@ export function useSettledSyncState(
     return () => clearTimeout(timer);
   }, [state]);
   return shown;
-}
-
-export function useSyncState(
-  controller: SyncController | null,
-): SyncControllerState | null {
-  const subscribe = useCallback(
-    (onChange: () => void) =>
-      controller ? controller.subscribe(onChange) : () => {},
-    [controller],
-  );
-  return useSyncExternalStore(subscribe, () =>
-    controller ? controller.state : null,
-  );
 }

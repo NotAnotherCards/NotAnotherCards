@@ -53,18 +53,11 @@ describe('syncStatusView', () => {
     expect(view.tone).toBe('warning');
     expect(view.details).toMatch(/^2 reviews\. The server refused/);
   });
-
-  it('reads Offline without a controller, as before the database opens', () => {
-    expect(syncStatusView(null)).toMatchObject({
-      label: 'Offline',
-      retryable: false,
-    });
-  });
 });
 
-const settle = (initial: SyncControllerState | null) =>
+const settle = (initial: SyncControllerState) =>
   renderHook(
-    (props: { current: SyncControllerState | null }) =>
+    (props: { current: SyncControllerState }) =>
       useSettledSyncState(props.current),
     { initialProps: { current: initial } },
   );
@@ -88,15 +81,15 @@ describe('useSettledSyncState', () => {
     const { result, rerender } = settle(state());
 
     rerender({ current: state({ status: 'syncing' }) });
-    expect(result.current?.status).toBe('idle');
+    expect(result.current.status).toBe('idle');
     act(() => jest.advanceTimersByTime(SYNCING_SHOW_DELAY_MS));
-    expect(result.current?.status).toBe('syncing');
+    expect(result.current.status).toBe('syncing');
   });
 
   it('shows a failure at once', () => {
     const { result, rerender } = settle(state());
 
     rerender({ current: state({ status: 'error' }) });
-    expect(result.current?.status).toBe('error');
+    expect(result.current.status).toBe('error');
   });
 });
