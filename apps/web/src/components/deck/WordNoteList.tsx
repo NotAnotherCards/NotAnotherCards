@@ -13,19 +13,12 @@ import { countCards, countWords, type UserNoteRecord } from '@repo/offline-db';
 import { WordNoteCards } from './WordNoteCards';
 import { toWordRow, type WordRow } from './word-note-rows';
 
-// These container thresholds preserve readable Word and Translation columns
-// before Cards changes from badges to a number and then to the post-row view.
+// Word rows switch once: a stacked layout below 848px and a table above it.
 const WORD_TABLE_LAYOUT = {
-  postRow: '848px',
-  compactCards: '1030px',
-  threeBadges: '1140px',
-  allBadges: '1250px',
   wordColumnMinimum: '260px',
+  cardsColumn: '4rem',
   extraInfoColumn: '76px',
   actionsColumn: '108px',
-  twoBadgesWidth: '13.375rem',
-  threeBadgesWidth: '20.25rem',
-  fourBadgesWidth: '27.125rem',
 } as const;
 
 interface WordNoteListProps {
@@ -71,32 +64,16 @@ export function WordNoteList({
       translation.toLowerCase().includes(search)
     );
   });
-  const maximumBadgeCount = Math.max(
-    2,
-    ...rows.map((row) => row.badges.length),
-  );
-  const cardsColumnFullWidth =
-    maximumBadgeCount === 4
-      ? WORD_TABLE_LAYOUT.fourBadgesWidth
-      : maximumBadgeCount === 3
-        ? WORD_TABLE_LAYOUT.threeBadgesWidth
-        : WORD_TABLE_LAYOUT.twoBadgesWidth;
-  const cardsColumnThreeBadgesWidth =
-    maximumBadgeCount === 4
-      ? WORD_TABLE_LAYOUT.threeBadgesWidth
-      : cardsColumnFullWidth;
   const tableStyle: CSSProperties &
     Record<
-      | '--cards-column-full'
-      | '--cards-column-three'
       | '--word-column-min'
+      | '--cards-column'
       | '--extra-info-column'
       | '--actions-column',
       string
     > = {
-    '--cards-column-full': cardsColumnFullWidth,
-    '--cards-column-three': cardsColumnThreeBadgesWidth,
     '--word-column-min': WORD_TABLE_LAYOUT.wordColumnMinimum,
+    '--cards-column': WORD_TABLE_LAYOUT.cardsColumn,
     '--extra-info-column': WORD_TABLE_LAYOUT.extraInfoColumn,
     '--actions-column': WORD_TABLE_LAYOUT.actionsColumn,
   };
@@ -141,12 +118,7 @@ export function WordNoteList({
           </div>
         ) : (
           <div className="@container">
-            <div
-              role="table"
-              aria-label="Word Catalog"
-              style={tableStyle}
-              className="[--cards-column:2rem] @[1030px]:[--cards-column:13.375rem] @[1140px]:[--cards-column:var(--cards-column-three)] @[1250px]:[--cards-column:var(--cards-column-full)]"
-            >
+            <div role="table" aria-label="Word Catalog" style={tableStyle}>
               <div role="rowgroup">
                 <div
                   role="row"
@@ -171,7 +143,7 @@ export function WordNoteList({
                     key={row.note.id}
                     role="row"
                     aria-rowindex={index + 2}
-                    className="grid grid-cols-1 @[848px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-3 @[848px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+                    className="grid grid-cols-1 items-center @[848px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-3 @[848px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
                   >
                     <div
                       role="cell"
@@ -194,57 +166,25 @@ export function WordNoteList({
                     >
                       {row.translation}
                     </div>
-                    <div className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)_minmax(max-content,1fr)] items-center gap-3 @[556px]:grid-cols-[minmax(15.625rem,1fr)_minmax(5rem,1fr)_minmax(10rem,1fr)] @[848px]:contents">
+                    <div className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)_minmax(max-content,1fr)] items-center gap-3 @[848px]:contents">
                       <div
                         role="cell"
-                        className="flex min-w-0 items-center gap-2 @[848px]:block @[848px]:self-center"
+                        className="flex min-w-0 items-center @[848px]:justify-self-center"
                         aria-label={`${row.cards.length} cards`}
                       >
                         <button
                           type="button"
-                          className="text-left text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[556px]:hidden"
+                          className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
                           onClick={() => setViewingCards(row.badges)}
                           aria-label={`View ${row.cards.length} cards`}
                         >
-                          Cards:
+                          <span className="@[848px]:hidden">
+                            Cards: {row.cards.length}
+                          </span>
+                          <span className="hidden @[848px]:inline">
+                            {row.cards.length}
+                          </span>
                         </button>
-                        <span className="hidden text-left text-xs font-semibold text-muted-foreground @[556px]:block @[848px]:hidden">
-                          Cards:
-                        </span>
-                        <span className="hidden min-w-0 text-left text-xs leading-6 text-muted-foreground @[556px]:block @[848px]:hidden">
-                          {row.badges.map((badge, index) => (
-                            <span key={badge} className="whitespace-nowrap">
-                              {index > 0 && ' · '}
-                              {badge}
-                            </span>
-                          ))}
-                        </span>
-                        <button
-                          type="button"
-                          className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer @[556px]:hidden"
-                          onClick={() => setViewingCards(row.badges)}
-                          aria-label={`View ${row.cards.length} cards`}
-                        >
-                          {row.cards.length}
-                        </button>
-                        <button
-                          type="button"
-                          className="hidden mx-auto text-center text-xs text-muted-foreground hover:text-primary cursor-pointer @[848px]:block @[1030px]:hidden"
-                          onClick={() => setViewingCards(row.badges)}
-                          aria-label={`View ${row.cards.length} cards`}
-                        >
-                          {row.cards.length}
-                        </button>
-                        <div className="hidden min-w-[13.375rem] flex-wrap gap-1.5 @[1030px]:flex">
-                          {row.badges.map((badge) => (
-                            <span
-                              key={badge}
-                              className="inline-flex h-7 w-[6.5rem] shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/35 px-2 text-xs font-medium text-muted-foreground"
-                            >
-                              {badge}
-                            </span>
-                          ))}
-                        </div>
                       </div>
                       <div className="contents">
                         <div

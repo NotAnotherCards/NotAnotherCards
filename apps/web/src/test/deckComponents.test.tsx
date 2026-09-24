@@ -388,7 +388,7 @@ describe('WordNoteList Component', () => {
     },
   ];
 
-  it('groups sibling cards into one word row with badges and filled details', () => {
+  it('groups sibling cards into one word row and shows their types on demand', () => {
     render(
       <WordNoteList
         notes={[wordNote]}
@@ -421,9 +421,9 @@ describe('WordNoteList Component', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Hund')).toBeInTheDocument();
     expect(screen.getByText('dog')).toBeInTheDocument();
-    expect(screen.getAllByText(/DE → RU/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/RU → DE/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Example → RU/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/DE → RU/)).toBeNull();
+    expect(screen.queryByText(/RU → DE/)).toBeNull();
+    expect(screen.queryByText(/Example → RU/)).toBeNull();
     expect(
       screen
         .getAllByRole('button', { name: 'View 3 details' })
@@ -438,10 +438,10 @@ describe('WordNoteList Component', () => {
       screen.getByText('Cards created to review this word.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'Cards' })).toBeInTheDocument();
+    expect(screen.getAllByText(/DE → RU/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/RU → DE/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Example → RU/).length).toBeGreaterThan(0);
     expect(screen.queryByText('Audio')).toBeNull();
-    expect(screen.getByLabelText('3 cards').textContent).toContain(
-      'DE → RURU → DEExample → RU',
-    );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Cards' })).toBeNull();
     expect(cardsTrigger).toHaveFocus();
