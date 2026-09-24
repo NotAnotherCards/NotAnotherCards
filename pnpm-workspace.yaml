@@ -28,6 +28,14 @@ minimumReleaseAgeExclude:
   - '@remelondb/store-drizzle@0.3.1'
   - '@expo/metro-runtime@57.0.7'
   - expo-constants@57.0.7
-  - expo-linking@57.0.4
-  - expo-router@57.0.8
+  - expo-linking@57.0.4 || 57.0.11
+  - expo-router@57.0.8 || 57.0.23
   - '@remelondb/driver-rn@0.3.1'
+  - '@expo/ui@57.0.20'
+  - expo-glass-effect@57.0.4
+  - '@expo/cli@57.0.27'
+  - '@expo/router-server@57.0.11'
+  - babel-preset-expo@57.0.13
+  - expo-modules-core@57.0.19
+  - expo-modules-jsi@57.1.1
+  - expo@57.0.25
