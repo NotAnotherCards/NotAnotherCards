@@ -10,6 +10,7 @@ import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
 import { CardList, CardListRef } from '../components/deck/CardList';
 import { WordNoteList } from '../components/deck/WordNoteList';
+import { WordNoteDialog } from '../components/deck/WordNoteDialog';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
@@ -477,6 +478,34 @@ describe('WordNoteList Component', () => {
     expect(onViewDetails).toHaveBeenCalledWith(wordNote);
     expect(onEditWord).toHaveBeenCalledWith(wordCards[0]);
     expect(onRemoveWord).toHaveBeenCalledWith(wordCards[0]);
+  });
+});
+
+describe('WordNoteDialog', () => {
+  it('keeps the current focus when its parent provides a new close callback', () => {
+    const firstClose = vi.fn();
+    const secondClose = vi.fn();
+    const { rerender } = render(
+      <WordNoteDialog label="Cards" onClose={firstClose}>
+        <button type="button">First</button>
+        <button type="button">Second</button>
+      </WordNoteDialog>,
+    );
+
+    const secondButton = screen.getByRole('button', { name: 'Second' });
+    secondButton.focus();
+
+    rerender(
+      <WordNoteDialog label="Cards" onClose={secondClose}>
+        <button type="button">First</button>
+        <button type="button">Second</button>
+      </WordNoteDialog>,
+    );
+
+    expect(secondButton).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(firstClose).not.toHaveBeenCalled();
+    expect(secondClose).toHaveBeenCalledOnce();
   });
 });
 

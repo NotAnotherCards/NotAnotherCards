@@ -13,13 +13,18 @@ export function WordNoteDialog({
   onClose,
 }: WordNoteDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  // Parent components recreate callbacks during store updates. Keep the
+  // latest close action without treating that update as a newly opened dialog.
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const activeElement = document.activeElement;
     const previousFocus =
       activeElement instanceof HTMLElement ? activeElement : null;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
       if (event.key !== 'Tab') return;
       const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -42,7 +47,7 @@ export function WordNoteDialog({
       document.removeEventListener('keydown', onKeyDown);
       previousFocus?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
