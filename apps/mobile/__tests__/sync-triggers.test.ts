@@ -12,7 +12,7 @@ import { AppState } from 'react-native';
 import { nativeSyncTriggers } from '../lib/sync-triggers';
 
 describe('nativeSyncTriggers', () => {
-  it('fires on reconnect and foreground, not on disconnect or background', () => {
+  it('fires on reconnect and foreground, not on repeats, disconnect or background', () => {
     const listeners: ((state: string) => void)[] = [];
     const appStateRemove = jest.fn();
     jest.spyOn(AppState, 'addEventListener').mockImplementation(((
@@ -26,8 +26,15 @@ describe('nativeSyncTriggers', () => {
     const fire = jest.fn();
     const unsubscribe = nativeSyncTriggers(fire);
 
+    // At start and while it stays connected: the first sync covers it
     mockNetworkListener({ isConnected: true });
+    mockNetworkListener({ isConnected: true });
+    expect(fire).not.toHaveBeenCalled();
+    // Offline, then back: one sync for the reconnect
     mockNetworkListener({ isConnected: false });
+    mockNetworkListener({ isConnected: true });
+    mockNetworkListener({ isConnected: true });
+    expect(fire).toHaveBeenCalledTimes(1);
     listeners[0]('active');
     listeners[0]('background');
     expect(fire).toHaveBeenCalledTimes(2);
