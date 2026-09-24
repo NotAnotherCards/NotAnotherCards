@@ -3,6 +3,7 @@ import {
   EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY,
   TRANSLATION_TO_WORD_TEMPLATE_KEY,
   WORD_TO_TRANSLATION_TEMPLATE_KEY,
+  type WordNoteFields,
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { languageFor } from '@repo/schemas';
@@ -12,6 +13,7 @@ type WordCardBadge = 'Word' | 'Translation' | 'Example';
 
 export interface WordRow {
   readonly note: UserNoteRecord;
+  readonly fields: WordNoteFields;
   readonly word: string;
   readonly translation: string;
   readonly cards: Card[];
@@ -77,6 +79,7 @@ export function toWordRow(note: UserNoteRecord, cards: Card[]): WordRow | null {
     );
   return {
     note,
+    fields,
     word: fields.word,
     translation: fields.translation,
     cards: noteCards,

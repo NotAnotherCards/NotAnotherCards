@@ -9,13 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Edit, Eye, HelpCircle, Library, Search, Unlink } from 'lucide-react';
-import {
-  countCards,
-  countDueCards,
-  countWords,
-  type UserNoteRecord,
-} from '@repo/offline-db';
-import { WordNoteCards } from './WordNoteCards';
+import { type UserNoteRecord } from '@repo/offline-db';
 import { toWordRow, type WordRow } from './word-note-rows';
 
 // Word rows switch once: a stacked layout below 848px and a table above it.
@@ -31,7 +25,6 @@ interface WordNoteListProps {
   cards: Card[];
   dueCards: Card[];
   onViewNote: (note: UserNoteRecord) => void;
-  onViewDetails: (note: UserNoteRecord) => void;
   onEditWord: (note: UserNoteRecord) => void;
   onRemoveWord: (note: UserNoteRecord) => void;
   canEdit: boolean;
@@ -44,7 +37,6 @@ export function WordNoteList({
   cards,
   dueCards,
   onViewNote,
-  onViewDetails,
   onEditWord,
   onRemoveWord,
   canEdit,
@@ -52,9 +44,6 @@ export function WordNoteList({
   onAddWord,
 }: WordNoteListProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewingCards, setViewingCards] = useState<readonly string[] | null>(
-    null,
-  );
   const rows = useMemo(
     () =>
       notes
@@ -70,7 +59,10 @@ export function WordNoteList({
     );
   });
   const filteredCards = filteredRows.flatMap((row) => row.cards);
-  const filteredDueCount = countDueCards(filteredCards, dueCards);
+  const dueCardIds = new Set(dueCards.map((card) => card.id));
+  const filteredDueCount = filteredCards.filter((card) =>
+    dueCardIds.has(card.id),
+  ).length;
   const tableStyle: CSSProperties &
     Record<
       | '--word-column-min'
@@ -90,9 +82,9 @@ export function WordNoteList({
         <div className="flex flex-nowrap items-center gap-x-4 text-base font-bold whitespace-nowrap">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Library className="size-4 text-primary" />
-            {countWords(filteredRows)} Words
+            {filteredRows.length} Words
           </CardTitle>
-          <span>{countCards(filteredCards)} Cards</span>
+          <span>{filteredCards.length} Cards</span>
           <span>{filteredDueCount} Cards Due</span>
         </div>
         <div className="relative mt-4 w-full md:max-w-xs">
@@ -180,7 +172,7 @@ export function WordNoteList({
                         <button
                           type="button"
                           className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
-                          onClick={() => setViewingCards(row.badges)}
+                          onClick={() => onViewNote(row.note)}
                           aria-label={`View ${row.cards.length} cards`}
                         >
                           <span className="@[848px]:hidden">
@@ -199,7 +191,7 @@ export function WordNoteList({
                           <button
                             type="button"
                             className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
-                            onClick={() => onViewDetails(row.note)}
+                            onClick={() => onViewNote(row.note)}
                             aria-label={`View ${row.detailsCount} details`}
                           >
                             <span className="@[848px]:hidden">
@@ -257,12 +249,6 @@ export function WordNoteList({
           </div>
         )}
       </CardContent>
-      {viewingCards && (
-        <WordNoteCards
-          cards={viewingCards}
-          onClose={() => setViewingCards(null)}
-        />
-      )}
     </UICard>
   );
 }

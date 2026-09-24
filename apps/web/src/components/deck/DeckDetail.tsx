@@ -29,8 +29,8 @@ import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { CardList } from './CardList';
 import { WordNoteList } from './WordNoteList';
 import { WordNoteView } from './WordNoteView';
-import { WordNoteDetails } from './WordNoteDetails';
 import { parseWordFields } from './word-note-fields';
+import { toWordRow } from './word-note-rows';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { usePublishing } from '@/hooks/usePublishing';
@@ -54,9 +54,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     null,
   );
   const [viewingWordNote, setViewingWordNote] = useState<UserNoteRecord | null>(
-    null,
-  );
-  const [viewingWordNoteId, setViewingWordNoteId] = useState<string | null>(
     null,
   );
   const [noteIdToRemove, setNoteIdToRemove] = useState<string | null>(null);
@@ -140,8 +137,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   // card, whose front and back are a template's output.
   const editingWordFields =
     editingWordNote && isWordDeck ? parseWordFields(editingWordNote) : null;
-  const viewingWordFields =
-    viewingWordNote && isWordDeck ? parseWordFields(viewingWordNote) : null;
 
   if (!deck) {
     return (
@@ -156,15 +151,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
   const cards = store.getCardsForDeck(deckId);
   const wordNotes = isWordDeck ? store.getNotesForDeck(deckId) : [];
-  const viewingWordDetailFields =
-    viewingWordNoteId && isWordDeck
-      ? (() => {
-          const note = wordNotes.find(
-            (wordNote) => wordNote.id === viewingWordNoteId,
-          );
-          return note ? parseWordFields(note) : null;
-        })()
-      : null;
+  const viewingWordRow =
+    viewingWordNote && isWordDeck ? toWordRow(viewingWordNote, cards) : null;
   const visibleWarnings =
     publishWarnings.length > 0
       ? publishWarnings
@@ -553,7 +541,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           cards={cards}
           dueCards={store.dueCards ?? []}
           onViewNote={(note) => setViewingWordNote(note)}
-          onViewDetails={(note) => setViewingWordNoteId(note.id)}
           onEditWord={(note) => setEditingWordNote(note)}
           onRemoveWord={(note) => setNoteIdToRemove(note.id)}
           canEdit={isKnownDeck}
@@ -630,21 +617,15 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         />
       ) : null}
 
-      {viewingWordNote && viewingWordFields && (
+      {viewingWordNote && viewingWordRow && (
         <WordNoteView
-          fields={viewingWordFields}
+          fields={viewingWordRow.fields}
+          cards={viewingWordRow.badges}
           onClose={() => setViewingWordNote(null)}
           onEdit={() => {
             setViewingWordNote(null);
             setEditingWordNote(viewingWordNote);
           }}
-        />
-      )}
-
-      {viewingWordNoteId && viewingWordDetailFields && (
-        <WordNoteDetails
-          fields={viewingWordDetailFields}
-          onClose={() => setViewingWordNoteId(null)}
         />
       )}
 

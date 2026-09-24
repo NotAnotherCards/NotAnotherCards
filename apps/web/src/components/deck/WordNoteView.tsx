@@ -13,11 +13,17 @@ import { WordNoteDetailFields } from './WordNoteDetailFields';
 
 interface WordNoteViewProps {
   fields: WordNoteFields;
+  cards: readonly string[];
   onClose: () => void;
   onEdit: () => void;
 }
 
-export function WordNoteView({ fields, onClose, onEdit }: WordNoteViewProps) {
+export function WordNoteView({
+  fields,
+  cards,
+  onClose,
+  onEdit,
+}: WordNoteViewProps) {
   const displayFieldClass =
     'min-h-9 rounded-lg border border-input bg-background px-3 py-2 text-sm whitespace-pre-wrap break-words';
 
@@ -45,6 +51,18 @@ export function WordNoteView({ fields, onClose, onEdit }: WordNoteViewProps) {
             </div>
           </div>
           <WordNoteDetailFields fields={fields} />
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">
+              Cards ({cards.length})
+            </p>
+            <div className="mt-1.5 space-y-2">
+              {cards.map((card) => (
+                <div key={card} className={displayFieldClass}>
+                  {card}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="flex gap-2 border-t border-border/40 pt-4">

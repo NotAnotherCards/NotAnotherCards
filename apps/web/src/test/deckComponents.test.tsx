@@ -11,6 +11,7 @@ import { CardItem } from '../components/deck/CardItem';
 import { CardList, CardListRef } from '../components/deck/CardList';
 import { WordNoteList } from '../components/deck/WordNoteList';
 import { WordNoteDialog } from '../components/deck/WordNoteDialog';
+import { WordNoteView } from '../components/deck/WordNoteView';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
@@ -388,14 +389,14 @@ describe('WordNoteList Component', () => {
     },
   ];
 
-  it('groups sibling cards into one word row and shows their types on demand', () => {
+  it('groups sibling cards into one word row and opens the word view', () => {
+    const onViewNote = vi.fn();
     render(
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
         dueCards={[]}
-        onViewNote={vi.fn()}
-        onViewDetails={vi.fn()}
+        onViewNote={onViewNote}
         onEditWord={vi.fn()}
         onRemoveWord={vi.fn()}
         canEdit
@@ -430,19 +431,33 @@ describe('WordNoteList Component', () => {
     const cardsTrigger = screen.getAllByRole('button', {
       name: 'View 3 cards',
     })[0];
-    cardsTrigger.focus();
     fireEvent.click(cardsTrigger);
+    expect(onViewNote).toHaveBeenCalledWith(wordNote);
+  });
+
+  it('shows details and card types in the unified word dialog', () => {
+    render(
+      <WordNoteView
+        fields={{
+          word: 'Hund',
+          translation: 'dog',
+          native_language_id: RUSSIAN,
+          target_language_id: GERMAN,
+          gender: 'der',
+        }}
+        cards={['DE → RU', 'RU → DE', 'Example → RU']}
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
     expect(
-      screen.getByText('Cards created to review this word.'),
+      screen.getByRole('dialog', { name: 'View Word' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('dialog', { name: 'Cards' })).toBeInTheDocument();
-    expect(screen.getAllByText(/DE → RU/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/RU → DE/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Example → RU/).length).toBeGreaterThan(0);
-    expect(screen.queryByText('Audio')).toBeNull();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('dialog', { name: 'Cards' })).toBeNull();
-    expect(cardsTrigger).toHaveFocus();
+    expect(screen.getByText('Cards (3)')).toBeInTheDocument();
+    expect(screen.getByText('DE → RU')).toBeInTheDocument();
+    expect(screen.getByText('RU → DE')).toBeInTheDocument();
+    expect(screen.getByText('Example → RU')).toBeInTheDocument();
   });
 
   it('counts only cards belonging to words that match the search', () => {
@@ -470,7 +485,6 @@ describe('WordNoteList Component', () => {
         cards={[...wordCards, secondWordCard]}
         dueCards={[wordCards[0], secondWordCard]}
         onViewNote={vi.fn()}
-        onViewDetails={vi.fn()}
         onEditWord={vi.fn()}
         onRemoveWord={vi.fn()}
         canEdit
@@ -491,7 +505,6 @@ describe('WordNoteList Component', () => {
 
   it('routes view, edit, and removal through the word note', () => {
     const onViewNote = vi.fn();
-    const onViewDetails = vi.fn();
     const onEditWord = vi.fn();
     const onRemoveWord = vi.fn();
     render(
@@ -500,7 +513,6 @@ describe('WordNoteList Component', () => {
         cards={wordCards}
         dueCards={[]}
         onViewNote={onViewNote}
-        onViewDetails={onViewDetails}
         onEditWord={onEditWord}
         onRemoveWord={onRemoveWord}
         canEdit
@@ -513,11 +525,12 @@ describe('WordNoteList Component', () => {
     fireEvent.click(
       screen.getAllByRole('button', { name: 'View 3 details' })[0],
     );
+    fireEvent.click(screen.getAllByRole('button', { name: 'View 3 cards' })[0]);
     fireEvent.click(screen.getByTitle('Edit Word'));
     fireEvent.click(screen.getByTitle('Remove word from this deck'));
 
-    expect(onViewNote).toHaveBeenCalledWith(wordNote);
-    expect(onViewDetails).toHaveBeenCalledWith(wordNote);
+    expect(onViewNote).toHaveBeenCalledTimes(3);
+    expect(onViewNote).toHaveBeenLastCalledWith(wordNote);
     expect(onEditWord).toHaveBeenCalledWith(wordNote);
     expect(onRemoveWord).toHaveBeenCalledWith(wordNote);
   });
@@ -532,7 +545,6 @@ describe('WordNoteList Component', () => {
         cards={[]}
         dueCards={[]}
         onViewNote={onViewNote}
-        onViewDetails={vi.fn()}
         onEditWord={onEditWord}
         onRemoveWord={onRemoveWord}
         canEdit
