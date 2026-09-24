@@ -16,12 +16,6 @@ describe('Mobile i18n adapter', () => {
     // Given the singleton nature of i18next in tests, it should default to 'en'.
     expect(i18n.options.fallbackLng).toContain('en');
   });
-
-  it('updates storage when the language changes', async () => {
-    await i18n.changeLanguage('de');
-    // Storage should have been updated by the 'languageChanged' event handler
-    expect(Storage.getItemSync('i18nextLng')).toBe('de');
-  });
 });
 
 describe('LanguageSwitcher', () => {

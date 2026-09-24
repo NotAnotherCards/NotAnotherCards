@@ -7,6 +7,7 @@ import {
   type SupportedLocale,
 } from '@repo/i18n';
 import { Segmented } from './ui/segmented';
+import Storage from 'expo-sqlite/kv-store';
 
 // Build the option list from centralized metadata so adding a locale only
 // requires editing @repo/i18n.
@@ -29,6 +30,7 @@ export function LanguageSwitcher() {
   const select = (value: SupportedLocale) => {
     setLocale(value);
     void i18n.changeLanguage(value);
+    Storage.setItemSync('i18nextLng', value);
   };
 
   return (

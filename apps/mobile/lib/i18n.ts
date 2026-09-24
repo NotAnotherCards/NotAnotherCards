@@ -20,14 +20,6 @@ function loadSavedLocale(): string | undefined {
   return undefined;
 }
 
-/**
- * Persist the resolved locale so it survives app restarts.
- * Called on every language change.
- */
-function persistLocale(lng: string) {
-  Storage.setItemSync(STORAGE_KEY, lng);
-}
-
 // Initialize i18next synchronously with bundled catalogs. The resources are
 // shipped in the JS bundle so init() resolves immediately.
 void i18n.use(initReactI18next).init({
@@ -40,12 +32,6 @@ void i18n.use(initReactI18next).init({
   interpolation: {
     escapeValue: false, // React Native handles escaping
   },
-});
-
-// Persist every language change so the choice survives restarts.
-i18n.on('languageChanged', (lng) => {
-  const resolved = i18n.resolvedLanguage ?? lng;
-  persistLocale(resolved);
 });
 
 export default i18n;
