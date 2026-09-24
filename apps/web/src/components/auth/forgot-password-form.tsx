@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { authClient } from '@/lib/auth-client';
 import { CheckCircle2 } from 'lucide-react';
 import { useSearch } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -24,6 +25,7 @@ const forgotPasswordSchema = z.object({
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPasswordComponent() {
+  const { t } = useTranslation();
   const search = useSearch({ from: '/_auth/forgot-password' });
   const [apiError, setApiError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -81,9 +83,9 @@ export function ForgotPasswordComponent() {
     setIsResending(false);
 
     if (error) {
-      setResendMessage(error.message || 'Failed to resend email');
+      setResendMessage(error.message || t('auth.forgot_password.resend_failed'));
     } else {
-      setResendMessage('Password reset email resent successfully!');
+      setResendMessage(t('auth.forgot_password.resend_success'));
       setCountdown(30);
     }
   };
@@ -91,10 +93,10 @@ export function ForgotPasswordComponent() {
   if (success) {
     return (
       <AuthCard
-        title="Check your email"
-        description="We've sent a password reset link to your email"
+        title={t('auth.forgot_password.success_title')}
+        description={t('auth.forgot_password.success_description')}
         footerText=""
-        footerLinkText="Back to login"
+        footerLinkText={t('auth.forgot_password.footerLinkText')}
         footerLinkTo="/login"
       >
         <div className="flex flex-col items-center justify-center space-y-4 py-4 text-center animate-in fade-in zoom-in duration-300">
@@ -102,12 +104,11 @@ export function ForgotPasswordComponent() {
             <CheckCircle2 className="h-10 w-10" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Please check your inbox for{' '}
+            {t('auth.forgot_password.check_inbox_1')}
             <span className="font-medium text-foreground">
               {form.getValues('email')}
             </span>
-            . If the email doesn't arrive in a few minutes, check your spam
-            folder.
+            {t('auth.forgot_password.check_inbox_2')}
           </p>
 
           {resendMessage && (
@@ -126,12 +127,12 @@ export function ForgotPasswordComponent() {
             {isResending ? (
               <span className="flex items-center justify-center gap-2">
                 <Spinner />
-                Resending...
+                {t('auth.forgot_password.resending')}
               </span>
             ) : countdown > 0 ? (
-              `Resend email in ${countdown}s`
+              t('auth.forgot_password.resend_in', { countdown })
             ) : (
-              'Resend email'
+              t('auth.forgot_password.resend')
             )}
           </Button>
         </div>
@@ -141,10 +142,10 @@ export function ForgotPasswordComponent() {
 
   return (
     <AuthCard
-      title="Forgotten Password"
-      description="Enter your email below and we will send you a password reset email"
+      title={t('auth.forgot_password.title')}
+      description={t('auth.forgot_password.description')}
       footerText=""
-      footerLinkText="Back to login"
+      footerLinkText={t('auth.forgot_password.footerLinkText')}
       footerLinkTo="/login"
     >
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -155,12 +156,12 @@ export function ForgotPasswordComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>{t('auth.email')}</FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
                     type="email"
-                    placeholder="name@example.com"
+                    placeholder={t('auth.email_placeholder')}
                     autoComplete="email"
                     aria-invalid={fieldState.invalid}
                     aria-describedby={
@@ -176,10 +177,10 @@ export function ForgotPasswordComponent() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
-                  Sending email...
+                  {t('auth.forgot_password.sending_email')}
                 </span>
               ) : (
-                'Send Reset Link'
+                t('auth.forgot_password.submit')
               )}
             </Button>
           </FieldGroup>

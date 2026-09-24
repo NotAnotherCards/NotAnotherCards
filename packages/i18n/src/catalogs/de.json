@@ -2,7 +2,12 @@
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",
-    "loading": "Wird geladen..."
+    "loading": "Wird geladen...",
+    "retry": "Wiederholen",
+    "close": "Schließen",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page": "Seite {{page}}"
   },
   "preferences": {
     "title": "Einstellungen",
@@ -18,5 +23,107 @@
     "home": "Startseite",
     "login": "Anmelden",
     "logout": "Abmelden"
+  },
+  "auth": {
+    "error": {
+      "social_login_failed_callback": "Social-Login fehlgeschlagen. Bitte versuche es erneut oder nutze einen anderen Anbieter.",
+      "social_login_failed": "Social-Login fehlgeschlagen. Bitte versuche es erneut.",
+      "unexpected": "Ein unerwarteter Fehler ist aufgetreten",
+      "social_signup_failed_callback": "Social-Signup fehlgeschlagen. Bitte versuche es erneut oder nutze einen anderen Anbieter.",
+      "social_signup_failed": "Social-Login fehlgeschlagen. Bitte versuche es erneut.",
+      "reset_token_missing": "Zurücksetzungs-Token fehlt oder ist ungültig.",
+      "two_factor_locked": "Zu viele fehlgeschlagene Versuche. Dein Konto ist vorübergehend gesperrt. Bitte versuche es später noch einmal.",
+      "two_factor_invalid_backup": "Dieser Backup-Code ist ungültig oder wurde bereits verwendet.",
+      "two_factor_invalid_code": "Dieser Authentifizierungscode ist ungültig oder abgelaufen.",
+      "two_factor_expired": "Diese Verifizierungsanfrage ist abgelaufen. Melde dich erneut an, um fortzufahren.",
+      "two_factor_failed": "Verifizierung fehlgeschlagen. Überprüfe den Code und versuche es erneut.",
+      "two_factor_empty_totp": "Gib den sechsstelligen Code aus deiner Authenticator-App ein.",
+      "two_factor_empty_backup": "Gib einen deiner Backup-Codes ein.",
+      "two_factor_unavailable": "Verifizierung ist vorübergehend nicht verfügbar. Bitte versuche es erneut."
+    },
+    "login": {
+      "title": "Willkommen zurück",
+      "description": "Gib deine E-Mail-Adresse ein, um dich anzumelden",
+      "logging_in": "Anmeldung läuft...",
+      "submit": "Anmelden",
+      "continue_with": "Oder weiter mit",
+      "forgot_password": "Passwort vergessen?",
+      "reset_here": "Hier zurücksetzen!",
+      "no_account": "Du hast noch kein Konto?",
+      "sign_up": "Registrieren"
+    },
+    "email": "E-Mail",
+    "password": "Passwort",
+    "register": {
+      "title": "Konto erstellen",
+      "description": "Gib deine Daten ein, um ein neues Profil zu erstellen",
+      "footerText": "Du hast bereits ein Konto?",
+      "footerLinkText": "Anmelden",
+      "creating_account": "Konto wird erstellt...",
+      "submit": "Registrieren"
+    },
+    "forgot_password": {
+      "title": "Passwort vergessen",
+      "description": "Gib unten deine E-Mail-Adresse ein und wir senden dir eine E-Mail zum Zurücksetzen deines Passworts",
+      "footerLinkText": "Zurück zur Anmeldung",
+      "sending_email": "E-Mail wird gesendet...",
+      "submit": "Link zum Zurücksetzen senden",
+      "success_title": "Überprüfe deine E-Mail",
+      "success_description": "Wir haben einen Link zum Zurücksetzen des Passworts an deine E-Mail-Adresse gesendet",
+      "check_inbox_1": "Bitte überprüfe deinen Posteingang für ",
+      "check_inbox_2": ". Wenn die E-Mail nach wenigen Minuten nicht ankommt, überprüfe deinen Spam-Ordner.",
+      "resend_failed": "E-Mail konnte nicht erneut gesendet werden",
+      "resend_success": "E-Mail zum Zurücksetzen des Passworts erfolgreich erneut gesendet!",
+      "resending": "Erneut senden...",
+      "resend_in": "E-Mail erneut senden in {{countdown}}s",
+      "resend": "E-Mail erneut senden"
+    },
+    "reset_password": {
+      "title": "Passwort zurücksetzen",
+      "description": "Gib unten dein neues Passwort ein, um das Zurücksetzen abzuschließen",
+      "success_title": "Passwort zurückgesetzt",
+      "success_description": "Dein Passwort wurde erfolgreich aktualisiert",
+      "can_log_in": "Du kannst dich nun mit deinem neuen Passwort bei deinem Konto anmelden.",
+      "go_to_login": "Zur Anmeldung gehen",
+      "new_password": "Neues Passwort",
+      "confirm_new_password": "Neues Passwort bestätigen",
+      "updating_password": "Passwort wird aktualisiert...",
+      "submit": "Passwort zurücksetzen"
+    },
+    "name": "Name",
+    "confirm_password": "Passwort bestätigen",
+    "email_placeholder": "name@beispiel.com",
+    "two_factor": {
+      "title": "Zweistufige Verifizierung",
+      "description_totp": "Gib den aktuellen Code aus deiner Authenticator-App ein.",
+      "description_backup": "Verwende einen der Backup-Codes, die du bei der Einrichtung gespeichert hast.",
+      "authenticator": "Authenticator",
+      "backup_code": "Backup-Code",
+      "verifying": "Überprüfe...",
+      "verify_and_continue": "Überprüfen und fortfahren",
+      "back_to_sign_in": "Zurück zur Anmeldung",
+      "totp_legend": "Sechsstelliger Authentifizierungscode",
+      "totp_digit_aria": "Ziffer {{digit}} von {{total}}"
+    }
+  },
+  "dashboard": {
+    "settings": {
+      "preferences": {
+        "title": "Einstellungen",
+        "description": "Passe deine Anwendungseinstellungen und das Erscheinungsbild an",
+        "language": "Sprache",
+        "language_description": "Wähle deine bevorzugte Sprache",
+        "theme": "Design",
+        "theme_description": "Wähle, wie die Anwendung aussehen soll",
+        "review_mode": "Wiederholungsmodus",
+        "review_mode_description": "Wähle, wie viele Antwortoptionen du siehst, nachdem du eine Karte aufgedeckt hast",
+        "basic": "Einfach",
+        "extended": "Erweitert",
+        "show_next_review": "Nächstes Wiederholungsintervall anzeigen",
+        "show_next_review_description": "Zeige an, wann jede Antwort die Karte das nächste Mal plant",
+        "use_target_language": "Zielsprache für die Benutzeroberfläche verwenden",
+        "use_target_language_description": "Üben Sie, indem Sie die App in der Sprache verwenden, die Sie lernen"
+      }
+    }
   }
 }

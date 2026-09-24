@@ -18,6 +18,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSearch, Link } from '@tanstack/react-router';
 import { passwordSchema } from '@repo/schemas';
 import { CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const resetPasswordConfirmSchema = z
   .object({
@@ -33,6 +34,7 @@ export type ResetPasswordConfirmFormData = z.infer<
 >;
 
 export function ResetPasswordComponent() {
+  const { t } = useTranslation();
   const search = useSearch({ from: '/_auth/reset-password' }) as {
     token?: string;
   };
@@ -53,7 +55,7 @@ export function ResetPasswordComponent() {
 
   const onSubmit = async (data: ResetPasswordConfirmFormData) => {
     if (!token) {
-      setApiError('Reset token is missing or invalid.');
+      setApiError(t('auth.error.reset_token_missing'));
       return;
     }
     setApiError(null);
@@ -63,7 +65,7 @@ export function ResetPasswordComponent() {
     });
 
     if (error) {
-      setApiError(error.message || 'An unexpected error occurred');
+      setApiError(error.message || t('auth.error.unexpected'));
     } else {
       setSuccess(true);
     }
@@ -72,10 +74,10 @@ export function ResetPasswordComponent() {
   if (success) {
     return (
       <AuthCard
-        title="Password Reset"
-        description="Your password has been successfully updated"
+        title={t('auth.reset_password.success_title')}
+        description={t('auth.reset_password.success_description')}
         footerText=""
-        footerLinkText="Back to login"
+        footerLinkText={t('auth.forgot_password.footerLinkText')}
         footerLinkTo="/login"
       >
         <div className="flex flex-col items-center justify-center space-y-4 py-6 text-center animate-in fade-in zoom-in duration-300">
@@ -83,10 +85,10 @@ export function ResetPasswordComponent() {
             <CheckCircle2 className="h-10 w-10" />
           </div>
           <p className="text-sm text-muted-foreground">
-            You can now log in to your account with your new password.
+            {t('auth.reset_password.can_log_in')}
           </p>
           <Button asChild className="w-full mt-4">
-            <Link to="/login">Go to Login</Link>
+            <Link to="/login">{t('auth.reset_password.go_to_login')}</Link>
           </Button>
         </div>
       </AuthCard>
@@ -95,10 +97,10 @@ export function ResetPasswordComponent() {
 
   return (
     <AuthCard
-      title="Reset Password"
-      description="Enter your new password below to complete the reset"
+      title={t('auth.reset_password.title')}
+      description={t('auth.reset_password.description')}
       footerText=""
-      footerLinkText="Back to login"
+      footerLinkText={t('auth.forgot_password.footerLinkText')}
       footerLinkTo="/login"
     >
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -109,7 +111,7 @@ export function ResetPasswordComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>{t('auth.reset_password.new_password')}</FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}
@@ -129,7 +131,7 @@ export function ResetPasswordComponent() {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
                   <FieldLabel htmlFor={field.name}>
-                    Confirm New Password
+                    {t('auth.reset_password.confirm_new_password')}
                   </FieldLabel>
                   <PasswordInput
                     {...field}
@@ -152,10 +154,10 @@ export function ResetPasswordComponent() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
-                  Updating password...
+                  {t('auth.reset_password.updating_password')}
                 </span>
               ) : (
-                'Reset Password'
+                t('auth.reset_password.submit')
               )}
             </Button>
           </FieldGroup>

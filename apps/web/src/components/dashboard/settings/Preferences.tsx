@@ -17,8 +17,10 @@ import {
   type ReviewPreferences,
 } from '@/lib/review-preferences';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function Preferences() {
+  const { t } = useTranslation();
   const { data: session } = authClient.useSession();
   const [reviewPreferences, setReviewPreferences] = useState(() =>
     getReviewPreferences(session?.user.id),
@@ -41,28 +43,28 @@ export function Preferences() {
             <SettingsIcon className="size-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-bold">Preferences</CardTitle>
+            <CardTitle className="text-base font-bold">{t('dashboard.settings.preferences.title')}</CardTitle>
             <CardDescription className="text-xs">
-              Customize your application settings and appearance
+              {t('dashboard.settings.preferences.description')}
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-foreground">
-              Language
+              {t('dashboard.settings.preferences.language')}
             </span>
             <span className="text-xs text-muted-foreground">
-              Select your preferred language
+              {t('dashboard.settings.preferences.language_description')}
             </span>
             <div className="mt-1">
               <LanguageSwitcher />
             </div>
           </div>
           <div className="flex flex-col gap-2 border-t border-border/60 pt-6">
-            <span className="text-sm font-medium text-foreground">Theme</span>
+            <span className="text-sm font-medium text-foreground">{t('dashboard.settings.preferences.theme')}</span>
             <span className="text-xs text-muted-foreground">
-              Select how the application looks to you
+              {t('dashboard.settings.preferences.theme_description')}
             </span>
             <div className="mt-1">
               <ThemeChanger />
@@ -70,15 +72,15 @@ export function Preferences() {
           </div>
           <div className="flex flex-col gap-2 border-t border-border/60 pt-6">
             <span className="text-sm font-medium text-foreground">
-              Review mode
+              {t('dashboard.settings.preferences.review_mode')}
             </span>
             <span className="text-xs text-muted-foreground">
-              Choose how many answer options you see after revealing a card
+              {t('dashboard.settings.preferences.review_mode_description')}
             </span>
             <div
               className="mt-1 flex gap-2"
               role="group"
-              aria-label="Review mode"
+              aria-label={t('dashboard.settings.preferences.review_mode')}
             >
               <Button
                 type="button"
@@ -95,7 +97,7 @@ export function Preferences() {
                   })
                 }
               >
-                Basic
+                {t('dashboard.settings.preferences.basic')}
               </Button>
               <Button
                 type="button"
@@ -112,7 +114,7 @@ export function Preferences() {
                   })
                 }
               >
-                Extended
+                {t('dashboard.settings.preferences.extended')}
               </Button>
             </div>
           </div>
@@ -122,10 +124,10 @@ export function Preferences() {
                 htmlFor="show-next-review-interval"
                 className="text-sm font-medium text-foreground"
               >
-                Show next review interval
+                {t('dashboard.settings.preferences.show_next_review')}
               </label>
               <span className="text-xs text-muted-foreground">
-                Show when each answer schedules the card next
+                {t('dashboard.settings.preferences.show_next_review_description')}
               </span>
             </div>
             <Switch
@@ -137,7 +139,7 @@ export function Preferences() {
                   showNextReviewInterval,
                 })
               }
-              aria-label="Show next review interval"
+              aria-label={t('dashboard.settings.preferences.show_next_review')}
             />
           </div>
         </CardContent>
