@@ -18,6 +18,7 @@ import {
 } from '@repo/offline-db';
 import { cardsForDeck, decksWithDueCards } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
+import { useNow } from './use-now';
 
 export function dueCardsForDeck(
   memberships: readonly Pick<UserNoteDeckRecord, 'deck_id' | 'note_id'>[],
@@ -42,8 +43,8 @@ export function useReviewOverview(manager: DatabaseManager) {
   const db = useDatabase(manager);
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
   const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
-
-  const now = Date.now();
+  // Cards come due as time passes, not only when data changes
+  const now = useNow();
 
   return {
     dueDeckIds: decksWithDueCards(memberships.data, cards.data, now),

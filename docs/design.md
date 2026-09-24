@@ -159,6 +159,7 @@ is missing; the fix is to add it there, not to copy the markup.
 | `button`                                    | `button` (primary, secondary, destructive; `loading`) |
 | `card`                                      |                                                       |
 | `field`, `label`, `input`, `password-input` | `form-field`, `input`                                 |
+| `progress`                                  | `progress` (value and indicator colour; no animation) |
 | `separator`                                 |                                                       |
 | `spinner`                                   |                                                       |
 | `google-icon`, `facebook-icon`              |                                                       |
