@@ -36,7 +36,6 @@ export type WordFormValues = z.infer<typeof wordFields>;
 // boxes at once reads as work. The required pair is always visible; the rest
 // open on request, and open already if the note being edited uses any.
 const DETAIL_FIELDS = [
-  ['pronunciation', 'Pronunciation', 'IPA'],
   ['example', 'Example', 'a sentence using the word'],
   ['example_translation', 'Example translation', ''],
   ['notes', 'Notes', 'anything you want to remember'],
@@ -202,6 +201,8 @@ export function WordNoteForm({
       const value = values[name]?.trim();
       if (value) cleaned[name] = value;
     }
+    const pronunciation = values.pronunciation?.trim();
+    if (pronunciation) cleaned.pronunciation = pronunciation;
     const partOfSpeech = values.part_of_speech?.trim();
     if (partOfSpeech) cleaned.part_of_speech = partOfSpeech;
     // gender is offered only where the target language has one
@@ -305,32 +306,27 @@ export function WordNoteForm({
                   </button>
                 )}
 
-                {showDetails &&
-                  DETAIL_FIELDS.slice(0, 1).map(
-                    ([name, label, placeholder]) => (
-                      <Controller
-                        key={name}
-                        name={name}
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                          <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor={field.name}>
-                              {label}
-                            </FieldLabel>
-                            <textarea
-                              {...field}
-                              value={field.value ?? ''}
-                              id={field.name}
-                              placeholder={placeholder}
-                              aria-invalid={fieldState.invalid}
-                              className={textAreaClass(fieldState.invalid)}
-                            />
-                            <FieldError errors={[fieldState.error]} />
-                          </Field>
-                        )}
-                      />
-                    ),
-                  )}
+                {showDetails && (
+                  <Controller
+                    name="pronunciation"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={field.name}>
+                          Pronunciation
+                        </FieldLabel>
+                        <input
+                          {...field}
+                          id={field.name}
+                          placeholder="IPA"
+                          aria-invalid={fieldState.invalid}
+                          className={inputClass(fieldState.invalid)}
+                        />
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                )}
 
                 {showDetails && genders.length > 0 && (
                   <Controller
@@ -392,7 +388,7 @@ export function WordNoteForm({
                 )}
 
                 {showDetails &&
-                  DETAIL_FIELDS.slice(1).map(([name, label, placeholder]) => (
+                  DETAIL_FIELDS.map(([name, label, placeholder]) => (
                     <Controller
                       key={name}
                       name={name}

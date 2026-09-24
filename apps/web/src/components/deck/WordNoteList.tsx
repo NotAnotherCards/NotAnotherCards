@@ -12,7 +12,7 @@ import { Edit, Eye, HelpCircle, Library, Search, Unlink } from 'lucide-react';
 import { type UserNoteRecord } from '@repo/offline-db';
 import { toWordRow, type WordRow } from './word-note-rows';
 
-// Word rows switch once: a stacked layout below 848px and a table above it.
+// Word rows switch once: a stacked layout below 880px and a table above it.
 const WORD_TABLE_LAYOUT = {
   wordColumnMinimum: '260px',
   cardsColumn: '4rem',
@@ -119,7 +119,7 @@ export function WordNoteList({
               <div role="rowgroup">
                 <div
                   role="row"
-                  className="sr-only @[848px]:not-sr-only @[848px]:grid @[848px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-4 @[848px]:!px-6 @[848px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                  className="sr-only @[880px]:not-sr-only @[880px]:grid @[880px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-4 @[880px]:!px-6 @[880px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
                 >
                   <div role="columnheader">Word</div>
                   <div role="columnheader">Translation</div>
@@ -140,7 +140,7 @@ export function WordNoteList({
                     key={row.note.id}
                     role="row"
                     aria-rowindex={index + 2}
-                    className="grid grid-cols-1 items-center @[848px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-3 @[848px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+                    className="grid grid-cols-1 items-center @[880px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-3 @[880px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
                   >
                     <div
                       role="cell"
@@ -163,10 +163,10 @@ export function WordNoteList({
                     >
                       {row.translation}
                     </div>
-                    <div className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)_minmax(max-content,1fr)] items-center gap-3 @[848px]:contents">
+                    <div className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)_minmax(max-content,1fr)] items-center gap-3 @[880px]:contents">
                       <div
                         role="cell"
-                        className="flex min-w-0 items-center @[848px]:justify-self-center"
+                        className="flex min-w-0 items-center @[880px]:justify-self-center"
                         aria-label={`${row.cards.length} cards`}
                       >
                         <button
@@ -175,10 +175,10 @@ export function WordNoteList({
                           onClick={() => onViewNote(row.note)}
                           aria-label={`View ${row.cards.length} cards`}
                         >
-                          <span className="@[848px]:hidden">
+                          <span className="@[880px]:hidden">
                             Cards: {row.cards.length}
                           </span>
-                          <span className="hidden @[848px]:inline">
+                          <span className="hidden @[880px]:inline">
                             {row.cards.length}
                           </span>
                         </button>
@@ -186,7 +186,7 @@ export function WordNoteList({
                       <div className="contents">
                         <div
                           role="cell"
-                          className="flex min-w-0 items-center justify-center @[848px]:justify-self-center"
+                          className="flex min-w-0 items-center justify-center @[880px]:justify-self-center"
                         >
                           <button
                             type="button"
@@ -194,17 +194,17 @@ export function WordNoteList({
                             onClick={() => onViewNote(row.note)}
                             aria-label={`View ${row.detailsCount} details`}
                           >
-                            <span className="@[848px]:hidden">
+                            <span className="@[880px]:hidden">
                               Extra info: {row.detailsCount}
                             </span>
-                            <span className="hidden @[848px]:inline">
+                            <span className="hidden @[880px]:inline">
                               {row.detailsCount}
                             </span>
                           </button>
                         </div>
                         <div
                           role="cell"
-                          className="flex min-w-0 items-center justify-end @[848px]:justify-center"
+                          className="flex min-w-0 items-center justify-end @[880px]:justify-center"
                         >
                           <div className="flex items-center gap-1.5">
                             <Button

@@ -40,13 +40,14 @@ describe('WordNoteForm', () => {
     expect(screen.queryByLabelText(/language/i)).toBeNull();
   });
 
-  it('keeps word and translation single-line while examples stay multiline', () => {
+  it('keeps word, translation, and pronunciation single-line while examples stay multiline', () => {
     renderForm();
 
     expect(screen.getByLabelText(/^word( in \w+)?$/i).tagName).toBe('INPUT');
     expect(screen.getByLabelText(/translation/i).tagName).toBe('INPUT');
 
     fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+    expect(screen.getByLabelText(/pronunciation/i).tagName).toBe('INPUT');
     expect(screen.getByLabelText(/^example$/i).tagName).toBe('TEXTAREA');
   });
 

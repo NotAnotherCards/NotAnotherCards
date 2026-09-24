@@ -350,7 +350,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       });
       setEditingWordNote(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to update card'));
+      setWriteError(writeErrorMessage(err, 'Failed to update word'));
     }
   };
 
