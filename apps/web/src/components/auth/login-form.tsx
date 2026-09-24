@@ -123,7 +123,9 @@ export function LoginComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>{t('auth.email')}</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.email')}
+                  </FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
@@ -142,7 +144,9 @@ export function LoginComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>{t('auth.password')}</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.password')}
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}

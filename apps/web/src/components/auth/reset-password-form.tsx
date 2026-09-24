@@ -111,7 +111,9 @@ export function ResetPasswordComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>{t('auth.reset_password.new_password')}</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.reset_password.new_password')}
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}

@@ -83,7 +83,9 @@ export function ForgotPasswordComponent() {
     setIsResending(false);
 
     if (error) {
-      setResendMessage(error.message || t('auth.forgot_password.resend_failed'));
+      setResendMessage(
+        error.message || t('auth.forgot_password.resend_failed'),
+      );
     } else {
       setResendMessage(t('auth.forgot_password.resend_success'));
       setCountdown(30);
@@ -156,7 +158,9 @@ export function ForgotPasswordComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>{t('auth.email')}</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.email')}
+                  </FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
