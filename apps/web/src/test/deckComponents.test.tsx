@@ -447,6 +447,49 @@ describe('WordNoteList Component', () => {
     expect(cardsTrigger).toHaveFocus();
   });
 
+  it('counts only cards belonging to words that match the search', () => {
+    const secondWordNote: UserNoteRecord = {
+      ...wordNote,
+      id: 'word-note-2',
+      fields_json: JSON.stringify({
+        word: 'Katze',
+        translation: 'cat',
+        native_language_id: RUSSIAN,
+        target_language_id: GERMAN,
+      }),
+    };
+    const secondWordCard: Card = {
+      ...wordCards[0],
+      id: 'word-card-2',
+      note_id: secondWordNote.id,
+      front: 'Katze',
+      back: 'cat',
+    };
+
+    render(
+      <WordNoteList
+        notes={[wordNote, secondWordNote]}
+        cards={[...wordCards, secondWordCard]}
+        dueCount={0}
+        onViewNote={vi.fn()}
+        onViewDetails={vi.fn()}
+        onEditWord={vi.fn()}
+        onRemoveWord={vi.fn()}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Search word, translation...'),
+      { target: { value: 'Katze' } },
+    );
+
+    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards')).toBeInTheDocument();
+  });
+
   it('routes view, edit, and removal through the word-to-translation sibling', () => {
     const onViewNote = vi.fn();
     const onViewDetails = vi.fn();

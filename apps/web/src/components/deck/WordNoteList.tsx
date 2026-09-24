@@ -108,7 +108,9 @@ export function WordNoteList({
             <Library className="size-4 text-primary" />
             {countWords(filteredRows)} Words
           </CardTitle>
-          <span>{countCards(cards)} Cards</span>
+          <span>
+            {countCards(filteredRows.flatMap((row) => row.cards))} Cards
+          </span>
           <span>{dueCount} Cards Due</span>
         </div>
         <div className="relative mt-4 w-full md:max-w-xs">
