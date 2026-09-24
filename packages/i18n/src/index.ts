@@ -2,7 +2,6 @@ import en from './catalogs/en.json';
 import es from './catalogs/es.json';
 import de from './catalogs/de.json';
 
-
 export const catalogs = {
   en: { translation: en },
   es: { translation: es },
