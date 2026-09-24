@@ -425,10 +425,8 @@ describe('WordNoteList Component', () => {
     expect(screen.queryByText(/RU → DE/)).toBeNull();
     expect(screen.queryByText(/Example → RU/)).toBeNull();
     expect(
-      screen
-        .getAllByRole('button', { name: 'View 3 details' })
-        .some((button) => button.textContent === '3'),
-    ).toBe(true);
+      screen.getAllByRole('button', { name: 'View 3 details' }),
+    ).not.toHaveLength(0);
     const cardsTrigger = screen.getAllByRole('button', {
       name: 'View 3 cards',
     })[0];

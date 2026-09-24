@@ -194,23 +194,20 @@ export function WordNoteList({
                       <div className="contents">
                         <div
                           role="cell"
-                          className="flex min-w-0 items-center justify-center gap-2 @[848px]:justify-self-center"
+                          className="flex min-w-0 items-center justify-center @[848px]:justify-self-center"
                         >
-                          <button
-                            type="button"
-                            className="text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer @[848px]:hidden"
-                            onClick={() => onViewDetails(row.note)}
-                            aria-label={`View ${row.detailsCount} details`}
-                          >
-                            Extra info:
-                          </button>
                           <button
                             type="button"
                             className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
                             onClick={() => onViewDetails(row.note)}
                             aria-label={`View ${row.detailsCount} details`}
                           >
-                            {row.detailsCount}
+                            <span className="@[848px]:hidden">
+                              Extra info: {row.detailsCount}
+                            </span>
+                            <span className="hidden @[848px]:inline">
+                              {row.detailsCount}
+                            </span>
                           </button>
                         </div>
                         <div
