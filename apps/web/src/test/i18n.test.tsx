@@ -82,13 +82,17 @@ describe('i18n web adapter', () => {
   });
 
   it('translates keys in the active language', async () => {
-    expect(i18n.t('common.save')).toBe('Save');
+    expect(i18n.t('auth.login.submit')).toBe('Login');
 
-    await i18n.changeLanguage('es');
-    expect(i18n.t('common.save')).toBe('Guardar');
+    await act(async () => {
+      await i18n.changeLanguage('es');
+    });
+    expect(i18n.t('auth.login.submit')).toBe('Iniciar sesión');
 
-    await i18n.changeLanguage('de');
-    expect(i18n.t('common.save')).toBe('Speichern');
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+    expect(i18n.t('auth.login.submit')).toBe('Anmelden');
   });
 
   it('updates document.documentElement.lang when the language changes', async () => {
@@ -187,6 +191,6 @@ describe('LanguageSwitcher component', () => {
     rerender(<LanguageSwitcher variant="full" />);
 
     // The combobox should now reflect German
-    expect(i18n.resolvedLanguage).toBe('de');
+    expect(screen.getByRole('combobox')).toHaveTextContent(/Deutsch/);
   });
 });
