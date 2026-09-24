@@ -26,21 +26,34 @@ describe('nativeSyncTriggers', () => {
     const fire = jest.fn();
     const unsubscribe = nativeSyncTriggers(fire);
 
-    // At start and while it stays connected: the first sync covers it
+    // The first report fires once; repeats while connected do not
     mockNetworkListener({ isConnected: true });
     mockNetworkListener({ isConnected: true });
-    expect(fire).not.toHaveBeenCalled();
+    expect(fire).toHaveBeenCalledTimes(1);
     // Offline, then back: one sync for the reconnect
     mockNetworkListener({ isConnected: false });
     mockNetworkListener({ isConnected: true });
     mockNetworkListener({ isConnected: true });
-    expect(fire).toHaveBeenCalledTimes(1);
+    expect(fire).toHaveBeenCalledTimes(2);
     listeners[0]('active');
     listeners[0]('background');
-    expect(fire).toHaveBeenCalledTimes(2);
+    expect(fire).toHaveBeenCalledTimes(3);
 
     unsubscribe();
     expect(mockNetworkRemove).toHaveBeenCalled();
     expect(appStateRemove).toHaveBeenCalled();
+  });
+
+  it('syncs when an app started offline first hears the network is back', () => {
+    // Android sends no offline report at start: the first one received
+    // is the connection returning, after the first sync has failed.
+    jest
+      .spyOn(AppState, 'addEventListener')
+      .mockImplementation((() => ({ remove: jest.fn() })) as never);
+    const fire = jest.fn();
+    nativeSyncTriggers(fire);
+
+    mockNetworkListener({ isConnected: true });
+    expect(fire).toHaveBeenCalledTimes(1);
   });
 });
