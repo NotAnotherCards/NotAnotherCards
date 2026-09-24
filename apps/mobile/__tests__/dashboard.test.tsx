@@ -54,6 +54,20 @@ let mockOverviewStats = {
   isLoading: false,
   error: null as Error | null,
 };
+let mockAchievements = {
+  achievements: [] as {
+    code: string;
+    name: string;
+    rule: string;
+    description: string;
+    unlockedAt: number | null;
+  }[],
+  isLoading: false,
+  error: null as Error | null,
+};
+jest.mock('../lib/achievements', () => ({
+  useAchievements: () => mockAchievements,
+}));
 // Only the hook is faked: dailyGoals is the real copy the card renders.
 jest.mock('../lib/overview-stats', () => ({
   ...jest.requireActual('../lib/overview-stats'),
@@ -81,8 +95,10 @@ jest.mock('../components/ui/icon', () => ({
   GraduationCapIcon: () => null,
   InfoIcon: () => null,
   LibraryIcon: () => null,
+  MedalIcon: () => null,
   SettingsIcon: () => null,
   SparklesIcon: () => null,
+  TrophyIcon: () => null,
 }));
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -110,6 +126,7 @@ describe('Dashboard screen', () => {
       error: null,
     };
     mockSyncController = null;
+    mockAchievements = { achievements: [], isLoading: false, error: null };
   });
 
   it('redirects to login when there is no session', () => {
@@ -232,7 +249,7 @@ describe('Dashboard screen', () => {
     expect(getByText('12')).toBeTruthy();
   });
 
-  it("shows today's goals with web's copy under the tiles", () => {
+  it("shows today's goals under the tiles, count or Completed", () => {
     mockOverviewStats.stats = {
       ...NO_STATS,
       challenges: [
@@ -245,15 +262,41 @@ describe('Dashboard screen', () => {
       isPending: false,
     });
 
-    const { getByText, getByLabelText } = render(<Dashboard />);
+    const { getByText, queryByText, getByLabelText } = render(<Dashboard />);
     expect(getByText('Daily Learning Goals')).toBeTruthy();
-    expect(getByText('20 / 20')).toBeTruthy();
+    // A finished goal says so instead of its count
     expect(getByText('Completed')).toBeTruthy();
+    expect(queryByText('20 / 20')).toBeNull();
     expect(getByText('2 / 5')).toBeTruthy();
-    expect(getByText('3 remaining')).toBeTruthy();
     expect(
       getByLabelText('New Vocabulary progress').props.accessibilityValue,
     ).toMatchObject({ now: 40 });
+  });
+
+  it('shows the badges in a row and their details on a tap', () => {
+    const { achievements } = jest.requireActual('../lib/achievements');
+    mockAchievements.achievements = achievements([
+      { badge_id: 'first-review', unlocked_at: Date.UTC(2026, 8, 20, 12) },
+    ]);
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText, getByLabelText } = render(<Dashboard />);
+    expect(getByText('Achievements')).toBeTruthy();
+    expect(getByLabelText('Century Mark, locked')).toBeTruthy();
+
+    // The row shows the badges; a tap opens rule, story and date
+    fireEvent.press(getByLabelText('First Step, unlocked'));
+    expect(getByText('Complete your first review')).toBeTruthy();
+    expect(getByText(/^Unlocked: /)).toBeTruthy();
+    fireEvent.press(getByLabelText('Close'));
+    expect(queryByText('Complete your first review')).toBeNull();
+
+    fireEvent.press(getByLabelText('Week Warrior, locked'));
+    expect(getByText('7-day streak')).toBeTruthy();
+    expect(getByText('Locked')).toBeTruthy();
   });
 
   it('opens the goal rules over the screen from the info button', () => {

@@ -8,8 +8,10 @@ import {
   Info,
   Library,
   LogOut,
+  Medal,
   Settings,
   Sparkles,
+  Trophy,
   User,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -34,7 +36,9 @@ export const GraduationCapIcon = withClassName(GraduationCap);
 export const InfoIcon = withClassName(Info);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
+export const MedalIcon = withClassName(Medal);
 export const SettingsIcon = withClassName(Settings);
 export const SparklesIcon = withClassName(Sparkles);
+export const TrophyIcon = withClassName(Trophy);
 export const UserIcon = withClassName(User);
 export type { LucideIcon };

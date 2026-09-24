@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DatabaseManager } from '@remelondb/core';
 import { authClient } from '@/lib/auth-client';
@@ -17,8 +11,10 @@ import {
   GraduationCapIcon,
   InfoIcon,
   LibraryIcon,
+  MedalIcon,
   SettingsIcon,
   SparklesIcon,
+  TrophyIcon,
   type LucideIcon,
 } from '@/components/ui/icon';
 import {
@@ -35,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { DeckList } from '@/components/deck-list';
 import { RequireSession } from '@/components/require-session';
 import { Settings } from '@/components/settings';
+import { InfoPanel } from '@/components/info-panel';
 import { SyncStatus } from '@/components/sync-status';
 import { useSessionDatabase } from '@/lib/database-provider';
 import {
@@ -43,6 +40,7 @@ import {
 } from '@/lib/review-preferences';
 import { useReviewOverview } from '@/lib/review';
 import { dailyGoals, useOverviewStats } from '@/lib/overview-stats';
+import { useAchievements, type Achievement } from '@/lib/achievements';
 
 // Web's dashboard strip: Overview, My Library, Profile & Settings, same
 // icons. Tab state lives here like web's, no native tab navigator. The
@@ -92,11 +90,14 @@ export default function Dashboard() {
             the first tap on Save only dismisses the keyboard. */}
         <ScrollView
           className="flex-1"
-          contentContainerClassName="gap-4 p-6"
+          contentContainerClassName="grow gap-4 p-6"
           keyboardShouldPersistTaps="handled"
         >
           {tab === 'overview' && (
-            <View className="gap-4">
+            // Greeting, tiles, goals and badges share the free height
+            // evenly, above and below each: on a tall phone they spread
+            // out, on a small one they close up to gap-4.
+            <View className="flex-1 justify-evenly gap-4">
               <View className="flex-row items-center justify-between gap-3">
                 {/* The email stays in the Settings account header; the first
                     screen is the one others see over your shoulder. */}
@@ -243,8 +244,10 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
     },
   ];
 
+  // A fragment: the three sections sit directly in the Overview's column,
+  // next to the greeting, so the free height is shared by all four.
   return (
-    <View className="gap-4">
+    <>
       {/* One row of three: a third of a phone has room for icon, value
           and title, not for web's description line, which screen readers
           still get. */}
@@ -281,27 +284,24 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
         )}
       </View>
       <DailyGoalsCard challenges={stats.challenges} />
-    </View>
+      <AchievementsCard manager={manager} />
+    </>
   );
 }
 
-// Web's Daily Learning Goals card: the two challenges with web's copy,
-// bar colours and footnote. The track takes the page colour: on mobile a
-// card is the muted tone already (docs/design.md), so web's muted track
-// would not show.
+// Web's Daily Learning Goals: each goal's title, count, description and
+// bar. The rules below web's goals open from the info button instead.
 function DailyGoalsCard({
   challenges,
 }: {
   challenges: Parameters<typeof dailyGoals>[0];
 }) {
-  // Web prints the rules under the goals every time; on a phone they are
-  // read once, so they open over the screen from the info button and give
-  // the card's space back when closed.
   const [showRules, setShowRules] = useState(false);
+  const goals = dailyGoals(challenges);
 
   return (
-    <Card className="gap-4 py-4">
-      <CardHeader className="gap-1 px-4">
+    <Card className="gap-3 py-4">
+      <CardHeader className="px-4">
         <View className="flex-row items-center gap-2">
           <SparklesIcon size={16} className="text-amber-500" />
           <CardTitle className="flex-1 text-base">
@@ -316,70 +316,140 @@ function DailyGoalsCard({
             <InfoIcon size={18} className="text-muted-foreground" />
           </Pressable>
         </View>
-        <CardDescription className="text-xs">
-          Complete daily tasks to unlock achievements and progress your fluency.
-        </CardDescription>
       </CardHeader>
-      <CardContent className="gap-4 px-4">
-        {dailyGoals(challenges).map((goal) => (
+      <CardContent className="gap-3 px-4">
+        {goals.map((goal) => (
           <View key={goal.code} className="gap-1.5">
             <View className="flex-row items-center justify-between">
               <Text className="text-sm font-semibold">{goal.title}</Text>
-              <Text className="text-xs text-muted-foreground">
-                {goal.progress}
+              <Text
+                className={`text-xs ${
+                  goal.completed
+                    ? 'font-semibold text-emerald-600 dark:text-emerald-400'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                {goal.completed ? 'Completed' : goal.progress}
               </Text>
             </View>
             <Text className="text-xs text-muted-foreground">
               {goal.description}
             </Text>
+            {/* The track takes the page colour: a mobile card is the muted
+                tone already (docs/design.md), so web's track would not show. */}
             <Progress
               value={goal.percent}
               accessibilityLabel={`${goal.title} progress`}
               className="h-1.5 bg-background"
               indicatorClassName="bg-amber-500"
             />
-            <View
-              className={`self-end rounded-full px-2 py-0.5 ${
-                goal.completed ? 'bg-emerald-500/10' : 'bg-amber-500/10'
-              }`}
-            >
-              <Text
-                className={`text-xs font-semibold ${
-                  goal.completed
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-amber-600 dark:text-amber-400'
-                }`}
-              >
-                {goal.reward}
-              </Text>
-            </View>
           </View>
         ))}
       </CardContent>
       {showRules && (
-        <Modal
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowRules(false)}
+        <InfoPanel
+          title="How daily goals count"
+          onClose={() => setShowRules(false)}
         >
-          {/* An info panel, not a dialog: a tap anywhere closes it, like the
-              back button. */}
-          <Pressable
-            accessibilityLabel="Close"
-            className="flex-1 items-center justify-center bg-black/50 p-6"
-            onPress={() => setShowRules(false)}
+          <Text className="text-sm text-muted-foreground">
+            One review earns one point regardless of rating.
+          </Text>
+          <Text className="text-sm text-muted-foreground">
+            Daily challenges and streaks reset at 00:00 UTC.
+          </Text>
+        </InfoPanel>
+      )}
+    </Card>
+  );
+}
+
+const BADGE_ICONS: Record<Achievement['code'], LucideIcon> = {
+  'first-review': MedalIcon,
+  'seven-day-streak': FlameIcon,
+  'hundred-reviews': TrophyIcon,
+};
+
+// Web's Achievements, as one row of three badges: unlocked ones in the
+// primary colour like web's (colours for both clients come with the
+// tokens, #396), locked ones faded (web greys them with a CSS filter,
+// which React Native lacks). A tap opens the rule, story and date.
+function AchievementsCard({ manager }: { manager: DatabaseManager }) {
+  const { achievements, isLoading, error } = useAchievements(manager);
+  const [open, setOpen] = useState<Achievement | null>(null);
+
+  return (
+    <Card className="gap-3 py-4">
+      <CardHeader className="px-4">
+        <View className="flex-row items-center gap-2">
+          <TrophyIcon size={16} className="text-primary" />
+          <CardTitle className="text-base">Achievements</CardTitle>
+        </View>
+      </CardHeader>
+      <CardContent className="px-4">
+        {error ? (
+          <Text className="text-sm text-destructive">
+            Could not load your badges: {error.message}
+          </Text>
+        ) : isLoading ? (
+          <ActivityIndicator accessibilityLabel="Loading badges" />
+        ) : (
+          <View className="flex-row gap-3">
+            {achievements.map((badge) => {
+              const Icon = BADGE_ICONS[badge.code];
+              const unlocked = badge.unlockedAt !== null;
+              return (
+                <Pressable
+                  key={badge.code}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${badge.name}, ${
+                    unlocked ? 'unlocked' : 'locked'
+                  }`}
+                  onPress={() => setOpen(badge)}
+                  className={`flex-1 items-center gap-1.5 rounded-xl border px-1 py-3 ${
+                    unlocked
+                      ? 'border-primary/20 bg-primary/5'
+                      : 'border-border bg-background opacity-50'
+                  }`}
+                >
+                  <View
+                    className={`rounded-full p-2.5 ${
+                      unlocked ? 'bg-primary/20' : 'bg-muted'
+                    }`}
+                  >
+                    <Icon
+                      size={20}
+                      className={
+                        unlocked ? 'text-primary' : 'text-muted-foreground'
+                      }
+                    />
+                  </View>
+                  <Text className="text-center text-xs font-semibold">
+                    {badge.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+      </CardContent>
+      {open && (
+        <InfoPanel title={open.name} onClose={() => setOpen(null)}>
+          <Text className="text-sm font-medium">{open.rule}</Text>
+          <Text className="text-sm text-muted-foreground">
+            {open.description}
+          </Text>
+          <Text
+            className={`text-sm ${
+              open.unlockedAt !== null
+                ? 'text-primary'
+                : 'text-muted-foreground'
+            }`}
           >
-            <Card className="w-full gap-3 px-5 py-5">
-              <CardTitle className="text-base">How daily goals count</CardTitle>
-              <Text className="text-sm text-muted-foreground">
-                One review earns one point regardless of rating.
-              </Text>
-              <Text className="text-sm text-muted-foreground">
-                Daily challenges and streaks reset at 00:00 UTC.
-              </Text>
-            </Card>
-          </Pressable>
-        </Modal>
+            {open.unlockedAt !== null
+              ? `Unlocked: ${new Date(open.unlockedAt).toLocaleDateString()}`
+              : 'Locked'}
+          </Text>
+        </InfoPanel>
       )}
     </Card>
   );
