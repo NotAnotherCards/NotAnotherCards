@@ -2,11 +2,13 @@ import 'i18next';
 import en from './catalogs/en.json';
 import es from './catalogs/es.json';
 import de from './catalogs/de.json';
+import ru from './catalogs/ru.json';
 
 export const catalogs = {
   en: { translation: en },
   es: { translation: es },
   de: { translation: de },
+  ru: { translation: ru },
 } as const;
 
 export type SupportedLocale = keyof typeof catalogs;
@@ -14,6 +16,7 @@ export const supportedLocales = [
   'en',
   'es',
   'de',
+  'ru',
 ] as const satisfies readonly SupportedLocale[];
 export const defaultLocale: SupportedLocale = 'en';
 
@@ -24,6 +27,7 @@ export const localeMetadata: Record<
   en: { flag: '🇺🇸', nativeName: 'English' },
   es: { flag: '🇪🇸', nativeName: 'Español' },
   de: { flag: '🇩🇪', nativeName: 'Deutsch' },
+  ru: { flag: '🇷🇺', nativeName: 'Русский' },
 };
 
 export type I18nKeys = typeof en;
