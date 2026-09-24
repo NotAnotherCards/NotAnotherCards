@@ -1,6 +1,10 @@
-export type UiPreferences = {
-  useTargetLanguageForUi: boolean;
-};
+import { z } from 'zod';
+
+const uiPreferencesSchema = z.object({
+  useTargetLanguageForUi: z.boolean().catch(false),
+});
+
+export type UiPreferences = z.infer<typeof uiPreferencesSchema>;
 
 export const DEFAULT_UI_PREFERENCES: Readonly<UiPreferences> = {
   useTargetLanguageForUi: false,
@@ -15,17 +19,11 @@ export function parseUiPreferences(savedValue: string | null): UiPreferences {
 
   try {
     const parsedValue: unknown = JSON.parse(savedValue);
-    if (!parsedValue || typeof parsedValue !== 'object') {
-      return { ...DEFAULT_UI_PREFERENCES };
+    const result = uiPreferencesSchema.safeParse(parsedValue);
+    if (result.success) {
+      return result.data;
     }
-
-    return {
-      useTargetLanguageForUi:
-        'useTargetLanguageForUi' in parsedValue &&
-        typeof (parsedValue as any).useTargetLanguageForUi === 'boolean'
-          ? (parsedValue as any).useTargetLanguageForUi
-          : false,
-    };
+    return { ...DEFAULT_UI_PREFERENCES };
   } catch {
     return { ...DEFAULT_UI_PREFERENCES };
   }
