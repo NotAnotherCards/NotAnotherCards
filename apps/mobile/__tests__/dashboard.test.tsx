@@ -10,6 +10,17 @@ import {
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
 const mockManager = { tag: 'manager' };
+let mockSyncController: {
+  state: {
+    status: string;
+    lastSyncAt: null;
+    error: null;
+    cause: null;
+    lastResult: null;
+  };
+  subscribe: () => () => void;
+  syncNow: jest.Mock;
+} | null = null;
 let mockReviewOverview = {
   dueDeckIds: new Set<string>(),
   dueCount: 0,
@@ -21,10 +32,46 @@ jest.mock('../lib/auth-client', () => ({
   authClient: { useSession: () => mockUseSession() },
 }));
 jest.mock('../lib/database-provider', () => ({
-  useSessionDatabase: () => ({ manager: mockManager }),
+  useSessionDatabase: () => ({
+    manager: mockManager,
+    syncController: mockSyncController,
+  }),
 }));
 jest.mock('../lib/review', () => ({
   useReviewOverview: () => mockReviewOverview,
+}));
+const NO_STATS = {
+  dictionarySize: 0,
+  streak: 0,
+  wordsLearned: 0,
+  challenges: [
+    { code: 'daily-review', current: 0, target: 20, completed: false },
+    { code: 'new-vocabulary', current: 0, target: 5, completed: false },
+  ],
+};
+let mockOverviewStats = {
+  stats: { ...NO_STATS } as typeof NO_STATS | null,
+  isLoading: false,
+  error: null as Error | null,
+};
+let mockAchievements = {
+  achievements: [] as {
+    code: string;
+    name: string;
+    rule: string;
+    description: string;
+    unlockedAt: number | null;
+  }[],
+  isLoading: false,
+  error: null as Error | null,
+};
+jest.mock('../lib/achievements', () => ({
+  useAchievements: () => mockAchievements,
+}));
+// Only the hook is faked: dailyGoals is the real copy the card renders.
+jest.mock('../lib/overview-stats', () => ({
+  ...jest.requireActual('../lib/overview-stats'),
+  useOverviewStats: () => mockOverviewStats,
 }));
 
 // The deck list and settings have their own tests; keep this one about the
@@ -42,9 +89,16 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('../components/ui/icon', () => ({
+  BookMarkedIcon: () => null,
   BookOpenIcon: () => null,
+  FlameIcon: () => null,
+  GraduationCapIcon: () => null,
+  InfoIcon: () => null,
   LibraryIcon: () => null,
+  MedalIcon: () => null,
   SettingsIcon: () => null,
+  SparklesIcon: () => null,
+  TrophyIcon: () => null,
 }));
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -66,6 +120,13 @@ describe('Dashboard screen', () => {
       isLoading: false,
       error: null,
     };
+    mockOverviewStats = {
+      stats: { ...NO_STATS },
+      isLoading: false,
+      error: null,
+    };
+    mockSyncController = null;
+    mockAchievements = { achievements: [], isLoading: false, error: null };
   });
 
   it('redirects to login when there is no session', () => {
@@ -133,8 +194,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    expect(getByText('3 cards due')).toBeTruthy();
-    fireEvent.press(getByText('Start Review'));
+    fireEvent.press(getByText('Start Review · 3 due'));
 
     expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
   });
@@ -161,11 +221,172 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Start Review'));
+    fireEvent.press(getByText('Start Review · 3 due'));
 
     expect(getByText('deck-list')).toBeTruthy();
     expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("shows web's three stat tiles on the Overview", () => {
+    mockOverviewStats.stats = {
+      ...NO_STATS,
+      dictionarySize: 1540,
+      streak: 1,
+      wordsLearned: 12,
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('Personal Dictionary')).toBeTruthy();
+    expect(getByText('1540 cards')).toBeTruthy();
+    expect(getByText('Learning Streak')).toBeTruthy();
+    expect(getByText('1 Day')).toBeTruthy();
+    expect(getByText('Words Learned')).toBeTruthy();
+    expect(getByText('12')).toBeTruthy();
+  });
+
+  it("shows today's goals under the tiles, count or Completed", () => {
+    mockOverviewStats.stats = {
+      ...NO_STATS,
+      challenges: [
+        { code: 'daily-review', current: 20, target: 20, completed: true },
+        { code: 'new-vocabulary', current: 2, target: 5, completed: false },
+      ],
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText, getByLabelText } = render(<Dashboard />);
+    expect(getByText('Daily Learning Goals')).toBeTruthy();
+    // A finished goal says so instead of its count
+    expect(getByText('Completed')).toBeTruthy();
+    expect(queryByText('20 / 20')).toBeNull();
+    expect(getByText('2 / 5')).toBeTruthy();
+    expect(
+      getByLabelText('New Vocabulary progress').props.accessibilityValue,
+    ).toMatchObject({ now: 40 });
+  });
+
+  it('shows the badges in a row and their details on a tap', () => {
+    const { achievements } = jest.requireActual('../lib/achievements');
+    mockAchievements.achievements = achievements([
+      { badge_id: 'first-review', unlocked_at: Date.UTC(2026, 8, 20, 12) },
+    ]);
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText, getByLabelText } = render(<Dashboard />);
+    expect(getByText('Achievements')).toBeTruthy();
+    expect(getByLabelText('Century Mark, locked')).toBeTruthy();
+
+    // The row shows the badges; a tap opens rule, story and date
+    fireEvent.press(getByLabelText('First Step, unlocked'));
+    expect(getByText('Complete your first review')).toBeTruthy();
+    expect(getByText(/^Unlocked: /)).toBeTruthy();
+    fireEvent.press(getByLabelText('Close'));
+    expect(queryByText('Complete your first review')).toBeNull();
+
+    fireEvent.press(getByLabelText('Week Warrior, locked'));
+    expect(getByText('7-day streak')).toBeTruthy();
+    expect(getByText('Locked')).toBeTruthy();
+  });
+
+  it('opens the goal rules over the screen from the info button', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByLabelText, getByText, queryByText } = render(<Dashboard />);
+    expect(queryByText(/One review earns one point/)).toBeNull();
+
+    fireEvent.press(getByLabelText('How daily goals count'));
+    expect(getByText(/One review earns one point/)).toBeTruthy();
+    // A tap anywhere closes it: on the panel or beside it
+    fireEvent.press(getByText(/One review earns one point/));
+    expect(queryByText(/One review earns one point/)).toBeNull();
+
+    fireEvent.press(getByLabelText('How daily goals count'));
+    fireEvent.press(getByLabelText('Close'));
+    expect(queryByText(/One review earns one point/)).toBeNull();
+  });
+
+  it('reports a statistics error and keeps Start Review usable', () => {
+    mockOverviewStats = {
+      stats: null,
+      isLoading: false,
+      error: new Error('Unsupported review rating: 9'),
+    };
+    mockReviewOverview.dueCount = 2;
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, getByRole } = render(<Dashboard />);
+    expect(
+      getByText(/Could not load your statistics: Unsupported review rating: 9/),
+    ).toBeTruthy();
+    expect(
+      getByRole('button', { name: 'Start Review · 2 due' }).props
+        .accessibilityState.disabled,
+    ).toBeFalsy();
+  });
+
+  it('shows the sync status next to the greeting, with a retry after a failure', () => {
+    mockSyncController = {
+      state: {
+        status: 'error',
+        lastSyncAt: null,
+        error: null,
+        cause: null,
+        lastResult: null,
+      },
+      subscribe: () => () => {},
+      syncNow: jest.fn(),
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('Jane Doe')).toBeTruthy();
+    expect(getByText('Sync failed')).toBeTruthy();
+    fireEvent.press(getByText('Retry'));
+    expect(mockSyncController.syncNow).toHaveBeenCalled();
+  });
+
+  it('says Offline in plain text while no sync runs, as web does', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('Offline')).toBeTruthy();
+    expect(queryByText('Retry')).toBeNull();
+  });
+
+  it('keeps Start Review to the Overview tab', () => {
+    mockReviewOverview.dueCount = 4;
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('Start Review · 4 due')).toBeTruthy();
+    fireEvent.press(getByText('My Library'));
+    expect(queryByText(/Start Review/)).toBeNull();
   });
 
   it('does not clear the saved deck while queries are loading', () => {

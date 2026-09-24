@@ -1,10 +1,17 @@
 import { cssInterop } from 'nativewind';
 import {
+  BookMarked,
   BookOpen,
+  Flame,
   Globe,
+  GraduationCap,
+  Info,
   Library,
   LogOut,
+  Medal,
   Settings,
+  Sparkles,
+  Trophy,
   User,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -21,10 +28,17 @@ function withClassName(icon: LucideIcon): LucideIcon {
   return icon;
 }
 
+export const BookMarkedIcon = withClassName(BookMarked);
 export const BookOpenIcon = withClassName(BookOpen);
+export const FlameIcon = withClassName(Flame);
 export const GlobeIcon = withClassName(Globe);
+export const GraduationCapIcon = withClassName(GraduationCap);
+export const InfoIcon = withClassName(Info);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
+export const MedalIcon = withClassName(Medal);
 export const SettingsIcon = withClassName(Settings);
+export const SparklesIcon = withClassName(Sparkles);
+export const TrophyIcon = withClassName(Trophy);
 export const UserIcon = withClassName(User);
 export type { LucideIcon };
