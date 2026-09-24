@@ -14,7 +14,6 @@ In project documents, we use GitHub nicknames instead of real names.
 
 ---
 
-
 ## Weekly Meeting
 
 Every Wednesday at **19:30 (Berlin time)**.
