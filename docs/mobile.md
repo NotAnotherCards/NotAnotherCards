@@ -74,6 +74,20 @@ the big downloads are cached in `/sgoinfre`, so re-provisioning is quick.
 ./scripts/android-emulator.sh --headless # start without a window (CI/tests)
 ```
 
+The emulator renders in software (`swiftshader_indirect`) by default. With
+the host GPU, emulator 37 on the school's AMD cards never brings up the
+display: the boot logo stays, and `adb logcat` shows `WATCHDOG KILLING
+SYSTEM PROCESS` in `DisplayManagerService.onBootPhase` about every 70
+seconds. To try the GPU anyway: `EMULATOR_GPU=auto ./scripts/android-emulator.sh`.
+
+A native build (`npx expo run:android`) next to the running emulator can use
+up the school machines' 15 GB: the emulator's CPU threads stall in swap and it
+crashes with `detected a hanging thread` and a segmentation fault. The script
+therefore writes `~/.gradle/gradle.properties`, if you have none, with fewer
+parallel workers, a smaller Kotlin daemon and a 10-minute idle timeout.
+Delete the file for full-speed builds on a bigger machine. After a build,
+`cd apps/mobile/android && ./gradlew --stop` frees the daemons' memory at once.
+
 To use `adb` or `emulator` manually in your own shell, source the env file
 the script writes:
 
@@ -82,8 +96,9 @@ source /goinfre/$USER/android-sdk/env.sh
 ```
 
 (The script exports `ANDROID_AVD_HOME` to keep AVDs on goinfre, but
-`avdmanager` ignores it and creates them in `~/.android/avd` anyway — keep
-`~/.android` symlinked into goinfre so they stay off the home quota.)
+`avdmanager` ignores it and creates them in `~/.android/avd` anyway. So the
+script keeps `~/.android` and `~/.gradle` as symlinks into goinfre, off the
+home quota, and recreates their targets after a wipe.)
 
 The script also points pnpm's global package store at
 `/goinfre/$USER/pnpm-store` — it grows to ~1 GB and eats the home quota
