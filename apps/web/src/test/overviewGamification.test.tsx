@@ -170,6 +170,29 @@ describe('Overview Gamification', () => {
     vi.useRealTimers();
   });
 
+  it('shows rejected changes in the sync badge', async () => {
+    vi.spyOn(syncProvider, 'useSyncController').mockReturnValue({
+      syncNow: vi.fn(),
+    } as unknown as ReturnType<typeof syncProvider.useSyncController>);
+    vi.spyOn(syncProvider, 'useSyncState').mockReturnValue({
+      status: 'idle',
+      lastSyncAt: 0,
+      error: null,
+      lastResult: {
+        rejected: 3,
+        rejectedRecords: { user_decks: ['d1'], user_note_decks: ['m1', 'm2'] },
+      },
+    } as unknown as ReturnType<typeof syncProvider.useSyncState>);
+
+    render(<Overview onChooseDeck={() => {}} />);
+
+    const badge = await screen.findByText('Synced, 3 not accepted');
+    expect(badge).toHaveAttribute(
+      'title',
+      expect.stringContaining('1 deck. 2 deck memberships.'),
+    );
+  });
+
   it('fetches /api/gamification/me on mount', async () => {
     render(<Overview onChooseDeck={() => {}} />);
 
