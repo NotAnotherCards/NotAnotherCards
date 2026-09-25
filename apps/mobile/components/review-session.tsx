@@ -290,6 +290,13 @@ function ActiveReviewSession({
           note={editCard ? editor.noteForCard(editCard) : null}
           writes={editor.writes}
           onDone={() => setEditing(null)}
+          // The deleted card is gone from the deck: move on as after an
+          // answer, without counting it as one.
+          onDeleted={() => {
+            setEditing(null);
+            setIsFlipped(false);
+            void advance();
+          }}
         />
       </View>
     );

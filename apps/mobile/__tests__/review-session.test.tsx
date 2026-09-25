@@ -13,6 +13,7 @@ const mockRecord = jest.fn((_cardId: string, _rating: number) =>
 );
 const mockCreate = jest.fn(() => Promise.resolve());
 const mockUpdate = jest.fn(() => Promise.resolve());
+const mockDeleteNote = jest.fn((_noteId: string) => Promise.resolve());
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
 let mockReviewState: {
@@ -51,7 +52,11 @@ jest.mock('../lib/cards', () => ({
     },
     canEdit: () => true,
     noteForCard: () => null,
-    writes: { create: mockCreate, update: mockUpdate },
+    writes: {
+      create: mockCreate,
+      update: mockUpdate,
+      deleteNote: mockDeleteNote,
+    },
   }),
 }));
 jest.mock('expo-router', () => ({
@@ -64,6 +69,7 @@ beforeEach(() => {
   mockRecord.mockClear();
   mockCreate.mockClear();
   mockUpdate.mockClear();
+  mockDeleteNote.mockClear();
   mockReplace.mockClear();
   mockBack.mockClear();
   mockReviewState = {
@@ -311,5 +317,34 @@ describe('ReviewSession', () => {
       reviewMode: 'extended',
       showNextReviewInterval: false,
     });
+  });
+
+  it('deletes the card from the edit header after asking, then moves on', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByLabelText('Edit this card'));
+    fireEvent.press(result.getByLabelText('Delete card'));
+    expect(result.getByText('Delete "**gato**"?')).toBeTruthy();
+
+    // No goes back to editing without deleting.
+    fireEvent.press(result.getByText('No'));
+    expect(result.getByText('Edit card')).toBeTruthy();
+    expect(mockDeleteNote).not.toHaveBeenCalled();
+
+    fireEvent.press(result.getByLabelText('Delete card'));
+    fireEvent.press(result.getByText('Delete'));
+    await waitFor(() => expect(mockDeleteNote).toHaveBeenCalledWith('n1'));
+    expect(await result.findByText('Review complete')).toBeTruthy();
+    expect(mockRecord).not.toHaveBeenCalled();
+  });
+
+  it('offers no delete for a new card', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByLabelText('Add a card'));
+    expect(result.getByText('New card')).toBeTruthy();
+    expect(result.queryByLabelText('Delete card')).toBeNull();
   });
 });

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pressable, View } from 'react-native';
@@ -38,6 +39,7 @@ export function WordNoteForm({
   error,
   onSubmit,
   onCancel,
+  headerAction,
 }: {
   title: string;
   initialValues?: Partial<WordFormValues>;
@@ -45,6 +47,7 @@ export function WordNoteForm({
   error?: string | null;
   onSubmit: (values: WordFormValues) => Promise<void>;
   onCancel: () => void;
+  headerAction?: ReactNode;
 }) {
   const { control, handleSubmit, formState } = useForm<WordFormFields>({
     resolver: zodResolver(wordFormSchema),
@@ -77,8 +80,9 @@ export function WordNoteForm({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+      <CardHeader className="flex-row items-center justify-between gap-2">
+        <CardTitle className="flex-1">{title}</CardTitle>
+        {headerAction}
       </CardHeader>
       <CardContent className="gap-4">
         <FormField

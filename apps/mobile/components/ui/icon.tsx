@@ -7,6 +7,7 @@ import {
   Pencil,
   Plus,
   Settings,
+  Trash2,
   User,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -30,5 +31,6 @@ export const LogOutIcon = withClassName(LogOut);
 export const PencilIcon = withClassName(Pencil);
 export const PlusIcon = withClassName(Plus);
 export const SettingsIcon = withClassName(Settings);
+export const TrashIcon = withClassName(Trash2);
 export const UserIcon = withClassName(User);
 export type { LucideIcon };
