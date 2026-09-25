@@ -61,7 +61,7 @@ vi.mock('@/hooks/useStore', () => ({
   }),
 }));
 
-const saveButton = () => screen.queryByRole('button', { name: /save deck/i });
+const saveButton = () => screen.queryByRole('button', { name: /save/i });
 const confirmDeleteButton = () =>
   screen.queryByRole('button', { name: /delete deck only/i });
 
@@ -124,7 +124,7 @@ describe('deck CRUD error handling', () => {
     const openForm = () => {
       decks = [existingDeck];
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Edit Deck Details'));
+      fireEvent.click(screen.getByTitle('Edit'));
     };
 
     it('keeps the dialog open when the write fails', async () => {
@@ -144,7 +144,7 @@ describe('deck CRUD error handling', () => {
     const openDelete = () => {
       decks = [existingDeck];
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Delete Deck'));
+      fireEvent.click(screen.getByTitle('Delete'));
     };
 
     it.each([0, 1])(
@@ -158,7 +158,7 @@ describe('deck CRUD error handling', () => {
         });
         openDelete();
         const button = await screen.findByRole('button', {
-          name: 'Delete deck and 1 card',
+          name: /Delete deck and 1 card/,
         });
         expect(
           screen.getByText(/1 card is only in this deck/),
@@ -181,7 +181,7 @@ describe('deck CRUD error handling', () => {
     it('shows card counts and requires a second confirmation', async () => {
       openDelete();
       const destructive = await screen.findByRole('button', {
-        name: 'Delete deck and 3 cards',
+        name: /Delete deck and 3 card/,
       });
       expect(
         screen.getByText(/2 cards are also in other decks/),
@@ -194,7 +194,7 @@ describe('deck CRUD error handling', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Back' }));
       expect(deleteDeckWithNotes).not.toHaveBeenCalled();
       fireEvent.click(
-        screen.getByRole('button', { name: 'Delete deck and 3 cards' }),
+        screen.getByRole('button', { name: /Delete deck and 3 card/ }),
       );
       fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
       await waitFor(() =>
@@ -208,7 +208,7 @@ describe('deck CRUD error handling', () => {
       deleteDeckWithNotes.mockRejectedValueOnce(new Error('Deletion failed'));
       openDelete();
       fireEvent.click(
-        await screen.findByRole('button', { name: 'Delete deck and 3 cards' }),
+        await screen.findByRole('button', { name: /Delete deck and 3 card/ }),
       );
       fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
       await screen.findByRole('alert');
@@ -229,7 +229,7 @@ describe('deck CRUD error handling', () => {
       );
       openDelete();
       fireEvent.click(
-        await screen.findByRole('button', { name: 'Delete deck and 3 cards' }),
+        await screen.findByRole('button', { name: /Delete deck and 3 card/ }),
       );
       const button = screen.getByRole('button', {
         name: 'Delete',
@@ -279,7 +279,7 @@ describe('deck CRUD error handling', () => {
       decks = [existingDeck];
 
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Delete Deck'));
+      fireEvent.click(screen.getByTitle('Delete'));
       fireEvent.click(confirmDeleteButton()!);
 
       await waitFor(() => expect(deleteDeck).toHaveBeenCalledTimes(1));

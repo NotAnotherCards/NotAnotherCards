@@ -12,12 +12,13 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthCard } from '@/components/auth/auth-card';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { z } from 'zod';
 import { authClient } from '@/lib/auth-client';
 import { CheckCircle2 } from 'lucide-react';
 import { useSearch } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
+
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -62,7 +63,7 @@ export function ForgotPasswordComponent() {
     });
 
     if (error) {
-      setApiError(error.message || 'An unexpected error occurred');
+      setApiError(error.message || t('auth.error.unexpected'));
     } else {
       setSuccess(true);
       setCountdown(30);

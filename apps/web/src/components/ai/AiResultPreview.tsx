@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AiCardOutput } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ export function AiResultPreview({
   onSave,
   isSaving,
 }: AiResultPreviewProps) {
+  const { t } = useTranslation();
   const [deckMode, setDeckMode] = useState<'existing' | 'new'>('existing');
   const [selectedDeckId, setSelectedDeckId] = useState(decks[0]?.id || '');
   const [newDeckTitle, setNewDeckTitle] = useState('');
@@ -64,7 +66,10 @@ export function AiResultPreview({
       }
       setSavedSuccess(true);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to save cards';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : t('playground.preview.save_cards_failed', 'Failed to save cards');
       setSaveError(msg);
     }
   };
@@ -73,9 +78,15 @@ export function AiResultPreview({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Creation Results</h2>
+          <h2 className="text-xl font-bold tracking-tight">
+            {t('playground.preview.results_title', 'Creation Results')}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            Created {cards.length} structured flashcard note candidates.
+            {t(
+              'playground.preview.results_desc',
+              'Created {{count}} structured flashcard note candidates.',
+              { count: cards.length },
+            )}
           </p>
         </div>
       </div>
@@ -88,7 +99,7 @@ export function AiResultPreview({
           >
             <div className="flex-1 space-y-1">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Front
+                {t('playground.preview.front', 'Front')}
               </div>
               <div className="text-sm font-medium">
                 <MarkdownRenderer content={card.front} />
@@ -99,7 +110,7 @@ export function AiResultPreview({
             </div>
             <div className="flex-1 space-y-1">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Back
+                {t('playground.preview.back', 'Back')}
               </div>
               <div className="text-sm font-medium">
                 <MarkdownRenderer content={card.back} />
@@ -112,10 +123,14 @@ export function AiResultPreview({
       {/* Persistence Section */}
       <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">
         <div>
-          <h3 className="text-lg font-bold tracking-tight">Save to Database</h3>
+          <h3 className="text-lg font-bold tracking-tight">
+            {t('playground.preview.save_db', 'Save to Database')}
+          </h3>
           <p className="text-sm text-muted-foreground">
-            Choose deck membership. Saving creates flashcards in your selected
-            deck.
+            {t(
+              'playground.preview.save_db_desc',
+              'Choose deck membership. Saving creates flashcards in your selected deck.',
+            )}
           </p>
         </div>
 
@@ -137,7 +152,8 @@ export function AiResultPreview({
                 : 'text-muted-foreground'
             }`}
           >
-            <BookOpen className="size-3.5" /> Select Deck
+            <BookOpen className="size-3.5" />{' '}
+            {t('playground.preview.select_deck', 'Select Deck')}
           </button>
           <button
             type="button"
@@ -148,14 +164,17 @@ export function AiResultPreview({
                 : 'text-muted-foreground'
             }`}
           >
-            <FolderPlus className="size-3.5" /> Create New
+            <FolderPlus className="size-3.5" />{' '}
+            {t('playground.preview.create_new', 'Create New')}
           </button>
         </div>
 
         {/* Target Deck input */}
         {deckMode === 'existing' ? (
           <Field className="space-y-2">
-            <FieldLabel htmlFor="deck-select">Target Deck</FieldLabel>
+            <FieldLabel htmlFor="deck-select">
+              {t('playground.form.target_deck', 'Target Deck')}
+            </FieldLabel>
             <div className="relative">
               <select
                 id="deck-select"
@@ -164,7 +183,7 @@ export function AiResultPreview({
                 className="w-full rounded-3xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
               >
                 <option value="" disabled>
-                  -- Choose a deck --
+                  {t('playground.preview.choose_deck', '-- Choose a deck --')}
                 </option>
                 {decks.map((deck) => (
                   <option
@@ -183,10 +202,15 @@ export function AiResultPreview({
           </Field>
         ) : (
           <Field className="space-y-2">
-            <FieldLabel htmlFor="new-deck">New Deck Name</FieldLabel>
+            <FieldLabel htmlFor="new-deck">
+              {t('playground.preview.new_deck_name', 'New Deck Name')}
+            </FieldLabel>
             <Input
               id="new-deck"
-              placeholder="e.g. French Vocab A1"
+              placeholder={t(
+                'playground.preview.new_deck_placeholder',
+                'e.g. French Vocab A1',
+              )}
               value={newDeckTitle}
               onChange={(e) => setNewDeckTitle(e.target.value)}
               className="w-full border-border/60"
@@ -203,7 +227,9 @@ export function AiResultPreview({
           }
           className="w-full bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-3xl py-5 shadow-lg shadow-emerald-500/10 font-semibold cursor-pointer"
         >
-          {isSaving ? 'Saving to Deck...' : 'Save Cards to Deck'}
+          {isSaving
+            ? t('playground.preview.saving_cards', 'Saving to Deck...')
+            : t('playground.preview.save_cards', 'Save Cards to Deck')}
         </Button>
       </div>
 
@@ -212,9 +238,14 @@ export function AiResultPreview({
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-500/30 transition-all duration-300">
           <CheckCircle2 className="size-5 shrink-0 text-white" />
           <div>
-            <h4 className="font-semibold text-sm">Deck Saved!</h4>
+            <h4 className="font-semibold text-sm">
+              {t('playground.preview.deck_saved', 'Deck Saved!')}
+            </h4>
             <p className="text-xs text-emerald-100">
-              Cards have been added to your local library.
+              {t(
+                'playground.preview.deck_saved_desc',
+                'Cards have been added to your local library.',
+              )}
             </p>
           </div>
         </div>

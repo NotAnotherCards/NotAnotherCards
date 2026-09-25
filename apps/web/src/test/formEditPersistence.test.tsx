@@ -91,7 +91,7 @@ describe('Form Edit Input Persistence Across Parent Re-renders', () => {
   it('retains typed text in DeckForm title and description inputs when parent re-renders with a new initialData object reference', async () => {
     render(<DeckFormTestWrapper />);
 
-    const titleInput = screen.getByLabelText(/deck title/i) as HTMLInputElement;
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement;
     const descInput = screen.getByLabelText(
       /description/i,
     ) as HTMLTextAreaElement;

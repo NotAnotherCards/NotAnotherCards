@@ -16,9 +16,10 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { SocialLoginButton } from '@/components/auth/social-login-button';
-import { useTranslation } from 'react-i18next';
+
 
 export function RegisterComponent() {
   const { t } = useTranslation();
@@ -33,9 +34,7 @@ export function RegisterComponent() {
     const errorParam = params.get('error');
     if (errorParam) {
       if (errorParam === 'OAuthCallbackError') {
-        setApiError(
-          'Social signup failed. Please try again or use another provider.',
-        );
+        setApiError(t('auth.error.social_signup_failed_callback'));
       } else {
         setApiError(errorParam.replace(/_/g, ' '));
       }
@@ -60,12 +59,12 @@ export function RegisterComponent() {
         errorCallbackURL: `${window.location.origin}/register`,
       });
       if (error) {
-        setApiError(error.message || 'Social login failed. Please try again.');
+        setApiError(error.message || t('auth.error.social_signup_failed'));
         setOauthProvider(null);
       }
     } catch {
       setOauthProvider(null);
-      setApiError('Social login failed. Please try again.');
+      setApiError(t('auth.error.social_signup_failed'));
     }
   };
   const form = useForm<SignupFormData>({
@@ -89,7 +88,7 @@ export function RegisterComponent() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (error) {
-      setApiError(error.message || 'An unexpected error occurred');
+      setApiError(error.message || t('auth.error.unexpected'));
     } else {
       void navigate({ to: '/onboarding' });
     }

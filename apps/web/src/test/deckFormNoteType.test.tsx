@@ -38,13 +38,13 @@ describe('DeckForm note type', () => {
     render(
       <DeckForm title="Create deck" onSubmit={onSubmit} onCancel={vi.fn()} />,
     );
-    fireEvent.change(screen.getByLabelText(/deck title/i), {
+    fireEvent.change(screen.getByLabelText(/title/i), {
       target: { value: 'Deck' },
     });
     fireEvent.change(screen.getByLabelText(/description/i), {
       target: { value: ' '.repeat(501) },
     });
-    fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({ description: '' });
@@ -73,7 +73,7 @@ describe('DeckForm note type', () => {
     });
     // no language selects until Words is chosen
     expect(screen.queryByLabelText(/your language/i)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({
@@ -97,7 +97,7 @@ describe('DeckForm note type', () => {
     expect(target.value).toBe(spanish.value);
     // changeable: the deck's pair is not forced to match the profile
     fireEvent.change(target, { target: { value: german.value } });
-    fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({
@@ -116,7 +116,7 @@ describe('DeckForm note type', () => {
       target: { value: 'English' },
     });
     chooseWords();
-    fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(
       await screen.findByText(/choose a different target language/i),
@@ -131,7 +131,7 @@ describe('DeckForm note type', () => {
       target: { value: 'Spanish' },
     });
     chooseWords();
-    fireEvent.click(screen.getByRole('button', { name: /save deck/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() =>
       expect(screen.getAllByText(/needs both languages/i).length).toBe(2),

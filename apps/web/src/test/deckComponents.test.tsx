@@ -94,7 +94,7 @@ describe('DeckCard Component', () => {
 
     expect(screen.getByTestId('total-words-badge')).toHaveTextContent('1');
     expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('3');
-    expect(screen.getByText('Cards Due')).toBeInTheDocument();
+    expect(screen.getByText('Due')).toBeInTheDocument();
     expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
   });
 
@@ -115,8 +115,8 @@ describe('DeckCard Component', () => {
       />,
     );
 
-    expect(screen.queryByTitle('Edit Deck Details')).toBeNull();
-    expect(screen.getByTitle('Delete Deck')).toBeInTheDocument();
+    expect(screen.queryByTitle('Edit')).toBeNull();
+    expect(screen.getByTitle('Delete')).toBeInTheDocument();
   });
 
   it('offers Edit on a deck whose type it knows', () => {
@@ -132,7 +132,7 @@ describe('DeckCard Component', () => {
       />,
     );
 
-    expect(screen.getByTitle('Edit Deck Details')).toBeInTheDocument();
+    expect(screen.getByTitle('Edit')).toBeInTheDocument();
   });
 
   it('calls action callbacks on click events', () => {
@@ -158,11 +158,11 @@ describe('DeckCard Component', () => {
     expect(onSelectDeck).toHaveBeenCalledWith('deck-test-1');
 
     // Click Edit icon button
-    fireEvent.click(screen.getByTitle('Edit Deck Details'));
+    fireEvent.click(screen.getByTitle('Edit'));
     expect(onEditDeck).toHaveBeenCalledWith(mockDeck);
 
     // Click Delete icon button
-    fireEvent.click(screen.getByTitle('Delete Deck'));
+    fireEvent.click(screen.getByTitle('Delete'));
     expect(onDeleteDeck).toHaveBeenCalledWith('deck-test-1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Review' }));
@@ -406,7 +406,7 @@ describe('WordNoteList Component', () => {
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('3 Cards')).toBeInTheDocument();
-    expect(screen.getByText('0 Cards Due')).toBeInTheDocument();
+    expect(screen.getByText('0 Due')).toBeInTheDocument();
     expect(
       screen.getByRole('columnheader', { name: 'Word' }),
     ).toBeInTheDocument();
@@ -499,7 +499,7 @@ describe('WordNoteList Component', () => {
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('1 Cards')).toBeInTheDocument();
-    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
+    expect(screen.getByText('1 Due')).toBeInTheDocument();
   });
 
   it('keeps an invalid word visible and lets the user remove it', () => {
@@ -525,7 +525,7 @@ describe('WordNoteList Component', () => {
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('3 Cards')).toBeInTheDocument();
-    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
+    expect(screen.getByText('1 Due')).toBeInTheDocument();
 
     expect(screen.getByText("This word can't be shown")).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove word' }));

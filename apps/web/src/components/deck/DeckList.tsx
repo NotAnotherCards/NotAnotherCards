@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStore, Deck } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +34,7 @@ interface DeckListProps {
 }
 
 export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
+  const { t } = useTranslation();
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
@@ -169,10 +171,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground font-heading">
-              My Library
+              {t('deck.list.my_library')}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Manage your custom card decks.
+              {t('deck.list.my_library_desc', 'Manage your custom card decks.')}
             </p>
           </div>
         </div>
@@ -181,7 +183,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
           className="cursor-pointer gap-1.5 self-start sm:self-center"
         >
           <Plus className="size-4" />
-          Create Deck
+          {t('deck.list.create_deck')}
         </Button>
       </div>
 
@@ -189,16 +191,17 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {store.decks.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 rounded-3xl border border-dashed border-border/85 bg-muted/10 text-center min-h-75">
           <BookOpen className="size-12 text-muted-foreground/60 mb-4 stroke-1 animate-bounce" />
-          <h3 className="text-lg font-semibold mb-1">No Decks Yet</h3>
+          <h3 className="text-lg font-semibold mb-1">
+            {t('deck.list.no_decks_title', 'No Decks Yet')}
+          </h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-6">
-            Create your first deck to start adding learning materials and
-            studying.
+            {t('deck.list.no_decks_empty')}
           </p>
           <Button
             onClick={() => setShowCreateForm(true)}
             className="cursor-pointer"
           >
-            Create First Deck
+            {t('deck.list.create_first', 'Create First Deck')}
           </Button>
         </div>
       ) : (
@@ -235,7 +238,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {/* Create Deck Dialog */}
       {showCreateForm && (
         <DeckForm
-          title="Create New Deck"
+          title={t('deck.form.create_new', 'Create New Deck')}
           showNoteType
           defaultLanguages={{
             nativeLanguageId: store.profile?.native_language_id ?? null,
@@ -250,7 +253,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {/* Edit Deck Dialog */}
       {editingDeck && (
         <DeckForm
-          title="Edit Deck Details"
+          title={t('deck.form.edit_title', 'Edit Deck Details')}
           initialData={{
             title: editingDeck.title,
             description: editingDeck.description || '',
@@ -284,36 +287,30 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
               >
                 <Trash2 className="size-5" />
                 {confirmCards
-                  ? `Delete ${deletionSummary?.orphanedCardCount} ${deletionSummary?.orphanedCardCount === 1 ? 'card and its' : 'cards and their'} review history?`
-                  : `Delete "${store.decks.find((deck) => deck.id === deckToDelete)?.title}"?`}
+                  ? t('deck.form.delete_title_cards', {
+                      count: deletionSummary?.orphanedCardCount || 0,
+                    })
+                  : t('deck.form.delete_title_deck', {
+                      title: store.decks.find((deck) => deck.id === deckToDelete)?.title,
+                    })}
               </CardTitle>
               <CardDescription id="delete-deck-description">
                 {confirmCards ? (
-                  'This cannot be undone.'
+                  t('deck.form.delete_cannot_undo')
                 ) : deletionSummary ? (
                   <>
-                    {deletionSummary.orphanedCardCount}{' '}
-                    {deletionSummary.orphanedCardCount === 1
-                      ? 'card is'
-                      : 'cards are'}{' '}
-                    only in this deck. Deleting the deck and cards also deletes
-                    their review history.{' '}
+                    {t('deck.form.orphaned_cards', { count: deletionSummary.orphanedCardCount })}{' '}
                     {deletionSummary.sharedCardCount > 0 && (
                       <>
-                        {deletionSummary.sharedCardCount}{' '}
-                        {deletionSummary.sharedCardCount === 1
-                          ? 'card is'
-                          : 'cards are'}{' '}
-                        also in other decks and will be kept.{' '}
+                        {t('deck.form.shared_cards', { count: deletionSummary.sharedCardCount })}{' '}
                       </>
                     )}
-                    Deleting only the deck keeps all cards and their review
-                    history.
+                    {t('deck.form.keep_cards_note')}
                   </>
                 ) : writeError ? (
-                  'Card counts could not be loaded. Close this dialog and try again.'
+                  t('deck.form.load_counts_error')
                 ) : (
-                  'Counting cards…'
+                  t('deck.form.counting_cards')
                 )}
               </CardDescription>
             </CardHeader>
@@ -331,7 +328,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   disabled={isDeleting}
                   className="cursor-pointer"
                 >
-                  {confirmCards ? 'Back' : 'Cancel'}
+                  {confirmCards ? t('deck.form.back') : t('deck.form.cancel')}
                 </Button>
                 {!confirmCards && (
                   <Button
@@ -340,7 +337,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                     onClick={() => void handleDeleteDeck(false)}
                     className="cursor-pointer"
                   >
-                    Delete deck only
+                    {t('deck.form.delete_deck_only')}
                   </Button>
                 )}
                 <Button
@@ -353,10 +350,12 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   className="cursor-pointer"
                 >
                   {confirmCards
-                    ? 'Delete'
+                    ? t('deck.form.delete_confirm')
                     : deletionSummary
-                      ? `Delete deck and ${deletionSummary.orphanedCardCount} ${deletionSummary.orphanedCardCount === 1 ? 'card' : 'cards'}`
-                      : 'Delete deck and cards'}
+                      ? t('deck.form.delete_deck_and_cards', {
+                          count: deletionSummary.orphanedCardCount,
+                        })
+                      : t('deck.form.delete_deck_and_cards_fallback')}
                 </Button>
               </div>
             </CardContent>
