@@ -397,6 +397,7 @@ describe('WordNoteList Component', () => {
         dueCards={[]}
         onViewNote={vi.fn()}
         onEditWord={vi.fn()}
+        onRepairWord={vi.fn()}
         onRemoveWord={vi.fn()}
         canEdit
         canRemove
@@ -485,6 +486,7 @@ describe('WordNoteList Component', () => {
         dueCards={[wordCards[0], secondWordCard]}
         onViewNote={vi.fn()}
         onEditWord={vi.fn()}
+        onRepairWord={vi.fn()}
         onRemoveWord={vi.fn()}
         canEdit
         canRemove
@@ -502,6 +504,78 @@ describe('WordNoteList Component', () => {
     expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
   });
 
+  it('keeps a recoverable word visible and offers repair or removal', () => {
+    const onRepairWord = vi.fn();
+    const onRemoveWord = vi.fn();
+    const recoverableNote: UserNoteRecord = {
+      ...wordNote,
+      fields_json: JSON.stringify({ word: 'Hund', pronunciation: 'hʊnt' }),
+    };
+
+    render(
+      <WordNoteList
+        notes={[recoverableNote]}
+        cards={wordCards}
+        dueCards={[wordCards[0]]}
+        onViewNote={vi.fn()}
+        onEditWord={vi.fn()}
+        onRepairWord={onRepairWord}
+        onRemoveWord={onRemoveWord}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('3 Cards')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Word data needs repair'));
+
+    expect(
+      screen.getByRole('dialog', { name: 'Word data needs repair' }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Repair word' }));
+    expect(onRepairWord).toHaveBeenCalledWith(recoverableNote, {
+      word: 'Hund',
+      pronunciation: 'hʊnt',
+    });
+    expect(onRemoveWord).not.toHaveBeenCalled();
+  });
+
+  it('keeps an unreadable word visible and offers removal only', () => {
+    const unreadableNote: UserNoteRecord = {
+      ...wordNote,
+      fields_json: '{not valid json',
+    };
+
+    render(
+      <WordNoteList
+        notes={[unreadableNote]}
+        cards={wordCards}
+        dueCards={[]}
+        onViewNote={vi.fn()}
+        onEditWord={vi.fn()}
+        onRepairWord={vi.fn()}
+        onRemoveWord={vi.fn()}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Word data cannot be read'));
+
+    expect(screen.getByRole('button', { name: 'Leave word' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Remove word' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Repair word' }),
+    ).toBeNull();
+  });
+
   it('routes view, edit, and removal through the word note', () => {
     const onViewNote = vi.fn();
     const onEditWord = vi.fn();
@@ -513,6 +587,7 @@ describe('WordNoteList Component', () => {
         dueCards={[]}
         onViewNote={onViewNote}
         onEditWord={onEditWord}
+        onRepairWord={vi.fn()}
         onRemoveWord={onRemoveWord}
         canEdit
         canRemove
@@ -542,6 +617,7 @@ describe('WordNoteList Component', () => {
         dueCards={[]}
         onViewNote={onViewNote}
         onEditWord={onEditWord}
+        onRepairWord={vi.fn()}
         onRemoveWord={onRemoveWord}
         canEdit
         canRemove

@@ -7,7 +7,11 @@ import {
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { languageFor } from '@repo/schemas';
-import { parseWordFields } from './word-note-fields';
+import {
+  inspectWordFields,
+  parseWordFields,
+  type RecoverableWordFields,
+} from './word-note-fields';
 
 type WordCardBadge = 'Word' | 'Translation' | 'Example';
 
@@ -20,6 +24,15 @@ export interface WordRow {
   readonly detailsCount: number;
   readonly badges: string[];
 }
+
+export interface InvalidWordRow {
+  readonly note: UserNoteRecord;
+  readonly cards: readonly Card[];
+  readonly problem: 'recoverable' | 'unreadable';
+  readonly initialData?: RecoverableWordFields;
+}
+
+export type WordListRow = WordRow | InvalidWordRow;
 
 const badgeForTemplateKey: Readonly<Record<string, WordCardBadge>> = {
   [WORD_TO_TRANSLATION_TEMPLATE_KEY]: 'Word',
@@ -61,6 +74,14 @@ export function toWordRow(
 ): WordRow | null {
   const fields = parseWordFields(note);
   if (!fields) return null;
+  return rowFromFields(note, noteCards, fields);
+}
+
+function rowFromFields(
+  note: UserNoteRecord,
+  noteCards: readonly Card[],
+  fields: WordNoteFields,
+): WordRow {
   const existing = new Set(
     noteCards.flatMap((card) => {
       const badge = badgeForTemplateKey[card.template_key];
@@ -81,4 +102,23 @@ export function toWordRow(
     badges,
     detailsCount: countWordDetails(fields),
   };
+}
+
+export function toWordListRow(
+  note: UserNoteRecord,
+  noteCards: readonly Card[],
+): WordListRow {
+  const result = inspectWordFields(note);
+  if (result.kind === 'valid') {
+    return rowFromFields(note, noteCards, result.fields);
+  }
+  if (result.kind === 'recoverable') {
+    return {
+      note,
+      cards: noteCards,
+      problem: 'recoverable',
+      initialData: result.initialData,
+    };
+  }
+  return { note, cards: noteCards, problem: 'unreadable' };
 }

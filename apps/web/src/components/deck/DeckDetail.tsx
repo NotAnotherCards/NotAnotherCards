@@ -29,7 +29,11 @@ import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { CardList } from './CardList';
 import { WordNoteList } from './WordNoteList';
 import { WordNoteView } from './WordNoteView';
-import { parseWordFields } from './word-note-fields';
+import {
+  parseWordFields,
+  preservedWordMedia,
+  type RecoverableWordFields,
+} from './word-note-fields';
 import { toWordRow } from './word-note-rows';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
@@ -53,6 +57,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const [editingWordNote, setEditingWordNote] = useState<UserNoteRecord | null>(
     null,
   );
+  const [repairInitialData, setRepairInitialData] =
+    useState<RecoverableWordFields | null>(null);
   const [viewingWordNote, setViewingWordNote] = useState<UserNoteRecord | null>(
     null,
   );
@@ -348,19 +354,24 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   };
 
   const handleEditWordNote = async (values: WordFormValues) => {
-    if (!editingWordNote || !editingWordFields) return;
+    if (!editingWordNote) return;
+    const nativeLanguageId =
+      editingWordFields?.native_language_id ?? deck.native_language_id;
+    const targetLanguageId =
+      editingWordFields?.target_language_id ?? deck.target_language_id;
+    if (!nativeLanguageId || !targetLanguageId) return;
+    const media = editingWordFields ?? preservedWordMedia(editingWordNote);
     setWriteError(null);
     try {
       await store.updateNoteFields(editingWordNote.id, {
         ...values,
-        native_language_id: editingWordFields.native_language_id,
-        target_language_id: editingWordFields.target_language_id,
-        ...(editingWordFields.image ? { image: editingWordFields.image } : {}),
-        ...(editingWordFields.word_audio
-          ? { word_audio: editingWordFields.word_audio }
-          : {}),
+        native_language_id: nativeLanguageId,
+        target_language_id: targetLanguageId,
+        ...(media.image ? { image: media.image } : {}),
+        ...(media.word_audio ? { word_audio: media.word_audio } : {}),
       });
       setEditingWordNote(null);
+      setRepairInitialData(null);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'Failed to update word'));
     }
@@ -553,7 +564,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           cards={cards}
           dueCards={store.dueCards ?? []}
           onViewNote={(note) => setViewingWordNote(note)}
-          onEditWord={(note) => setEditingWordNote(note)}
+          onEditWord={(note) => {
+            setRepairInitialData(null);
+            setEditingWordNote(note);
+          }}
+          onRepairWord={(note, initialData) => {
+            setRepairInitialData(initialData);
+            setEditingWordNote(note);
+          }}
           onRemoveWord={(note) => setNoteIdToRemove(note.id)}
           canEdit={isKnownDeck}
           canRemove={isKnownDeck}
@@ -606,14 +624,30 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           the front and back a template rendered from them */}
       {editingWordNote && isWordDeck ? (
         <WordNoteForm
-          title="Edit Word"
+          title={repairInitialData ? 'Repair word' : 'Edit Word'}
           alwaysShowDetails
-          targetLanguageId={editingWordFields?.target_language_id}
-          nativeLanguageId={editingWordFields?.native_language_id}
-          initialData={editingWordFields ?? undefined}
+          targetLanguageId={
+            editingWordFields?.target_language_id ?? deck.target_language_id
+          }
+          nativeLanguageId={
+            editingWordFields?.native_language_id ?? deck.native_language_id
+          }
+          initialData={editingWordFields ?? repairInitialData ?? undefined}
           onSubmit={handleEditWordNote}
           error={writeError}
-          onCancel={() => setEditingWordNote(null)}
+          onCancel={() => {
+            setRepairInitialData(null);
+            setEditingWordNote(null);
+          }}
+          onRemove={
+            repairInitialData
+              ? () => {
+                  setRepairInitialData(null);
+                  setEditingWordNote(null);
+                  setNoteIdToRemove(editingWordNote.id);
+                }
+              : undefined
+          }
         />
       ) : editingCard && isBasicDeck ? (
         <CardForm
@@ -635,6 +669,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           onClose={() => setViewingWordNote(null)}
           onEdit={() => {
             setViewingWordNote(null);
+            setRepairInitialData(null);
             setEditingWordNote(viewingWordNote);
           }}
         />
