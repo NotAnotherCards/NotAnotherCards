@@ -5,11 +5,15 @@ import { saveReviewPreferences } from '@/lib/review-preferences';
 
 const manager = { tag: 'manager' };
 let mockManager: unknown = manager;
-const mockRecord = jest.fn(() => Promise.resolve({ id: 'review-1' }));
+const mockRecord = jest.fn((_cardId: string, _rating: number) =>
+  Promise.resolve({ id: 'review-1' }),
+);
+const mockCreate = jest.fn(() => Promise.resolve());
+const mockUpdate = jest.fn(() => Promise.resolve());
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
 let mockReviewState: {
-  deck: { id: string; title: string } | null;
+  deck: { id: string; title: string; note_type: string } | null;
   dueCards: Array<{
     id: string;
     note_id: string;
@@ -32,6 +36,21 @@ jest.mock('../lib/auth-client', () => ({
 jest.mock('../lib/review', () => ({
   useReviewDeck: () => mockReviewState,
 }));
+// The editor's data: a basic deck whose cards are all editable.
+jest.mock('../lib/cards', () => ({
+  useCards: () => ({
+    deck: {
+      id: 'd1',
+      title: 'Spanish',
+      note_type: 'basic',
+      native_language_id: null,
+      target_language_id: null,
+    },
+    canEdit: () => true,
+    noteForCard: () => null,
+    writes: { create: mockCreate, update: mockUpdate },
+  }),
+}));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, back: mockBack }),
   Stack: { Screen: () => null },
@@ -40,10 +59,12 @@ jest.mock('expo-router', () => ({
 beforeEach(() => {
   mockManager = manager;
   mockRecord.mockClear();
+  mockCreate.mockClear();
+  mockUpdate.mockClear();
   mockReplace.mockClear();
   mockBack.mockClear();
   mockReviewState = {
-    deck: { id: 'd1', title: 'Spanish' },
+    deck: { id: 'd1', title: 'Spanish', note_type: 'basic' },
     dueCards: [
       {
         id: 'c1',
@@ -170,5 +191,77 @@ describe('ReviewSession', () => {
     expect(await result.findByText('disk full')).toBeTruthy();
     expect(result.getByText('cat')).toBeTruthy();
     expect(result.getByText('Forgot')).toBeTruthy();
+  });
+
+  it('counts progress across batches, not per batch', async () => {
+    // A sibling of the first card waits for the next batch.
+    mockReviewState.dueCards = [
+      ...mockReviewState.dueCards,
+      {
+        id: 'c2',
+        note_id: 'n1',
+        front: 'perro',
+        back: 'dog',
+        due_at: 2,
+        scheduled_interval_minutes: 0,
+      },
+    ];
+    // As the live query does: an answered card is no longer due.
+    mockRecord.mockImplementationOnce((id) => {
+      mockReviewState.dueCards = mockReviewState.dueCards.filter(
+        (card) => card.id !== id,
+      );
+      return Promise.resolve({ id: 'review-1' });
+    });
+    const result = render(<ReviewSession deckId="d1" />);
+
+    expect(await result.findByText('1 of 2')).toBeTruthy();
+    fireEvent.press(result.getByText('Show answer'));
+    fireEvent.press(result.getByText('Remembered'));
+    expect(await result.findByText('2 of 2')).toBeTruthy();
+    expect(result.getByText('perro')).toBeTruthy();
+  });
+
+  it('edits the current card and returns to it', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByLabelText('Edit this card'));
+    expect(result.getByText('Edit card')).toBeTruthy();
+    fireEvent.changeText(result.getByPlaceholderText('The answer'), 'a cat');
+    fireEvent.press(result.getByText('Save'));
+
+    await waitFor(() =>
+      expect(mockUpdate).toHaveBeenCalledWith('c1', '**gato**', 'a cat'),
+    );
+    expect(await result.findByText('1 of 1')).toBeTruthy();
+    expect(result.getByText('gato')).toBeTruthy();
+  });
+
+  it('opens the editor on a long press of the card', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent(result.getByLabelText('Show the answer'), 'longPress');
+    expect(result.getByText('Edit card')).toBeTruthy();
+  });
+
+  it('adds a card to the deck without losing the place', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByLabelText('Add a card'));
+    fireEvent.changeText(
+      result.getByPlaceholderText('The question or prompt'),
+      'perro',
+    );
+    fireEvent.changeText(result.getByPlaceholderText('The answer'), 'dog');
+    fireEvent.press(result.getByText('Save'));
+
+    await waitFor(() =>
+      expect(mockCreate).toHaveBeenCalledWith('d1', 'perro', 'dog'),
+    );
+    expect(await result.findByText('1 of 1')).toBeTruthy();
+    expect(result.getByText('gato')).toBeTruthy();
   });
 });

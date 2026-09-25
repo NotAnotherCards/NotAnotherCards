@@ -8,6 +8,8 @@ import {
   formatReviewInterval,
   reviewAnswerLabels,
   reviewRatingByAnswer,
+  BASIC_NOTE_TYPE,
+  WORD_NOTE_TYPE,
   selectReviewBatch,
   type ReviewAnswer,
   type ReviewPreferences,
@@ -17,7 +19,10 @@ import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
 import { loadReviewPreferences } from '@/lib/review-preferences';
+import { useCards, type Card as CardRecord } from '@/lib/cards';
 import { useReviewDeck } from '@/lib/review';
+import { CardEditor } from './card-editor';
+import { PencilIcon, PlusIcon } from './ui/icon';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Markdown } from './ui/markdown';
@@ -110,6 +115,13 @@ function ActiveReviewSession({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  // Answers given so far, for progress across batches.
+  const [answered, setAnswered] = useState(0);
+  // The card editor over the review: a new card, or the current one.
+  const [editing, setEditing] = useState<
+    { kind: 'new' } | { kind: 'edit'; card: CardRecord } | null
+  >(null);
+  const editor = useCards(manager, deckId);
 
   useEffect(() => {
     if (!isLoading && deck && session?.deckId !== deckId) {
@@ -184,6 +196,7 @@ function ActiveReviewSession({
     try {
       await writes.record(card.id, reviewRatingByAnswer[answer]);
       setIsFlipped(false);
+      setAnswered((count) => count + 1);
       advance();
     } catch (cause) {
       setSaveError(writeErrorMessage(cause, 'Could not save your answer'));
@@ -224,25 +237,85 @@ function ActiveReviewSession({
     );
   }
 
+  // The editor replaces the card until it is saved or cancelled; the
+  // session keeps its place, and an edit shows on the same card.
+  if (editing && editor.deck && editor.writes) {
+    const editCard = editing.kind === 'edit' ? editing.card : undefined;
+    return (
+      <View className="gap-4">
+        <Stack.Screen options={{ title: deck.title }} />
+        <CardEditor
+          deck={editor.deck}
+          card={editCard}
+          note={editCard ? editor.noteForCard(editCard) : null}
+          writes={editor.writes}
+          onDone={() => setEditing(null)}
+        />
+      </View>
+    );
+  }
+
+  const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
+  const canAdd = isWordDeck || deck.note_type === BASIC_NOTE_TYPE;
+  const edit = () => {
+    if (editor.canEdit(card)) setEditing({ kind: 'edit', card });
+  };
+  // Answered, plus every card still due: the live query drops a card once
+  // it is answered and brings it back if it falls due again.
+  const total = answered + dueCards.length;
+
   return (
     <View className="flex-1 gap-4">
       <Stack.Screen options={{ title: deck.title }} />
+      {/* Leaving is the header's back arrow, so this row keeps the
+          progress and the two writes web's review offers. */}
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-semibold text-muted-foreground">
-          Card {cardIndex + 1} of {session.cards.length}
+          {answered + 1} of {total}
         </Text>
-        <Button variant="ghost" size="sm" onPress={leave} disabled={isSaving}>
-          <Text>Exit review</Text>
-        </Button>
+        <View className="flex-row gap-1">
+          {editor.canEdit(card) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              accessibilityLabel="Edit this card"
+              disabled={isSaving}
+              onPress={edit}
+            >
+              <PencilIcon size={18} className="text-muted-foreground" />
+            </Button>
+          )}
+          {canAdd && (
+            <Button
+              variant="ghost"
+              size="icon"
+              accessibilityLabel={isWordDeck ? 'Add a word' : 'Add a card'}
+              disabled={isSaving}
+              onPress={() => setEditing({ kind: 'new' })}
+            >
+              <PlusIcon size={20} className="text-muted-foreground" />
+            </Button>
+          )}
+        </View>
       </View>
 
       {/* Tapping the card toggles: read the answer, tap again for the
-          question. "Show answer" only reveals. */}
+          question. "Show answer" only reveals. A long press edits, the
+          pencil's shortcut; screen readers get it as an action. */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={isFlipped ? 'Show the question' : 'Show the answer'}
+        accessibilityActions={
+          editor.canEdit(card)
+            ? [{ name: 'edit', label: 'Edit this card' }]
+            : []
+        }
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'edit') edit();
+        }}
         disabled={isSaving}
         onPress={() => setIsFlipped((flipped) => !flipped)}
+        onLongPress={edit}
       >
         <Card className="min-h-80 justify-center">
           <CardHeader>

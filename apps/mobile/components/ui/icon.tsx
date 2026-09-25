@@ -4,6 +4,8 @@ import {
   Globe,
   Library,
   LogOut,
+  Pencil,
+  Plus,
   Settings,
   User,
   type LucideIcon,
@@ -25,6 +27,8 @@ export const BookOpenIcon = withClassName(BookOpen);
 export const GlobeIcon = withClassName(Globe);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
+export const PencilIcon = withClassName(Pencil);
+export const PlusIcon = withClassName(Plus);
 export const SettingsIcon = withClassName(Settings);
 export const UserIcon = withClassName(User);
 export type { LucideIcon };
