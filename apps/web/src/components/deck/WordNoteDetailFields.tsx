@@ -7,8 +7,6 @@ const fields = [
   ['Example', 'example'],
   ['Example translation', 'example_translation'],
   ['Notes', 'notes'],
-  ['Image', 'image'],
-  ['Audio', 'word_audio'],
 ] as const;
 
 export function WordNoteDetailFields({
@@ -28,13 +26,7 @@ export function WordNoteDetailFields({
               {label}
             </dt>
             <dd className="mt-1.5 min-h-9 rounded-lg border border-input bg-background px-3 py-2 text-sm whitespace-pre-wrap break-words">
-              {key === 'image' ? (
-                <img src={value} alt="Word" className="max-h-48 rounded-md" />
-              ) : key === 'word_audio' ? (
-                <audio controls src={value} className="w-full" />
-              ) : (
-                value
-              )}
+              {value}
             </dd>
           </dl>
         );

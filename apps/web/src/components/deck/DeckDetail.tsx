@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useStore, Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -74,6 +74,18 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const { status: moderationStatus, refresh: refreshModerationStatus } =
     useOwnerModerationStatus(deckId);
   const explanation = useModerationExplanation(deckId);
+  const deck = store.decks.find((d) => d.id === deckId);
+  const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
+  const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
+  const isKnownDeck = isBasicDeck || isWordDeck;
+  const cards = useMemo(
+    () => store.getCardsForDeck(deckId),
+    [deckId, store.getCardsForDeck],
+  );
+  const wordNotes = useMemo(
+    () => (isWordDeck ? store.getNotesForDeck(deckId) : []),
+    [deckId, isWordDeck, store.getNotesForDeck],
+  );
 
   if (store.isTakenOver) {
     return (
@@ -127,10 +139,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     return null;
   }
 
-  const deck = store.decks.find((d) => d.id === deckId);
-  const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
-  const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
-  const isKnownDeck = isBasicDeck || isWordDeck;
   const isPublic =
     deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
   // The note's own fields, parsed from the note rather than read off the
@@ -149,10 +157,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     );
   }
 
-  const cards = store.getCardsForDeck(deckId);
-  const wordNotes = isWordDeck ? store.getNotesForDeck(deckId) : [];
+  const viewingWordCards =
+    viewingWordNote === null
+      ? []
+      : cards.filter((card) => card.note_id === viewingWordNote.id);
   const viewingWordRow =
-    viewingWordNote && isWordDeck ? toWordRow(viewingWordNote, cards) : null;
+    viewingWordNote && isWordDeck
+      ? toWordRow(viewingWordNote, viewingWordCards)
+      : null;
   const visibleWarnings =
     publishWarnings.length > 0
       ? publishWarnings

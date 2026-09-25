@@ -19,6 +19,7 @@ const WORD_TABLE_LAYOUT = {
   extraInfoColumn: '76px',
   actionsColumn: '108px',
 } as const;
+const EMPTY_CARDS: readonly Card[] = [];
 
 interface WordNoteListProps {
   notes: UserNoteRecord[];
@@ -44,12 +45,23 @@ export function WordNoteList({
   onAddWord,
 }: WordNoteListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const cardsByNoteId = useMemo(() => {
+    const result = new Map<string, Card[]>();
+    for (const card of cards) {
+      const noteCards = result.get(card.note_id);
+      if (noteCards) noteCards.push(card);
+      else result.set(card.note_id, [card]);
+    }
+    return result;
+  }, [cards]);
   const rows = useMemo(
     () =>
       notes
-        .map((note) => toWordRow(note, cards))
+        .map((note) =>
+          toWordRow(note, cardsByNoteId.get(note.id) ?? EMPTY_CARDS),
+        )
         .filter((row): row is WordRow => row !== null),
-    [notes, cards],
+    [notes, cardsByNoteId],
   );
   const filteredRows = rows.filter(({ word, translation }) => {
     const search = searchTerm.toLowerCase();
@@ -169,38 +181,28 @@ export function WordNoteList({
                         className="flex min-w-0 items-center @[880px]:justify-self-center"
                         aria-label={`${row.cards.length} cards`}
                       >
-                        <button
-                          type="button"
-                          className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
-                          onClick={() => onViewNote(row.note)}
-                          aria-label={`View ${row.cards.length} cards`}
-                        >
+                        <span className="text-left text-xs text-muted-foreground">
                           <span className="@[880px]:hidden">
                             Cards: {row.cards.length}
                           </span>
                           <span className="hidden @[880px]:inline">
                             {row.cards.length}
                           </span>
-                        </button>
+                        </span>
                       </div>
                       <div className="contents">
                         <div
                           role="cell"
                           className="flex min-w-0 items-center justify-center @[880px]:justify-self-center"
                         >
-                          <button
-                            type="button"
-                            className="text-left text-xs text-muted-foreground hover:text-primary cursor-pointer"
-                            onClick={() => onViewNote(row.note)}
-                            aria-label={`View ${row.detailsCount} details`}
-                          >
+                          <span className="text-left text-xs text-muted-foreground">
                             <span className="@[880px]:hidden">
                               Extra info: {row.detailsCount}
                             </span>
                             <span className="hidden @[880px]:inline">
                               {row.detailsCount}
                             </span>
-                          </button>
+                          </span>
                         </div>
                         <div
                           role="cell"

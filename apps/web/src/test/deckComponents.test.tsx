@@ -389,14 +389,13 @@ describe('WordNoteList Component', () => {
     },
   ];
 
-  it('groups sibling cards into one word row and opens the word view', () => {
-    const onViewNote = vi.fn();
+  it('groups sibling cards into one word row without duplicate dialog buttons', () => {
     render(
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
         dueCards={[]}
-        onViewNote={onViewNote}
+        onViewNote={vi.fn()}
         onEditWord={vi.fn()}
         onRemoveWord={vi.fn()}
         canEdit
@@ -425,18 +424,14 @@ describe('WordNoteList Component', () => {
     expect(screen.queryByText(/DE → RU/)).toBeNull();
     expect(screen.queryByText(/RU → DE/)).toBeNull();
     expect(screen.queryByText(/Example → RU/)).toBeNull();
-    expect(
-      screen.getAllByRole('button', { name: 'View 3 details' }),
-    ).not.toHaveLength(0);
-    const cardsTrigger = screen.getAllByRole('button', {
-      name: 'View 3 cards',
-    })[0];
-    fireEvent.click(cardsTrigger);
-    expect(onViewNote).toHaveBeenCalledWith(wordNote);
+    expect(screen.getByText('Cards: 3')).toBeInTheDocument();
+    expect(screen.getByText('Extra info: 3')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'View 3 cards' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'View 3 details' })).toBeNull();
   });
 
   it('shows details and card types in the unified word dialog', () => {
-    render(
+    const { container } = render(
       <WordNoteView
         fields={{
           word: 'Hund',
@@ -444,6 +439,8 @@ describe('WordNoteList Component', () => {
           native_language_id: RUSSIAN,
           target_language_id: GERMAN,
           gender: 'der',
+          image: 'https://untrusted.example/hund.png',
+          word_audio: 'https://untrusted.example/hund.mp3',
         }}
         cards={['DE → RU', 'RU → DE', 'Example → RU']}
         onClose={vi.fn()}
@@ -458,6 +455,8 @@ describe('WordNoteList Component', () => {
     expect(screen.getByText('DE → RU')).toBeInTheDocument();
     expect(screen.getByText('RU → DE')).toBeInTheDocument();
     expect(screen.getByText('Example → RU')).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Word' })).toBeNull();
+    expect(container.querySelector('audio')).toBeNull();
   });
 
   it('counts only cards belonging to words that match the search', () => {
@@ -522,14 +521,11 @@ describe('WordNoteList Component', () => {
     );
 
     fireEvent.click(screen.getAllByTitle('View Word')[0]);
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'View 3 details' })[0],
-    );
-    fireEvent.click(screen.getAllByRole('button', { name: 'View 3 cards' })[0]);
+    fireEvent.click(screen.getAllByTitle('View Word')[1]);
     fireEvent.click(screen.getByTitle('Edit Word'));
     fireEvent.click(screen.getByTitle('Remove word from this deck'));
 
-    expect(onViewNote).toHaveBeenCalledTimes(3);
+    expect(onViewNote).toHaveBeenCalledTimes(2);
     expect(onViewNote).toHaveBeenLastCalledWith(wordNote);
     expect(onEditWord).toHaveBeenCalledWith(wordNote);
     expect(onRemoveWord).toHaveBeenCalledWith(wordNote);

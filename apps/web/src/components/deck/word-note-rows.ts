@@ -16,7 +16,7 @@ export interface WordRow {
   readonly fields: WordNoteFields;
   readonly word: string;
   readonly translation: string;
-  readonly cards: Card[];
+  readonly cards: readonly Card[];
   readonly detailsCount: number;
   readonly badges: string[];
 }
@@ -49,23 +49,18 @@ export function countWordDetails(
 ): number {
   const hasExample =
     fields.example !== undefined || fields.example_translation !== undefined;
-  const keys = [
-    'part_of_speech',
-    'gender',
-    'pronunciation',
-    'notes',
-    'image',
-    'word_audio',
-  ] as const;
+  const keys = ['part_of_speech', 'gender', 'pronunciation', 'notes'] as const;
   return (
     Number(hasExample) + keys.filter((key) => fields[key] !== undefined).length
   );
 }
 
-export function toWordRow(note: UserNoteRecord, cards: Card[]): WordRow | null {
+export function toWordRow(
+  note: UserNoteRecord,
+  noteCards: readonly Card[],
+): WordRow | null {
   const fields = parseWordFields(note);
   if (!fields) return null;
-  const noteCards = cards.filter((card) => card.note_id === note.id);
   const existing = new Set(
     noteCards.flatMap((card) => {
       const badge = badgeForTemplateKey[card.template_key];

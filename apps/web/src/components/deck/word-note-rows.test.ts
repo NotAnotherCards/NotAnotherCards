@@ -71,7 +71,8 @@ describe('word note rows', () => {
         example: 'Der Hund läuft.',
         example_translation: 'The dog runs.',
         image: 'https://example.com/hund.png',
+        word_audio: 'https://example.com/hund.mp3',
       }),
-    ).toBe(2);
+    ).toBe(1);
   });
 });
