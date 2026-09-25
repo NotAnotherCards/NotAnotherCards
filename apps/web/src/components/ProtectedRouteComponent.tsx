@@ -52,7 +52,12 @@ export function ProtectedLayoutComponent() {
     return () => {
       window.removeEventListener('uiPreferencesChanged', enforceLanguage);
     };
-  }, [profile, session?.user.id, i18n]);
+  }, [
+    profile?.native_language_id,
+    profile?.target_language_id,
+    session?.user.id,
+    i18n,
+  ]);
 
   if (!manager && location.pathname !== '/onboarding') {
     return null;

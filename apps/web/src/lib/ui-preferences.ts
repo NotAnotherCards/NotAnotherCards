@@ -39,8 +39,12 @@ function getUiStorage() {
   }
 }
 
+const inMemoryCache: Record<string, UiPreferences> = {};
+
 export function getUiPreferences(userId: string | undefined): UiPreferences {
   if (!userId) return { ...DEFAULT_UI_PREFERENCES };
+
+  if (inMemoryCache[userId]) return inMemoryCache[userId];
 
   const storage = getUiStorage();
   if (!storage) return { ...DEFAULT_UI_PREFERENCES };
@@ -58,6 +62,9 @@ export function saveUiPreferences(
 ) {
   if (!userId) return;
 
+  inMemoryCache[userId] = preferences;
+  window.dispatchEvent(new CustomEvent('uiPreferencesChanged'));
+
   const storage = getUiStorage();
   if (!storage) return;
 
@@ -66,7 +73,6 @@ export function saveUiPreferences(
       uiPreferencesStorageKey(userId),
       JSON.stringify(preferences),
     );
-    window.dispatchEvent(new CustomEvent('uiPreferencesChanged'));
   } catch {
     // UI works without saved browser preferences.
   }

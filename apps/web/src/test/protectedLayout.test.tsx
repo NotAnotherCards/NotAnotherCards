@@ -6,7 +6,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@remelondb/core/react', () => ({
   useDatabaseState: () => ({ status: 'ready', error: null }),
-  useQuery: () => ({ data: [], isLoading: false, error: null }),
+  useQuery: vi.fn(() => ({ data: [], isLoading: false, error: null })),
   useDatabase: () => null,
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
   // The root provider calls this, and the  layout renders nothing
@@ -229,5 +229,45 @@ describe('Protected Layout Guards', () => {
     expect(navigateSpy).toHaveBeenCalledWith(
       expect.objectContaining({ to: '/login' }),
     );
+  });
+
+  it('updates i18n language when profile is mutated in place', async () => {
+    const profileObj = {
+      id: 'profile-1',
+      username: 'test',
+      native_language_id: '00000000-0000-0000-0000-000000000001', // en
+      target_language_id: '00000000-0000-0000-0000-000000000002', // es
+    };
+
+    const storeHook = await import('@/hooks/useStore');
+    const originalUseStore = storeHook.useStore;
+    const useStoreSpy = vi
+      .spyOn(storeHook, 'useStore')
+      .mockImplementation(() => {
+        const actual = originalUseStore();
+        return {
+          ...actual,
+          profile: profileObj,
+        } as ReturnType<typeof originalUseStore>;
+      });
+
+    const i18n = (await import('@/lib/i18n')).default;
+    const changeLanguageSpy = vi.spyOn(i18n, 'changeLanguage');
+
+    render(<App />);
+    await act(async () => {
+      await router.navigate({ to: '/dashboard' });
+    });
+
+    // Mutate the object in place (simulate reMelonDB)
+    profileObj.native_language_id = '00000000-0000-0000-0000-000000000002'; // es
+
+    // Trigger the preferences event to force the effect's listener to re-evaluate
+    // the profile object it captured by reference
+    window.dispatchEvent(new CustomEvent('uiPreferencesChanged'));
+
+    expect(changeLanguageSpy).toHaveBeenCalledWith('es');
+
+    useStoreSpy.mockRestore();
   });
 });
