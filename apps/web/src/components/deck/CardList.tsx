@@ -38,7 +38,6 @@ interface CardListProps {
   canRemoveCard?: boolean;
   onAddCard: () => void;
   isLoading?: boolean;
-  error?: string | null;
   initialScrollOffset?: number;
 }
 
@@ -58,7 +57,6 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
       canRemoveCard = true,
       onAddCard,
       isLoading,
-      error,
       initialScrollOffset,
     },
     ref,
@@ -153,39 +151,13 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
       );
     }
 
-    if (error) {
-      return (
-        <UICard className="border border-border/60 p-6 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-200">
-          <div className="p-3 rounded-2xl bg-destructive/10 text-destructive">
-            <AlertCircle className="size-8" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-destructive">
-              Failed to Load Cards
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              {error || 'An error occurred while loading deck contents.'}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            className="cursor-pointer gap-1.5"
-            onClick={() => window.location.reload()}
-          >
-            <RefreshCw className="size-4" />
-            Retry
-          </Button>
-        </UICard>
-      );
-    }
-
     return (
       <UICard className="border border-border/60">
         <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <Library className="size-4 text-primary" />
-              Card Catalog ({filteredCards.length})
+              {filteredCards.length} Cards
             </CardTitle>
           </div>
           {/* Search bar */}
@@ -230,11 +202,11 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
               <div role="rowgroup">
                 <div
                   role="row"
-                  className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                  className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_128px] gap-4 md:!px-6 md:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
                 >
                   <div role="columnheader">Front / Question</div>
                   <div role="columnheader">Back / Answer</div>
-                  <div role="columnheader" className="text-right">
+                  <div role="columnheader" className="text-center">
                     Actions
                   </div>
                 </div>

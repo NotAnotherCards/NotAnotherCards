@@ -92,15 +92,11 @@ export function useDelayedLoading(
 }
 
 export function useStore() {
-  const { status, error: managerError } = useDatabaseState();
+  const { status } = useDatabaseState();
   const sync = useSyncController();
 
   const db = useDatabase() as Database | null;
   const isInitializing = status === 'loading' || status === 'idle';
-  const initError =
-    status === 'error'
-      ? managerError?.message || 'Failed to open local database'
-      : null;
 
   const [, setTimeTrigger] = useState(0);
 
@@ -139,6 +135,7 @@ export function useStore() {
     notesLoading ||
     noteDecksLoading ||
     profileLoading;
+
   const { ready, showSpinner } = useDelayedLoading(isLoading);
 
   const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(
@@ -322,6 +319,18 @@ export function useStore() {
     [cards, noteDecks],
   );
 
+  const getNotesForDeck = useCallback(
+    (deckId: string): UserNoteRecord[] => {
+      const noteIds = new Set(
+        noteDecks
+          .filter((noteDeck) => noteDeck.deck_id === deckId)
+          .map((noteDeck) => noteDeck.note_id),
+      );
+      return notes.filter((note) => noteIds.has(note.id));
+    },
+    [notes, noteDecks],
+  );
+
   const getCardsForDeck = useCallback(
     (deckId: string): UserCardRecord[] => {
       const noteIds = new Set(
@@ -389,7 +398,6 @@ export function useStore() {
     ready,
     showSpinner,
     isLoading,
-    error: initError,
     reconnect,
     createDeck,
     updateDeck,
@@ -406,6 +414,7 @@ export function useStore() {
     updateNoteFields,
     getCardsCount,
     getCardsForDeck,
+    getNotesForDeck,
     createUserProfile,
     updateUserProfile,
     createCardsBatch,

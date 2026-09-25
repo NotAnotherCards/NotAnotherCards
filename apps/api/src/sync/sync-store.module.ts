@@ -27,7 +27,7 @@ export const REMELON_SYNC_ENGINE = Symbol('REMELON_SYNC_ENGINE');
         createAppSyncStore(db, undefined, (tx, userId) =>
           gamification
             .refreshAwardsInTransaction(tx, userId)
-            .then(() => undefined),
+            .then(({ newlyUnlocked }) => newlyUnlocked),
         ),
     },
     {

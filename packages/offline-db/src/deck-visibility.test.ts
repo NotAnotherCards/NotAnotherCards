@@ -6,7 +6,7 @@ import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { describe, expect, it } from 'vitest';
 import { migrations, schema } from './index.js';
 import { createDeck } from './queries.js';
-import { UserDeck } from './user-dictionary.js';
+import { UserDeck, UserBadge } from './user-dictionary.js';
 
 describe('deck visibility offline migration', () => {
   it('backfills v4 decks as private and defaults new decks to private', async () => {
@@ -18,7 +18,7 @@ describe('deck visibility offline migration', () => {
         version: 4,
         tables: [
           ...Object.values(schema.tables).filter(
-            (t) => t.name !== 'user_decks',
+            (t) => t.name !== 'user_decks' && t.name !== 'user_badges',
           ),
           table('user_decks', {
             title: column.string(),
@@ -56,7 +56,7 @@ describe('deck visibility offline migration', () => {
         schema,
         migrations,
         name,
-        modelClasses: [UserDeck],
+        modelClasses: [UserDeck, UserBadge],
       });
       const existing = await database.get(UserDeck).find('existing');
       expect(existing).toMatchObject({
@@ -76,7 +76,7 @@ describe('deck visibility offline migration', () => {
         schema,
         migrations,
         name,
-        modelClasses: [UserDeck],
+        modelClasses: [UserDeck, UserBadge],
       });
       expect((await database.get(UserDeck).find('existing')).visibility).toBe(
         'private',

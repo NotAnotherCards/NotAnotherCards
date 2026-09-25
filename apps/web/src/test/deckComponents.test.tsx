@@ -9,10 +9,17 @@ import {
 import { DeckCard } from '../components/deck/DeckCard';
 import { CardItem } from '../components/deck/CardItem';
 import { CardList, CardListRef } from '../components/deck/CardList';
+import { WordNoteList } from '../components/deck/WordNoteList';
+import { WordNoteDialog } from '../components/deck/WordNoteDialog';
+import { WordNoteView } from '../components/deck/WordNoteView';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FlashcardModal } from '../components/deck/FlashcardModal';
 import { Deck, Card } from '../hooks/useStore';
-import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
+import {
+  WORD_TO_TRANSLATION_TEMPLATE_KEY,
+  type UserNoteRecord,
+} from '@repo/offline-db';
+import { GERMAN, RUSSIAN } from '@repo/schemas';
 
 vi.mock('@/offline/db', () => {
   const manager = {
@@ -51,6 +58,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={12}
+        dueCount={3}
         onSelectDeck={vi.fn()}
         onStartReview={vi.fn()}
         onEditDeck={vi.fn()}
@@ -65,6 +73,31 @@ describe('DeckCard Component', () => {
     expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('12');
   });
 
+  it('adds a total words badge only for word decks', () => {
+    render(
+      <DeckCard
+        deck={{
+          ...mockDeck,
+          note_type: 'word',
+          native_language_id: 'ru',
+          target_language_id: 'de',
+        }}
+        totalCards={3}
+        totalWords={1}
+        dueCount={2}
+        onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('total-words-badge')).toHaveTextContent('1');
+    expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('3');
+    expect(screen.getByText('Cards Due')).toBeInTheDocument();
+    expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
+  });
+
   // A push sends the client's whole view of a row, so an old client
   // rewriting a deck a newer one wrote could drop columns it never knew
   // about. Delete is a tombstone and carries no field values, so it stays as
@@ -74,6 +107,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={{ ...mockDeck, note_type: 'cloze' }}
         totalCards={0}
+        dueCount={0}
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
@@ -90,6 +124,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={0}
+        dueCount={0}
         onSelectDeck={vi.fn()}
         onEditDeck={vi.fn()}
         onDeleteDeck={vi.fn()}
@@ -110,6 +145,7 @@ describe('DeckCard Component', () => {
       <DeckCard
         deck={mockDeck}
         totalCards={12}
+        dueCount={3}
         onSelectDeck={onSelectDeck}
         onStartReview={onStartReview}
         onEditDeck={onEditDeck}
@@ -295,6 +331,292 @@ describe('FlashcardModal Component', () => {
   });
 });
 
+describe('WordNoteList Component', () => {
+  const wordNote: UserNoteRecord = {
+    id: 'word-note-1',
+    note_type: 'word',
+    fields_version: 1,
+    fields_json: JSON.stringify({
+      word: 'Hund',
+      translation: 'dog',
+      native_language_id: RUSSIAN,
+      target_language_id: GERMAN,
+      example: 'Der Hund läuft.',
+      example_translation: 'The dog runs.',
+      gender: 'der',
+      pronunciation: 'hʊnt',
+    }),
+    additional_content: null,
+    created_at: 0,
+    updated_at: 0,
+  };
+  const wordCards: Card[] = [
+    {
+      id: 'word-card',
+      note_id: 'word-note-1',
+      template_key: WORD_TO_TRANSLATION_TEMPLATE_KEY,
+      active: true,
+      front: 'Hund',
+      back: 'dog',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    },
+    {
+      id: 'translation-card',
+      note_id: 'word-note-1',
+      template_key: 'translation-to-word',
+      active: true,
+      front: 'dog',
+      back: 'Hund',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    },
+    {
+      id: 'example-card',
+      note_id: 'word-note-1',
+      template_key: 'example-to-translation',
+      active: true,
+      front: 'Der Hund läuft.',
+      back: 'The dog runs.',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    },
+  ];
+
+  it('groups sibling cards into one word row without duplicate dialog buttons', () => {
+    render(
+      <WordNoteList
+        notes={[wordNote]}
+        cards={wordCards}
+        dueCards={[]}
+        onViewNote={vi.fn()}
+        onEditWord={vi.fn()}
+        onRemoveWord={vi.fn()}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('3 Cards')).toBeInTheDocument();
+    expect(screen.getByText('0 Cards Due')).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Word' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Translation' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Cards' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', { name: 'Extra info' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Hund')).toBeInTheDocument();
+    expect(screen.getByText('dog')).toBeInTheDocument();
+    expect(screen.queryByText(/DE → RU/)).toBeNull();
+    expect(screen.queryByText(/RU → DE/)).toBeNull();
+    expect(screen.queryByText(/Example → RU/)).toBeNull();
+    expect(screen.getByText('Cards: 3')).toBeInTheDocument();
+    expect(screen.getByText('Extra info: 3')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'View 3 cards' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'View 3 details' })).toBeNull();
+  });
+
+  it('shows details and card types in the unified word dialog', () => {
+    const { container } = render(
+      <WordNoteView
+        fields={{
+          word: 'Hund',
+          translation: 'dog',
+          native_language_id: RUSSIAN,
+          target_language_id: GERMAN,
+          gender: 'der',
+          image: 'https://untrusted.example/hund.png',
+          word_audio: 'https://untrusted.example/hund.mp3',
+        }}
+        cards={['DE → RU', 'RU → DE', 'Example → RU']}
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('dialog', { name: 'View Word' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Cards (3)')).toBeInTheDocument();
+    expect(screen.getByText('DE → RU')).toBeInTheDocument();
+    expect(screen.getByText('RU → DE')).toBeInTheDocument();
+    expect(screen.getByText('Example → RU')).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Word' })).toBeNull();
+    expect(container.querySelector('audio')).toBeNull();
+  });
+
+  it('counts only cards belonging to words that match the search', () => {
+    const secondWordNote: UserNoteRecord = {
+      ...wordNote,
+      id: 'word-note-2',
+      fields_json: JSON.stringify({
+        word: 'Katze',
+        translation: 'cat',
+        native_language_id: RUSSIAN,
+        target_language_id: GERMAN,
+      }),
+    };
+    const secondWordCard: Card = {
+      ...wordCards[0],
+      id: 'word-card-2',
+      note_id: secondWordNote.id,
+      front: 'Katze',
+      back: 'cat',
+    };
+
+    render(
+      <WordNoteList
+        notes={[wordNote, secondWordNote]}
+        cards={[...wordCards, secondWordCard]}
+        dueCards={[wordCards[0], secondWordCard]}
+        onViewNote={vi.fn()}
+        onEditWord={vi.fn()}
+        onRemoveWord={vi.fn()}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Search word, translation...'),
+      { target: { value: 'Katze' } },
+    );
+
+    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
+  });
+
+  it('keeps an invalid word visible and lets the user remove it', () => {
+    const onRemoveWord = vi.fn();
+    const invalidNote: UserNoteRecord = {
+      ...wordNote,
+      fields_json: JSON.stringify({ word: 'Hund', pronunciation: 'hʊnt' }),
+    };
+
+    render(
+      <WordNoteList
+        notes={[invalidNote]}
+        cards={wordCards}
+        dueCards={[wordCards[0]]}
+        onViewNote={vi.fn()}
+        onEditWord={vi.fn()}
+        onRemoveWord={onRemoveWord}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('3 Cards')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
+
+    expect(screen.getByText("This word can't be shown")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove word' }));
+    expect(onRemoveWord).toHaveBeenCalledWith(invalidNote);
+  });
+
+  it('routes view, edit, and removal through the word note', () => {
+    const onViewNote = vi.fn();
+    const onEditWord = vi.fn();
+    const onRemoveWord = vi.fn();
+    render(
+      <WordNoteList
+        notes={[wordNote]}
+        cards={wordCards}
+        dueCards={[]}
+        onViewNote={onViewNote}
+        onEditWord={onEditWord}
+        onRemoveWord={onRemoveWord}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByTitle('View Word')[0]);
+    fireEvent.click(screen.getAllByTitle('View Word')[1]);
+    fireEvent.click(screen.getByTitle('Edit Word'));
+    fireEvent.click(screen.getByTitle('Remove word from this deck'));
+
+    expect(onViewNote).toHaveBeenCalledTimes(2);
+    expect(onViewNote).toHaveBeenLastCalledWith(wordNote);
+    expect(onEditWord).toHaveBeenCalledWith(wordNote);
+    expect(onRemoveWord).toHaveBeenCalledWith(wordNote);
+  });
+
+  it('keeps word actions available when the word has no cards', () => {
+    const onViewNote = vi.fn();
+    const onEditWord = vi.fn();
+    const onRemoveWord = vi.fn();
+    render(
+      <WordNoteList
+        notes={[wordNote]}
+        cards={[]}
+        dueCards={[]}
+        onViewNote={onViewNote}
+        onEditWord={onEditWord}
+        onRemoveWord={onRemoveWord}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByTitle('View Word')[0]);
+    fireEvent.click(screen.getByTitle('Edit Word'));
+    fireEvent.click(screen.getByTitle('Remove word from this deck'));
+
+    expect(onViewNote).toHaveBeenCalledWith(wordNote);
+    expect(onEditWord).toHaveBeenCalledWith(wordNote);
+    expect(onRemoveWord).toHaveBeenCalledWith(wordNote);
+  });
+});
+
+describe('WordNoteDialog', () => {
+  it('keeps the current focus when its parent provides a new close callback', () => {
+    const firstClose = vi.fn();
+    const secondClose = vi.fn();
+    const { rerender } = render(
+      <WordNoteDialog label="Cards" onClose={firstClose}>
+        <button type="button">First</button>
+        <button type="button">Second</button>
+      </WordNoteDialog>,
+    );
+
+    const secondButton = screen.getByRole('button', { name: 'Second' });
+    secondButton.focus();
+
+    rerender(
+      <WordNoteDialog label="Cards" onClose={secondClose}>
+        <button type="button">First</button>
+        <button type="button">Second</button>
+      </WordNoteDialog>,
+    );
+
+    expect(secondButton).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(firstClose).not.toHaveBeenCalled();
+    expect(secondClose).toHaveBeenCalledOnce();
+  });
+});
+
 describe('CardList Component - Virtualization & Large Decks', () => {
   it('only renders a virtualized slice of DOM rows for a 1,000-card deck and updates on filter', () => {
     const largeDeckCards: Card[] = Array.from({ length: 1000 }, (_, i) => ({
@@ -321,7 +643,7 @@ describe('CardList Component - Virtualization & Large Decks', () => {
     );
 
     // Verify catalog title reflects total count of 1,000
-    expect(screen.getByText('Card Catalog (1000)')).toBeInTheDocument();
+    expect(screen.getByText('1000 Cards')).toBeInTheDocument();
 
     // Verify virtualization: DOM contains far fewer row elements than 1,000 (only windowed slice)
     const renderedRows = screen.getAllByRole('row');
@@ -335,7 +657,7 @@ describe('CardList Component - Virtualization & Large Decks', () => {
     fireEvent.change(searchInput, { target: { value: 'UniqueTargetFront' } });
 
     // Verify search correctly narrows catalog to 1 card and renders it
-    expect(screen.getByText('Card Catalog (1)')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards')).toBeInTheDocument();
     expect(screen.getByText('UniqueTargetFront')).toBeInTheDocument();
   });
 

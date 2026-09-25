@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { vi, afterEach } from 'vitest';
 import { useEffect, useState, useCallback } from 'react';
+import '@/lib/i18n';
 
 afterEach(() => {
   vi.restoreAllMocks();

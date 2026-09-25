@@ -22,6 +22,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Activity,
+  Brain,
+  CalendarClock,
+  FilePlus,
+  Flame,
+  Sprout,
+  TrendingDown,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { formatDate, formatNumber } from '@repo/i18n';
 
 type SeriesKey = 'reviews' | 'notesAdded' | 'forgotRate';
 
@@ -45,15 +56,15 @@ const RANGES = [
   { value: 'year', label: 'Year' },
 ] as const;
 
-const monthLabel = (utcMonth: string) =>
-  new Date(`${utcMonth}-01T00:00:00Z`).toLocaleDateString('en', {
+const monthLabel = (utcMonth: string, locale: string) =>
+  formatDate(new Date(`${utcMonth}-01T00:00:00Z`), locale, {
     month: 'short',
     year: '2-digit',
     timeZone: 'UTC',
   });
 
-const shortDate = (utcDate: string) =>
-  new Date(`${utcDate}T00:00:00Z`).toLocaleDateString('en', {
+const shortDate = (utcDate: string, locale: string) =>
+  formatDate(new Date(`${utcDate}T00:00:00Z`), locale, {
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
@@ -71,21 +82,23 @@ function BarSeries({
   rows,
   valueKey,
   percentage = false,
+  locale,
 }: {
   rows: readonly SeriesRow[];
   valueKey: SeriesKey;
   percentage?: boolean;
+  locale: string;
 }) {
   const values = rows.map((row) => row[valueKey]);
   const peak = Math.max(...values, 0);
   const ceiling = percentage ? 1 : Math.max(peak, 1);
   const format = (value: number) =>
     percentage
-      ? new Intl.NumberFormat('en', {
+      ? formatNumber(value, locale, {
           style: 'percent',
           maximumFractionDigits: 1,
-        }).format(value)
-      : value.toLocaleString();
+        })
+      : formatNumber(value, locale);
   // Values fit above the bars in the 7-day range only; 30 bars are too narrow.
   const showValues = rows.length <= 7;
   const latest = rows.at(-1)?.key;
@@ -145,6 +158,8 @@ export function Statistics() {
   );
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [deckId, setDeckId] = useState('');
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || 'en';
   const now = Date.now();
   const rows = useMemo(
     () =>
@@ -165,7 +180,7 @@ export function Statistics() {
         }).map((row) => ({
           ...row,
           key: row.utcMonth,
-          label: monthLabel(row.utcMonth),
+          label: monthLabel(row.utcMonth, locale),
         }))
       : selectDailyCounts(rows.reviewEvents, rows.notes, {
           days: range === 'week' ? 7 : 30,
@@ -173,7 +188,7 @@ export function Statistics() {
         }).map((row) => ({
           ...row,
           key: row.utcDate,
-          label: shortDate(row.utcDate),
+          label: shortDate(row.utcDate, locale),
         }));
   const streak = selectStreakActivity(rows.reviewEvents, now);
   const learnedNotes = selectLearnedNoteCount(
@@ -214,7 +229,10 @@ export function Statistics() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card aria-label="Learning streak">
           <CardHeader>
-            <CardTitle>Learning streak</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Flame className="h-5 w-5 text-orange-500" />
+              Learning streak
+            </CardTitle>
             <CardDescription>Consecutive learning days</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
@@ -229,19 +247,25 @@ export function Statistics() {
 
         <Card aria-label="Learned notes">
           <CardHeader>
-            <CardTitle>Learned notes</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-blue-500" />
+              Learned notes
+            </CardTitle>
             <CardDescription>Notes with a successful review</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {learnedNotes.toLocaleString()} learned
+              {formatNumber(learnedNotes, locale)} learned
             </p>
           </CardContent>
         </Card>
 
         <Card aria-label="Due forecast">
           <CardHeader>
-            <CardTitle>Due forecast</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-purple-500" />
+              Due forecast
+            </CardTitle>
             <CardDescription>Upcoming review workload</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-3 gap-2 text-center">
@@ -260,7 +284,10 @@ export function Statistics() {
 
         <Card aria-label="Card maturity">
           <CardHeader>
-            <CardTitle>Card maturity</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Sprout className="h-5 w-5 text-green-500" />
+              Card maturity
+            </CardTitle>
             <CardDescription>By scheduled review interval</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
@@ -294,26 +321,40 @@ export function Statistics() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card aria-label="Reviews per day">
           <CardHeader>
-            <CardTitle>Reviews per day</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-chart-1" />
+              Reviews per day
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="reviews" />
+            <BarSeries rows={series} valueKey="reviews" locale={locale} />
           </CardContent>
         </Card>
         <Card aria-label="Notes added per day">
           <CardHeader>
-            <CardTitle>Notes added per day</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FilePlus className="h-5 w-5 text-chart-2" />
+              Notes added per day
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="notesAdded" />
+            <BarSeries rows={series} valueKey="notesAdded" locale={locale} />
           </CardContent>
         </Card>
         <Card aria-label="Forgot rate per day">
           <CardHeader>
-            <CardTitle>Forgot rate per day</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-chart-3" />
+              Forgot rate per day
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="forgotRate" percentage />
+            <BarSeries
+              rows={series}
+              valueKey="forgotRate"
+              percentage
+              locale={locale}
+            />
           </CardContent>
         </Card>
       </div>

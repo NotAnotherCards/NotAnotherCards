@@ -23,8 +23,10 @@ import {
   rememberPendingChallenge,
   safeReturnTo,
 } from '@/lib/two-factor-challenge';
+import { useTranslation } from 'react-i18next';
 
 export function LoginComponent() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const search = useSearch({ from: '/_auth/login' });
   const returnTo = safeReturnTo(search.redirect);
@@ -107,8 +109,8 @@ export function LoginComponent() {
 
   return (
     <AuthCard
-      title="Welcome Back"
-      description="Enter your email below to log in to your account"
+      title={t('auth.login.title')}
+      description={t('auth.login.description')}
       footerText=""
       footerLinkText=""
       footerLinkTo=""
@@ -121,7 +123,9 @@ export function LoginComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.email')}
+                  </FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
@@ -140,7 +144,9 @@ export function LoginComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.password')}
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}
@@ -162,10 +168,10 @@ export function LoginComponent() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
-                  Logging in...
+                  {t('auth.login.logging_in')}
                 </span>
               ) : (
-                'Login'
+                t('auth.login.submit')
               )}
             </Button>
             <div className="relative my-2">
@@ -174,7 +180,7 @@ export function LoginComponent() {
               </div>
               <div className="relative flex justify-center text-xs">
                 <span className="px-2 text-muted-foreground">
-                  Or continue with
+                  {t('auth.login.continue_with')}
                 </span>
               </div>
             </div>
@@ -195,21 +201,21 @@ export function LoginComponent() {
       </form>
       <div className="flex flex-col items-center justify-center gap-2 border-t border-border/10 pt-3.5 pb-2 text-center">
         <p className="text-xs text-muted-foreground">
-          Forgot your password?{' '}
+          {t('auth.login.forgot_password')}{' '}
           <Link
             to="/forgot-password"
             className="text-primary font-medium hover:underline transition-colors"
           >
-            Reset here!
+            {t('auth.login.reset_here')}
           </Link>
         </p>
         <p className="text-xs text-muted-foreground">
-          Don't have an account?{' '}
+          {t('auth.login.no_account')}{' '}
           <Link
             to="/register"
             className="text-primary font-medium hover:underline transition-colors"
           >
-            Sign up
+            {t('auth.login.sign_up')}
           </Link>
         </p>
       </div>

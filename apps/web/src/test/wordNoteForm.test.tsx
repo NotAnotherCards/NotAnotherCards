@@ -40,6 +40,17 @@ describe('WordNoteForm', () => {
     expect(screen.queryByLabelText(/language/i)).toBeNull();
   });
 
+  it('keeps word, translation, and pronunciation single-line while examples stay multiline', () => {
+    renderForm();
+
+    expect(screen.getByLabelText(/^word( in \w+)?$/i).tagName).toBe('INPUT');
+    expect(screen.getByLabelText(/translation/i).tagName).toBe('INPUT');
+
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+    expect(screen.getByLabelText(/pronunciation/i).tagName).toBe('INPUT');
+    expect(screen.getByLabelText(/^example$/i).tagName).toBe('TEXTAREA');
+  });
+
   it('will not submit without a word or a translation', async () => {
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
@@ -77,6 +88,30 @@ describe('WordNoteForm', () => {
       part_of_speech: 'verb',
       pronunciation: 'ˈlaʊ̯fn̩',
     });
+  });
+
+  it('offers one part of speech from a fixed list', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+
+    const select = screen.getByLabelText(/part of speech/i);
+    expect(select.tagName).toBe('SELECT');
+    expect(
+      Array.from((select as HTMLSelectElement).options).map(
+        (option) => option.text,
+      ),
+    ).toEqual([
+      'Not set',
+      'Noun',
+      'Verb',
+      'Adjective',
+      'Adverb',
+      'Pronoun',
+      'Preposition',
+      'Conjunction',
+      'Interjection',
+      'Other',
+    ]);
   });
 
   it('opens the details already expanded when the note uses any of them', () => {
@@ -184,5 +219,26 @@ describe('WordNoteForm gender', () => {
       translation: 'dog',
       gender: 'der',
     });
+  });
+
+  it('places gender before part of speech', () => {
+    render(
+      <WordNoteForm
+        title="Add New Word"
+        targetLanguageId={GERMAN}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+    openDetails();
+
+    const gender = screen.getByLabelText(/gender/i);
+    const partOfSpeech = screen.getByLabelText(/part of speech/i);
+    expect(
+      Boolean(
+        gender.compareDocumentPosition(partOfSpeech) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
   });
 });

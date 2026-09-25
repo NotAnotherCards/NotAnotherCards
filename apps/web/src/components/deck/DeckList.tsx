@@ -21,7 +21,11 @@ import { DeckForm } from './DeckForm';
 import { DeckCard } from './DeckCard';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
-import type { DeckNoteType } from '@repo/offline-db';
+import {
+  countCardsPerDeck,
+  type DeckNoteType,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
 
 interface DeckListProps {
   onSelectDeck: (deckId: string) => void;
@@ -35,6 +39,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
+  const dueCardsPerDeck = countCardsPerDeck(
+    store.noteDecks ?? [],
+    store.dueCards ?? [],
+  );
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
@@ -129,33 +137,6 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
     return null;
   }
 
-  if (store.error) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 rounded-3xl border border-destructive/25 bg-destructive/5 text-center min-h-60 space-y-4 animate-in fade-in duration-200">
-        <div className="p-3 rounded-2xl bg-destructive/10 text-destructive">
-          <AlertCircle className="size-8" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-destructive">
-            Failed to Load Decks
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {store.error ||
-              'An error occurred while loading your library. Please try reloading.'}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          className="cursor-pointer gap-1.5"
-          onClick={() => window.location.reload()}
-        >
-          <RefreshCw className="size-4" />
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header and Controls */}
@@ -202,12 +183,18 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {store.decks.map((deck) => {
             const totalCards = store.getCardsCount(deck.id);
+            const totalWords =
+              deck.note_type === WORD_NOTE_TYPE
+                ? store.getNotesForDeck(deck.id).length
+                : undefined;
 
             return (
               <DeckCard
                 key={deck.id}
                 deck={deck}
                 totalCards={totalCards}
+                totalWords={totalWords}
+                dueCount={dueCardsPerDeck.get(deck.id) ?? 0}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   selectActivitySummary,
   selectDailyChallengeHistory,
+  selectEligibleBadgeCodes,
+  selectReviewActivity,
   selectStreakActivity,
   type ActivityCard,
   type ActivityNote,
@@ -329,6 +331,86 @@ describe('shared activity and gamification rules', () => {
           },
         ],
       },
+    ]);
+  });
+});
+
+describe('badge eligibility acceptance criteria', () => {
+  const at = (iso: string) => new Date(iso).getTime();
+
+  function review(
+    id: string,
+    reviewedAt: string,
+    rating = 3,
+    cardId = `card-${id}`,
+  ): ActivityReviewEvent {
+    return { id, user_card_id: cardId, rating, reviewed_at: at(reviewedAt) };
+  }
+
+  function eligibleBadges(reviewEvents: ActivityReviewEvent[]) {
+    const reviewActivity = selectReviewActivity(reviewEvents);
+    const streakActivity = selectStreakActivity(
+      reviewEvents,
+      at('2026-09-08T12:00:00.000Z'),
+    );
+    return selectEligibleBadgeCodes({
+      reviewCount: reviewActivity.reviewCount,
+      longestStreak: streakActivity.longestStreak,
+    });
+  }
+
+  it('unlocks first-review after exactly one distinct review', () => {
+    const events = [review('only-one', '2026-09-08T10:00:00.000Z')];
+
+    expect(eligibleBadges(events)).toEqual(['first-review']);
+  });
+
+  it('unlocks hundred-reviews without seven-day-streak when all reviews fall on one day', () => {
+    const events = Array.from({ length: 100 }, (_, i) =>
+      review(`review-${i}`, '2026-09-08T10:00:00.000Z'),
+    );
+
+    expect(eligibleBadges(events)).toEqual(['first-review', 'hundred-reviews']);
+  });
+
+  it('unlocks seven-day-streak from reviews on 7 consecutive UTC dates', () => {
+    const events = Array.from({ length: 7 }, (_, i) =>
+      review(
+        `day-${i}`,
+        `2026-09-${String(i + 1).padStart(2, '0')}T23:59:00.000Z`,
+      ),
+    );
+
+    expect(eligibleBadges(events)).toEqual([
+      'first-review',
+      'seven-day-streak',
+    ]);
+  });
+
+  it('does not inflate badge progress from duplicated review event IDs', () => {
+    const event = review('same-id', '2026-09-08T10:00:00.000Z');
+    // 100 copies of the same event id should still count as 1 review
+    const events = Array.from({ length: 100 }, () => ({ ...event }));
+
+    expect(eligibleBadges(events)).toEqual(['first-review']);
+  });
+
+  it('counts all valid ratings equally toward badge progress', () => {
+    // 25 reviews at each rating (1–4) on consecutive days to also test streak
+    const events = Array.from({ length: 100 }, (_, i) => {
+      const day = (i % 7) + 1;
+      const rating = (i % 4) + 1;
+      return review(
+        `review-${i}`,
+        `2026-09-${String(day).padStart(2, '0')}T${String(8 + Math.floor(i / 7)).padStart(2, '0')}:00:00.000Z`,
+        rating,
+      );
+    });
+
+    expect(eligibleBadges(events)).toEqual([
+      'first-review',
+      'seven-day-streak',
+      'hundred-reviews',
     ]);
   });
 });

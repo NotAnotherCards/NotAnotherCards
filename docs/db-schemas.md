@@ -1,91 +1,191 @@
 # Database schemas
 
+Implemented persistence only. Tables that are not built yet are in
+[Database schema proposals](db-schema-proposals.md). The table blocks below are
+generated from this branch's Drizzle snapshot, not read from a deployed database.
+
+## How the data fits together
+
+A **note** holds what you want to learn. **Cards** are the questions generated
+from a note, each with its own schedule. **Review events** record your answers.
+**Decks** group notes without copying them or their progress.
+
+PostgreSQL holds the server data. Web and mobile each keep a local RemelonDB
+database per signed-in user, so reviewing works offline; when connected, they
+push local changes to the API and pull accepted ones back. Sync only covers the
+user's own learning records, and the server checks ownership before accepting a
+push. Auth, published decks, moderation, AI jobs and gamification awards live in
+server-only tables behind API endpoints.
+
+```mermaid
+flowchart LR
+    W[Web app] <--> WL[Local learning database]
+    M[Mobile app] <--> ML[Local learning database]
+    WL <-->|Authenticated sync| A[API]
+    ML <-->|Authenticated sync| A
+    W <-->|Auth and other API requests| A
+    M <-->|Auth and other API requests| A
+    A <--> P[(PostgreSQL)]
+```
+
+### Example: learning “Haus”
+
+An English speaker adds the German word “Haus” (“house”) to a “German basics”
+deck:
+
+1. A `user_notes` row stores a `word@1` note. Its `fields_json` holds `word`,
+   `translation`, the native/target language ids and any optional word fields.
+2. The note compiler generates `user_cards` rows for word→translation and
+   translation→word, plus an example card when both example fields are filled.
+   Each card has its own `due_at` and `scheduled_interval_minutes`.
+3. A `user_note_decks` row links the note to “German basics”. Adding it to a
+   second deck, “Buildings”, adds another membership; the note and its cards
+   stay the same, so progress is shared across both decks.
+4. Reviewing a card records a `review_events` row with the rating and time, and
+   updates that card's schedule. This happens locally and syncs later.
+5. Editing “Haus” edits the note. Regenerating updates its cards in place,
+   keeping their ids, schedules and review history.
+
+```mermaid
+erDiagram
+    user ||--o| user_profiles : "has app profile"
+    user ||--o{ user_decks : owns
+    user ||--o{ user_notes : owns
+    user_decks ||--o{ user_note_decks : contains
+    user_notes ||--o{ user_note_decks : "belongs through"
+    user_notes ||--o{ user_cards : generates
+    user_cards ||--o{ review_events : "has review history"
+```
+
+Only the edges from `user` are SQL foreign keys. Card→note, membership→note/deck
+and review→card are checked in [sync validation](../apps/api/src/sync/sync-validation.ts).
+
+## Storage boundaries
+
+| Category                     | Examples                                                                                                    | How the client uses it                                                             |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Synced learning data         | Notes, cards, decks, memberships, review events, profiles                                                   | Reads and writes local records; sync exchanges accepted changes with the server    |
+| Server-only application data | Auth records, AI jobs/usage, published decks, moderation records, badge awards, daily challenge completions | Calls the relevant API; these tables are not part of the current local sync schema |
+| Device-local preferences     | Theme; web review mode and interval display                                                                 | Saves locally without cross-device sync                                            |
+| Server sync bookkeeping      | Revision sequence, revision checkpoints, garbage-collection floor                                           | Used by the sync service, not exposed as local application tables                  |
+
 ## Current architecture
+
+Each block lists a table's columns alphabetically with type, nullability and
+default, then its indexes, keys, foreign keys and checks, as the snapshot
+records them.
 
 ### Better Auth tables (server only)
 
-These tables are generated and managed by Better Auth. Changes to authentication fields should be made through the Better Auth configuration and generation workflow, not by editing [`apps/api/src/database/schema.ts`](../apps/api/src/database/schema.ts)
+These tables are generated and managed by Better Auth. Changes to authentication fields should be made through the Better Auth configuration and generation workflow, not by editing [`apps/api/src/database/schema.ts`](../apps/api/src/database/schema.ts).
 
-#### `user` ([API schema](../apps/api/src/database/schema.ts#L4))
+#### `user` ([API schema](../apps/api/src/database/schema.ts))
 
-```text
-id                  text PK
-name                text NOT NULL
-email               text UNIQUE NOT NULL
-email_verified      boolean NOT NULL DEFAULT false
-image               text NULL
-created_at          timestamp NOT NULL DEFAULT now()
-updated_at          timestamp NOT NULL
-timezone            text NULL DEFAULT 'UTC'
-on_boarding_complete boolean NOT NULL DEFAULT false
-two_factor_enabled  boolean NULL DEFAULT false
-```
-
-#### `session` ([API schema](../apps/api/src/database/schema.ts#L19))
+<!-- schema:table:public.user -->
 
 ```text
-id                  text PK
-expires_at          timestamp NOT NULL
-token               text UNIQUE NOT NULL
-created_at          timestamp NOT NULL DEFAULT now()
-updated_at          timestamp NOT NULL
-ip_address          text NULL
-user_agent          text NULL
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE
-
-INDEX(user_id)
+TABLE "public"."user" RLS DISABLED
+"created_at" timestamp NOT NULL DEFAULT now()
+"email" text NOT NULL
+"email_verified" boolean NOT NULL DEFAULT false
+"id" text NOT NULL PRIMARY KEY
+"image" text NULL
+"name" text NOT NULL
+"on_boarding_complete" boolean NOT NULL DEFAULT false
+"timezone" text NULL DEFAULT 'UTC'
+"two_factor_enabled" boolean NULL DEFAULT false
+"updated_at" timestamp NOT NULL DEFAULT now()
+UNIQUE "user_email_unique" ("email") NULLS DISTINCT
 ```
 
-#### `account` ([API schema](../apps/api/src/database/schema.ts#L38))
+<!-- /schema -->
+
+#### `session` ([API schema](../apps/api/src/database/schema.ts))
+
+<!-- schema:table:public.session -->
 
 ```text
-id                        text PK
-account_id                text NOT NULL
-provider_id               text NOT NULL
-user_id                   text NOT NULL FK -> user.id ON DELETE CASCADE
-access_token              text NULL
-refresh_token             text NULL
-id_token                  text NULL
-access_token_expires_at   timestamp NULL
-refresh_token_expires_at  timestamp NULL
-scope                     text NULL
-password                  text NULL
-created_at                timestamp NOT NULL DEFAULT now()
-updated_at                timestamp NOT NULL
-
-INDEX(user_id)
+TABLE "public"."session" RLS DISABLED
+"created_at" timestamp NOT NULL DEFAULT now()
+"expires_at" timestamp NOT NULL
+"id" text NOT NULL PRIMARY KEY
+"ip_address" text NULL
+"token" text NOT NULL
+"updated_at" timestamp NOT NULL
+"user_agent" text NULL
+"user_id" text NOT NULL
+INDEX "session_userId_idx" USING btree ("user_id" ASC NULLS LAST)
+UNIQUE "session_token_unique" ("token") NULLS DISTINCT
+FOREIGN KEY "session_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
 ```
 
-#### `verification` ([API schema](../apps/api/src/database/schema.ts#L62))
+<!-- /schema -->
+
+#### `account` ([API schema](../apps/api/src/database/schema.ts))
+
+<!-- schema:table:public.account -->
 
 ```text
-id                  text PK
-identifier          text NOT NULL
-value               text NOT NULL
-expires_at          timestamp NOT NULL
-created_at          timestamp NOT NULL DEFAULT now()
-updated_at          timestamp NOT NULL DEFAULT now()
-
-INDEX(identifier)
+TABLE "public"."account" RLS DISABLED
+"access_token" text NULL
+"access_token_expires_at" timestamp NULL
+"account_id" text NOT NULL
+"created_at" timestamp NOT NULL DEFAULT now()
+"id" text NOT NULL PRIMARY KEY
+"id_token" text NULL
+"password" text NULL
+"provider_id" text NOT NULL
+"refresh_token" text NULL
+"refresh_token_expires_at" timestamp NULL
+"scope" text NULL
+"updated_at" timestamp NOT NULL
+"user_id" text NOT NULL
+INDEX "account_userId_idx" USING btree ("user_id" ASC NULLS LAST)
+FOREIGN KEY "account_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
 ```
 
-#### `two_factor` ([API schema](../apps/api/src/database/schema.ts#L86))
+<!-- /schema -->
+
+#### `verification` ([API schema](../apps/api/src/database/schema.ts))
+
+<!-- schema:table:public.verification -->
+
+```text
+TABLE "public"."verification" RLS DISABLED
+"created_at" timestamp NOT NULL DEFAULT now()
+"expires_at" timestamp NOT NULL
+"id" text NOT NULL PRIMARY KEY
+"identifier" text NOT NULL
+"updated_at" timestamp NOT NULL DEFAULT now()
+"value" text NOT NULL
+INDEX "verification_identifier_idx" USING btree ("identifier" ASC NULLS LAST)
+```
+
+<!-- /schema -->
+
+#### `two_factor` ([API schema](../apps/api/src/database/schema.ts))
 
 Managed by Better Auth's `twoFactor` plugin (see the API README). `secret`
 and `backup_codes` are encrypted at rest; never read them for display or
 logging.
 
-```text
-id                        text PK
-secret                    text NOT NULL             (encrypted)
-backup_codes              text NOT NULL             (encrypted)
-user_id                   text NOT NULL FK -> user.id ON DELETE CASCADE
-verified                  boolean NULL DEFAULT true
-failed_verification_count integer NULL DEFAULT 0
-locked_until              timestamp NULL
+<!-- schema:table:public.two_factor -->
 
-INDEX(secret), INDEX(user_id)
+```text
+TABLE "public"."two_factor" RLS DISABLED
+"backup_codes" text NOT NULL
+"failed_verification_count" integer NULL DEFAULT 0
+"id" text NOT NULL PRIMARY KEY
+"locked_until" timestamp NULL
+"secret" text NOT NULL
+"user_id" text NOT NULL
+"verified" boolean NULL DEFAULT true
+INDEX "twoFactor_secret_idx" USING btree ("secret" ASC NULLS LAST)
+INDEX "twoFactor_userId_idx" USING btree ("user_id" ASC NULLS LAST)
+FOREIGN KEY "two_factor_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
 ```
+
+<!-- /schema -->
 
 ### Synchronized application tables
 
@@ -96,152 +196,446 @@ those server columns are not application fields in the local Zod tables.
 
 All numeric application timestamps (`due_at`, `created_at`, `updated_at`, and `reviewed_at`) are non-negative integer Unix milliseconds and must remain within JavaScript's safe-integer range. PostgreSQL stores them as `double precision`; the wire and local schemas validate them as integers found in [`apps/api/src/sync/schema.ts`](../apps/api/src/sync/schema.ts).
 
-#### `user_decks` ([API schema](../apps/api/src/sync/schema.ts#L35), [local schema](../packages/offline-db/src/user-dictionary.ts#L126))
+#### `user_decks` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts))
+
+A deck says which note contract its notes follow (`note_type`, migration
+`0011`, local schema v4) and whether it is shared (`visibility`, migration
+`0012`, local schema v5). `note_type` is insert-only and must name a
+registered type; a word deck carries the two language ids its note form
+defaults from, a basic deck carries none (check constraint). `visibility` is
+server-owned: sync accepts a row that keeps `public`, but a client cannot
+publish by pushing `public`; that happens through the sharing API, which also
+writes the snapshot in `published_decks`.
+
+<!-- schema:table:public.user_decks -->
 
 ```text
-id                  text PK
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-title               text NOT NULL
-description         text NULL
-created_at          number (integer Unix ms) NOT NULL
-updated_at          number (integer Unix ms) NOT NULL
+TABLE "public"."user_decks" RLS DISABLED
+"created_at" double precision NOT NULL
+"deleted_at" timestamp with time zone NULL
+"description" text NULL
+"id" text NOT NULL PRIMARY KEY
+"native_language_id" uuid NULL
+"note_type" text NOT NULL
+"rev" bigint NOT NULL
+"target_language_id" uuid NULL
+"title" text NOT NULL
+"updated_at" double precision NOT NULL
+"user_id" text NOT NULL
+"visibility" text NOT NULL DEFAULT 'private'
+INDEX "user_decks_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+INDEX "user_decks_user_updated_idx" USING btree ("user_id" ASC NULLS LAST, "updated_at" ASC NULLS LAST)
+FOREIGN KEY "user_decks_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "user_decks_created_at_safe_integer_check": "user_decks"."created_at" >= 0 and "user_decks"."created_at" <= 9007199254740991 and "user_decks"."created_at" = trunc("user_decks"."created_at")
+CHECK "user_decks_languages_match_note_type_check": case when "user_decks"."note_type" = 'word' then "user_decks"."native_language_id" is not null and "user_decks"."target_language_id" is not null and "user_decks"."native_language_id" <> "user_decks"."target_language_id" else "user_decks"."native_language_id" is null and "user_decks"."target_language_id" is null end
+CHECK "user_decks_updated_at_safe_integer_check": "user_decks"."updated_at" >= 0 and "user_decks"."updated_at" <= 9007199254740991 and "user_decks"."updated_at" = trunc("user_decks"."updated_at")
+CHECK "user_decks_visibility_check": "user_decks"."visibility" in ('private', 'public')
 ```
 
-#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts#L108), [local schema](../packages/offline-db/src/user-dictionary.ts#L134))
+<!-- /schema -->
+
+#### `user_notes` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts))
 
 The canonical source for a learning item. `fields_json` is serialized JSON;
 `additional_content` is optional Markdown for genuinely free-form material.
 
-```text
-id                  text PK
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-note_type           text NOT NULL
-fields_version      integer NOT NULL
-fields_json         text NOT NULL
-additional_content  text NULL
-created_at          number (integer Unix ms) NOT NULL
-updated_at          number (integer Unix ms) NOT NULL
+<!-- schema:table:public.user_notes -->
 
-INDEX(user_id, rev)
+```text
+TABLE "public"."user_notes" RLS DISABLED
+"additional_content" text NULL
+"created_at" double precision NOT NULL
+"deleted_at" timestamp with time zone NULL
+"fields_json" text NOT NULL
+"fields_version" integer NOT NULL
+"id" text NOT NULL PRIMARY KEY
+"note_type" text NOT NULL
+"rev" bigint NOT NULL
+"updated_at" double precision NOT NULL
+"user_id" text NOT NULL
+INDEX "user_notes_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+INDEX "user_notes_user_updated_idx" USING btree ("user_id" ASC NULLS LAST, "updated_at" ASC NULLS LAST)
+FOREIGN KEY "user_notes_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "user_notes_created_at_safe_integer_check": "user_notes"."created_at" >= 0 and "user_notes"."created_at" <= 9007199254740991 and "user_notes"."created_at" = trunc("user_notes"."created_at")
+CHECK "user_notes_updated_at_safe_integer_check": "user_notes"."updated_at" >= 0 and "user_notes"."updated_at" <= 9007199254740991 and "user_notes"."updated_at" = trunc("user_notes"."updated_at")
 ```
 
-#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts#L63), [local schema](../packages/offline-db/src/user-dictionary.ts#L130))
+<!-- /schema -->
+
+#### `user_cards` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts))
 
 Generated review questions. `front` and `back` deliberately remain generic
 Markdown instead of encoding subject-specific fields in this table. Every
 persisted card belongs to a note and has a stable template key.
 
-```text
-id                  text PK
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-note_id             text NOT NULL relation -> user_notes.id
-template_key        text NOT NULL
-active              boolean NOT NULL DEFAULT true
-front               text (Markdown) NOT NULL
-back                text (Markdown) NOT NULL
-due_at              number (integer Unix ms) NOT NULL
-scheduled_interval_minutes  integer NOT NULL DEFAULT 0 [server] -- required locally; 0 = never reviewed
-created_at          number (integer Unix ms) NOT NULL
-updated_at          number (integer Unix ms) NOT NULL
+<!-- schema:table:public.user_cards -->
 
-INDEX(user_id, rev)
-INDEX(note_id)
-INDEX(user_id, due_at)
+```text
+TABLE "public"."user_cards" RLS DISABLED
+"active" boolean NOT NULL DEFAULT true
+"back" text NOT NULL
+"created_at" double precision NOT NULL
+"deleted_at" timestamp with time zone NULL
+"due_at" double precision NOT NULL
+"front" text NOT NULL
+"id" text NOT NULL PRIMARY KEY
+"note_id" text NOT NULL
+"rev" bigint NOT NULL
+"scheduled_interval_minutes" integer NOT NULL DEFAULT 0
+"template_key" text NOT NULL
+"updated_at" double precision NOT NULL
+"user_id" text NOT NULL
+INDEX "user_cards_note_idx" USING btree ("note_id" ASC NULLS LAST)
+INDEX "user_cards_user_due_idx" USING btree ("user_id" ASC NULLS LAST, "due_at" ASC NULLS LAST)
+INDEX "user_cards_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+INDEX "user_cards_user_updated_idx" USING btree ("user_id" ASC NULLS LAST, "updated_at" ASC NULLS LAST)
+FOREIGN KEY "user_cards_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "user_cards_created_at_safe_integer_check": "user_cards"."created_at" >= 0 and "user_cards"."created_at" <= 9007199254740991 and "user_cards"."created_at" = trunc("user_cards"."created_at")
+CHECK "user_cards_due_at_safe_integer_check": "user_cards"."due_at" >= 0 and "user_cards"."due_at" <= 9007199254740991 and "user_cards"."due_at" = trunc("user_cards"."due_at")
+CHECK "user_cards_scheduled_interval_minutes_range_check": "user_cards"."scheduled_interval_minutes" between 0 and 172800
+CHECK "user_cards_updated_at_safe_integer_check": "user_cards"."updated_at" >= 0 and "user_cards"."updated_at" <= 9007199254740991 and "user_cards"."updated_at" = trunc("user_cards"."updated_at")
 ```
 
-#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts#L138), [local schema](../packages/offline-db/src/user-dictionary.ts#L138))
+<!-- /schema -->
+
+#### `user_note_decks` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts))
 
 Note-level deck membership. A note can belong to several decks without
 duplicating the note, its generated cards, or their review schedules.
 
-```text
-id                  text PK
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-note_id             text NOT NULL relation -> user_notes.id
-deck_id             text NOT NULL relation -> user_decks.id
-active              boolean NOT NULL DEFAULT true
-created_at          number (integer Unix ms) NOT NULL
-updated_at          number (integer Unix ms) NOT NULL
+<!-- schema:table:public.user_note_decks -->
 
-INDEX(user_id, rev)
-INDEX(note_id)
-INDEX(deck_id)
+```text
+TABLE "public"."user_note_decks" RLS DISABLED
+"active" boolean NOT NULL DEFAULT true
+"created_at" double precision NOT NULL
+"deck_id" text NOT NULL
+"deleted_at" timestamp with time zone NULL
+"id" text NOT NULL PRIMARY KEY
+"note_id" text NOT NULL
+"rev" bigint NOT NULL
+"updated_at" double precision NOT NULL
+"user_id" text NOT NULL
+INDEX "user_note_decks_deck_idx" USING btree ("deck_id" ASC NULLS LAST)
+INDEX "user_note_decks_note_idx" USING btree ("note_id" ASC NULLS LAST)
+INDEX "user_note_decks_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+INDEX "user_note_decks_user_updated_idx" USING btree ("user_id" ASC NULLS LAST, "updated_at" ASC NULLS LAST)
+FOREIGN KEY "user_note_decks_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "user_note_decks_created_at_safe_integer_check": "user_note_decks"."created_at" >= 0 and "user_note_decks"."created_at" <= 9007199254740991 and "user_note_decks"."created_at" = trunc("user_note_decks"."created_at")
+CHECK "user_note_decks_updated_at_safe_integer_check": "user_note_decks"."updated_at" >= 0 and "user_note_decks"."updated_at" <= 9007199254740991 and "user_note_decks"."updated_at" = trunc("user_note_decks"."updated_at")
 ```
+
+<!-- /schema -->
 
 The note/card and note/deck relations are declared in Drizzle. As with the
 previous card/deck relationship, authenticated ownership and parent checks are
-sync-layer concerns rather than cascading SQL foreign keys. The
-server ownership checks remain in
-[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+sync-layer concerns rather than cascading SQL foreign keys. See the current [sync validation](../apps/api/src/sync/sync-validation.ts) for ownership and parent checks.
 
-#### `review_events` ([API schema](../apps/api/src/sync/schema.ts#L169), [local schema](../packages/offline-db/src/user-dictionary.ts#L142))
+#### `review_events` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts))
+
+<!-- schema:table:public.review_events -->
 
 ```text
-id                  text PK
-user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-user_card_id        text NOT NULL relation -> user_cards.id
-rating              integer NOT NULL CHECK (rating BETWEEN 1 AND 4)
-reviewed_at         number (integer Unix ms) NOT NULL
+TABLE "public"."review_events" RLS DISABLED
+"deleted_at" timestamp with time zone NULL
+"id" text NOT NULL PRIMARY KEY
+"rating" integer NOT NULL
+"rev" bigint NOT NULL
+"reviewed_at" double precision NOT NULL
+"user_card_id" text NOT NULL
+"user_id" text NOT NULL
+INDEX "review_events_user_card_idx" USING btree ("user_id" ASC NULLS LAST, "user_card_id" ASC NULLS LAST)
+INDEX "review_events_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+FOREIGN KEY "review_events_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "review_events_rating_check": "review_events"."rating" between 1 and 4
+CHECK "review_events_reviewed_at_safe_integer_check": "review_events"."reviewed_at" >= 0 and "review_events"."reviewed_at" <= 9007199254740991 and "review_events"."reviewed_at" = trunc("review_events"."reviewed_at")
 ```
+
+<!-- /schema -->
 
 Review events are append-only in the sync configuration.
 
-#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts#L193), [local schema](../packages/offline-db/src/user-dictionary.ts#L146))
+#### `user_profiles` ([API schema](../apps/api/src/sync/schema.ts), [local schema](../packages/offline-db/src/user-dictionary.ts))
 
 Contains app-specific profile data and is separate from Better Auth's `user` table.
 
+<!-- schema:table:public.user_profiles -->
+
 ```text
-user_id             text PK FK -> user.id ON DELETE CASCADE
-rev                 bigint NOT NULL                                [server]
-deleted_at          timestamptz NULL                               [server]
-username            text UNIQUE NULL
-bio                 text NULL
-avatar_file_id      uuid NULL
-native_language_id  uuid NULL
-target_language_id  uuid NULL
-created_at          number (integer Unix ms) NOT NULL
-updated_at          number (integer Unix ms) NOT NULL
+TABLE "public"."user_profiles" RLS DISABLED
+"avatar_file_id" uuid NULL
+"bio" text NULL
+"created_at" double precision NOT NULL
+"deleted_at" timestamp with time zone NULL
+"native_language_id" uuid NULL
+"rev" bigint NOT NULL
+"target_language_id" uuid NULL
+"updated_at" double precision NOT NULL
+"user_id" text NOT NULL PRIMARY KEY
+"username" text NULL
+INDEX "user_profiles_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+INDEX "user_profiles_user_updated_idx" USING btree ("user_id" ASC NULLS LAST, "updated_at" ASC NULLS LAST)
+UNIQUE "user_profiles_username_unique" ("username") NULLS DISTINCT
+FOREIGN KEY "user_profiles_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "user_profiles_created_at_safe_integer_check": "user_profiles"."created_at" >= 0 and "user_profiles"."created_at" <= 9007199254740991 and "user_profiles"."created_at" = trunc("user_profiles"."created_at")
+CHECK "user_profiles_updated_at_safe_integer_check": "user_profiles"."updated_at" >= 0 and "user_profiles"."updated_at" <= 9007199254740991 and "user_profiles"."updated_at" = trunc("user_profiles"."updated_at")
 ```
 
+<!-- /schema -->
+
 The three UUID fields are currently values only; no `files` or `languages` tables or foreign-key constraints exist yet.
+
+#### `user_badges` ([API schema](../apps/api/src/sync/schema.ts#L243), [local schema](../packages/offline-db/src/index.ts#L160))
+
+Stores unlocked gamification badges for users. This table is server-owned. Clients may only pull and display badges; client-side pushes are rejected by sync-validation.
+
+<!-- schema:table:public.user_badges -->
+
+```text
+TABLE "public"."user_badges" RLS DISABLED
+"badge_id" text NOT NULL
+"created_at" double precision NOT NULL
+"deleted_at" timestamp with time zone NULL
+"id" text NOT NULL PRIMARY KEY
+"rev" bigint NOT NULL
+"unlocked_at" double precision NOT NULL
+"updated_at" double precision NOT NULL
+"user_id" text NOT NULL
+INDEX "user_badges_user_rev_idx" USING btree ("user_id" ASC NULLS LAST, "rev" ASC NULLS LAST)
+INDEX "user_badges_user_updated_idx" USING btree ("user_id" ASC NULLS LAST, "updated_at" ASC NULLS LAST)
+UNIQUE "user_badges_user_badge_uk" ("user_id", "badge_id") NULLS DISTINCT
+FOREIGN KEY "user_badges_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "user_badges_created_at_safe_integer_check": "user_badges"."created_at" >= 0 and "user_badges"."created_at" <= 9007199254740991 and "user_badges"."created_at" = trunc("user_badges"."created_at")
+CHECK "user_badges_unlocked_at_safe_integer_check": "user_badges"."unlocked_at" >= 0 and "user_badges"."unlocked_at" <= 9007199254740991 and "user_badges"."unlocked_at" = trunc("user_badges"."unlocked_at")
+CHECK "user_badges_updated_at_safe_integer_check": "user_badges"."updated_at" >= 0 and "user_badges"."updated_at" <= 9007199254740991 and "user_badges"."updated_at" = trunc("user_badges"."updated_at")
+```
+
+<!-- /schema -->
 
 ### Sync infrastructure
 
 These server-only RemelonDB bookkeeping objects were introduced by [migration `0005`](../apps/api/drizzle/0005_remelon-sync-store.sql). They support synchronization and retention and do not contain application data or exist in the local schema.
 
-#### `remelon_rev` ([API schema](../apps/api/src/sync/schema.ts#L17))
+#### `remelon_rev` ([API schema](../apps/api/src/sync/schema.ts))
 
 A PostgreSQL sequence that allocates the global, monotonically increasing revisions stored in synchronized rows' `rev` columns.
 
-#### `remelon_revision_checkpoints` ([API schema](../apps/api/src/sync/schema.ts#L24))
+#### `remelon_revision_checkpoints` ([API schema](../apps/api/src/sync/schema.ts))
+
+<!-- schema:table:public.remelon_revision_checkpoints -->
 
 ```text
-observed_at         timestamptz PK
-rev                 bigint NOT NULL
-
-INDEX(observed_at)
+TABLE "public"."remelon_revision_checkpoints" RLS DISABLED
+"observed_at" timestamp with time zone NOT NULL PRIMARY KEY
+"rev" bigint NOT NULL
+INDEX "remelon_revision_checkpoints_observed_at_idx" USING btree ("observed_at" ASC NULLS LAST)
 ```
+
+<!-- /schema -->
 
 Records the highest served revision observed at a point in time. Retention uses these checkpoints to determine which tombstones are old enough to garbage-collect safely.
 
-#### `remelon_sync_meta` ([API schema](../apps/api/src/sync/schema.ts#L19))
+#### `remelon_sync_meta` ([API schema](../apps/api/src/sync/schema.ts))
+
+<!-- schema:table:public.remelon_sync_meta -->
 
 ```text
-key                 text PK
-value               bigint NOT NULL
+TABLE "public"."remelon_sync_meta" RLS DISABLED
+"key" text NOT NULL PRIMARY KEY
+"value" bigint NOT NULL
 ```
 
+<!-- /schema -->
+
 Stores persistent sync metadata. It currently records `gc_floor`, the oldest valid incremental-sync cursor after garbage collection.
+
+### Server-only application tables
+
+These tables hold application data that never enters a client's sync scope.
+Clients reach them through the API.
+
+#### `ai_generation_jobs` ([API schema](../apps/api/src/ai/schema.ts), migration `0007`)
+
+The AI job queue: one row per generation or moderation request, worked by
+the API's polling worker. `type` is one of `topic_deck`, `text_cards`,
+`word_note`, `deck_moderation`; `status` moves pending → processing →
+completed | failed. `payload` and `result` are typed JSON per job type.
+
+<!-- schema:table:public.ai_generation_jobs -->
+
+```text
+TABLE "public"."ai_generation_jobs" RLS DISABLED
+"attempts" integer NOT NULL DEFAULT 0
+"completed_at" timestamp with time zone NULL
+"created_at" timestamp with time zone NOT NULL DEFAULT now()
+"error" text NULL
+"id" text NOT NULL PRIMARY KEY
+"locked_at" timestamp with time zone NULL
+"max_attempts" integer NOT NULL DEFAULT 3
+"next_run_at" timestamp with time zone NOT NULL DEFAULT now()
+"payload" jsonb NOT NULL
+"result" jsonb NULL
+"status" text NOT NULL DEFAULT 'pending'
+"type" text NOT NULL
+"updated_at" timestamp with time zone NOT NULL DEFAULT now()
+"user_id" text NOT NULL
+UNIQUE INDEX "ai_jobs_active_deck_moderation_unique" USING btree (("payload" ->> 'deckId') ASC NULLS LAST) WHERE "ai_generation_jobs"."type" = 'deck_moderation' and "ai_generation_jobs"."status" in ('pending', 'processing')
+INDEX "ai_jobs_status_attempts_idx" USING btree ("status" ASC NULLS LAST, "attempts" ASC NULLS LAST)
+INDEX "ai_jobs_status_next_run_idx" USING btree ("status" ASC NULLS LAST, "next_run_at" ASC NULLS LAST)
+INDEX "ai_jobs_user_status_idx" USING btree ("user_id" ASC NULLS LAST, "status" ASC NULLS LAST)
+FOREIGN KEY "ai_generation_jobs_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+```
+
+<!-- /schema -->
+
+The partial unique index (migration `0014`) allows one active moderation job
+per deck.
+
+#### `ai_usage` ([API schema](../apps/api/src/ai/schema.ts), migration `0007`)
+
+Token usage per model call, for quotas and cost reporting. The streaming
+preview reserves its row before the call, under the same per-user lock as
+the queue, so it counts toward the daily request quota; those rows have no
+`job_id`.
+
+<!-- schema:table:public.ai_usage -->
+
+```text
+TABLE "public"."ai_usage" RLS DISABLED
+"completion_tokens" integer NOT NULL DEFAULT 0
+"created_at" timestamp with time zone NOT NULL DEFAULT now()
+"id" text NOT NULL PRIMARY KEY
+"job_id" text NULL
+"model" text NOT NULL
+"prompt_tokens" integer NOT NULL DEFAULT 0
+"total_tokens" integer NOT NULL DEFAULT 0
+"user_id" text NOT NULL
+INDEX "ai_usage_user_created_idx" USING btree ("user_id" ASC NULLS LAST, "created_at" ASC NULLS LAST)
+FOREIGN KEY "ai_usage_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+```
+
+<!-- /schema -->
+
+#### `published_decks` ([API schema](../apps/api/src/sharing/schema.ts), migrations `0013`, `0014`)
+
+The immutable snapshot readers browse and import. It is content only: the
+live deck's `visibility` and tombstone remain the gate for whether the
+snapshot is served. Publishing runs every card through moderation (#263)
+before the row is written; `moderation_status` is flipped to `blocked` by a
+takedown.
+
+<!-- schema:table:public.published_decks -->
+
+```text
+TABLE "public"."published_decks" RLS DISABLED
+"card_count" integer NOT NULL
+"content" jsonb NOT NULL
+"deck_id" text NOT NULL PRIMARY KEY
+"description" text NULL
+"moderated_at" timestamp with time zone NULL
+"moderation_status" text NOT NULL DEFAULT 'visible'
+"moderation_verdict" jsonb NULL
+"native_language_id" text NULL
+"note_type" text NOT NULL
+"published_at" timestamp with time zone NOT NULL DEFAULT now()
+"target_language_id" text NULL
+"title" text NOT NULL
+"user_id" text NOT NULL
+CHECK "published_decks_moderation_status_check": "published_decks"."moderation_status" in ('visible', 'blocked')
+```
+
+<!-- /schema -->
+
+#### `deck_reports` ([API schema](../apps/api/src/sharing/schema.ts), migration `0014`)
+
+One immutable row per person and reported deck; operator-visible only.
+`snapshot_published_at` pins which snapshot the report was about.
+
+<!-- schema:table:public.deck_reports -->
+
+```text
+TABLE "public"."deck_reports" RLS DISABLED
+"created_at" timestamp with time zone NOT NULL DEFAULT now()
+"deck_id" text NOT NULL
+"id" text NOT NULL PRIMARY KEY
+"reason" text NOT NULL
+"reporter_user_id" text NOT NULL
+"snapshot_published_at" timestamp with time zone NOT NULL
+INDEX "deck_reports_deck_created_idx" USING btree ("deck_id" ASC NULLS LAST, "created_at" ASC NULLS LAST)
+INDEX "deck_reports_reporter_created_idx" USING btree ("reporter_user_id" ASC NULLS LAST, "created_at" ASC NULLS LAST)
+UNIQUE INDEX "deck_reports_reporter_deck_unique" USING btree ("reporter_user_id" ASC NULLS LAST, "deck_id" ASC NULLS LAST)
+FOREIGN KEY "deck_reports_reporter_user_id_user_id_fk" ("reporter_user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+```
+
+<!-- /schema -->
+
+#### `deck_takedowns` ([API schema](../apps/api/src/sharing/schema.ts), migration `0014`)
+
+Audit trail of takedowns, whether the moderation classifier (`automatic`) or
+an operator decided. `verdict` stores the classifier result that justified it.
+
+<!-- schema:table:public.deck_takedowns -->
+
+```text
+TABLE "public"."deck_takedowns" RLS DISABLED
+"created_at" timestamp with time zone NOT NULL DEFAULT now()
+"deck_id" text NOT NULL
+"id" text NOT NULL PRIMARY KEY
+"reason" text NULL
+"snapshot_published_at" timestamp with time zone NOT NULL
+"source" text NOT NULL
+"verdict" jsonb NOT NULL
+INDEX "deck_takedowns_deck_created_idx" USING btree ("deck_id" ASC NULLS LAST, "created_at" ASC NULLS LAST)
+CHECK "deck_takedowns_source_check": "deck_takedowns"."source" in ('automatic', 'operator')
+```
+
+<!-- /schema -->
+
+#### `badge_awards` ([API schema](../apps/api/src/gamification/schema.ts), migration `0015`)
+
+Persistent gamification awards (#271, #359). Projected on the server from
+durable review and note rows after a successful sync, so a client cannot
+claim a badge directly. The rules that decide eligibility are shared code in
+[`packages/offline-db/src/activity.ts`](../packages/offline-db/src/activity.ts)
+(#339). Exposed through `/api/gamification/me`; nothing cross-user enters a
+sync scope.
+
+<!-- schema:table:public.badge_awards -->
+
+```text
+TABLE "public"."badge_awards" RLS DISABLED
+"awarded_at" timestamp with time zone NOT NULL DEFAULT now()
+"badge_code" text NOT NULL
+"user_id" text NOT NULL
+INDEX "badge_awards_user_awarded_idx" USING btree ("user_id" ASC NULLS LAST, "awarded_at" ASC NULLS LAST)
+PRIMARY KEY "badge_awards_user_code_pk" ("user_id", "badge_code")
+FOREIGN KEY "badge_awards_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "badge_awards_code_check": "badge_awards"."badge_code" in ('first-review', 'seven-day-streak', 'hundred-reviews')
+```
+
+<!-- /schema -->
+
+#### `daily_challenge_completions` ([API schema](../apps/api/src/gamification/schema.ts), migration `0015`)
+
+One row per user, challenge and UTC day, written when the shared rules see
+the challenge met (20 distinct reviews, 5 new notes). The UTC date is the
+v1 reset boundary.
+
+<!-- schema:table:public.daily_challenge_completions -->
+
+```text
+TABLE "public"."daily_challenge_completions" RLS DISABLED
+"challenge_code" text NOT NULL
+"completed_at" timestamp with time zone NOT NULL DEFAULT now()
+"user_id" text NOT NULL
+"utc_date" date NOT NULL
+INDEX "daily_challenge_completions_user_date_idx" USING btree ("user_id" ASC NULLS LAST, "utc_date" ASC NULLS LAST)
+PRIMARY KEY "daily_challenge_completions_user_code_date_pk" ("user_id", "challenge_code", "utc_date")
+FOREIGN KEY "daily_challenge_completions_user_id_user_id_fk" ("user_id") REFERENCES "public"."user" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+CHECK "daily_challenge_completions_code_check": "daily_challenge_completions"."challenge_code" in ('daily-review', 'new-vocabulary')
+```
+
+<!-- /schema -->
 
 ## Note/card content model
 
@@ -252,45 +646,7 @@ replaces a single typed `user_cards` row: structure lives in a canonical **note*
 and each **card** is a generated, per-review-mode Markdown front/back row with its
 own schedule.
 
-```text
-user_notes
-  id                  text PK
-  user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-  rev                 bigint NOT NULL                                [server]
-  deleted_at          timestamptz NULL                               [server]
-  note_type           text NOT NULL       -- e.g. basic, word, phrase, comparison
-  fields_version      integer NOT NULL
-  fields_json         text NOT NULL       -- serialized JSON, validated by note_type + fields_version
-  additional_content  text NULL           -- Markdown, free-form content templates don't address individually
-  created_at          number (integer Unix ms) NOT NULL
-  updated_at          number (integer Unix ms) NOT NULL
-
-user_cards
-  id                  text PK
-  user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-  rev                 bigint NOT NULL                                [server]
-  deleted_at          timestamptz NULL                               [server]
-  note_id             text NOT NULL relation -> user_notes.id
-  template_key        text NOT NULL       -- selects the render template within note_type
-  active              boolean NOT NULL DEFAULT true
-  front               text NOT NULL  (Markdown content)
-  back                text NOT NULL  (Markdown content)
-  due_at              number (integer Unix ms) NOT NULL
-  scheduled_interval_minutes  integer NOT NULL DEFAULT 0 [server] -- required locally; 0 = never reviewed
-  created_at          number (integer Unix ms) NOT NULL
-  updated_at          number (integer Unix ms) NOT NULL
-
-user_note_decks
-  id                  text PK
-  user_id             text NOT NULL FK -> user.id ON DELETE CASCADE  [server]
-  rev                 bigint NOT NULL                                [server]
-  deleted_at          timestamptz NULL                               [server]
-  note_id             text NOT NULL relation -> user_notes.id
-  deck_id             text NOT NULL relation -> user_decks.id
-  active              boolean NOT NULL DEFAULT true
-  created_at          number (integer Unix ms) NOT NULL
-  updated_at          number (integer Unix ms) NOT NULL
-```
+See the [relationship diagram](#example-learning-haus) above for the main learning records.
 
 Key points from the discussion:
 
@@ -306,10 +662,10 @@ Key points from the discussion:
   `additional_content` is reserved for genuinely free-form Markdown. This
   intentionally accepts whole-value conflict resolution on `fields_json`
   for concurrent offline edits, revisited if it proves too coarse.
-- **Sibling cards, one per review mode.** A `word` note (`original`,
-  `translation`, `pronunciation`, `examples`) generates sibling cards such
-  as original→translation, translation→original, audio→translation, and
-  context→translation, sharing `note_id` and each with its own schedule. A
+- **Sibling cards, one per review mode.** A `word` note (`word`,
+  `translation`, `pronunciation`, `example`) generates word→translation,
+  translation→word, and (when both example fields exist) example→translation
+  cards, sharing `note_id` and each with its own schedule. A
   manual front/back card is a `basic` note with one template and one card,
   not a separate code path.
 - **Cards store their current scheduled interval.** The scheduler calculates
@@ -340,9 +696,8 @@ Key points from the discussion:
 > No compatibility data migration is provided for the old card shape. Existing
 > API development databases must be reset before applying the new migration;
 > the shared local v3 migration discards incompatible cards and reviews while
-> preserving decks and profiles. Sync-store relationship and ownership
-> enforcement remains in
-> [#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+> preserving decks and profiles. Sync ownership and parent checks are implemented in
+> [sync validation](../apps/api/src/sync/sync-validation.ts).
 
 ### `fields_json` validation
 
@@ -354,18 +709,15 @@ registry — a registered pair validates strictly, and an unregistered pair
 passes clients opaquely on pull while the server rejects pushing it —
 parse `fields_json`, and validate the parsed value. Malformed JSON and payloads
 that fail a registered schema are rejected. This keeps schema evolution
-explicit without coupling the database table to any one subject. Enforcement
-of the same contract at the sync-store boundary remains in
-[#161](https://github.com/NotAnotherCards/NotAnotherCards/issues/161).
+explicit without coupling the database table to any one subject. The [sync validator](../apps/api/src/sync/sync-validation.ts) enforces the server-side contract.
 
 `basic@1` and `word@1` are registered. The word contract (#194) requires
 `word`, `translation`, `native_language_id` and `target_language_id` — the
-profile's language id columns (placeholder ids until a languages table
-exists), carrying the original/translation semantics; the
+profile's language id columns (identifiers from the shared language catalog), carrying the original/translation semantics; the
 note is the canonical language source, deck membership is not. Optional
 fields: `example`, `example_translation`, `part_of_speech`, `gender`,
 `pronunciation`, `notes`, and the reserved `image` and `word_audio` ids for
-the upcoming `note_media` table. Its templates render both directions and,
+proposed media support; no `note_media` table exists yet. Its templates render both directions and,
 when both example fields exist, an example card.
 
 The trust model for derived cards: fronts and backs are client-computed
@@ -377,780 +729,120 @@ unregistered `(note_type, fields_version)` pair as opaque: stored and
 synced, never rendered or edited, so a newer client's notes do not break
 an older client's pull.
 
-## Future ideas
+## Local database contract
 
-Everything in this section is exploratory and is not part of the current database contract.
+Source: [shared schema and migrations](../packages/offline-db/src/index.ts) and
+[Zod row declarations](../packages/offline-db/src/user-dictionary.ts). The
+columns exclude RemelonDB's record id and sync metadata, and the server's
+`user_id`, `rev` and `deleted_at`; a profile's wire `id` is the server's
+`user_id`. The block covers storage types, nullability and indexes; the Zod
+refinements described above (integer ranges, visibility, note fields) apply on
+top.
 
-### Proposed files/upload foundation
-
-The current profile schemas already reserve a nullable `avatar_file_id` in the [API schema](../apps/api/src/sync/schema.ts#L203) and [local schema](../packages/offline-db/src/user-dictionary.ts#L119), but the value is not yet backed by a table or foreign-key constraint. A minimal server-side file metadata table could support avatars first and later support card images, audio, and imports without storing binary data in PostgreSQL.
-
-#### `files`
+<!-- schema:local-schema -->
 
 ```text
-id                  uuid PK
-owner_user_id       text NOT NULL FK -> user.id ON DELETE CASCADE
-purpose             text NOT NULL  -- avatar | card_image | audio | import
-file_name           text NOT NULL
-mime_type           text NOT NULL
-size_bytes          bigint NOT NULL CHECK (size_bytes > 0)
-storage_key         text UNIQUE NOT NULL
-created_at          timestamptz NOT NULL DEFAULT now()
-updated_at          timestamptz NOT NULL DEFAULT now()
-deleted_at          timestamptz NULL
+LOCAL SCHEMA VERSION 6
+
+TABLE review_events SYNCED
+rating number NOT NULL
+reviewed_at number NOT NULL
+user_card_id string NOT NULL INDEXED
+
+TABLE user_badges SYNCED
+badge_id string NOT NULL INDEXED
+created_at number NOT NULL
+unlocked_at number NOT NULL
+updated_at number NOT NULL
+
+TABLE user_cards SYNCED
+active boolean NOT NULL
+back string NOT NULL
+created_at number NOT NULL
+due_at number NOT NULL INDEXED
+front string NOT NULL
+note_id string NOT NULL INDEXED
+scheduled_interval_minutes number NOT NULL
+template_key string NOT NULL
+updated_at number NOT NULL INDEXED
+
+TABLE user_decks SYNCED
+created_at number NOT NULL
+description string NULL
+native_language_id string NULL
+note_type string NOT NULL
+target_language_id string NULL
+title string NOT NULL
+updated_at number NOT NULL INDEXED
+visibility string NOT NULL
+
+TABLE user_note_decks SYNCED
+active boolean NOT NULL
+created_at number NOT NULL
+deck_id string NOT NULL INDEXED
+note_id string NOT NULL INDEXED
+updated_at number NOT NULL INDEXED
+
+TABLE user_notes SYNCED
+additional_content string NULL
+created_at number NOT NULL
+fields_json string NOT NULL
+fields_version number NOT NULL
+note_type string NOT NULL
+updated_at number NOT NULL INDEXED
+
+TABLE user_profiles SYNCED
+avatar_file_id string NULL
+bio string NULL
+created_at number NOT NULL
+native_language_id string NULL
+target_language_id string NULL
+updated_at number NOT NULL INDEXED
+username string NULL
 ```
 
-The file bytes would live in object storage; `storage_key` would identify the object without persisting a provider-specific or permanently public URL. Download URLs should be generated by the API after authorization checks. The first implementation could restrict `purpose` to `avatar`, with the other values added only when their features are implemented.
+<!-- /schema -->
 
-Introducing this table would require a database migration and a foreign key from `user_profiles.avatar_file_id` to `files.id`. The upload API must validate ownership, MIME type, and size, and deletion must remove or schedule cleanup of the corresponding object. The `files` table does not need to be synchronized to RemelonDB initially: clients can continue synchronizing `avatar_file_id` and resolve its content through the API. If Markdown cards later reference uploaded media, the reference format and offline caching behavior must be defined before adding file IDs to card content.
+## Other server schema objects
 
-> Future proposals should state their migration and offline-sync impact and remain in this section until added as ticket under the Task section in [this ticket](https://github.com/NotAnotherCards/NotAnotherCards/issues/131), and implemented in both the api and database where applicable.
+Everything in the snapshot that is not a table: today only the `remelon_rev`
+sequence. Enums, views or policies would appear here too.
 
-## AI Suggestion
+<!-- schema:server-objects -->
 
-**WARNING!!!** This section is meant to be a reference, not the single source of truth of our future DB Schemas. I kept the suggestions for the areas we have not implemented yet.
-
-### 1. User Related
-
-#### `user_settings`
-
-User app preferences.
-
-```txt
-user_id             uuid PK FK -> users.id ON DELETE CASCADE
-theme               text DEFAULT 'system'       -- system | light | dark
-ui_language         text DEFAULT 'en'
-daily_review_goal   integer DEFAULT 20
-notifications_enabled boolean DEFAULT true
-sound_enabled       boolean DEFAULT true
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
+```json
+{
+  "sequences": {
+    "public.remelon_rev": {
+      "cache": "1",
+      "cycle": false,
+      "increment": "1",
+      "maxValue": "9223372036854775807",
+      "minValue": "1",
+      "name": "remelon_rev",
+      "schema": "public",
+      "startWith": "1"
+    }
+  }
+}
 ```
 
----
-
-### 2. Languages and learning preferences
-
-#### `languages`
-
-Languages supported by the app.
-
-```txt
-id                  uuid PK
-code                text UNIQUE NOT NULL       -- en, de, es, fr
-name                text NOT NULL              -- English, German, Spanish
-native_name         text
-direction           text DEFAULT 'ltr'         -- ltr | rtl
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `user_learning_languages`
-
-Many-to-many table for users learning multiple languages.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-language_id         uuid FK -> languages.id ON DELETE CASCADE
-is_primary          boolean DEFAULT false
-created_at          timestamptz DEFAULT now()
-
-UNIQUE(user_id, language_id)
-```
-
----
-
-### 3. Global card database
-
-The project concept has word cards, comparison cards, and phrase cards, plus fields like translation, pronunciation, frequency, etymology, examples, mnemonics, related words, and language-specific grammar.
-
-#### `cards`
-
-Base table for all card types.
-
-```txt
-id                  uuid PK
-type                text NOT NULL              -- word | comparison | phrase
-language_id         uuid FK -> languages.id NOT NULL
-status              text DEFAULT 'active'      -- draft | active | flagged | archived
-source              text DEFAULT 'manual'      -- manual | ai | import | seed
-created_by_user_id  uuid FK -> users.id NULL
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-deleted_at          timestamptz NULL
-version             integer DEFAULT 1
-```
-
-Why `version`? Useful for conflict detection later.
-
----
-
-#### `word_cards`
-
-Details for normal word cards.
-
-```txt
-card_id             uuid PK FK -> cards.id ON DELETE CASCADE
-lemma               text NOT NULL              -- gehen, house, mirar
-translation         text NOT NULL
-part_of_speech      text                       -- noun | verb | adjective | adverb | ...
-pronunciation       text
-frequency_rank      integer
-frequency_label     text                       -- common | uncommon | rare
-etymology           text
-mnemonic            text
-notes               text
-
--- German-specific / language-specific
-article             text                       -- der | die | das
-gender              text                       -- masculine | feminine | neuter
-plural_form         text
-
--- English-specific
-countability        text                       -- countable | uncountable | both
-
--- Verb data as JSON for flexibility
-verb_forms          jsonb                      -- { "present": "...", "past": "...", "participle": "..." }
-```
-
-This avoids creating separate grammar tables too early.
-
----
-
-#### `phrase_cards`
-
-Details for fixed expressions or phrases.
-
-```txt
-card_id             uuid PK FK -> cards.id ON DELETE CASCADE
-phrase              text NOT NULL
-translation         text NOT NULL
-meaning             text
-is_fixed_expression boolean DEFAULT true
-frequency_label     text
-notes               text
-```
-
----
-
-#### `comparison_cards`
-
-Details for cards comparing similar words.
-
-```txt
-card_id             uuid PK FK -> cards.id ON DELETE CASCADE
-term_a              text NOT NULL
-term_b              text NOT NULL
-translation_a       text
-translation_b       text
-difference_summary  text NOT NULL
-frequency_note      text
-style_note          text                       -- colloquial, formal, academic, business, etc.
-typical_situations  jsonb                      -- array of use cases
-notes               text
-```
-
----
-
-#### `card_examples`
-
-Usage examples for any card type.
-
-```txt
-id                  uuid PK
-card_id             uuid FK -> cards.id ON DELETE CASCADE
-example_text        text NOT NULL
-translation         text
-source              text DEFAULT 'manual'      -- manual | ai | imported
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `card_related_terms`
-
-Related words or phrases.
-
-```txt
-id                  uuid PK
-card_id             uuid FK -> cards.id ON DELETE CASCADE
-related_text        text NOT NULL
-relation_type       text                       -- synonym | antonym | same_root | same_family | commonly_used_with
-translation         text
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `card_tags`
-
-Reusable tags.
-
-```txt
-id                  uuid PK
-name                text UNIQUE NOT NULL       -- travel, food, business, grammar, A1
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `card_tag_assignments`
-
-Many-to-many card/tag relation.
-
-```txt
-card_id             uuid FK -> cards.id ON DELETE CASCADE
-tag_id              uuid FK -> card_tags.id ON DELETE CASCADE
-
-PRIMARY KEY(card_id, tag_id)
-```
-
----
-
-#### `dictionary_collections`
-
-Ready-made dictionaries like Top-100, Top-300, Top-500.
-
-```txt
-id                  uuid PK
-language_id         uuid FK -> languages.id NOT NULL
-name                text NOT NULL              -- Top 100 German Words
-description         text
-level               text                       -- A1 | A2 | B1 | ...
-is_public           boolean DEFAULT true
-created_by_user_id  uuid FK -> users.id NULL
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `dictionary_collection_cards`
-
-Cards inside ready-made dictionaries.
-
-```txt
-collection_id       uuid FK -> dictionary_collections.id ON DELETE CASCADE
-card_id             uuid FK -> cards.id ON DELETE CASCADE
-position            integer
-
-PRIMARY KEY(collection_id, card_id)
-```
-
----
-
-### 4. User dictionary and personal card data
-
-The central card DB and a user’s personal dictionary should be separate. A global card can exist once, but each user has their own progress, edits, and learning status.
-
-#### `user_cards`
-
-Cards added to a user’s personal dictionary.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-card_id             uuid FK -> cards.id ON DELETE CASCADE
-status              text DEFAULT 'learning'    -- new | learning | learned | suspended | archived
-source              text DEFAULT 'manual'      -- manual | collection | ai | imported
-offline_enabled     boolean DEFAULT false
-added_at            timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-
-UNIQUE(user_id, card_id)
-```
-
----
-
-#### `user_card_overrides`
-
-User-specific edits to global card data.
-
-```txt
-id                  uuid PK
-user_card_id        uuid FK -> user_cards.id ON DELETE CASCADE
-field_path          text NOT NULL              -- "translation", "mnemonic", "examples[0].text"
-value               jsonb NOT NULL
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-
-UNIQUE(user_card_id, field_path)
-```
-
-This lets users edit any card without changing the global card for everyone.
-
----
-
-#### `user_card_annotations`
-
-Personal notes.
-
-> Renamed from `user_card_notes`, decided in
-> [issue #81](https://github.com/NotAnotherCards/NotAnotherCards/issues/81),
-> to free up "note" for the canonical `user_notes` source record proposed
-> below.
-
-```txt
-id                  uuid PK
-user_card_id        uuid FK -> user_cards.id ON DELETE CASCADE
-note                text NOT NULL
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `user_card_reset_events`
-
-When the user thought a word was learned but resets progress.
-
-```txt
-id                  uuid PK
-user_card_id        uuid FK -> user_cards.id ON DELETE CASCADE
-reason              text
-created_at          timestamptz DEFAULT now()
-```
-
-This supports “reset progress when encountering a forgotten word in real life” idea.
-
----
-
-### 5. Spaced repetition and reviews
-
-#### `review_sessions`
-
-One review session by a user.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-started_at          timestamptz DEFAULT now()
-ended_at            timestamptz NULL
-source              text DEFAULT 'online'      -- online | offline_synced
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `user_card_progress`
-
-Current spaced repetition state for a user card.
-
-```txt
-user_card_id        uuid PK FK -> user_cards.id ON DELETE CASCADE
-user_id             uuid FK -> users.id ON DELETE CASCADE
-stage               integer DEFAULT 0
-ease_factor         numeric(4,2) DEFAULT 2.50
-interval_days       integer DEFAULT 0
-due_at              timestamptz DEFAULT now()
-last_reviewed_at    timestamptz NULL
-review_count        integer DEFAULT 0
-success_count       integer DEFAULT 0
-failure_count       integer DEFAULT 0
-is_learned          boolean DEFAULT false
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-```
-
-Even if our first SRS algorithm is simple, this table allows us to improve it later.
-
----
-
-#### `card_reviews`
-
-Every review result.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-user_card_id        uuid FK -> user_cards.id ON DELETE CASCADE
-review_session_id   uuid FK -> review_sessions.id NULL
-result              text NOT NULL              -- remembered | forgot | easy | hard
-response_time_ms    integer NULL
-reviewed_at         timestamptz NOT NULL
-created_at          timestamptz DEFAULT now()
-
--- For offline sync/idempotency
-client_mutation_id  text NULL
-sync_action_id      uuid FK -> sync_actions.id NULL
-
-UNIQUE(user_id, client_mutation_id)
-```
-
-`client_mutation_id` prevents the same offline review from being applied twice.
-
----
-
-### 6. Statistics and gamification
-
-Our concept includes learned words, due words, daily points, streaks, dictionary progress, resets, and added words per day.
-
-#### `user_daily_stats`
-
-Aggregated daily stats.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-date                date NOT NULL
-reviews_count       integer DEFAULT 0
-remembered_count    integer DEFAULT 0
-forgot_count        integer DEFAULT 0
-cards_added_count   integer DEFAULT 0
-cards_reset_count   integer DEFAULT 0
-points_earned       integer DEFAULT 0
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-
-UNIQUE(user_id, date)
-```
-
----
-
-#### `user_streaks`
-
-Current streak state.
-
-```txt
-user_id             uuid PK FK -> users.id ON DELETE CASCADE
-current_streak      integer DEFAULT 0
-longest_streak      integer DEFAULT 0
-last_active_date    date NULL
-updated_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `achievements`
-
-Achievement definitions.
-
-```txt
-id                  uuid PK
-code                text UNIQUE NOT NULL       -- first_review, seven_day_streak
-name                text NOT NULL
-description         text
-points              integer DEFAULT 0
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `user_achievements`
-
-Achievements unlocked by users.
-
-```txt
-user_id             uuid FK -> users.id ON DELETE CASCADE
-achievement_id      uuid FK -> achievements.id ON DELETE CASCADE
-unlocked_at         timestamptz DEFAULT now()
-
-PRIMARY KEY(user_id, achievement_id)
-```
-
----
-
-### 7. Social features
-
-The subject’s user interaction module includes profile, friends system, chat, online status, and real-time interaction.
-
-#### `friend_requests`
-
-Friend request flow.
-
-```txt
-id                  uuid PK
-sender_id           uuid FK -> users.id ON DELETE CASCADE
-receiver_id         uuid FK -> users.id ON DELETE CASCADE
-status              text DEFAULT 'pending'     -- pending | accepted | rejected | cancelled
-created_at          timestamptz DEFAULT now()
-responded_at        timestamptz NULL
-
-UNIQUE(sender_id, receiver_id)
-```
-
----
-
-#### `friendships`
-
-Accepted friendships.
-
-```txt
-id                  uuid PK
-user_a_id           uuid FK -> users.id ON DELETE CASCADE
-user_b_id           uuid FK -> users.id ON DELETE CASCADE
-created_at          timestamptz DEFAULT now()
-
-UNIQUE(user_a_id, user_b_id)
-```
-
-Rule: store smaller UUID as `user_a_id` if we want to avoid duplicate inverse rows.
-
----
-
-#### `user_blocks`
-
-Optional, useful if we implement chat.
-
-```txt
-blocker_id          uuid FK -> users.id ON DELETE CASCADE
-blocked_id          uuid FK -> users.id ON DELETE CASCADE
-created_at          timestamptz DEFAULT now()
-
-PRIMARY KEY(blocker_id, blocked_id)
-```
-
----
-
-#### `conversations`
-
-For chat.
-
-```txt
-id                  uuid PK
-type                text DEFAULT 'direct'      -- direct | group
-created_at          timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `conversation_participants`
-
-Users in a conversation.
-
-```txt
-conversation_id     uuid FK -> conversations.id ON DELETE CASCADE
-user_id             uuid FK -> users.id ON DELETE CASCADE
-joined_at           timestamptz DEFAULT now()
-last_read_at        timestamptz NULL
-
-PRIMARY KEY(conversation_id, user_id)
-```
-
----
-
-#### `messages`
-
-Chat messages.
-
-```txt
-id                  uuid PK
-conversation_id     uuid FK -> conversations.id ON DELETE CASCADE
-sender_id           uuid FK -> users.id ON DELETE CASCADE
-body                text NOT NULL
-created_at          timestamptz DEFAULT now()
-edited_at           timestamptz NULL
-deleted_at          timestamptz NULL
-```
-
----
-
-### 8. Notifications and realtime
-
-#### `notifications`
-
-Persistent notifications.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-type                text NOT NULL              -- friend_request | achievement | sync_conflict | system
-title               text NOT NULL
-body                text
-data                jsonb
-read_at             timestamptz NULL
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `user_presence`
-
-Online status. Could also be in memory/Redis, but DB is fine for MVP.
-
-```txt
-user_id             uuid PK FK -> users.id ON DELETE CASCADE
-status              text DEFAULT 'offline'     -- online | offline | away
-last_seen_at        timestamptz DEFAULT now()
-updated_at          timestamptz DEFAULT now()
-```
-
----
-
-### 9. AI generation and quality control
-
-The app concept says missing words can be generated with AI and saved to the shared database, with users able to report errors and the system tracking frequently edited fields.
-
-#### `ai_generation_requests`
-
-Track AI usage.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE SET NULL
-input_text          text NOT NULL
-target_language_id  uuid FK -> languages.id
-card_type           text NOT NULL              -- word | phrase | comparison
-status              text DEFAULT 'pending'     -- pending | success | failed
-model               text
-prompt_version      text
-raw_response        jsonb
-error_message       text
-created_card_id     uuid FK -> cards.id NULL
-created_at          timestamptz DEFAULT now()
-completed_at        timestamptz NULL
-```
-
----
-
-#### `card_reports`
-
-User reports for wrong card data.
-
-```txt
-id                  uuid PK
-card_id             uuid FK -> cards.id ON DELETE CASCADE
-user_id             uuid FK -> users.id ON DELETE SET NULL
-reason              text NOT NULL              -- wrong_translation | bad_example | offensive | duplicate | other
-description         text
-status              text DEFAULT 'open'        -- open | reviewed | resolved | rejected
-created_at          timestamptz DEFAULT now()
-resolved_at         timestamptz NULL
-```
-
----
-
-#### `card_quality_signals`
-
-Track fields that users often edit.
-
-```txt
-id                  uuid PK
-card_id             uuid FK -> cards.id ON DELETE CASCADE
-field_path          text NOT NULL
-edit_count          integer DEFAULT 1
-last_edited_at      timestamptz DEFAULT now()
-
-UNIQUE(card_id, field_path)
-```
-
----
-
-### 10. Files/uploads
-
-Useful for avatars now, and later audio/pronunciation or imported files.
-
-#### `files`
-
-```txt
-id                  uuid PK
-owner_user_id       uuid FK -> users.id ON DELETE SET NULL
-purpose             text NOT NULL              -- avatar | audio | import | attachment
-file_name           text NOT NULL
-mime_type           text NOT NULL
-size_bytes          integer NOT NULL
-storage_path        text NOT NULL
-public_url          text NULL
-created_at          timestamptz DEFAULT now()
-deleted_at          timestamptz NULL
-```
-
----
-
-### 11. Public API, audit, and legal
-
-The subject allows/mentions public API, rate limiting, documentation, privacy policy, terms, GDPR features, and README database documentation.
-
-#### `api_keys`
-
-For public API module if we implement it.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-name                text NOT NULL
-key_hash            text NOT NULL
-last_used_at        timestamptz NULL
-created_at          timestamptz DEFAULT now()
-revoked_at          timestamptz NULL
-```
-
----
-
-#### `api_usage_logs`
-
-```txt
-id                  uuid PK
-api_key_id          uuid FK -> api_keys.id ON DELETE SET NULL
-user_id             uuid FK -> users.id ON DELETE SET NULL
-endpoint            text NOT NULL
-method              text NOT NULL
-status_code         integer
-ip_address          text
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `audit_logs`
-
-Useful for debugging and evaluation.
-
-```txt
-id                  uuid PK
-actor_user_id       uuid FK -> users.id ON DELETE SET NULL
-action              text NOT NULL              -- user.login | card.create | review.submit | sync.apply
-entity_type         text
-entity_id           uuid
-metadata            jsonb
-created_at          timestamptz DEFAULT now()
-```
-
----
-
-#### `legal_documents`
-
-Versions of Privacy Policy and Terms.
-
-```txt
-id                  uuid PK
-type                text NOT NULL              -- privacy_policy | terms_of_service
-version             text NOT NULL
-content             text NOT NULL
-published_at        timestamptz DEFAULT now()
-
-UNIQUE(type, version)
-```
-
----
-
-#### `user_legal_acceptances`
-
-Track accepted Terms/Privacy versions.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-legal_document_id   uuid FK -> legal_documents.id ON DELETE CASCADE
-accepted_at         timestamptz DEFAULT now()
-
-UNIQUE(user_id, legal_document_id)
-```
-
----
-
-#### `data_export_requests`
-
-For GDPR/data export module.
-
-```txt
-id                  uuid PK
-user_id             uuid FK -> users.id ON DELETE CASCADE
-status              text DEFAULT 'pending'     -- pending | processing | ready | failed
-file_id             uuid FK -> files.id NULL
-requested_at        timestamptz DEFAULT now()
-completed_at        timestamptz NULL
-```
+<!-- /schema -->
+
+## Maintaining this reference
+
+The marked blocks are generated: table blocks from the latest Drizzle snapshot,
+the local block from `packages/offline-db`. CI fails when a block differs from
+its source or the snapshot differs from the Drizzle schema. The prose is not
+checked.
+
+After a schema change:
+
+1. Generate the API migration and snapshot (`pnpm --filter api db:generate`),
+   and a local schema migration if needed.
+2. For a new or removed table, add or remove its section with a
+   `schema:table:public.<name>` marker, a fenced `text` block and a closing
+   `/schema` marker.
+3. Run `pnpm docs:db:generate`, update the prose, and remove any proposal it
+   implements from [the proposals](db-schema-proposals.md).
+4. Run `pnpm check:schema-fresh`, `pnpm check:db-docs` and `pnpm test:db-docs`.

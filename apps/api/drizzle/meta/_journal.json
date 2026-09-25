@@ -120,6 +120,27 @@
       "when": 1789568673000,
       "tag": "0016_nasty_harry_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789631000040,
+      "tag": "0017_special_starjammers",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789981721090,
+      "tag": "0018_familiar_power_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790007333968,
+      "tag": "0019_backfill_badges",
+      "breakpoints": true
     }
   ]
 }
