@@ -39,6 +39,26 @@ const EXTENDED_ANSWERS: ReviewAnswer[] = [
   'very-easy',
 ];
 
+// One hue per answer, the dark: border too because outline sets its own.
+const answerColours: Record<ReviewAnswer, { button: string; text: string }> = {
+  forgot: {
+    button: 'border-rating-again/40 dark:border-rating-again/40',
+    text: 'text-rating-again',
+  },
+  hard: {
+    button: 'border-rating-hard/40 dark:border-rating-hard/40',
+    text: 'text-rating-hard',
+  },
+  remember: {
+    button: 'border-rating-good/40 dark:border-rating-good/40',
+    text: 'text-rating-good',
+  },
+  'very-easy': {
+    button: 'border-rating-easy/40 dark:border-rating-easy/40',
+    text: 'text-rating-easy',
+  },
+};
+
 function makeBatch(deckId: string, cards: UserCardRecord[]): ReviewBatch {
   const batch = selectReviewBatch(cards);
   const selectedIds = new Set(batch.map((card) => card.id));
@@ -205,7 +225,7 @@ function ActiveReviewSession({
   }
 
   return (
-    <View className="gap-4">
+    <View className="flex-1 gap-4">
       <Stack.Screen options={{ title: deck.title }} />
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-semibold text-muted-foreground">
@@ -236,6 +256,9 @@ function ActiveReviewSession({
         </Card>
       </Pressable>
 
+      {/* The card reads from the top, the controls stay at the bottom. */}
+      <View className="flex-1" />
+
       {saveError ? (
         <Text className="text-center text-destructive">{saveError}</Text>
       ) : null}
@@ -245,16 +268,18 @@ function ActiveReviewSession({
           <Text>Show answer</Text>
         </Button>
       ) : (
-        <View className="flex-row flex-wrap gap-2">
+        <View className="flex-row gap-2">
           {answers.map((answer) => (
             <Button
               key={answer}
               variant="outline"
-              className="min-w-[45%] flex-1 flex-col gap-0"
+              // One row: four buttons are narrow, so the interval sits
+              // under the label and h-auto lets the button grow for it.
+              className={`h-auto flex-1 flex-col gap-0.5 px-1 py-2 ${answerColours[answer].button}`}
               disabled={isSaving}
               onPress={() => void record(answer)}
             >
-              <Text>
+              <Text className={answerColours[answer].text}>
                 {preferences.reviewMode === 'extended'
                   ? extendedReviewAnswerLabels[answer]
                   : reviewAnswerLabels[answer]}

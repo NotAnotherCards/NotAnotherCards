@@ -117,6 +117,19 @@ describe('ReviewSession', () => {
     // A new card: Again schedules 5 minutes, Good three days.
     expect(result.getByText('5 min')).toBeTruthy();
     expect(result.getByText('3 days')).toBeTruthy();
+    // Each answer carries its own hue.
+    expect(result.getByText('Again').props.className).toContain(
+      'text-rating-again',
+    );
+    expect(result.getByText('Hard').props.className).toContain(
+      'text-rating-hard',
+    );
+    expect(result.getByText('Good').props.className).toContain(
+      'text-rating-good',
+    );
+    expect(result.getByText('Easy').props.className).toContain(
+      'text-rating-easy',
+    );
   });
 
   it('renders Markdown, shows the back alone after flipping, and records a rating', async () => {
