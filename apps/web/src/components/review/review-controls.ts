@@ -1,4 +1,5 @@
 import type { ReviewAnswer } from '@repo/offline-db';
+import type { ReviewMode } from '@repo/study';
 
 export {
   extendedReviewAnswerLabels,
@@ -7,32 +8,14 @@ export {
   type ReviewAnswer,
 } from '@repo/offline-db';
 
-export type ReviewMode = 'two' | 'three' | 'four';
-export type ReviewGesture = 'left' | 'right' | 'up';
-
-type GestureReviewAnswer = Exclude<ReviewAnswer, 'very-easy'>;
+// The swipe rules are shared with mobile; the keyboard stays web's own.
+export {
+  getAnswerForReviewGesture,
+  type ReviewGesture,
+  type ReviewMode,
+} from '@repo/study';
 
 export const CURRENT_REVIEW_MODE: ReviewMode = 'four';
-
-const answersByGesture: Record<
-  ReviewMode,
-  Partial<Record<ReviewGesture, GestureReviewAnswer>>
-> = {
-  two: {
-    left: 'forgot',
-    right: 'remember',
-  },
-  three: {
-    left: 'forgot',
-    right: 'remember',
-    up: 'hard',
-  },
-  four: {
-    left: 'forgot',
-    right: 'remember',
-    up: 'hard',
-  },
-};
 
 const answersByKeyboardShortcut: Record<
   ReviewMode,
@@ -54,13 +37,6 @@ const answersByKeyboardShortcut: Record<
     4: 'very-easy',
   },
 };
-
-export function getAnswerForReviewGesture(
-  mode: ReviewMode,
-  gesture: ReviewGesture,
-) {
-  return answersByGesture[mode][gesture] ?? null;
-}
 
 export function getAnswerForReviewKeyboardShortcut(
   mode: ReviewMode,

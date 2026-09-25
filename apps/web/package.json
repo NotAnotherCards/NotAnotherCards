@@ -46,6 +46,7 @@
     "@repo/i18n": "workspace:*",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
+    "@repo/study": "workspace:*",
     "@tanstack/react-router": "^1.170.17",
     "@tanstack/react-router-devtools": "^1.167.0",
     "@tanstack/react-virtual": "^3.14.11",

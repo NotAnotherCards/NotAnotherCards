@@ -1,13 +1,12 @@
 import { useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import {
-  getAnswerForReviewGesture,
-  type ReviewAnswer,
-  type ReviewMode,
-} from './review-controls';
+  getSwipeDirection as swipeDirectionFor,
+  type ReviewSwipeDirection,
+} from '@repo/study';
+import type { ReviewAnswer, ReviewMode } from './review-controls';
 
-export type ReviewCardSwipeDirection =
-  Exclude<ReviewAnswer, 'very-easy'> | 'delete';
+export type ReviewCardSwipeDirection = ReviewSwipeDirection;
 
 const SWIPE_THRESHOLD_PX = 48;
 // A pointer that travelled further than this was a drag, however short,
@@ -56,25 +55,13 @@ export function useReviewCardInteraction({
     horizontalDistance: number,
     verticalDistance: number,
     threshold: number,
-  ): ReviewCardSwipeDirection | null => {
-    if (
-      Math.max(Math.abs(horizontalDistance), Math.abs(verticalDistance)) <
-      threshold
-    ) {
-      return null;
-    }
-
-    if (Math.abs(horizontalDistance) >= Math.abs(verticalDistance)) {
-      return getAnswerForReviewGesture(
-        reviewMode,
-        horizontalDistance > 0 ? 'right' : 'left',
-      );
-    }
-
-    return verticalDistance < 0
-      ? getAnswerForReviewGesture(reviewMode, 'up')
-      : 'delete';
-  };
+  ): ReviewCardSwipeDirection | null =>
+    swipeDirectionFor(
+      reviewMode,
+      horizontalDistance,
+      verticalDistance,
+      threshold,
+    );
 
   const settleCardAtCenter = () => {
     setIsDragging(false);
