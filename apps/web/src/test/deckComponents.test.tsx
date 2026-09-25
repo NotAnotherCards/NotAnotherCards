@@ -567,13 +567,13 @@ describe('WordNoteList Component', () => {
 
     fireEvent.click(screen.getByText('Word data cannot be read'));
 
-    expect(screen.getByRole('button', { name: 'Leave word' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Leave word' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Remove word' }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Repair word' }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Repair word' })).toBeNull();
   });
 
   it('routes view, edit, and removal through the word note', () => {
