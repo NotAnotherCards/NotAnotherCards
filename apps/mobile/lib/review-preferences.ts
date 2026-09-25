@@ -32,7 +32,3 @@ export function loadLastReviewDeckId(userId: string): string | null {
 export function saveLastReviewDeckId(userId: string, deckId: string): void {
   Storage.setItemSync(lastReviewDeckStorageKey(userId), deckId);
 }
-
-export function clearLastReviewDeckId(userId: string): void {
-  Storage.removeItemSync(lastReviewDeckStorageKey(userId));
-}

@@ -17,7 +17,6 @@ import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
 import {
-  clearLastReviewDeckId,
   loadReviewPreferences,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
@@ -165,7 +164,6 @@ function ActiveReviewSession({
       setCardIndex(0);
       return;
     }
-    if (userId) clearLastReviewDeckId(userId);
     setIsComplete(true);
   };
 
@@ -185,10 +183,6 @@ function ActiveReviewSession({
   };
 
   const leave = () => router.replace(`/deck/${deckId}`);
-  const exit = () => {
-    if (userId) clearLastReviewDeckId(userId);
-    leave();
-  };
 
   if (isComplete) {
     return (
@@ -227,7 +221,7 @@ function ActiveReviewSession({
         <Text className="text-sm font-semibold text-muted-foreground">
           Card {cardIndex + 1} of {session.cards.length}
         </Text>
-        <Button variant="ghost" size="sm" onPress={exit} disabled={isSaving}>
+        <Button variant="ghost" size="sm" onPress={leave} disabled={isSaving}>
           <Text>Exit review</Text>
         </Button>
       </View>

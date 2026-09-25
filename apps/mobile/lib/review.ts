@@ -10,13 +10,14 @@ import {
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
   recordReviewEvent,
+  reviewTarget,
   selectDueCards,
   type ReviewRating,
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
 } from '@repo/offline-db';
-import { cardsForDeck, decksWithDueCards } from './cards-in-deck';
+import { cardsForDeck } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
 
 export function dueCardsForDeck(
@@ -38,7 +39,10 @@ export function reviewWrites(db: Database, sync: SyncController | null) {
   };
 }
 
-export function useReviewOverview(manager: DatabaseManager) {
+export function useReviewOverview(
+  manager: DatabaseManager,
+  lastDeckId: string | null,
+) {
   const db = useDatabase(manager);
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
   const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
@@ -46,7 +50,12 @@ export function useReviewOverview(manager: DatabaseManager) {
   const now = Date.now();
 
   return {
-    dueDeckIds: decksWithDueCards(memberships.data, cards.data, now),
+    target: reviewTarget({
+      lastDeckId,
+      memberships: memberships.data,
+      cards: cards.data,
+      now,
+    }),
     dueCount: selectDueCards(cards.data, now).length,
     isLoading: !db || memberships.isLoading || cards.isLoading,
     error: memberships.error ?? cards.error,

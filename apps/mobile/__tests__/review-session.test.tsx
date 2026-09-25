@@ -1,8 +1,9 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ReviewSession } from '@/components/review-session';
+import Storage from 'expo-sqlite/kv-store';
+import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
-  clearLastReviewDeckId,
   loadLastReviewDeckId,
   saveReviewPreferences,
 } from '@/lib/review-preferences';
@@ -46,7 +47,7 @@ beforeEach(() => {
   mockRecord.mockClear();
   mockReplace.mockClear();
   mockBack.mockClear();
-  clearLastReviewDeckId('user-1');
+  Storage.removeItemSync(lastReviewDeckStorageKey('user-1'));
   mockReviewState = {
     deck: { id: 'd1', title: 'Spanish' },
     dueCards: [
@@ -93,13 +94,13 @@ describe('ReviewSession', () => {
     expect(loadLastReviewDeckId('user-1')).toBeNull();
   });
 
-  it('clears the remembered deck when review is exited', async () => {
+  it('keeps the remembered deck when review is exited', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 
     await result.findByText('gato');
     fireEvent.press(result.getByText('Exit review'));
 
-    expect(loadLastReviewDeckId('user-1')).toBeNull();
+    expect(loadLastReviewDeckId('user-1')).toBe('d1');
     expect(mockReplace).toHaveBeenCalledWith('/deck/d1');
   });
 
@@ -165,7 +166,7 @@ describe('ReviewSession', () => {
     fireEvent.press(result.getByText('Remembered'));
     await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
     expect(await result.findByText('Review complete')).toBeTruthy();
-    expect(loadLastReviewDeckId('user-1')).toBeNull();
+    expect(loadLastReviewDeckId('user-1')).toBe('d1');
   });
 
   it('shows a no-due-cards state and returns to the deck', async () => {

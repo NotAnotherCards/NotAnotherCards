@@ -5,11 +5,7 @@ import {
   type UserCardRecord,
   type UserNoteRecord,
 } from '@repo/offline-db';
-import {
-  cardsForDeck,
-  decksWithDueCards,
-  isBasicCard,
-} from '@/lib/cards-in-deck';
+import { cardsForDeck, isBasicCard } from '@/lib/cards-in-deck';
 
 const m = (deck_id: string, note_id: string) => ({ deck_id, note_id });
 const c = (id: string, note_id: string) => ({ id, note_id });
@@ -23,33 +19,6 @@ describe('cardsForDeck', () => {
 
   it('gives an empty list for a deck without notes', () => {
     expect(cardsForDeck([m('d1', 'n1')], [c('c1', 'n1')], 'd2')).toEqual([]);
-  });
-});
-
-describe('decksWithDueCards', () => {
-  const now = 1_000_000;
-  const due = (note_id: string) =>
-    ({ note_id, due_at: now - 1 }) as UserCardRecord;
-  const later = (note_id: string) =>
-    ({ note_id, due_at: now + 60_000 }) as UserCardRecord;
-
-  it('lists every deck that holds a due note, a shared note counts for both', () => {
-    const decks = decksWithDueCards(
-      [m('d1', 'n1'), m('d2', 'n1'), m('d3', 'n2')],
-      [due('n1'), later('n2')],
-      now,
-    );
-    expect([...decks].sort()).toEqual(['d1', 'd2']);
-  });
-
-  it('leaves out a deck whose cards are all scheduled ahead', () => {
-    expect(decksWithDueCards([m('d1', 'n1')], [later('n1')], now).size).toBe(0);
-  });
-
-  it('leaves out a deck whose memberships are gone, as after deleteDeck', () => {
-    // deleteDeck marks the deck's membership rows deleted; the active query
-    // no longer returns them, so the deck has no route to the set.
-    expect(decksWithDueCards([], [due('n1')], now).size).toBe(0);
   });
 });
 
