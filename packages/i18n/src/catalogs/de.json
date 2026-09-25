@@ -479,10 +479,10 @@
       "no_back": "Kein Inhalt auf der Rückseite"
     },
     "answers": {
-      "again": "Nochmal",
+      "forgot": "Nochmal",
       "hard": "Schwer",
-      "good": "Gut",
-      "easy": "Einfach"
+      "remember": "Gut",
+      "very_easy": "Einfach"
     },
     "dialogs": {
       "suspend": "Karte aussetzen",

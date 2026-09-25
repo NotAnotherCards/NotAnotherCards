@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  render,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { DeckList } from '../components/deck/DeckList';
 import type { Deck } from '../hooks/useStore';
 
@@ -57,9 +63,11 @@ vi.mock('@/hooks/useStore', () => ({
   }),
 }));
 
-const saveButton = () => screen.queryByRole('button', { name: /save deck/i });
+const saveButton = () => screen.queryByRole('button', { name: /save/i });
 const confirmDeleteButton = () =>
-  screen.queryByRole('button', { name: /delete permanently/i });
+  within(screen.getByRole('alertdialog')).queryByRole('button', {
+    name: 'Delete',
+  });
 
 const fillTitleAndSubmit = (title: string) => {
   fireEvent.change(screen.getByLabelText(/title/i), {
@@ -113,7 +121,7 @@ describe('deck CRUD error handling', () => {
     const openForm = () => {
       decks = [existingDeck];
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Edit Deck Details'));
+      fireEvent.click(screen.getByTitle('Edit'));
     };
 
     it('keeps the dialog open when the write fails', async () => {
@@ -135,7 +143,7 @@ describe('deck CRUD error handling', () => {
       decks = [existingDeck];
 
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Delete Deck'));
+      fireEvent.click(screen.getByTitle('Delete'));
       fireEvent.click(confirmDeleteButton()!);
 
       await waitFor(() => expect(deleteDeck).toHaveBeenCalledTimes(1));

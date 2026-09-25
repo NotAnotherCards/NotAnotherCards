@@ -464,7 +464,7 @@
   },
   "review": {
     "session": {
-      "completed_title": "Session Complete!",
+      "completed_title": "Review complete",
       "completed_desc": "You have finished all due cards for this session.",
       "back_to_dashboard": "Back to Dashboard",
       "cards_reviewed": "Cards Reviewed",
@@ -472,17 +472,17 @@
       "time_spent": "Time Spent"
     },
     "card": {
-      "show_answer": "Show Answer",
+      "show_answer": "Show answer",
       "front": "Front",
       "back": "Back",
       "no_front": "No front content",
       "no_back": "No back content"
     },
     "answers": {
-      "again": "Again",
+      "forgot": "Again",
       "hard": "Hard",
-      "good": "Good",
-      "easy": "Easy"
+      "remember": "Good",
+      "very_easy": "Easy"
     },
     "dialogs": {
       "suspend": "Suspend Card",

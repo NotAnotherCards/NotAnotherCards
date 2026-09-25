@@ -479,10 +479,10 @@
       "no_back": "Sin contenido en el reverso"
     },
     "answers": {
-      "again": "Otra vez",
+      "forgot": "Otra vez",
       "hard": "Difícil",
-      "good": "Bien",
-      "easy": "Fácil"
+      "remember": "Bien",
+      "very_easy": "Fácil"
     },
     "dialogs": {
       "suspend": "Suspender tarjeta",

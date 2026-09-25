@@ -115,8 +115,8 @@ describe('DeckCard Component', () => {
       />,
     );
 
-    expect(screen.queryByTitle('Edit Deck Details')).toBeNull();
-    expect(screen.getByTitle('Delete Deck')).toBeInTheDocument();
+    expect(screen.queryByTitle('Edit')).toBeNull();
+    expect(screen.getByTitle('Delete')).toBeInTheDocument();
   });
 
   it('offers Edit on a deck whose type it knows', () => {
@@ -132,7 +132,7 @@ describe('DeckCard Component', () => {
       />,
     );
 
-    expect(screen.getByTitle('Edit Deck Details')).toBeInTheDocument();
+    expect(screen.getByTitle('Edit')).toBeInTheDocument();
   });
 
   it('calls action callbacks on click events', () => {
@@ -158,11 +158,11 @@ describe('DeckCard Component', () => {
     expect(onSelectDeck).toHaveBeenCalledWith('deck-test-1');
 
     // Click Edit icon button
-    fireEvent.click(screen.getByTitle('Edit Deck Details'));
+    fireEvent.click(screen.getByTitle('Edit'));
     expect(onEditDeck).toHaveBeenCalledWith(mockDeck);
 
     // Click Delete icon button
-    fireEvent.click(screen.getByTitle('Delete Deck'));
+    fireEvent.click(screen.getByTitle('Delete'));
     expect(onDeleteDeck).toHaveBeenCalledWith('deck-test-1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Review' }));

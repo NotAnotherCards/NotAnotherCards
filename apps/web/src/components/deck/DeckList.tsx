@@ -240,6 +240,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {/* Delete Confirmation Dialog */}
       {deckToDelete && (
         <div
+          role="alertdialog"
           onClick={() => setDeckToDelete(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
         >
