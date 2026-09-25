@@ -7,9 +7,6 @@ import {
   UserNoteRecord,
   UserNoteDeckRecord,
   UserProfileRecord,
-  BASIC_FRONT_BACK_TEMPLATE_KEY,
-  BASIC_NOTE_FIELDS_VERSION,
-  BASIC_NOTE_TYPE,
   type DeckNoteType,
   WordNoteFieldsV1,
   WORD_NOTE_FIELDS_VERSION,
@@ -38,6 +35,7 @@ import {
   updateUserProfile as dbUpdateUserProfile,
   CreateCardsBatchOptions,
   cardsForDeck,
+  isBasicCard as isBasicNoteCard,
 } from '@repo/offline-db';
 
 export type Deck = UserDeckRecord;
@@ -271,11 +269,7 @@ export function useStore() {
   const isBasicCard = useCallback(
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
-      return (
-        note?.note_type === BASIC_NOTE_TYPE &&
-        note.fields_version === BASIC_NOTE_FIELDS_VERSION &&
-        card.template_key === BASIC_FRONT_BACK_TEMPLATE_KEY
-      );
+      return isBasicNoteCard(card, note);
     },
     [notes],
   );

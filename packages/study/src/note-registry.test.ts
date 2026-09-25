@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
   BasicNoteFieldsV1,
+  isBasicCard,
   noteTypeRegistry,
   validateNoteFieldsJson,
   WordNoteFieldsV1,
@@ -264,5 +266,21 @@ describe('every word@1 field, one by one', () => {
     expect(parsed.example).toBe('Ich laufe.');
     expect(parsed.example_translation).toBe('I run.');
     expect(parsed.gender).toBe('neuter');
+  });
+});
+
+describe('isBasicCard', () => {
+  const basicNote = { note_type: 'basic', fields_version: 1 };
+  const card = { template_key: BASIC_FRONT_BACK_TEMPLATE_KEY };
+
+  it('accepts a basic note with the front-back template', () => {
+    expect(isBasicCard(card, basicNote)).toBe(true);
+  });
+
+  it('rejects another template, another note type, another version, or a missing note', () => {
+    expect(isBasicCard({ template_key: 'audio' }, basicNote)).toBe(false);
+    expect(isBasicCard(card, { ...basicNote, note_type: 'word' })).toBe(false);
+    expect(isBasicCard(card, { ...basicNote, fields_version: 2 })).toBe(false);
+    expect(isBasicCard(card, undefined)).toBe(false);
   });
 });

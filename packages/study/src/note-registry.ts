@@ -20,6 +20,19 @@ import {
 // derive a different card ID for the built-in basic note.
 export const BASIC_FRONT_BACK_TEMPLATE_KEY = 'front-back';
 
+// Only a basic note's front-back card is edited with the front/back form;
+// any other card keeps its own editor. The caller looks up the note.
+export function isBasicCard(
+  card: { template_key: string },
+  note: { note_type: string; fields_version: number } | null | undefined,
+): boolean {
+  return (
+    note?.note_type === BASIC_NOTE_TYPE &&
+    note.fields_version === BASIC_NOTE_FIELDS_VERSION &&
+    card.template_key === BASIC_FRONT_BACK_TEMPLATE_KEY
+  );
+}
+
 export interface RenderedCard {
   readonly front: string;
   readonly back: string;

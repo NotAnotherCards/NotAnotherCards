@@ -14,9 +14,9 @@ import {
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
   cardsForDeck,
+  isBasicCard,
 } from '@repo/offline-db';
 import { cardWrites } from './card-writes';
-import { isBasicCard } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
 
 export type Card = UserCardRecord;
@@ -47,7 +47,7 @@ export function useCards(manager: DatabaseManager, deckId: string) {
     notesById.get(card.note_id) ?? null;
   const canEdit = (card: UserCardRecord) => {
     const note = noteForCard(card);
-    if (isBasicCard(card, notesById)) return true;
+    if (isBasicCard(card, note)) return true;
     if (
       note?.note_type !== WORD_NOTE_TYPE ||
       note.fields_version !== WORD_NOTE_FIELDS_VERSION
