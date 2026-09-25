@@ -1,5 +1,6 @@
 import {
   DEFAULT_REVIEW_PREFERENCES,
+  lastReviewDeckStorageKey,
   parseReviewPreferences,
   reviewPreferencesStorageKey,
   type ReviewPreferences,
@@ -9,12 +10,6 @@ export {
   DEFAULT_REVIEW_PREFERENCES,
   type ReviewPreferences,
 } from '@repo/offline-db';
-
-const LAST_REVIEW_DECK_STORAGE_PREFIX = 'not-another-cards:last-review-deck:';
-
-function getLastReviewDeckStorageKey(userId: string) {
-  return `${LAST_REVIEW_DECK_STORAGE_PREFIX}${userId}`;
-}
 
 function getReviewStorage() {
   if (typeof window === 'undefined') return null;
@@ -31,7 +26,7 @@ export function getLastReviewDeckId(userId: string) {
   if (!storage) return null;
 
   try {
-    return storage.getItem(getLastReviewDeckStorageKey(userId));
+    return storage.getItem(lastReviewDeckStorageKey(userId));
   } catch {
     return null;
   }
@@ -42,18 +37,7 @@ export function saveLastReviewDeckId(userId: string, deckId: string) {
   if (!storage) return;
 
   try {
-    storage.setItem(getLastReviewDeckStorageKey(userId), deckId);
-  } catch {
-    // Review works without a saved local preference.
-  }
-}
-
-export function clearLastReviewDeckId(userId: string) {
-  const storage = getReviewStorage();
-  if (!storage) return;
-
-  try {
-    storage.removeItem(getLastReviewDeckStorageKey(userId));
+    storage.setItem(lastReviewDeckStorageKey(userId), deckId);
   } catch {
     // Review works without a saved local preference.
   }

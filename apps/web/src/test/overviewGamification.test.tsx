@@ -1,4 +1,15 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+  fireEvent,
+} from '@testing-library/react';
+import { useNavigate } from '@tanstack/react-router';
+import {
+  getLastReviewDeckId,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
 import { Component, type ReactNode } from 'react';
 import { Overview } from '../components/dashboard/Overview';
 import { Progress } from '../components/ui/progress';
@@ -10,7 +21,7 @@ import * as dbReact from '@remelondb/core/react';
 
 // Mock router
 vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: vi.fn(() => vi.fn()),
   Link: ({ children }: { children: ReactNode }) => <a>{children}</a>,
 }));
 
@@ -168,6 +179,91 @@ describe('Overview Gamification', () => {
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
     vi.useRealTimers();
+  });
+
+  it.each([
+    {
+      name: 'opens the remembered due deck',
+      remembered: 'd2',
+      dueDecks: ['d1', 'd2'],
+      expected: 'd2',
+    },
+    {
+      name: 'opens the only due deck without a remembered deck',
+      remembered: null,
+      dueDecks: ['d1'],
+      expected: 'd1',
+    },
+    {
+      name: 'skips a remembered deck with nothing due',
+      remembered: 'finished',
+      dueDecks: ['d1'],
+      expected: 'd1',
+    },
+    {
+      name: 'opens the library when the deck is unclear',
+      remembered: 'deleted',
+      dueDecks: ['d1', 'd2'],
+      expected: 'library',
+    },
+    {
+      name: 'disables review when nothing is due',
+      remembered: 'finished',
+      dueDecks: [],
+      expected: 'nothing-due',
+    },
+  ])('$name', async ({ remembered, dueDecks, expected }) => {
+    if (remembered) saveLastReviewDeckId(mockSession.user.id, remembered);
+    const navigate = vi.fn();
+    vi.mocked(useNavigate).mockReturnValue(navigate);
+    const store = useStoreModule.useStore();
+    const cards = [...dueDecks, 'finished'].map((deckId) => ({
+      id: `card-${deckId}`,
+      note_id: `note-${deckId}`,
+      template_key: 'basic:front-back',
+      active: true,
+      front: 'front',
+      back: 'back',
+      due_at: Date.now() + (deckId === 'finished' ? 60_000 : -1),
+      scheduled_interval_minutes: 0,
+      created_at: 1,
+      updated_at: 1,
+    }));
+    vi.mocked(useStoreModule.useStore).mockReturnValue({
+      ...store,
+      cards,
+      noteDecks: [...dueDecks, 'finished'].map((deckId) => ({
+        id: `membership-${deckId}`,
+        deck_id: deckId,
+        note_id: `note-${deckId}`,
+        active: true,
+        created_at: 1,
+        updated_at: 1,
+      })),
+    });
+    const onChooseDeck = vi.fn();
+    render(<Overview onChooseDeck={onChooseDeck} />);
+    const button = screen.getByRole('button', { name: 'Start Review' });
+    expect(button).toHaveTextContent(/^Start Review$/);
+    if (expected === 'nothing-due') expect(button).toBeDisabled();
+    else expect(button).toBeEnabled();
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    if (expected === 'library') {
+      expect(onChooseDeck).toHaveBeenCalledOnce();
+      expect(navigate).not.toHaveBeenCalled();
+    } else if (expected === 'nothing-due') {
+      expect(onChooseDeck).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+    } else {
+      expect(navigate).toHaveBeenCalledWith({
+        to: '/deck-review',
+        search: { deckId: expected },
+      });
+      expect(onChooseDeck).not.toHaveBeenCalled();
+    }
+    expect(getLastReviewDeckId(mockSession.user.id)).toBe(remembered);
   });
 
   it('shows rejected changes in the sync badge', async () => {
