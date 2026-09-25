@@ -31,6 +31,13 @@
   --border: 229 229 229;
   --input: 229 229 229;
   --ring: 161 161 161;
+  /* The review answers, from forgot to very easy. Again is --destructive;
+     the others are tailwind 3's orange, emerald and blue, 600 here and 400
+     in dark. */
+  --rating-again: 231 0 11;
+  --rating-hard: 234 88 12;
+  --rating-good: 5 150 105;
+  --rating-easy: 37 99 235;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -52,5 +59,9 @@
     --border: 35 35 35;
     --input: 47 47 47;
     --ring: 115 115 115;
+    --rating-again: 255 100 103;
+    --rating-hard: 251 146 60;
+    --rating-good: 52 211 153;
+    --rating-easy: 96 165 250;
   }
 }

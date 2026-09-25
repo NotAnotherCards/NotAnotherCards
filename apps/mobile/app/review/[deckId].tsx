@@ -1,5 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ScrollView } from 'react-native';
+// gesture-handler's ScrollView, so it lets the review card's swipe through
+// instead of claiming the touch first.
+import { ScrollView } from 'react-native-gesture-handler';
 import { RequireSession } from '@/components/require-session';
 import { ReviewSession } from '@/components/review-session';
 

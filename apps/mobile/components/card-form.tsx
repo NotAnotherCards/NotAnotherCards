@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { View } from 'react-native';
@@ -13,6 +14,8 @@ type CardFormProps = {
   error?: string | null;
   onSubmit: (values: CardFormValues) => Promise<void>;
   onCancel: () => void;
+  // Right side of the header, e.g. the editor's delete.
+  headerAction?: ReactNode;
 };
 
 // Front and back of a basic note. Does not know whether it creates or
@@ -23,6 +26,7 @@ export function CardForm({
   error,
   onSubmit,
   onCancel,
+  headerAction,
 }: CardFormProps) {
   const { control, handleSubmit, formState } = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
@@ -31,8 +35,9 @@ export function CardForm({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+      <CardHeader className="flex-row items-center justify-between gap-2">
+        <CardTitle className="flex-1">{title}</CardTitle>
+        {headerAction}
       </CardHeader>
       <CardContent className="gap-4">
         <FormField

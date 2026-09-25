@@ -9,13 +9,8 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
 import { Markdown } from './ui/markdown';
-import { CardForm } from './card-form';
-import { WordNoteForm, type WordFormValues } from './word-note-form';
-import {
-  BASIC_NOTE_TYPE,
-  parseWordFields,
-  WORD_NOTE_TYPE,
-} from '@repo/offline-db';
+import { CardEditor } from './card-editor';
+import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/offline-db';
 
 // Readiness gate, as DeckList: no manager yet means no database to query.
 export function CardList({ deckId }: { deckId: string }) {
@@ -105,84 +100,15 @@ function ActiveCardList({
   const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
 
-  if (action?.kind === 'create') {
-    const nativeLanguageId = deck.native_language_id;
-    const targetLanguageId = deck.target_language_id;
-    if (isWordDeck) {
-      if (!(nativeLanguageId && targetLanguageId)) {
-        return (
-          <Text className="text-destructive">
-            This word deck does not have a valid language pair.
-          </Text>
-        );
-      }
-      return (
-        <WordNoteForm
-          title="New word"
-          targetLanguageId={targetLanguageId}
-          error={writeError}
-          onSubmit={(values) =>
-            run(() =>
-              writes.createWord(deckId, {
-                ...values,
-                native_language_id: nativeLanguageId,
-                target_language_id: targetLanguageId,
-              }),
-            )
-          }
-          onCancel={() => open(null)}
-        />
-      );
-    }
+  if (action?.kind === 'create' || action?.kind === 'edit') {
+    const card = action.kind === 'edit' ? action.card : undefined;
     return (
-      <CardForm
-        title="New card"
-        error={writeError}
-        onSubmit={(values) =>
-          run(() => writes.create(deckId, values.front, values.back))
-        }
-        onCancel={() => open(null)}
-      />
-    );
-  }
-
-  if (action?.kind === 'edit') {
-    const { card } = action;
-    const note = noteForCard(card);
-    if (note?.note_type === WORD_NOTE_TYPE) {
-      // Invalid synced payloads remain visible but cannot be edited.
-      const fields = parseWordFields(note);
-      if (!fields) return null;
-      const updateWord = (values: WordFormValues) =>
-        run(() =>
-          writes.updateWord(note.id, {
-            ...values,
-            native_language_id: fields.native_language_id,
-            target_language_id: fields.target_language_id,
-            ...(fields.image ? { image: fields.image } : {}),
-            ...(fields.word_audio ? { word_audio: fields.word_audio } : {}),
-          }),
-        );
-      return (
-        <WordNoteForm
-          title="Edit word"
-          initialValues={fields}
-          targetLanguageId={fields.target_language_id}
-          error={writeError}
-          onSubmit={updateWord}
-          onCancel={() => open(null)}
-        />
-      );
-    }
-    return (
-      <CardForm
-        title="Edit card"
-        initialValues={{ front: card.front, back: card.back }}
-        error={writeError}
-        onSubmit={(values) =>
-          run(() => writes.update(card.id, values.front, values.back))
-        }
-        onCancel={() => open(null)}
+      <CardEditor
+        deck={deck}
+        card={card}
+        note={card ? noteForCard(card) : null}
+        writes={writes}
+        onDone={() => open(null)}
       />
     );
   }

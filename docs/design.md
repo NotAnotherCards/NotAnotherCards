@@ -15,7 +15,7 @@ Web defines them in `apps/web/src/style.css`, in oklch. Mobile defines them in
 `apps/mobile/global.css`, in hex, because React Native does not parse oklch.
 Mobile is a subset of web: every token mobile defines exists on web under the
 same name, and every shared value is the same colour once web's oklch is
-converted to sRGB, with one deliberate exception (33 of 34).
+converted to sRGB, with one deliberate exception (41 of 42).
 
 The exception is light-mode `--card`. Web keeps it white like the page and
 separates a card with `shadow-md` and a hairline ring. On Android a shadow
@@ -39,11 +39,18 @@ lighter than its background on both clients.
 | `--border`                                   | borders and separators                 |
 | `--input`                                    | input field borders and backgrounds    |
 | `--ring`                                     | focus rings                            |
+| `--rating-again` … `--rating-easy`           | review answer buttons, one hue each    |
 
 Tailwind exposes each as a utility of the same name: `bg-card`,
 `text-muted-foreground`, `border-border`, `ring-ring`. Web does this through
 `@theme inline` in `style.css`; mobile through `theme.extend.colors` in
 `tailwind.config.js`.
+
+The four rating tokens are the second place the palette leaves greyscale,
+after the charts: forgot, hard, remember and very easy have to be told apart
+at a glance. `--rating-again` is `--destructive`; hard, good and easy are
+tailwind 3's orange, emerald and blue (600, and 400 in dark). Web's review
+buttons still use inline tailwind classes and have not moved to them yet.
 
 ### Web-only tokens
 
@@ -56,9 +63,9 @@ decision, not an oversight to fix.
 - **Sidebar.** `--sidebar` and its seven companions. Desktop navigation only.
 - **Charts.** `--chart-1` to `--chart-5`. Web statistics only. The first
   three carry a hue each so a reader tells the series apart (reviews, notes
-  added, forgot rate); `--chart-4` and `--chart-5` are still neutral. This is
-  the only place the palette leaves greyscale, and only because a chart
-  without distinguishable series is unreadable.
+  added, forgot rate); `--chart-4` and `--chart-5` are still neutral. They
+  leave greyscale only because a chart without distinguishable series is
+  unreadable.
 - **Radius scale.** `--radius` (0.625rem) and `--radius-sm` to `--radius-4xl`
   derived from it. Mobile gains `--radius` with the kit; see Spacing and radius.
 - **`--color-*`.** Tailwind 4's `@theme` bridge, one per token above. These are
@@ -113,10 +120,19 @@ Animations are designed to be fast and functional: they confirm user actions wit
 - **Reduced motion.** Target standard. Web currently has no `motion-reduce:` usage
   (0 of 128). Newly introduced animated surfaces should pair each animation with
   `motion-reduce:animate-none` / `motion-reduce:transition-none`.
-- **Mobile.** Mobile includes no motion today: 10 Pressables, none using ripple,
-  pressed opacity, or timed transitions, and no `Animated` usage. Touch
-  feedback will arrive with the React Native Reusables adoption (#233); until then
-  its absence is intentional, not an oversight.
+- **Mobile.** The review is the one animated surface, through Reanimated and
+  gesture-handler. Once the answer shows, the answer card follows a swipe,
+  tilts slightly, springs back below the threshold and leaves in the swipe's
+  direction in 260ms before the answer is recorded. With four answers, a
+  swipe down and to the right (30 to 60 degrees) answers easy, towards the
+  Easy button. While it is dragged, the
+  question fades out over the first half of the way and the next question
+  comes in over the second, growing from 95%; both follow the finger, so they
+  apply with reduced motion too. With the system's reduced motion setting on
+  (`useReducedMotion`), the answer is recorded without the flight. Elsewhere
+  mobile has no motion: Pressables use no ripple, pressed opacity or timed
+  transitions. Touch feedback will arrive with the React Native Reusables
+  adoption (#233); until then its absence is intentional, not an oversight.
 
 ## Responsive breakpoints and layout grid
 

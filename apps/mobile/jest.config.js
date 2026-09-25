@@ -29,6 +29,12 @@ module.exports = {
   // The first render in a file pays the full babel transform of the RN
   // component graph; on CI runners that alone brushes the 5s default.
   testTimeout: 15000,
+  // Gesture handler and Reanimated are native; their test setups stand in.
+  setupFiles: [
+    ...(preset.setupFiles || []),
+    'react-native-gesture-handler/jestSetup',
+    '<rootDir>/jest.setup.ts',
+  ],
   moduleNameMapper: {
     ...(preset.moduleNameMapper || {}),
     '^react$': '<rootDir>/node_modules/react',

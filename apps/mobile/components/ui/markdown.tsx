@@ -21,6 +21,10 @@ import { isSafeUrl } from '@repo/schemas';
 interface MarkdownProps {
   content: string;
   inline?: boolean;
+  // The review card's look, as web's: card is text-3xl bold and centred
+  // with lists smaller and regular; card-detail is the smaller text below a
+  // word card's translation.
+  variant?: 'card' | 'card-detail';
 }
 
 const themes = {
@@ -52,6 +56,29 @@ const styles: MarkedStyles = {
   },
   codeText: { fontFamily: 'monospace' },
   link: { fontStyle: 'normal', textDecorationLine: 'underline' },
+};
+
+const cardDetailText: TextStyle = {
+  fontSize: 20,
+  lineHeight: 28,
+  fontWeight: '400',
+  textAlign: 'center',
+};
+const cardStyles: MarkedStyles = {
+  ...styles,
+  paragraph: { paddingVertical: 0, justifyContent: 'center' },
+  text: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  list: { marginTop: 16, alignItems: 'center' },
+  li: cardDetailText,
+};
+const cardDetailStyles: MarkedStyles = {
+  ...cardStyles,
+  text: cardDetailText,
 };
 
 const blockedUrl = 'unsafe-markdown:';
@@ -113,8 +140,10 @@ function inheritTextStyle(
 }
 
 class SafeRenderer extends Renderer {
+  // Card text is not selectable: a finger resting on it before a swipe
+  // would select a word. The edit form is where text gets copied.
   constructor(private readonly inline: boolean) {
-    super();
+    super({ selectable: false });
   }
 
   paragraph(children: ReactNode[], style?: ViewStyle): ReactNode {
@@ -195,7 +224,6 @@ class SafeRenderer extends Renderer {
     return (
       <NativeText
         key={this.getKey()}
-        selectable
         accessibilityRole="link"
         accessibilityHint="Opens in a new window"
         accessibilityLabel={title}
@@ -331,14 +359,19 @@ class SafeRenderer extends Renderer {
   }
 }
 
-export function Markdown({ content, inline = false }: MarkdownProps) {
+export function Markdown({ content, inline = false, variant }: MarkdownProps) {
   const { colorScheme } = useColorScheme();
   const renderer = useMemo(() => new SafeRenderer(inline), [inline]);
   const elements = useMarkdown(content, {
     colorScheme,
     renderer,
     hooks: safeUrlHooks,
-    styles,
+    styles:
+      variant === 'card'
+        ? cardStyles
+        : variant === 'card-detail'
+          ? cardDetailStyles
+          : styles,
     theme: themes[colorScheme === 'dark' ? 'dark' : 'light'],
   });
 
