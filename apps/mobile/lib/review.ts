@@ -15,8 +15,8 @@ import {
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
+  cardsForDeck,
 } from '@repo/offline-db';
-import { cardsForDeck } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
 
 export function dueCardsForDeck(

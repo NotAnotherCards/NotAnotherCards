@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BASIC_FRONT_BACK_TEMPLATE_KEY,
   BasicNoteFieldsV1,
+  isBasicCard,
+  parseWordFields,
   noteTypeRegistry,
   validateNoteFieldsJson,
   WordNoteFieldsV1,
   type WordNoteFields,
 } from './note-registry.js';
-import { UserNoteRow } from './user-dictionary.js';
 
 const word: WordNoteFields = {
   word: 'laufen',
@@ -42,7 +44,8 @@ describe('WordNoteFieldsV1', () => {
   it.each(['word', 'translation', 'native_language_id', 'target_language_id'])(
     'rejects a note missing %s',
     (key) => {
-      const { [key as keyof WordNoteFields]: _gone, ...partial } = word;
+      const partial: Partial<WordNoteFields> = { ...word };
+      delete partial[key as keyof WordNoteFields];
       expect(WordNoteFieldsV1.safeParse(partial).success).toBe(false);
     },
   );
@@ -168,7 +171,8 @@ describe('the registry feeds validateNoteFieldsJson', () => {
   });
 
   it('rejects a partial word@1 payload, so it cannot enter the sync protocol', () => {
-    const { word: _gone, ...partial } = word;
+    const partial: Partial<WordNoteFields> = { ...word };
+    delete partial.word;
     expect(
       validateNoteFieldsJson('word', 1, JSON.stringify(partial)).success,
     ).toBe(false);
@@ -266,30 +270,33 @@ describe('every word@1 field, one by one', () => {
   });
 });
 
-describe('unknown note types are opaque to the client row schema', () => {
-  it('passes an unregistered pair instead of failing the pull', () => {
-    expect(
-      UserNoteRow.safeParse({
-        note_type: 'word',
-        fields_version: 9,
-        fields_json: '{"anything":"at all"}',
-        additional_content: null,
-        created_at: 1,
-        updated_at: 1,
-      }).success,
-    ).toBe(true);
+describe('isBasicCard', () => {
+  const basicNote = { note_type: 'basic', fields_version: 1 };
+  const card = { template_key: BASIC_FRONT_BACK_TEMPLATE_KEY };
+
+  it('accepts a basic note with the front-back template', () => {
+    expect(isBasicCard(card, basicNote)).toBe(true);
   });
 
-  it('still rejects invalid fields of a registered pair', () => {
+  it('rejects another template, another note type, another version, or a missing note', () => {
+    expect(isBasicCard({ template_key: 'audio' }, basicNote)).toBe(false);
+    expect(isBasicCard(card, { ...basicNote, note_type: 'word' })).toBe(false);
+    expect(isBasicCard(card, { ...basicNote, fields_version: 2 })).toBe(false);
+    expect(isBasicCard(card, undefined)).toBe(false);
+  });
+});
+
+describe('parseWordFields', () => {
+  it('returns the fields of a valid word note', () => {
+    expect(parseWordFields({ fields_json: JSON.stringify(word) })).toEqual(
+      word,
+    );
+  });
+
+  it('returns null for broken JSON or fields that fail word@1', () => {
+    expect(parseWordFields({ fields_json: '{not json' })).toBeNull();
     expect(
-      UserNoteRow.safeParse({
-        note_type: 'word',
-        fields_version: 1,
-        fields_json: '{"word":"alone"}',
-        additional_content: null,
-        created_at: 1,
-        updated_at: 1,
-      }).success,
-    ).toBe(false);
+      parseWordFields({ fields_json: JSON.stringify({ word: 'alone' }) }),
+    ).toBeNull();
   });
 });

@@ -6,10 +6,7 @@ import {
   UserNoteDeck,
   ReviewEvent,
 } from './user-dictionary.js';
-import {
-  BASIC_NOTE_FIELDS_VERSION,
-  BASIC_NOTE_TYPE,
-} from './note-constants.js';
+import { BASIC_NOTE_FIELDS_VERSION, BASIC_NOTE_TYPE } from '@repo/study';
 import {
   BackupCard,
   BackupDeck,
@@ -17,7 +14,7 @@ import {
   BackupNote,
   BackupReviewEvent,
 } from './export-import-types.js';
-import { compileNote } from './note-registry.js';
+import { compileNote } from '@repo/study';
 
 function escapeCsvField(val: unknown): string {
   if (val === null || val === undefined) return '';

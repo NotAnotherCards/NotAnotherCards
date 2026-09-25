@@ -1,5 +1,5 @@
 {
-  "name": "@repo/offline-db",
+  "name": "@repo/study",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -18,19 +18,19 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@remelondb/core": "0.3.1",
-    "@repo/schemas": "workspace:*",
-    "@repo/study": "workspace:*",
-    "uuid": "^14.0.2",
-    "zod": "^4.4.3"
+    "test": "pnpm test:unit && pnpm test:runtime-contract",
+    "test:unit": "vitest run",
+    "test:runtime-contract": "node scripts/runtime-contract.mjs",
+    "lint": "eslint ."
   },
   "license": "MIT",
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
   "devDependencies": {
-    "@remelondb/driver-node": "0.3.1",
     "@repo/typescript-config": "workspace:*",
+    "esbuild": "0.28.2",
+    "hermes-engine-cli": "0.12.0",
     "typescript": "5.9.3",
     "vitest": "^4.1.10"
   }

@@ -10,7 +10,7 @@
     "prebuild": "expo prebuild",
     "lint": "eslint \"{app,components,lib,__tests__,__mocks__}/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
+    "pretest": "pnpm --filter @repo/offline-db... build",
     "test": "jest",
     "dev:mobile": "expo start"
   },

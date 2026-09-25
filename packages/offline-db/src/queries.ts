@@ -13,15 +13,16 @@ import {
   UserProfile,
   PRIVATE_DECK,
 } from './user-dictionary.js';
-import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
+import { BASIC_FRONT_BACK_TEMPLATE_KEY } from '@repo/study';
+import { cardId, noteDeckId } from './ids.js';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
   DECK_NOTE_TYPES,
   type DeckNoteType,
   WORD_NOTE_TYPE,
-} from './note-constants.js';
-import { calculateReviewSchedule } from './review-scheduler.js';
+} from '@repo/study';
+import { calculateReviewSchedule } from '@repo/study';
 
 // ==========================================
 // QUERIES
