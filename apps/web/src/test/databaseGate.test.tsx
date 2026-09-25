@@ -5,7 +5,7 @@ import { ProtectedLayoutComponent } from '../components/ProtectedRouteComponent'
 
 vi.mock('@remelondb/core/react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@remelondb/core/react')>();
-  return { ...actual, useDatabaseState: vi.fn() };
+  return { ...actual, useDatabaseState: vi.fn(), useDatabase: () => null };
 });
 vi.mock('@tanstack/react-router', () => ({
   Outlet: () => <div>outlet</div>,
@@ -14,9 +14,6 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 vi.mock('@/offline/sessionDatabase', () => ({
   useSessionDatabase: () => ({ manager: {}, syncController: null }),
-}));
-vi.mock('@/offline/syncProvider', () => ({
-  SyncProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 vi.mock('@/components/SyncStatus', () => ({ SyncStatus: () => null }));
 vi.mock('@/components/DatabaseBanner', () => ({
