@@ -12,6 +12,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthCard } from '@/components/auth/auth-card';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { z } from 'zod';
 import { authClient } from '@/lib/auth-client';
@@ -23,10 +24,12 @@ import { useTranslation } from 'react-i18next';
 const resetPasswordConfirmSchema = z
   .object({
     password: passwordSchema,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z
+      .string()
+      .min(1, 'auth.validation.confirm_password_required'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'auth.validation.passwords_mismatch',
     path: ['confirmPassword'],
   });
 export type ResetPasswordConfirmFormData = z.infer<

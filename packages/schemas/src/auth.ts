@@ -2,27 +2,29 @@ import z from 'zod';
 
 export const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(128, 'Password must be at most 128 characters')
-  .regex(/[a-z]/, 'Password must include a lowercase letter')
-  .regex(/[A-Z]/, 'Password must include an uppercase letter')
-  .regex(/[0-9]/, 'Password must include a number')
-  .regex(/[^A-Za-z0-9]/, 'Password must include a special character');
+  .min(8, 'auth.validation.password_min')
+  .max(128, 'auth.validation.password_max')
+  .regex(/[a-z]/, 'auth.validation.password_lowercase')
+  .regex(/[A-Z]/, 'auth.validation.password_uppercase')
+  .regex(/[0-9]/, 'auth.validation.password_number')
+  .regex(/[^A-Za-z0-9]/, 'auth.validation.password_special');
 
 export const loginSchema = z.object({
-  email: z.email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email('auth.validation.invalid_email'),
+  password: z.string().min(1, 'auth.validation.password_required'),
 });
 
 export const registerSchema = z
   .object({
-    name: z.string().trim().min(2, 'Name must be at least 2 characters'),
-    email: z.email('Please enter a valid email address'),
+    name: z.string().trim().min(2, 'auth.validation.name_min'),
+    email: z.string().email('auth.validation.invalid_email'),
     password: passwordSchema,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z
+      .string()
+      .min(1, 'auth.validation.confirm_password_required'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'auth.validation.passwords_mismatch',
     path: ['confirmPassword'],
   });
 

@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { KeyRound, ShieldCheck } from 'lucide-react';
 import { AuthCard } from '@/components/auth/auth-card';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
@@ -20,27 +21,28 @@ import {
 
 type ChallengeMode = 'totp' | 'backup';
 
-function challengeError(error: unknown): string {
+function challengeError(error: unknown, t: (key: string) => string): string {
   const code =
     typeof error === 'object' && error !== null && 'code' in error
       ? String(error.code)
       : '';
   if (code === 'ACCOUNT_TEMPORARILY_LOCKED') {
-    return 'Too many failed attempts. Your account is temporarily locked. Please try again later.';
+    return t('auth.error.two_factor_locked');
   }
   if (code === 'INVALID_BACKUP_CODE') {
-    return 'That backup code is invalid or has already been used.';
+    return t('auth.error.two_factor_invalid_backup');
   }
   if (code === 'INVALID_CODE') {
-    return 'That authentication code is invalid or has expired.';
+    return t('auth.error.two_factor_invalid_code');
   }
   if (code === 'INVALID_TWO_FACTOR_COOKIE') {
-    return 'This verification request has expired. Sign in again to continue.';
+    return t('auth.error.two_factor_expired');
   }
-  return 'Verification failed. Check the code and try again.';
+  return t('auth.error.two_factor_failed');
 }
 
 export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const returnTo = useMemo(
     () => safeReturnTo(redirect ?? pendingChallengeReturnTo()),
@@ -64,11 +66,11 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
     const normalizedCode =
       mode === 'totp' ? totpDigits.join('') : backupCode.trim();
     if (mode === 'totp' && normalizedCode.length !== 6) {
-      setError('Enter the six-digit code from your authenticator app.');
+      setError(t('auth.error.two_factor_empty_totp'));
       return;
     }
     if (mode === 'backup' && !normalizedCode) {
-      setError('Enter one of your backup codes.');
+      setError(t('auth.error.two_factor_empty_backup'));
       return;
     }
 
@@ -88,14 +90,14 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
             });
 
       if (response.error) {
-        setError(challengeError(response.error));
+        setError(challengeError(response.error, t));
         return;
       }
 
       clearPendingChallenge();
       await navigate({ href: returnTo, replace: true });
     } catch {
-      setError('Verification is temporarily unavailable. Please try again.');
+      setError(t('auth.error.two_factor_unavailable'));
     } finally {
       setIsSubmitting(false);
     }
@@ -108,11 +110,11 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
 
   return (
     <AuthCard
-      title="Two-factor verification"
+      title={t('auth.two_factor.title')}
       description={
         mode === 'totp'
-          ? 'Enter the current code from your authenticator app.'
-          : 'Use one of the backup codes you saved during setup.'
+          ? t('auth.two_factor.description_totp')
+          : t('auth.two_factor.description_backup')
       }
       footerText=""
       footerLinkText=""
@@ -131,7 +133,7 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
           className="flex-1"
         >
           <ShieldCheck aria-hidden="true" />
-          Authenticator
+          {t('auth.two_factor.authenticator')}
         </Button>
         <Button
           type="button"
@@ -141,7 +143,7 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
           className="flex-1"
         >
           <KeyRound aria-hidden="true" />
-          Backup code
+          {t('auth.two_factor.backup_code')}
         </Button>
       </div>
 
@@ -156,7 +158,9 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
           />
         ) : (
           <div className="space-y-2">
-            <Label htmlFor="backup-code">Backup code</Label>
+            <Label htmlFor="backup-code">
+              {t('auth.two_factor.backup_code')}
+            </Label>
             <Input
               id="backup-code"
               value={backupCode}
@@ -176,10 +180,10 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
-              <Spinner /> Verifying...
+              <Spinner /> {t('auth.two_factor.verifying')}
             </>
           ) : (
-            'Verify and continue'
+            t('auth.two_factor.verify_and_continue')
           )}
         </Button>
         <Button
@@ -189,7 +193,7 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
           onClick={leaveChallenge}
           disabled={isSubmitting}
         >
-          Back to sign in
+          {t('auth.two_factor.back_to_sign_in')}
         </Button>
       </form>
     </AuthCard>

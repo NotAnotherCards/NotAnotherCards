@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/card';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { ThemeChanger } from '@/components/ThemeChanger';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { authClient } from '@/lib/auth-client';

@@ -1,7 +1,35 @@
 {
-  "preferences": {
-    "title": "Preferences",
-    "language": "Language"
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "close": "Close",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}}"
+  },
+  "locales": {
+    "en": "English",
+    "es": "Español",
+    "de": "Deutsch"
+  },
+  "nav": {
+    "home": "Home",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "onboarding": {
+    "title": "Welcome!",
+    "description": "Choose your username and language preferences to get started",
+    "username": "Username",
+    "nativeLanguage": "Native Language",
+    "targetLanguage": "Target Language",
+    "selectLanguage": "Select language",
+    "submit": "Complete registration",
+    "saving": "Saving...",
+    "username_taken": "Username is already taken",
+    "error_default": "Failed to save onboarding data"
   },
   "auth": {
     "error": {
@@ -83,7 +111,33 @@
       "back_to_sign_in": "Back to sign in",
       "totp_legend": "Six-digit authentication code",
       "totp_digit_aria": "Digit {{digit}} of {{total}}"
+    },
+    "validation": {
+      "password_min": "Password must be at least 8 characters",
+      "password_max": "Password must be at most 128 characters",
+      "password_lowercase": "Password must include a lowercase letter",
+      "password_uppercase": "Password must include an uppercase letter",
+      "password_number": "Password must include a number",
+      "password_special": "Password must include a special character",
+      "invalid_email": "Please enter a valid email address",
+      "password_required": "Password is required",
+      "name_min": "Name must be at least 2 characters",
+      "confirm_password_required": "Please confirm your password",
+      "passwords_mismatch": "Passwords do not match"
     }
+  },
+  "profile": {
+    "validation": {
+      "username_min": "Username must be at least 3 characters",
+      "username_regex": "Username can only contain letters, numbers, underscores, and hyphens",
+      "native_language_required": "Native language is required",
+      "target_language_required": "Target language is required"
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "language": "Language",
+    "systemDefault": "System Default"
   },
   "dashboard": {
     "settings": {
@@ -102,7 +156,457 @@
         "show_next_review_description": "Show when each answer schedules the card next",
         "use_target_language": "Use target language for interface",
         "use_target_language_description": "Practice by using the app in the language you are studying"
+      },
+      "tabs": {
+        "profile_languages": "Profile & Languages",
+        "preferences": "Preferences",
+        "security": "Security",
+        "import_export": "Data Import / Export"
+      },
+      "profile": {
+        "title": "Profile Details",
+        "description": "Your public display name and screen username",
+        "username": "Username",
+        "username_placeholder": "Username",
+        "language_title": "Language Preferences",
+        "language_description": "Configure your native language and the language you want to study",
+        "native_language": "Native Language",
+        "target_language": "Target Language",
+        "select_language": "Select language",
+        "save_changes": "Save Changes",
+        "saving": "Saving...",
+        "success": "Settings saved successfully!",
+        "username_taken": "Username is already taken",
+        "unexpected_error": "An unexpected error occurred"
+      },
+      "security": {
+        "title": "Change Password",
+        "description": "Update your account password. You will be logged out of other devices.",
+        "current_password": "Current Password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm New Password",
+        "update_password": "Update Password",
+        "updating": "Updating...",
+        "success": "Password changed successfully!",
+        "unexpected_error": "An unexpected error occurred"
+      },
+      "two_factor": {
+        "title": "Two-factor authentication",
+        "description": "Protect your account with an authenticator app and recovery codes.",
+        "enabled": "Two-factor is enabled",
+        "disabled": "Two-factor is off",
+        "enabled_desc": "You will be asked for a code when signing in.",
+        "disabled_desc": "Add an extra verification step to password sign-in.",
+        "status_enabled": "Enabled",
+        "status_disabled": "Disabled",
+        "password_required": "A password is required",
+        "password_required_desc": "Social-only accounts cannot enable two-factor authentication yet. Sign out, then create a password for this email through the password reset flow.",
+        "sign_out_create_password": "Sign out and create a password",
+        "signing_out": "Signing out...",
+        "enable_two_factor": "Enable two-factor authentication",
+        "save_backup_codes": "Save your backup codes",
+        "new_backup_codes": "Your new backup codes",
+        "regenerate_backup_codes": "Regenerate backup codes",
+        "disable_two_factor": "Disable two-factor authentication",
+        "regenerate_desc": "Your existing backup codes will stop working.",
+        "disable_desc": "Your authenticator and all backup codes will stop working.",
+        "current_password": "Current password",
+        "generate_new_codes": "Generate new codes",
+        "disable_two_factor_btn": "Disable two-factor",
+        "confirming": "Confirming...",
+        "cancel": "Cancel",
+        "scan_qr": "Scan the QR code",
+        "scan_qr_desc": "Add it in your authenticator app, then enter the code it shows.",
+        "manual_setup_key": "Manual setup key",
+        "copy_manual_key": "Copy manual setup key",
+        "manual_key_copied": "Setup key copied.",
+        "manual_key_copy_fail": "Select the setup key and copy it manually.",
+        "manual_setup_help": "Use this key if your app cannot scan the QR code.",
+        "verify_enable": "Verify and enable",
+        "verifying": "Verifying...",
+        "cancel_setup": "Cancel setup",
+        "continue": "Continue",
+        "starting_setup": "Starting setup...",
+        "download_codes": "Download codes",
+        "saved_codes": "I saved my codes",
+        "backup_codes_desc": "This is the only time these codes will be shown. Keep them somewhere secure; each code works once.",
+        "qr_title": "Scan this QR code with your authenticator app",
+        "incorrect_password": "The current password is incorrect.",
+        "already_enabled": "Two-factor authentication is already enabled.",
+        "start_setup_fail": "Could not start two-factor setup. Please try again.",
+        "verify_fail": "Could not verify the code. Please try again.",
+        "invalid_code": "That code is invalid or has expired. Try the current code.",
+        "regenerate_fail": "Could not regenerate backup codes. Please try again.",
+        "disable_fail": "Could not disable two-factor authentication. Please try again.",
+        "sign_out_fail": "Could not sign out. Please try again before creating a password.",
+        "six_digit_req": "Enter the six-digit code from your authenticator app.",
+        "enter_password": "Enter your current password to continue."
+      },
+      "import_export": {
+        "export_title": "Export Data",
+        "export_description": "Download your decks, cards, and study schedule as a backup",
+        "export_error": "Export Error",
+        "json_format": "JSON Format (Full Backup)",
+        "json_desc": "Lossless format. Includes all decks, notes, cards, and review history.",
+        "export_json": "Export JSON",
+        "csv_format": "CSV Format (Basic Cards)",
+        "csv_desc": "Spreadsheet format. Exports basic flashcards with card schedule.",
+        "export_csv": "Export CSV",
+        "import_title": "Import Data",
+        "import_description": "Import decks and cards from a JSON backup or CSV file",
+        "import_error": "Import Error",
+        "import_complete": "Import Complete",
+        "import_success_msg_one": "Successfully imported {{decks}} deck, {{notes}} note, {{cards}} card, and {{reviews}} review event.",
+        "import_success_msg_other": "Successfully imported {{decks}} decks, {{notes}} notes, {{cards}} cards, and {{reviews}} review events.",
+        "drop_here": "Drop file here",
+        "drop_or_browse": "Drop a file or click to browse",
+        "supports_files": "Supports .json and .csv files",
+        "validating": "Validating file…",
+        "validation_error_one": "1 validation error found",
+        "validation_error_other": "{{count}} validation errors found",
+        "validation_more": "…and {{count}} more",
+        "cancel": "Cancel",
+        "import": "Import",
+        "importing": "Importing…",
+        "unsupported_format": "Unsupported file format. Please upload a .json or .csv file.",
+        "read_fail": "Failed to read file",
+        "validate_fail": "Failed to validate file",
+        "import_fail": "Import failed unexpectedly",
+        "export_json_fail": "Failed to export JSON",
+        "export_csv_fail": "Failed to export CSV"
       }
+    },
+    "title": "Dashboard",
+    "description": "Welcome to your language learning portal. Track your vocabulary review progress, explore dictionaries, and build your learning streak.",
+    "aria_sections": "Dashboard sections",
+    "tabs": {
+      "overview": "Overview",
+      "library": "My Library",
+      "playground": "Playground",
+      "statistics": "Statistics",
+      "leaderboard": "Leaderboard",
+      "settings": "Profile & Settings"
+    },
+    "sync": {
+      "synced": "Synced",
+      "syncing": "Syncing…",
+      "offline": "Offline",
+      "failed": "Sync failed",
+      "reset_required": "Reset required",
+      "rejected": "Synced, {{rejected}} not accepted"
+    },
+    "overview": {
+      "badges": {
+        "first_review": {
+          "name": "First Step",
+          "rule": "Complete your first review",
+          "description": "The journey of a thousand miles begins with a single step."
+        },
+        "seven_day": {
+          "name": "Week Warrior",
+          "rule": "7-day streak",
+          "description": "You reviewed 7 days in a row! Consistency is key."
+        },
+        "hundred_reviews": {
+          "name": "Century Mark",
+          "rule": "100 distinct reviews",
+          "description": "You have completed 100 distinct reviews. Incredible dedication!"
+        }
+      },
+      "stats": {
+        "today_reviews": "Today's Reviews",
+        "personal_dictionary": "Personal Dictionary",
+        "learning_streak": "Learning Streak",
+        "words_learned": "Words Learned",
+        "cards": "{{value}} cards",
+        "words": "{{value}} words",
+        "days_one": "1 Day",
+        "days_other": "{{count}} Days",
+        "due_for_review": "Due for review",
+        "added_to_collection": "Added to your collection",
+        "daily_streak": "Daily learning-day streak",
+        "notes_reviewed": "Notes reviewed successfully"
+      },
+      "goals": {
+        "daily_learning_goals": "Daily Learning Goals",
+        "daily_learning_goals_desc": "Complete daily tasks to unlock achievements and progress your fluency.",
+        "daily_review": "Daily Review",
+        "new_vocabulary": "New Vocabulary",
+        "review_20_words": "Review at least 20 words due today",
+        "add_5_words": "Add 5 new words to your personal dictionary",
+        "completed": "Completed",
+        "remaining": "{{value}} remaining",
+        "footer_points": "One review earns one point regardless of rating.",
+        "footer_reset": "Daily challenges and streaks reset at 00:00 UTC."
+      },
+      "profile": {
+        "status": "Status",
+        "online": "Online",
+        "offline": "Offline",
+        "sync": "Sync",
+        "start_review": "Start Review"
+      },
+      "community": {
+        "title": "Community Decks",
+        "description": "Browse and study ready-made vocabulary sets shared by the community.",
+        "load_failed": "Failed to load community decks. Please try again later.",
+        "empty": "No community decks available yet.",
+        "deck_name": "Deck Name",
+        "deck_description": "Description",
+        "cards": "Cards",
+        "action": "Action",
+        "untitled": "Untitled",
+        "by_user": "by @{{username}}",
+        "import": "Import",
+        "report_deck": "Report {{deck}}",
+        "report_description": "Tell the moderation team what is wrong. A report may queue a thorough automatic re-check, but the report alone never hides the deck.",
+        "report_recorded": "Thank you. Your report was recorded.",
+        "report_placeholder": "Describe the problem with this deck",
+        "submit_report": "Submit report"
+      },
+      "achievements": {
+        "title": "Achievements",
+        "description": "Badges you've earned along your language learning journey.",
+        "locked": "Locked",
+        "unlocked": "Unlocked: {{date}}"
+      },
+      "toasts": {
+        "challenge_completed": "Challenge Completed: ",
+        "new_badge": "New Badge Unlocked!"
+      }
+    },
+    "leaderboard": {
+      "title": "Global Leaderboard",
+      "description": "See how you rank against other learners.",
+      "how_it_works": "How scoring works",
+      "how_it_works_description": "One distinct completed review earns exactly one point, regardless of rating (ratings only affect scheduling). Ties are sorted by the earliest time the score was reached, and then by public username.",
+      "top_learners": "Top Learners",
+      "snapshot": "Snapshot from ",
+      "refresh": "Refresh",
+      "failed_to_load": "Failed to load leaderboard",
+      "failed_to_refresh": "Failed to refresh leaderboard. Showing latest snapshot.",
+      "rank": "Rank",
+      "username": "Username",
+      "points": "Points",
+      "no_learners": "No learners found on this page.",
+      "you": "You"
+    },
+    "statistics": {
+      "title": "Your statistics",
+      "description": "Activity from the cards stored on this device.",
+      "deck_label": "Deck",
+      "all_decks": "All decks",
+      "learning_streak": "Learning streak",
+      "consecutive_days": "Consecutive learning days",
+      "days_current_one": "1 day current",
+      "days_current_other": "{{count}} days current",
+      "days_longest_one": "1 day longest",
+      "days_longest_other": "{{count}} days longest",
+      "learned_notes": "Learned notes",
+      "learned_description": "Notes with a successful review",
+      "learned_value": "{{value}} learned",
+      "due_forecast": "Due forecast",
+      "due_forecast_description": "Upcoming review workload",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "next_7_days": "Next 7 days",
+      "card_maturity": "Card maturity",
+      "card_maturity_description": "By scheduled review interval",
+      "ranges": {
+        "week": "Week",
+        "month": "Month",
+        "year": "Year"
+      },
+      "series": {
+        "reviews": "Reviews per day",
+        "notesAdded": "Notes added per day",
+        "forgotRate": "Forgot rate per day"
+      },
+      "empty": "No {{series}} in this range"
+    }
+  },
+  "deck": {
+    "list": {
+      "my_library": "My Library",
+      "add_deck": "Add Deck",
+      "search_placeholder": "Search decks...",
+      "create_deck": "Create Deck",
+      "no_decks": "No decks found matching your search.",
+      "no_decks_empty": "No decks found. Create one to get started!",
+      "my_library_desc": "Manage your custom card decks."
+    },
+    "card": {
+      "no_description": "No description provided.",
+      "due": "Due",
+      "new": "New",
+      "learned": "Learned",
+      "actions": {
+        "study": "Study",
+        "edit": "Edit",
+        "settings": "Settings",
+        "delete": "Delete",
+        "manage_cards": "Manage Cards",
+        "start_review": "Start Review"
+      }
+    },
+    "form": {
+      "title": "Title",
+      "description": "Description",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "delete_title": "Delete Deck",
+      "delete_description": "Are you sure you want to delete this deck? All cards will be permanently removed.",
+      "delete_confirm": "Delete",
+      "visibility_public": "Public",
+      "visibility_private": "Private"
+    }
+  },
+  "review": {
+    "session": {
+      "completed_title": "Session Complete!",
+      "completed_desc": "You have finished all due cards for this session.",
+      "back_to_dashboard": "Back to Dashboard",
+      "cards_reviewed": "Cards Reviewed",
+      "correct_rate": "Correct Rate",
+      "time_spent": "Time Spent"
+    },
+    "card": {
+      "show_answer": "Show Answer",
+      "front": "Front",
+      "back": "Back",
+      "no_front": "No front content",
+      "no_back": "No back content"
+    },
+    "answers": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "dialogs": {
+      "suspend": "Suspend Card",
+      "suspend_desc": "This card will no longer appear in reviews until you unsuspend it.",
+      "edit": "Edit Card",
+      "delete": "Delete Card"
+    }
+  },
+  "playground": {
+    "title": "AI Generation Playground",
+    "description": "Experiment with generating study notes and flashcards from text",
+    "system_prompt": "System Prompt",
+    "user_input": "User Input",
+    "generate_cards": "Generate Cards",
+    "generating": "Generating...",
+    "clear": "Clear",
+    "results": "Results",
+    "no_results": "No results yet. Enter some text and generate!",
+    "error": "An error occurred during generation.",
+    "success": "Generation complete!",
+    "form": {
+      "error_topic": "Subject/Topic cannot be empty",
+      "error_text": "Source text cannot be empty",
+      "error_word": "Word cannot be empty",
+      "error_deck": "Please select a target deck",
+      "error_generic": "An error occurred",
+      "quota_status": "Quota Status",
+      "quota_used": "{{used}}/{{limit}} requests used",
+      "quota_loading": "Loading quota...",
+      "mode_topic": "Topic Deck",
+      "mode_text": "Text Cards",
+      "mode_word": "Word Note",
+      "topic_label": "Subject / Topic",
+      "topic_desc": "Describe what you want to learn (e.g. \"Spanish Nouns\").",
+      "topic_placeholder": "e.g. Spanish Subjunctive",
+      "limit_chars": "Limit {{count}} chars",
+      "text_label": "Source Text",
+      "text_desc": "Paste an article or notes to create cards from.",
+      "text_placeholder": "Paste text here...",
+      "target_deck": "Target Deck",
+      "choose_deck": "-- Choose a Word Deck --",
+      "no_word_decks": "No word decks available. Please create one in the Decks tab.",
+      "word_label": "Word / Translation",
+      "word_placeholder": "e.g. hello, bonjour",
+      "toggle_dir": "Toggle Translation Direction",
+      "dir_target": "Target",
+      "dir_native": "Native",
+      "mode_target_title": "Target Mode:",
+      "mode_target_desc": "Enter a word in the language you are learning (e.g. \"bonjour\") to create its dictionary note.",
+      "mode_native_title": "Native Mode:",
+      "mode_native_desc": "Enter a word in your native language (e.g. \"hello\") to translate it and create a note.",
+      "model_label": "Model Selection",
+      "card_count": "Card Count",
+      "cards": "{{count}} cards",
+      "creating": "Creating...",
+      "create": "Create"
+    },
+    "poll_failed": "Failed to poll job status",
+    "creation_error": "Creation could not be completed. Please try again with a different input.",
+    "poll_network_error": "Unable to update job status. Please check your connection.",
+    "start_error_cards": "Unable to start card creation. Please try again.",
+    "no_stream_error": "Creation response has no stream.",
+    "start_error": "Unable to start creation. Please try again.",
+    "create_failed": "Unable to create.",
+    "created_cards": "Created Cards",
+    "save_cards_error": "Unable to save cards to deck. Please try again.",
+    "save_word_error": "Unable to save word note to deck. Please try again.",
+    "selected_deck": "Selected Deck",
+    "type_topic": "Topic",
+    "type_source": "Source Paragraph",
+    "type_word": "Word",
+    "live_output": "Live Output",
+    "live_output_aria": "Live creation output",
+    "preview": {
+      "save_cards_failed": "Failed to save cards",
+      "results_title": "Creation Results",
+      "results_desc": "Created {{count}} structured flashcard note candidates.",
+      "front": "Front",
+      "back": "Back",
+      "save_db": "Save to Database",
+      "save_db_desc": "Choose deck membership. Saving creates flashcards in your selected deck.",
+      "select_deck": "Select Deck",
+      "create_new": "Create New",
+      "choose_deck": "-- Choose a deck --",
+      "new_deck_name": "New Deck Name",
+      "new_deck_placeholder": "e.g. French Vocab A1",
+      "saving_cards": "Saving to Deck...",
+      "save_cards": "Save Cards to Deck",
+      "deck_saved": "Deck Saved!",
+      "deck_saved_desc": "Cards have been added to your local library.",
+      "save_note_failed": "Failed to save note",
+      "word_note_desc": "Created structured word note candidate.",
+      "word": "Word",
+      "translation": "Translation",
+      "part_of_speech": "Part of Speech",
+      "gender": "Gender",
+      "pronunciation": "Pronunciation",
+      "example": "Example",
+      "example_translation": "Example Translation",
+      "target_deck": "Target Deck:",
+      "saving_note": "Saving to Deck...",
+      "save_note": "Save Note to Deck",
+      "note_saved": "Note Saved!",
+      "note_saved_desc": "The word note has been added to your selected deck."
+    },
+    "tracker": {
+      "pending_label": "Queuing Job",
+      "pending_desc": "Waiting for processor slot",
+      "processing_label": "Processing LLM",
+      "processing_desc": "Querying model and formatting structured output",
+      "completed_label": "Done",
+      "completed_note": "Note created successfully",
+      "completed_cards": "Cards created successfully",
+      "creating_note": "Creating Your Note",
+      "creating_deck": "Creating Your Deck",
+      "error": "Error:"
+    }
+  },
+  "ai": {
+    "validation": {
+      "topic_empty": "Topic cannot be empty",
+      "topic_too_long": "Topic is too long",
+      "source_text_empty": "Source text cannot be empty",
+      "source_text_too_long": "Source text cannot exceed 10000 characters"
     }
   }
 }

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   CardHeader,
@@ -29,6 +30,7 @@ import {
 } from '@repo/offline-db';
 
 export function ImportExport() {
+  const { t } = useTranslation();
   const { db } = useStore();
 
   // ── Export state ──
@@ -80,7 +82,9 @@ export function ImportExport() {
       );
     } catch (err: unknown) {
       setExportError(
-        err instanceof Error ? err.message : 'Failed to export JSON',
+        err instanceof Error
+          ? err.message
+          : t('dashboard.settings.import_export.export_json_fail'),
       );
     } finally {
       setExportingFormat(null);
@@ -97,7 +101,9 @@ export function ImportExport() {
       triggerDownload(content, `flashcards-backup-${dateStr}.csv`, 'text/csv');
     } catch (err: unknown) {
       setExportError(
-        err instanceof Error ? err.message : 'Failed to export CSV',
+        err instanceof Error
+          ? err.message
+          : t('dashboard.settings.import_export.export_csv_fail'),
       );
     } finally {
       setExportingFormat(null);
@@ -109,9 +115,7 @@ export function ImportExport() {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext === 'json') return 'json';
     if (ext === 'csv') return 'csv';
-    throw new Error(
-      'Unsupported file format. Please upload a .json or .csv file.',
-    );
+    throw new Error(t('dashboard.settings.import_export.unsupported_format'));
   };
 
   const readFileContent = (file: File): Promise<string> =>
@@ -121,10 +125,11 @@ export function ImportExport() {
         if (typeof reader.result === 'string') {
           resolve(reader.result);
         } else {
-          reject(new Error('Failed to read file as text'));
+          reject(new Error(t('dashboard.settings.import_export.read_fail')));
         }
       };
-      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.onerror = () =>
+        reject(new Error(t('dashboard.settings.import_export.read_fail')));
       reader.readAsText(file);
     });
 
@@ -146,7 +151,9 @@ export function ImportExport() {
         setImportPhase('previewing');
       } catch (err: unknown) {
         setImportError(
-          err instanceof Error ? err.message : 'Failed to validate file',
+          err instanceof Error
+            ? err.message
+            : t('dashboard.settings.import_export.validate_fail'),
         );
         setImportPhase('idle');
       }
@@ -171,7 +178,9 @@ export function ImportExport() {
       setImportPhase(report.success ? 'done' : 'previewing');
     } catch (err: unknown) {
       setImportError(
-        err instanceof Error ? err.message : 'Import failed unexpectedly',
+        err instanceof Error
+          ? err.message
+          : t('dashboard.settings.import_export.import_fail'),
       );
       setImportPhase('previewing');
     }
@@ -234,9 +243,11 @@ export function ImportExport() {
             <Download className="size-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-bold">Export Data</CardTitle>
+            <CardTitle className="text-base font-bold">
+              {t('dashboard.settings.import_export.export_title')}
+            </CardTitle>
             <CardDescription className="text-xs">
-              Download your decks, cards, and study schedule as a backup
+              {t('dashboard.settings.import_export.export_description')}
             </CardDescription>
           </div>
         </CardHeader>
@@ -245,7 +256,7 @@ export function ImportExport() {
             <Alert variant="destructive" className="rounded-2xl text-xs py-3">
               <AlertCircle className="size-4 shrink-0" />
               <AlertTitle className="text-xs font-bold">
-                Export Error
+                {t('dashboard.settings.import_export.export_error')}
               </AlertTitle>
               <AlertDescription className="text-xs">
                 {exportError}
@@ -258,11 +269,10 @@ export function ImportExport() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 font-bold text-sm">
                   <FileJson className="size-4 text-primary" />
-                  JSON Format (Full Backup)
+                  {t('dashboard.settings.import_export.json_format')}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Lossless format. Includes all decks, notes, cards, and review
-                  history.
+                  {t('dashboard.settings.import_export.json_desc')}
                 </p>
               </div>
               <Button
@@ -278,7 +288,7 @@ export function ImportExport() {
                 ) : (
                   <Download className="size-3.5" />
                 )}
-                Export JSON
+                {t('dashboard.settings.import_export.export_json')}
               </Button>
             </div>
 
@@ -286,11 +296,10 @@ export function ImportExport() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 font-bold text-sm">
                   <FileSpreadsheet className="size-4 text-emerald-500" />
-                  CSV Format (Basic Cards)
+                  {t('dashboard.settings.import_export.csv_format')}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Spreadsheet format. Exports basic flashcards with card
-                  schedule.
+                  {t('dashboard.settings.import_export.csv_desc')}
                 </p>
               </div>
               <Button
@@ -306,7 +315,7 @@ export function ImportExport() {
                 ) : (
                   <Download className="size-3.5" />
                 )}
-                Export CSV
+                {t('dashboard.settings.import_export.export_csv')}
               </Button>
             </div>
           </div>
@@ -320,9 +329,11 @@ export function ImportExport() {
             <Upload className="size-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-bold">Import Data</CardTitle>
+            <CardTitle className="text-base font-bold">
+              {t('dashboard.settings.import_export.import_title')}
+            </CardTitle>
             <CardDescription className="text-xs">
-              Import decks and cards from a JSON backup or CSV file
+              {t('dashboard.settings.import_export.import_description')}
             </CardDescription>
           </div>
         </CardHeader>
@@ -332,7 +343,7 @@ export function ImportExport() {
             <Alert variant="destructive" className="rounded-2xl text-xs py-3">
               <AlertCircle className="size-4 shrink-0" />
               <AlertTitle className="text-xs font-bold">
-                Import Error
+                {t('dashboard.settings.import_export.import_error')}
               </AlertTitle>
               <AlertDescription className="text-xs">
                 {importError}
@@ -345,17 +356,16 @@ export function ImportExport() {
             <Alert className="rounded-2xl text-xs py-3 border-emerald-500/40 bg-emerald-500/5">
               <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
               <AlertTitle className="text-xs font-bold text-emerald-600">
-                Import Complete
+                {t('dashboard.settings.import_export.import_complete')}
               </AlertTitle>
               <AlertDescription className="text-xs text-emerald-600/80">
-                Successfully imported {importReport.counts.decks} deck
-                {importReport.counts.decks !== 1 ? 's' : ''},{' '}
-                {importReport.counts.notes} note
-                {importReport.counts.notes !== 1 ? 's' : ''},{' '}
-                {importReport.counts.cards} card
-                {importReport.counts.cards !== 1 ? 's' : ''}, and{' '}
-                {importReport.counts.review_events} review event
-                {importReport.counts.review_events !== 1 ? 's' : ''}.
+                {t('dashboard.settings.import_export.import_success_msg', {
+                  count: importReport.counts.decks,
+                  decks: importReport.counts.decks,
+                  notes: importReport.counts.notes,
+                  cards: importReport.counts.cards,
+                  reviews: importReport.counts.review_events,
+                })}
               </AlertDescription>
             </Alert>
           )}
@@ -399,11 +409,11 @@ export function ImportExport() {
                 </div>
                 <div className="text-sm font-medium">
                   {isDragging
-                    ? 'Drop file here'
-                    : 'Drop a file or click to browse'}
+                    ? t('dashboard.settings.import_export.drop_here')
+                    : t('dashboard.settings.import_export.drop_or_browse')}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Supports .json and .csv files
+                  {t('dashboard.settings.import_export.supports_files')}
                 </p>
               </button>
             </>
@@ -413,7 +423,9 @@ export function ImportExport() {
           {importPhase === 'validating' && (
             <div className="p-6 rounded-2xl border border-border/40 bg-muted/20 flex flex-col items-center gap-3">
               <RefreshCw className="size-5 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Validating file…</p>
+              <p className="text-sm text-muted-foreground">
+                {t('dashboard.settings.import_export.validating')}
+              </p>
             </div>
           )}
 
@@ -474,8 +486,9 @@ export function ImportExport() {
                 {importReport.errors.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs font-bold text-destructive">
-                      {importReport.errors.length} validation error
-                      {importReport.errors.length !== 1 ? 's' : ''} found
+                      {t('dashboard.settings.import_export.validation_error', {
+                        count: importReport.errors.length,
+                      })}
                     </p>
                     <div className="max-h-40 overflow-y-auto rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-1.5">
                       {importReport.errors.slice(0, 20).map((err, idx) => (
@@ -492,7 +505,10 @@ export function ImportExport() {
                       ))}
                       {importReport.errors.length > 20 && (
                         <p className="text-xs text-destructive/70 pt-1">
-                          …and {importReport.errors.length - 20} more
+                          {t(
+                            'dashboard.settings.import_export.validation_more',
+                            { count: importReport.errors.length - 20 },
+                          )}
                         </p>
                       )}
                     </div>
@@ -509,7 +525,7 @@ export function ImportExport() {
                     disabled={isImportBusy}
                     className="flex-1 rounded-xl cursor-pointer"
                   >
-                    Cancel
+                    {t('dashboard.settings.import_export.cancel')}
                   </Button>
                   <Button
                     type="button"
@@ -523,7 +539,9 @@ export function ImportExport() {
                     ) : (
                       <Upload className="size-3.5" />
                     )}
-                    {importPhase === 'importing' ? 'Importing…' : 'Import'}
+                    {importPhase === 'importing'
+                      ? t('dashboard.settings.import_export.importing')
+                      : t('dashboard.settings.import_export.import')}
                   </Button>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStore, Deck } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +34,7 @@ interface DeckListProps {
 }
 
 export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
+  const { t } = useTranslation();
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
@@ -147,10 +149,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground font-heading">
-              My Library
+              {t('deck.list.my_library')}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Manage your custom card decks.
+              {t('deck.list.my_library_desc', 'Manage your custom card decks.')}
             </p>
           </div>
         </div>
@@ -159,7 +161,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
           className="cursor-pointer gap-1.5 self-start sm:self-center"
         >
           <Plus className="size-4" />
-          Create Deck
+          {t('deck.list.create_deck')}
         </Button>
       </div>
 
@@ -167,16 +169,17 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {store.decks.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 rounded-3xl border border-dashed border-border/85 bg-muted/10 text-center min-h-75">
           <BookOpen className="size-12 text-muted-foreground/60 mb-4 stroke-1 animate-bounce" />
-          <h3 className="text-lg font-semibold mb-1">No Decks Yet</h3>
+          <h3 className="text-lg font-semibold mb-1">
+            {t('deck.list.no_decks_title', 'No Decks Yet')}
+          </h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-6">
-            Create your first deck to start adding learning materials and
-            studying.
+            {t('deck.list.no_decks_empty')}
           </p>
           <Button
             onClick={() => setShowCreateForm(true)}
             className="cursor-pointer"
           >
-            Create First Deck
+            {t('deck.list.create_first', 'Create First Deck')}
           </Button>
         </div>
       ) : (
@@ -208,7 +211,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {/* Create Deck Dialog */}
       {showCreateForm && (
         <DeckForm
-          title="Create New Deck"
+          title={t('deck.form.create_new', 'Create New Deck')}
           showNoteType
           defaultLanguages={{
             nativeLanguageId: store.profile?.native_language_id ?? null,
@@ -223,7 +226,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {/* Edit Deck Dialog */}
       {editingDeck && (
         <DeckForm
-          title="Edit Deck Details"
+          title={t('deck.form.edit_title', 'Edit Deck Details')}
           initialData={{
             title: editingDeck.title,
             description: editingDeck.description || '',
@@ -247,11 +250,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
             <CardHeader>
               <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
                 <Trash2 className="size-5" />
-                Delete Deck?
+                {t('deck.form.delete_title')}
               </CardTitle>
               <CardDescription>
-                This action is permanent. Deleting this deck will also
-                permanently delete all cards inside it.
+                {t('deck.form.delete_description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
@@ -262,7 +264,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   onClick={() => setDeckToDelete(null)}
                   className="cursor-pointer"
                 >
-                  Cancel
+                  {t('deck.form.cancel')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -270,7 +272,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   disabled={isDeleting}
                   className="cursor-pointer"
                 >
-                  Delete Permanently
+                  {t('deck.form.delete_confirm')}
                 </Button>
               </div>
             </CardContent>
