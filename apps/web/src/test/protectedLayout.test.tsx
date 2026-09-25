@@ -32,6 +32,18 @@ vi.mock('@/offline/db', () => {
   };
 });
 
+vi.mock('@/offline/syncProvider', () => ({
+  SyncProvider: ({ children }: { children: React.ReactNode }) => children,
+  useSyncController: () => null,
+  useSyncState: () => ({
+    status: 'idle',
+    lastSyncAt: null,
+    error: null,
+    cause: null,
+    lastResult: null,
+  }),
+}));
+
 const mockSession = {
   session: {
     id: 'session-123',
@@ -264,7 +276,9 @@ describe('Protected Layout Guards', () => {
 
     // Trigger the preferences event to force the effect's listener to re-evaluate
     // the profile object it captured by reference
-    window.dispatchEvent(new CustomEvent('uiPreferencesChanged'));
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('uiPreferencesChanged'));
+    });
 
     expect(changeLanguageSpy).toHaveBeenCalledWith('es');
 
