@@ -75,6 +75,48 @@ export function getNoteDecksQuery(db: Database) {
   return db.get(UserNoteDeck).query(Q.where('active', true));
 }
 
+export async function deckDeletionSummary(db: Database, deckId: string) {
+  const memberships = await db
+    .get(UserNoteDeck)
+    .query(Q.where('deck_id', deckId), Q.where('active', true))
+    .fetch();
+  const noteIds = [
+    ...new Set(memberships.map((membership) => membership.note_id)),
+  ];
+  if (noteIds.length === 0) {
+    return {
+      orphanedNoteIds: [],
+      sharedNoteCount: 0,
+      orphanedCardCount: 0,
+      sharedCardCount: 0,
+    };
+  }
+  const otherMemberships = await db
+    .get(UserNoteDeck)
+    .query(
+      Q.where('note_id', Q.oneOf(noteIds)),
+      Q.where('deck_id', Q.notEq(deckId)),
+      Q.where('active', true),
+    )
+    .fetch();
+  const sharedNoteIds = new Set(
+    otherMemberships.map((membership) => membership.note_id),
+  );
+  const cards = await db
+    .get(UserCard)
+    .query(Q.where('note_id', Q.oneOf(noteIds)))
+    .fetch();
+  const sharedCardCount = cards.filter((card) =>
+    sharedNoteIds.has(card.note_id),
+  ).length;
+  return {
+    orphanedNoteIds: noteIds.filter((noteId) => !sharedNoteIds.has(noteId)),
+    sharedNoteCount: sharedNoteIds.size,
+    orphanedCardCount: cards.length - sharedCardCount,
+    sharedCardCount,
+  };
+}
+
 // ==========================================
 // LOCAL WRITES
 // ==========================================
@@ -154,6 +196,32 @@ export async function deleteDeck(db: Database, deckId: string) {
   });
 }
 
+export async function deleteDeckWithNotes(db: Database, deckId: string) {
+  return await db.write(async () => {
+    const deck = await db.get(UserDeck).find(deckId);
+    const { orphanedNoteIds } = await deckDeletionSummary(db, deckId);
+    const orphanedIds = new Set(orphanedNoteIds);
+    const noteDecks = await db
+      .get(UserNoteDeck)
+      .query(Q.where('deck_id', deckId))
+      .fetch();
+    // ponytail: four reads per orphan; bulk-fetch with Q.oneOf if large decks make deletion slow.
+    const noteDeletions = await Promise.all(
+      orphanedNoteIds.map(async (noteId) => {
+        const note = await db.get(UserNote).find(noteId);
+        return await prepareDeleteNote(db, note);
+      }),
+    );
+    await db.batch([
+      ...noteDeletions.flat(),
+      ...noteDecks
+        .filter((noteDeck) => !orphanedIds.has(noteDeck.note_id))
+        .map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
+      deck.prepareMarkAsDeleted(),
+    ]);
+  });
+}
+
 export async function createCard(
   db: Database,
   deckId: string,
@@ -222,30 +290,34 @@ export async function disableCard(db: Database, cardId: string) {
   });
 }
 
+export async function prepareDeleteNote(db: Database, note: UserNote) {
+  const cards = await db
+    .get(UserCard)
+    .query(Q.where('note_id', note.id))
+    .fetch();
+  const cardIds = cards.map((sibling) => sibling.id);
+  const noteDecks = await db
+    .get(UserNoteDeck)
+    .query(Q.where('note_id', note.id))
+    .fetch();
+  const reviews = cardIds.length
+    ? await db
+        .get(ReviewEvent)
+        .query(Q.where('user_card_id', Q.oneOf(cardIds)))
+        .fetch()
+    : [];
+  return [
+    ...reviews.map((review) => review.prepareMarkAsDeleted()),
+    ...cards.map((sibling) => sibling.prepareMarkAsDeleted()),
+    ...noteDecks.map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
+    note.prepareMarkAsDeleted(),
+  ];
+}
+
 export async function deleteNote(db: Database, noteId: string) {
   return await db.write(async () => {
     const note = await db.get(UserNote).find(noteId);
-    const cards = await db
-      .get(UserCard)
-      .query(Q.where('note_id', noteId))
-      .fetch();
-    const cardIds = cards.map((sibling) => sibling.id);
-    const noteDecks = await db
-      .get(UserNoteDeck)
-      .query(Q.where('note_id', noteId))
-      .fetch();
-    const reviews = cardIds.length
-      ? await db
-          .get(ReviewEvent)
-          .query(Q.where('user_card_id', Q.oneOf(cardIds)))
-          .fetch()
-      : [];
-    await db.batch([
-      ...reviews.map((review) => review.prepareMarkAsDeleted()),
-      ...cards.map((sibling) => sibling.prepareMarkAsDeleted()),
-      ...noteDecks.map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
-      note.prepareMarkAsDeleted(),
-    ]);
+    await db.batch(await prepareDeleteNote(db, note));
   });
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore, Deck } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,11 +38,32 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmCards, setConfirmCards] = useState(false);
+  const [deletionSummary, setDeletionSummary] = useState<Awaited<
+    ReturnType<typeof store.deckDeletionSummary>
+  > | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
   const dueCardsPerDeck = countCardsPerDeck(
     store.noteDecks ?? [],
     store.dueCards ?? [],
   );
+  const { deckDeletionSummary } = store;
+  useEffect(() => {
+    if (!deckToDelete) return;
+    let cancelled = false;
+    void deckDeletionSummary(deckToDelete).then(
+      (summary) => {
+        if (!cancelled) setDeletionSummary(summary);
+      },
+      (err: unknown) => {
+        if (!cancelled)
+          setWriteError(writeErrorMessage(err, 'Failed to count cards'));
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [deckToDelete, deckDeletionSummary]);
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
@@ -80,12 +101,13 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
     }
   };
 
-  const handleDeleteDeck = async () => {
+  const handleDeleteDeck = async (withNotes: boolean) => {
     if (!deckToDelete) return;
     setIsDeleting(true);
     setWriteError(null);
     try {
-      await store.deleteDeck(deckToDelete);
+      if (withNotes) await store.deleteDeckWithNotes(deckToDelete);
+      else await store.deleteDeck(deckToDelete);
       setDeckToDelete(null);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'Failed to delete deck'));
@@ -198,7 +220,12 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}
-                onDeleteDeck={(id) => setDeckToDelete(id)}
+                onDeleteDeck={(id) => {
+                  setWriteError(null);
+                  setDeletionSummary(null);
+                  setConfirmCards(false);
+                  setDeckToDelete(id);
+                }}
               />
             );
           })}
@@ -237,40 +264,99 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {/* Delete Confirmation Dialog */}
       {deckToDelete && (
         <div
-          onClick={() => setDeckToDelete(null)}
+          onClick={() => {
+            if (!isDeleting) setDeckToDelete(null);
+          }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
         >
           <Card
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-deck-title"
+            aria-describedby="delete-deck-description"
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm border border-destructive/20 shadow-2xl animate-in zoom-in-95 duration-200"
           >
             <CardHeader>
-              <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
+              <CardTitle
+                id="delete-deck-title"
+                className="text-lg font-bold text-destructive flex items-center gap-2"
+              >
                 <Trash2 className="size-5" />
-                Delete Deck?
+                {confirmCards
+                  ? `Delete ${deletionSummary?.orphanedCardCount} ${deletionSummary?.orphanedCardCount === 1 ? 'card and its' : 'cards and their'} review history?`
+                  : `Delete "${store.decks.find((deck) => deck.id === deckToDelete)?.title}"?`}
               </CardTitle>
-              <CardDescription>
-                This action is permanent. Deleting this deck will also
-                permanently delete all cards inside it.
+              <CardDescription id="delete-deck-description">
+                {confirmCards ? (
+                  'This cannot be undone.'
+                ) : deletionSummary ? (
+                  <>
+                    {deletionSummary.orphanedCardCount}{' '}
+                    {deletionSummary.orphanedCardCount === 1
+                      ? 'card is'
+                      : 'cards are'}{' '}
+                    only in this deck. Deleting the deck and cards also deletes
+                    their review history.{' '}
+                    {deletionSummary.sharedCardCount > 0 && (
+                      <>
+                        {deletionSummary.sharedCardCount}{' '}
+                        {deletionSummary.sharedCardCount === 1
+                          ? 'card is'
+                          : 'cards are'}{' '}
+                        also in other decks and will be kept.{' '}
+                      </>
+                    )}
+                    Deleting only the deck keeps all cards and their review
+                    history.
+                  </>
+                ) : writeError ? (
+                  'Card counts could not be loaded. Close this dialog and try again.'
+                ) : (
+                  'Counting cards…'
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               <FormErrorMessage message={writeError} className="mb-4" />
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setDeckToDelete(null)}
-                  className="cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteDeck}
+                  onClick={() => {
+                    if (confirmCards) {
+                      setConfirmCards(false);
+                      setWriteError(null);
+                    } else setDeckToDelete(null);
+                  }}
                   disabled={isDeleting}
                   className="cursor-pointer"
                 >
-                  Delete Permanently
+                  {confirmCards ? 'Back' : 'Cancel'}
+                </Button>
+                {!confirmCards && (
+                  <Button
+                    variant="outline"
+                    disabled={isDeleting}
+                    onClick={() => void handleDeleteDeck(false)}
+                    className="cursor-pointer"
+                  >
+                    Delete deck only
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirmCards) void handleDeleteDeck(true);
+                    else setConfirmCards(true);
+                  }}
+                  disabled={isDeleting || !deletionSummary}
+                  className="cursor-pointer"
+                >
+                  {confirmCards
+                    ? 'Delete'
+                    : deletionSummary
+                      ? `Delete deck and ${deletionSummary.orphanedCardCount} ${deletionSummary.orphanedCardCount === 1 ? 'card' : 'cards'}`
+                      : 'Delete deck and cards'}
                 </Button>
               </div>
             </CardContent>
