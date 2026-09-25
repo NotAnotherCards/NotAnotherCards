@@ -489,7 +489,9 @@ export function AiGenerationPlaygroundComponent() {
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||
-                  (currentJob?.error ? (t(currentJob.error as any, currentJob.error) as string) : null) ||
+                  (currentJob?.error
+                    ? (t(currentJob.error as any, currentJob.error) as string)
+                    : null) ||
                   t(
                     'playground.creation_error',
                     'Creation could not be completed. Please try again with a different input.',

@@ -292,7 +292,9 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                       count: deletionSummary?.orphanedCardCount || 0,
                     })
                   : t('deck.form.delete_title_deck', {
-                      title: store.decks.find((deck) => deck.id === deckToDelete)?.title,
+                      title: store.decks.find(
+                        (deck) => deck.id === deckToDelete,
+                      )?.title,
                     })}
               </CardTitle>
               <CardDescription id="delete-deck-description">
@@ -300,10 +302,14 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   t('deck.form.delete_cannot_undo')
                 ) : deletionSummary ? (
                   <>
-                    {t('deck.form.orphaned_cards', { count: deletionSummary.orphanedCardCount })}{' '}
+                    {t('deck.form.orphaned_cards', {
+                      count: deletionSummary.orphanedCardCount,
+                    })}{' '}
                     {deletionSummary.sharedCardCount > 0 && (
                       <>
-                        {t('deck.form.shared_cards', { count: deletionSummary.sharedCardCount })}{' '}
+                        {t('deck.form.shared_cards', {
+                          count: deletionSummary.sharedCardCount,
+                        })}{' '}
                       </>
                     )}
                     {t('deck.form.keep_cards_note')}

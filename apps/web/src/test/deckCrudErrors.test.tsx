@@ -1,10 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import {
-  render,
-  fireEvent,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { DeckList } from '../components/deck/DeckList';
 import type { Deck } from '../hooks/useStore';
 
