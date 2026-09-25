@@ -658,12 +658,6 @@ importers:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
-      esbuild:
-        specifier: 0.28.2
-        version: 0.28.2
-      hermes-engine-cli:
-        specifier: 0.12.0
-        version: 0.12.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -693,6 +687,12 @@ importers:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
+      hermes-engine-cli:
+        specifier: 0.12.0
+        version: 0.12.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3
