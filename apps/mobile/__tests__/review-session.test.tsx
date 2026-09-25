@@ -109,6 +109,15 @@ describe('ReviewSession', () => {
     ).toBeNull();
   });
 
+  it('reveals the answer when the empty answer space is tapped', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByLabelText('Answer, tap to show'));
+    expect(result.getByText('cat')).toBeTruthy();
+    expect(result.getByLabelText('Answer')).toBeTruthy();
+  });
+
   it('follows the saved review preference: four labels and the next interval', async () => {
     saveReviewPreferences('user-1', {
       reviewMode: 'extended',

@@ -647,8 +647,17 @@ function ActiveReviewSession({
           )}
         </Pressable>
         {/* The answer's space is kept before it shows, so revealing
-                does not move the question. */}
-        {(!isFlipped || hasLanded) && (
+                does not move the question; a tap there reveals it too. */}
+        {!isFlipped && (
+          <Pressable
+            style={cardSize}
+            accessibilityRole="button"
+            accessibilityLabel="Answer, tap to show"
+            disabled={isSaving}
+            onPress={() => setIsFlipped(true)}
+          />
+        )}
+        {isFlipped && hasLanded && (
           <View
             style={cardSize}
             accessibilityElementsHidden
