@@ -157,7 +157,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           <div>
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <Library className="size-4 text-primary" />
-              Card Catalog ({filteredCards.length})
+              {filteredCards.length} Cards
             </CardTitle>
           </div>
           {/* Search bar */}
@@ -202,11 +202,11 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
               <div role="rowgroup">
                 <div
                   role="row"
-                  className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                  className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_128px] gap-4 md:!px-6 md:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
                 >
                   <div role="columnheader">Front / Question</div>
                   <div role="columnheader">Back / Answer</div>
-                  <div role="columnheader" className="text-right">
+                  <div role="columnheader" className="text-center">
                     Actions
                   </div>
                 </div>

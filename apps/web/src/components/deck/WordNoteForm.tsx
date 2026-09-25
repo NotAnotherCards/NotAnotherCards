@@ -36,11 +36,21 @@ export type WordFormValues = z.infer<typeof wordFields>;
 // boxes at once reads as work. The required pair is always visible; the rest
 // open on request, and open already if the note being edited uses any.
 const DETAIL_FIELDS = [
-  ['part_of_speech', 'Part of speech', 'noun, verb, adjective'],
-  ['pronunciation', 'Pronunciation', 'IPA'],
   ['example', 'Example', 'a sentence using the word'],
   ['example_translation', 'Example translation', ''],
   ['notes', 'Notes', 'anything you want to remember'],
+] as const;
+
+const PARTS_OF_SPEECH = [
+  ['noun', 'Noun'],
+  ['verb', 'Verb'],
+  ['adjective', 'Adjective'],
+  ['adverb', 'Adverb'],
+  ['pronoun', 'Pronoun'],
+  ['preposition', 'Preposition'],
+  ['conjunction', 'Conjunction'],
+  ['interjection', 'Interjection'],
+  ['other', 'Other'],
 ] as const;
 
 // Blank optional inputs, including whitespace, mean absent in the form.
@@ -73,6 +83,7 @@ interface WordNoteFormProps {
   error?: string | null;
   onCancel: () => void;
   title: string;
+  alwaysShowDetails?: boolean;
 }
 
 export function WordNoteForm({
@@ -84,6 +95,7 @@ export function WordNoteForm({
   onCancel,
   title,
   error,
+  alwaysShowDetails = false,
 }: WordNoteFormProps) {
   const form = useForm<WordFormFields>({
     resolver: zodResolver(wordFormSchema),
@@ -99,6 +111,10 @@ export function WordNoteForm({
     },
   });
   const genders = gendersFor(targetLanguageId);
+  const initialPartOfSpeech = initialData?.part_of_speech ?? '';
+  const hasLegacyPartOfSpeech =
+    Boolean(initialPartOfSpeech) &&
+    !PARTS_OF_SPEECH.some(([value]) => value === initialPartOfSpeech);
   // "Word in German", "Translation in English": the pair is the deck's, and
   // naming it saves the user guessing which box is which.
   const targetName = languageFor(targetLanguageId)?.name;
@@ -108,7 +124,9 @@ export function WordNoteForm({
     ? `Translation in ${nativeName}`
     : 'Translation';
   const [showDetails, setShowDetails] = useState(
-    DETAIL_FIELDS.some(([name]) => Boolean(initialData?.[name])) ||
+    alwaysShowDetails ||
+      DETAIL_FIELDS.some(([name]) => Boolean(initialData?.[name])) ||
+      Boolean(initialData?.part_of_speech) ||
       Boolean(initialData?.gender),
   );
   const [candidateLanguages, setCandidateLanguages] = useState<{
@@ -183,6 +201,10 @@ export function WordNoteForm({
       const value = values[name]?.trim();
       if (value) cleaned[name] = value;
     }
+    const pronunciation = values.pronunciation?.trim();
+    if (pronunciation) cleaned.pronunciation = pronunciation;
+    const partOfSpeech = values.part_of_speech?.trim();
+    if (partOfSpeech) cleaned.part_of_speech = partOfSpeech;
     // gender is offered only where the target language has one
     const gender = values.gender?.trim();
     if (gender && genders.length > 0) cleaned.gender = gender;
@@ -196,6 +218,8 @@ export function WordNoteForm({
         ? 'border-destructive focus-visible:ring-destructive/30'
         : 'border-input focus-visible:ring-ring'
     }`;
+  const textAreaClass = (invalid: boolean) =>
+    `${inputClass(invalid)} field-sizing-content min-h-9 resize-y`;
 
   return (
     <div
@@ -204,7 +228,7 @@ export function WordNoteForm({
     >
       <Card
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg shadow-2xl border border-border/80 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg lg:max-w-3xl shadow-2xl border border-border/80 animate-in zoom-in-95 duration-200"
       >
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
           <CardHeader className="border-b border-border/40 pb-4">
@@ -268,40 +292,41 @@ export function WordNoteForm({
                   )}
                 />
 
-                <button
-                  type="button"
-                  onClick={() => setShowDetails((open) => !open)}
-                  aria-expanded={showDetails}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ChevronDown
-                    className={`size-4 transition-transform ${showDetails ? 'rotate-180' : ''}`}
-                  />
-                  More details
-                </button>
-
-                {showDetails &&
-                  DETAIL_FIELDS.map(([name, label, placeholder]) => (
-                    <Controller
-                      key={name}
-                      name={name}
-                      control={form.control}
-                      render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-                          <input
-                            {...field}
-                            value={field.value ?? ''}
-                            id={field.name}
-                            placeholder={placeholder}
-                            aria-invalid={fieldState.invalid}
-                            className={inputClass(fieldState.invalid)}
-                          />
-                          <FieldError errors={[fieldState.error]} />
-                        </Field>
-                      )}
+                {!alwaysShowDetails && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDetails((open) => !open)}
+                    aria-expanded={showDetails}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronDown
+                      className={`size-4 transition-transform ${showDetails ? 'rotate-180' : ''}`}
                     />
-                  ))}
+                    More details
+                  </button>
+                )}
+
+                {showDetails && (
+                  <Controller
+                    name="pronunciation"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={field.name}>
+                          Pronunciation
+                        </FieldLabel>
+                        <input
+                          {...field}
+                          id={field.name}
+                          placeholder="IPA"
+                          aria-invalid={fieldState.invalid}
+                          className={inputClass(fieldState.invalid)}
+                        />
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                )}
 
                 {showDetails && genders.length > 0 && (
                   <Controller
@@ -328,6 +353,62 @@ export function WordNoteForm({
                     )}
                   />
                 )}
+
+                {showDetails && (
+                  <Controller
+                    name="part_of_speech"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={field.name}>
+                          Part of speech
+                        </FieldLabel>
+                        <select
+                          {...field}
+                          value={field.value ?? ''}
+                          id={field.name}
+                          className={inputClass(fieldState.invalid)}
+                        >
+                          <option value="">Not set</option>
+                          {hasLegacyPartOfSpeech && (
+                            <option value={initialPartOfSpeech}>
+                              {initialPartOfSpeech}
+                            </option>
+                          )}
+                          {PARTS_OF_SPEECH.map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                )}
+
+                {showDetails &&
+                  DETAIL_FIELDS.map(([name, label, placeholder]) => (
+                    <Controller
+                      key={name}
+                      name={name}
+                      control={form.control}
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                          <textarea
+                            {...field}
+                            value={field.value ?? ''}
+                            id={field.name}
+                            placeholder={placeholder}
+                            aria-invalid={fieldState.invalid}
+                            className={textAreaClass(fieldState.invalid)}
+                          />
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
+                      )}
+                    />
+                  ))}
               </FieldGroup>
             </FieldSet>
           </CardContent>
