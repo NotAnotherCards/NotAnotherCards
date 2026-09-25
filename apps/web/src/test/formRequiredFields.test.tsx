@@ -9,15 +9,15 @@ describe('Required deck and card fields', () => {
     render(
       <DeckForm title="Create Deck" onSubmit={onSubmit} onCancel={vi.fn()} />,
     );
-    const title = screen.getByLabelText(/title/i);
+    const title = screen.getByLabelText(/Title/i);
     fireEvent.change(title, { target: { value: ' \t ' } });
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Save/i }));
 
     expect(await screen.findByText('Deck title is required')).toBeVisible();
     expect(onSubmit).not.toHaveBeenCalled();
 
     fireEvent.change(title, { target: { value: ' Travel vocabulary ' } });
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Save/i }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({
       title: 'Travel vocabulary',

@@ -82,7 +82,7 @@ describe('Register screen', () => {
       'Abcdef2!',
     );
     fireEvent.press(getByRole('button', { name: 'Create account' }));
-    expect(await findByText('Passwords do not match')).toBeTruthy();
+    expect(await findByText('auth.validation.passwords_mismatch')).toBeTruthy();
   });
 
   it('shows a friendly message when the server is unreachable', async () => {

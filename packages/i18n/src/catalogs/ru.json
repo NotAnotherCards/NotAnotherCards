@@ -505,12 +505,10 @@
       "aria_front": "Review card"
     },
     "answers": {
-      "again": "Снова",
+      "forgot": "Снова",
       "hard": "Трудно",
-      "good": "Хорошо",
-      "easy": "Легко",
-      "forgot": "Again",
-      "remember": "Good"
+      "remember": "Хорошо",
+      "very_easy": "Легко"
     },
     "dialogs": {
       "suspend": "Отложить карточку",

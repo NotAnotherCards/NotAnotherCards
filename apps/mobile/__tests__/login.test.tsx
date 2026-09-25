@@ -78,7 +78,7 @@ describe('Login screen', () => {
       'not-an-email',
     );
     fireEvent.press(getByText('Log in'));
-    expect(await findByText('Please enter a valid email address')).toBeTruthy();
+    expect(await findByText('auth.validation.invalid_email')).toBeTruthy();
   });
 
   it('shows a friendly message when the server is unreachable', async () => {

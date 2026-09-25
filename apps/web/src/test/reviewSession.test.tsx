@@ -446,7 +446,7 @@ describe('ReviewSession', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 
     expect(screen.getByRole('button', { name: 'Again' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Remembered' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Good' })).toBeVisible();
     expect(
       screen.queryByRole('button', { name: 'Struggled' }),
     ).not.toBeInTheDocument();
@@ -467,9 +467,7 @@ describe('ReviewSession', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 
     expect(screen.getByRole('button', { name: /Again.*5 min/ })).toBeVisible();
-    expect(
-      screen.getByRole('button', { name: /Remembered.*8 days/ }),
-    ).toBeVisible();
+    expect(screen.getByRole('button', { name: /Good.*8 days/ })).toBeVisible();
   });
 
   it('shows all Extended intervals from the existing scheduler ratings', () => {
@@ -587,7 +585,7 @@ describe('ReviewSession', () => {
   it.each([
     ['Again', 'ArrowLeft'],
     ['Struggled', 'ArrowUp'],
-    ['Remembered', 'ArrowRight'],
+    ['Good', 'ArrowRight'],
   ])('moves to the next card after %s', async (_, key) => {
     renderSession([card, secondCard]);
     revealCard();
@@ -978,7 +976,7 @@ describe('ReviewSession', () => {
     );
     expect(
       screen.getByRole('heading', {
-        name: 'Permanently delete this word?',
+        name: 'Are you sure you want to delete this deck? All cards will be permanently removed.',
       }),
     ).toBeInTheDocument();
 

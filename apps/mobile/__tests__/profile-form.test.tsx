@@ -66,15 +66,15 @@ describe('ProfileForm', () => {
     fireEvent.changeText(screen.getByDisplayValue('jane'), 'ab');
     await leaveUsername(screen);
 
-    expect(
-      screen.getByText('Username must be at least 3 characters'),
-    ).toBeTruthy();
+    expect(screen.getByText('profile.validation.username_min')).toBeTruthy();
     expect(onSave).not.toHaveBeenCalled();
 
     // Picking the target language as native empties the target, so the
     // form is incomplete and must not be written either.
     await tapLanguage(screen, /Native language: .*Spanish/);
-    expect(screen.getByText('Target language is required')).toBeTruthy();
+    expect(
+      screen.getByText('profile.validation.target_language_required'),
+    ).toBeTruthy();
     expect(onSave).not.toHaveBeenCalled();
   });
 

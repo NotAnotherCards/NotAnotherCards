@@ -505,12 +505,10 @@
       "aria_front": "Review card"
     },
     "answers": {
-      "again": "Otra vez",
+      "forgot": "Otra vez",
       "hard": "Difícil",
-      "good": "Bien",
-      "easy": "Fácil",
-      "forgot": "Again",
-      "remember": "Good"
+      "remember": "Bien",
+      "very_easy": "Fácil"
     },
     "dialogs": {
       "suspend": "Suspender tarjeta",
