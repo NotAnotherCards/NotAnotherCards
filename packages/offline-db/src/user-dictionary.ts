@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ModelFor, type InferRecord } from '@remelondb/core';
 import { zodTable } from '@remelondb/core/zod';
 import { refineNoteFields } from './note-registry.js';
-import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
+import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/study';
 
 export const DECK_VISIBILITIES = ['private', 'public'] as const;
 export type DeckVisibility = (typeof DECK_VISIBILITIES)[number];

@@ -642,6 +642,9 @@ importers:
       '@repo/schemas':
         specifier: workspace:*
         version: link:../schemas
+      '@repo/study':
+        specifier: workspace:*
+        version: link:../study
       uuid:
         specifier: ^14.0.2
         version: 14.0.2

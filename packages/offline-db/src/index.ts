@@ -176,11 +176,8 @@ export * from './note-reconcile.js';
 export * from './note-writes.js';
 export * from './ids.js';
 export * from './note-constants.js';
-export * from './review-scheduler.js';
-export * from './review-queue.js';
-export * from './review-answers.js';
-export * from './review-preferences.js';
-export * from './cards-by-deck.js';
+// Moved to @repo/study (#430); re-exported so existing imports keep working.
+export * from '@repo/study';
 export * from './statistics.js';
 export { utcDayAt, type UtcDay } from './utc-day.js';
 export * from './sync-schemas.js';

@@ -21,7 +21,7 @@ import {
   type DeckNoteType,
   WORD_NOTE_TYPE,
 } from './note-constants.js';
-import { calculateReviewSchedule } from './review-scheduler.js';
+import { calculateReviewSchedule } from '@repo/study';
 
 // ==========================================
 // QUERIES

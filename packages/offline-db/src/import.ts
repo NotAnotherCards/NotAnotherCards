@@ -6,7 +6,7 @@ import {
   WORD_NOTE_TYPE,
 } from './note-constants.js';
 import { LANGUAGES } from '@repo/schemas';
-import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
+import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/study';
 import {
   UserDeck,
   UserNote,
