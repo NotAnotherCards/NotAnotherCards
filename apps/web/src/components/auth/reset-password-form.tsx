@@ -19,7 +19,6 @@ import { authClient } from '@/lib/auth-client';
 import { useSearch, Link } from '@tanstack/react-router';
 import { passwordSchema } from '@repo/schemas';
 import { CheckCircle2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 const resetPasswordConfirmSchema = z
   .object({

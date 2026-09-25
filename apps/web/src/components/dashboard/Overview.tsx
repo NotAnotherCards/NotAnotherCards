@@ -800,7 +800,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                     {earned && (
                       <p className="text-[10px] text-primary/80 pt-1">
                         {t('dashboard.overview.achievements.unlocked', {
-                          date: formatDate(new Date(earned.unlocked_at), locale),
+                          date: formatDate(
+                            new Date(earned.unlocked_at),
+                            locale,
+                          ),
                         })}
                       </p>
                     )}

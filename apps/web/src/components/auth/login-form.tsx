@@ -24,7 +24,6 @@ import {
   rememberPendingChallenge,
   safeReturnTo,
 } from '@/lib/two-factor-challenge';
-import { useTranslation } from 'react-i18next';
 
 export function LoginComponent() {
   const { t } = useTranslation();

@@ -32,7 +32,6 @@ import {
   Sprout,
   TrendingDown,
 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { formatDate, formatNumber } from '@repo/i18n';
 
 type SeriesKey = 'reviews' | 'notesAdded' | 'forgotRate';
@@ -368,7 +367,12 @@ export function Statistics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="notesAdded" locale={locale} t={t} />
+            <BarSeries
+              rows={series}
+              valueKey="notesAdded"
+              locale={locale}
+              t={t}
+            />
           </CardContent>
         </Card>
         <Card aria-label="Forgot rate per day">
