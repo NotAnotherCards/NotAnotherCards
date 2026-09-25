@@ -19,7 +19,8 @@ import { Text } from './ui/text';
 // card list and the review both open it; onDone runs after a save or a
 // cancel, and the caller decides what shows next. Editing also offers
 // delete: the trash in the header asks in place, then deletes the whole
-// note, and onDeleted (or onDone) runs.
+// note, and onDeleted (or onDone) runs. confirmDelete opens straight at
+// that question, as the review's swipe down does.
 export function CardEditor({
   deck,
   card,
@@ -27,6 +28,7 @@ export function CardEditor({
   writes,
   onDone,
   onDeleted = onDone,
+  confirmDelete = false,
 }: {
   deck: UserDeckRecord;
   card?: CardRecord;
@@ -34,10 +36,11 @@ export function CardEditor({
   writes: ReturnType<typeof cardWrites>;
   onDone: () => void;
   onDeleted?: () => void;
+  confirmDelete?: boolean;
 }) {
   const [writeError, setWriteError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(confirmDelete);
 
   const run = async (write: () => Promise<unknown>, then = onDone) => {
     setWriteError(null);

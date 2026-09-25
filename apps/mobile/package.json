@@ -22,6 +22,7 @@
     "@repo/i18n": "workspace:*",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
+    "@repo/study": "workspace:*",
     "@rn-primitives/label": "^1.5.2",
     "@rn-primitives/slot": "^1.5.2",
     "better-auth": "^1.6.23",

@@ -1,5 +1,10 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { State } from 'react-native-gesture-handler';
+import {
+  fireGestureHandler,
+  getByGestureTestId,
+} from 'react-native-gesture-handler/jest-utils';
 import { ReviewSession } from '@/components/review-session';
 import {
   loadReviewPreferences,
@@ -25,6 +30,7 @@ let mockReviewState: {
     back: string;
     due_at: number;
     scheduled_interval_minutes: number;
+    template_key?: string;
   }>;
   isLoading: boolean;
   error: Error | null;
@@ -120,16 +126,18 @@ describe('ReviewSession', () => {
     expect(result.getByText('3 days')).toBeTruthy();
   });
 
-  it('flips back to the question when the card is tapped again', async () => {
+  it('reveals the answer below the question when the question is tapped', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 
     expect(await result.findByText('gato')).toBeTruthy();
-    fireEvent.press(result.getByLabelText('Show the answer'));
-    expect(result.getByText('cat')).toBeTruthy();
-
-    fireEvent.press(result.getByLabelText('Show the question'));
     expect(result.queryByText('cat')).toBeNull();
+    fireEvent.press(result.getByLabelText('Show the answer'));
+
+    // Both stay, so the answer can be checked against the question.
+    expect(result.getByText('cat')).toBeTruthy();
     expect(result.getByText('gato')).toBeTruthy();
+    fireEvent.press(result.getByLabelText('Question'));
+    expect(result.getByText('cat')).toBeTruthy();
   });
 
   it('follows the saved review preference: four labels and the next interval', async () => {
@@ -162,12 +170,12 @@ describe('ReviewSession', () => {
     );
   });
 
-  it('renders Markdown, shows the back alone after flipping, and records a rating', async () => {
+  it('renders Markdown, keeps the question beside the answer, and records a rating', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 
     expect(await result.findByText('gato')).toHaveStyle({ fontWeight: 'bold' });
     fireEvent.press(result.getByText('Show answer'));
-    expect(result.queryByText('gato')).toBeNull();
+    expect(result.getByText('gato')).toBeTruthy();
     expect(result.getByText('cat')).toHaveStyle({ fontFamily: 'monospace' });
 
     expect(result.getByText('Forgot')).toBeTruthy();
@@ -339,6 +347,45 @@ describe('ReviewSession', () => {
     expect(mockRecord).not.toHaveBeenCalled();
   });
 
+  it('shows the live text of the current card after an edit', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    mockReviewState = {
+      ...mockReviewState,
+      dueCards: [{ ...mockReviewState.dueCards[0]!, front: 'perro' }],
+    };
+    result.rerender(<ReviewSession deckId="d1" />);
+    expect(result.getByText('perro')).toBeTruthy();
+    expect(result.queryByText('gato')).toBeNull();
+  });
+
+  it('drops the other cards of a deleted note from the session', async () => {
+    const card = mockReviewState.dueCards[0]!;
+    mockReviewState = {
+      ...mockReviewState,
+      dueCards: [
+        card,
+        { ...card, id: 'c2', front: 'cat', back: 'gato', due_at: 2 },
+        { ...card, id: 'c3', note_id: 'n2', front: 'perro', due_at: 3 },
+      ],
+    };
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByLabelText('Edit this card'));
+    fireEvent.press(result.getByLabelText('Delete card'));
+    fireEvent.press(result.getByText('Delete'));
+
+    await waitFor(() => expect(mockDeleteNote).toHaveBeenCalledWith('n1'));
+    // The sibling waits for a later batch, which must not bring it back.
+    expect(await result.findByText('perro')).toBeTruthy();
+    fireEvent.press(result.getByText('Show answer'));
+    fireEvent.press(result.getByText('Remembered'));
+    await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c3', 3));
+    expect(await result.findByText('Review complete')).toBeTruthy();
+  });
+
   it('offers no delete for a new card', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 
@@ -346,5 +393,158 @@ describe('ReviewSession', () => {
     fireEvent.press(result.getByLabelText('Add a card'));
     expect(result.getByText('New card')).toBeTruthy();
     expect(result.queryByLabelText('Delete card')).toBeNull();
+  });
+
+  describe('swipe', () => {
+    const drag = (x: number, y: number) =>
+      fireGestureHandler(getByGestureTestId('review-card-swipe'), [
+        { state: State.BEGAN },
+        { state: State.ACTIVE, translationX: x, translationY: y },
+        { state: State.END, translationX: x, translationY: y },
+      ]);
+
+    it('records the answer of a swipe past the threshold after the card leaves', async () => {
+      const result = render(<ReviewSession deckId="d1" />);
+
+      await result.findByText('gato');
+      fireEvent.press(result.getByText('Show answer'));
+      drag(300, 0);
+
+      // remember is rating 3, as the Remembered button records
+      await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
+    });
+
+    it('answers a card once when a button is pressed while it leaves', async () => {
+      const result = render(<ReviewSession deckId="d1" />);
+
+      await result.findByText('gato');
+      fireEvent.press(result.getByText('Show answer'));
+      drag(300, 0);
+      await waitFor(() =>
+        expect(result.getByRole('button', { name: /Forgot/ })).toBeDisabled(),
+      );
+      fireEvent.press(result.getByText('Forgot'));
+      drag(300, 0);
+
+      await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(mockRecord).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the next question in place while the answer is saved', async () => {
+      const card = mockReviewState.dueCards[0]!;
+      mockReviewState = {
+        ...mockReviewState,
+        dueCards: [
+          card,
+          { ...card, id: 'c2', note_id: 'n2', front: 'perro', due_at: 2 },
+        ],
+      };
+      let finishSave = () => {};
+      mockRecord.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishSave = () => resolve({ id: 'review-1' });
+          }),
+      );
+      const result = render(<ReviewSession deckId="d1" />);
+
+      await result.findByText('gato');
+      fireEvent.press(result.getByText('Show answer'));
+      drag(300, 0);
+
+      await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
+      expect(result.queryByText('cat')).toBeNull();
+      expect(result.queryByText('gato')).toBeNull();
+      expect(result.getByText('perro')).toBeTruthy();
+
+      finishSave();
+      expect(await result.findByText('Show answer')).toBeTruthy();
+      expect(result.getByText('perro')).toBeTruthy();
+    });
+
+    it('records nothing for a short drag or before the answer shows', async () => {
+      const result = render(<ReviewSession deckId="d1" />);
+
+      await result.findByText('gato');
+      // Before the answer shows there is no answer card, so nothing to swipe.
+      expect(() => getByGestureTestId('review-card-swipe')).toThrow();
+      fireEvent.press(result.getByText('Show answer'));
+      drag(40, 0);
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(mockRecord).not.toHaveBeenCalled();
+    });
+
+    it('gives hard for up only with four answers', async () => {
+      const result = render(<ReviewSession deckId="d1" />);
+
+      await result.findByText('gato');
+      fireEvent.press(result.getByText('Show answer'));
+      drag(0, -300);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(mockRecord).not.toHaveBeenCalled();
+
+      saveReviewPreferences('user-1', {
+        reviewMode: 'extended',
+        showNextReviewInterval: false,
+      });
+      result.unmount();
+      const extended = render(<ReviewSession deckId="d1" />);
+      await extended.findByText('gato');
+      fireEvent.press(extended.getByText('Show answer'));
+      drag(0, -300);
+      await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 2));
+    });
+
+    it('answers easy down and to the right, only with four answers', async () => {
+      // The test window is 750 wide, so a quarter (188) commits; 250 by 250
+      // is 45 degrees below horizontal.
+      const result = render(<ReviewSession deckId="d1" />);
+      await result.findByText('gato');
+      fireEvent.press(result.getByText('Show answer'));
+      drag(250, 250);
+      await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
+      result.unmount();
+      mockRecord.mockClear();
+
+      saveReviewPreferences('user-1', {
+        reviewMode: 'extended',
+        showNextReviewInterval: false,
+      });
+      const extended = render(<ReviewSession deckId="d1" />);
+      await extended.findByText('gato');
+      fireEvent.press(extended.getByText('Show answer'));
+      drag(250, 250);
+      await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 4));
+    });
+
+    it('opens the delete question for a swipe down', async () => {
+      const result = render(<ReviewSession deckId="d1" />);
+
+      await result.findByText('gato');
+      fireEvent.press(result.getByText('Show answer'));
+      drag(0, 300);
+
+      expect(await result.findByText('Delete "**gato**"?')).toBeTruthy();
+      expect(mockDeleteNote).not.toHaveBeenCalled();
+      expect(mockRecord).not.toHaveBeenCalled();
+    });
+  });
+
+  it("shows a word card's translation and, below it, the rest of the answer", async () => {
+    mockReviewState.dueCards = [
+      {
+        ...mockReviewState.dueCards[0],
+        template_key: 'word-to-translation',
+        back: 'cat\n\nEl gato duerme.',
+      },
+    ];
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Show answer'));
+    expect(result.getByText('cat')).toBeTruthy();
+    expect(result.getByText('El gato duerme.')).toBeTruthy();
   });
 });

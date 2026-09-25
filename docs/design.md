@@ -120,10 +120,19 @@ Animations are designed to be fast and functional: they confirm user actions wit
 - **Reduced motion.** Target standard. Web currently has no `motion-reduce:` usage
   (0 of 128). Newly introduced animated surfaces should pair each animation with
   `motion-reduce:animate-none` / `motion-reduce:transition-none`.
-- **Mobile.** Mobile includes no motion today: 10 Pressables, none using ripple,
-  pressed opacity, or timed transitions, and no `Animated` usage. Touch
-  feedback will arrive with the React Native Reusables adoption (#233); until then
-  its absence is intentional, not an oversight.
+- **Mobile.** The review is the one animated surface, through Reanimated and
+  gesture-handler. Once the answer shows, the answer card follows a swipe,
+  tilts slightly, springs back below the threshold and leaves in the swipe's
+  direction in 260ms before the answer is recorded. With four answers, a
+  swipe down and to the right (30 to 60 degrees) answers easy, towards the
+  Easy button. While it is dragged, the
+  question fades out over the first half of the way and the next question
+  comes in over the second, growing from 95%; both follow the finger, so they
+  apply with reduced motion too. With the system's reduced motion setting on
+  (`useReducedMotion`), the answer is recorded without the flight. Elsewhere
+  mobile has no motion: Pressables use no ripple, pressed opacity or timed
+  transitions. Touch feedback will arrive with the React Native Reusables
+  adoption (#233); until then its absence is intentional, not an oversight.
 
 ## Responsive breakpoints and layout grid
 
