@@ -10,7 +10,7 @@ import {
   type UserDeckRecord,
   type UserNoteDeckRecord,
   type UserNoteRecord,
-  WordNoteFieldsV1,
+  parseWordFields,
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
   cardsForDeck,
@@ -54,11 +54,7 @@ export function useCards(manager: DatabaseManager, deckId: string) {
     ) {
       return false;
     }
-    try {
-      return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
-    } catch {
-      return false;
-    }
+    return parseWordFields(note) !== null;
   };
 
   return {

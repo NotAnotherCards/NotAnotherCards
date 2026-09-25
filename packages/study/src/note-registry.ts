@@ -119,6 +119,19 @@ export const WordNoteFieldsV1 = WordNoteFieldsV1Base.refine(
 );
 export type WordNoteFields = z.output<typeof WordNoteFieldsV1>;
 
+// A stored word note's fields, or null when the JSON is broken or the
+// fields fail word@1. Such a note stays visible but cannot be edited.
+export function parseWordFields(note: {
+  fields_json: string;
+}): WordNoteFields | null {
+  try {
+    const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
 // Sync protocol constants, like BASIC_FRONT_BACK_TEMPLATE_KEY above:
 // each is half of the cardId tuple and must never change. Declared in
 // #157's sibling order (word→translation, translation→word, listen,

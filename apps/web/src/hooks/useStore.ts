@@ -8,7 +8,7 @@ import {
   UserNoteDeckRecord,
   UserProfileRecord,
   type DeckNoteType,
-  WordNoteFieldsV1,
+  parseWordFields,
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
@@ -283,11 +283,7 @@ export function useStore() {
       ) {
         return false;
       }
-      try {
-        return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
-      } catch {
-        return false;
-      }
+      return parseWordFields(note) !== null;
     },
     [notes],
   );

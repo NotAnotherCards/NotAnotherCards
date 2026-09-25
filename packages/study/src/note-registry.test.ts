@@ -3,6 +3,7 @@ import {
   BASIC_FRONT_BACK_TEMPLATE_KEY,
   BasicNoteFieldsV1,
   isBasicCard,
+  parseWordFields,
   noteTypeRegistry,
   validateNoteFieldsJson,
   WordNoteFieldsV1,
@@ -282,5 +283,20 @@ describe('isBasicCard', () => {
     expect(isBasicCard(card, { ...basicNote, note_type: 'word' })).toBe(false);
     expect(isBasicCard(card, { ...basicNote, fields_version: 2 })).toBe(false);
     expect(isBasicCard(card, undefined)).toBe(false);
+  });
+});
+
+describe('parseWordFields', () => {
+  it('returns the fields of a valid word note', () => {
+    expect(parseWordFields({ fields_json: JSON.stringify(word) })).toEqual(
+      word,
+    );
+  });
+
+  it('returns null for broken JSON or fields that fail word@1', () => {
+    expect(parseWordFields({ fields_json: '{not json' })).toBeNull();
+    expect(
+      parseWordFields({ fields_json: JSON.stringify({ word: 'alone' }) }),
+    ).toBeNull();
   });
 });
