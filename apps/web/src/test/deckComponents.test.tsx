@@ -94,7 +94,7 @@ describe('DeckCard Component', () => {
 
     expect(screen.getByTestId('total-words-badge')).toHaveTextContent('1');
     expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('3');
-    expect(screen.getByText('Cards Due')).toBeInTheDocument();
+    expect(screen.getByText('Due')).toBeInTheDocument();
     expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
   });
 
