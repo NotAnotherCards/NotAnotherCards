@@ -1,6 +1,8 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Register from '@/app/register';
+// The app's root loads the catalogs; these render the forms without it.
+import '@/lib/i18n';
 
 const mockReplace = jest.fn();
 
@@ -82,7 +84,7 @@ describe('Register screen', () => {
       'Abcdef2!',
     );
     fireEvent.press(getByRole('button', { name: 'Create account' }));
-    expect(await findByText('auth.validation.passwords_mismatch')).toBeTruthy();
+    expect(await findByText('Passwords do not match')).toBeTruthy();
   });
 
   it('shows a friendly message when the server is unreachable', async () => {
