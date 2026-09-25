@@ -15,6 +15,16 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('@/offline/sessionDatabase', () => ({
   useSessionDatabase: () => ({ manager: {}, syncController: null }),
 }));
+vi.mock('@/offline/syncProvider', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/offline/syncProvider')>();
+  return {
+    ...actual,
+    SyncProvider: ({ children }: { children: React.ReactNode }) => children,
+    useSyncController: vi.fn(() => null),
+    useSyncState: vi.fn(() => ({ status: 'idle' })),
+  };
+});
 vi.mock('@/components/SyncStatus', () => ({ SyncStatus: () => null }));
 vi.mock('@/components/DatabaseBanner', () => ({
   DatabaseBanner: () => <div>banner</div>,

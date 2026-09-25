@@ -120,25 +120,6 @@ vi.mock('@/offline/db', () => {
   };
 });
 
-// Mock @/offline/syncProvider globally – useStore() calls useSyncController()
-// which reads from a React context that only exists inside <SyncProvider>.
-// Without this, any test rendering ProtectedLayoutComponent would crash.
-vi.mock('@/offline/syncProvider', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@/offline/syncProvider')>();
-  return {
-    ...actual,
-    useSyncController: vi.fn(() => null),
-    useSyncState: vi.fn(() => ({
-      status: 'idle',
-      lastSyncAt: null,
-      error: null,
-      cause: null,
-      lastResult: null,
-    })),
-  };
-});
-
 // Mock @tanstack/react-virtual for JSDOM
 vi.mock('@tanstack/react-virtual', async (importOriginal) => {
   const actual =
