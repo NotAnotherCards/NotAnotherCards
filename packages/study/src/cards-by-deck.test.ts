@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countCardsPerDeck } from './cards-by-deck.js';
+import { cardsForDeck, countCardsPerDeck } from './cards-by-deck.js';
 
 const membership = (deck_id: string, note_id: string) => ({
   deck_id,
@@ -38,5 +38,20 @@ describe('countCardsPerDeck', () => {
     expect(counts.get('d1')).toBe(0);
     expect(counts.get('d2')).toBeUndefined();
     expect(countCardsPerDeck([], [])).toEqual(new Map());
+  });
+});
+
+describe('cardsForDeck', () => {
+  const m = (deck_id: string, note_id: string) => ({ deck_id, note_id });
+  const c = (id: string, note_id: string) => ({ id, note_id });
+
+  it('returns the cards of the notes in the deck, in card order', () => {
+    const cards = [c('c3', 'n3'), c('c1', 'n1'), c('c2', 'n1')];
+    const out = cardsForDeck([m('d1', 'n1'), m('d2', 'n3')], cards, 'd1');
+    expect(out.map((x) => x.id)).toEqual(['c1', 'c2']);
+  });
+
+  it('gives an empty list for a deck without notes', () => {
+    expect(cardsForDeck([m('d1', 'n1')], [c('c1', 'n1')], 'd2')).toEqual([]);
   });
 });

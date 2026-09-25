@@ -37,6 +37,7 @@ import {
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
   CreateCardsBatchOptions,
+  cardsForDeck,
 } from '@repo/offline-db';
 
 export type Deck = UserDeckRecord;
@@ -308,14 +309,7 @@ export function useStore() {
   );
 
   const getCardsCount = useCallback(
-    (deckId: string): number => {
-      const noteIds = new Set(
-        noteDecks
-          .filter((noteDeck) => noteDeck.deck_id === deckId)
-          .map((noteDeck) => noteDeck.note_id),
-      );
-      return cards.filter((card) => noteIds.has(card.note_id)).length;
-    },
+    (deckId: string): number => cardsForDeck(noteDecks, cards, deckId).length,
     [cards, noteDecks],
   );
 
@@ -332,14 +326,8 @@ export function useStore() {
   );
 
   const getCardsForDeck = useCallback(
-    (deckId: string): UserCardRecord[] => {
-      const noteIds = new Set(
-        noteDecks
-          .filter((noteDeck) => noteDeck.deck_id === deckId)
-          .map((noteDeck) => noteDeck.note_id),
-      );
-      return cards.filter((card) => noteIds.has(card.note_id));
-    },
+    (deckId: string): UserCardRecord[] =>
+      cardsForDeck(noteDecks, cards, deckId),
     [cards, noteDecks],
   );
 

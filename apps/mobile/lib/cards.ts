@@ -13,9 +13,10 @@ import {
   WordNoteFieldsV1,
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
+  cardsForDeck,
 } from '@repo/offline-db';
 import { cardWrites } from './card-writes';
-import { cardsForDeck, isBasicCard } from './cards-in-deck';
+import { isBasicCard } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
 
 export type Card = UserCardRecord;
