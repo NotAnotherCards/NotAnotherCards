@@ -1,0 +1,108 @@
+{
+  "preferences": {
+    "title": "Preferencias",
+    "language": "Idioma"
+  },
+  "auth": {
+    "error": {
+      "social_login_failed_callback": "El inicio de sesión social ha fallado. Por favor, inténtalo de nuevo o usa otro proveedor.",
+      "social_login_failed": "El inicio de sesión social ha fallado. Por favor, inténtalo de nuevo.",
+      "unexpected": "Ha ocurrido un error inesperado",
+      "social_signup_failed_callback": "El registro social ha fallado. Por favor, inténtalo de nuevo o usa otro proveedor.",
+      "social_signup_failed": "El inicio de sesión social ha fallado. Por favor, inténtalo de nuevo.",
+      "reset_token_missing": "El token de restablecimiento falta o no es válido.",
+      "two_factor_locked": "Demasiados intentos fallidos. Tu cuenta está temporalmente bloqueada. Por favor, inténtalo de nuevo más tarde.",
+      "two_factor_invalid_backup": "Ese código de recuperación es inválido o ya ha sido usado.",
+      "two_factor_invalid_code": "Ese código de autenticación es inválido o ha expirado.",
+      "two_factor_expired": "Esta solicitud de verificación ha expirado. Inicia sesión de nuevo para continuar.",
+      "two_factor_failed": "La verificación ha fallado. Comprueba el código e inténtalo de nuevo.",
+      "two_factor_empty_totp": "Introduce el código de seis dígitos de tu aplicación de autenticación.",
+      "two_factor_empty_backup": "Introduce uno de tus códigos de recuperación.",
+      "two_factor_unavailable": "La verificación no está disponible temporalmente. Por favor, inténtalo de nuevo."
+    },
+    "login": {
+      "title": "¡Bienvenido de nuevo!",
+      "description": "Introduce tu correo electrónico abajo para iniciar sesión",
+      "logging_in": "Iniciando sesión...",
+      "submit": "Iniciar sesión",
+      "continue_with": "O continúa con",
+      "forgot_password": "¿Olvidaste tu contraseña?",
+      "reset_here": "¡Restablécela aquí!",
+      "no_account": "¿No tienes una cuenta?",
+      "sign_up": "Regístrate"
+    },
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "register": {
+      "title": "Crear cuenta",
+      "description": "Introduce tus datos para crear un nuevo perfil",
+      "footerText": "¿Ya tienes una cuenta?",
+      "footerLinkText": "Iniciar sesión",
+      "creating_account": "Creando cuenta...",
+      "submit": "Registrarse"
+    },
+    "forgot_password": {
+      "title": "Contraseña olvidada",
+      "description": "Introduce tu correo electrónico abajo y te enviaremos un correo de restablecimiento de contraseña",
+      "footerLinkText": "Volver a iniciar sesión",
+      "sending_email": "Enviando correo...",
+      "submit": "Enviar enlace de restablecimiento",
+      "success_title": "Revisa tu correo",
+      "success_description": "Te hemos enviado un enlace de restablecimiento de contraseña a tu correo electrónico",
+      "check_inbox_1": "Por favor revisa tu bandeja de entrada para ",
+      "check_inbox_2": ". Si el correo no llega en unos minutos, revisa tu carpeta de spam.",
+      "resend_failed": "Fallo al reenviar el correo",
+      "resend_success": "¡Correo de restablecimiento de contraseña reenviado exitosamente!",
+      "resending": "Reenviando...",
+      "resend_in": "Reenviar correo en {{countdown}}s",
+      "resend": "Reenviar correo"
+    },
+    "reset_password": {
+      "title": "Restablecer contraseña",
+      "description": "Introduce tu nueva contraseña abajo para completar el restablecimiento",
+      "success_title": "Restablecimiento de contraseña",
+      "success_description": "Tu contraseña ha sido actualizada exitosamente",
+      "can_log_in": "Ahora puedes iniciar sesión en tu cuenta con tu nueva contraseña.",
+      "go_to_login": "Ir a Iniciar sesión",
+      "new_password": "Nueva contraseña",
+      "confirm_new_password": "Confirmar nueva contraseña",
+      "updating_password": "Actualizando contraseña...",
+      "submit": "Restablecer contraseña"
+    },
+    "name": "Nombre",
+    "confirm_password": "Confirmar contraseña",
+    "email_placeholder": "nombre@ejemplo.com",
+    "two_factor": {
+      "title": "Verificación en dos pasos",
+      "description_totp": "Introduce el código actual de tu aplicación de autenticación.",
+      "description_backup": "Usa uno de los códigos de recuperación que guardaste durante la configuración.",
+      "authenticator": "Autenticador",
+      "backup_code": "Código de recuperación",
+      "verifying": "Verificando...",
+      "verify_and_continue": "Verificar y continuar",
+      "back_to_sign_in": "Volver al inicio de sesión",
+      "totp_legend": "Código de autenticación de seis dígitos",
+      "totp_digit_aria": "Dígito {{digit}} de {{total}}"
+    }
+  },
+  "dashboard": {
+    "settings": {
+      "preferences": {
+        "title": "Preferencias",
+        "description": "Personaliza tus ajustes y apariencia de la aplicación",
+        "language": "Idioma",
+        "language_description": "Selecciona tu idioma preferido",
+        "theme": "Tema",
+        "theme_description": "Selecciona cómo se ve la aplicación",
+        "review_mode": "Modo de repaso",
+        "review_mode_description": "Elige cuántas opciones de respuesta ves tras revelar una tarjeta",
+        "basic": "Básico",
+        "extended": "Extendido",
+        "show_next_review": "Mostrar próximo intervalo de repaso",
+        "show_next_review_description": "Mostrar para cuándo programa la tarjeta cada respuesta",
+        "use_target_language": "Usar idioma objetivo para la interfaz",
+        "use_target_language_description": "Practica usando la aplicación en el idioma que estás estudiando"
+      }
+    }
+  }
+}

@@ -51,6 +51,8 @@ import {
   type UserBadgeRecord,
   rejectedSummary,
 } from '@repo/offline-db';
+import { useTranslation } from 'react-i18next';
+import { formatNumber, formatDate } from '@repo/i18n';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -170,6 +172,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     store.cards,
     store.notes,
   );
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || 'en';
 
   const user = session?.user || {
     name: 'Legendary Learner',
@@ -222,7 +226,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
     {
       title: 'Words Learned',
-      value: learnedNotes.toLocaleString(),
+      value: formatNumber(learnedNotes, locale),
       description: 'Notes reviewed successfully',
       icon: GraduationCap,
       color: 'text-purple-500 bg-purple-500/10',
@@ -763,7 +767,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                     {earned && (
                       <p className="text-[10px] text-primary/80 pt-1">
                         Unlocked:{' '}
-                        {new Date(earned.unlocked_at).toLocaleDateString()}
+                        {formatDate(new Date(earned.unlocked_at), locale)}
                       </p>
                     )}
                   </div>
