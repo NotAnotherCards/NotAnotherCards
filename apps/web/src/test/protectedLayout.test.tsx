@@ -32,18 +32,6 @@ vi.mock('@/offline/db', () => {
   };
 });
 
-vi.mock('@/offline/syncProvider', () => ({
-  SyncProvider: ({ children }: { children: React.ReactNode }) => children,
-  useSyncController: () => null,
-  useSyncState: () => ({
-    status: 'idle',
-    lastSyncAt: null,
-    error: null,
-    cause: null,
-    lastResult: null,
-  }),
-}));
-
 const mockSession = {
   session: {
     id: 'session-123',
