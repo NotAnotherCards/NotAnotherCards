@@ -17,10 +17,13 @@
     "test": "vitest run",
     "lint": "eslint ."
   },
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "typescript": "5.9.3",
     "vitest": "^4.1.10"
-  },
-  "license": "MIT"
+  }
 }

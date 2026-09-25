@@ -4,7 +4,7 @@ import {
   BASIC_NOTE_TYPE,
   BASIC_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
-} from './note-constants.js';
+} from '@repo/study';
 import { LANGUAGES } from '@repo/schemas';
 import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/study';
 import {
@@ -26,7 +26,7 @@ import {
   noteFieldsSchemas,
   validateNoteFieldsJson,
   compileNote,
-} from './note-registry.js';
+} from '@repo/study';
 
 export interface ImportError {
   row?: number;

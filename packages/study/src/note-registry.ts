@@ -15,7 +15,10 @@ import {
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
 } from './note-constants.js';
-import { BASIC_FRONT_BACK_TEMPLATE_KEY } from './ids.js';
+
+// A template key is half of the tuple hashed by cardId, so changing it would
+// derive a different card ID for the built-in basic note.
+export const BASIC_FRONT_BACK_TEMPLATE_KEY = 'front-back';
 
 export interface RenderedCard {
   readonly front: string;
@@ -25,7 +28,7 @@ export interface RenderedCard {
 /**
  * One sibling card of a note type. `key` is half of the tuple hashed by
  * cardId, so it is a sync protocol constant: changing it re-derives a
- * different card id on every device (see ids.ts).
+ * different card id on every device (see ids.ts in @repo/offline-db).
  *
  * `render` returns null when the fields cannot yield this card, so
  * "can this card exist" and "what does it say" cannot drift apart.
@@ -103,7 +106,7 @@ export const WordNoteFieldsV1 = WordNoteFieldsV1Base.refine(
 );
 export type WordNoteFields = z.output<typeof WordNoteFieldsV1>;
 
-// Sync protocol constants, like BASIC_FRONT_BACK_TEMPLATE_KEY in ids.ts:
+// Sync protocol constants, like BASIC_FRONT_BACK_TEMPLATE_KEY above:
 // each is half of the cardId tuple and must never change. Declared in
 // #157's sibling order (word→translation, translation→word, listen,
 // example) so a progressive-activation policy can later map onto the

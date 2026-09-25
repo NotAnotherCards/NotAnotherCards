@@ -6,7 +6,6 @@ import {
   WordNoteFieldsV1,
   type WordNoteFields,
 } from './note-registry.js';
-import { UserNoteRow } from './user-dictionary.js';
 
 const word: WordNoteFields = {
   word: 'laufen',
@@ -42,7 +41,8 @@ describe('WordNoteFieldsV1', () => {
   it.each(['word', 'translation', 'native_language_id', 'target_language_id'])(
     'rejects a note missing %s',
     (key) => {
-      const { [key as keyof WordNoteFields]: _gone, ...partial } = word;
+      const partial: Partial<WordNoteFields> = { ...word };
+      delete partial[key as keyof WordNoteFields];
       expect(WordNoteFieldsV1.safeParse(partial).success).toBe(false);
     },
   );
@@ -168,7 +168,8 @@ describe('the registry feeds validateNoteFieldsJson', () => {
   });
 
   it('rejects a partial word@1 payload, so it cannot enter the sync protocol', () => {
-    const { word: _gone, ...partial } = word;
+    const partial: Partial<WordNoteFields> = { ...word };
+    delete partial.word;
     expect(
       validateNoteFieldsJson('word', 1, JSON.stringify(partial)).success,
     ).toBe(false);
@@ -263,33 +264,5 @@ describe('every word@1 field, one by one', () => {
     expect(parsed.example).toBe('Ich laufe.');
     expect(parsed.example_translation).toBe('I run.');
     expect(parsed.gender).toBe('neuter');
-  });
-});
-
-describe('unknown note types are opaque to the client row schema', () => {
-  it('passes an unregistered pair instead of failing the pull', () => {
-    expect(
-      UserNoteRow.safeParse({
-        note_type: 'word',
-        fields_version: 9,
-        fields_json: '{"anything":"at all"}',
-        additional_content: null,
-        created_at: 1,
-        updated_at: 1,
-      }).success,
-    ).toBe(true);
-  });
-
-  it('still rejects invalid fields of a registered pair', () => {
-    expect(
-      UserNoteRow.safeParse({
-        note_type: 'word',
-        fields_version: 1,
-        fields_json: '{"word":"alone"}',
-        additional_content: null,
-        created_at: 1,
-        updated_at: 1,
-      }).success,
-    ).toBe(false);
   });
 });

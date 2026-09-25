@@ -29,6 +29,7 @@
     "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },
+  "license": "MIT",
   "devDependencies": {
     "@remelondb/driver-node": "0.3.1",
     "@repo/typescript-config": "workspace:*",
@@ -36,6 +37,5 @@
     "hermes-engine-cli": "0.12.0",
     "typescript": "5.9.3",
     "vitest": "^4.1.10"
-  },
-  "license": "MIT"
+  }
 }
