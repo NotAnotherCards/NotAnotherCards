@@ -48,17 +48,6 @@ export function saveLastReviewDeckId(userId: string, deckId: string) {
   }
 }
 
-export function clearLastReviewDeckId(userId: string) {
-  const storage = getReviewStorage();
-  if (!storage) return;
-
-  try {
-    storage.removeItem(getLastReviewDeckStorageKey(userId));
-  } catch {
-    // Review works without a saved local preference.
-  }
-}
-
 export function getReviewPreferences(
   userId: string | undefined,
 ): ReviewPreferences {

@@ -23,6 +23,7 @@ export function countCardsPerDeck(
   return counts;
 }
 
+// The deck Start review opens, per #425's four rules. Inputs are active-only.
 export function reviewTarget({
   lastDeckId,
   memberships,
