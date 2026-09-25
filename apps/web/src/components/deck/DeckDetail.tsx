@@ -557,7 +557,6 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           canRemoveCard={isKnownDeck}
           onAddCard={() => setShowCreateForm(true)}
           isLoading={!store.ready}
-          error={store.error}
         />
       )}
 

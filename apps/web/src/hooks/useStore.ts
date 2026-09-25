@@ -92,15 +92,11 @@ export function useDelayedLoading(
 }
 
 export function useStore() {
-  const { status, error: managerError } = useDatabaseState();
+  const { status } = useDatabaseState();
   const sync = useSyncController();
 
   const db = useDatabase() as Database | null;
   const isInitializing = status === 'loading' || status === 'idle';
-  const initError =
-    status === 'error'
-      ? managerError?.message || 'Failed to open local database'
-      : null;
 
   const [, setTimeTrigger] = useState(0);
 
@@ -402,7 +398,6 @@ export function useStore() {
     ready,
     showSpinner,
     isLoading,
-    error: initError,
     reconnect,
     createDeck,
     updateDeck,

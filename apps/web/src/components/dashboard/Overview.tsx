@@ -49,6 +49,7 @@ import {
   type ReviewEventRecord,
   UserBadge,
   type UserBadgeRecord,
+  rejectedSummary,
 } from '@repo/offline-db';
 
 type OverviewProps = {
@@ -99,8 +100,10 @@ function DashboardSyncStatus() {
     'resync-required': 'Reset required',
   };
 
-  const statusColor =
-    state.status === 'idle'
+  const { count: rejected, details: rejectionDetails } = rejectedSummary(state);
+  const statusColor = rejected
+    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+    : state.status === 'idle'
       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
       : state.status === 'syncing'
         ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse'
@@ -110,8 +113,13 @@ function DashboardSyncStatus() {
 
   return (
     <div className="flex items-center gap-1.5 font-semibold">
-      <span className={`px-2 py-0.5 rounded-full ${statusColor}`}>
-        {LABELS[state.status] ?? state.status}
+      <span
+        className={`px-2 py-0.5 rounded-full ${statusColor}`}
+        title={rejectionDetails}
+      >
+        {rejected
+          ? `Synced, ${rejected} not accepted`
+          : (LABELS[state.status] ?? state.status)}
       </span>
       {(state.status === 'error' || state.status === 'offline') && (
         <button
