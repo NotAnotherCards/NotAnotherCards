@@ -1,7 +1,10 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ReviewSession } from '@/components/review-session';
-import { saveReviewPreferences } from '@/lib/review-preferences';
+import {
+  loadReviewPreferences,
+  saveReviewPreferences,
+} from '@/lib/review-preferences';
 
 const manager = { tag: 'manager' };
 let mockManager: unknown = manager;
@@ -263,5 +266,50 @@ describe('ReviewSession', () => {
     );
     expect(await result.findByText('1 of 1')).toBeTruthy();
     expect(result.getByText('gato')).toBeTruthy();
+  });
+
+  it('steps through the answer layouts on a long press, without rating', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Show answer'));
+    expect(result.getByText('Forgot')).toBeTruthy();
+
+    fireEvent(result.getByText('Forgot'), 'longPress');
+    expect(result.getByText('Four answers')).toBeTruthy();
+    expect(result.getByText('Hard')).toBeTruthy();
+    expect(result.queryByText('5 min')).toBeNull();
+
+    fireEvent(result.getByText('Again'), 'longPress');
+    expect(result.getByText('Four answers with intervals')).toBeTruthy();
+    expect(result.getByText('5 min')).toBeTruthy();
+
+    fireEvent(result.getByText('Again'), 'longPress');
+    expect(result.getByText('Two answers')).toBeTruthy();
+    expect(result.getByText('Remembered')).toBeTruthy();
+    expect(result.queryByText('5 min')).toBeNull();
+
+    expect(mockRecord).not.toHaveBeenCalled();
+    expect(loadReviewPreferences('user-1')).toEqual({
+      reviewMode: 'basic',
+      showNextReviewInterval: false,
+    });
+  });
+
+  it('leaves basic with intervals out of the cycle', async () => {
+    saveReviewPreferences('user-1', {
+      reviewMode: 'basic',
+      showNextReviewInterval: true,
+    });
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Show answer'));
+    fireEvent(result.getByText('Forgot'), 'longPress');
+
+    expect(loadReviewPreferences('user-1')).toEqual({
+      reviewMode: 'extended',
+      showNextReviewInterval: false,
+    });
   });
 });

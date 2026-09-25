@@ -18,7 +18,10 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
-import { loadReviewPreferences } from '@/lib/review-preferences';
+import {
+  loadReviewPreferences,
+  saveReviewPreferences,
+} from '@/lib/review-preferences';
 import { useCards, type Card as CardRecord } from '@/lib/cards';
 import { useReviewDeck } from '@/lib/review';
 import { CardEditor } from './card-editor';
@@ -88,20 +91,57 @@ export function ReviewSession({ deckId }: { deckId: string }) {
     <ActiveReviewSession
       manager={manager}
       deckId={deckId}
-      preferences={loadReviewPreferences(authSession?.user.id ?? '')}
+      userId={authSession?.user.id ?? ''}
     />
   );
 }
 
+// A long press on an answer steps through the three layouts. Basic with
+// intervals, which settings allow, joins at basic and never comes back
+// from the cycle: two answers do not need the extra line.
+function nextLayout(preferences: ReviewPreferences): ReviewPreferences {
+  if (preferences.reviewMode === 'basic') {
+    return { reviewMode: 'extended', showNextReviewInterval: false };
+  }
+  if (!preferences.showNextReviewInterval) {
+    return { reviewMode: 'extended', showNextReviewInterval: true };
+  }
+  return { reviewMode: 'basic', showNextReviewInterval: false };
+}
+
+const layoutNames = (preferences: ReviewPreferences) =>
+  preferences.reviewMode === 'basic'
+    ? 'Two answers'
+    : preferences.showNextReviewInterval
+      ? 'Four answers with intervals'
+      : 'Four answers';
+
 function ActiveReviewSession({
   manager,
   deckId,
-  preferences,
+  userId,
 }: {
   manager: DatabaseManager;
   deckId: string;
-  preferences: ReviewPreferences;
+  userId: string;
 }) {
+  // Held here, not read once: the long press changes it mid-session, and
+  // saving it keeps settings and the next review in step.
+  const [preferences, setPreferences] = useState(() =>
+    loadReviewPreferences(userId),
+  );
+  const [layoutHint, setLayoutHint] = useState<string | null>(null);
+  useEffect(() => {
+    if (!layoutHint) return;
+    const timer = setTimeout(() => setLayoutHint(null), 2000);
+    return () => clearTimeout(timer);
+  }, [layoutHint]);
+  const switchLayout = () => {
+    const next = nextLayout(preferences);
+    setPreferences(next);
+    if (userId) saveReviewPreferences(userId, next);
+    setLayoutHint(layoutNames(next));
+  };
   const answers =
     preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS;
   const router = useRouter();
@@ -336,6 +376,12 @@ function ActiveReviewSession({
         <Text className="text-center text-destructive">{saveError}</Text>
       ) : null}
 
+      {layoutHint && (
+        <Text className="text-center text-sm text-muted-foreground">
+          {layoutHint}
+        </Text>
+      )}
+
       {!isFlipped ? (
         <Button variant="outline" onPress={() => setIsFlipped(true)}>
           <Text>Show answer</Text>
@@ -351,6 +397,19 @@ function ActiveReviewSession({
               className={`h-auto flex-1 flex-col gap-0.5 px-1 py-2 ${answerColours[answer].button}`}
               disabled={isSaving}
               onPress={() => void record(answer)}
+              // Held a little longer than the default, so a slow answer
+              // is not taken for a layout switch. Never records a rating.
+              delayLongPress={600}
+              onLongPress={switchLayout}
+              accessibilityActions={[
+                {
+                  name: 'layout',
+                  label: `Switch to ${layoutNames(nextLayout(preferences)).toLowerCase()}`,
+                },
+              ]}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === 'layout') switchLayout();
+              }}
             >
               <Text className={answerColours[answer].text}>
                 {preferences.reviewMode === 'extended'
