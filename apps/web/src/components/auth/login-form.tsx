@@ -25,7 +25,6 @@ import {
   safeReturnTo,
 } from '@/lib/two-factor-challenge';
 
-
 export function LoginComponent() {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { SocialLoginButton } from '@/components/auth/social-login-button';
 
-
 export function RegisterComponent() {
   const { t } = useTranslation();
   const navigate = useNavigate();

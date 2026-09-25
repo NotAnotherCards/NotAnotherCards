@@ -20,7 +20,6 @@ import { useSearch, Link } from '@tanstack/react-router';
 import { passwordSchema } from '@repo/schemas';
 import { CheckCircle2 } from 'lucide-react';
 
-
 const resetPasswordConfirmSchema = z
   .object({
     password: passwordSchema,

@@ -361,7 +361,12 @@ export function Statistics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="notesAdded" locale={locale} t={t} />
+            <BarSeries
+              rows={series}
+              valueKey="notesAdded"
+              locale={locale}
+              t={t}
+            />
           </CardContent>
         </Card>
         <Card aria-label="Forgot rate per day">
