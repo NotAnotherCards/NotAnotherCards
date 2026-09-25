@@ -32,10 +32,7 @@ import { useReportDeck } from '@/hooks/useReportDeck';
 import { useStore } from '@/hooks/useStore';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
 import { useNavigate } from '@tanstack/react-router';
-import {
-  clearLastReviewDeckId,
-  getLastReviewDeckId,
-} from '@/lib/review-preferences';
+import { getLastReviewDeckId } from '@/lib/review-preferences';
 import { gamificationMeSchema, type SharedDeckSummary } from '@repo/schemas';
 import {
   selectTodayChallengeActivity,
@@ -50,7 +47,10 @@ import {
   UserBadge,
   type UserBadgeRecord,
   rejectedSummary,
+  reviewTarget,
 } from '@repo/offline-db';
+import { useTranslation } from 'react-i18next';
+import { formatNumber, formatDate } from '@repo/i18n';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -170,31 +170,24 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     store.cards,
     store.notes,
   );
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || 'en';
 
   const user = session?.user || {
     name: 'Legendary Learner',
     email: 'learner@notanothercards.com',
   };
 
+  const target = reviewTarget({
+    lastDeckId: session?.user.id ? getLastReviewDeckId(session.user.id) : null,
+    memberships: store.noteDecks,
+    cards: store.cards,
+    now: Date.now(),
+  });
   const handleStartReview = () => {
-    const userId = session?.user.id;
-    if (!userId) {
-      onChooseDeck();
-      return;
-    }
-
-    const lastDeckId = getLastReviewDeckId(userId);
-    const lastDeckStillExists = (store.decks || []).some(
-      (deck) => deck.id === lastDeckId,
-    );
-
-    if (lastDeckId && lastDeckStillExists) {
-      void navigate({ to: '/deck-review', search: { deckId: lastDeckId } });
-      return;
-    }
-
-    if (lastDeckId) clearLastReviewDeckId(userId);
-    onChooseDeck();
+    if (target === 'nothing-due') return;
+    if (target === 'library') onChooseDeck();
+    else void navigate({ to: '/deck-review', search: { deckId: target } });
   };
 
   // Dynamic statistics from local remelonDB store
@@ -222,7 +215,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
     {
       title: 'Words Learned',
-      value: learnedNotes.toLocaleString(),
+      value: formatNumber(learnedNotes, locale),
       description: 'Notes reviewed successfully',
       icon: GraduationCap,
       color: 'text-purple-500 bg-purple-500/10',
@@ -500,6 +493,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 className="flex-1 cursor-pointer gap-1.5"
                 size="sm"
                 onClick={handleStartReview}
+                disabled={target === 'nothing-due'}
               >
                 <Library className="size-3.5" />
                 Start Review
@@ -763,7 +757,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                     {earned && (
                       <p className="text-[10px] text-primary/80 pt-1">
                         Unlocked:{' '}
-                        {new Date(earned.unlocked_at).toLocaleDateString()}
+                        {formatDate(new Date(earned.unlocked_at), locale)}
                       </p>
                     )}
                   </div>

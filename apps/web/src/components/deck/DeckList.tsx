@@ -133,33 +133,6 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
     return null;
   }
 
-  if (store.error) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 rounded-3xl border border-destructive/25 bg-destructive/5 text-center min-h-60 space-y-4 animate-in fade-in duration-200">
-        <div className="p-3 rounded-2xl bg-destructive/10 text-destructive">
-          <AlertCircle className="size-8" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-destructive">
-            Failed to Load Decks
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            {store.error ||
-              'An error occurred while loading your library. Please try reloading.'}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          className="cursor-pointer gap-1.5"
-          onClick={() => window.location.reload()}
-        >
-          <RefreshCw className="size-4" />
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header and Controls */}

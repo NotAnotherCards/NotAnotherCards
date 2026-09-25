@@ -31,6 +31,8 @@ import {
   Sprout,
   TrendingDown,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { formatDate, formatNumber } from '@repo/i18n';
 
 type SeriesKey = 'reviews' | 'notesAdded' | 'forgotRate';
 
@@ -54,15 +56,15 @@ const RANGES = [
   { value: 'year', label: 'Year' },
 ] as const;
 
-const monthLabel = (utcMonth: string) =>
-  new Date(`${utcMonth}-01T00:00:00Z`).toLocaleDateString('en', {
+const monthLabel = (utcMonth: string, locale: string) =>
+  formatDate(new Date(`${utcMonth}-01T00:00:00Z`), locale, {
     month: 'short',
     year: '2-digit',
     timeZone: 'UTC',
   });
 
-const shortDate = (utcDate: string) =>
-  new Date(`${utcDate}T00:00:00Z`).toLocaleDateString('en', {
+const shortDate = (utcDate: string, locale: string) =>
+  formatDate(new Date(`${utcDate}T00:00:00Z`), locale, {
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
@@ -80,21 +82,23 @@ function BarSeries({
   rows,
   valueKey,
   percentage = false,
+  locale,
 }: {
   rows: readonly SeriesRow[];
   valueKey: SeriesKey;
   percentage?: boolean;
+  locale: string;
 }) {
   const values = rows.map((row) => row[valueKey]);
   const peak = Math.max(...values, 0);
   const ceiling = percentage ? 1 : Math.max(peak, 1);
   const format = (value: number) =>
     percentage
-      ? new Intl.NumberFormat('en', {
+      ? formatNumber(value, locale, {
           style: 'percent',
           maximumFractionDigits: 1,
-        }).format(value)
-      : value.toLocaleString();
+        })
+      : formatNumber(value, locale);
   // Values fit above the bars in the 7-day range only; 30 bars are too narrow.
   const showValues = rows.length <= 7;
   const latest = rows.at(-1)?.key;
@@ -154,6 +158,8 @@ export function Statistics() {
   );
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [deckId, setDeckId] = useState('');
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || 'en';
   const now = Date.now();
   const rows = useMemo(
     () =>
@@ -174,7 +180,7 @@ export function Statistics() {
         }).map((row) => ({
           ...row,
           key: row.utcMonth,
-          label: monthLabel(row.utcMonth),
+          label: monthLabel(row.utcMonth, locale),
         }))
       : selectDailyCounts(rows.reviewEvents, rows.notes, {
           days: range === 'week' ? 7 : 30,
@@ -182,7 +188,7 @@ export function Statistics() {
         }).map((row) => ({
           ...row,
           key: row.utcDate,
-          label: shortDate(row.utcDate),
+          label: shortDate(row.utcDate, locale),
         }));
   const streak = selectStreakActivity(rows.reviewEvents, now);
   const learnedNotes = selectLearnedNoteCount(
@@ -249,7 +255,7 @@ export function Statistics() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {learnedNotes.toLocaleString()} learned
+              {formatNumber(learnedNotes, locale)} learned
             </p>
           </CardContent>
         </Card>
@@ -321,7 +327,7 @@ export function Statistics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="reviews" />
+            <BarSeries rows={series} valueKey="reviews" locale={locale} />
           </CardContent>
         </Card>
         <Card aria-label="Notes added per day">
@@ -332,7 +338,7 @@ export function Statistics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="notesAdded" />
+            <BarSeries rows={series} valueKey="notesAdded" locale={locale} />
           </CardContent>
         </Card>
         <Card aria-label="Forgot rate per day">
@@ -343,7 +349,12 @@ export function Statistics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarSeries rows={series} valueKey="forgotRate" percentage />
+            <BarSeries
+              rows={series}
+              valueKey="forgotRate"
+              percentage
+              locale={locale}
+            />
           </CardContent>
         </Card>
       </div>
