@@ -1,4 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { authClient } from '@/lib/auth-client';
 import { useStore } from '@/hooks/useStore';
@@ -63,6 +69,7 @@ describe('Settings Tab Component Specs', () => {
   const mockUpdateUserProfile = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     vi.mocked(useStore).mockReset();
 
@@ -236,7 +243,8 @@ describe('Settings Tab Component Specs', () => {
   });
 
   it('saves modifications successfully and calls useStore.updateUserProfile', async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<Settings />);
 
     const usernameInput = screen.getByLabelText(/Username/i);
@@ -269,6 +277,14 @@ describe('Settings Tab Component Specs', () => {
     expect(
       await screen.findByText('Settings saved successfully!'),
     ).toBeInTheDocument();
+
+    // Verify the banner clears itself three seconds later
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(screen.queryByText('Settings saved successfully!')).toBeNull();
+
+    vi.useRealTimers();
   });
 
   it('displays error and rejects saving when the username is already taken', async () => {
@@ -358,7 +374,8 @@ describe('Settings Tab Component Specs', () => {
       getCardsCount: () => 0,
     } as unknown as ReturnType<typeof useStore>);
 
-    const user = userEvent.setup();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const { rerender } = render(<Settings />);
 
     const usernameInput = screen.getByLabelText(
@@ -385,6 +402,14 @@ describe('Settings Tab Component Specs', () => {
 
     // Success banner should disappear immediately
     expect(screen.queryByText('Settings saved successfully!')).toBeNull();
+
+    // The pending auto-dismiss timer must not resurface anything either
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(screen.queryByText('Settings saved successfully!')).toBeNull();
+
+    vi.useRealTimers();
   });
 
   it('navigates to Security subtab and renders change password form without Log Out card', async () => {
@@ -465,4 +490,241 @@ describe('Settings Tab Component Specs', () => {
       await screen.findByText('Password changed successfully!'),
     ).toBeInTheDocument();
   });
+
+  it('cancels the profile banner timer when unmounted after a save', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    const { unmount } = render(<Settings />);
+
+    await user.selectOptions(
+      screen.getByLabelText(/Native Language/i),
+      '00000000-0000-0000-0000-000000000003',
+    );
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    expect(
+      await screen.findByText('Settings saved successfully!'),
+    ).toBeInTheDocument();
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+
+    clearTimeoutSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('cancels the password banner timer when unmounted after a save', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    vi.mocked(authClient.changePassword).mockResolvedValue({
+      data: { status: true },
+      error: null,
+    });
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    const { unmount } = render(<Settings />);
+
+    await user.click(screen.getByRole('button', { name: /^Security$/i }));
+    await user.type(
+      screen.getByLabelText(/Current Password/i),
+      'CurrentPassword1!',
+    );
+    await user.type(
+      screen.getByLabelText(/^New Password$/i),
+      'NewPassword123!',
+    );
+    await user.type(
+      screen.getByLabelText(/Confirm New Password/i),
+      'NewPassword123!',
+    );
+    await user.click(screen.getByRole('button', { name: /Update Password/i }));
+    expect(
+      await screen.findByText('Password changed successfully!'),
+    ).toBeInTheDocument();
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+
+    clearTimeoutSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('still saves when unmounted during the username check', async () => {
+    // Switching sub-tabs unmounts Profile; a save already in flight must
+    // finish, only its state updates are dropped.
+    let finishCheck!: () => void;
+    global.fetch = vi.fn().mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          finishCheck = () =>
+            resolve({
+              ok: true,
+              json: () => Promise.resolve({ available: true }),
+            } as Response);
+        }),
+    );
+    const user = userEvent.setup();
+    const { unmount } = render(<Settings />);
+
+    const usernameInput = screen.getByLabelText(/Username/i);
+    await user.clear(usernameInput);
+    await user.type(usernameInput, 'fresh_username');
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledOnce());
+
+    unmount();
+    await act(async () => {
+      finishCheck();
+    });
+
+    await waitFor(() =>
+      expect(mockUpdateUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ username: 'fresh_username' }),
+      ),
+    );
+  });
+
+  it('does not schedule the profile banner timer when unmounted during a save', async () => {
+    let finishSave!: () => void;
+    mockUpdateUserProfile.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const { unmount } = render(<Settings />);
+
+    await user.selectOptions(
+      screen.getByLabelText(/Native Language/i),
+      '00000000-0000-0000-0000-000000000003',
+    );
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(mockUpdateUserProfile).toHaveBeenCalledOnce());
+
+    unmount();
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    await act(async () => {
+      finishSave();
+    });
+
+    expect(
+      setTimeoutSpy.mock.calls.filter(([, delay]) => delay === 3000),
+    ).toHaveLength(0);
+    setTimeoutSpy.mockRestore();
+  });
+
+  it('does not schedule the password banner timer when unmounted during a save', async () => {
+    let finishSave!: () => void;
+    vi.mocked(authClient.changePassword).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishSave = () => resolve({ data: { status: true }, error: null });
+        }),
+    );
+    const user = userEvent.setup();
+    const { unmount } = render(<Settings />);
+
+    await user.click(screen.getByRole('button', { name: /^Security$/i }));
+    await user.type(
+      screen.getByLabelText(/Current Password/i),
+      'CurrentPassword1!',
+    );
+    await user.type(
+      screen.getByLabelText(/^New Password$/i),
+      'NewPassword123!',
+    );
+    await user.type(
+      screen.getByLabelText(/Confirm New Password/i),
+      'NewPassword123!',
+    );
+    await user.click(screen.getByRole('button', { name: /Update Password/i }));
+    await waitFor(() =>
+      expect(authClient.changePassword).toHaveBeenCalledOnce(),
+    );
+
+    unmount();
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    await act(async () => {
+      finishSave();
+    });
+
+    expect(
+      setTimeoutSpy.mock.calls.filter(([, delay]) => delay === 5000),
+    ).toHaveLength(0);
+    setTimeoutSpy.mockRestore();
+  });
+
+  it.each([
+    {
+      section: 'profile',
+      message: 'Settings saved successfully!',
+      duration: 3000,
+    },
+    {
+      section: 'password',
+      message: 'Password changed successfully!',
+      duration: 5000,
+    },
+  ])(
+    'replaces and cancels the $section timer across repeated saves',
+    async ({ section, message, duration }) => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(authClient.changePassword).mockResolvedValue({
+          data: { status: true },
+          error: null,
+        });
+        const { unmount } = render(<Settings />);
+        if (section === 'password') {
+          fireEvent.click(screen.getByRole('button', { name: /^Security$/i }));
+        }
+        const save = async () => {
+          await act(async () => {
+            if (section === 'profile') {
+              fireEvent.change(screen.getByLabelText(/Native Language/i), {
+                target: { value: '00000000-0000-0000-0000-000000000003' },
+              });
+              fireEvent.click(
+                screen.getByRole('button', { name: /Save Changes/i }),
+              );
+            } else {
+              fireEvent.change(screen.getByLabelText(/Current Password/i), {
+                target: { value: 'CurrentPassword1!' },
+              });
+              fireEvent.change(screen.getByLabelText(/^New Password$/i), {
+                target: { value: 'NewPassword123!' },
+              });
+              fireEvent.change(screen.getByLabelText(/Confirm New Password/i), {
+                target: { value: 'NewPassword123!' },
+              });
+              fireEvent.click(
+                screen.getByRole('button', { name: /Update Password/i }),
+              );
+            }
+          });
+          expect(screen.getByText(message)).toBeInTheDocument();
+          expect(vi.getTimerCount()).toBe(1);
+        };
+        await save();
+        await act(() => vi.advanceTimersByTime(1000));
+        await save();
+        await act(() => vi.advanceTimersByTime(duration - 1000));
+        expect(screen.getByText(message)).toBeInTheDocument();
+        await act(() => vi.advanceTimersByTime(999));
+        expect(screen.getByText(message)).toBeInTheDocument();
+        await act(() => vi.advanceTimersByTime(1));
+        expect(screen.queryByText(message)).not.toBeInTheDocument();
+        await save();
+        unmount();
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.clearAllTimers();
+        vi.useRealTimers();
+      }
+    },
+  );
 });

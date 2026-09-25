@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { Save, Check, Shield } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { z } from 'zod';
 import { TwoFactorSecurity } from './TwoFactorSecurity';
 
@@ -49,6 +50,8 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 export function Security() {
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
+  const { schedule: scheduleSuccessDismiss } = useDismissTimer(5000);
+  const mounted = useRef(true);
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -59,6 +62,13 @@ export function Security() {
     },
   });
 
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const onPasswordSubmit = async (data: PasswordFormValues) => {
     setSecurityError(null);
     setSecuritySuccess(null);
@@ -68,6 +78,7 @@ export function Security() {
         newPassword: data.newPassword,
         revokeOtherSessions: true,
       });
+      if (!mounted.current) return;
 
       if (error) {
         throw new Error(error.message || 'Failed to update password');
@@ -79,10 +90,11 @@ export function Security() {
         newPassword: '',
         confirmPassword: '',
       });
-      setTimeout(() => {
+      scheduleSuccessDismiss(() => {
         setSecuritySuccess(null);
-      }, 5000);
+      });
     } catch (err) {
+      if (!mounted.current) return;
       setSecurityError(
         err instanceof Error ? err.message : 'An unexpected error occurred',
       );

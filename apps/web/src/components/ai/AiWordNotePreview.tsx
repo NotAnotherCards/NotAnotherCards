@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AiWordNoteCandidate } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
+import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
@@ -19,23 +20,27 @@ export function AiWordNotePreview({
 }: AiWordNotePreviewProps) {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { schedule: scheduleSuccessDismiss } = useDismissTimer(3000);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    if (savedSuccess) {
-      timeout = setTimeout(() => setSavedSuccess(false), 3000);
-    }
+    mounted.current = true;
     return () => {
-      if (timeout) clearTimeout(timeout);
+      mounted.current = false;
     };
-  }, [savedSuccess]);
+  }, []);
 
   const handleSave = async () => {
     setSaveError(null);
     try {
       await onSave();
+      if (!mounted.current) return;
       setSavedSuccess(true);
+      scheduleSuccessDismiss(() => {
+        setSavedSuccess(false);
+      });
     } catch (err) {
+      if (!mounted.current) return;
       const msg = err instanceof Error ? err.message : 'Failed to save note';
       setSaveError(msg);
     }

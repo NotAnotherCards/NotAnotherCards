@@ -184,13 +184,9 @@
         "ai_generation_jobs_user_id_user_id_fk": {
           "name": "ai_generation_jobs_user_id_user_id_fk",
           "tableFrom": "ai_generation_jobs",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -285,13 +281,9 @@
         "ai_usage_user_id_user_id_fk": {
           "name": "ai_usage_user_id_user_id_fk",
           "tableFrom": "ai_usage",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -407,13 +399,9 @@
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -499,13 +487,9 @@
         "session_user_id_user_id_fk": {
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -514,9 +498,7 @@
       "uniqueConstraints": {
         "session_token_unique": {
           "name": "session_token_unique",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "nullsNotDistinct": false
         }
       },
@@ -609,13 +591,9 @@
         "two_factor_user_id_user_id_fk": {
           "name": "two_factor_user_id_user_id_fk",
           "tableFrom": "two_factor",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -703,9 +681,7 @@
       "uniqueConstraints": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "nullsNotDistinct": false
         }
       },
@@ -831,13 +807,9 @@
         "badge_awards_user_id_user_id_fk": {
           "name": "badge_awards_user_id_user_id_fk",
           "tableFrom": "badge_awards",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -845,10 +817,7 @@
       "compositePrimaryKeys": {
         "badge_awards_user_code_pk": {
           "name": "badge_awards_user_code_pk",
-          "columns": [
-            "user_id",
-            "badge_code"
-          ]
+          "columns": ["user_id", "badge_code"]
         }
       },
       "uniqueConstraints": {},
@@ -918,13 +887,9 @@
         "daily_challenge_completions_user_id_user_id_fk": {
           "name": "daily_challenge_completions_user_id_user_id_fk",
           "tableFrom": "daily_challenge_completions",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -932,11 +897,7 @@
       "compositePrimaryKeys": {
         "daily_challenge_completions_user_code_date_pk": {
           "name": "daily_challenge_completions_user_code_date_pk",
-          "columns": [
-            "user_id",
-            "challenge_code",
-            "utc_date"
-          ]
+          "columns": ["user_id", "challenge_code", "utc_date"]
         }
       },
       "uniqueConstraints": {},
@@ -1060,13 +1021,9 @@
         "deck_reports_reporter_user_id_user_id_fk": {
           "name": "deck_reports_reporter_user_id_user_id_fk",
           "tableFrom": "deck_reports",
-          "columnsFrom": [
-            "reporter_user_id"
-          ],
+          "columnsFrom": ["reporter_user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1419,13 +1376,9 @@
         "review_events_user_id_user_id_fk": {
           "name": "review_events_user_id_user_id_fk",
           "tableFrom": "review_events",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1546,13 +1499,9 @@
         "user_badges_user_id_user_id_fk": {
           "name": "user_badges_user_id_user_id_fk",
           "tableFrom": "user_badges",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1561,10 +1510,7 @@
       "uniqueConstraints": {
         "user_badges_user_badge_uk": {
           "name": "user_badges_user_badge_uk",
-          "columns": [
-            "user_id",
-            "badge_id"
-          ],
+          "columns": ["user_id", "badge_id"],
           "nullsNotDistinct": false
         }
       },
@@ -1754,13 +1700,9 @@
         "user_cards_user_id_user_id_fk": {
           "name": "user_cards_user_id_user_id_fk",
           "tableFrom": "user_cards",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1914,13 +1856,9 @@
         "user_decks_user_id_user_id_fk": {
           "name": "user_decks_user_id_user_id_fk",
           "tableFrom": "user_decks",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -2086,13 +2024,9 @@
         "user_note_decks_user_id_user_id_fk": {
           "name": "user_note_decks_user_id_user_id_fk",
           "tableFrom": "user_note_decks",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -2225,13 +2159,9 @@
         "user_notes_user_id_user_id_fk": {
           "name": "user_notes_user_id_user_id_fk",
           "tableFrom": "user_notes",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -2364,13 +2294,9 @@
         "user_profiles_user_id_user_id_fk": {
           "name": "user_profiles_user_id_user_id_fk",
           "tableFrom": "user_profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "user",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -2379,9 +2305,7 @@
       "uniqueConstraints": {
         "user_profiles_username_unique": {
           "name": "user_profiles_username_unique",
-          "columns": [
-            "username"
-          ],
+          "columns": ["username"],
           "nullsNotDistinct": false
         }
       },
