@@ -150,7 +150,7 @@ describe('deck note actions', () => {
     );
   });
 
-  it('repairs readable partial word data or removes it from the deck', async () => {
+  it('removes an invalid word through its fallback row', async () => {
     store.decks[0].note_type = 'word';
     store.decks[0].native_language_id = 'deck-native';
     store.decks[0].target_language_id = 'deck-target';
@@ -159,11 +159,7 @@ describe('deck note actions', () => {
         id: 'note-1',
         note_type: 'word',
         fields_version: 1,
-        fields_json: JSON.stringify({
-          word: 'Hund',
-          image: 'image-1',
-          word_audio: 'audio-1',
-        }),
+        fields_json: '{not valid json',
         additional_content: null,
         created_at: 0,
         updated_at: 0,
@@ -171,29 +167,7 @@ describe('deck note actions', () => {
     ]);
 
     render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
-    fireEvent.click(screen.getByText('Word data needs repair'));
-    fireEvent.click(screen.getByRole('button', { name: 'Repair word' }));
-
-    expect(screen.getByText('Repair word')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/^translation$/i), {
-      target: { value: 'dog' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-
-    await waitFor(() =>
-      expect(store.updateNoteFields).toHaveBeenCalledWith('note-1', {
-        word: 'Hund',
-        translation: 'dog',
-        native_language_id: 'deck-native',
-        target_language_id: 'deck-target',
-        image: 'image-1',
-        word_audio: 'audio-1',
-      }),
-    );
-
-    store.updateNoteFields.mockClear();
-    fireEvent.click(screen.getByText('Word data needs repair'));
-    fireEvent.click(screen.getByRole('button', { name: 'Repair word' }));
+    expect(screen.getByText("This word can't be shown")).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove word' }));
 
     expect(screen.getByText('Remove Word from Deck?')).toBeInTheDocument();

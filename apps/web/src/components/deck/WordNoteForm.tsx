@@ -82,7 +82,6 @@ interface WordNoteFormProps {
   onSubmit: (values: WordFormValues) => void | Promise<void>;
   error?: string | null;
   onCancel: () => void;
-  onRemove?: () => void;
   title: string;
   alwaysShowDetails?: boolean;
 }
@@ -94,7 +93,6 @@ export function WordNoteForm({
   nativeLanguageId,
   onSubmit,
   onCancel,
-  onRemove,
   title,
   error,
   alwaysShowDetails = false,
@@ -429,35 +427,25 @@ export function WordNoteForm({
               <FormErrorMessage message="The deck languages changed. Generate a new candidate or reopen the form before saving." />
             )}
             {error && <FormErrorMessage message={error} />}
-            <div className="flex w-full items-center gap-2">
-              {onRemove && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={onRemove}
-                  disabled={form.formState.isSubmitting}
-                >
-                  Remove word
-                </Button>
-              )}
-              <div className="ml-auto flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={form.formState.isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={
-                    form.formState.isSubmitting || staleCandidate || generating
-                  }
-                >
-                  {form.formState.isSubmitting ? 'Saving…' : 'Save'}
-                </Button>
-              </div>
+            <div className="flex gap-2 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={onCancel}
+                disabled={form.formState.isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={
+                  form.formState.isSubmitting || staleCandidate || generating
+                }
+              >
+                {form.formState.isSubmitting ? 'Saving…' : 'Save'}
+              </Button>
             </div>
           </CardFooter>
         </form>

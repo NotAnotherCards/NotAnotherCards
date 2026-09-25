@@ -7,11 +7,7 @@ import {
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { languageFor } from '@repo/schemas';
-import {
-  inspectWordFields,
-  parseWordFields,
-  type RecoverableWordFields,
-} from './word-note-fields';
+import { parseWordFields } from './word-note-fields';
 
 type WordCardBadge = 'Word' | 'Translation' | 'Example';
 
@@ -28,8 +24,6 @@ export interface WordRow {
 export interface InvalidWordRow {
   readonly note: UserNoteRecord;
   readonly cards: readonly Card[];
-  readonly problem: 'recoverable' | 'unreadable';
-  readonly initialData?: RecoverableWordFields;
 }
 
 export type WordListRow = WordRow | InvalidWordRow;
@@ -108,17 +102,8 @@ export function toWordListRow(
   note: UserNoteRecord,
   noteCards: readonly Card[],
 ): WordListRow {
-  const result = inspectWordFields(note);
-  if (result.kind === 'valid') {
-    return rowFromFields(note, noteCards, result.fields);
-  }
-  if (result.kind === 'recoverable') {
-    return {
-      note,
-      cards: noteCards,
-      problem: 'recoverable',
-      initialData: result.initialData,
-    };
-  }
-  return { note, cards: noteCards, problem: 'unreadable' };
+  const fields = parseWordFields(note);
+  return fields
+    ? rowFromFields(note, noteCards, fields)
+    : { note, cards: noteCards };
 }

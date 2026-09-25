@@ -18,13 +18,7 @@ import {
   Unlink,
 } from 'lucide-react';
 import { type UserNoteRecord } from '@repo/offline-db';
-import {
-  toWordListRow,
-  type InvalidWordRow,
-  type WordListRow,
-} from './word-note-rows';
-import { type RecoverableWordFields } from './word-note-fields';
-import { WordNoteDialog } from './WordNoteDialog';
+import { toWordListRow, type WordListRow } from './word-note-rows';
 
 // Word rows switch once: a stacked layout below 880px and a table above it.
 const WORD_TABLE_LAYOUT = {
@@ -41,10 +35,6 @@ interface WordNoteListProps {
   dueCards: Card[];
   onViewNote: (note: UserNoteRecord) => void;
   onEditWord: (note: UserNoteRecord) => void;
-  onRepairWord: (
-    note: UserNoteRecord,
-    initialData: RecoverableWordFields,
-  ) => void;
   onRemoveWord: (note: UserNoteRecord) => void;
   canEdit: boolean;
   canRemove: boolean;
@@ -57,14 +47,12 @@ export function WordNoteList({
   dueCards,
   onViewNote,
   onEditWord,
-  onRepairWord,
   onRemoveWord,
   canEdit,
   canRemove,
   onAddWord,
 }: WordNoteListProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [problemRow, setProblemRow] = useState<InvalidWordRow | null>(null);
   const cardsByNoteId = useMemo(() => {
     const result = new Map<string, Card[]>();
     for (const card of cards) {
@@ -82,7 +70,7 @@ export function WordNoteList({
     [notes, cardsByNoteId],
   );
   const filteredRows = rows.filter((row) => {
-    if ('problem' in row) return searchTerm.trim() === '';
+    if (!('fields' in row)) return searchTerm.trim() === '';
     const search = searchTerm.toLowerCase();
     return (
       row.word.toLowerCase().includes(search) ||
@@ -173,23 +161,25 @@ export function WordNoteList({
                     aria-rowindex={index + 2}
                     className="grid grid-cols-1 items-center @[880px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-3 @[880px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
                   >
-                    {'problem' in row ? (
+                    {!('fields' in row) ? (
                       <div
                         role="cell"
-                        className="col-span-full rounded-lg border border-amber-500/40 bg-amber-500/5"
+                        className="col-span-full flex items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-3"
                       >
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-3 px-3 py-3 text-left text-amber-900 dark:text-amber-200"
-                          onClick={() => setProblemRow(row)}
-                        >
-                          <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                          <span className="text-sm font-medium">
-                            {row.problem === 'recoverable'
-                              ? 'Word data needs repair'
-                              : 'Word data cannot be read'}
-                          </span>
-                        </button>
+                        <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span className="mr-auto text-sm font-medium text-amber-900 dark:text-amber-200">
+                          This word can't be shown
+                        </span>
+                        {canRemove && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="cursor-pointer"
+                            onClick={() => onRemoveWord(row.note)}
+                          >
+                            Remove word
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -292,58 +282,6 @@ export function WordNoteList({
           </div>
         )}
       </CardContent>
-      {problemRow && (
-        <WordNoteDialog
-          label={
-            problemRow.problem === 'recoverable'
-              ? 'Word data needs repair'
-              : 'Word data cannot be read'
-          }
-          onClose={() => setProblemRow(null)}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-bold text-amber-800 dark:text-amber-300">
-              <AlertCircle className="size-5" />
-              {problemRow.problem === 'recoverable'
-                ? 'Word data needs repair'
-                : 'Word data cannot be read'}
-            </CardTitle>
-            {problemRow.problem === 'recoverable' && (
-              <p className="text-sm text-muted-foreground">
-                Some saved fields are missing or invalid.
-              </p>
-            )}
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex flex-wrap justify-end gap-2">
-              {problemRow.problem === 'recoverable' && (
-                <Button
-                  onClick={() => {
-                    onRepairWord(problemRow.note, problemRow.initialData ?? {});
-                    setProblemRow(null);
-                  }}
-                >
-                  Repair word
-                </Button>
-              )}
-              <Button variant="outline" onClick={() => setProblemRow(null)}>
-                Leave word
-              </Button>
-              {canRemove && (
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    onRemoveWord(problemRow.note);
-                    setProblemRow(null);
-                  }}
-                >
-                  Remove word
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </WordNoteDialog>
-      )}
     </UICard>
   );
 }
