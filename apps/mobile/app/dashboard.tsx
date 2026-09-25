@@ -133,6 +133,8 @@ function ReviewOverview({
       <Button
         variant="outline"
         size="lg"
+        // 48 high, Android's touch target size.
+        className="h-12 sm:h-12"
         loading={isLoading}
         disabled={!!error || target === 'nothing-due'}
         onPress={startReview}
