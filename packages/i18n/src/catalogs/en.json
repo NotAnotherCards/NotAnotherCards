@@ -1,0 +1,108 @@
+{
+  "preferences": {
+    "title": "Preferences",
+    "language": "Language"
+  },
+  "auth": {
+    "error": {
+      "social_login_failed_callback": "Social login failed. Please try again or use another provider.",
+      "social_login_failed": "Social login failed. Please try again.",
+      "unexpected": "An unexpected error occurred",
+      "social_signup_failed_callback": "Social signup failed. Please try again or use another provider.",
+      "social_signup_failed": "Social login failed. Please try again.",
+      "reset_token_missing": "Reset token is missing or invalid.",
+      "two_factor_locked": "Too many failed attempts. Your account is temporarily locked. Please try again later.",
+      "two_factor_invalid_backup": "That backup code is invalid or has already been used.",
+      "two_factor_invalid_code": "That authentication code is invalid or has expired.",
+      "two_factor_expired": "This verification request has expired. Sign in again to continue.",
+      "two_factor_failed": "Verification failed. Check the code and try again.",
+      "two_factor_empty_totp": "Enter the six-digit code from your authenticator app.",
+      "two_factor_empty_backup": "Enter one of your backup codes.",
+      "two_factor_unavailable": "Verification is temporarily unavailable. Please try again."
+    },
+    "login": {
+      "title": "Welcome Back",
+      "description": "Enter your email below to log in to your account",
+      "logging_in": "Logging in...",
+      "submit": "Login",
+      "continue_with": "Or continue with",
+      "forgot_password": "Forgot your password?",
+      "reset_here": "Reset here!",
+      "no_account": "Don't have an account?",
+      "sign_up": "Sign up"
+    },
+    "email": "Email",
+    "password": "Password",
+    "register": {
+      "title": "Create Account",
+      "description": "Enter your details to create a new profile",
+      "footerText": "Already have an account?",
+      "footerLinkText": "Sign in",
+      "creating_account": "Creating account...",
+      "submit": "Sign up"
+    },
+    "forgot_password": {
+      "title": "Forgotten Password",
+      "description": "Enter your email below and we will send you a password reset email",
+      "footerLinkText": "Back to login",
+      "sending_email": "Sending email...",
+      "submit": "Send Reset Link",
+      "success_title": "Check your email",
+      "success_description": "We've sent a password reset link to your email",
+      "check_inbox_1": "Please check your inbox for ",
+      "check_inbox_2": ". If the email doesn't arrive in a few minutes, check your spam folder.",
+      "resend_failed": "Failed to resend email",
+      "resend_success": "Password reset email resent successfully!",
+      "resending": "Resending...",
+      "resend_in": "Resend email in {{countdown}}s",
+      "resend": "Resend email"
+    },
+    "reset_password": {
+      "title": "Reset Password",
+      "description": "Enter your new password below to complete the reset",
+      "success_title": "Password Reset",
+      "success_description": "Your password has been successfully updated",
+      "can_log_in": "You can now log in to your account with your new password.",
+      "go_to_login": "Go to Login",
+      "new_password": "New Password",
+      "confirm_new_password": "Confirm New Password",
+      "updating_password": "Updating password...",
+      "submit": "Reset Password"
+    },
+    "name": "Name",
+    "confirm_password": "Confirm Password",
+    "email_placeholder": "name@example.com",
+    "two_factor": {
+      "title": "Two-factor verification",
+      "description_totp": "Enter the current code from your authenticator app.",
+      "description_backup": "Use one of the backup codes you saved during setup.",
+      "authenticator": "Authenticator",
+      "backup_code": "Backup code",
+      "verifying": "Verifying...",
+      "verify_and_continue": "Verify and continue",
+      "back_to_sign_in": "Back to sign in",
+      "totp_legend": "Six-digit authentication code",
+      "totp_digit_aria": "Digit {{digit}} of {{total}}"
+    }
+  },
+  "dashboard": {
+    "settings": {
+      "preferences": {
+        "title": "Preferences",
+        "description": "Customize your application settings and appearance",
+        "language": "Language",
+        "language_description": "Select your preferred language",
+        "theme": "Theme",
+        "theme_description": "Select how the application looks to you",
+        "review_mode": "Review mode",
+        "review_mode_description": "Choose how many answer options you see after revealing a card",
+        "basic": "Basic",
+        "extended": "Extended",
+        "show_next_review": "Show next review interval",
+        "show_next_review_description": "Show when each answer schedules the card next",
+        "use_target_language": "Use target language for interface",
+        "use_target_language_description": "Practice by using the app in the language you are studying"
+      }
+    }
+  }
+}
