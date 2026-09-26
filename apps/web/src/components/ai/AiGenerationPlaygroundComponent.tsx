@@ -490,10 +490,7 @@ export function AiGenerationPlaygroundComponent() {
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||
                   (currentJob?.error
-                    ? (t(
-                        currentJob.error,
-                        currentJob.error,
-                      ) as string)
+                    ? (t(currentJob.error, currentJob.error) as string)
                     : null) ||
                   t(
                     'playground.creation_error',
