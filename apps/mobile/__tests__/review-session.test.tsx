@@ -6,18 +6,23 @@ import { saveReviewPreferences } from '@/lib/review-preferences';
 const manager = { tag: 'manager' };
 let mockManager: unknown = manager;
 const mockRecord = jest.fn(() => Promise.resolve({ id: 'review-1' }));
+const mockReadDueCards = jest.fn<Promise<Card[]>, []>(() =>
+  Promise.resolve([]),
+);
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
+type Card = {
+  id: string;
+  note_id: string;
+  front: string;
+  back: string;
+  due_at: number;
+  scheduled_interval_minutes: number;
+};
 let mockReviewState: {
   deck: { id: string; title: string } | null;
-  dueCards: Array<{
-    id: string;
-    note_id: string;
-    front: string;
-    back: string;
-    due_at: number;
-    scheduled_interval_minutes: number;
-  }>;
+  dueCards: Card[];
+  readDueCards: typeof mockReadDueCards;
   isLoading: boolean;
   error: Error | null;
   writes: { record: typeof mockRecord } | null;
@@ -40,6 +45,8 @@ jest.mock('expo-router', () => ({
 beforeEach(() => {
   mockManager = manager;
   mockRecord.mockClear();
+  mockReadDueCards.mockClear();
+  mockReadDueCards.mockResolvedValue([]);
   mockReplace.mockClear();
   mockBack.mockClear();
   mockReviewState = {
@@ -54,6 +61,7 @@ beforeEach(() => {
         scheduled_interval_minutes: 0,
       },
     ],
+    readDueCards: mockReadDueCards,
     isLoading: false,
     error: null,
     writes: { record: mockRecord },
@@ -135,6 +143,53 @@ describe('ReviewSession', () => {
     fireEvent.press(result.getByText('Remembered'));
     await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
     expect(await result.findByText('Review complete')).toBeTruthy();
+  });
+
+  it('builds the next batch from a fresh read, not the opening snapshot', async () => {
+    // Nothing else was due when the session started; a card synced in while
+    // the learner was answering, so it belongs in the next batch.
+    mockReadDueCards.mockResolvedValue([
+      {
+        id: 'c2',
+        note_id: 'n2',
+        front: 'perro',
+        back: 'dog',
+        due_at: 2,
+        scheduled_interval_minutes: 0,
+      },
+    ]);
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Show answer'));
+    fireEvent.press(result.getByText('Remembered'));
+
+    expect(await result.findByText('perro')).toBeTruthy();
+    expect(result.queryByText('Review complete')).toBeNull();
+  });
+
+  it('drops a card from the opening snapshot that is gone by the next batch', async () => {
+    // A sibling of the first card, so the batch rules leave it for the next
+    // batch. It was deleted meanwhile, so the fresh read no longer has it.
+    mockReviewState.dueCards = [
+      ...mockReviewState.dueCards,
+      {
+        id: 'c2',
+        note_id: 'n1',
+        front: 'perro',
+        back: 'dog',
+        due_at: 2,
+        scheduled_interval_minutes: 0,
+      },
+    ];
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Show answer'));
+    fireEvent.press(result.getByText('Remembered'));
+
+    expect(await result.findByText('Review complete')).toBeTruthy();
+    expect(result.queryByText('perro')).toBeNull();
   });
 
   it('shows a no-due-cards state and returns to the deck', async () => {
