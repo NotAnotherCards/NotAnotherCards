@@ -307,6 +307,13 @@ function LandingFooter() {
       >
         Privacy Policy
       </a>
+      <span aria-hidden="true">·</span>
+      <a
+        className="underline underline-offset-4 hover:text-foreground"
+        href="/terms"
+      >
+        Terms of Service
+      </a>
     </footer>
   );
 }

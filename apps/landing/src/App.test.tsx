@@ -9,6 +9,11 @@ const privacyHtml = readFileSync(
   resolve(process.cwd(), 'privacy.html'),
   'utf8',
 );
+const termsHtml = readFileSync(resolve(process.cwd(), 'terms.html'), 'utf8');
+const landingNginxConfig = readFileSync(
+  resolve(process.cwd(), '../../landing.nginx.conf'),
+  'utf8',
+);
 
 describe('App', () => {
   afterEach(() => {
@@ -52,12 +57,15 @@ describe('App', () => {
     }
   });
 
-  it('links the public landing footer to the privacy policy', () => {
+  it('links the public landing footer to both legal pages', () => {
     render(<App />);
 
     expect(
       screen.getByRole('link', { name: 'Privacy Policy' }),
     ).toHaveAttribute('href', '/privacy');
+    expect(
+      screen.getByRole('link', { name: 'Terms of Service' }),
+    ).toHaveAttribute('href', '/terms');
   });
 
   it('ships a static privacy policy for Meta crawlers', () => {
@@ -96,6 +104,34 @@ describe('App', () => {
     expect(privacyText).toContain('Resend or an SMTP email provider');
     expect(privacyText).toContain('on your mobile device');
     expect(privacyDocument.querySelector('script')).toBeNull();
+  });
+
+  it('ships static terms with its canonical URL and legal content', () => {
+    const termsDocument = new DOMParser().parseFromString(
+      termsHtml,
+      'text/html',
+    );
+
+    expect(termsDocument.title).toBe('NotAnotherCards — Terms of Service');
+    expect(
+      termsDocument
+        .querySelector('link[rel="canonical"]')
+        ?.getAttribute('href'),
+    ).toBe('https://notanothercards.com/terms');
+    expect(
+      termsDocument
+        .querySelector('meta[property="og:url"]')
+        ?.getAttribute('content'),
+    ).toBe('https://notanothercards.com/terms');
+    expect(termsDocument.querySelector('h1')?.textContent?.trim()).toBe(
+      'Terms of Service',
+    );
+    expect(termsDocument.querySelector('#terms-open-source')).not.toBeNull();
+    expect(termsDocument.body.textContent).toContain('MIT License');
+    expect(
+      termsDocument.querySelector('a[href="/privacy"]')?.textContent?.trim(),
+    ).toBe('Privacy Policy');
+    expect(termsDocument.querySelector('script')).toBeNull();
   });
 
   it('renders word cards for an unknown route instead of the landing page', () => {
@@ -170,5 +206,17 @@ describe('App', () => {
     expect(
       existsSync(resolve(process.cwd(), 'public/brand/og-image.png')),
     ).toBe(true);
+  });
+
+  it('allows only the known legal page routes through the landing server', () => {
+    expect(landingNginxConfig).toMatch(
+      /location = \/privacy \{\s+try_files \/privacy\.html =404;/,
+    );
+    expect(landingNginxConfig).toMatch(
+      /location = \/terms \{\s+try_files \/terms\.html =404;/,
+    );
+    expect(landingNginxConfig).toMatch(
+      /location \/ \{\s+try_files \$uri =404;\s+\}/,
+    );
   });
 });
