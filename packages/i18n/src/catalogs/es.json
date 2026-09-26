@@ -330,14 +330,16 @@
         "personal_dictionary": "Diccionario Personal",
         "learning_streak": "Racha de Aprendizaje",
         "words_learned": "Palabras Aprendidas",
-        "cards": "{{value}} tarjetas",
-        "words": "{{value}} palabras",
         "days_one": "1 Día",
         "days_other": "{{count}} Días",
         "due_for_review": "Para repasar",
         "added_to_collection": "Añadidas a tu colección",
         "daily_streak": "Racha diaria de aprendizaje",
-        "notes_reviewed": "Notas repasadas con éxito"
+        "notes_reviewed": "Notas repasadas con éxito",
+        "cards_one": "1 tarjeta",
+        "cards_other": "{{count}} tarjetas",
+        "words_one": "1 palabra",
+        "words_other": "{{count}} palabras"
       },
       "goals": {
         "daily_learning_goals": "Metas Diarias de Aprendizaje",
@@ -529,7 +531,8 @@
       "remove_note": "¿Quitar nota del mazo?",
       "remove_word_desc": "Esto elimina cada tarjeta de estudio generada a partir de esta palabra de “{{title}}”. La palabra, sus tarjetas, su programación y su historial de repaso permanecerán en tu diccionario personal.",
       "remove_note_desc": "Esto elimina cada tarjeta de estudio generada a partir de esta nota de “{{title}}”. La nota, sus tarjetas, su programación y su historial de repaso permanecerán en tu diccionario personal.",
-      "remove_btn": "Quitar del mazo"
+      "remove_btn": "Quitar del mazo",
+      "add_word": "Añadir palabra"
     },
     "cards": {
       "title": "{{count}} tarjetas",

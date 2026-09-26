@@ -124,7 +124,15 @@
       "name_min": "Имя должно содержать не менее 2 символов",
       "confirm_password_required": "Пожалуйста, подтвердите пароль",
       "passwords_mismatch": "Пароли не совпадают"
-    }
+    },
+    "validation_error_one": "Найдена {{count}} ошибка проверки",
+    "validation_error_few": "Найдено {{count}} ошибки проверки",
+    "validation_error_many": "Найдено {{count}} ошибок проверки",
+    "validation_error_other": "Найдено {{count}} ошибок проверки",
+    "validation_more_one": "…и еще {{count}}",
+    "validation_more_few": "…и еще {{count}}",
+    "validation_more_many": "…и еще {{count}}",
+    "validation_more_other": "…и еще {{count}}"
   },
   "profile": {
     "validation": {
@@ -330,14 +338,30 @@
         "personal_dictionary": "Личный словарь",
         "learning_streak": "Серия обучения",
         "words_learned": "Выучено слов",
-        "cards": "{{value}} карточек",
-        "words": "{{value}} слов",
-        "days_one": "1 День",
-        "days_other": "{{count}} Дней",
         "due_for_review": "Ожидают повторения",
         "added_to_collection": "Добавлено в коллекцию",
         "daily_streak": "Ежедневная серия",
-        "notes_reviewed": "Заметок успешно повторено"
+        "notes_reviewed": "Заметок успешно повторено",
+        "cards_one": "1 карточка",
+        "cards_few": "{{count}} карточки",
+        "cards_many": "{{count}} карточек",
+        "cards_other": "{{count}} карточек",
+        "words_one": "1 слово",
+        "words_few": "{{count}} слова",
+        "words_many": "{{count}} слов",
+        "words_other": "{{count}} слов",
+        "days_one": "1 день",
+        "days_few": "{{count}} дня",
+        "days_many": "{{count}} дней",
+        "days_other": "{{count}} дней",
+        "days_current_one": "1 день сейчас",
+        "days_current_few": "{{count}} дня сейчас",
+        "days_current_many": "{{count}} дней сейчас",
+        "days_current_other": "{{count}} дней сейчас",
+        "days_longest_one": "1 день максимум",
+        "days_longest_few": "{{count}} дня максимум",
+        "days_longest_many": "{{count}} дней максимум",
+        "days_longest_other": "{{count}} дней максимум"
       },
       "goals": {
         "daily_learning_goals": "Ежедневные цели",
@@ -529,10 +553,42 @@
       "remove_note": "Удалить заметку из колоды?",
       "remove_word_desc": "Это действие удалит каждую карточку, сгенерированную из этого слова в «{{title}}». Слово, его карточки, расписание и история повторений останутся в вашем личном словаре.",
       "remove_note_desc": "Это действие удалит каждую карточку, сгенерированную из этой заметки в «{{title}}». Заметка, ее карточки, расписание и история повторений останутся в вашем личном словаре.",
-      "remove_btn": "Удалить из колоды"
+      "remove_btn": "Удалить из колоды",
+      "add_word": "Добавить слово",
+      "delete_title_cards_one": "Удалить {{count}} карточку и её историю повторений?",
+      "delete_title_cards_few": "Удалить {{count}} карточки и их историю повторений?",
+      "delete_title_cards_many": "Удалить {{count}} карточек и их историю повторений?",
+      "delete_title_cards_other": "Удалить {{count}} карточек и их историю повторений?",
+      "orphaned_cards_one": "Будет удалена {{count}} карточка без колоды.",
+      "orphaned_cards_few": "Будут удалены {{count}} карточки без колоды.",
+      "orphaned_cards_many": "Будет удалено {{count}} карточек без колоды.",
+      "orphaned_cards_other": "Будет удалено {{count}} карточек без колоды.",
+      "shared_cards_one": "{{count}} общая карточка будет сохранена.",
+      "shared_cards_few": "{{count}} общие карточки будут сохранены.",
+      "shared_cards_many": "{{count}} общих карточек будут сохранены.",
+      "shared_cards_other": "{{count}} общих карточек будут сохранены.",
+      "delete_deck_and_cards_one": "Удалить колоду и {{count}} карточку",
+      "delete_deck_and_cards_few": "Удалить колоду и {{count}} карточки",
+      "delete_deck_and_cards_many": "Удалить колоду и {{count}} карточек",
+      "delete_deck_and_cards_other": "Удалить колоду и {{count}} карточек",
+      "delete_title_words_one": "Удалить {{count}} слово и его историю повторений?",
+      "delete_title_words_few": "Удалить {{count}} слова и историю их повторений?",
+      "delete_title_words_many": "Удалить {{count}} слов и историю их повторений?",
+      "delete_title_words_other": "Удалить {{count}} слов и историю их повторений?",
+      "orphaned_words_one": "Будет удалено {{count}} слово без колоды.",
+      "orphaned_words_few": "Будут удалены {{count}} слова без колоды.",
+      "orphaned_words_many": "Будет удалено {{count}} слов без колоды.",
+      "orphaned_words_other": "Будет удалено {{count}} слов без колоды.",
+      "shared_words_one": "{{count}} общее слово будет сохранено.",
+      "shared_words_few": "{{count}} общие слова будут сохранены.",
+      "shared_words_many": "{{count}} общих слов будут сохранены.",
+      "shared_words_other": "{{count}} общих слов будут сохранены.",
+      "delete_deck_and_words_one": "Удалить колоду и {{count}} слово",
+      "delete_deck_and_words_few": "Удалить колоду и {{count}} слова",
+      "delete_deck_and_words_many": "Удалить колоду и {{count}} слов",
+      "delete_deck_and_words_other": "Удалить колоду и {{count}} слов"
     },
     "cards": {
-      "title": "{{count}} карточек",
       "search_placeholder": "Поиск аверса, реверса...",
       "no_found": "Карточки не найдены",
       "refine_search": "Попробуйте уточнить условия поиска, чтобы найти карточки в этой колоде.",
@@ -543,10 +599,13 @@
       "db_inactive": "База данных неактивна",
       "db_inactive_desc": "Эта вкладка в настоящее время неактивна, так как офлайн-база данных открыта в другой вкладке. Нажмите ниже, чтобы использовать базу данных в этом окне.",
       "use_here": "Использовать здесь",
-      "loading": "Загрузка карточек..."
+      "loading": "Загрузка карточек...",
+      "title_one": "1 карточка",
+      "title_few": "{{count}} карточки",
+      "title_many": "{{count}} карточек",
+      "title_other": "{{count}} карточек"
     },
     "words": {
-      "title": "{{count}} слов",
       "search_placeholder": "Поиск слова, перевода...",
       "no_found": "Слова не найдены",
       "refine_search": "Попробуйте уточнить условия поиска, чтобы найти слова в этой колоде.",
@@ -560,7 +619,11 @@
       "remove_word": "Удалить слово",
       "view_word": "Просмотр слова",
       "cards_count": "Карточек: {{count}}",
-      "details_count": "Доп. инфо: {{count}}"
+      "details_count": "Доп. инфо: {{count}}",
+      "title_one": "1 слово",
+      "title_few": "{{count}} слова",
+      "title_many": "{{count}} слов",
+      "title_other": "{{count}} слов"
     },
     "card_form": {
       "desc": "Создайте вопрос и ответ для этой карточки.",
@@ -619,8 +682,11 @@
     },
     "word_view": {
       "desc": "Все сохраненные детали для этого слова.",
-      "cards_count": "Карточки ({{count}})",
-      "edit_word": "Редактировать слово"
+      "edit_word": "Редактировать слово",
+      "cards_count_one": "Карточка (1)",
+      "cards_count_few": "Карточки ({{count}})",
+      "cards_count_many": "Карточек ({{count}})",
+      "cards_count_other": "Карточек ({{count}})"
     }
   },
   "review": {
@@ -687,7 +753,6 @@
       "topic_label": "Предмет / Тема",
       "topic_desc": "Опишите, что хотите выучить.",
       "topic_placeholder": "Например, Испанский сослагательное наклонение",
-      "limit_chars": "Лимит {{count}} символов",
       "text_label": "Исходный текст",
       "text_desc": "Вставьте статью или заметки.",
       "text_placeholder": "Вставьте текст сюда...",
@@ -705,9 +770,16 @@
       "mode_native_desc": "Введите слово на вашем родном языке.",
       "model_label": "Выбор модели",
       "card_count": "Количество карточек",
-      "cards": "{{count}} карточек",
       "creating": "Создание...",
-      "create": "Создать"
+      "create": "Создать",
+      "limit_chars_one": "Лимит 1 символ",
+      "limit_chars_few": "Лимит {{count}} символа",
+      "limit_chars_many": "Лимит {{count}} символов",
+      "limit_chars_other": "Лимит {{count}} символов",
+      "cards_one": "1 карточка",
+      "cards_few": "{{count}} карточки",
+      "cards_many": "{{count}} карточек",
+      "cards_other": "{{count}} карточек"
     },
     "poll_failed": "Не удалось получить статус задачи",
     "creation_error": "Создание не завершено. Попробуйте другой ввод.",
@@ -728,7 +800,6 @@
     "preview": {
       "save_cards_failed": "Не удалось сохранить карточки",
       "results_title": "Результаты генерации",
-      "results_desc": "Создано {{count}} карточек.",
       "front": "Спереди",
       "back": "Сзади",
       "save_db": "Сохранить в базу",
@@ -755,7 +826,11 @@
       "saving_note": "Сохранение...",
       "save_note": "Сохранить заметку",
       "note_saved": "Заметка сохранена!",
-      "note_saved_desc": "Заметка добавлена в колоду."
+      "note_saved_desc": "Заметка добавлена в колоду.",
+      "results_desc_one": "Создана 1 карточка.",
+      "results_desc_few": "Созданы {{count}} карточки.",
+      "results_desc_many": "Создано {{count}} карточек.",
+      "results_desc_other": "Создано {{count}} карточек."
     },
     "tracker": {
       "pending_label": "В очереди",
@@ -776,7 +851,10 @@
     "creation_failed": "Создание не удалось",
     "no_results_title": "Нет предпросмотра результатов",
     "no_results_desc": "Результаты не найдены.",
-    "total_jobs": "Всего заданий: {{count}}"
+    "total_jobs_one": "Всего заданий: 1",
+    "total_jobs_few": "Всего заданий: {{count}}",
+    "total_jobs_many": "Всего заданий: {{count}}",
+    "total_jobs_other": "Всего заданий: {{count}}"
   },
   "ai": {
     "validation": {

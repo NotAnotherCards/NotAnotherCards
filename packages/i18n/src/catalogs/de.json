@@ -330,14 +330,16 @@
         "personal_dictionary": "Persönliches Wörterbuch",
         "learning_streak": "Lernserie",
         "words_learned": "Gelernte Wörter",
-        "cards": "{{value}} Karten",
-        "words": "{{value}} Wörter",
         "days_one": "1 Tag",
         "days_other": "{{count}} Tage",
         "due_for_review": "Fällig zur Wiederholung",
         "added_to_collection": "Zu deiner Sammlung hinzugefügt",
         "daily_streak": "Tägliche Lernserie",
-        "notes_reviewed": "Erfolgreich wiederholte Notizen"
+        "notes_reviewed": "Erfolgreich wiederholte Notizen",
+        "cards_one": "1 Karte",
+        "cards_other": "{{count}} Karten",
+        "words_one": "1 Wort",
+        "words_other": "{{count}} Wörter"
       },
       "goals": {
         "daily_learning_goals": "Tägliche Lernziele",
@@ -529,7 +531,8 @@
       "remove_note": "Notiz aus dem Stapel entfernen?",
       "remove_word_desc": "Dies entfernt jede von diesem Wort generierte Lernkarte aus „{{title}}“. Das Wort, seine Karten, der Zeitplan und der Lernverlauf bleiben in Ihrem persönlichen Wörterbuch erhalten.",
       "remove_note_desc": "Dies entfernt jede von dieser Notiz generierte Lernkarte aus „{{title}}“. Die Notiz, ihre Karten, der Zeitplan und der Lernverlauf bleiben in Ihrem persönlichen Wörterbuch erhalten.",
-      "remove_btn": "Aus Stapel entfernen"
+      "remove_btn": "Aus Stapel entfernen",
+      "add_word": "Wort hinzufügen"
     },
     "cards": {
       "title": "{{count}} Karten",
