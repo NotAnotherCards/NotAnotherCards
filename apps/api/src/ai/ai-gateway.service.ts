@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { CardOutput } from './schema';
 import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
+import { CARD_SIDE_MAX_LENGTH } from '@repo/schemas';
 
 export interface InferenceResult {
   cards: CardOutput[];
@@ -428,8 +429,8 @@ export class AiGatewayService {
         throw new Error(`Card at index ${idx} is missing front or back string`);
       }
       return {
-        front: item.front.slice(0, 1000),
-        back: item.back.slice(0, 1000),
+        front: item.front.slice(0, CARD_SIDE_MAX_LENGTH),
+        back: item.back.slice(0, CARD_SIDE_MAX_LENGTH),
       };
     });
   }
