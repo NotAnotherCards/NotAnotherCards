@@ -1,0 +1,1 @@
+ALTER TABLE "user_profiles" ADD COLUMN "target_language_active" boolean DEFAULT false NOT NULL;
