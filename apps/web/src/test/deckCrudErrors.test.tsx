@@ -196,7 +196,11 @@ describe('deck CRUD error handling', () => {
       fireEvent.click(
         screen.getByRole('button', { name: /Delete deck and 3 card/ }),
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      const dialog = screen.getByRole('dialog');
+      const dialogButton = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      );
+      if (dialogButton) fireEvent.click(dialogButton);
       await waitFor(() =>
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
       );
@@ -210,10 +214,17 @@ describe('deck CRUD error handling', () => {
       fireEvent.click(
         await screen.findByRole('button', { name: /Delete deck and 3 card/ }),
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      const dialog = screen.getByRole('dialog');
+      let dialogButton = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      );
+      if (dialogButton) fireEvent.click(dialogButton);
       await screen.findByRole('alert');
       expect(screen.getByRole('alert')).toHaveTextContent('Deletion failed');
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      dialogButton = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      );
+      if (dialogButton) fireEvent.click(dialogButton);
       await waitFor(() =>
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
       );
@@ -231,9 +242,10 @@ describe('deck CRUD error handling', () => {
       fireEvent.click(
         await screen.findByRole('button', { name: /Delete deck and 3 card/ }),
       );
-      const button = screen.getByRole('button', {
-        name: 'Delete',
-      });
+      const dialog = screen.getByRole('dialog');
+      const button = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      ) as HTMLElement;
       fireEvent.click(button);
       expect(button).toBeDisabled();
       expect(screen.getByRole('button', { name: 'Back' })).toBeDisabled();

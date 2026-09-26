@@ -360,11 +360,18 @@ export function ImportExport() {
               </AlertTitle>
               <AlertDescription className="text-xs text-emerald-600/80">
                 {t('dashboard.settings.import_export.import_success_msg', {
-                  count: importReport.counts.decks,
-                  decks: importReport.counts.decks,
-                  notes: importReport.counts.notes,
-                  cards: importReport.counts.cards,
-                  reviews: importReport.counts.review_events,
+                  decks: t('dashboard.settings.import_export.count_decks', {
+                    count: importReport.counts.decks,
+                  }),
+                  notes: t('dashboard.settings.import_export.count_notes', {
+                    count: importReport.counts.notes,
+                  }),
+                  cards: t('dashboard.settings.import_export.count_cards', {
+                    count: importReport.counts.cards,
+                  }),
+                  reviews: t('dashboard.settings.import_export.count_reviews', {
+                    count: importReport.counts.review_events,
+                  }),
                 })}
               </AlertDescription>
             </Alert>

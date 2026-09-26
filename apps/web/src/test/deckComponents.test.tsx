@@ -406,7 +406,7 @@ describe('WordNoteList Component', () => {
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('3 Cards')).toBeInTheDocument();
-    expect(screen.getByText('0 Due')).toBeInTheDocument();
+    expect(screen.getByText('0 Cards Due')).toBeInTheDocument();
     expect(
       screen.getByRole('columnheader', { name: 'Word' }),
     ).toBeInTheDocument();
@@ -499,7 +499,7 @@ describe('WordNoteList Component', () => {
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('1 Cards')).toBeInTheDocument();
-    expect(screen.getByText('1 Due')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
   });
 
   it('keeps an invalid word visible and lets the user remove it', () => {
@@ -525,7 +525,7 @@ describe('WordNoteList Component', () => {
 
     expect(screen.getByText('1 Words')).toBeInTheDocument();
     expect(screen.getByText('3 Cards')).toBeInTheDocument();
-    expect(screen.getByText('1 Due')).toBeInTheDocument();
+    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
 
     expect(screen.getByText("This word can't be shown")).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove word' }));

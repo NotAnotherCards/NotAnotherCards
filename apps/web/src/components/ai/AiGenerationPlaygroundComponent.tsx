@@ -86,7 +86,7 @@ export function AiGenerationPlaygroundComponent() {
           if (disposed) return;
           setErrorMessage(
             message
-              ? (t(message as any, message) as string)
+              ? (t(message, message) as string)
               : t('playground.poll_failed', 'Failed to poll job status'),
           );
           setCurrentJob((prev) =>
@@ -199,7 +199,7 @@ export function AiGenerationPlaygroundComponent() {
           );
           throw new Error(
             message
-              ? (t(message as any, message) as string)
+              ? (t(message, message) as string)
               : t(
                   'playground.start_error_cards',
                   'Unable to start card creation. Please try again.',
@@ -227,7 +227,7 @@ export function AiGenerationPlaygroundComponent() {
           );
           throw new Error(
             message
-              ? (t(message as any, message) as string)
+              ? (t(message, message) as string)
               : t(
                   'playground.start_error',
                   'Unable to start creation. Please try again.',
@@ -490,7 +490,10 @@ export function AiGenerationPlaygroundComponent() {
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||
                   (currentJob?.error
-                    ? (t(currentJob.error as any, currentJob.error) as string)
+                    ? (t(
+                        currentJob.error,
+                        currentJob.error,
+                      ) as string)
                     : null) ||
                   t(
                     'playground.creation_error',

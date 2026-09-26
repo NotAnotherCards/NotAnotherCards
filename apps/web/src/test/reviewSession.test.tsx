@@ -976,7 +976,7 @@ describe('ReviewSession', () => {
     );
     expect(
       screen.getByRole('heading', {
-        name: 'Are you sure you want to delete this deck? All cards will be permanently removed.',
+        name: 'Permanently delete this word?',
       }),
     ).toBeInTheDocument();
 

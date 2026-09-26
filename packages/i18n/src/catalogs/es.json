@@ -272,7 +272,16 @@
         "import_fail": "La importación falló inesperadamente",
         "export_json_fail": "Fallo al exportar JSON",
         "export_csv_fail": "Fallo al exportar CSV",
-        "import_success_msg": "Importados exitosamente {{decks}} mazos, {{notes}} notas, {{cards}} tarjetas y {{reviews}} repasos."
+        "import_success_msg": "Importados exitosamente {{decks}} mazos, {{notes}} notas, {{cards}} tarjetas y {{reviews}} repasos.",
+        "validation_error": "Validation error",
+        "count_decks_one": "1 deck",
+        "count_decks_other": "{{count}} decks",
+        "count_notes_one": "1 note",
+        "count_notes_other": "{{count}} notes",
+        "count_cards_one": "1 card",
+        "count_cards_other": "{{count}} cards",
+        "count_reviews_one": "1 review event",
+        "count_reviews_other": "{{count}} review events"
       }
     },
     "title": "Panel",
@@ -438,7 +447,7 @@
     },
     "card": {
       "no_description": "Sin descripción.",
-      "due": "Repasar",
+      "due": "Due",
       "new": "Nuevo",
       "learned": "Aprendido",
       "actions": {
@@ -483,7 +492,12 @@
       "target_lang": "Language you are learning",
       "choose_lang": "Choose a language",
       "create_new": "Create New Deck",
-      "edit_title": "Edit Deck Details"
+      "edit_title": "Edit Deck Details",
+      "delete_deck_and_cards": "Delete deck and {{count}} cards",
+      "delete_title_cards": "Delete {{count}} cards?",
+      "desc_placeholder": "Enter deck description...",
+      "header_desc": "Configure your deck",
+      "title_placeholder": "Deck Title"
     }
   },
   "review": {
@@ -514,7 +528,8 @@
       "suspend": "Suspender tarjeta",
       "suspend_desc": "Esta tarjeta no aparecerá en los repasos hasta que la reactives.",
       "edit": "Editar tarjeta",
-      "delete": "Eliminar tarjeta"
+      "delete": "Eliminar tarjeta",
+      "delete_word_title": "Permanently delete this word?"
     },
     "swipe": {
       "forgot_basic": "Forgot",
@@ -636,14 +651,21 @@
     "waiting": "Waiting for the first text…",
     "job_failed": "Creation Job Failed",
     "creation_failed": "Creation Failed",
-    "no_results_title": "No Results Preview"
+    "no_results_title": "No Results Preview",
+    "no_results_desc": "No results found.",
+    "total_jobs": "Total jobs: {{count}}"
   },
   "ai": {
     "validation": {
-      "topic_empty": "El tema no puede estar vacío",
-      "topic_too_long": "El tema es demasiado largo",
-      "source_text_empty": "El texto de origen no puede estar vacío",
-      "source_text_too_long": "El texto de origen no puede superar los 10000 caracteres"
+      "topic_empty": "Topic is required",
+      "topic_too_long": "Topic is too long",
+      "source_text_empty": "Source text is required",
+      "source_text_too_long": "Source text is too long",
+      "prompt_empty": "Prompt is required",
+      "prompt_too_long": "Prompt is too long",
+      "source_text_too_short": "Source text is too short",
+      "fill_error": "Failed to fill fields",
+      "network_error": "Network error"
     }
   }
 }
