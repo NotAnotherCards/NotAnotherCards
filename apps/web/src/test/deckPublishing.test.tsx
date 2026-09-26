@@ -7,6 +7,15 @@ import {
 } from '@testing-library/react';
 import { DeckDetail } from '../components/deck/DeckDetail';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import type { SyncControllerState } from '@remelondb/core';
+
+const synced: SyncControllerState = {
+  status: 'idle',
+  error: null,
+  cause: null,
+  lastSyncAt: 1,
+  lastResult: { resynced: false, rejected: 0, rejectedRecords: {} },
+};
 
 const mockDeck = {
   id: 'deck-1',
@@ -32,7 +41,9 @@ vi.mock('@/hooks/useStore', () => ({
 }));
 
 const mockSyncController = {
-  syncNow: vi.fn().mockResolvedValue(undefined),
+  syncNow: vi
+    .fn<() => Promise<SyncControllerState>>()
+    .mockResolvedValue(synced),
 };
 
 vi.mock('@/offline/syncProvider', () => ({
@@ -43,7 +54,7 @@ vi.mock('@/offline/syncProvider', () => ({
 describe('Deck Publishing Controls', () => {
   beforeEach(() => {
     mockDeck.visibility = 'private'; // Reset to private for each test
-    mockSyncController.syncNow.mockClear();
+    mockSyncController.syncNow.mockReset().mockResolvedValue(synced);
   });
 
   afterEach(() => {
@@ -89,7 +100,9 @@ describe('Deck Publishing Controls', () => {
         expect.objectContaining({ method: 'POST' }),
       );
       // Wait for state to settle to avoid act() warning
-      expect(publishBtn).not.toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: 'Unpublish' }),
+      ).not.toBeDisabled();
     });
 
     // Simulate store reacting to sync (deck visibility updates locally)
@@ -138,7 +151,9 @@ describe('Deck Publishing Controls', () => {
         expect.objectContaining({ method: 'POST' }),
       );
       // Wait for state to settle to avoid act() warning
-      expect(unpublishBtn).not.toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: 'Publish' }),
+      ).not.toBeDisabled();
     });
 
     // Simulate store reacting to sync
@@ -205,9 +220,9 @@ describe('Deck Publishing Controls', () => {
   });
 
   it('prevents double-click while syncNow is pending before publish', async () => {
-    let completeSync!: () => void;
+    let completeSync!: (state: SyncControllerState) => void;
     mockSyncController.syncNow.mockImplementationOnce(() => {
-      return new Promise<void>((resolve) => {
+      return new Promise<SyncControllerState>((resolve) => {
         completeSync = resolve;
       });
     });
@@ -229,14 +244,20 @@ describe('Deck Publishing Controls', () => {
     // Try clicking again
     fireEvent.click(publishBtn);
 
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/publish')),
+    ).toHaveLength(0);
+
     // Resolve the sync
     await act(async () => {
-      completeSync();
+      completeSync(synced);
     });
 
     // Wait for the publish fetch to finish
     await waitFor(() => {
-      expect(publishBtn).not.toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: 'Unpublish' }),
+      ).not.toBeDisabled();
     });
 
     // Ensure syncNow was called twice (once before publish, once after publish)
@@ -246,6 +267,140 @@ describe('Deck Publishing Controls', () => {
         String(url).includes('/api/decks/deck-1/publish'),
       ),
     ).toHaveLength(1);
+  });
+
+  it.each(['publish', 'unpublish'] as const)(
+    'stops %s when sync resolves offline',
+    async (action) => {
+      mockDeck.visibility = action === 'publish' ? 'private' : 'public';
+      mockSyncController.syncNow.mockResolvedValueOnce({
+        ...synced,
+        status: 'offline',
+        error: 'No connection',
+      });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(response({ status: 'clear' }));
+      vi.stubGlobal('fetch', fetchMock);
+      render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: action === 'publish' ? 'Publish' : 'Unpublish',
+        }),
+      );
+      expect(await screen.findByText('No connection')).toBeInTheDocument();
+      expect(
+        fetchMock.mock.calls.filter(([url]) =>
+          String(url).endsWith(`/${action}`),
+        ),
+      ).toHaveLength(0);
+    },
+  );
+
+  it.each(['idle', 'resync-required'] as const)(
+    'stops publishing when %s includes rejected rows',
+    async (status) => {
+      mockSyncController.syncNow.mockResolvedValueOnce({
+        ...synced,
+        status,
+        lastResult: {
+          resynced: false,
+          rejected: 1,
+          rejectedRecords: { user_decks: ['deck-1'] },
+        },
+      });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(response({ status: 'clear' }));
+      vi.stubGlobal('fetch', fetchMock);
+      render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+      expect(
+        await screen.findByText(/The deck's changes were not accepted/),
+      ).toBeInTheDocument();
+      expect(
+        fetchMock.mock.calls.filter(([url]) =>
+          String(url).endsWith('/publish'),
+        ),
+      ).toHaveLength(0);
+    },
+  );
+
+  it.each(['publish', 'unpublish'] as const)(
+    'retains %s success when the second sync fails',
+    async (action) => {
+      mockDeck.visibility = action === 'publish' ? 'private' : 'public';
+      let completeSync!: (state: SyncControllerState) => void;
+      mockSyncController.syncNow
+        .mockResolvedValueOnce(synced)
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              completeSync = resolve;
+            }),
+        );
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementation((url: string) =>
+            Promise.resolve(
+              response(
+                url.endsWith('/publish')
+                  ? { visibility: 'public', warnings: [] }
+                  : { status: 'clear' },
+              ),
+            ),
+          ),
+      );
+      render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: action === 'publish' ? 'Publish' : 'Unpublish',
+        }),
+      );
+      await waitFor(() =>
+        expect(mockSyncController.syncNow).toHaveBeenCalledTimes(2),
+      );
+      const nextAction = action === 'publish' ? 'Unpublish' : 'Publish';
+      expect(screen.getByRole('button', { name: nextAction })).toBeDisabled();
+      await act(async () =>
+        completeSync({
+          ...synced,
+          status: 'offline',
+          error: 'Connection lost',
+        }),
+      );
+      expect(
+        await screen.findByText('Deck Updated, Sync Pending'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          `The deck was ${action === 'publish' ? 'published' : 'unpublished'}. This device will update after the next successful sync.`,
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: nextAction }),
+      ).not.toBeDisabled();
+      expect(screen.queryByText(/Could Not .* Deck/)).not.toBeInTheDocument();
+    },
+  );
+
+  it('does not publish when disposal leaves sync unfinished', async () => {
+    mockSyncController.syncNow.mockResolvedValueOnce({
+      ...synced,
+      status: 'syncing',
+    });
+    const fetchMock = vi.fn().mockResolvedValue(response({ status: 'clear' }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(
+      await screen.findByText(/Sync did not complete/),
+    ).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/publish')),
+    ).toHaveLength(0);
   });
 
   it('shows the stored takedown verdict to the owner', async () => {
