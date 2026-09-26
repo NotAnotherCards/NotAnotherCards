@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  aiJobResponseSchema,
-  aiJobsResponseSchema,
-  aiQuotaResponseSchema,
-  apiErrorBodySchema,
   CreateAiJobInput,
   QuotaStatus,
   type AiJob,
@@ -13,7 +9,8 @@ import {
 } from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
 import { AiJobStatusTracker } from './AiJobStatusTracker';
-import { readPlaygroundStream } from './readPlaygroundStream';
+import { ApiError } from '@repo/api-client';
+import { apiClient } from '@/lib/api-client';
 import { AiResultPreview } from './AiResultPreview';
 import { AiWordNotePreview } from './AiWordNotePreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
@@ -75,29 +72,9 @@ export function AiGenerationPlaygroundComponent() {
       let terminalStateReached = false;
 
       try {
-        const res = await fetch(`/api/ai/jobs/${currentJob.id}`, {
+        const { job: updatedJob } = await apiClient.ai.job(currentJob.id, {
           signal: controller.signal,
         });
-        if (disposed) return;
-        if (!res.ok) {
-          const { message } = apiErrorBodySchema.parse(
-            await res.json().catch(() => null),
-          );
-          if (disposed) return;
-          setErrorMessage(
-            message
-              ? (t(message, message) as string)
-              : t('playground.poll_failed', 'Failed to poll job status'),
-          );
-          setCurrentJob((prev) =>
-            prev ? { ...prev, status: 'failed' } : null,
-          );
-          setLoading(false);
-          terminalStateReached = true;
-          return;
-        }
-
-        const { job: updatedJob } = aiJobResponseSchema.parse(await res.json());
         if (disposed) return;
         setCurrentJob(updatedJob);
 
@@ -118,13 +95,15 @@ export function AiGenerationPlaygroundComponent() {
           void fetchJobs(controller.signal);
           void fetchQuota(controller.signal);
         }
-      } catch {
+      } catch (error) {
         if (disposed) return;
         setErrorMessage(
-          t(
-            'playground.poll_network_error',
-            'Unable to update job status. Please check your connection.',
-          ),
+          error instanceof ApiError && error.status !== undefined
+            ? (t(error.message, error.message) as string)
+            : t(
+                'playground.poll_network_error',
+                'Unable to update job status. Please check your connection.',
+              ),
         );
         setCurrentJob((prev) => (prev ? { ...prev, status: 'failed' } : null));
         setLoading(false);
@@ -147,11 +126,8 @@ export function AiGenerationPlaygroundComponent() {
 
   const fetchQuota = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch('/api/ai/quota', { signal });
-      if (res.ok) {
-        const { quota } = aiQuotaResponseSchema.parse(await res.json());
-        if (!signal?.aborted) setQuota(quota);
-      }
+      const { quota } = await apiClient.ai.quota({ signal });
+      if (!signal?.aborted) setQuota(quota);
     } catch {
       // Background quota fetch failure handled gracefully
     }
@@ -159,11 +135,8 @@ export function AiGenerationPlaygroundComponent() {
 
   const fetchJobs = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch('/api/ai/jobs', { signal });
-      if (res.ok) {
-        const { jobs } = aiJobsResponseSchema.parse(await res.json());
-        if (!signal?.aborted) setJobs(jobs);
-      }
+      const { jobs } = await apiClient.ai.jobs({ signal });
+      if (!signal?.aborted) setJobs(jobs);
     } catch {
       // Background jobs list fetch failure handled gracefully
     }
@@ -187,54 +160,19 @@ export function AiGenerationPlaygroundComponent() {
     setErrorMessage(null);
     try {
       if (input.type === 'topic_deck') {
-        const res = await fetch('/api/ai/playground/stream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
-          signal: request.signal,
-        });
-        if (!res.ok) {
-          const { message } = apiErrorBodySchema.parse(
-            await res.json().catch(() => null),
-          );
-          throw new Error(
-            message
-              ? (t(message, message) as string)
-              : t(
-                  'playground.start_error_cards',
-                  'Unable to start card creation. Please try again.',
-                ),
-          );
-        }
-        if (!res.body)
-          throw new Error(
-            t('playground.no_stream_error', 'Creation response has no stream.'),
-          );
-        const result = await readPlaygroundStream(res.body, (delta) => {
-          if (!request.signal.aborted) setStreamText((text) => text + delta);
-        });
+        const result = await apiClient.ai.playgroundStream(
+          input,
+          (event) => {
+            if (event.type === 'delta' && !request.signal.aborted)
+              setStreamText((text) => text + event.delta);
+          },
+          { signal: request.signal },
+        );
         if (!request.signal.aborted) setStreamResult(result);
       } else {
-        const res = await fetch('/api/ai/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
+        const data = await apiClient.ai.generate(input, {
           signal: request.signal,
         });
-        if (!res.ok) {
-          const { message } = apiErrorBodySchema.parse(
-            await res.json().catch(() => null),
-          );
-          throw new Error(
-            message
-              ? (t(message, message) as string)
-              : t(
-                  'playground.start_error',
-                  'Unable to start creation. Please try again.',
-                ),
-          );
-        }
-        const data = aiJobResponseSchema.parse(await res.json());
         if (!request.signal.aborted) setCurrentJob(data.job);
         // Polling will take over from here
         return;
@@ -244,7 +182,7 @@ export function AiGenerationPlaygroundComponent() {
       if (!request.signal.aborted) {
         setErrorMessage(
           error instanceof Error
-            ? error.message
+            ? (t(error.message, error.message) as string)
             : t('playground.create_failed', 'Unable to create.'),
         );
       }

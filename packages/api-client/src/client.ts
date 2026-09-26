@@ -1,4 +1,9 @@
 import {
+  aiJobResponseSchema,
+  aiJobsResponseSchema,
+  aiQuotaResponseSchema,
+  type CreateAiJobInput,
+  type AiPlaygroundEvent,
   sharedDeckListSchema,
   sharedDeckPreviewSchema,
   sharedDeckImportSchema,
@@ -18,6 +23,7 @@ import {
   type RequestOptions,
 } from './transport.js';
 import { readEventStream } from './read-event-stream.js';
+import { readPlaygroundStream } from './read-playground-stream.js';
 
 export type PublishOutcome =
   | { published: true; warnings: ModerationWarning[] }
@@ -45,6 +51,46 @@ export function createApiClient(transport: ApiTransport) {
     `/api/shared/decks/${encodeURIComponent(id)}`;
 
   return {
+    ai: {
+      generate(input: CreateAiJobInput, options?: RequestOptions) {
+        return json(
+          '/api/ai/generate',
+          aiJobResponseSchema,
+          { method: 'POST', body: JSON.stringify(input) },
+          options,
+        );
+      },
+      job(id: string, options?: RequestOptions) {
+        return json(
+          `/api/ai/jobs/${encodeURIComponent(id)}`,
+          aiJobResponseSchema,
+          {},
+          options,
+        );
+      },
+      jobs(options?: RequestOptions) {
+        return json('/api/ai/jobs', aiJobsResponseSchema, {}, options);
+      },
+      quota(options?: RequestOptions) {
+        return json('/api/ai/quota', aiQuotaResponseSchema, {}, options);
+      },
+      playgroundStream(
+        input: Extract<CreateAiJobInput, { type: 'topic_deck' }>,
+        onEvent: (event: AiPlaygroundEvent) => void,
+        options?: RequestOptions,
+      ) {
+        return request(
+          '/api/ai/playground/stream',
+          { method: 'POST', body: JSON.stringify(input) },
+          async (response, signal) => {
+            if (!response.body)
+              throw new Error('Creation response has no stream.');
+            return readPlaygroundStream(response.body, onEvent, signal);
+          },
+          { ...options, timeoutMs: options?.timeoutMs ?? 60_000 },
+        );
+      },
+    },
     sharedDecks: {
       list(
         page: { limit?: number; offset?: number } = {},
