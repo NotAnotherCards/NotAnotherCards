@@ -5,10 +5,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+const privacyHtml = readFileSync(
+  resolve(process.cwd(), 'privacy.html'),
+  'utf8',
+);
 
 describe('App', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    window.history.replaceState({}, '', '/');
   });
 
   it('sends account calls to action to the canonical application subdomain', () => {
@@ -45,6 +50,52 @@ describe('App', () => {
       const value = element.getAttribute('href') ?? element.getAttribute('src');
       expect(value).not.toMatch(/^\/(?:api|sync)(?:\/|$)/);
     }
+  });
+
+  it('links the public landing footer to the privacy policy', () => {
+    render(<App />);
+
+    expect(
+      screen.getByRole('link', { name: 'Privacy Policy' }),
+    ).toHaveAttribute('href', '/privacy');
+  });
+
+  it('ships a static privacy policy for Meta crawlers', () => {
+    const privacyDocument = new DOMParser().parseFromString(
+      privacyHtml,
+      'text/html',
+    );
+    const privacyText = privacyDocument.body.textContent?.replace(/\s+/g, ' ');
+
+    expect(privacyDocument.title).toBe('NotAnotherCards — Privacy Policy');
+    expect(
+      privacyDocument
+        .querySelector('link[rel="canonical"]')
+        ?.getAttribute('href'),
+    ).toBe('https://notanothercards.com/privacy');
+    expect(
+      privacyDocument
+        .querySelector('meta[property="og:url"]')
+        ?.getAttribute('content'),
+    ).toBe('https://notanothercards.com/privacy');
+    expect(privacyDocument.querySelector('h1')?.textContent?.trim()).toBe(
+      'Privacy Policy',
+    );
+    expect(privacyDocument.querySelector('#data-deletion')).not.toBeNull();
+    expect(privacyText).toContain('app-scoped Facebook user ID');
+    expect(privacyText).toContain('OAuth access token');
+    expect(privacyText).toContain('security issue');
+    expect(privacyText).toContain('Facebook Login data, and private decks');
+    expect(privacyText).toContain(
+      "After account deletion, the author's public decks are no longer listed",
+    );
+    expect(privacyText).toContain('Google Login');
+    expect(privacyText).toContain(
+      'granted permissions, and authentication tokens provided by Google',
+    );
+    expect(privacyText).toContain('Resend or an SMTP email provider');
+    expect(privacyText).toContain('on your mobile device');
+    expect(privacyDocument.querySelector('script')).toBeNull();
   });
 
   it('renders word cards for an unknown route instead of the landing page', () => {
