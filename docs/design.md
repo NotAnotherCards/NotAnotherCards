@@ -100,6 +100,8 @@ defaults, so the same class names produce 0.5rem and 0.75rem. The React Native
 Reusables adoption (#143) closes the gap: the first component that needs
 `--radius` adds it to `global.css` at web's 0.625rem and maps `borderRadius` in
 `tailwind.config.js`, after which the class names mean the same on both clients.
+Buttons are the exception that already matches: web's `rounded-4xl` and
+mobile's `rounded-full` both make a pill at button height.
 
 ## Motion and micro-animations
 
@@ -152,6 +154,10 @@ and named variants. Repeated markup in screens is the signal that a component
 is missing; the fix is to add it there, not to copy the markup.
 
 ### Inventory
+
+Mobile multiline inputs use a minimum height of 6rem and top-aligned text;
+single-line inputs keep their compact height. This applies to card sides,
+deck descriptions and word-note notes through the shared `Input` component.
 
 | web `apps/web/src/components/ui`            | mobile `apps/mobile/components/ui`                    |
 | ------------------------------------------- | ----------------------------------------------------- |

@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
 import {
   clearLastReviewDeckId,
@@ -10,6 +11,7 @@ import {
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
 const mockManager = { tag: 'manager' };
+const mockSyncNow = jest.fn(() => Promise.resolve());
 let mockReviewOverview = {
   dueDeckIds: new Set<string>(),
   dueCount: 0,
@@ -21,7 +23,10 @@ jest.mock('../lib/auth-client', () => ({
   authClient: { useSession: () => mockUseSession() },
 }));
 jest.mock('../lib/database-provider', () => ({
-  useSessionDatabase: () => ({ manager: mockManager }),
+  useSessionDatabase: () => ({
+    manager: mockManager,
+    syncController: { syncNow: mockSyncNow },
+  }),
 }));
 jest.mock('../lib/review', () => ({
   useReviewOverview: () => mockReviewOverview,
@@ -66,6 +71,33 @@ describe('Dashboard screen', () => {
       isLoading: false,
       error: null,
     };
+  });
+
+  it('runs a sync when pulled down', async () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const result = render(<Dashboard />);
+
+    // jest-expo mocks RefreshControl away, so the control is read off the
+    // ScrollView's prop.
+    const refresh = () =>
+      result.UNSAFE_getByProps({ keyboardShouldPersistTaps: 'handled' }).props
+        .refreshControl as ReactElement<{
+        refreshing: boolean;
+        onRefresh: () => Promise<void>;
+      }>;
+    await refresh().props.onRefresh();
+    expect(mockSyncNow).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(refresh().props.refreshing).toBe(false));
   });
 
   it('redirects to login when there is no session', () => {

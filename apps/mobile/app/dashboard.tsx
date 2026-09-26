@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DatabaseManager } from '@remelondb/core';
 import { authClient } from '@/lib/auth-client';
@@ -36,7 +41,8 @@ const TABS: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
 
 export default function Dashboard() {
   const { data: session } = authClient.useSession();
-  const { manager } = useSessionDatabase();
+  const { manager, syncController } = useSessionDatabase();
+  const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('overview');
 
@@ -73,6 +79,23 @@ export default function Dashboard() {
           className="flex-1"
           contentContainerClassName="gap-4 p-6"
           keyboardShouldPersistTaps="handled"
+          // A pull runs a sync; the lists update through their live queries.
+          // A failed sync is reported by the sync status, not here.
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                try {
+                  await syncController?.syncNow();
+                } catch {
+                  // reported by the sync status
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
+            />
+          }
         >
           {tab === 'overview' && (
             <View className="gap-4">
