@@ -167,6 +167,17 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 7,
+      steps: [
+        addColumns({
+          table: 'user_profiles',
+          columns: {
+            target_language_active: column.boolean().optional(),
+          },
+        }),
+      ],
+    },
   ],
 });
 
