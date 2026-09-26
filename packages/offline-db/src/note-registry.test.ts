@@ -42,7 +42,8 @@ describe('WordNoteFieldsV1', () => {
   it.each(['word', 'translation', 'native_language_id', 'target_language_id'])(
     'rejects a note missing %s',
     (key) => {
-      const { [key as keyof WordNoteFields]: _gone, ...partial } = word;
+      const partial = { ...word };
+      Reflect.deleteProperty(partial, key);
       expect(WordNoteFieldsV1.safeParse(partial).success).toBe(false);
     },
   );
@@ -168,7 +169,8 @@ describe('the registry feeds validateNoteFieldsJson', () => {
   });
 
   it('rejects a partial word@1 payload, so it cannot enter the sync protocol', () => {
-    const { word: _gone, ...partial } = word;
+    const partial = { ...word };
+    Reflect.deleteProperty(partial, 'word');
     expect(
       validateNoteFieldsJson('word', 1, JSON.stringify(partial)).success,
     ).toBe(false);

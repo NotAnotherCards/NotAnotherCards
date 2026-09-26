@@ -13,7 +13,7 @@ import {
   UserProfile,
   PRIVATE_DECK,
 } from './user-dictionary.js';
-import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
+import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId } from './ids.js';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
