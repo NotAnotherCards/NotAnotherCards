@@ -7,7 +7,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiGenerationPlaygroundComponent } from '@/components/ai/AiGenerationPlaygroundComponent';
-import { readPlaygroundStream } from '@/components/ai/readPlaygroundStream';
+import { readPlaygroundStream } from '@repo/api-client';
 
 const save = vi.fn().mockResolvedValue('deck-1');
 vi.mock('@/hooks/useStore', () => ({
