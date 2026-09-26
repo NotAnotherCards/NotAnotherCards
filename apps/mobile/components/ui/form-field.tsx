@@ -5,6 +5,7 @@ import {
   type FieldValues,
 } from 'react-hook-form';
 import { useId, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TextInput, View, type TextInputProps } from 'react-native';
 import { cn } from '@/lib/utils';
 import { Input } from './input';
@@ -27,6 +28,7 @@ export function FormField<T extends FieldValues>({
   const inputId = inputProps.nativeID ?? generatedInputId;
   const labelId = `${inputId}-label`;
   const inputRef = useRef<TextInput>(null);
+  const { t } = useTranslation();
 
   return (
     <Controller
@@ -57,7 +59,10 @@ export function FormField<T extends FieldValues>({
           />
           {fieldState.error && (
             <Text className="text-sm text-destructive">
-              {fieldState.error.message}
+              {/* Shared schemas give i18n keys; anything else shows as it is. */}
+              {t(fieldState.error.message ?? '', {
+                defaultValue: fieldState.error.message,
+              })}
             </Text>
           )}
         </View>
