@@ -90,10 +90,7 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({ rows: [mockJob] }), // claim query
       transaction: jest.fn(
         (
-          cb: (tx: {
-            execute: jest.Mock;
-            insert: jest.Mock;
-          }) => Promise<unknown>,
+          cb: (tx: { execute: jest.Mock; insert: jest.Mock }) => Promise<void>,
         ) =>
           cb({
             execute: mockTxExecute,
@@ -305,10 +302,7 @@ describe('AiWorkerService', () => {
         .mockResolvedValueOnce({ rows: [mockJob] }),
       transaction: jest.fn(
         (
-          cb: (tx: {
-            execute: jest.Mock;
-            insert: jest.Mock;
-          }) => Promise<unknown>,
+          cb: (tx: { execute: jest.Mock; insert: jest.Mock }) => Promise<void>,
         ) =>
           cb({
             execute: mockTxExecute,

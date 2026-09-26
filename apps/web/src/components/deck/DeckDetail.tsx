@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useStore, Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,12 +71,23 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     error,
     setError,
     warnings: publishWarnings,
+    remoteVisibility,
+    setRemoteVisibility,
   } = usePublishing();
   const controller = useSyncController();
   const { status: moderationStatus, refresh: refreshModerationStatus } =
     useOwnerModerationStatus(deckId);
   const explanation = useModerationExplanation(deckId);
   const deck = store.decks.find((d) => d.id === deckId);
+  useEffect(() => {
+    if (
+      remoteVisibility &&
+      (remoteVisibility.deckId !== deckId ||
+        deck?.visibility === remoteVisibility.visibility)
+    ) {
+      setRemoteVisibility(null);
+    }
+  }, [deckId, deck?.visibility, remoteVisibility, setRemoteVisibility]);
   const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
   const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
@@ -142,7 +153,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   const isPublic =
-    deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
+    remoteVisibility?.deckId === deckId
+      ? remoteVisibility.visibility === 'public'
+      : deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
   const editingWordFields =
@@ -442,10 +455,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   isBusyRef.current = true;
                   setIsPendingPublishAction(true);
                   try {
-                    await controller?.syncNow();
                     await unpublish(
                       deckId,
-                      () => controller?.syncNow() || Promise.resolve(),
+                      controller ? () => controller.syncNow() : undefined,
                     );
                   } finally {
                     setIsPendingPublishAction(false);
@@ -465,10 +477,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   isBusyRef.current = true;
                   setIsPendingPublishAction(true);
                   try {
-                    await controller?.syncNow();
                     const published = await publish(
                       deckId,
-                      () => controller?.syncNow() || Promise.resolve(),
+                      controller ? () => controller.syncNow() : undefined,
                     );
                     if (published) await refreshModerationStatus();
                   } finally {
@@ -724,14 +735,18 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 className="text-lg font-bold flex items-center gap-2"
               >
                 <AlertCircle className="size-5 text-destructive" />
-                {error.action === 'publish'
-                  ? 'Could Not Publish Deck'
-                  : 'Could Not Unpublish Deck'}
+                {error.completed
+                  ? 'Deck Updated, Sync Pending'
+                  : error.action === 'publish'
+                    ? 'Could Not Publish Deck'
+                    : 'Could Not Unpublish Deck'}
               </CardTitle>
               <CardDescription>
-                {error.flagged && error.flagged.length > 0
-                  ? 'The deck was refused by our automated moderation system. Please review the flagged content before trying again.'
-                  : 'There was an issue processing your request. Please try again.'}
+                {error.completed
+                  ? `The deck was ${error.action === 'publish' ? 'published' : 'unpublished'}. This device will update after the next successful sync.`
+                  : error.flagged && error.flagged.length > 0
+                    ? 'The deck was refused by our automated moderation system. Please review the flagged content before trying again.'
+                    : 'There was an issue processing your request. Please try again.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">

@@ -17,8 +17,8 @@
   "dependencies": {
     "@better-auth/expo": "^1.6.23",
     "@hookform/resolvers": "^5.4.0",
-    "@remelondb/core": "0.3.1",
-    "@remelondb/driver-rn": "0.3.1",
+    "@remelondb/core": "0.3.2",
+    "@remelondb/driver-rn": "0.3.2",
     "@repo/i18n": "workspace:*",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
@@ -56,7 +56,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "@remelondb/driver-node": "0.3.1",
+    "@remelondb/driver-node": "0.3.2",
     "@repo/eslint-config": "workspace:*",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",

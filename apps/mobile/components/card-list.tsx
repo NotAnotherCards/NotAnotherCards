@@ -65,7 +65,7 @@ function ActiveCardList({
     setAction(next);
   };
 
-  const run = async (write: () => Promise<unknown>) => {
+  const run = async <T,>(write: () => Promise<T>) => {
     setWriteError(null);
     setPending(true);
     try {

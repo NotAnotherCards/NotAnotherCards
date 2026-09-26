@@ -68,7 +68,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
   const handleComplete = () => {
     clearSavedDeckPreference();
-    syncController?.syncNow();
+    void syncController?.syncNow();
   };
 
   const exitReview = () => {
