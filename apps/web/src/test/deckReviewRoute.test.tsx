@@ -34,10 +34,9 @@ vi.mock('@/lib/auth-client', () => ({
   },
 }));
 
-vi.mock('@/lib/review-preferences', () => ({
+vi.mock('@/lib/review-preferences', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/review-preferences')>()),
   getReviewPreferences: () => routeTestState.reviewPreferences,
-  clearLastReviewDeckId: vi.fn(),
-  saveLastReviewDeckId: vi.fn(),
 }));
 
 vi.mock('@/components/review/ReviewSession', () => ({
@@ -63,7 +62,7 @@ vi.mock('@/components/review/ReviewSession', () => ({
 }));
 
 import { DeckReviewPage } from '@/components/review/DeckReviewPage';
-import { clearLastReviewDeckId } from '@/lib/review-preferences';
+import { getLastReviewDeckId } from '@/lib/review-preferences';
 
 const deck: Deck = {
   id: 'deck-1',
@@ -117,7 +116,7 @@ describe('DeckReviewRoute', () => {
     };
     routeTestState.reviewSession.mockReset();
     routeTestState.reviewSessionProps = null;
-    vi.mocked(clearLastReviewDeckId).mockReset();
+    localStorage.clear();
   });
 
   it('asks the user to choose a deck when deckId is missing', () => {
@@ -201,7 +200,7 @@ describe('DeckReviewRoute', () => {
     );
   });
 
-  it('clears the saved deck when the user exits review', () => {
+  it('keeps the saved deck when the user exits review', () => {
     const dueCard = makeCard('due-card', Date.now() - 1);
     routeTestState.store = makeStore({
       getCardsForDeck: vi.fn(() => [dueCard]),
@@ -210,10 +209,10 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
 
-    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+    expect(getLastReviewDeckId('user-1')).toBe(deck.id);
   });
 
-  it('clears the saved deck when the review session completes', () => {
+  it('keeps the saved deck when the review session completes', () => {
     const dueCard = makeCard('due-card', Date.now() - 1);
     routeTestState.store = makeStore({
       getCardsForDeck: vi.fn(() => [dueCard]),
@@ -222,7 +221,7 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
 
-    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+    expect(getLastReviewDeckId('user-1')).toBe(deck.id);
   });
 
   it('keeps sibling cards out of the first review batch', async () => {
