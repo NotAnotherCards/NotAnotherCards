@@ -161,15 +161,13 @@ describe('deck CRUD error handling', () => {
           name: /Delete deck and 1 card/,
         });
         expect(
-          screen.getByText(/1 card is only in this deck/),
+          screen.getByText(/This will delete 1 orphaned card/),
         ).toBeInTheDocument();
         if (sharedCardCount === 0)
-          expect(
-            screen.queryByText(/also in other decks/),
-          ).not.toBeInTheDocument();
+          expect(screen.queryByText(/shared card/)).not.toBeInTheDocument();
         else
           expect(
-            screen.getByText(/1 card is also in other decks/),
+            screen.getByText(/1 shared card will be kept/),
           ).toBeInTheDocument();
         fireEvent.click(button);
         expect(screen.getByRole('dialog')).toHaveAccessibleName(
@@ -184,7 +182,7 @@ describe('deck CRUD error handling', () => {
         name: /Delete deck and 3 card/,
       });
       expect(
-        screen.getByText(/2 cards are also in other decks/),
+        screen.getByText(/2 shared cards will be kept/),
       ).toBeInTheDocument();
       fireEvent.click(destructive);
       expect(screen.getByRole('dialog')).toHaveAccessibleName(

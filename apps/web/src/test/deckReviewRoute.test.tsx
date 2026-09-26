@@ -146,7 +146,7 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
 
     expect(
-      screen.getByRole('heading', { name: 'No due cards' }),
+      screen.getByRole('heading', { name: 'No cards due' }),
     ).toBeInTheDocument();
   });
 
@@ -299,7 +299,7 @@ describe('DeckReviewRoute', () => {
 
     expect(screen.getByTestId('review-session')).toBeInTheDocument();
     expect(
-      screen.queryByRole('heading', { name: 'No due cards' }),
+      screen.queryByRole('heading', { name: 'No cards due' }),
     ).not.toBeInTheDocument();
     expect(routeTestState.reviewSession).toHaveBeenLastCalledWith([dueCard]);
   });

@@ -166,10 +166,9 @@ export function WordNoteGeneration({
       apply.current?.(result);
     } catch (err) {
       setError(
-        t(
-          'ai.validation.fill_error',
-          err instanceof Error ? err.message : 'Unable to fill the form.',
-        ),
+        err instanceof Error
+          ? err.message
+          : t('ai.validation.fill_error', 'Unable to fill the form.'),
       );
     }
   }, [job, deck.deckId, deck.nativeLanguageId, deck.targetLanguageId]);
