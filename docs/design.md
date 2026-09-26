@@ -155,6 +155,10 @@ is missing; the fix is to add it there, not to copy the markup.
 
 ### Inventory
 
+Mobile multiline inputs use a minimum height of 6rem and top-aligned text;
+single-line inputs keep their compact height. This applies to card sides,
+deck descriptions and word-note notes through the shared `Input` component.
+
 | web `apps/web/src/components/ui`            | mobile `apps/mobile/components/ui`                    |
 | ------------------------------------------- | ----------------------------------------------------- |
 | `alert`                                     |                                                       |
