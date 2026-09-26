@@ -59,8 +59,8 @@ export function DeleteConfirmationDialog({
       >
         <h2 id="delete-word-title" className="text-xl font-bold">
           {t(
-            'deck.form.delete_description',
-            'Does permanently delete this word?',
+            'review.dialogs.delete_word_title',
+            'Permanently delete this word?',
           )}
         </h2>
         {error && (

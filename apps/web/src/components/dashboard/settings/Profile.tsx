@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import { ChevronDown, User, Globe, Save, Check } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { LANGUAGES, languageLabel } from '@repo/schemas';
 import { useStore } from '@/hooks/useStore';
+import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 
 export function Profile() {
@@ -32,6 +33,9 @@ export function Profile() {
   const { profile, updateUserProfile } = useStore();
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { clear: clearSuccessTimer, schedule: scheduleSuccessDismiss } =
+    useDismissTimer(3000);
+  const mounted = useRef(true);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(userProfileFormSchema),
@@ -65,10 +69,19 @@ export function Profile() {
 
   useEffect(() => {
     if (isDirty) {
+      // the banner goes now, so its timer has nothing left to do
+      clearSuccessTimer();
       setSuccessMessage(null);
       setApiError(null);
     }
-  }, [isDirty]);
+  }, [clearSuccessTimer, isDirty]);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const onSubmit = async (data: ProfileFormValues) => {
     setApiError(null);
@@ -89,13 +102,15 @@ export function Profile() {
         native_language_id: data.native_language_id || '',
         target_language_id: data.target_language_id || '',
       });
+      if (!mounted.current) return;
 
       setSuccessMessage(t('dashboard.settings.profile.success'));
       void refetch();
-      setTimeout(() => {
+      scheduleSuccessDismiss(() => {
         setSuccessMessage(null);
-      }, 3000);
+      });
     } catch (err) {
+      if (!mounted.current) return;
       setApiError(
         err instanceof Error
           ? err.message

@@ -68,6 +68,7 @@ describe('ProfileForm', () => {
     fireEvent.changeText(screen.getByDisplayValue('jane'), 'ab');
     await leaveUsername(screen);
 
+    // The shared schema gives a key; the field shows its translation.
     expect(
       screen.getByText('Username must be at least 3 characters'),
     ).toBeTruthy();

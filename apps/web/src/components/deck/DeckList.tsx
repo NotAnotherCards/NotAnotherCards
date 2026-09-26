@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore, Deck } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
@@ -40,11 +40,36 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmCards, setConfirmCards] = useState(false);
+  const [deletionSummary, setDeletionSummary] = useState<Awaited<
+    ReturnType<typeof store.deckDeletionSummary>
+  > | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
   const dueCardsPerDeck = countCardsPerDeck(
     store.noteDecks ?? [],
     store.dueCards ?? [],
   );
+  const { deckDeletionSummary } = store;
+  useEffect(() => {
+    if (!deckToDelete) return;
+    let cancelled = false;
+    void deckDeletionSummary(deckToDelete).then(
+      (summary) => {
+        if (!cancelled) setDeletionSummary(summary);
+      },
+      (err: unknown) => {
+        if (!cancelled)
+          setWriteError(writeErrorMessage(err, 'Failed to count cards'));
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [deckToDelete, deckDeletionSummary]);
+
+  const isWordDeck = deckToDelete
+    ? store.decks.find((d) => d.id === deckToDelete)?.note_type === 'word'
+    : false;
 
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
@@ -82,12 +107,13 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
     }
   };
 
-  const handleDeleteDeck = async () => {
+  const handleDeleteDeck = async (withNotes: boolean) => {
     if (!deckToDelete) return;
     setIsDeleting(true);
     setWriteError(null);
     try {
-      await store.deleteDeck(deckToDelete);
+      if (withNotes) await store.deleteDeckWithNotes(deckToDelete);
+      else await store.deleteDeck(deckToDelete);
       setDeckToDelete(null);
     } catch (err) {
       setWriteError(writeErrorMessage(err, 'Failed to delete deck'));
@@ -201,7 +227,12 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}
-                onDeleteDeck={(id) => setDeckToDelete(id)}
+                onDeleteDeck={(id) => {
+                  setWriteError(null);
+                  setDeletionSummary(null);
+                  setConfirmCards(false);
+                  setDeckToDelete(id);
+                }}
               />
             );
           })}
@@ -240,40 +271,126 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       {/* Delete Confirmation Dialog */}
       {deckToDelete && (
         <div
+          onClick={() => {
+            if (!isDeleting) setDeckToDelete(null);
+          }}
           role="alertdialog"
-          onClick={() => setDeckToDelete(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
         >
           <Card
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-deck-title"
+            aria-describedby="delete-deck-description"
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm border border-destructive/20 shadow-2xl animate-in zoom-in-95 duration-200"
           >
             <CardHeader>
-              <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
+              <CardTitle
+                id="delete-deck-title"
+                className="text-lg font-bold text-destructive flex items-center gap-2"
+              >
                 <Trash2 className="size-5" />
-                {t('deck.form.delete_title')}
+                {confirmCards
+                  ? t(
+                      isWordDeck
+                        ? 'deck.form.delete_title_words'
+                        : 'deck.form.delete_title_cards',
+                      {
+                        count: deletionSummary?.orphanedCardCount || 0,
+                      },
+                    )
+                  : t('deck.form.delete_title_deck', {
+                      title: store.decks.find(
+                        (deck) => deck.id === deckToDelete,
+                      )?.title,
+                    })}
               </CardTitle>
-              <CardDescription>
-                {t('deck.form.delete_description')}
+              <CardDescription id="delete-deck-description">
+                {confirmCards ? (
+                  t('deck.form.delete_cannot_undo')
+                ) : deletionSummary ? (
+                  <>
+                    {t(
+                      isWordDeck
+                        ? 'deck.form.orphaned_words'
+                        : 'deck.form.orphaned_cards',
+                      {
+                        count: deletionSummary.orphanedCardCount,
+                      },
+                    )}{' '}
+                    {deletionSummary.sharedCardCount > 0 && (
+                      <>
+                        {t(
+                          isWordDeck
+                            ? 'deck.form.shared_words'
+                            : 'deck.form.shared_cards',
+                          {
+                            count: deletionSummary.sharedCardCount,
+                          },
+                        )}{' '}
+                      </>
+                    )}
+                    {t('deck.form.keep_cards_note')}
+                  </>
+                ) : writeError ? (
+                  t('deck.form.load_counts_error')
+                ) : (
+                  t('deck.form.counting_cards')
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               <FormErrorMessage message={writeError} className="mb-4" />
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setDeckToDelete(null)}
-                  className="cursor-pointer"
-                >
-                  {t('deck.form.cancel')}
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteDeck}
+                  onClick={() => {
+                    if (confirmCards) {
+                      setConfirmCards(false);
+                      setWriteError(null);
+                    } else setDeckToDelete(null);
+                  }}
                   disabled={isDeleting}
                   className="cursor-pointer"
                 >
-                  {t('deck.form.delete_confirm')}
+                  {confirmCards ? t('deck.form.back') : t('deck.form.cancel')}
+                </Button>
+                {!confirmCards && (
+                  <Button
+                    variant="outline"
+                    disabled={isDeleting}
+                    onClick={() => void handleDeleteDeck(false)}
+                    className="cursor-pointer"
+                  >
+                    {t('deck.form.delete_deck_only')}
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirmCards) void handleDeleteDeck(true);
+                    else setConfirmCards(true);
+                  }}
+                  disabled={isDeleting || !deletionSummary}
+                  className="cursor-pointer"
+                >
+                  {confirmCards
+                    ? t('deck.form.delete_confirm')
+                    : deletionSummary
+                      ? t(
+                          isWordDeck
+                            ? 'deck.form.delete_deck_and_words'
+                            : 'deck.form.delete_deck_and_cards',
+                          {
+                            count: deletionSummary.orphanedCardCount,
+                          },
+                        )
+                      : t(
+                          isWordDeck
+                            ? 'deck.form.delete_deck_and_words_fallback'
+                            : 'deck.form.delete_deck_and_cards_fallback',
+                        )}
                 </Button>
               </div>
             </CardContent>

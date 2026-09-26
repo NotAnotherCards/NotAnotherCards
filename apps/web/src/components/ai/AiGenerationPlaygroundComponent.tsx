@@ -85,7 +85,9 @@ export function AiGenerationPlaygroundComponent() {
           );
           if (disposed) return;
           setErrorMessage(
-            message || t('playground.poll_failed', 'Failed to poll job status'),
+            message
+              ? (t(message, message) as string)
+              : t('playground.poll_failed', 'Failed to poll job status'),
           );
           setCurrentJob((prev) =>
             prev ? { ...prev, status: 'failed' } : null,
@@ -196,11 +198,12 @@ export function AiGenerationPlaygroundComponent() {
             await res.json().catch(() => null),
           );
           throw new Error(
-            message ||
-              t(
-                'playground.start_error_cards',
-                'Unable to start card creation. Please try again.',
-              ),
+            message
+              ? (t(message, message) as string)
+              : t(
+                  'playground.start_error_cards',
+                  'Unable to start card creation. Please try again.',
+                ),
           );
         }
         if (!res.body)
@@ -223,11 +226,12 @@ export function AiGenerationPlaygroundComponent() {
             await res.json().catch(() => null),
           );
           throw new Error(
-            message ||
-              t(
-                'playground.start_error',
-                'Unable to start creation. Please try again.',
-              ),
+            message
+              ? (t(message, message) as string)
+              : t(
+                  'playground.start_error',
+                  'Unable to start creation. Please try again.',
+                ),
           );
         }
         const data = aiJobResponseSchema.parse(await res.json());
@@ -485,7 +489,9 @@ export function AiGenerationPlaygroundComponent() {
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||
-                  currentJob?.error ||
+                  (currentJob?.error
+                    ? (t(currentJob.error, currentJob.error) as string)
+                    : null) ||
                   t(
                     'playground.creation_error',
                     'Creation could not be completed. Please try again with a different input.',

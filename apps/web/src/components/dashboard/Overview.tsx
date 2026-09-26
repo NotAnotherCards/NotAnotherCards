@@ -213,7 +213,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     {
       title: t('dashboard.overview.stats.today_reviews'),
       value: t('dashboard.overview.stats.cards', {
-        value: store.dueCards?.length ?? 0,
+        count: store.dueCards?.length ?? 0,
       }),
       description: t('dashboard.overview.stats.due_for_review'),
       icon: Clock,
@@ -222,7 +222,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     {
       title: t('dashboard.overview.stats.personal_dictionary'),
       value: t('dashboard.overview.stats.words', {
-        value: new Set((store.noteDecks || []).map((nd) => nd.note_id)).size,
+        count: new Set((store.noteDecks || []).map((nd) => nd.note_id)).size,
       }),
       description: t('dashboard.overview.stats.added_to_collection'),
       icon: BookMarked,

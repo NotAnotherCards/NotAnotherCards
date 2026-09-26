@@ -417,7 +417,7 @@ describe('WordNoteList Component', () => {
       screen.getByRole('columnheader', { name: 'Cards' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('columnheader', { name: 'Extra info' }),
+      screen.getByRole('columnheader', { name: 'Details' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Hund')).toBeInTheDocument();
     expect(screen.getByText('dog')).toBeInTheDocument();
@@ -553,7 +553,7 @@ describe('WordNoteList Component', () => {
     fireEvent.click(screen.getAllByTitle('View Word')[0]);
     fireEvent.click(screen.getAllByTitle('View Word')[1]);
     fireEvent.click(screen.getByTitle('Edit Word'));
-    fireEvent.click(screen.getByTitle('Remove word from this deck'));
+    fireEvent.click(screen.getByTitle('Remove from Deck'));
 
     expect(onViewNote).toHaveBeenCalledTimes(2);
     expect(onViewNote).toHaveBeenLastCalledWith(wordNote);
@@ -581,7 +581,7 @@ describe('WordNoteList Component', () => {
 
     fireEvent.click(screen.getAllByTitle('View Word')[0]);
     fireEvent.click(screen.getByTitle('Edit Word'));
-    fireEvent.click(screen.getByTitle('Remove word from this deck'));
+    fireEvent.click(screen.getByTitle('Remove from Deck'));
 
     expect(onViewNote).toHaveBeenCalledWith(wordNote);
     expect(onEditWord).toHaveBeenCalledWith(wordNote);

@@ -44,12 +44,6 @@ const seriesTone: Record<SeriesKey, string> = {
   forgotRate: 'bg-chart-3',
 };
 
-// const seriesNoun: Record<SeriesKey, string> = {
-//   reviews: 'reviews',
-//   notesAdded: 'notes added',
-//   forgotRate: 'forgot rate',
-// };
-
 function getRanges(t: (key: string) => string) {
   return [
     { value: 'week', label: t('dashboard.statistics.ranges.week') },
