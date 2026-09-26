@@ -6,7 +6,7 @@
     "lint": "turbo run lint && eslint \"scripts/**/*.mjs\" --max-warnings 0",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/monitoring/validate.sh && bash infra/vps/validate-ai-gateway.sh",
+    "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/validate-landing.sh && bash infra/monitoring/validate.sh && bash infra/vps/validate-ai-gateway.sh",
     "check:cycles": "node scripts/check-cycles.mjs",
     "check:db-docs": "pnpm build:db-docs-deps && node scripts/check-db-docs.mjs",
     "check:schema-fresh": "pnpm build:db-docs-deps && node scripts/check-schema-fresh.mjs",
