@@ -90,6 +90,38 @@ describe('community and publishing endpoints', () => {
       expect.objectContaining({ method: 'POST' }),
     );
   });
+  it("waits for moderation beyond the short default, up to the server's own deadline", async () => {
+    vi.useFakeTimers();
+    let answer!: (response: Response) => void;
+    const fetch = vi.fn<typeof globalThis.fetch>().mockImplementation(
+      (_url, init) =>
+        new Promise<Response>((resolve, reject) => {
+          answer = resolve;
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError')),
+          );
+        }),
+    );
+    const client = createApiClient({ baseUrl: '', fetch });
+
+    const publishing = client.publishing.publish('d');
+    await vi.advanceTimersByTimeAsync(200_000);
+    answer(
+      new Response(JSON.stringify({ visibility: 'public', warnings: [] }), {
+        status: 200,
+      }),
+    );
+    await expect(publishing).resolves.toEqual({
+      published: true,
+      warnings: [],
+    });
+
+    const stalled = client.publishing.publish('d');
+    const rejected = expect(stalled).rejects.toBeInstanceOf(ApiTimeoutError);
+    await vi.advanceTimersByTimeAsync(270_000);
+    await rejected;
+  });
+
   it('returns a valid 422 refusal, but throws other failures', async () => {
     const refusal = { reason: 'no', flagged: [{ cardId: 'c', reason: 'r' }] };
     expect(await setup(refusal, 422).client.publishing.publish('d')).toEqual({

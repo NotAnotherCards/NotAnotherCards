@@ -25,6 +25,13 @@ import {
 import { readEventStream } from './read-event-stream.js';
 import { readPlaygroundStream } from './read-playground-stream.js';
 
+// Publishing moderates every card before it answers. The server's deadline
+// grows with the deck and stops at 240 s (moderationDeadlineMs in
+// apps/api/src/sharing/moderation.service.ts), under nginx's 300 s; the
+// client waits a little longer than the server, so the server's own answer,
+// published, refused or timed out, always arrives first.
+const PUBLISH_TIMEOUT_MS = 270_000;
+
 export type PublishOutcome =
   | { published: true; warnings: ModerationWarning[] }
   | { published: false; refusal: ModerationRefusal };
@@ -136,7 +143,7 @@ export function createApiClient(transport: ApiTransport) {
             `${deckPath(id)}/publish`,
             publishResponseSchema,
             { method: 'POST' },
-            options,
+            { ...options, timeoutMs: options?.timeoutMs ?? PUBLISH_TIMEOUT_MS },
           );
           return { published: true, warnings: result.warnings };
         } catch (error) {
