@@ -67,6 +67,12 @@ beforeEach(() => {
 });
 
 describe('DeckList', () => {
+  it('opens the deck from Manage cards', async () => {
+    const { findByLabelText } = render(<DeckList />);
+    fireEvent.press(await findByLabelText('Manage cards of Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
+  });
+
   it('waits for the database manager before rendering decks', () => {
     mockSessionDb = { manager: null };
     const { queryByText } = render(<DeckList />);
@@ -117,7 +123,7 @@ describe('DeckList', () => {
     const { getByText, getByPlaceholderText, queryByText } = render(
       <DeckList />,
     );
-    fireEvent.press(getByText('New deck'));
+    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -141,7 +147,7 @@ describe('DeckList', () => {
     const { getByText, getByPlaceholderText, getByDisplayValue } = render(
       <DeckList />,
     );
-    fireEvent.press(getByText('New deck'));
+    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -188,7 +194,7 @@ describe('DeckList action state', () => {
     message = 'Database not initialized',
   ) => {
     mockWrites.create.mockRejectedValueOnce(new Error(message));
-    fireEvent.press(r.getByText('New deck'));
+    fireEvent.press(r.getByText('Create deck'));
     fireEvent.changeText(
       r.getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
