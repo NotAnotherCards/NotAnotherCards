@@ -1,9 +1,40 @@
 # Mobile
 
-Expo (SDK 57) React Native app in `apps/mobile`, using expo-router. Mirrors the
-web frontend: login, register and a protected dashboard, sharing the API and the
-`@repo/schemas` validation. Screens are built and auth works end to end (see
-Auth below).
+## Why a mobile app
+
+<!-- The module's justification for the evaluation. It moves into the README's
+Modules section with #438; this file then links to it. -->
+
+Spaced repetition happens in short moments: a few cards while waiting, on
+the train, without a signal. That is a phone, not a browser tab, so the
+mobile app is the module of choice. It is simply the more convenient way to
+review.
+
+It is a second full client, not a wrapper around the website. It shares with
+web the API, the `@repo/schemas` validation and the study rules in
+`@repo/study`, so a card is scheduled the same way whichever client answered
+it. On its own it brings:
+
+- A per-account offline database on the device, so decks, cards and reviews
+  work without a connection and sync when there is one.
+- A native review flow: question and answer on one screen, the answer card
+  follows the finger, and an answer is a swipe or a tap on one of the two or
+  four buttons.
+- The same look as web: shadcn's theme on web and React Native Reusables on
+  mobile, built from one set of tokens described in `docs/design.md`.
+- Signed release builds through the project's own F-Droid repository, so the
+  app updates in place without a store.
+
+The same account, decks and progress on the phone and in the browser, and a
+review session that fits in a minute. It is Major because it is a complete
+client with its own storage and release pipeline on a shared data layer.
+
+## Overview
+
+Expo (SDK 57) React Native app in `apps/mobile`, using expo-router. It shares
+the API, the `@repo/schemas` validation and the `@repo/study` rules with the
+web frontend: login, register, onboarding, overview, library, deck and card
+editing, review, settings, and sync.
 
 Layout:
 
