@@ -157,17 +157,16 @@ is missing; the fix is to add it there, not to copy the markup.
 | ------------------------------------------- | ----------------------------------------------------- |
 | `alert`                                     |                                                       |
 | `button`                                    | `button` (primary, secondary, destructive; `loading`) |
-| `card`                                      |                                                       |
-| `field`, `label`, `input`, `password-input` | `form-field`, `input`                                 |
+| `card`                                      | `card`                                                |
+| `dropdown-menu`                             |                                                       |
+| `field`, `label`, `input`, `password-input` | `form-field`, `label`, `input`                        |
+| `MarkdownRenderer`                          | `markdown`                                            |
 | `separator`                                 |                                                       |
 | `spinner`                                   |                                                       |
-| `google-icon`, `facebook-icon`              |                                                       |
+| `switch`                                    |                                                       |
+| `google-icon`, `facebook-icon`              | `icon` (lucide wrappers)                              |
+|                                             | `segmented`                                           |
 |                                             | `text`                                                |
-
-The first mobile deck CRUD slice in #68 introduces the `secondary` and
-`destructive` button variants. They are listed here because this document is
-the review contract for that work; until the slice lands, `main` has only the
-primary variant and `loading` state.
 
 Web components come from shadcn (`components.json`: style `radix-luma`, base
 colour `neutral`, CSS variables on, icon library lucide). They are added with
