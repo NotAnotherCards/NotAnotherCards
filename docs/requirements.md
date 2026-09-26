@@ -17,12 +17,12 @@ Status values:
 - **not started**: nothing exists.
 - **gap**: mandatory, missing, and the subject says it causes rejection.
 
-Progress (2026-09-18): **13 modules, 17 points claimed** (Public API and PWA
+Progress (2026-09-26): **13 modules, 17 points claimed** (Public API and PWA
 at very low priority and not counted in the 17, advanced search open and not
-counted; see section 6). By module: done 10 (13 pts), in progress 2 (3 pts),
-not started 1 (1 pt). Weighted by points and module progress, about **84%** of
-the claimed 17 points is implemented. Because incomplete modules score zero at
-evaluation, 13 points are currently banked.
+counted; see section 6). By module: done 11 (14 pts), in progress 2 (3 pts),
+not started 0. Weighted by points and module progress, about **93%** of the
+claimed 17 points is implemented. Because incomplete modules score zero at
+evaluation, 14 points are currently banked, which is the required minimum.
 Two mandatory gaps remain: the Privacy and Terms pages are in review, and the
 README first line and most required README sections are still missing.
 
@@ -121,20 +121,20 @@ CSV carries a card's rendered front and back plus its scheduling, so a word
 note exported to CSV and imported again comes back as a basic card. JSON is
 the lossless format and keeps the note's fields.
 
-### 4.9 Gaming and user experience: gamification — Minor, 1 — in progress — 50%
+### 4.9 Gaming and user experience: gamification — Minor, 1 — done — 100%
 
 Scope decided 2026-09-03: badges, leaderboards ranked across the whole user
 base, and daily challenges — 3 of the 6 listed options.
 
-- Implement at least 3 of: achievements, badges, leaderboards, XP or levels, daily challenges, rewards. **in progress**: badge awards and daily challenge completion are implemented; the whole-user leaderboard API is implemented, but its UI remains #275 (#359).
+- Implement at least 3 of: achievements, badges, leaderboards, XP or levels, daily challenges, rewards. **done**: badges and daily challenges (#359, #351, #367) and the whole-user leaderboard, API in #359 and the ranking on the dashboard in #402.
 - The system must be persistent and stored in the database. **done**: the server-owned projection stores badge awards and UTC daily challenge completions and exposes `/api/gamification/me` (#359).
-- Give visual feedback to users (notifications, progress bars, etc.). **in review**: daily challenge progress and notifications are in #351; badge cards and unlock feedback are in #367.
-- Give clear rules and progression mechanics. **in progress**: shared rules and server-side tests exist; the remaining client surfaces must make them visible.
+- Give visual feedback to users (notifications, progress bars, etc.). **done**: daily challenge progress and notifications (#351), badge cards and unlock feedback (#367), the leaderboard with the user's own rank (#402).
+- Give clear rules and progression mechanics. **done**: the rules are shared code with tests (#339) and the dashboard shows them: what each badge takes, the day's challenge and its progress, and the leaderboard's points.
 
-### 4.11 Modules of choice: mobile app — Major, 2 — in progress — 35%
+### 4.11 Modules of choice: mobile app — Major, 2 — in progress — 65%
 
-- The module must be substantial and show technical complexity. **in progress, about 70% of the technical bullet**: auth, onboarding, protected navigation, per-account offline databases and sync, deck and card CRUD, a native review flow (#348), Markdown card rendering (#349), and shared review behavior (#347) are merged. Profile settings and review preferences are in #358. The Overview start-review shortcut, root mobile typecheck, and a complete device smoke test remain for the MVP (#143). Social login and password reset (#293, blocked on #319), mobile 2FA (#278), and i18n are later parity work.
-- The README must justify: why this module, which technical challenges it addresses, how it adds value, and why it deserves Major status. **not started**: not in the README. This bullet is half the module's score, so the module is about 35% overall.
+- The module must be substantial and show technical complexity. **in progress, about 85% of the technical bullet**: auth, onboarding, protected navigation, per-account offline databases and sync, deck and card CRUD, a native review flow (#348), Markdown card rendering (#349), shared review behavior (#347), and settings and profile editing (#358) are merged. The app ships as a signed APK through the project's own F-Droid repository with in-place updates (versions 0.0.1 to 0.0.4 since 2026-09-22; scripts in #401). In review: start review from the Overview and the library (#387, #400), the Overview with today's numbers, streak and badges (#419), the review flow with coloured answers, swipe answers and the question shown with the answer (#435), and the fresh batch read (#399). The device smoke test remains for the MVP (#143). Social login and password reset (#293, #392), mobile 2FA (#278), and mobile i18n (#281) are later parity work.
+- The README must justify: why this module, which technical challenges it addresses, how it adds value, and why it deserves Major status. **in review**: the text is written in `docs/mobile.md` ("Why a mobile app", this PR) and moves into the README's Modules section with #438. This bullet is half the module's score; half credit until it sits in the README puts the module at about 65% overall.
 - Trivial features or shortcuts cause rejection of the module. Note for the README.
 
 ### 4.12 DevOps: monitoring with Prometheus and Grafana — Major, 2 — done — 100%
@@ -186,14 +186,14 @@ All figures are derived from reactive local remelonDB queries and work
 offline. The optional deck filter follows active note-to-deck memberships;
 a note shared by several decks contributes to each of them.
 
-### 4.14 Accessibility and Internationalization: multiple languages — Minor, 1 — not started — 0%
+### 4.14 Accessibility and Internationalization: multiple languages — Minor, 1 — in progress — 50%
 
 Decided 2026-09-03.
 
-- Implement i18n (internationalization) system. **not started**
-- At least 3 complete language translations. **not started**
-- Language switcher in the UI. **not started**
-- All user-facing text must be translatable. **not started**
+- Implement i18n (internationalization) system. **done**: `@repo/i18n` with typed keys, formatters and locale metadata, used by web and mobile (#417).
+- At least 3 complete language translations. **in review**: English, Spanish, German and Russian catalogs; the web texts move into them in #428.
+- Language switcher in the UI. **done**: on web and mobile, persisted and following the device locale (#417).
+- All user-facing text must be translatable. **in review** for web (#428); **not started** for mobile (#281).
 
 ### 4.15 User Management: 2FA — Minor, 1 — done — 100%
 
@@ -276,13 +276,13 @@ questions are kept below with the current status on each.
   written backup and recovery procedure, on top of the monitoring stack.
   Estimate: about 1 day.
 
-Arithmetic (2026-09-18): claimed 17. Done 13 pts (framework, ORM, design
-system, OAuth, LLM, import/export, monitoring, activity analytics, 2FA, and
-content moderation — 10 modules). In progress 3 pts (gamification and mobile).
-Not started 1 pt (multiple languages). Incomplete modules score zero, so 13
-points are currently banked. Completing either gamification or i18n would
-reach the 14-point floor; completing mobile would add both points. Advanced
-search remains a reserve outside the 17.
+Arithmetic (2026-09-26): claimed 17. Done 14 pts (framework, ORM, design
+system, OAuth, LLM, import/export, gamification, monitoring, activity
+analytics, 2FA, and content moderation — 11 modules). In progress 3 pts
+(mobile and multiple languages). Incomplete modules score zero, so 14 points
+are currently banked, the floor. Completing i18n adds one point of margin;
+completing mobile adds two, and its README justification is half of that
+module's score. Advanced search remains a reserve outside the 17.
 
 Before any of this: merge and verify the Privacy Policy and Terms of Service
 pages (#374, #379), and complete the README. They give 0 points and their
