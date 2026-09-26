@@ -124,7 +124,15 @@
       "name_min": "El nombre debe tener al menos 2 caracteres",
       "confirm_password_required": "Por favor, confirma tu contraseña",
       "passwords_mismatch": "Las contraseñas no coinciden"
-    }
+    },
+    "validation_error_one": "1",
+    "validation_error_few": "{{count}}",
+    "validation_error_many": "{{count}}",
+    "validation_error_other": "{{count}}",
+    "validation_more_one": "1",
+    "validation_more_few": "{{count}}",
+    "validation_more_many": "{{count}}",
+    "validation_more_other": "{{count}}"
   },
   "profile": {
     "validation": {
@@ -330,16 +338,30 @@
         "personal_dictionary": "Diccionario Personal",
         "learning_streak": "Racha de Aprendizaje",
         "words_learned": "Palabras Aprendidas",
-        "days_one": "1 Día",
-        "days_other": "{{count}} Días",
         "due_for_review": "Para repasar",
         "added_to_collection": "Añadidas a tu colección",
         "daily_streak": "Racha diaria de aprendizaje",
         "notes_reviewed": "Notas repasadas con éxito",
         "cards_one": "1 tarjeta",
+        "cards_few": "{{count}} tarjetas",
+        "cards_many": "{{count}} tarjetas",
         "cards_other": "{{count}} tarjetas",
         "words_one": "1 palabra",
-        "words_other": "{{count}} palabras"
+        "words_few": "{{count}} palabras",
+        "words_many": "{{count}} palabras",
+        "words_other": "{{count}} palabras",
+        "days_one": "1 Día",
+        "days_few": "{{count}} Días",
+        "days_many": "{{count}} Días",
+        "days_other": "{{count}} Días",
+        "days_current_one": "1",
+        "days_current_few": "{{count}}",
+        "days_current_many": "{{count}}",
+        "days_current_other": "{{count}}",
+        "days_longest_one": "1",
+        "days_longest_few": "{{count}}",
+        "days_longest_many": "{{count}}",
+        "days_longest_other": "{{count}}"
       },
       "goals": {
         "daily_learning_goals": "Metas Diarias de Aprendizaje",
@@ -532,10 +554,41 @@
       "remove_word_desc": "Esto elimina cada tarjeta de estudio generada a partir de esta palabra de “{{title}}”. La palabra, sus tarjetas, su programación y su historial de repaso permanecerán en tu diccionario personal.",
       "remove_note_desc": "Esto elimina cada tarjeta de estudio generada a partir de esta nota de “{{title}}”. La nota, sus tarjetas, su programación y su historial de repaso permanecerán en tu diccionario personal.",
       "remove_btn": "Quitar del mazo",
-      "add_word": "Añadir palabra"
+      "add_word": "Añadir palabra",
+      "delete_title_cards_one": "1",
+      "delete_title_cards_few": "{{count}}",
+      "delete_title_cards_many": "{{count}}",
+      "delete_title_cards_other": "{{count}}",
+      "orphaned_cards_one": "1",
+      "orphaned_cards_few": "{{count}}",
+      "orphaned_cards_many": "{{count}}",
+      "orphaned_cards_other": "{{count}}",
+      "shared_cards_one": "1",
+      "shared_cards_few": "{{count}}",
+      "shared_cards_many": "{{count}}",
+      "shared_cards_other": "{{count}}",
+      "delete_deck_and_cards_one": "1",
+      "delete_deck_and_cards_few": "{{count}}",
+      "delete_deck_and_cards_many": "{{count}}",
+      "delete_deck_and_cards_other": "{{count}}",
+      "delete_title_words_one": "1",
+      "delete_title_words_few": "{{count}}",
+      "delete_title_words_many": "{{count}}",
+      "delete_title_words_other": "{{count}}",
+      "orphaned_words_one": "1",
+      "orphaned_words_few": "{{count}}",
+      "orphaned_words_many": "{{count}}",
+      "orphaned_words_other": "{{count}}",
+      "shared_words_one": "1",
+      "shared_words_few": "{{count}}",
+      "shared_words_many": "{{count}}",
+      "shared_words_other": "{{count}}",
+      "delete_deck_and_words_one": "1",
+      "delete_deck_and_words_few": "{{count}}",
+      "delete_deck_and_words_many": "{{count}}",
+      "delete_deck_and_words_other": "{{count}}"
     },
     "cards": {
-      "title": "{{count}} tarjetas",
       "search_placeholder": "Buscar en anverso, reverso...",
       "no_found": "No se encontraron tarjetas",
       "refine_search": "Intenta refinar tu término de búsqueda para encontrar tarjetas en este mazo.",
@@ -546,10 +599,13 @@
       "db_inactive": "Base de datos inactiva",
       "db_inactive_desc": "Esta pestaña está inactiva actualmente porque la base de datos sin conexión está abierta en otra pestaña. Haz clic a continuación para usar la base de datos en esta ventana.",
       "use_here": "Usar aquí en su lugar",
-      "loading": "Cargando tarjetas..."
+      "loading": "Cargando tarjetas...",
+      "title_one": "{{count}} tarjetas",
+      "title_few": "{{count}} tarjetas",
+      "title_many": "{{count}} tarjetas",
+      "title_other": "{{count}} tarjetas"
     },
     "words": {
-      "title": "{{count}} palabras",
       "search_placeholder": "Buscar palabra, traducción...",
       "no_found": "No se encontraron palabras",
       "refine_search": "Intenta refinar tu término de búsqueda para encontrar palabras en este mazo.",
@@ -563,7 +619,11 @@
       "remove_word": "Quitar palabra",
       "view_word": "Ver palabra",
       "cards_count": "Tarjetas: {{count}}",
-      "details_count": "Información extra: {{count}}"
+      "details_count": "Información extra: {{count}}",
+      "title_one": "{{count}} palabras",
+      "title_few": "{{count}} palabras",
+      "title_many": "{{count}} palabras",
+      "title_other": "{{count}} palabras"
     },
     "card_form": {
       "desc": "Crea la pregunta y respuesta para esta tarjeta de estudio.",
@@ -622,8 +682,11 @@
     },
     "word_view": {
       "desc": "Todos los detalles guardados para esta palabra.",
-      "cards_count": "Tarjetas ({{count}})",
-      "edit_word": "Editar palabra"
+      "edit_word": "Editar palabra",
+      "cards_count_one": "Tarjetas ({{count}})",
+      "cards_count_few": "Tarjetas ({{count}})",
+      "cards_count_many": "Tarjetas ({{count}})",
+      "cards_count_other": "Tarjetas ({{count}})"
     }
   },
   "review": {
@@ -690,7 +753,6 @@
       "topic_label": "Asunto / Tema",
       "topic_desc": "Describe lo que quieres aprender (ej. \"Sustantivos en inglés\").",
       "topic_placeholder": "ej. Subjuntivo en español",
-      "limit_chars": "Límite {{count}} caracteres",
       "text_label": "Texto de Origen",
       "text_desc": "Pega un artículo o notas para crear tarjetas.",
       "text_placeholder": "Pega el texto aquí...",
@@ -708,9 +770,16 @@
       "mode_native_desc": "Ingresa una palabra en tu idioma nativo (ej. \"hola\") para traducirla y crear una nota.",
       "model_label": "Selección de Modelo",
       "card_count": "Número de Tarjetas",
-      "cards": "{{count}} tarjetas",
       "creating": "Creando...",
-      "create": "Crear"
+      "create": "Crear",
+      "limit_chars_one": "Límite {{count}} caracteres",
+      "limit_chars_few": "Límite {{count}} caracteres",
+      "limit_chars_many": "Límite {{count}} caracteres",
+      "limit_chars_other": "Límite {{count}} caracteres",
+      "cards_one": "{{count}} tarjetas",
+      "cards_few": "{{count}} tarjetas",
+      "cards_many": "{{count}} tarjetas",
+      "cards_other": "{{count}} tarjetas"
     },
     "poll_failed": "Error al comprobar el estado del trabajo",
     "creation_error": "No se pudo completar la creación. Por favor, intenta con otra entrada.",
@@ -731,7 +800,6 @@
     "preview": {
       "save_cards_failed": "Error al guardar las tarjetas",
       "results_title": "Resultados de Creación",
-      "results_desc": "Se han creado {{count}} posibles tarjetas estructuradas.",
       "front": "Anverso",
       "back": "Reverso",
       "save_db": "Guardar en Base de Datos",
@@ -758,7 +826,11 @@
       "saving_note": "Guardando en el Mazo...",
       "save_note": "Guardar Nota en el Mazo",
       "note_saved": "¡Nota Guardada!",
-      "note_saved_desc": "La nota de palabra se ha añadido al mazo seleccionado."
+      "note_saved_desc": "La nota de palabra se ha añadido al mazo seleccionado.",
+      "results_desc_one": "Se han creado {{count}} posibles tarjetas estructuradas.",
+      "results_desc_few": "Se han creado {{count}} posibles tarjetas estructuradas.",
+      "results_desc_many": "Se han creado {{count}} posibles tarjetas estructuradas.",
+      "results_desc_other": "Se han creado {{count}} posibles tarjetas estructuradas."
     },
     "tracker": {
       "pending_label": "Poniendo Trabajo en Cola",
@@ -779,7 +851,10 @@
     "creation_failed": "Creación fallida",
     "no_results_title": "No hay vista previa de resultados",
     "no_results_desc": "No se encontraron resultados.",
-    "total_jobs": "Trabajos totales: {{count}}"
+    "total_jobs_one": "Trabajos totales: {{count}}",
+    "total_jobs_few": "Trabajos totales: {{count}}",
+    "total_jobs_many": "Trabajos totales: {{count}}",
+    "total_jobs_other": "Trabajos totales: {{count}}"
   },
   "ai": {
     "validation": {

@@ -124,7 +124,15 @@
       "name_min": "Name must be at least 2 characters",
       "confirm_password_required": "Please confirm your password",
       "passwords_mismatch": "Passwords do not match"
-    }
+    },
+    "validation_error_one": "1",
+    "validation_error_few": "{{count}}",
+    "validation_error_many": "{{count}}",
+    "validation_error_other": "{{count}}",
+    "validation_more_one": "1",
+    "validation_more_few": "{{count}}",
+    "validation_more_many": "{{count}}",
+    "validation_more_other": "{{count}}"
   },
   "profile": {
     "validation": {
@@ -330,16 +338,30 @@
         "personal_dictionary": "Personal Dictionary",
         "learning_streak": "Learning Streak",
         "words_learned": "Words Learned",
-        "days_one": "1 Day",
-        "days_other": "{{count}} Days",
         "due_for_review": "Due for review",
         "added_to_collection": "Added to your collection",
         "daily_streak": "Daily learning-day streak",
         "notes_reviewed": "Notes reviewed successfully",
         "cards_one": "1 card",
+        "cards_few": "{{count}} cards",
+        "cards_many": "{{count}} cards",
         "cards_other": "{{count}} cards",
         "words_one": "1 word",
-        "words_other": "{{count}} words"
+        "words_few": "{{count}} words",
+        "words_many": "{{count}} words",
+        "words_other": "{{count}} words",
+        "days_one": "1 Day",
+        "days_few": "{{count}} Days",
+        "days_many": "{{count}} Days",
+        "days_other": "{{count}} Days",
+        "days_current_one": "1",
+        "days_current_few": "{{count}}",
+        "days_current_many": "{{count}}",
+        "days_current_other": "{{count}}",
+        "days_longest_one": "1",
+        "days_longest_few": "{{count}}",
+        "days_longest_many": "{{count}}",
+        "days_longest_other": "{{count}}"
       },
       "goals": {
         "daily_learning_goals": "Daily Learning Goals",
@@ -532,10 +554,41 @@
       "remove_word_desc": "This removes every study card generated from this word from “{{title}}”. The word, its cards, schedule, and review history will remain in your personal dictionary.",
       "remove_note_desc": "This removes every study card generated from this note from “{{title}}”. The note, its cards, schedule, and review history will remain in your personal dictionary.",
       "remove_btn": "Remove from Deck",
-      "add_word": "Add Word"
+      "add_word": "Add Word",
+      "delete_title_cards_one": "1",
+      "delete_title_cards_few": "{{count}}",
+      "delete_title_cards_many": "{{count}}",
+      "delete_title_cards_other": "{{count}}",
+      "orphaned_cards_one": "1",
+      "orphaned_cards_few": "{{count}}",
+      "orphaned_cards_many": "{{count}}",
+      "orphaned_cards_other": "{{count}}",
+      "shared_cards_one": "1",
+      "shared_cards_few": "{{count}}",
+      "shared_cards_many": "{{count}}",
+      "shared_cards_other": "{{count}}",
+      "delete_deck_and_cards_one": "1",
+      "delete_deck_and_cards_few": "{{count}}",
+      "delete_deck_and_cards_many": "{{count}}",
+      "delete_deck_and_cards_other": "{{count}}",
+      "delete_title_words_one": "1",
+      "delete_title_words_few": "{{count}}",
+      "delete_title_words_many": "{{count}}",
+      "delete_title_words_other": "{{count}}",
+      "orphaned_words_one": "1",
+      "orphaned_words_few": "{{count}}",
+      "orphaned_words_many": "{{count}}",
+      "orphaned_words_other": "{{count}}",
+      "shared_words_one": "1",
+      "shared_words_few": "{{count}}",
+      "shared_words_many": "{{count}}",
+      "shared_words_other": "{{count}}",
+      "delete_deck_and_words_one": "1",
+      "delete_deck_and_words_few": "{{count}}",
+      "delete_deck_and_words_many": "{{count}}",
+      "delete_deck_and_words_other": "{{count}}"
     },
     "cards": {
-      "title": "{{count}} Cards",
       "search_placeholder": "Search front, back...",
       "no_found": "No Cards Found",
       "refine_search": "Try refining your search term to find cards in this deck.",
@@ -546,10 +599,13 @@
       "db_inactive": "Database Inactive (Taken Over)",
       "db_inactive_desc": "This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.",
       "use_here": "Use here instead",
-      "loading": "Loading cards..."
+      "loading": "Loading cards...",
+      "title_one": "{{count}} Cards",
+      "title_few": "{{count}} Cards",
+      "title_many": "{{count}} Cards",
+      "title_other": "{{count}} Cards"
     },
     "words": {
-      "title": "{{count}} Words",
       "search_placeholder": "Search word, translation...",
       "no_found": "No Words Found",
       "refine_search": "Try refining your search term to find words in this deck.",
@@ -563,7 +619,11 @@
       "remove_word": "Remove word",
       "view_word": "View Word",
       "cards_count": "Cards: {{count}}",
-      "details_count": "Extra info: {{count}}"
+      "details_count": "Extra info: {{count}}",
+      "title_one": "{{count}} Words",
+      "title_few": "{{count}} Words",
+      "title_many": "{{count}} Words",
+      "title_other": "{{count}} Words"
     },
     "card_form": {
       "desc": "Create the question and answer for this study card.",
@@ -622,8 +682,11 @@
     },
     "word_view": {
       "desc": "All details saved for this word.",
-      "cards_count": "Cards ({{count}})",
-      "edit_word": "Edit Word"
+      "edit_word": "Edit Word",
+      "cards_count_one": "Cards ({{count}})",
+      "cards_count_few": "Cards ({{count}})",
+      "cards_count_many": "Cards ({{count}})",
+      "cards_count_other": "Cards ({{count}})"
     }
   },
   "review": {
@@ -690,7 +753,6 @@
       "topic_label": "Subject / Topic",
       "topic_desc": "Describe what you want to learn (e.g. \"Spanish Nouns\").",
       "topic_placeholder": "e.g. Spanish Subjunctive",
-      "limit_chars": "Limit {{count}} chars",
       "text_label": "Source Text",
       "text_desc": "Paste an article or notes to create cards from.",
       "text_placeholder": "Paste text here...",
@@ -708,9 +770,16 @@
       "mode_native_desc": "Enter a word in your native language (e.g. \"hello\") to translate it and create a note.",
       "model_label": "Model Selection",
       "card_count": "Card Count",
-      "cards": "{{count}} cards",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "limit_chars_one": "Limit {{count}} chars",
+      "limit_chars_few": "Limit {{count}} chars",
+      "limit_chars_many": "Limit {{count}} chars",
+      "limit_chars_other": "Limit {{count}} chars",
+      "cards_one": "{{count}} cards",
+      "cards_few": "{{count}} cards",
+      "cards_many": "{{count}} cards",
+      "cards_other": "{{count}} cards"
     },
     "poll_failed": "Failed to poll job status",
     "creation_error": "Creation could not be completed. Please try again with a different input.",
@@ -731,7 +800,6 @@
     "preview": {
       "save_cards_failed": "Failed to save cards",
       "results_title": "Creation Results",
-      "results_desc": "Created {{count}} structured flashcard note candidates.",
       "front": "Front",
       "back": "Back",
       "save_db": "Save to Database",
@@ -758,7 +826,11 @@
       "saving_note": "Saving to Deck...",
       "save_note": "Save Note to Deck",
       "note_saved": "Note Saved!",
-      "note_saved_desc": "The word note has been added to your selected deck."
+      "note_saved_desc": "The word note has been added to your selected deck.",
+      "results_desc_one": "Created {{count}} structured flashcard note candidates.",
+      "results_desc_few": "Created {{count}} structured flashcard note candidates.",
+      "results_desc_many": "Created {{count}} structured flashcard note candidates.",
+      "results_desc_other": "Created {{count}} structured flashcard note candidates."
     },
     "tracker": {
       "pending_label": "Queuing Job",
@@ -779,7 +851,10 @@
     "creation_failed": "Creation Failed",
     "no_results_title": "No Results Preview",
     "no_results_desc": "No results found.",
-    "total_jobs": "Total jobs: {{count}}"
+    "total_jobs_one": "Total jobs: {{count}}",
+    "total_jobs_few": "Total jobs: {{count}}",
+    "total_jobs_many": "Total jobs: {{count}}",
+    "total_jobs_other": "Total jobs: {{count}}"
   },
   "ai": {
     "validation": {

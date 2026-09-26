@@ -124,7 +124,15 @@
       "name_min": "Der Name muss mindestens 2 Zeichen lang sein",
       "confirm_password_required": "Bitte bestätige dein Passwort",
       "passwords_mismatch": "Die Passwörter stimmen nicht überein"
-    }
+    },
+    "validation_error_one": "1",
+    "validation_error_few": "{{count}}",
+    "validation_error_many": "{{count}}",
+    "validation_error_other": "{{count}}",
+    "validation_more_one": "1",
+    "validation_more_few": "{{count}}",
+    "validation_more_many": "{{count}}",
+    "validation_more_other": "{{count}}"
   },
   "profile": {
     "validation": {
@@ -330,16 +338,30 @@
         "personal_dictionary": "Persönliches Wörterbuch",
         "learning_streak": "Lernserie",
         "words_learned": "Gelernte Wörter",
-        "days_one": "1 Tag",
-        "days_other": "{{count}} Tage",
         "due_for_review": "Fällig zur Wiederholung",
         "added_to_collection": "Zu deiner Sammlung hinzugefügt",
         "daily_streak": "Tägliche Lernserie",
         "notes_reviewed": "Erfolgreich wiederholte Notizen",
         "cards_one": "1 Karte",
+        "cards_few": "{{count}} Karten",
+        "cards_many": "{{count}} Karten",
         "cards_other": "{{count}} Karten",
         "words_one": "1 Wort",
-        "words_other": "{{count}} Wörter"
+        "words_few": "{{count}} Wörter",
+        "words_many": "{{count}} Wörter",
+        "words_other": "{{count}} Wörter",
+        "days_one": "1 Tag",
+        "days_few": "{{count}} Tage",
+        "days_many": "{{count}} Tage",
+        "days_other": "{{count}} Tage",
+        "days_current_one": "1",
+        "days_current_few": "{{count}}",
+        "days_current_many": "{{count}}",
+        "days_current_other": "{{count}}",
+        "days_longest_one": "1",
+        "days_longest_few": "{{count}}",
+        "days_longest_many": "{{count}}",
+        "days_longest_other": "{{count}}"
       },
       "goals": {
         "daily_learning_goals": "Tägliche Lernziele",
@@ -532,10 +554,41 @@
       "remove_word_desc": "Dies entfernt jede von diesem Wort generierte Lernkarte aus „{{title}}“. Das Wort, seine Karten, der Zeitplan und der Lernverlauf bleiben in Ihrem persönlichen Wörterbuch erhalten.",
       "remove_note_desc": "Dies entfernt jede von dieser Notiz generierte Lernkarte aus „{{title}}“. Die Notiz, ihre Karten, der Zeitplan und der Lernverlauf bleiben in Ihrem persönlichen Wörterbuch erhalten.",
       "remove_btn": "Aus Stapel entfernen",
-      "add_word": "Wort hinzufügen"
+      "add_word": "Wort hinzufügen",
+      "delete_title_cards_one": "1",
+      "delete_title_cards_few": "{{count}}",
+      "delete_title_cards_many": "{{count}}",
+      "delete_title_cards_other": "{{count}}",
+      "orphaned_cards_one": "1",
+      "orphaned_cards_few": "{{count}}",
+      "orphaned_cards_many": "{{count}}",
+      "orphaned_cards_other": "{{count}}",
+      "shared_cards_one": "1",
+      "shared_cards_few": "{{count}}",
+      "shared_cards_many": "{{count}}",
+      "shared_cards_other": "{{count}}",
+      "delete_deck_and_cards_one": "1",
+      "delete_deck_and_cards_few": "{{count}}",
+      "delete_deck_and_cards_many": "{{count}}",
+      "delete_deck_and_cards_other": "{{count}}",
+      "delete_title_words_one": "1",
+      "delete_title_words_few": "{{count}}",
+      "delete_title_words_many": "{{count}}",
+      "delete_title_words_other": "{{count}}",
+      "orphaned_words_one": "1",
+      "orphaned_words_few": "{{count}}",
+      "orphaned_words_many": "{{count}}",
+      "orphaned_words_other": "{{count}}",
+      "shared_words_one": "1",
+      "shared_words_few": "{{count}}",
+      "shared_words_many": "{{count}}",
+      "shared_words_other": "{{count}}",
+      "delete_deck_and_words_one": "1",
+      "delete_deck_and_words_few": "{{count}}",
+      "delete_deck_and_words_many": "{{count}}",
+      "delete_deck_and_words_other": "{{count}}"
     },
     "cards": {
-      "title": "{{count}} Karten",
       "search_placeholder": "Suche Vorderseite, Rückseite...",
       "no_found": "Keine Karten gefunden",
       "refine_search": "Versuchen Sie, Ihren Suchbegriff zu verfeinern, um Karten in diesem Stapel zu finden.",
@@ -546,10 +599,13 @@
       "db_inactive": "Datenbank inaktiv (Übernommen)",
       "db_inactive_desc": "Dieser Tab ist derzeit inaktiv, da die Offline-Datenbank in einem anderen Tab geöffnet ist. Klicken Sie unten, um die Datenbank in diesem Fenster zu verwenden.",
       "use_here": "Stattdessen hier verwenden",
-      "loading": "Lade Karten..."
+      "loading": "Lade Karten...",
+      "title_one": "{{count}} Karten",
+      "title_few": "{{count}} Karten",
+      "title_many": "{{count}} Karten",
+      "title_other": "{{count}} Karten"
     },
     "words": {
-      "title": "{{count}} Wörter",
       "search_placeholder": "Suche Wort, Übersetzung...",
       "no_found": "Keine Wörter gefunden",
       "refine_search": "Versuchen Sie, Ihren Suchbegriff zu verfeinern, um Wörter in diesem Stapel zu finden.",
@@ -563,7 +619,11 @@
       "remove_word": "Wort entfernen",
       "view_word": "Wort anzeigen",
       "cards_count": "Karten: {{count}}",
-      "details_count": "Zusatzinfo: {{count}}"
+      "details_count": "Zusatzinfo: {{count}}",
+      "title_one": "{{count}} Wörter",
+      "title_few": "{{count}} Wörter",
+      "title_many": "{{count}} Wörter",
+      "title_other": "{{count}} Wörter"
     },
     "card_form": {
       "desc": "Erstellen Sie Frage und Antwort für diese Lernkarte.",
@@ -622,8 +682,11 @@
     },
     "word_view": {
       "desc": "Alle gespeicherten Details für dieses Wort.",
-      "cards_count": "Karten ({{count}})",
-      "edit_word": "Wort bearbeiten"
+      "edit_word": "Wort bearbeiten",
+      "cards_count_one": "Karten ({{count}})",
+      "cards_count_few": "Karten ({{count}})",
+      "cards_count_many": "Karten ({{count}})",
+      "cards_count_other": "Karten ({{count}})"
     }
   },
   "review": {
@@ -690,7 +753,6 @@
       "topic_label": "Betreff / Thema",
       "topic_desc": "Beschreibe, was du lernen möchtest (z.B. \"Spanische Nomen\").",
       "topic_placeholder": "z.B. Spanischer Subjunktiv",
-      "limit_chars": "Limit {{count}} Zeichen",
       "text_label": "Quelltext",
       "text_desc": "Füge einen Artikel oder Notizen ein, um daraus Karten zu erstellen.",
       "text_placeholder": "Text hier einfügen...",
@@ -708,9 +770,16 @@
       "mode_native_desc": "Gib ein Wort in deiner Muttersprache ein (z.B. \"Hallo\"), um es zu übersetzen und eine Notiz zu erstellen.",
       "model_label": "Modellauswahl",
       "card_count": "Kartenanzahl",
-      "cards": "{{count}} Karten",
       "creating": "Erstelle...",
-      "create": "Erstellen"
+      "create": "Erstellen",
+      "limit_chars_one": "Limit {{count}} Zeichen",
+      "limit_chars_few": "Limit {{count}} Zeichen",
+      "limit_chars_many": "Limit {{count}} Zeichen",
+      "limit_chars_other": "Limit {{count}} Zeichen",
+      "cards_one": "{{count}} Karten",
+      "cards_few": "{{count}} Karten",
+      "cards_many": "{{count}} Karten",
+      "cards_other": "{{count}} Karten"
     },
     "poll_failed": "Job-Status konnte nicht abgefragt werden",
     "creation_error": "Erstellung konnte nicht abgeschlossen werden. Bitte versuche es mit einer anderen Eingabe.",
@@ -731,7 +800,6 @@
     "preview": {
       "save_cards_failed": "Karten konnten nicht gespeichert werden",
       "results_title": "Erstellungsergebnisse",
-      "results_desc": "{{count}} strukturierte Karteikarten-Kandidaten erstellt.",
       "front": "Vorderseite",
       "back": "Rückseite",
       "save_db": "In Datenbank speichern",
@@ -758,7 +826,11 @@
       "saving_note": "Speichere in Stapel...",
       "save_note": "Notiz im Stapel speichern",
       "note_saved": "Notiz gespeichert!",
-      "note_saved_desc": "Die Wortnotiz wurde zu deinem ausgewählten Stapel hinzugefügt."
+      "note_saved_desc": "Die Wortnotiz wurde zu deinem ausgewählten Stapel hinzugefügt.",
+      "results_desc_one": "{{count}} strukturierte Karteikarten-Kandidaten erstellt.",
+      "results_desc_few": "{{count}} strukturierte Karteikarten-Kandidaten erstellt.",
+      "results_desc_many": "{{count}} strukturierte Karteikarten-Kandidaten erstellt.",
+      "results_desc_other": "{{count}} strukturierte Karteikarten-Kandidaten erstellt."
     },
     "tracker": {
       "pending_label": "Job wird in Warteschlange eingereiht",
@@ -779,7 +851,10 @@
     "creation_failed": "Erstellung fehlgeschlagen",
     "no_results_title": "Keine Ergebnisvorschau",
     "no_results_desc": "Keine Ergebnisse gefunden.",
-    "total_jobs": "Gesamtaufgaben: {{count}}"
+    "total_jobs_one": "Gesamtaufgaben: {{count}}",
+    "total_jobs_few": "Gesamtaufgaben: {{count}}",
+    "total_jobs_many": "Gesamtaufgaben: {{count}}",
+    "total_jobs_other": "Gesamtaufgaben: {{count}}"
   },
   "ai": {
     "validation": {
