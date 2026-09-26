@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +11,7 @@ export const FormErrorMessage = React.forwardRef<
   HTMLDivElement,
   FormErrorMessageProps
 >(({ className, message, ...props }, ref) => {
+  const { t } = useTranslation();
   if (!message) return null;
 
   const messages = Array.isArray(message)
@@ -32,11 +34,11 @@ export const FormErrorMessage = React.forwardRef<
       <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
       <div className="text-left w-full">
         {messages.length === 1 ? (
-          <p className="font-medium">{messages[0]}</p>
+          <p className="font-medium">{t(messages[0])}</p>
         ) : (
           <ul className="list-disc pl-4 font-medium space-y-1">
             {messages.map((msg, i) => (
-              <li key={i}>{msg}</li>
+              <li key={i}>{t(msg)}</li>
             ))}
           </ul>
         )}

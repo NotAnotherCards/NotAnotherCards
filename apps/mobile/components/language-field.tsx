@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LANGUAGES, languageLabel } from '@repo/schemas';
 import { Text } from './ui/text';
 
@@ -15,6 +16,7 @@ export function LanguageField({
   error?: string;
   exclude?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <View className="gap-1">
       <Text className="text-sm font-medium">{label}</Text>
@@ -41,7 +43,11 @@ export function LanguageField({
           );
         })}
       </View>
-      {error && <Text className="text-sm text-destructive">{error}</Text>}
+      {error && (
+        <Text className="text-sm text-destructive">
+          {t(error, { defaultValue: error })}
+        </Text>
+      )}
     </View>
   );
 }

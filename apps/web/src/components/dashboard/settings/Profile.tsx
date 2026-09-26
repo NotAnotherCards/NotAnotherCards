@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +28,7 @@ import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 
 export function Profile() {
+  const { t } = useTranslation();
   const { data: session, refetch } = authClient.useSession();
   const { profile, updateUserProfile } = useStore();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export function Profile() {
       if (newUsername && newUsername !== currentUsername) {
         const available = await checkUsernameAvailable(newUsername);
         if (!available) {
-          throw new Error('Username is already taken');
+          throw new Error(t('dashboard.settings.profile.username_taken'));
         }
       }
 
@@ -102,7 +104,7 @@ export function Profile() {
       });
       if (!mounted.current) return;
 
-      setSuccessMessage('Settings saved successfully!');
+      setSuccessMessage(t('dashboard.settings.profile.success'));
       void refetch();
       scheduleSuccessDismiss(() => {
         setSuccessMessage(null);
@@ -110,7 +112,9 @@ export function Profile() {
     } catch (err) {
       if (!mounted.current) return;
       setApiError(
-        err instanceof Error ? err.message : 'An unexpected error occurred',
+        err instanceof Error
+          ? err.message
+          : t('dashboard.settings.profile.unexpected_error'),
       );
     }
   };
@@ -125,10 +129,10 @@ export function Profile() {
           </div>
           <div>
             <CardTitle className="text-base font-bold">
-              Profile Details
+              {t('dashboard.settings.profile.title')}
             </CardTitle>
             <CardDescription className="text-xs">
-              Your public display name and screen username
+              {t('dashboard.settings.profile.description')}
             </CardDescription>
           </div>
         </CardHeader>
@@ -140,12 +144,16 @@ export function Profile() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Username</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>
+                      {t('dashboard.settings.profile.username')}
+                    </FieldLabel>
                     <Input
                       {...field}
                       value={field.value ?? ''}
                       id={field.name}
-                      placeholder="Username"
+                      placeholder={t(
+                        'dashboard.settings.profile.username_placeholder',
+                      )}
                       aria-invalid={fieldState.invalid}
                       aria-describedby={
                         fieldState.invalid ? 'username-error' : undefined
@@ -171,10 +179,10 @@ export function Profile() {
           </div>
           <div>
             <CardTitle className="text-base font-bold">
-              Language Preferences
+              {t('dashboard.settings.profile.language_title')}
             </CardTitle>
             <CardDescription className="text-xs">
-              Configure your native language and the language you want to study
+              {t('dashboard.settings.profile.language_description')}
             </CardDescription>
           </div>
         </CardHeader>
@@ -187,7 +195,7 @@ export function Profile() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>
-                      Native Language
+                      {t('dashboard.settings.profile.native_language')}
                     </FieldLabel>
                     <div className="relative w-full">
                       <select
@@ -207,7 +215,7 @@ export function Profile() {
                           disabled
                           className="bg-background text-foreground"
                         >
-                          Select language
+                          {t('dashboard.settings.profile.select_language')}
                         </option>
                         {LANGUAGES.map((lang) => (
                           <option
@@ -238,7 +246,7 @@ export function Profile() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>
-                      Target Language
+                      {t('dashboard.settings.profile.target_language')}
                     </FieldLabel>
                     <div className="relative w-full">
                       <select
@@ -258,7 +266,7 @@ export function Profile() {
                           disabled
                           className="bg-background text-foreground"
                         >
-                          Select language
+                          {t('dashboard.settings.profile.select_language')}
                         </option>
                         {LANGUAGES.filter(
                           (lang) => lang.value !== nativeLanguage,
@@ -308,12 +316,12 @@ export function Profile() {
           {isSubmitting ? (
             <>
               <Spinner />
-              Saving...
+              {t('dashboard.settings.profile.saving')}
             </>
           ) : (
             <>
               <Save className="size-4" />
-              Save Changes
+              {t('dashboard.settings.profile.save_changes')}
             </>
           )}
         </Button>

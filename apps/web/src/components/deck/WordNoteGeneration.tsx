@@ -11,6 +11,7 @@ import { WordNoteFieldsV1 } from '@repo/offline-db';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { useTranslation } from 'react-i18next';
 
 export interface WordGenerationDeck {
   deckId: string;
@@ -47,6 +48,7 @@ export function WordNoteGeneration({
   };
   onBusyChange: (busy: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const [job, setJob] = useState<WordJob | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,10 @@ export function WordNoteGeneration({
       } catch {
         if (controller.signal.aborted) return;
         setError(
-          'Unable to check generation. Check your connection and try again.',
+          t(
+            'ai.validation.network_error',
+            'Unable to check generation. Check your connection and try again.',
+          ),
         );
         setPollPaused(true);
       }
@@ -129,9 +134,9 @@ export function WordNoteGeneration({
       if (!controller.signal.aborted) setJob(created);
     } catch (err) {
       if (!controller.signal.aborted) {
-        setError(
-          err instanceof Error ? err.message : 'Unable to start generation.',
-        );
+        const rawMessage =
+          err instanceof Error ? err.message : 'Unable to start generation.';
+        setError(t(rawMessage, rawMessage) as string);
       }
     } finally {
       if (!controller.signal.aborted) setStarting(false);
@@ -160,7 +165,11 @@ export function WordNoteGeneration({
     try {
       apply.current?.(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to fill the form.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : t('ai.validation.fill_error', 'Unable to fill the form.'),
+      );
     }
   }, [job, deck.deckId, deck.nativeLanguageId, deck.targetLanguageId]);
 

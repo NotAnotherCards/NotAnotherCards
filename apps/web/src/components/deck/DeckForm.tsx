@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { Input } from '@/components/ui/input';
 import {
@@ -100,6 +101,7 @@ export function DeckForm({
   title,
   error,
 }: DeckFormProps) {
+  const { t } = useTranslation();
   const form = useForm<DeckFormData>({
     resolver: zodResolver(deckFormSchema),
     defaultValues: {
@@ -146,7 +148,10 @@ export function DeckForm({
               {title}
             </CardTitle>
             <CardDescription>
-              Organize your study cards under a custom category.
+              {t(
+                'deck.form.header_desc',
+                'Organize your study cards under a custom category.',
+              )}
             </CardDescription>
           </CardHeader>
 
@@ -158,11 +163,16 @@ export function DeckForm({
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={field.name}>Deck Title</FieldLabel>
+                      <FieldLabel htmlFor={field.name}>
+                        {t('deck.form.title', 'Deck Title')}
+                      </FieldLabel>
                       <Input
                         {...field}
                         id={field.name}
-                        placeholder="e.g. Spanish Vocabulary, AWS Cloud Practitioner"
+                        placeholder={t(
+                          'deck.form.title_placeholder',
+                          'e.g. Spanish Vocabulary, AWS Cloud Practitioner',
+                        )}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid ? 'title-error' : undefined
@@ -188,12 +198,15 @@ export function DeckForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Description (Optional)
+                        {t('deck.form.description', 'Description (Optional)')}
                       </FieldLabel>
                       <textarea
                         {...field}
                         id={field.name}
-                        placeholder="Describe what these cards will cover..."
+                        placeholder={t(
+                          'deck.form.desc_placeholder',
+                          'Describe what these cards will cover...',
+                        )}
                         rows={3}
                         aria-invalid={fieldState.invalid}
                         className="w-full flex min-h-20 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
@@ -209,7 +222,9 @@ export function DeckForm({
                     control={form.control}
                     render={({ field }) => (
                       <Field>
-                        <FieldLabel>What goes in this deck</FieldLabel>
+                        <FieldLabel>
+                          {t('deck.form.note_type', 'What goes in this deck')}
+                        </FieldLabel>
                         <div className="grid grid-cols-2 gap-2">
                           {DECK_NOTE_TYPE_OPTIONS.map(
                             ({ value, label, description }) => (
@@ -243,8 +258,14 @@ export function DeckForm({
                   isWord &&
                   (
                     [
-                      ['nativeLanguageId', 'Your language'],
-                      ['targetLanguageId', 'Language you are learning'],
+                      [
+                        'nativeLanguageId',
+                        t('deck.form.native_lang', 'Your language'),
+                      ],
+                      [
+                        'targetLanguageId',
+                        t('deck.form.target_lang', 'Language you are learning'),
+                      ],
                     ] as const
                   ).map(([name, label]) => (
                     <Controller
@@ -265,7 +286,9 @@ export function DeckForm({
                                 : 'border-input'
                             }`}
                           >
-                            <option value="">Choose a language</option>
+                            <option value="">
+                              {t('deck.form.choose_lang', 'Choose a language')}
+                            </option>
                             {LANGUAGES.map((language) => (
                               <option
                                 key={language.value}
@@ -292,14 +315,14 @@ export function DeckForm({
               onClick={onCancel}
               className="cursor-pointer"
             >
-              Cancel
+              {t('deck.form.cancel', 'Cancel')}
             </Button>
             <Button
               type="submit"
               disabled={form.formState.isSubmitting}
               className="cursor-pointer"
             >
-              Save Deck
+              {t('deck.form.save', 'Save Deck')}
             </Button>
           </CardFooter>
         </form>

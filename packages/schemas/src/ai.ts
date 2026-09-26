@@ -47,8 +47,8 @@ export const createAiJobSchema = z.discriminatedUnion('type', [
     topic: z
       .string()
       .trim()
-      .min(1, 'Topic cannot be empty')
-      .max(300, 'Topic is too long'),
+      .min(1, 'ai.validation.topic_empty')
+      .max(300, 'ai.validation.topic_too_long'),
     count,
     model,
   }),
@@ -57,8 +57,8 @@ export const createAiJobSchema = z.discriminatedUnion('type', [
     sourceText: z
       .string()
       .trim()
-      .min(1, 'Source text cannot be empty')
-      .max(10000, 'Source text cannot exceed 10000 characters'),
+      .min(1, 'ai.validation.source_text_empty')
+      .max(10000, 'ai.validation.source_text_too_long'),
     count,
     model,
   }),

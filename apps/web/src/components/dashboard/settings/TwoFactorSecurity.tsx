@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -34,14 +35,19 @@ type EnrollmentMaterial = {
   backupCodes: string[];
 };
 
-function managementError(error: unknown, fallback: string): string {
+function managementError(
+  error: unknown,
+  fallback: string,
+  t: (key: string) => string,
+): string {
   const code =
     typeof error === 'object' && error !== null && 'code' in error
       ? String(error.code)
       : '';
-  if (code === 'INVALID_PASSWORD') return 'The current password is incorrect.';
+  if (code === 'INVALID_PASSWORD')
+    return t('dashboard.settings.two_factor.incorrect_password');
   if (code === 'TWO_FACTOR_ALREADY_ENABLED') {
-    return 'Two-factor authentication is already enabled.';
+    return t('dashboard.settings.two_factor.already_enabled');
   }
   return fallback;
 }
@@ -56,13 +62,14 @@ function secretFromUri(uri: string): string {
 
 function BackupCodes({
   codes,
-  title = 'Save your backup codes',
+  title,
   onDone,
 }: {
   codes: string[];
-  title?: string;
+  title: string;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const download = () => {
     const file = new Blob(
       [
@@ -85,8 +92,7 @@ function BackupCodes({
           {title}
         </h4>
         <p className="text-sm text-muted-foreground">
-          This is the only time these codes will be shown. Keep them somewhere
-          secure; each code works once.
+          {t('dashboard.settings.two_factor.backup_codes_desc')}
         </p>
       </div>
       <ul className="grid grid-cols-1 gap-2 rounded-2xl border bg-muted/30 p-4 font-mono text-sm sm:grid-cols-2">
@@ -102,10 +108,11 @@ function BackupCodes({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button type="button" variant="outline" onClick={download}>
           <Download aria-hidden="true" />
-          Download codes
+          {t('dashboard.settings.two_factor.download_codes')}
         </Button>
         <Button type="button" onClick={onDone}>
-          <Check aria-hidden="true" />I saved my codes
+          <Check aria-hidden="true" />
+          {t('dashboard.settings.two_factor.saved_codes')}
         </Button>
       </div>
     </div>
@@ -119,6 +126,7 @@ function Enrollment({
   onCancel: () => void;
   onVerified: (backupCodes: string[]) => void | Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [material, setMaterial] = useState<EnrollmentMaterial | null>(null);
   const [code, setCode] = useState(emptyTotpDigits);
@@ -137,7 +145,7 @@ function Enrollment({
   const enable = async (event: FormEvent) => {
     event.preventDefault();
     if (!password) {
-      setError('Enter your current password to continue.');
+      setError(t('dashboard.settings.two_factor.enter_password'));
       return;
     }
     setError(null);
@@ -151,7 +159,8 @@ function Enrollment({
         setError(
           managementError(
             response.error,
-            'Could not start two-factor setup. Please try again.',
+            t('dashboard.settings.two_factor.start_setup_fail'),
+            t,
           ),
         );
         return;
@@ -162,7 +171,7 @@ function Enrollment({
       });
       setPassword('');
     } catch {
-      setError('Could not start two-factor setup. Please try again.');
+      setError(t('dashboard.settings.two_factor.start_setup_fail'));
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +182,7 @@ function Enrollment({
     if (!material) return;
     const normalizedCode = code.join('');
     if (normalizedCode.length !== 6) {
-      setError('Enter the six-digit code from your authenticator app.');
+      setError(t('dashboard.settings.two_factor.six_digit_req'));
       return;
     }
     setError(null);
@@ -183,7 +192,7 @@ function Enrollment({
         code: normalizedCode,
       });
       if (response.error) {
-        setError('That code is invalid or has expired. Try the current code.');
+        setError(t('dashboard.settings.two_factor.invalid_code'));
         return;
       }
       const backupCodes = [...material.backupCodes];
@@ -191,7 +200,7 @@ function Enrollment({
       setCode(emptyTotpDigits());
       await onVerified(backupCodes);
     } catch {
-      setError('Could not verify the code. Please try again.');
+      setError(t('dashboard.settings.two_factor.verify_fail'));
     } finally {
       setIsSubmitting(false);
     }
@@ -201,7 +210,9 @@ function Enrollment({
     return (
       <form onSubmit={enable} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="two-factor-password">Current password</Label>
+          <Label htmlFor="two-factor-password">
+            {t('dashboard.settings.two_factor.current_password')}
+          </Label>
           <PasswordInput
             id="two-factor-password"
             value={password}
@@ -217,7 +228,9 @@ function Enrollment({
         <div className="flex gap-2">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? <Spinner /> : <ShieldCheck aria-hidden="true" />}
-            {isSubmitting ? 'Starting setup...' : 'Continue'}
+            {isSubmitting
+              ? t('dashboard.settings.two_factor.starting_setup')
+              : t('dashboard.settings.two_factor.continue')}
           </Button>
           <Button
             type="button"
@@ -225,7 +238,7 @@ function Enrollment({
             onClick={onCancel}
             disabled={isSubmitting}
           >
-            Cancel
+            {t('dashboard.settings.two_factor.cancel')}
           </Button>
         </div>
       </form>
@@ -239,18 +252,22 @@ function Enrollment({
           <QRCodeSVG
             value={material.totpURI}
             size={176}
-            title="Scan this QR code with your authenticator app"
+            title={t('dashboard.settings.two_factor.qr_title')}
           />
         </div>
         <div className="space-y-3">
           <div>
-            <h4 className="font-semibold">Scan the QR code</h4>
+            <h4 className="font-semibold">
+              {t('dashboard.settings.two_factor.scan_qr')}
+            </h4>
             <p className="text-sm text-muted-foreground">
-              Add it in your authenticator app, then enter the code it shows.
+              {t('dashboard.settings.two_factor.scan_qr_desc')}
             </p>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="manual-secret">Manual setup key</Label>
+            <Label htmlFor="manual-secret">
+              {t('dashboard.settings.two_factor.manual_setup_key')}
+            </Label>
             <div className="flex gap-2">
               <Input
                 id="manual-secret"
@@ -263,13 +280,17 @@ function Enrollment({
                 type="button"
                 variant="outline"
                 size="icon"
-                aria-label="Copy manual setup key"
+                aria-label={t('dashboard.settings.two_factor.copy_manual_key')}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(secret);
-                    setCopyStatus('Setup key copied.');
+                    setCopyStatus(
+                      t('dashboard.settings.two_factor.manual_key_copied'),
+                    );
                   } catch {
-                    setCopyStatus('Select the setup key and copy it manually.');
+                    setCopyStatus(
+                      t('dashboard.settings.two_factor.manual_key_copy_fail'),
+                    );
                   }
                 }}
               >
@@ -280,7 +301,7 @@ function Enrollment({
               id="manual-secret-help"
               className="text-xs text-muted-foreground"
             >
-              Use this key if your app cannot scan the QR code.
+              {t('dashboard.settings.two_factor.manual_setup_help')}
             </p>
             <p id="copy-status" className="sr-only" aria-live="polite">
               {copyStatus}
@@ -301,7 +322,9 @@ function Enrollment({
         <div className="flex gap-2">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? <Spinner /> : <ShieldCheck aria-hidden="true" />}
-            {isSubmitting ? 'Verifying...' : 'Verify and enable'}
+            {isSubmitting
+              ? t('dashboard.settings.two_factor.verifying')
+              : t('dashboard.settings.two_factor.verify_enable')}
           </Button>
           <Button
             type="button"
@@ -309,7 +332,7 @@ function Enrollment({
             onClick={onCancel}
             disabled={isSubmitting}
           >
-            Cancel setup
+            {t('dashboard.settings.two_factor.cancel_setup')}
           </Button>
         </div>
       </form>
@@ -318,6 +341,7 @@ function Enrollment({
 }
 
 export function TwoFactorSecurity() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: session, refetch } = authClient.useSession();
   const [enabledOverride, setEnabledOverride] = useState<boolean | null>(null);
@@ -326,8 +350,8 @@ export function TwoFactorSecurity() {
   const [action, setAction] = useState<'regenerate' | 'disable' | null>(null);
   const [password, setPassword] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
-  const [backupCodesTitle, setBackupCodesTitle] = useState(
-    'Save your backup codes',
+  const [backupCodesTitle, setBackupCodesTitle] = useState(() =>
+    t('dashboard.settings.two_factor.save_backup_codes'),
   );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -372,7 +396,7 @@ export function TwoFactorSecurity() {
       if (response.error) {
         setCredentialError(
           response.error.message ||
-            'Could not sign out. Please try again before creating a password.',
+            t('dashboard.settings.two_factor.sign_out_fail'),
         );
         return;
       }
@@ -381,9 +405,7 @@ export function TwoFactorSecurity() {
         search: { email: session?.user.email },
       });
     } catch {
-      setCredentialError(
-        'Could not sign out. Please try again before creating a password.',
-      );
+      setCredentialError(t('dashboard.settings.two_factor.sign_out_fail'));
     } finally {
       setIsCreatingCredential(false);
     }
@@ -392,7 +414,7 @@ export function TwoFactorSecurity() {
   const manage = async (event: FormEvent) => {
     event.preventDefault();
     if (!password) {
-      setError('Enter your current password to continue.');
+      setError(t('dashboard.settings.two_factor.enter_password'));
       return;
     }
     setError(null);
@@ -406,13 +428,16 @@ export function TwoFactorSecurity() {
           setError(
             managementError(
               response.error,
-              'Could not regenerate backup codes. Please try again.',
+              t('dashboard.settings.two_factor.regenerate_fail'),
+              t,
             ),
           );
           return;
         }
         setBackupCodes([...response.data.backupCodes]);
-        setBackupCodesTitle('Your new backup codes');
+        setBackupCodesTitle(
+          t('dashboard.settings.two_factor.new_backup_codes'),
+        );
         setPassword('');
       } else if (action === 'disable') {
         const response = await authClient.twoFactor.disable({ password });
@@ -420,7 +445,8 @@ export function TwoFactorSecurity() {
           setError(
             managementError(
               response.error,
-              'Could not disable two-factor authentication. Please try again.',
+              t('dashboard.settings.two_factor.disable_fail'),
+              t,
             ),
           );
           return;
@@ -430,7 +456,7 @@ export function TwoFactorSecurity() {
         await refetch();
       }
     } catch {
-      setError('The security change could not be completed. Please try again.');
+      setError(t('dashboard.settings.profile.unexpected_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -448,10 +474,10 @@ export function TwoFactorSecurity() {
             aria-level={3}
             className="text-base font-bold"
           >
-            Two-factor authentication
+            {t('dashboard.settings.two_factor.title')}
           </CardTitle>
           <CardDescription className="text-xs">
-            Protect your account with an authenticator app and recovery codes.
+            {t('dashboard.settings.two_factor.description')}
           </CardDescription>
         </div>
       </CardHeader>
@@ -459,12 +485,14 @@ export function TwoFactorSecurity() {
         <div className="flex items-center justify-between gap-4 rounded-2xl border bg-muted/20 p-4">
           <div>
             <p className="font-medium">
-              {isEnabled ? 'Two-factor is enabled' : 'Two-factor is off'}
+              {isEnabled
+                ? t('dashboard.settings.two_factor.enabled')
+                : t('dashboard.settings.two_factor.disabled')}
             </p>
             <p className="text-sm text-muted-foreground">
               {isEnabled
-                ? 'You will be asked for a code when signing in.'
-                : 'Add an extra verification step to password sign-in.'}
+                ? t('dashboard.settings.two_factor.enabled_desc')
+                : t('dashboard.settings.two_factor.disabled_desc')}
             </p>
           </div>
           <span
@@ -474,17 +502,19 @@ export function TwoFactorSecurity() {
                 : 'rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground'
             }
           >
-            {isEnabled ? 'Enabled' : 'Disabled'}
+            {isEnabled
+              ? t('dashboard.settings.two_factor.status_enabled')
+              : t('dashboard.settings.two_factor.status_disabled')}
           </span>
         </div>
 
         {!isEnabled && hasCredential === false && (
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-            <p className="font-semibold">A password is required</p>
+            <p className="font-semibold">
+              {t('dashboard.settings.two_factor.password_required')}
+            </p>
             <p className="text-muted-foreground">
-              Social-only accounts cannot enable two-factor authentication yet.
-              Sign out, then create a password for this email through the
-              password reset flow.
+              {t('dashboard.settings.two_factor.password_required_desc')}
             </p>
             <Button
               type="button"
@@ -495,8 +525,8 @@ export function TwoFactorSecurity() {
             >
               {isCreatingCredential && <Spinner />}
               {isCreatingCredential
-                ? 'Signing out...'
-                : 'Sign out and create a password'}
+                ? t('dashboard.settings.two_factor.signing_out')
+                : t('dashboard.settings.two_factor.sign_out_create_password')}
             </Button>
             <FormErrorMessage className="mt-3" message={credentialError} />
           </div>
@@ -509,7 +539,9 @@ export function TwoFactorSecurity() {
               // Lift the one-time codes before refreshing the shared session.
               // The refresh changes twoFactorEnabled and unmounts Enrollment.
               setBackupCodes(codes);
-              setBackupCodesTitle('Save your backup codes');
+              setBackupCodesTitle(
+                t('dashboard.settings.two_factor.save_backup_codes'),
+              );
               setShowEnrollment(false);
               setEnabledOverride(true);
               await refetch();
@@ -524,7 +556,7 @@ export function TwoFactorSecurity() {
             disabled={hasCredential !== true}
           >
             <ShieldCheck aria-hidden="true" />
-            Enable two-factor authentication
+            {t('dashboard.settings.two_factor.enable_two_factor')}
           </Button>
         )}
 
@@ -541,18 +573,18 @@ export function TwoFactorSecurity() {
             <div>
               <h4 className="font-semibold">
                 {action === 'regenerate'
-                  ? 'Regenerate backup codes'
-                  : 'Disable two-factor authentication'}
+                  ? t('dashboard.settings.two_factor.regenerate_backup_codes')
+                  : t('dashboard.settings.two_factor.disable_two_factor')}
               </h4>
               <p className="text-sm text-muted-foreground">
                 {action === 'regenerate'
-                  ? 'Your existing backup codes will stop working.'
-                  : 'Your authenticator and all backup codes will stop working.'}
+                  ? t('dashboard.settings.two_factor.regenerate_desc')
+                  : t('dashboard.settings.two_factor.disable_desc')}
               </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor={`two-factor-${action}-password`}>
-                Current password
+                {t('dashboard.settings.two_factor.current_password')}
               </Label>
               <PasswordInput
                 id={`two-factor-${action}-password`}
@@ -574,10 +606,10 @@ export function TwoFactorSecurity() {
               >
                 {isSubmitting ? <Spinner /> : null}
                 {isSubmitting
-                  ? 'Confirming...'
+                  ? t('dashboard.settings.two_factor.confirming')
                   : action === 'regenerate'
-                    ? 'Generate new codes'
-                    : 'Disable two-factor'}
+                    ? t('dashboard.settings.two_factor.generate_new_codes')
+                    : t('dashboard.settings.two_factor.disable_two_factor_btn')}
               </Button>
               <Button
                 type="button"
@@ -585,7 +617,7 @@ export function TwoFactorSecurity() {
                 onClick={resetAction}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('dashboard.settings.two_factor.cancel')}
               </Button>
             </div>
           </form>
@@ -599,7 +631,7 @@ export function TwoFactorSecurity() {
               onClick={() => setAction('regenerate')}
             >
               <RefreshCw aria-hidden="true" />
-              Regenerate backup codes
+              {t('dashboard.settings.two_factor.regenerate_backup_codes')}
             </Button>
             <Button
               type="button"
@@ -607,7 +639,7 @@ export function TwoFactorSecurity() {
               onClick={() => setAction('disable')}
             >
               <ShieldOff aria-hidden="true" />
-              Disable two-factor
+              {t('dashboard.settings.two_factor.disable_two_factor_btn')}
             </Button>
           </div>
         )}

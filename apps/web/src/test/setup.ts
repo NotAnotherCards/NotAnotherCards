@@ -1,7 +1,14 @@
 import '@testing-library/jest-dom/vitest';
 import { vi, afterEach } from 'vitest';
 import { useEffect, useState, useCallback } from 'react';
-import '@/lib/i18n';
+import i18n from '@/lib/i18n';
+import { beforeAll } from 'vitest';
+
+beforeAll(async () => {
+  if (!i18n.isInitialized) {
+    await new Promise((resolve) => i18n.on('initialized', resolve));
+  }
+});
 
 afterEach(() => {
   vi.restoreAllMocks();

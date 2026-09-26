@@ -16,6 +16,7 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { authClient } from '@/lib/auth-client';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { SocialLoginButton } from '@/components/auth/social-login-button';
 import {
@@ -23,7 +24,6 @@ import {
   rememberPendingChallenge,
   safeReturnTo,
 } from '@/lib/two-factor-challenge';
-import { useTranslation } from 'react-i18next';
 
 export function LoginComponent() {
   const { t } = useTranslation();
@@ -40,9 +40,7 @@ export function LoginComponent() {
     const errorParam = params.get('error');
     if (errorParam) {
       if (errorParam === 'OAuthCallbackError') {
-        setApiError(
-          'Social login failed. Please try again or use another provider.',
-        );
+        setApiError(t('auth.error.social_login_failed_callback'));
       } else {
         setApiError(errorParam.replace(/_/g, ' '));
       }
@@ -68,12 +66,12 @@ export function LoginComponent() {
       });
 
       if (error) {
-        setApiError(error.message || 'Social login failed. Please try again.');
+        setApiError(error.message || t('auth.error.social_login_failed'));
         setOauthProvider(null);
       }
     } catch {
       setOauthProvider(null);
-      setApiError('Social login failed. Please try again.');
+      setApiError(t('auth.error.social_login_failed'));
     }
   };
 
@@ -95,7 +93,7 @@ export function LoginComponent() {
     });
 
     if (error) {
-      setApiError(error.message || 'An unexpected error occurred');
+      setApiError(error.message || t('auth.error.unexpected'));
     } else if (isTwoFactorRedirect(response)) {
       rememberPendingChallenge(returnTo);
       void navigate({

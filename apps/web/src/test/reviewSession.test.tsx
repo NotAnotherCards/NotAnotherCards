@@ -440,13 +440,13 @@ describe('ReviewSession', () => {
 
     expect(screen.getByRole('button', { name: 'Show answer' })).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: 'Forgot' }),
+      screen.queryByRole('button', { name: 'Again' }),
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 
-    expect(screen.getByRole('button', { name: 'Forgot' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Remembered' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Again' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Good' })).toBeVisible();
     expect(
       screen.queryByRole('button', { name: 'Struggled' }),
     ).not.toBeInTheDocument();
@@ -466,10 +466,8 @@ describe('ReviewSession', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 
-    expect(screen.getByRole('button', { name: /Forgot.*5 min/ })).toBeVisible();
-    expect(
-      screen.getByRole('button', { name: /Remembered.*8 days/ }),
-    ).toBeVisible();
+    expect(screen.getByRole('button', { name: /Again.*5 min/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Good.*8 days/ })).toBeVisible();
   });
 
   it('shows all Extended intervals from the existing scheduler ratings', () => {
@@ -585,9 +583,9 @@ describe('ReviewSession', () => {
   });
 
   it.each([
-    ['Forgot', 'ArrowLeft'],
+    ['Again', 'ArrowLeft'],
     ['Struggled', 'ArrowUp'],
-    ['Remembered', 'ArrowRight'],
+    ['Good', 'ArrowRight'],
   ])('moves to the next card after %s', async (_, key) => {
     renderSession([card, secondCard]);
     revealCard();
@@ -799,7 +797,7 @@ describe('ReviewSession', () => {
     fireEvent.pointerMove(reviewCard, { clientX: 200, clientY: 201 });
 
     expect(screen.getByTestId('swipe-feedback')).toHaveTextContent(
-      'Delete word',
+      'Delete Card',
     );
     expect(screen.getByTestId('review-answer-buttons')).toBeVisible();
   });
@@ -910,7 +908,7 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
 
-    const cancelButton = screen.getByRole('button', { name: 'No' });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     expect(cancelButton).toHaveFocus();
 
     fireEvent.keyDown(cancelButton, { key: 'ArrowRight' });
@@ -925,8 +923,8 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
 
-    const cancelButton = screen.getByRole('button', { name: 'No' });
-    const confirmButton = screen.getByRole('button', { name: 'Yes' });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    const confirmButton = screen.getByRole('button', { name: 'Delete' });
 
     fireEvent.keyDown(cancelButton, { key: 'Tab' });
     expect(confirmButton).toHaveFocus();
@@ -946,7 +944,7 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
 
-    fireEvent.keyDown(screen.getByRole('button', { name: 'No' }), {
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Cancel' }), {
       key: 'Escape',
     });
 
@@ -978,11 +976,11 @@ describe('ReviewSession', () => {
     );
     expect(
       screen.getByRole('heading', {
-        name: 'Does permanently delete this word?',
+        name: 'Permanently delete this word?',
       }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -1001,7 +999,7 @@ describe('ReviewSession', () => {
 
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -1018,7 +1016,7 @@ describe('ReviewSession', () => {
 
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -1026,7 +1024,7 @@ describe('ReviewSession', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Could not delete this word. Try again.',
     );
-    expect(screen.getByRole('button', { name: 'Yes' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled();
   });
 
   it('keeps the visible answer buttons without shadows', () => {
