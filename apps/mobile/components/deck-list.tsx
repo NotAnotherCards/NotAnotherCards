@@ -59,7 +59,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
 
   // A form closes only once its write landed, so a failed write is never
   // shown as a success (same rule as web's DeckList).
-  const run = async (write: () => Promise<unknown>) => {
+  const run = async <T,>(write: () => Promise<T>) => {
     setWriteError(null);
     setPending(true);
     try {

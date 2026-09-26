@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { SyncControllerState } from '@remelondb/core';
 import {
   moderationRefusalSchema,
   apiErrorBodySchema,
@@ -25,7 +26,7 @@ export function usePublishing() {
 
   const publish = async (
     deckId: string,
-    onSync?: () => Promise<void>,
+    onSync?: () => Promise<SyncControllerState>,
   ): Promise<boolean> => {
     setIsPublishing(true);
     setError(null);
@@ -71,7 +72,7 @@ export function usePublishing() {
 
   const unpublish = async (
     deckId: string,
-    onSync?: () => Promise<void>,
+    onSync?: () => Promise<SyncControllerState>,
   ): Promise<boolean> => {
     setIsUnpublishing(true);
     setError(null);
