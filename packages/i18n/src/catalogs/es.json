@@ -273,15 +273,19 @@
         "export_json_fail": "Fallo al exportar JSON",
         "export_csv_fail": "Fallo al exportar CSV",
         "import_success_msg": "Importados exitosamente {{decks}} mazos, {{notes}} notas, {{cards}} tarjetas y {{reviews}} repasos.",
-        "validation_error": "Validation error",
-        "count_decks_one": "1 deck",
-        "count_decks_other": "{{count}} decks",
-        "count_notes_one": "1 note",
-        "count_notes_other": "{{count}} notes",
-        "count_cards_one": "1 card",
-        "count_cards_other": "{{count}} cards",
-        "count_reviews_one": "1 review event",
-        "count_reviews_other": "{{count}} review events"
+        "validation_error": "Error de validación",
+        "count_decks_one": "1 mazo",
+        "count_decks_other": "{{count}} mazos",
+        "count_notes_one": "1 nota",
+        "count_notes_other": "{{count}} notas",
+        "count_cards_one": "1 tarjeta",
+        "count_cards_other": "{{count}} tarjetas",
+        "count_reviews_one": "1 evento de repaso",
+        "count_reviews_other": "{{count}} eventos de repaso",
+        "count_cards": "{{count}} tarjetas",
+        "count_notes": "{{count}} notas",
+        "count_reviews": "{{count}} repasos",
+        "count_decks": "{{count}} mazos"
       }
     },
     "title": "Panel",
@@ -442,12 +446,12 @@
       "no_decks": "No se encontraron mazos que coincidan con la búsqueda.",
       "no_decks_empty": "No se encontraron mazos. ¡Crea uno para empezar!",
       "my_library_desc": "Administra tus mazos de cartas personalizados.",
-      "no_decks_title": "No Decks Yet",
-      "create_first": "Create First Deck"
+      "no_decks_title": "Aún no hay mazos",
+      "create_first": "Crear el primer mazo"
     },
     "card": {
       "no_description": "Sin descripción.",
-      "due": "Due",
+      "due": "Pendientes",
       "new": "Nuevo",
       "learned": "Aprendido",
       "actions": {
@@ -458,7 +462,7 @@
         "manage_cards": "Gestionar Cartas",
         "start_review": "Comenzar Repaso"
       },
-      "total_cards": "Total Cards"
+      "total_cards": "Tarjetas totales"
     },
     "form": {
       "title": "Título",
@@ -471,33 +475,48 @@
       "delete_confirm": "Eliminar",
       "visibility_public": "Público",
       "visibility_private": "Privado",
-      "delete_title_deck": "Delete \"{{title}}\"?",
-      "delete_title_cards_one": "Delete {{count}} card and its review history?",
-      "delete_title_cards_other": "Delete {{count}} cards and their review history?",
-      "delete_cannot_undo": "This cannot be undone.",
+      "delete_title_deck": "¿Eliminar \"{{title}}\"?",
+      "delete_title_cards_one": "¿Eliminar {{count}} tarjeta y su historial de repaso?",
+      "delete_title_cards_other": "¿Eliminar {{count}} tarjetas y su historial de repaso?",
+      "delete_cannot_undo": "Esta acción no se puede deshacer.",
       "orphaned_cards_one": "{{count}} card is only in this deck. Deleting the deck and cards also deletes their review history.",
       "orphaned_cards_other": "{{count}} cards are only in this deck. Deleting the deck and cards also deletes their review history.",
       "shared_cards_one": "{{count}} card is also in other decks and will be kept.",
       "shared_cards_other": "{{count}} cards are also in other decks and will be kept.",
-      "keep_cards_note": "Deleting only the deck keeps all cards and their review history.",
-      "load_counts_error": "Card counts could not be loaded. Close this dialog and try again.",
-      "counting_cards": "Counting cards…",
-      "delete_deck_only": "Delete deck only",
-      "delete_deck_and_cards_one": "Delete deck and {{count}} card",
-      "delete_deck_and_cards_other": "Delete deck and {{count}} cards",
-      "delete_deck_and_cards_fallback": "Delete deck and cards",
-      "back": "Back",
-      "note_type": "What goes in this deck",
-      "native_lang": "Your language",
-      "target_lang": "Language you are learning",
-      "choose_lang": "Choose a language",
-      "create_new": "Create New Deck",
-      "edit_title": "Edit Deck Details",
-      "delete_deck_and_cards": "Delete deck and {{count}} cards",
-      "delete_title_cards": "Delete {{count}} cards?",
-      "desc_placeholder": "Enter deck description...",
-      "header_desc": "Configure your deck",
-      "title_placeholder": "Deck Title"
+      "keep_cards_note": "Eliminar solo el mazo conserva todas las tarjetas y su historial de repaso.",
+      "load_counts_error": "No se pudieron cargar los recuentos de tarjetas. Cierra este diálogo e inténtalo de nuevo.",
+      "counting_cards": "Contando tarjetas…",
+      "delete_deck_only": "Eliminar solo el mazo",
+      "delete_deck_and_cards_one": "Eliminar mazo y {{count}} tarjeta",
+      "delete_deck_and_cards_other": "Eliminar mazo y {{count}} tarjetas",
+      "delete_deck_and_cards_fallback": "Eliminar mazo y tarjetas",
+      "back": "Atrás",
+      "note_type": "Qué va en este mazo",
+      "native_lang": "Tu idioma",
+      "target_lang": "Idioma que estás aprendiendo",
+      "choose_lang": "Elige un idioma",
+      "create_new": "Crear nuevo mazo",
+      "edit_title": "Editar detalles del mazo",
+      "delete_deck_and_cards": "Eliminar mazo y {{count}} tarjetas",
+      "delete_title_cards": "¿Eliminar {{count}} tarjetas?",
+      "desc_placeholder": "Introduce la descripción del mazo...",
+      "header_desc": "Configura tu mazo",
+      "title_placeholder": "Título del mazo",
+      "delete_title_words": "¿Eliminar {{count}} palabras y su historial de repaso?",
+      "delete_title_words_one": "¿Eliminar {{count}} palabra y su historial de repaso?",
+      "delete_title_words_other": "¿Eliminar {{count}} palabras y su historial de repaso?",
+      "orphaned_words": "Esto eliminará {{count}} palabras huérfanas.",
+      "orphaned_words_one": "Esto eliminará 1 palabra huérfana.",
+      "orphaned_words_other": "Esto eliminará {{count}} palabras huérfanas.",
+      "shared_words": "Se conservarán {{count}} palabras compartidas.",
+      "shared_words_one": "Se conservará 1 palabra compartida.",
+      "shared_words_other": "Se conservarán {{count}} palabras compartidas.",
+      "delete_deck_and_words": "Eliminar mazo y {{count}} palabras",
+      "delete_deck_and_words_one": "Eliminar mazo y {{count}} palabra",
+      "delete_deck_and_words_other": "Eliminar mazo y {{count}} palabras",
+      "delete_deck_and_words_fallback": "Eliminar mazo y palabras",
+      "orphaned_cards": "Esto eliminará {{count}} tarjetas huérfanas.",
+      "shared_cards": "Se conservarán {{count}} tarjetas compartidas."
     }
   },
   "review": {
@@ -515,8 +534,8 @@
       "back": "Reverso",
       "no_front": "Sin contenido frontal",
       "no_back": "Sin contenido en el reverso",
-      "aria_flipped": "Answer is shown",
-      "aria_front": "Review card"
+      "aria_flipped": "Se muestra la respuesta",
+      "aria_front": "Tarjeta de repaso"
     },
     "answers": {
       "forgot": "Otra vez",
@@ -529,12 +548,12 @@
       "suspend_desc": "Esta tarjeta no aparecerá en los repasos hasta que la reactives.",
       "edit": "Editar tarjeta",
       "delete": "Eliminar tarjeta",
-      "delete_word_title": "Permanently delete this word?"
+      "delete_word_title": "¿Eliminar esta palabra permanentemente?"
     },
     "swipe": {
-      "forgot_basic": "Forgot",
-      "remember_basic": "Remembered",
-      "hard_basic": "Struggled"
+      "forgot_basic": "Olvidada",
+      "remember_basic": "Recordada",
+      "hard_basic": "Con dificultad"
     }
   },
   "playground": {
@@ -646,26 +665,26 @@
       "creating_deck": "Creando tu Mazo",
       "error": "Error:"
     },
-    "history_title": "Previous Jobs History",
-    "no_jobs": "No previous jobs found.",
-    "waiting": "Waiting for the first text…",
-    "job_failed": "Creation Job Failed",
-    "creation_failed": "Creation Failed",
-    "no_results_title": "No Results Preview",
-    "no_results_desc": "No results found.",
-    "total_jobs": "Total jobs: {{count}}"
+    "history_title": "Historial de trabajos anteriores",
+    "no_jobs": "No se encontraron trabajos anteriores.",
+    "waiting": "Esperando el primer texto…",
+    "job_failed": "El trabajo de creación falló",
+    "creation_failed": "Creación fallida",
+    "no_results_title": "No hay vista previa de resultados",
+    "no_results_desc": "No se encontraron resultados.",
+    "total_jobs": "Trabajos totales: {{count}}"
   },
   "ai": {
     "validation": {
-      "topic_empty": "Topic is required",
-      "topic_too_long": "Topic is too long",
-      "source_text_empty": "Source text is required",
-      "source_text_too_long": "Source text is too long",
-      "prompt_empty": "Prompt is required",
-      "prompt_too_long": "Prompt is too long",
-      "source_text_too_short": "Source text is too short",
-      "fill_error": "Failed to fill fields",
-      "network_error": "Network error"
+      "topic_empty": "El tema no puede estar vacío",
+      "topic_too_long": "El tema es demasiado largo",
+      "source_text_empty": "El texto fuente no puede estar vacío",
+      "source_text_too_long": "El texto fuente es demasiado largo",
+      "prompt_empty": "El prompt es obligatorio",
+      "prompt_too_long": "El prompt es demasiado largo",
+      "source_text_too_short": "El texto fuente es demasiado corto",
+      "fill_error": "No se pudieron rellenar los campos. Por favor, compruebe su conexión e inténtelo de nuevo.",
+      "network_error": "Error de red, por favor inténtelo de nuevo"
     }
   }
 }

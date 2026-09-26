@@ -67,6 +67,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
     };
   }, [deckToDelete, deckDeletionSummary]);
 
+  const isWordDeck = deckToDelete
+    ? store.decks.find((d) => d.id === deckToDelete)?.note_type === 'word'
+    : false;
+
   // the dialog is dismissed only once the write lands, so a failed write is
   // never reported to the user as a success
   const handleCreateDeck = async (data: {
@@ -288,9 +292,14 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
               >
                 <Trash2 className="size-5" />
                 {confirmCards
-                  ? t('deck.form.delete_title_cards', {
-                      count: deletionSummary?.orphanedCardCount || 0,
-                    })
+                  ? t(
+                      isWordDeck
+                        ? 'deck.form.delete_title_words'
+                        : 'deck.form.delete_title_cards',
+                      {
+                        count: deletionSummary?.orphanedCardCount || 0,
+                      },
+                    )
                   : t('deck.form.delete_title_deck', {
                       title: store.decks.find(
                         (deck) => deck.id === deckToDelete,
@@ -302,14 +311,24 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   t('deck.form.delete_cannot_undo')
                 ) : deletionSummary ? (
                   <>
-                    {t('deck.form.orphaned_cards', {
-                      count: deletionSummary.orphanedCardCount,
-                    })}{' '}
+                    {t(
+                      isWordDeck
+                        ? 'deck.form.orphaned_words'
+                        : 'deck.form.orphaned_cards',
+                      {
+                        count: deletionSummary.orphanedCardCount,
+                      },
+                    )}{' '}
                     {deletionSummary.sharedCardCount > 0 && (
                       <>
-                        {t('deck.form.shared_cards', {
-                          count: deletionSummary.sharedCardCount,
-                        })}{' '}
+                        {t(
+                          isWordDeck
+                            ? 'deck.form.shared_words'
+                            : 'deck.form.shared_cards',
+                          {
+                            count: deletionSummary.sharedCardCount,
+                          },
+                        )}{' '}
                       </>
                     )}
                     {t('deck.form.keep_cards_note')}
@@ -359,10 +378,19 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                   {confirmCards
                     ? t('deck.form.delete_confirm')
                     : deletionSummary
-                      ? t('deck.form.delete_deck_and_cards', {
-                          count: deletionSummary.orphanedCardCount,
-                        })
-                      : t('deck.form.delete_deck_and_cards_fallback')}
+                      ? t(
+                          isWordDeck
+                            ? 'deck.form.delete_deck_and_words'
+                            : 'deck.form.delete_deck_and_cards',
+                          {
+                            count: deletionSummary.orphanedCardCount,
+                          },
+                        )
+                      : t(
+                          isWordDeck
+                            ? 'deck.form.delete_deck_and_words_fallback'
+                            : 'deck.form.delete_deck_and_cards_fallback',
+                        )}
                 </Button>
               </div>
             </CardContent>

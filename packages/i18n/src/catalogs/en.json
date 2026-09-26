@@ -281,7 +281,11 @@
         "count_cards_one": "1 card",
         "count_cards_other": "{{count}} cards",
         "count_reviews_one": "1 review event",
-        "count_reviews_other": "{{count}} review events"
+        "count_reviews_other": "{{count}} review events",
+        "count_cards": "{{count}} cards",
+        "count_notes": "{{count}} notes",
+        "count_reviews": "{{count}} reviews",
+        "count_decks": "{{count}} decks"
       }
     },
     "title": "Dashboard",
@@ -497,7 +501,22 @@
       "delete_title_cards": "Delete {{count}} cards?",
       "desc_placeholder": "Enter deck description...",
       "header_desc": "Configure your deck",
-      "title_placeholder": "Deck Title"
+      "title_placeholder": "Deck Title",
+      "delete_title_words": "Delete {{count}} words and their review history?",
+      "delete_title_words_one": "Delete {{count}} word and its review history?",
+      "delete_title_words_other": "Delete {{count}} words and their review history?",
+      "orphaned_words": "This will delete {{count}} orphaned words.",
+      "orphaned_words_one": "This will delete 1 orphaned word.",
+      "orphaned_words_other": "This will delete {{count}} orphaned words.",
+      "shared_words": "{{count}} shared words will be kept.",
+      "shared_words_one": "1 shared word will be kept.",
+      "shared_words_other": "{{count}} shared words will be kept.",
+      "delete_deck_and_words": "Delete deck and {{count}} words",
+      "delete_deck_and_words_one": "Delete deck and {{count}} word",
+      "delete_deck_and_words_other": "Delete deck and {{count}} words",
+      "delete_deck_and_words_fallback": "Delete deck and words",
+      "orphaned_cards": "This will delete {{count}} orphaned cards.",
+      "shared_cards": "{{count}} shared cards will be kept."
     }
   },
   "review": {
@@ -657,15 +676,15 @@
   },
   "ai": {
     "validation": {
-      "topic_empty": "Topic is required",
+      "topic_empty": "Topic cannot be empty",
       "topic_too_long": "Topic is too long",
-      "source_text_empty": "Source text is required",
+      "source_text_empty": "Source text cannot be empty",
       "source_text_too_long": "Source text is too long",
       "prompt_empty": "Prompt is required",
       "prompt_too_long": "Prompt is too long",
       "source_text_too_short": "Source text is too short",
-      "fill_error": "Failed to fill fields",
-      "network_error": "Network error"
+      "fill_error": "Could not fill the fields. Please check your network and try again.",
+      "network_error": "Network error, please try again"
     }
   }
 }
