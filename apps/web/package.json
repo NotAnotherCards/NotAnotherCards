@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
-    "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/offline-db build",
+    "pretest": "pnpm --filter @repo/schemas build && pnpm --filter @repo/api-client build && pnpm --filter @repo/offline-db build",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:watch": "vitest --watch"
@@ -43,6 +43,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@remelondb/core": "0.3.1",
     "@remelondb/driver-web": "0.3.1",
+    "@repo/api-client": "workspace:*",
     "@repo/i18n": "workspace:*",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",

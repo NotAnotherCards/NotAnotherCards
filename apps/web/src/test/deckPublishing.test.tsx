@@ -51,7 +51,9 @@ describe('Deck Publishing Controls', () => {
   });
 
   const response = (value: unknown, ok = true, status = 200) =>
-    ({ ok, status, json: async () => value }) as Response;
+    new Response(JSON.stringify(value), {
+      status: ok ? status : status === 200 ? 500 : status,
+    });
 
   it('renders Publish button when deck is private and handles publishing successfully', async () => {
     let completePublish!: (value: Response) => void;
@@ -214,7 +216,9 @@ describe('Deck Publishing Controls', () => {
 
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(response({ visibility: 'public', warnings: [] }));
+      .mockImplementation(async () =>
+        response({ visibility: 'public', warnings: [] }),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);

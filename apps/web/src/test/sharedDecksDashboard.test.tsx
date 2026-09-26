@@ -127,7 +127,7 @@ describe('Shared Decks Dashboard Feed', () => {
       .mockImplementation((url: string, init?: RequestInit) => {
         if (
           url.includes('/api/shared/decks') &&
-          (!init || init.method === 'GET')
+          (init?.method ?? 'GET') === 'GET'
         ) {
           return Promise.resolve(response({ decks: mockDecks }));
         }
@@ -175,7 +175,7 @@ describe('Shared Decks Dashboard Feed', () => {
       .mockImplementation((url: string, init?: RequestInit) => {
         if (
           url.endsWith('/api/shared/decks') &&
-          (!init || init.method === 'GET')
+          (init?.method ?? 'GET') === 'GET'
         ) {
           return Promise.resolve(response({ decks: mockDecks }));
         }
