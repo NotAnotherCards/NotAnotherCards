@@ -3,8 +3,7 @@ import { Database } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { cardId } from './ids.js';
 import { prepareReconcileNoteCards } from './note-reconcile.js';
-import { compileNote } from '@repo/study';
-import { WordNoteFieldsV1, type WordNoteFields } from '@repo/study';
+import { compileNote, type WordNoteFields } from '@repo/study';
 import { schema } from './index.js';
 import { UserCard, UserNote } from './user-dictionary.js';
 

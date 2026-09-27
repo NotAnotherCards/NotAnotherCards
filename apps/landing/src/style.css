@@ -1,8 +1,8 @@
-@import "tailwindcss";
-@import "@fontsource-variable/inter";
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
 
 @theme inline {
-  --font-sans: "Inter Variable", sans-serif;
+  --font-sans: 'Inter Variable', sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
@@ -111,7 +111,9 @@
   border-bottom: 1px solid var(--sage-border);
   border-left: 1px solid var(--sage-border);
   border-right: 1px solid var(--sage-border);
-  background-image: linear-gradient(to right, var(--sage-border) 1px, transparent 1px), linear-gradient(to bottom, var(--sage-border) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, var(--sage-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--sage-border) 1px, transparent 1px);
   background-size: 22px 22px;
   transform: translateX(-50%);
 }
@@ -294,11 +296,17 @@
   }
 }
 
-@media (min-width: 72rem), (min-width: 60rem) and (max-width: 71.999rem), (min-width: 38rem) and (max-width: 45.999rem) {
+@media (min-width: 72rem),
+  (min-width: 60rem) and (max-width: 71.999rem),
+  (min-width: 38rem) and (max-width: 45.999rem) {
   .card-scene {
     --triple-overlap: 1rem;
     --triple-card-width: clamp(11rem, calc(38cqw - 1.5rem), 15rem);
-    --triple-card-width: clamp(11rem, round(down, calc(38cqw - 1.5rem), 11px), 15rem);
+    --triple-card-width: clamp(
+      11rem,
+      round(down, calc(38cqw - 1.5rem), 11px),
+      15rem
+    );
   }
 
   .learning-card {
@@ -322,7 +330,9 @@
   }
 
   .learning-card-one {
-    top: calc(50% - (var(--triple-card-height) / 2 + var(--triple-step) - 1rem));
+    top: calc(
+      50% - (var(--triple-card-height) / 2 + var(--triple-step) - 1rem)
+    );
   }
 
   .learning-card-two {
@@ -330,6 +340,8 @@
   }
 
   .learning-card-three {
-    top: calc(50% - (var(--triple-card-height) / 2 - var(--triple-step) - 1rem));
+    top: calc(
+      50% - (var(--triple-card-height) / 2 - var(--triple-step) - 1rem)
+    );
   }
 }

@@ -23,6 +23,8 @@ import {
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
   deleteDeck as dbDeleteDeck,
+  deleteDeckWithNotes as dbDeleteDeckWithNotes,
+  deckDeletionSummary as dbDeckDeletionSummary,
   createCard as dbCreateCard,
   updateCard as dbUpdateCard,
   createCardsBatch as dbCreateCardsBatch,
@@ -187,6 +189,24 @@ export function useStore() {
       return result;
     },
     [db, sync],
+  );
+
+  const deleteDeckWithNotes = useCallback(
+    async (id: string) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteDeckWithNotes(db, id);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const deckDeletionSummary = useCallback(
+    async (id: string) => {
+      if (!db) throw new Error('Database not initialized');
+      return await dbDeckDeletionSummary(db, id);
+    },
+    [db],
   );
 
   const createCard = useCallback(
@@ -380,6 +400,8 @@ export function useStore() {
     createDeck,
     updateDeck,
     deleteDeck,
+    deleteDeckWithNotes,
+    deckDeletionSummary,
     createCard,
     updateCard,
     removeNoteFromDeck,

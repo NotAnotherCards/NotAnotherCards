@@ -1,4 +1,5 @@
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
+import { useTranslation } from 'react-i18next';
 import type { Card } from '@/hooks/useStore';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import type { CSSProperties, PointerEvent, RefObject } from 'react';
@@ -53,21 +54,6 @@ const swipeFeedback: Record<ReviewCardSwipeDirection, { className: string }> = {
   },
 };
 
-const swipeFeedbackLabels = {
-  basic: {
-    forgot: 'Forgot',
-    remember: 'Remembered',
-    hard: 'Struggled',
-    delete: 'Delete word',
-  },
-  extended: {
-    forgot: 'Again',
-    remember: 'Good',
-    hard: 'Hard',
-    delete: 'Delete word',
-  },
-} as const;
-
 /** Visual card stack and animation surface for deck review. */
 export function ReviewCard({
   card,
@@ -88,6 +74,23 @@ export function ReviewCard({
   onPointerCancel,
   onSettled,
 }: ReviewCardProps) {
+  const { t } = useTranslation();
+
+  const swipeFeedbackLabels = {
+    basic: {
+      forgot: t('review.swipe.forgot_basic', 'Forgot'),
+      remember: t('review.swipe.remember_basic', 'Remembered'),
+      hard: t('review.swipe.hard_basic', 'Struggled'),
+      delete: t('review.dialogs.delete', 'Delete Card'),
+    },
+    extended: {
+      forgot: t('review.answers.forgot', 'Again'),
+      remember: t('review.answers.remember', 'Good'),
+      hard: t('review.answers.hard', 'Hard'),
+      delete: t('review.dialogs.delete', 'Delete Card'),
+    },
+  };
+
   const style: CSSProperties | undefined = exitDirection
     ? { transform: exitTransformByDirection[exitDirection] }
     : isFlipped
@@ -139,7 +142,11 @@ export function ReviewCard({
           type="button"
           className="absolute inset-0 z-20 w-full touch-none select-none cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
           aria-pressed={isFlipped}
-          aria-label={isFlipped ? 'Answer is shown' : 'Review card'}
+          aria-label={
+            isFlipped
+              ? t('review.card.aria_flipped', 'Answer is shown')
+              : t('review.card.aria_front', 'Review card')
+          }
           aria-hidden={isFlipped}
           tabIndex={isFlipped ? -1 : 0}
           data-testid="review-card"

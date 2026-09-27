@@ -4,8 +4,13 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import type { SyncPullResult, SyncPushResult } from '@remelondb/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+
+// What the sync endpoints answer: a pull's changes and cursor (or a resync
+// request), or a push's cursor, echoed changes and rejections.
+type SyncResponse = SyncPullResult | SyncPushResult;
 
 /**
  * Strips the 'user_badges' table from sync responses if the client
@@ -14,7 +19,10 @@ import { map } from 'rxjs/operators';
  */
 @Injectable()
 export class SyncCompatibilityInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler<SyncResponse>,
+  ): Observable<SyncResponse> {
     if (context.getType() !== 'http') {
       return next.handle();
     }
@@ -28,17 +36,13 @@ export class SyncCompatibilityInterceptor implements NestInterceptor {
     const isLegacy = !versionHeader || parseInt(versionHeader, 10) < 2;
 
     return next.handle().pipe(
-      map((data: Record<string, any>) => {
-        const changes = data.changes as Record<string, any> | undefined;
-        if (isLegacy && data && changes && changes.user_badges) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { user_badges, ...restChanges } = changes;
-          return {
-            ...data,
-            changes: restChanges,
-          };
+      map((data) => {
+        if (!isLegacy || !('changes' in data) || !data.changes?.user_badges) {
+          return data;
         }
-        return data;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { user_badges, ...changes } = data.changes;
+        return { ...data, changes };
       }),
     );
   }

@@ -1,15 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import {
   calculateReviewIntervalMinutes,
   reviewRatingByAnswer,
 } from '@repo/offline-db';
 import { Button } from '@/components/ui/button';
 import type { RefObject } from 'react';
-import {
-  extendedReviewAnswerLabels,
-  formatReviewInterval,
-  reviewAnswerLabels,
-  type ReviewAnswer,
-} from './review-controls';
+import { formatReviewInterval, type ReviewAnswer } from './review-controls';
 
 type ReviewAnswerButtonsProps = {
   active: boolean;
@@ -43,6 +39,7 @@ export function ReviewAnswerButtons({
   onAnswer,
   onReveal,
 }: ReviewAnswerButtonsProps) {
+  const { t } = useTranslation();
   const answers: ReviewAnswer[] =
     reviewMode === 'basic'
       ? ['forgot', 'remember']
@@ -61,17 +58,17 @@ export function ReviewAnswerButtons({
           disabled={disabled}
           className="min-h-12 w-full cursor-pointer border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
         >
-          Show answer
+          {t('review.card.show_answer', 'Show answer')}
         </Button>
       ) : (
         <div
           className={`grid gap-2 ${reviewMode === 'basic' ? 'grid-cols-2' : 'grid-cols-4'}`}
         >
           {answers.map((answer) => {
-            const label =
-              reviewMode === 'extended'
-                ? extendedReviewAnswerLabels[answer]
-                : reviewAnswerLabels[answer];
+            const label = t(
+              `review.answers.${answer.replace('-', '_')}`,
+              answer,
+            );
             const interval = calculateReviewIntervalMinutes(
               previousIntervalMinutes,
               reviewRatingByAnswer[answer],

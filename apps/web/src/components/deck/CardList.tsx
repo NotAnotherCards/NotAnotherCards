@@ -28,6 +28,7 @@ import {
 import { CardItem } from './CardItem';
 import { FlashcardModal } from './FlashcardModal';
 import { Button } from '../ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface CardListProps {
   cards: Card[];
@@ -61,6 +62,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
     },
     ref,
   ) => {
+    const { t } = useTranslation();
     const store = useStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [viewingCard, setViewingCard] = useState<Card | null>(null);
@@ -119,12 +121,13 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           </div>
           <div>
             <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
-              Database Inactive (Taken Over)
+              {t('deck.cards.db_inactive', 'Database Inactive (Taken Over)')}
             </h3>
             <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-              This tab is currently inactive because the offline database is
-              open in another tab. Click below to use the database in this
-              window.
+              {t(
+                'deck.cards.db_inactive_desc',
+                'This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.',
+              )}
             </p>
           </div>
           <Button
@@ -132,7 +135,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
             className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium border-none shadow-sm"
           >
             <RefreshCw className="size-4" />
-            Use here instead
+            {t('deck.cards.use_here', 'Use here instead')}
           </Button>
         </UICard>
       );
@@ -144,7 +147,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           <CardContent className="flex flex-col items-center justify-center min-h-60 space-y-4 animate-in fade-in duration-300">
             <Loader2 className="animate-spin size-8 text-primary" />
             <p className="text-sm text-muted-foreground animate-pulse">
-              Loading cards...
+              {t('deck.cards.loading', 'Loading cards...')}
             </p>
           </CardContent>
         </UICard>
@@ -157,14 +160,19 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           <div>
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <Library className="size-4 text-primary" />
-              {filteredCards.length} Cards
+              {t('deck.cards.title', '{{count}} Cards', {
+                count: filteredCards.length,
+              })}
             </CardTitle>
           </div>
           {/* Search bar */}
           <div className="relative w-full md:max-w-xs">
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search front, back..."
+              placeholder={t(
+                'deck.cards.search_placeholder',
+                'Search front, back...',
+              )}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 h-9 text-xs"
@@ -175,11 +183,19 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           {filteredCards.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground min-h-50 gap-4">
               <HelpCircle className="size-10 mb-2 stroke-1 opacity-60" />
-              <p className="text-sm font-semibold">No Cards Found</p>
+              <p className="text-sm font-semibold">
+                {t('deck.cards.no_found', 'No Cards Found')}
+              </p>
               <p className="text-xs max-w-xs mt-1">
                 {searchTerm
-                  ? 'Try refining your search term to find cards in this deck.'
-                  : "This deck is empty. Click 'Add Card' above to start building your collection."}
+                  ? t(
+                      'deck.cards.refine_search',
+                      'Try refining your search term to find cards in this deck.',
+                    )
+                  : t(
+                      'deck.cards.empty_deck',
+                      "This deck is empty. Click 'Add Card' above to start building your collection.",
+                    )}
               </p>
               {!searchTerm && cards.length === 0 && canAddCard ? (
                 <Button
@@ -187,7 +203,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
                   className="cursor-pointer gap-1.5 self-start sm:self-center"
                 >
                   <Plus className="size-4" />
-                  Add Card
+                  {t('deck.detail.add_card', 'Add Card')}
                 </Button>
               ) : null}
             </div>
@@ -204,10 +220,14 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
                   role="row"
                   className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_128px] gap-4 md:!px-6 md:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
                 >
-                  <div role="columnheader">Front / Question</div>
-                  <div role="columnheader">Back / Answer</div>
+                  <div role="columnheader">
+                    {t('deck.cards.col_front', 'Front / Question')}
+                  </div>
+                  <div role="columnheader">
+                    {t('deck.cards.col_back', 'Back / Answer')}
+                  </div>
                   <div role="columnheader" className="text-center">
-                    Actions
+                    {t('deck.cards.col_actions', 'Actions')}
                   </div>
                 </div>
               </div>

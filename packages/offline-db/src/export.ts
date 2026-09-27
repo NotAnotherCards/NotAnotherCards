@@ -6,7 +6,6 @@ import {
   UserNoteDeck,
   ReviewEvent,
 } from './user-dictionary.js';
-import { BASIC_NOTE_FIELDS_VERSION, BASIC_NOTE_TYPE } from '@repo/study';
 import {
   BackupCard,
   BackupDeck,

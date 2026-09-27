@@ -16,7 +16,10 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
-import { loadReviewPreferences } from '@/lib/review-preferences';
+import {
+  loadReviewPreferences,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
 import { useReviewDeck } from '@/lib/review';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
@@ -63,6 +66,7 @@ export function ReviewSession({ deckId }: { deckId: string }) {
     <ActiveReviewSession
       manager={manager}
       deckId={deckId}
+      userId={authSession?.user.id}
       preferences={loadReviewPreferences(authSession?.user.id ?? '')}
     />
   );
@@ -71,10 +75,12 @@ export function ReviewSession({ deckId }: { deckId: string }) {
 function ActiveReviewSession({
   manager,
   deckId,
+  userId,
   preferences,
 }: {
   manager: DatabaseManager;
   deckId: string;
+  userId: string | undefined;
   preferences: ReviewPreferences;
 }) {
   const answers =
@@ -90,6 +96,10 @@ function ActiveReviewSession({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (deck && userId) saveLastReviewDeckId(userId, deck.id);
+  }, [deck, userId]);
 
   useEffect(() => {
     if (!isLoading && deck && session?.deckId !== deckId) {

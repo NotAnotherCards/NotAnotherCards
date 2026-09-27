@@ -40,6 +40,7 @@ import {
   type ExplainableFinding,
   useModerationExplanation,
 } from '@/hooks/useModerationExplanation';
+import { useTranslation } from 'react-i18next';
 
 interface DeckDetailProps {
   deckId: string;
@@ -47,6 +48,7 @@ interface DeckDetailProps {
 }
 
 export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
+  const { t } = useTranslation();
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -403,7 +405,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             className="cursor-pointer gap-1 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Back to Decks
+            {t('deck.detail.back_to_decks', 'Back to Decks')}
           </Button>
         </div>
 
@@ -423,7 +425,11 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               </h2>
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              {deck.description || 'Manage your library cards below.'}
+              {deck.description ||
+                t(
+                  'deck.detail.manage_library_cards',
+                  'Manage your library cards below.',
+                )}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 self-stretch md:self-auto">
@@ -448,7 +454,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 }}
                 className="cursor-pointer gap-1.5 justify-center"
               >
-                Unpublish
+                {t('deck.detail.unpublish', 'Unpublish')}
               </Button>
             ) : (
               <Button
@@ -472,7 +478,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 }}
                 className="cursor-pointer gap-1.5 justify-center"
               >
-                Publish
+                {t('deck.detail.publish', 'Publish')}
               </Button>
             )}
             {isKnownDeck && (
@@ -481,14 +487,19 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 className="cursor-pointer gap-1.5 justify-center"
               >
                 <Plus className="size-4" />
-                Add Card
+                {isWordDeck
+                  ? t('deck.detail.add_word', 'Add Word')
+                  : t('deck.detail.add_card', 'Add Card')}
               </Button>
             )}
           </div>
         </div>
         {!isKnownDeck && (
           <p className="text-sm text-muted-foreground">
-            This deck uses a note type this app cannot edit yet.
+            {t(
+              'deck.detail.unknown_note_type',
+              'This deck uses a note type this app cannot edit yet.',
+            )}
           </p>
         )}
       </div>
@@ -595,7 +606,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           />
         ) : isBasicDeck ? (
           <CardForm
-            title="Add New Card"
+            title={t('deck.card_form.add_new_card', 'Add New Card')}
             onSubmit={handleCreateCard}
             error={writeError}
             onCancel={() => setShowCreateForm(false)}
@@ -617,7 +628,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         />
       ) : editingCard && isBasicDeck ? (
         <CardForm
-          title="Edit Card"
+          title={t('deck.card_form.edit_card', 'Edit Card')}
           initialData={{
             front: editingCard.front,
             back: editingCard.back,
@@ -654,23 +665,21 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
                 <Unlink className="size-5" />
                 {isWordDeck
-                  ? 'Remove Word from Deck?'
-                  : 'Remove Note from Deck?'}
+                  ? t('deck.detail.remove_word', 'Remove Word from Deck?')
+                  : t('deck.detail.remove_note', 'Remove Note from Deck?')}
               </CardTitle>
               <CardDescription>
-                {isWordDeck ? (
-                  <>
-                    This removes every study card generated from this word from
-                    “{deck.title}”. The word, its cards, schedule, and review
-                    history will remain in your personal dictionary.
-                  </>
-                ) : (
-                  <>
-                    This removes every study card generated from this note from
-                    “{deck.title}”. The note, its cards, schedule, and review
-                    history will remain in your personal dictionary.
-                  </>
-                )}
+                {isWordDeck
+                  ? t(
+                      'deck.detail.remove_word_desc',
+                      'This removes every study card generated from this word from “{{title}}”. The word, its cards, schedule, and review history will remain in your personal dictionary.',
+                      { title: deck.title },
+                    )
+                  : t(
+                      'deck.detail.remove_note_desc',
+                      'This removes every study card generated from this note from “{{title}}”. The note, its cards, schedule, and review history will remain in your personal dictionary.',
+                      { title: deck.title },
+                    )}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
@@ -681,7 +690,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   onClick={() => setNoteIdToRemove(null)}
                   className="cursor-pointer"
                 >
-                  Cancel
+                  {t('common.cancel', 'Cancel')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -689,7 +698,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   disabled={isRemoving}
                   className="cursor-pointer"
                 >
-                  Remove from Deck
+                  {t('deck.detail.remove_btn', 'Remove from Deck')}
                 </Button>
               </div>
             </CardContent>

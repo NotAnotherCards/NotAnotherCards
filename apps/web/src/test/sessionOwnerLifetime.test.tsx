@@ -89,7 +89,7 @@ describe('session database owner lifetime', () => {
   it('survives the protected layout being unmounted and rebuilt', async () => {
     render(<App />);
     expect(
-      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+      await screen.findByRole('heading', { name: /Dashboard/i }),
     ).toBeInTheDocument();
     expect(mounts).toBe(1);
 

@@ -94,7 +94,7 @@ describe('DeckCard Component', () => {
 
     expect(screen.getByTestId('total-words-badge')).toHaveTextContent('1');
     expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('3');
-    expect(screen.getByText('Cards Due')).toBeInTheDocument();
+    expect(screen.getByText('Due')).toBeInTheDocument();
     expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
   });
 
@@ -115,8 +115,8 @@ describe('DeckCard Component', () => {
       />,
     );
 
-    expect(screen.queryByTitle('Edit Deck Details')).toBeNull();
-    expect(screen.getByTitle('Delete Deck')).toBeInTheDocument();
+    expect(screen.queryByTitle('Edit')).toBeNull();
+    expect(screen.getByTitle('Delete')).toBeInTheDocument();
   });
 
   it('offers Edit on a deck whose type it knows', () => {
@@ -132,7 +132,7 @@ describe('DeckCard Component', () => {
       />,
     );
 
-    expect(screen.getByTitle('Edit Deck Details')).toBeInTheDocument();
+    expect(screen.getByTitle('Edit')).toBeInTheDocument();
   });
 
   it('calls action callbacks on click events', () => {
@@ -158,11 +158,11 @@ describe('DeckCard Component', () => {
     expect(onSelectDeck).toHaveBeenCalledWith('deck-test-1');
 
     // Click Edit icon button
-    fireEvent.click(screen.getByTitle('Edit Deck Details'));
+    fireEvent.click(screen.getByTitle('Edit'));
     expect(onEditDeck).toHaveBeenCalledWith(mockDeck);
 
     // Click Delete icon button
-    fireEvent.click(screen.getByTitle('Delete Deck'));
+    fireEvent.click(screen.getByTitle('Delete'));
     expect(onDeleteDeck).toHaveBeenCalledWith('deck-test-1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Review' }));
@@ -417,7 +417,7 @@ describe('WordNoteList Component', () => {
       screen.getByRole('columnheader', { name: 'Cards' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('columnheader', { name: 'Extra info' }),
+      screen.getByRole('columnheader', { name: 'Details' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Hund')).toBeInTheDocument();
     expect(screen.getByText('dog')).toBeInTheDocument();
@@ -553,7 +553,7 @@ describe('WordNoteList Component', () => {
     fireEvent.click(screen.getAllByTitle('View Word')[0]);
     fireEvent.click(screen.getAllByTitle('View Word')[1]);
     fireEvent.click(screen.getByTitle('Edit Word'));
-    fireEvent.click(screen.getByTitle('Remove word from this deck'));
+    fireEvent.click(screen.getByTitle('Remove from Deck'));
 
     expect(onViewNote).toHaveBeenCalledTimes(2);
     expect(onViewNote).toHaveBeenLastCalledWith(wordNote);
@@ -581,7 +581,7 @@ describe('WordNoteList Component', () => {
 
     fireEvent.click(screen.getAllByTitle('View Word')[0]);
     fireEvent.click(screen.getByTitle('Edit Word'));
-    fireEvent.click(screen.getByTitle('Remove word from this deck'));
+    fireEvent.click(screen.getByTitle('Remove from Deck'));
 
     expect(onViewNote).toHaveBeenCalledWith(wordNote);
     expect(onEditWord).toHaveBeenCalledWith(wordNote);
