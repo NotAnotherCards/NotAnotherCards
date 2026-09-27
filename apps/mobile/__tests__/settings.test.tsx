@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '@/lib/i18n';
 import { Settings, initials } from '@/components/settings';
 import { loadReviewPreferences } from '@/lib/review-preferences';
 

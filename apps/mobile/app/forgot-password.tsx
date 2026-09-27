@@ -1,20 +1,39 @@
+import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { AuthCard } from '@/components/auth/auth-card';
-import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
+import {
+  ForgotPasswordForm,
+  ResetEmailSent,
+} from '@/components/auth/forgot-password-form';
 
 export default function ForgotPassword() {
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const search = useLocalSearchParams<{ email?: string | string[] }>();
   const email = Array.isArray(search.email) ? search.email[0] : search.email;
 
+  if (sentTo) {
+    return (
+      <AuthCard
+        title="Check your email"
+        description="We've sent a password reset link to your email"
+        footerText=""
+        footerLinkText="Back to login"
+        footerLinkTo="/login"
+      >
+        <ResetEmailSent email={sentTo} />
+      </AuthCard>
+    );
+  }
+
   return (
     <AuthCard
-      title="Create or reset a password"
-      description="We'll email you a secure password reset link."
+      title="Forgotten Password"
+      description="Enter your email below and we will send you a password reset email"
       footerText=""
-      footerLinkText="Back to sign in"
+      footerLinkText="Back to login"
       footerLinkTo="/login"
     >
-      <ForgotPasswordForm defaultEmail={email} />
+      <ForgotPasswordForm onSent={setSentTo} defaultEmail={email} />
     </AuthCard>
   );
 }

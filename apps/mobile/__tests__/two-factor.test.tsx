@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
+import '@/lib/i18n';
 import { TwoFactorChallenge } from '@/components/auth/two-factor-challenge';
 import { TwoFactorLifecycle } from '@/components/two-factor-lifecycle';
 import {
@@ -315,17 +316,18 @@ describe('mobile password creation entry point', () => {
   });
 
   it('requests a reset link for the prefilled social-account email', async () => {
+    const onSent = jest.fn();
     const view = render(
-      <ForgotPasswordForm defaultEmail="learner@example.com" />,
+      <ForgotPasswordForm defaultEmail="learner@example.com" onSent={onSent} />,
     );
-    fireEvent.press(view.getByText('Send reset link'));
+    fireEvent.press(view.getByText('Send Reset Link'));
 
     await waitFor(() =>
       expect(mockRequestPasswordReset).toHaveBeenCalledWith({
         email: 'learner@example.com',
       }),
     );
-    expect(await view.findByText(/Check learner@example.com/)).toBeTruthy();
+    expect(onSent).toHaveBeenCalledWith('learner@example.com');
   });
 });
 

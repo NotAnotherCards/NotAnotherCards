@@ -3,13 +3,13 @@ import { type Card, useStore } from '@/hooks/useStore';
 import { authClient } from '@/lib/auth-client';
 import {
   getReviewPreferences,
-  clearLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
 import { selectDueCards, selectReviewBatch } from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useSyncController } from '@/offline/syncProvider';
 import { ReviewSession } from './ReviewSession';
 
 type DeckReviewPageProps = {
@@ -59,12 +59,13 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
     ? activeSession.cards
     : selectReviewBatch(dueCards);
 
-  const clearSavedDeckPreference = () => {
-    if (session?.user.id) clearLastReviewDeckId(session.user.id);
+  const syncController = useSyncController();
+
+  const handleComplete = () => {
+    syncController?.syncNow();
   };
 
   const exitReview = () => {
-    clearSavedDeckPreference();
     void navigate({ to: '/dashboard' });
   };
 
@@ -83,17 +84,6 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
         title="Database inactive"
         message="Your offline database is open in another tab."
         actionLabel="Use here instead"
-        onAction={store.reconnect}
-      />
-    );
-  }
-
-  if (store.error) {
-    return (
-      <ReviewRecovery
-        title="Could not load your deck"
-        message={store.error}
-        actionLabel="Retry"
         onAction={store.reconnect}
       />
     );
@@ -136,7 +126,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       cards={sessionCards}
       deckTitle={deck.title}
       onExit={exitReview}
-      onComplete={clearSavedDeckPreference}
+      onComplete={handleComplete}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}

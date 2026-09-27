@@ -1,0 +1,27 @@
+{
+  "name": "@repo/i18n",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "i18next": "^26.4.2",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.10"
+  },
+  "license": "MIT"
+}

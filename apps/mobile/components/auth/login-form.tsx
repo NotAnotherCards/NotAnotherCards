@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useRouter } from 'expo-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '@repo/schemas';
@@ -7,7 +8,6 @@ import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
-import { Link, useRouter } from 'expo-router';
 import {
   beginTwoFactorChallenge,
   finishTwoFactorChallenge,
@@ -74,11 +74,12 @@ export function LoginForm() {
       >
         <Text>Log in</Text>
       </Button>
-      <Link href="/forgot-password" asChild>
-        <Text className="text-center font-medium text-primary">
-          Forgot your password?
-        </Text>
-      </Link>
+      <Text className="mt-1 text-center text-muted-foreground">
+        Forgot your password?{' '}
+        <Link href="/forgot-password" asChild>
+          <Text className="font-semibold text-foreground">Reset here!</Text>
+        </Link>
+      </Text>
     </>
   );
 }

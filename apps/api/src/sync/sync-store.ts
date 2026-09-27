@@ -16,6 +16,7 @@ import {
   UserNoteDeckRow,
   UserNoteRow,
   UserProfileRow,
+  UserBadgeRow,
 } from '@repo/offline-db';
 import type { AppDatabase } from '../database/database-schema';
 import {
@@ -25,6 +26,7 @@ import {
   userNoteDecks,
   userNotes,
   userProfiles,
+  userBadges,
 } from './schema';
 import {
   createCrossValidateSyncRelationships,
@@ -65,6 +67,7 @@ export interface AppSyncStoreBundle {
   readonly crossValidateChanges: NonNullable<
     SyncEngineOptions<string>['crossValidateChanges']
   >;
+  readonly db: AppDatabase;
 }
 
 export const appSyncTables: SyncEngineConfig<string>['tables'] = {
@@ -74,6 +77,7 @@ export const appSyncTables: SyncEngineConfig<string>['tables'] = {
   user_note_decks: UserNoteDeckRow,
   review_events: ReviewEventRow,
   user_profiles: UserProfileRow,
+  user_badges: UserBadgeRow,
 };
 
 export const appSyncTableOptions: NonNullable<
@@ -85,7 +89,10 @@ export const appSyncTableOptions: NonNullable<
 export function createAppSyncStore(
   db: AppDatabase,
   now: () => number = () => Date.now(),
-  beforePushCommit?: (tx: AppTx, userId: string) => Promise<void>,
+  beforePushCommit?: (
+    tx: AppTx,
+    userId: string,
+  ) => Promise<(typeof userBadges.$inferSelect)[] | void>,
 ): AppSyncStoreBundle {
   const tables = {
     user_decks: drizzleSyncTable<string, typeof userDecks>({
@@ -154,6 +161,14 @@ export function createAppSyncStore(
         targetLanguageId: null,
       },
     }),
+    user_badges: drizzleSyncTable<string, typeof userBadges>({
+      table: userBadges,
+      id: userBadges.id,
+      rev: userBadges.rev,
+      deletedAt: userBadges.deletedAt,
+      scope: userBadges.userId,
+      insertOnly: ['unlocked_at'],
+    }),
   };
 
   const createDurableStore = (storeDb: AppDatabase | AppTx) =>
@@ -183,7 +198,38 @@ export function createAppSyncStore(
           result !== null &&
           'conflict' in result &&
           result.conflict === true;
-        if (!conflict) await beforePushCommit(tx, scope);
+        if (!conflict && beforePushCommit) {
+          const newlyUnlocked = await beforePushCommit(tx, scope);
+          if (
+            newlyUnlocked &&
+            newlyUnlocked.length > 0 &&
+            typeof result === 'object' &&
+            result !== null
+          ) {
+            const resObj = result as Record<string, unknown>;
+            if (!resObj.changes) {
+              resObj.changes = {};
+            }
+            const changes = resObj.changes as Record<string, unknown>;
+            if (!changes.user_badges) {
+              changes.user_badges = {
+                created: [],
+                updated: [],
+                deleted: [],
+              };
+            }
+            const userBadges = changes.user_badges as { created: unknown[] };
+            userBadges.created.push(
+              ...newlyUnlocked.map((row) => ({
+                id: row.id,
+                badge_id: row.badgeId,
+                unlocked_at: row.unlockedAt,
+                created_at: row.createdAt,
+                updated_at: row.updatedAt,
+              })),
+            );
+          }
+        }
         return result;
       });
     },
@@ -221,6 +267,7 @@ export function createAppSyncStore(
       findProfileUsernameOwners,
       now,
     ),
+    db,
   };
 }
 

@@ -1,0 +1,37 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import Storage from 'expo-sqlite/kv-store';
+import {
+  catalogs,
+  defaultLocale,
+  supportedLocales,
+  isSupportedLocale,
+} from '@repo/i18n';
+
+const STORAGE_KEY = 'i18nextLng';
+
+/**
+ * Read the saved locale from SQLite KV storage. Falls back to the default
+ * locale if the saved value is missing, empty, or unsupported.
+ */
+function loadSavedLocale(): string | undefined {
+  const saved = Storage.getItemSync(STORAGE_KEY);
+  if (saved && isSupportedLocale(saved)) return saved;
+  return undefined;
+}
+
+// Initialize i18next synchronously with bundled catalogs. The resources are
+// shipped in the JS bundle so init() resolves immediately.
+void i18n.use(initReactI18next).init({
+  resources: catalogs,
+  lng: loadSavedLocale(),
+  fallbackLng: defaultLocale,
+  supportedLngs: [...supportedLocales],
+  showSupportNotice: false, // Suppress the Locize promotional banner in console
+
+  interpolation: {
+    escapeValue: false, // React Native handles escaping
+  },
+});
+
+export default i18n;

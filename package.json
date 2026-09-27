@@ -3,7 +3,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint && eslint \"scripts/**/*.mjs\" --max-warnings 0",
+    "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:infra": "docker compose config --quiet && docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet && bash infra/monitoring/validate.sh && bash infra/vps/validate-ai-gateway.sh",
     "check:cycles": "node scripts/check-cycles.mjs",
@@ -18,8 +19,8 @@
     "test:db-docs": "pnpm build:db-docs-deps && node --test scripts/schema-docs.test.mjs"
   },
   "devDependencies": {
-    "@remelondb/core": "0.3.0",
-    "@remelondb/driver-web": "0.3.0",
+    "@remelondb/core": "0.3.1",
+    "@remelondb/driver-web": "0.3.1",
     "eslint": "^10.6.0",
     "knip": "^6.34.0",
     "madge": "8.0.0",

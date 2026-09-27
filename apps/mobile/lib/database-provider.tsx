@@ -54,7 +54,7 @@ export function SessionDatabaseProvider({
   const { manager, syncController, closeError } = useOwnedDatabase({
     userId,
     createManager: createUserDatabaseManager,
-    sync: { pullChanges, pushChanges },
+    sync: { pullChanges, pushChanges, migrationsEnabledAtVersion: 1 },
     controller: { triggers: nativeSyncTriggers },
   });
 
