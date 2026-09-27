@@ -19,6 +19,7 @@ import { useQuery } from '@remelondb/core/react';
 import { useSyncController } from '@/offline/syncProvider';
 import {
   getDecksQuery,
+  getAllCardsQuery,
   getPersonalDictionaryQuery,
   getNotesQuery,
   getNoteDecksQuery,
@@ -36,7 +37,9 @@ import {
   updateNoteFields as dbUpdateNoteFields,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
+  activateWordsInDeck as dbActivateWordsInDeck,
   CreateCardsBatchOptions,
+  selectDueCards,
 } from '@repo/offline-db';
 
 export type Deck = UserDeckRecord;
@@ -117,6 +120,8 @@ export function useStore() {
   const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>(
     db && getPersonalDictionaryQuery(db),
   );
+  const { data: allCards, isLoading: allCardsLoading } =
+    useQuery<UserCardRecord>(db && getAllCardsQuery(db));
 
   const { data: notes, isLoading: notesLoading } = useQuery<UserNoteRecord>(
     db && getNotesQuery(db),
@@ -132,6 +137,7 @@ export function useStore() {
     isInitializing ||
     decksLoading ||
     cardsLoading ||
+    allCardsLoading ||
     notesLoading ||
     noteDecksLoading ||
     profileLoading;
@@ -143,9 +149,7 @@ export function useStore() {
     {
       select: useCallback(
         (rows: UserCardRecord[]) =>
-          rows
-            .filter((c) => c.due_at <= now)
-            .sort((a, b) => a.due_at - b.due_at),
+          selectDueCards(rows, now),
         [now],
       ),
     },
@@ -194,6 +198,16 @@ export function useStore() {
     async (deckId: string, front: string, back: string) => {
       if (!db) throw new Error('Database not initialized');
       const result = await dbCreateCard(db, deckId, front, back);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const activateWordsInDeck = useCallback(
+    async (deckId: string, count: number) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbActivateWordsInDeck(db, deckId, count);
       sync?.notifyLocalWrite();
       return result;
     },
@@ -314,9 +328,9 @@ export function useStore() {
           .filter((noteDeck) => noteDeck.deck_id === deckId)
           .map((noteDeck) => noteDeck.note_id),
       );
-      return cards.filter((card) => noteIds.has(card.note_id)).length;
+      return allCards.filter((card) => noteIds.has(card.note_id)).length;
     },
-    [cards, noteDecks],
+    [allCards, noteDecks],
   );
 
   const getCardsForDeck = useCallback(
@@ -326,9 +340,9 @@ export function useStore() {
           .filter((noteDeck) => noteDeck.deck_id === deckId)
           .map((noteDeck) => noteDeck.note_id),
       );
-      return cards.filter((card) => noteIds.has(card.note_id));
+      return allCards.filter((card) => noteIds.has(card.note_id));
     },
-    [cards, noteDecks],
+    [allCards, noteDecks],
   );
 
   const createCardsBatch = useCallback(
@@ -391,6 +405,7 @@ export function useStore() {
     updateDeck,
     deleteDeck,
     createCard,
+    activateWordsInDeck,
     updateCard,
     removeNoteFromDeck,
     deleteNote,

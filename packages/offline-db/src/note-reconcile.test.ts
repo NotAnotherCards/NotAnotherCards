@@ -82,7 +82,7 @@ describe('prepareReconcileNoteCards', () => {
     ]);
     for (const card of cards) {
       expect(card.id).toBe(cardId('note-1', card.template_key));
-      expect(card.active).toBe(true);
+      expect(card.active).toBe(false);
       expect(card.front.length).toBeGreaterThan(0);
     }
   });
@@ -108,7 +108,7 @@ describe('prepareReconcileNoteCards', () => {
     expect(wtt.back).toBe('to run\n\nIch laufe jeden Morgen.');
   });
 
-  it('deactivates the example card when the example goes, never deletes', async () => {
+  it('clears the example card when the example goes, without changing activation', async () => {
     await openDb();
     await createWordNote(withExample);
     await reconcile('note-1', word);
@@ -118,9 +118,11 @@ describe('prepareReconcileNoteCards', () => {
       (c) => c.template_key === 'example-to-translation',
     )!;
     expect(example.active).toBe(false);
+    expect(example.front).toBe('');
+    expect(example.back).toBe('');
   });
 
-  it('reactivates as due now with the schedule history kept (#157)', async () => {
+  it('restores an incomplete card as due now without changing activation', async () => {
     await openDb();
     await createWordNote(withExample);
     // the card earns a schedule, then its field disappears, then returns
@@ -136,7 +138,7 @@ describe('prepareReconcileNoteCards', () => {
     const before = Date.now();
     await reconcile('note-1', withExample);
     const card = await db.get(UserCard).find(exampleId);
-    expect(card.active).toBe(true);
+    expect(card.active).toBe(false);
     expect(card.due_at).toBeLessThanOrEqual(Date.now());
     expect(card.due_at).toBeGreaterThanOrEqual(before);
     expect(card.scheduled_interval_minutes).toBe(1440);

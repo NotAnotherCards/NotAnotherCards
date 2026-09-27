@@ -3,9 +3,9 @@
  * compiled note. By the deterministic cardId(noteId, templateKey):
  *
  * - compiled and missing  → create, due now
- * - compiled and existing → update front/back in place; if it was
- *   deactivated, reactivate as due now with its history intact (#157)
- * - uncompiled and active → deactivate; never delete
+ * - compiled and existing → update front/back in place; a card restored from
+ *   empty content becomes due now, without changing its activation
+ * - uncompiled → clear its rendered sides; never delete or deactivate
  * - a card whose template key the registry does not know (written by a
  *   newer client) is left strictly alone
  *
@@ -30,7 +30,7 @@ export function prepareCardsForNewNote(
       id: cardId(noteId, card.templateKey),
       note_id: noteId,
       template_key: card.templateKey,
-      active: true,
+      active: false,
       front: card.front,
       back: card.back,
       due_at: now,
@@ -74,7 +74,7 @@ export async function prepareReconcileNoteCards(
             id,
             note_id: noteId,
             template_key: templateKey,
-            active: true,
+            active: existing.some((sibling) => sibling.active),
             front: wanted.front,
             back: wanted.back,
             due_at: now,
@@ -84,19 +84,18 @@ export async function prepareReconcileNoteCards(
           }),
         );
       } else {
-        const reactivate = !card.active;
+        const wasIncomplete = card.front === '' || card.back === '';
         if (
           card.front !== wanted.front ||
           card.back !== wanted.back ||
-          reactivate
+          wasIncomplete
         ) {
           operations.push(
             card.prepareUpdate((record) => {
               record.front = wanted.front;
               record.back = wanted.back;
-              if (reactivate) {
-                // #157's reactivation rule: due now, history kept.
-                record.active = true;
+              if (wasIncomplete) {
+                // Restored content is immediately available if its word is active.
                 record.due_at = now;
               }
               record.updated_at = now;
@@ -104,10 +103,11 @@ export async function prepareReconcileNoteCards(
           );
         }
       }
-    } else if (card && card.active) {
+    } else if (card && (card.front !== '' || card.back !== '')) {
       operations.push(
         card.prepareUpdate((record) => {
-          record.active = false;
+          record.front = '';
+          record.back = '';
           record.updated_at = now;
         }),
       );

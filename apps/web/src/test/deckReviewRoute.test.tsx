@@ -36,6 +36,8 @@ vi.mock('@/lib/auth-client', () => ({
 
 vi.mock('@/lib/review-preferences', () => ({
   getReviewPreferences: () => routeTestState.reviewPreferences,
+  getActivationCount: () => 5,
+  saveActivationCount: vi.fn(),
   clearLastReviewDeckId: vi.fn(),
   saveLastReviewDeckId: vi.fn(),
 }));

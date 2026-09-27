@@ -11,6 +11,8 @@ export {
 } from '@repo/offline-db';
 
 const LAST_REVIEW_DECK_STORAGE_PREFIX = 'not-another-cards:last-review-deck:';
+const ACTIVATION_COUNT_STORAGE_PREFIX = 'not-another-cards:activation-count:';
+export const DEFAULT_ACTIVATION_COUNT = 5;
 
 function getLastReviewDeckStorageKey(userId: string) {
   return `${LAST_REVIEW_DECK_STORAGE_PREFIX}${userId}`;
@@ -57,6 +59,21 @@ export function clearLastReviewDeckId(userId: string) {
   } catch {
     // Review works without a saved local preference.
   }
+}
+
+export function getActivationCount(userId: string | undefined) {
+  if (!userId) return DEFAULT_ACTIVATION_COUNT;
+  const storage = getReviewStorage();
+  if (!storage) return DEFAULT_ACTIVATION_COUNT;
+  const value = Number(storage.getItem(`${ACTIVATION_COUNT_STORAGE_PREFIX}${userId}`));
+  return Number.isInteger(value) && value > 0 ? value : DEFAULT_ACTIVATION_COUNT;
+}
+
+export function saveActivationCount(userId: string | undefined, count: number) {
+  if (!userId || !Number.isInteger(count) || count < 1) return;
+  const storage = getReviewStorage();
+  if (!storage) return;
+  storage.setItem(`${ACTIVATION_COUNT_STORAGE_PREFIX}${userId}`, String(count));
 }
 
 export function getReviewPreferences(

@@ -370,7 +370,8 @@ async function validateAndImportJson(
     );
   }
   // Create notes, deck memberships, and cards
-  for (const note of notesData) {
+  for (const [noteIndex, note] of notesData.entries()) {
+    const createdAt = now + noteIndex;
     const newNoteId = randomId();
     batchOps.push(
       db.get(UserNote).prepareCreate({
@@ -379,8 +380,8 @@ async function validateAndImportJson(
         fields_version: note.fields_version ?? BASIC_NOTE_FIELDS_VERSION,
         fields_json: JSON.stringify(note.fields ?? {}),
         additional_content: note.additional_content ?? null,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
     // Deck memberships
@@ -394,8 +395,8 @@ async function validateAndImportJson(
             note_id: newNoteId,
             deck_id: newDeckId,
             active: true,
-            created_at: now,
-            updated_at: now,
+            created_at: createdAt,
+            updated_at: createdAt,
           }),
         );
       }
@@ -424,14 +425,14 @@ async function validateAndImportJson(
           id: newCardId,
           note_id: newNoteId,
           template_key: templateKey,
-          active: sourceCard?.active ?? true,
+          active: false,
           front: compiledCard.front,
           back: compiledCard.back,
           due_at: sourceCard?.due_at ?? now,
           scheduled_interval_minutes:
             sourceCard?.scheduled_interval_minutes ?? 0,
-          created_at: now,
-          updated_at: now,
+          created_at: createdAt,
+          updated_at: createdAt,
         }),
       );
     }
@@ -695,7 +696,8 @@ async function validateAndImportCsv(
   }
 
   // Create a note + card + deck membership per CSV row
-  for (const item of parsedRows) {
+  for (const [itemIndex, item] of parsedRows.entries()) {
+    const createdAt = now + itemIndex;
     const noteId = randomId();
     const targetDeckId =
       deckTitleToIdMap.get(item.deckTitle.toLowerCase()) ?? randomId();
@@ -710,8 +712,8 @@ async function validateAndImportCsv(
         fields_version: BASIC_NOTE_FIELDS_VERSION,
         fields_json: JSON.stringify({ front: item.front, back: item.back }),
         additional_content: null,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
 
@@ -720,13 +722,13 @@ async function validateAndImportCsv(
         id: generatedCardId,
         note_id: noteId,
         template_key: templateKey,
-        active: item.active,
+        active: false,
         front: item.front,
         back: item.back,
         due_at: item.dueAt,
         scheduled_interval_minutes: item.interval,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
 
@@ -736,8 +738,8 @@ async function validateAndImportCsv(
         note_id: noteId,
         deck_id: targetDeckId,
         active: true,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
   }

@@ -48,4 +48,14 @@ describe('selectDueCards', () => {
       'now',
     ]);
   });
+
+  it('excludes inactive and incomplete cards', () => {
+    const cards = [
+      { id: 'inactive', note_id: 'n1', due_at: 1, active: false, front: 'a', back: 'b' },
+      { id: 'empty-front', note_id: 'n2', due_at: 1, active: true, front: '', back: 'b' },
+      { id: 'empty-back', note_id: 'n3', due_at: 1, active: true, front: 'a', back: '' },
+      { id: 'ready', note_id: 'n4', due_at: 1, active: true, front: 'a', back: 'b' },
+    ];
+    expect(selectDueCards(cards, 1).map((card) => card.id)).toEqual(['ready']);
+  });
 });

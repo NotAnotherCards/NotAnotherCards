@@ -3,6 +3,8 @@ import { type Card, useStore } from '@/hooks/useStore';
 import { authClient } from '@/lib/auth-client';
 import {
   getReviewPreferences,
+  getActivationCount,
+  saveActivationCount,
   clearLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
@@ -12,6 +14,7 @@ import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSyncController } from '@/offline/syncProvider';
 import { ReviewSession } from './ReviewSession';
+import { ActivateMoreWords } from './ReviewDialogs';
 
 type DeckReviewPageProps = {
   deckId?: string;
@@ -28,10 +31,20 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const { data: session } = authClient.useSession();
   const [activeSession, setActiveSession] =
     useState<ActiveReviewSession | null>(null);
+  const [sessionVersion, setSessionVersion] = useState(0);
   const getDueCards = (id: string) => selectDueCards(store.getCardsForDeck(id));
   const dueCards = deckId ? getDueCards(deckId) : [];
   const deck = store.decks.find((item) => item.id === deckId);
   const reviewPreferences = getReviewPreferences(session?.user.id);
+  const activationCount = getActivationCount(session?.user.id);
+  const inactiveWordCount = deckId
+    ? new Set(
+        store
+          .getCardsForDeck(deckId)
+          .filter((card) => !card.active)
+          .map((card) => card.note_id),
+      ).size
+    : 0;
 
   useEffect(() => {
     if (deck && session?.user.id) {
@@ -69,6 +82,14 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const handleComplete = () => {
     clearSavedDeckPreference();
     syncController?.syncNow();
+  };
+
+  const activateMoreWords = async (count: number) => {
+    if (!deckId) return;
+    await store.activateWordsInDeck(deckId, count);
+    saveActivationCount(session?.user.id, count);
+    setActiveSession(null);
+    setSessionVersion((version) => version + 1);
   };
 
   const exitReview = () => {
@@ -123,17 +144,22 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       <ReviewRecovery
         title="No cards due"
         message={`There are no cards due in ${deck.title} right now.`}
+        activationCount={inactiveWordCount > 0 ? activationCount : undefined}
+        onActivate={inactiveWordCount > 0 ? activateMoreWords : undefined}
+        onExit={exitReview}
       />
     );
   }
 
   return (
     <ReviewSession
-      key={deckId}
+      key={`${deckId}:${sessionVersion}`}
       cards={sessionCards}
       deckTitle={deck.title}
       onExit={exitReview}
       onComplete={handleComplete}
+      onActivateMore={inactiveWordCount > 0 ? activateMoreWords : undefined}
+      activationCount={inactiveWordCount > 0 ? activationCount : undefined}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}
@@ -151,6 +177,9 @@ type ReviewRecoveryProps = {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  activationCount?: number;
+  onActivate?: (count: number) => Promise<void>;
+  onExit?: () => void;
 };
 
 function ReviewRecovery({
@@ -158,6 +187,9 @@ function ReviewRecovery({
   message,
   actionLabel,
   onAction,
+  activationCount,
+  onActivate,
+  onExit,
 }: ReviewRecoveryProps) {
   return (
     <main className="mx-auto flex min-h-80 w-full max-w-md flex-col items-center justify-center gap-4 p-4 text-center">
@@ -167,7 +199,13 @@ function ReviewRecovery({
         <p className="text-sm text-muted-foreground">{message}</p>
       </div>
 
-      {onAction && actionLabel ? (
+      {onActivate && activationCount && onExit ? (
+        <ActivateMoreWords
+          onActivate={onActivate}
+          onExit={onExit}
+          initialCount={activationCount}
+        />
+      ) : onAction && actionLabel ? (
         <Button onClick={onAction} className="cursor-pointer gap-1.5">
           <RefreshCw className="size-4" />
           {actionLabel}

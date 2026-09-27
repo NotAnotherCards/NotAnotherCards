@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
   calculateReviewIntervalMinutes,
@@ -16,8 +16,9 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
-import { loadReviewPreferences } from '@/lib/review-preferences';
+import { loadActivationCount, loadReviewPreferences, saveActivationCount } from '@/lib/review-preferences';
 import { useReviewDeck } from '@/lib/review';
+import { cardsForDeck } from '@/lib/cards-in-deck';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Markdown } from './ui/markdown';
@@ -28,6 +29,29 @@ type ReviewBatch = {
   cards: UserCardRecord[];
   remaining: UserCardRecord[];
 };
+
+function ActivationControls({
+  count,
+  onChangeCount,
+  onActivate,
+  isActivating,
+  error,
+}: {
+  count: string;
+  onChangeCount: (value: string) => void;
+  onActivate: () => void;
+  isActivating: boolean;
+  error: string | null;
+}) {
+  return (
+    <>
+      <Text>Ready for more?</Text>
+      <TextInput value={count} onChangeText={onChangeCount} keyboardType="number-pad" className="w-20 rounded border px-3 py-2 text-center" />
+      <Button onPress={onActivate} disabled={isActivating}><Text>Activate and continue</Text></Button>
+      {error && <Text className="text-destructive">{error}</Text>}
+    </>
+  );
+}
 
 // Web's two modes, same labels: basic asks whether you knew it, extended
 // keeps the four scheduler ratings apart. Settings stores the choice.
@@ -63,6 +87,7 @@ export function ReviewSession({ deckId }: { deckId: string }) {
     <ActiveReviewSession
       manager={manager}
       deckId={deckId}
+      userId={authSession?.user.id ?? ''}
       preferences={loadReviewPreferences(authSession?.user.id ?? '')}
     />
   );
@@ -71,16 +96,18 @@ export function ReviewSession({ deckId }: { deckId: string }) {
 function ActiveReviewSession({
   manager,
   deckId,
+  userId,
   preferences,
 }: {
   manager: DatabaseManager;
   deckId: string;
+  userId: string;
   preferences: ReviewPreferences;
 }) {
   const answers =
     preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS;
   const router = useRouter();
-  const { deck, dueCards, isLoading, error, writes } = useReviewDeck(
+  const { deck, dueCards, memberships, cards, isLoading, error, writes } = useReviewDeck(
     manager,
     deckId,
   );
@@ -90,16 +117,30 @@ function ActiveReviewSession({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [activationCount, setActivationCount] = useState('5');
+  const [activationPending, setActivationPending] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && deck && session?.deckId !== deckId) {
+    if (!isLoading && deck && activationPending) {
+      if (dueCards.length === 0) return;
+      setSession(makeBatch(deckId, dueCards));
+      setCardIndex(0);
+      setIsComplete(false);
+      setActivationPending(false);
+    } else if (!isLoading && deck && session?.deckId !== deckId) {
       setSession(makeBatch(deckId, dueCards));
       setCardIndex(0);
       setIsFlipped(false);
       setSaveError(null);
       setIsComplete(false);
     }
-  }, [deck, deckId, dueCards, isLoading, session?.deckId]);
+  }, [activationPending, deck, deckId, dueCards, isLoading, session?.deckId]);
+
+  useEffect(() => {
+    setActivationCount(String(loadActivationCount(userId)));
+  }, [userId]);
 
   if (isLoading || !writes) {
     return (
@@ -142,6 +183,27 @@ function ActiveReviewSession({
   }
 
   const card = session.cards[cardIndex];
+  const inactiveWordCount = new Set(
+    cardsForDeck(memberships, cards, deckId)
+      .filter((item) => !item.active)
+      .map((item) => item.note_id),
+  ).size;
+  const activateMore = async () => {
+    if (isActivating) return;
+    const count = Math.max(1, Math.floor(Number(activationCount) || 5));
+    setIsActivating(true);
+    setActivationError(null);
+    try {
+      await writes.activate(deckId, count);
+      saveActivationCount(userId, count);
+      setSession(null);
+      setActivationPending(true);
+    } catch {
+      setActivationError('An error occurred while activating words. Please try again.');
+    } finally {
+      setIsActivating(false);
+    }
+  };
   const advance = () => {
     if (cardIndex < session.cards.length - 1) {
       setCardIndex((index) => index + 1);
@@ -182,6 +244,9 @@ function ActiveReviewSession({
         <Text className="text-center text-muted-foreground">
           All due cards in this deck are done for now.
         </Text>
+        {inactiveWordCount > 0 && (
+          <ActivationControls count={activationCount} onChangeCount={setActivationCount} onActivate={() => void activateMore()} isActivating={isActivating} error={activationError} />
+        )}
         <Button onPress={leave}>
           <Text>Back to deck</Text>
         </Button>
@@ -197,6 +262,9 @@ function ActiveReviewSession({
         <Text className="text-center text-muted-foreground">
           There are no cards due in {deck.title} right now.
         </Text>
+        {inactiveWordCount > 0 && (
+          <ActivationControls count={activationCount} onChangeCount={setActivationCount} onActivate={() => void activateMore()} isActivating={isActivating} error={activationError} />
+        )}
         <Button onPress={leave}>
           <Text>Back to deck</Text>
         </Button>

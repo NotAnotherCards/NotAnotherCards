@@ -9,6 +9,8 @@ import {
   getDecksQuery,
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
+  getAllCardsQuery,
+  activateWordsInDeck,
   recordReviewEvent,
   selectDueCards,
   type ReviewRating,
@@ -35,6 +37,11 @@ export function reviewWrites(db: Database, sync: SyncController | null) {
       sync?.notifyLocalWrite();
       return review;
     },
+    activate: async (deckId: string, count: number) => {
+      const noteIds = await activateWordsInDeck(db, deckId, count);
+      sync?.notifyLocalWrite();
+      return noteIds;
+    },
   };
 }
 
@@ -43,7 +50,7 @@ export function useReviewDeck(manager: DatabaseManager, deckId: string) {
   const db = useDatabase(manager);
   const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
-  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getAllCardsQuery(db));
 
   const deck = useMemo(
     () => decks.data.find((item) => item.id === deckId) ?? null,
@@ -60,6 +67,8 @@ export function useReviewDeck(manager: DatabaseManager, deckId: string) {
 
   return {
     deck,
+    memberships: memberships.data,
+    cards: cards.data,
     dueCards,
     isLoading: decks.isLoading || memberships.isLoading || cards.isLoading,
     error: decks.error ?? memberships.error ?? cards.error,
