@@ -146,7 +146,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByRole(
         'heading',
-        { name: /DASHBOARD PAGE/i },
+        { name: /Dashboard/i },
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
@@ -160,7 +160,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByRole(
         'heading',
-        { name: /DASHBOARD PAGE/i },
+        { name: /Dashboard/i },
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
@@ -273,7 +273,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByRole(
         'heading',
-        { name: /DASHBOARD PAGE/i },
+        { name: /Dashboard/i },
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();

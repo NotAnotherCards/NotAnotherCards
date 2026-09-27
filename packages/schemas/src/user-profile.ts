@@ -3,13 +3,14 @@ import { z } from 'zod';
 export const userProfileFormSchema = z.object({
   username: z
     .string()
-    .min(3, 'Username must be at least 3 characters')
-    .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      'Username can only contain letters, numbers, underscores, and hyphens',
-    ),
-  native_language_id: z.string().min(1, 'Native language is required'),
-  target_language_id: z.string().min(1, 'Target language is required'),
+    .min(3, 'profile.validation.username_min')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'profile.validation.username_regex'),
+  native_language_id: z
+    .string()
+    .min(1, 'profile.validation.native_language_required'),
+  target_language_id: z
+    .string()
+    .min(1, 'profile.validation.target_language_required'),
 });
 export type ProfileFormValues = z.infer<typeof userProfileFormSchema>;
 
@@ -34,6 +35,7 @@ export const LANGUAGES = [
   {
     value: '00000000-0000-0000-0000-000000000001',
     name: 'English',
+    code: 'EN',
     flag: '🇺🇸',
     genders: [],
     locale: 'en',
@@ -41,6 +43,7 @@ export const LANGUAGES = [
   {
     value: '00000000-0000-0000-0000-000000000002',
     name: 'Spanish',
+    code: 'ES',
     flag: '🇪🇸',
     genders: ['el', 'la'],
     locale: 'es',
@@ -48,6 +51,7 @@ export const LANGUAGES = [
   {
     value: '00000000-0000-0000-0000-000000000003',
     name: 'German',
+    code: 'DE',
     flag: '🇩🇪',
     genders: ['der', 'die', 'das'],
     locale: 'de',
@@ -55,6 +59,7 @@ export const LANGUAGES = [
   {
     value: '00000000-0000-0000-0000-000000000004',
     name: 'Russian',
+    code: 'RU',
     flag: '🇷🇺',
     genders: ['м.', 'ж.', 'ср.'],
     locale: 'ru',
