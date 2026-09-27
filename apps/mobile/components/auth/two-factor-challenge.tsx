@@ -49,11 +49,7 @@ export function TwoFactorChallenge() {
       });
       return;
     }
-    if (
-      !isConfirmingSession &&
-      !isSessionPending &&
-      !isSessionRefetching
-    ) {
+    if (!isConfirmingSession && !isSessionPending && !isSessionRefetching) {
       setSessionError(
         'Your code was accepted, but the signed-in session could not be confirmed. Retry or return to sign in.',
       );
