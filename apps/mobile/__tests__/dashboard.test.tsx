@@ -2,8 +2,9 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
+import Storage from 'expo-sqlite/kv-store';
+import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
-  clearLastReviewDeckId,
   loadLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
@@ -12,8 +13,11 @@ const mockUseSession = jest.fn();
 const mockPush = jest.fn();
 const mockManager = { tag: 'manager' };
 const mockSyncNow = jest.fn(() => Promise.resolve());
+const mockUseReviewOverview = jest.fn(
+  (..._args: unknown[]) => mockReviewOverview,
+);
 let mockReviewOverview = {
-  dueDeckIds: new Set<string>(),
+  target: 'nothing-due' as string,
   dueCount: 0,
   isLoading: false,
   error: null as Error | null,
@@ -29,7 +33,7 @@ jest.mock('../lib/database-provider', () => ({
   }),
 }));
 jest.mock('../lib/review', () => ({
-  useReviewOverview: () => mockReviewOverview,
+  useReviewOverview: (...args: unknown[]) => mockUseReviewOverview(...args),
 }));
 
 // The deck list and settings have their own tests; keep this one about the
@@ -64,9 +68,9 @@ jest.mock('expo-router', () => {
 describe('Dashboard screen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    clearLastReviewDeckId('user-dashboard');
+    Storage.removeItemSync(lastReviewDeckStorageKey('user-dashboard'));
     mockReviewOverview = {
-      dueDeckIds: new Set(),
+      target: 'nothing-due',
       dueCount: 0,
       isLoading: false,
       error: null,
@@ -147,7 +151,7 @@ describe('Dashboard screen', () => {
 
   it('shows the due count and starts the saved deck review', () => {
     mockReviewOverview = {
-      dueDeckIds: new Set(['deck-spanish']),
+      target: 'deck-spanish',
       dueCount: 3,
       isLoading: false,
       error: null,
@@ -169,18 +173,19 @@ describe('Dashboard screen', () => {
     fireEvent.press(getByText('Start Review'));
 
     expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
+    expect(mockUseReviewOverview).toHaveBeenCalledWith(
+      mockManager,
+      'deck-spanish',
+    );
   });
 
-  it('clears a saved deck with nothing due and opens the library', () => {
-    // Deleted or finished, the branch is the same: the deck is not in the
-    // set of decks with due cards. 3 cards are due, all in another deck.
+  it('opens the library when the deck to review is unclear', () => {
     mockReviewOverview = {
-      dueDeckIds: new Set(['deck-french']),
+      target: 'library',
       dueCount: 3,
       isLoading: false,
       error: null,
     };
-    saveLastReviewDeckId('user-dashboard', 'deck-spanish');
     mockUseSession.mockReturnValue({
       data: {
         user: {
@@ -196,8 +201,31 @@ describe('Dashboard screen', () => {
     fireEvent.press(getByText('Start Review'));
 
     expect(getByText('deck-list')).toBeTruthy();
-    expect(loadLastReviewDeckId('user-dashboard')).toBeNull();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('disables Start Review when nothing is due', () => {
+    saveLastReviewDeckId('user-dashboard', 'deck-spanish');
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByRole, getByText } = render(<Dashboard />);
+    expect(getByText('0 cards due')).toBeTruthy();
+    const button = getByRole('button', { name: 'Start Review' });
+    expect(button.props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(button);
+
+    expect(mockPush).not.toHaveBeenCalled();
+    // Nothing due now does not forget the deck: it can be due again later.
+    expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });
 
   it('does not clear the saved deck while queries are loading', () => {

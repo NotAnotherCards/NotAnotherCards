@@ -26,6 +26,8 @@ import {
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
   deleteDeck as dbDeleteDeck,
+  deleteDeckWithNotes as dbDeleteDeckWithNotes,
+  deckDeletionSummary as dbDeckDeletionSummary,
   createCard as dbCreateCard,
   updateCard as dbUpdateCard,
   createCardsBatch as dbCreateCardsBatch,
@@ -92,15 +94,11 @@ export function useDelayedLoading(
 }
 
 export function useStore() {
-  const { status, error: managerError } = useDatabaseState();
+  const { status } = useDatabaseState();
   const sync = useSyncController();
 
   const db = useDatabase() as Database | null;
   const isInitializing = status === 'loading' || status === 'idle';
-  const initError =
-    status === 'error'
-      ? managerError?.message || 'Failed to open local database'
-      : null;
 
   const [, setTimeTrigger] = useState(0);
 
@@ -139,6 +137,7 @@ export function useStore() {
     notesLoading ||
     noteDecksLoading ||
     profileLoading;
+
   const { ready, showSpinner } = useDelayedLoading(isLoading);
 
   const { data: dueCards } = useQuery<UserCardRecord, UserCardRecord[]>(
@@ -191,6 +190,24 @@ export function useStore() {
       return result;
     },
     [db, sync],
+  );
+
+  const deleteDeckWithNotes = useCallback(
+    async (id: string) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteDeckWithNotes(db, id);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const deckDeletionSummary = useCallback(
+    async (id: string) => {
+      if (!db) throw new Error('Database not initialized');
+      return await dbDeckDeletionSummary(db, id);
+    },
+    [db],
   );
 
   const createCard = useCallback(
@@ -322,6 +339,18 @@ export function useStore() {
     [cards, noteDecks],
   );
 
+  const getNotesForDeck = useCallback(
+    (deckId: string): UserNoteRecord[] => {
+      const noteIds = new Set(
+        noteDecks
+          .filter((noteDeck) => noteDeck.deck_id === deckId)
+          .map((noteDeck) => noteDeck.note_id),
+      );
+      return notes.filter((note) => noteIds.has(note.id));
+    },
+    [notes, noteDecks],
+  );
+
   const getCardsForDeck = useCallback(
     (deckId: string): UserCardRecord[] => {
       const noteIds = new Set(
@@ -389,11 +418,12 @@ export function useStore() {
     ready,
     showSpinner,
     isLoading,
-    error: initError,
     reconnect,
     createDeck,
     updateDeck,
     deleteDeck,
+    deleteDeckWithNotes,
+    deckDeletionSummary,
     createCard,
     updateCard,
     removeNoteFromDeck,
@@ -406,6 +436,7 @@ export function useStore() {
     updateNoteFields,
     getCardsCount,
     getCardsForDeck,
+    getNotesForDeck,
     createUserProfile,
     updateUserProfile,
     createCardsBatch,

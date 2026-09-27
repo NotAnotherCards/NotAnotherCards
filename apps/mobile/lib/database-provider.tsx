@@ -42,7 +42,7 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   const { manager, syncController, closeError } = useOwnedDatabase({
     userId,
     createManager: createUserDatabaseManager,
-    sync: { pullChanges, pushChanges },
+    sync: { pullChanges, pushChanges, migrationsEnabledAtVersion: 1 },
     controller: { triggers: nativeSyncTriggers },
   });
 

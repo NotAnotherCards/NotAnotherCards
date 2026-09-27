@@ -1,7 +1,5 @@
 /**
- * Every local write in useStore schedules a sync (#52). The nine
- * write callbacks each call notifyLocalWrite; a refactor that drops
- * one fails the count here.
+ * Local writes in useStore schedule a sync (#52); reads do not.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
@@ -21,7 +19,7 @@ import { SyncProvider } from '@/offline/syncProvider';
 import type { SyncController } from '@/offline/syncController';
 
 describe('useStore sync triggers', () => {
-  it('all nine writes call notifyLocalWrite', async () => {
+  it('notifies after deck and card writes, but not deletion summaries', async () => {
     const db = await Database.open({
       driver: new NodeSqliteDriver(),
       schema,
@@ -61,9 +59,18 @@ describe('useStore sync triggers', () => {
       await result.current.removeNoteFromDeck(card.note_id, deck.id);
       await result.current.deleteNote(card.note_id);
       await result.current.deleteDeck(deck.id);
+      const secondDeck = await result.current.createDeck('Second deck', '');
+      await result.current.createCard(secondDeck.id, 'front', 'back');
+      const countBeforeRead = notifyLocalWrite.mock.calls.length;
+      expect(
+        (await result.current.deckDeletionSummary(secondDeck.id))
+          .orphanedCardCount,
+      ).toBe(1);
+      expect(notifyLocalWrite).toHaveBeenCalledTimes(countBeforeRead);
+      await result.current.deleteDeckWithNotes(secondDeck.id);
     });
 
-    expect(notifyLocalWrite).toHaveBeenCalledTimes(8);
+    expect(notifyLocalWrite).toHaveBeenCalledTimes(11);
     await db.driver.close();
   });
 });

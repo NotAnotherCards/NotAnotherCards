@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   aiJobResponseSchema,
   aiJobsResponseSchema,
@@ -21,6 +22,7 @@ import { useStore } from '@/hooks/useStore';
 type Job = AiJob;
 
 export function AiGenerationPlaygroundComponent() {
+  const { t } = useTranslation();
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJob, setCurrentJob] = useState<Job | null>(null);
@@ -82,7 +84,11 @@ export function AiGenerationPlaygroundComponent() {
             await res.json().catch(() => null),
           );
           if (disposed) return;
-          setErrorMessage(message || 'Failed to poll job status');
+          setErrorMessage(
+            message
+              ? (t(message, message) as string)
+              : t('playground.poll_failed', 'Failed to poll job status'),
+          );
           setCurrentJob((prev) =>
             prev ? { ...prev, status: 'failed' } : null,
           );
@@ -101,7 +107,10 @@ export function AiGenerationPlaygroundComponent() {
         ) {
           if (updatedJob.status === 'failed') {
             setErrorMessage(
-              'Creation could not be completed. Please try again with a different input.',
+              t(
+                'playground.creation_error',
+                'Creation could not be completed. Please try again with a different input.',
+              ),
             );
           }
           setLoading(false);
@@ -112,7 +121,10 @@ export function AiGenerationPlaygroundComponent() {
       } catch {
         if (disposed) return;
         setErrorMessage(
-          'Unable to update job status. Please check your connection.',
+          t(
+            'playground.poll_network_error',
+            'Unable to update job status. Please check your connection.',
+          ),
         );
         setCurrentJob((prev) => (prev ? { ...prev, status: 'failed' } : null));
         setLoading(false);
@@ -186,10 +198,18 @@ export function AiGenerationPlaygroundComponent() {
             await res.json().catch(() => null),
           );
           throw new Error(
-            message || 'Unable to start card creation. Please try again.',
+            message
+              ? (t(message, message) as string)
+              : t(
+                  'playground.start_error_cards',
+                  'Unable to start card creation. Please try again.',
+                ),
           );
         }
-        if (!res.body) throw new Error('Creation response has no stream.');
+        if (!res.body)
+          throw new Error(
+            t('playground.no_stream_error', 'Creation response has no stream.'),
+          );
         const result = await readPlaygroundStream(res.body, (delta) => {
           if (!request.signal.aborted) setStreamText((text) => text + delta);
         });
@@ -206,7 +226,12 @@ export function AiGenerationPlaygroundComponent() {
             await res.json().catch(() => null),
           );
           throw new Error(
-            message || 'Unable to start creation. Please try again.',
+            message
+              ? (t(message, message) as string)
+              : t(
+                  'playground.start_error',
+                  'Unable to start creation. Please try again.',
+                ),
           );
         }
         const data = aiJobResponseSchema.parse(await res.json());
@@ -218,7 +243,9 @@ export function AiGenerationPlaygroundComponent() {
       setLoading(false);
       if (!request.signal.aborted) {
         setErrorMessage(
-          error instanceof Error ? error.message : 'Unable to create.',
+          error instanceof Error
+            ? error.message
+            : t('playground.create_failed', 'Unable to create.'),
         );
       }
     } finally {
@@ -241,14 +268,17 @@ export function AiGenerationPlaygroundComponent() {
       await createCardsBatch({
         deckIdOrTitle,
         isNew,
-        description: 'Created Cards',
+        description: t('playground.created_cards', 'Created Cards'),
         cards: cards.map((card) => ({
           front: card.front,
           back: card.back,
         })),
       });
     } catch {
-      const msg = 'Unable to save cards to deck. Please try again.';
+      const msg = t(
+        'playground.save_cards_error',
+        'Unable to save cards to deck. Please try again.',
+      );
       setErrorMessage(msg);
       throw new Error(msg);
     } finally {
@@ -269,7 +299,10 @@ export function AiGenerationPlaygroundComponent() {
         wordNoteCandidate.fields,
       );
     } catch {
-      const msg = 'Unable to save word note to deck. Please try again.';
+      const msg = t(
+        'playground.save_word_error',
+        'Unable to save word note to deck. Please try again.',
+      );
       setErrorMessage(msg);
       throw new Error(msg);
     } finally {
@@ -285,7 +318,10 @@ export function AiGenerationPlaygroundComponent() {
     setCurrentJob(job);
     if (job.status === 'failed') {
       setErrorMessage(
-        'Creation could not be completed. Please try again with a different input.',
+        t(
+          'playground.creation_error',
+          'Creation could not be completed. Please try again with a different input.',
+        ),
       );
     } else {
       setErrorMessage(null);
@@ -298,7 +334,10 @@ export function AiGenerationPlaygroundComponent() {
   };
 
   const getTargetDeckName = (deckId: string) => {
-    return decks.find((d) => d.id === deckId)?.title || 'Selected Deck';
+    return (
+      decks.find((d) => d.id === deckId)?.title ||
+      t('playground.selected_deck', 'Selected Deck')
+    );
   };
 
   return (
@@ -333,17 +372,19 @@ export function AiGenerationPlaygroundComponent() {
           <div className="flex justify-between items-center">
             <h3 className="text-base font-bold tracking-tight flex items-center gap-1.5">
               <Calendar className="size-4.5 text-muted-foreground" />
-              Previous Jobs History
+              {t('playground.history_title', 'Previous Jobs History')}
             </h3>
             <span className="text-xs font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-              {jobs.length} total
+              {t('playground.total_jobs', '{{count}} total', {
+                count: jobs.length,
+              })}
             </span>
           </div>
 
           <div className="space-y-2.5 max-h-62.5 overflow-y-auto pr-1">
             {jobs.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">
-                No previous jobs found.
+                {t('playground.no_jobs', 'No previous jobs found.')}
               </p>
             ) : (
               jobs.map((job) => (
@@ -360,10 +401,10 @@ export function AiGenerationPlaygroundComponent() {
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         {job.type === 'topic_deck'
-                          ? 'Topic'
+                          ? t('playground.type_topic', 'Topic')
                           : job.type === 'text_cards'
-                            ? 'Source Paragraph'
-                            : 'Word'}
+                            ? t('playground.type_source', 'Source Paragraph')
+                            : t('playground.type_word', 'Word')}
                       </span>
                     </div>
                     <p className="text-sm font-semibold truncate text-foreground/90">
@@ -402,13 +443,19 @@ export function AiGenerationPlaygroundComponent() {
         !cards &&
         !wordNoteCandidate ? (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md space-y-3">
-            <h3 className="text-base font-bold tracking-tight">Live Output</h3>
+            <h3 className="text-base font-bold tracking-tight">
+              {t('playground.live_output', 'Live Output')}
+            </h3>
             <pre
               ref={liveOutput}
-              aria-label="Live creation output"
+              aria-label={t(
+                'playground.live_output_aria',
+                'Live creation output',
+              )}
               className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground"
             >
-              {streamText || 'Waiting for the first text…'}
+              {streamText ||
+                t('playground.waiting', 'Waiting for the first text…')}
             </pre>
           </div>
         ) : cards ? (
@@ -436,12 +483,19 @@ export function AiGenerationPlaygroundComponent() {
             </div>
             <div className="space-y-1.5 max-w-md">
               <h3 className="text-xl font-bold mb-2">
-                {currentJob ? 'Creation Job Failed' : 'Creation Failed'}
+                {currentJob
+                  ? t('playground.job_failed', 'Creation Job Failed')
+                  : t('playground.creation_failed', 'Creation Failed')}
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||
-                  currentJob?.error ||
-                  'Creation could not be completed. Please try again with a different input.'}
+                  (currentJob?.error
+                    ? (t(currentJob.error, currentJob.error) as string)
+                    : null) ||
+                  t(
+                    'playground.creation_error',
+                    'Creation could not be completed. Please try again with a different input.',
+                  )}
               </p>
             </div>
           </div>
@@ -452,11 +506,13 @@ export function AiGenerationPlaygroundComponent() {
             </div>
             <div>
               <h3 className="font-semibold text-foreground text-sm">
-                No Results Preview
+                {t('playground.no_results_title', 'No Results Preview')}
               </h3>
               <p className="text-sm text-muted-foreground/80 max-w-sm mx-auto leading-relaxed">
-                Trigger a creation task or select a completed past job from the
-                history panel to view results.
+                {t(
+                  'playground.no_results_desc',
+                  'Trigger a creation task or select a completed past job from the history panel to view results.',
+                )}
               </p>
             </div>
           </div>

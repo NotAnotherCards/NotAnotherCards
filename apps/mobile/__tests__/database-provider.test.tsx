@@ -106,7 +106,11 @@ describe('SessionDatabaseProvider', () => {
     expect(mockUseSessionDatabase).toHaveBeenCalledWith({
       userId: 'user-a',
       createManager: createUserDatabaseManager,
-      sync: { pullChanges: 'pull', pushChanges: 'push' },
+      sync: {
+        pullChanges: 'pull',
+        pushChanges: 'push',
+        migrationsEnabledAtVersion: 1,
+      },
       controller: { triggers: 'triggers' },
     });
   });
