@@ -208,8 +208,16 @@ function NotFoundPage() {
 
   const cards = [
     { digit: '4', word: 'Page', className: 'not-found-card-one' },
-    { digit: '0', word: 'not', className: 'not-found-card-two' },
-    { digit: '4', word: 'found', className: 'not-found-card-three' },
+    {
+      digit: '0',
+      word: 'not',
+      className: 'not-found-card-two',
+    },
+    {
+      digit: '4',
+      word: 'found',
+      className: 'not-found-card-three',
+    },
   ];
 
   return (
@@ -288,9 +296,17 @@ function useNotFoundPageMetadata() {
 
 function LandingFooter() {
   return (
-    <footer className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted sm:px-8">
-      © 2026 NotAnotherCards <span aria-hidden="true">·</span> Learn at your own
-      pace.
+    <footer className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-2 gap-y-1 px-5 py-8 text-sm text-muted sm:px-8">
+      <span>© 2026 NotAnotherCards</span>
+      <span aria-hidden="true">·</span>
+      <span>Learn at your own pace.</span>
+      <span aria-hidden="true">·</span>
+      <a
+        className="underline underline-offset-4 hover:text-foreground"
+        href="/privacy"
+      >
+        Privacy Policy
+      </a>
     </footer>
   );
 }
