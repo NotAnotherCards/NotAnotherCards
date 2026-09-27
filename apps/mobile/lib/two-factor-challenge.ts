@@ -139,6 +139,9 @@ export function twoFactorChallengeError(error: unknown): string {
   if (code === 'ACCOUNT_TEMPORARILY_LOCKED') {
     return 'Too many failed attempts. Your account is temporarily locked. Sign in again later.';
   }
+  if (code === 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE') {
+    return 'Too many failed attempts. Sign in again to start a new verification request.';
+  }
   if (code === 'INVALID_BACKUP_CODE') {
     return 'That backup code is invalid or has already been used.';
   }
@@ -155,7 +158,8 @@ export function isTerminalTwoFactorChallengeError(error: unknown): boolean {
   const code = twoFactorChallengeErrorCode(error);
   return (
     code === 'INVALID_TWO_FACTOR_COOKIE' ||
-    code === 'ACCOUNT_TEMPORARILY_LOCKED'
+    code === 'ACCOUNT_TEMPORARILY_LOCKED' ||
+    code === 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE'
   );
 }
 

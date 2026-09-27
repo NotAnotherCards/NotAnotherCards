@@ -44,6 +44,8 @@ type MockSession = {
     };
   } | null;
   refetch: typeof mockRefetch;
+  isPending?: boolean;
+  isRefetching?: boolean;
 };
 const signedInSession: MockSession = {
   data: {
@@ -167,6 +169,23 @@ describe('two-factor sign-in challenge', () => {
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
   });
 
+  it('lets the user retry when the verified session cannot be refreshed', async () => {
+    const view = render(<TwoFactorChallenge />);
+    fireEvent.changeText(view.getByLabelText('Authentication code'), '123456');
+    fireEvent.press(view.getByText('Verify and continue'));
+
+    expect(
+      await view.findByText(/signed-in session could not be confirmed/i),
+    ).toBeTruthy();
+    expect(view.getByText('Retry session')).toBeTruthy();
+    expect(view.getByText('Back to sign in')).toBeTruthy();
+
+    mockSession = signedInSession;
+    fireEvent.press(view.getByText('Retry session'));
+    view.rerender(<TwoFactorChallenge />);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+  });
+
   it('clears the temporary sign-in when returning to login', async () => {
     mockSession = { data: null, refetch: mockRefetch };
     const view = render(<TwoFactorChallenge />);
@@ -191,6 +210,28 @@ describe('two-factor sign-in challenge', () => {
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
     expect(mockReplace).toHaveBeenCalledWith('/login');
     expect(getTwoFactorChallengeState().pending).toBe(false);
+    alertSpy.mockRestore();
+  });
+
+  it('signs out when the verification attempt budget is exhausted', async () => {
+    mockVerifyTotp.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE' },
+    });
+    const alertSpy = jest
+      .spyOn(require('react-native').Alert, 'alert')
+      .mockImplementation(() => {});
+    const view = render(<TwoFactorChallenge />);
+    fireEvent.changeText(view.getByLabelText('Authentication code'), '123456');
+    fireEvent.press(view.getByText('Verify and continue'));
+
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+    expect(mockReplace).toHaveBeenCalledWith('/login');
+    expect(getTwoFactorChallengeState().pending).toBe(false);
+    expect(alertSpy).toHaveBeenCalledWith(
+      'Sign-in could not continue',
+      expect.stringMatching(/start a new verification request/i),
+    );
     alertSpy.mockRestore();
   });
 

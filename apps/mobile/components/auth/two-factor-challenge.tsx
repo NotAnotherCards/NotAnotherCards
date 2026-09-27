@@ -21,25 +21,65 @@ type ChallengeMode = 'totp' | 'backup';
 export function TwoFactorChallenge() {
   const router = useRouter();
   usePreventScreenCapture('notanothercards-two-factor-challenge');
-  const { data: session } = authClient.useSession();
+  const {
+    data: session,
+    isPending: isSessionPending,
+    isRefetching: isSessionRefetching,
+    refetch,
+  } = authClient.useSession();
   const [mode, setMode] = useState<ChallengeMode>('totp');
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
+  const [isConfirmingSession, setIsConfirmingSession] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
     void beginTwoFactorChallenge();
   }, []);
 
   useEffect(() => {
-    if (!verifiedUserId || session?.user.id !== verifiedUserId) return;
-    void finishTwoFactorChallenge().then(() => {
-      router.replace(
-        session.user.onBoardingComplete ? '/dashboard' : '/onboarding',
+    if (!verifiedUserId) return;
+    if (session?.user.id === verifiedUserId) {
+      void finishTwoFactorChallenge().then(() => {
+        router.replace(
+          session.user.onBoardingComplete ? '/dashboard' : '/onboarding',
+        );
+      });
+      return;
+    }
+    if (
+      !isConfirmingSession &&
+      !isSessionPending &&
+      !isSessionRefetching
+    ) {
+      setSessionError(
+        'Your code was accepted, but the signed-in session could not be confirmed. Retry or return to sign in.',
       );
-    });
-  }, [verifiedUserId, session, router]);
+    }
+  }, [
+    isConfirmingSession,
+    isSessionPending,
+    isSessionRefetching,
+    verifiedUserId,
+    session,
+    router,
+  ]);
+
+  const confirmSession = async () => {
+    setSessionError(null);
+    setIsConfirmingSession(true);
+    try {
+      await refetch();
+    } catch {
+      setSessionError(
+        'Your code was accepted, but the signed-in session could not be confirmed. Retry or return to sign in.',
+      );
+    } finally {
+      setIsConfirmingSession(false);
+    }
+  };
 
   const changeMode = (next: ChallengeMode) => {
     setMode(next);
@@ -115,6 +155,7 @@ export function TwoFactorChallenge() {
       }
 
       setVerifiedUserId(response.data.user.id);
+      await confirmSession();
     } catch {
       setError('Verification is temporarily unavailable. Please try again.');
     } finally {
@@ -181,24 +222,37 @@ export function TwoFactorChallenge() {
         />
       </View>
 
-      {error ? (
+      {error || sessionError ? (
         <Text
           accessibilityRole="alert"
           className="text-center text-destructive"
         >
-          {error}
+          {error ?? sessionError}
         </Text>
       ) : null}
 
-      <Button
-        loading={isSubmitting || Boolean(verifiedUserId)}
-        onPress={verify}
-      >
-        <Text>Verify and continue</Text>
-      </Button>
+      {verifiedUserId ? (
+        <Button
+          loading={
+            isConfirmingSession || isSessionPending || isSessionRefetching
+          }
+          onPress={confirmSession}
+        >
+          <Text>Retry session</Text>
+        </Button>
+      ) : (
+        <Button loading={isSubmitting} onPress={verify}>
+          <Text>Verify and continue</Text>
+        </Button>
+      )}
       <Button
         variant="ghost"
-        disabled={isSubmitting || Boolean(verifiedUserId)}
+        disabled={
+          isSubmitting ||
+          isConfirmingSession ||
+          isSessionPending ||
+          isSessionRefetching
+        }
         onPress={leaveChallenge}
       >
         <Text>Back to sign in</Text>
