@@ -27,6 +27,8 @@ import {
   createDeck as dbCreateDeck,
   updateDeck as dbUpdateDeck,
   deleteDeck as dbDeleteDeck,
+  deleteDeckWithNotes as dbDeleteDeckWithNotes,
+  deckDeletionSummary as dbDeckDeletionSummary,
   createCard as dbCreateCard,
   updateCard as dbUpdateCard,
   createCardsBatch as dbCreateCardsBatch,
@@ -194,6 +196,24 @@ export function useStore() {
     [db, sync],
   );
 
+  const deleteDeckWithNotes = useCallback(
+    async (id: string) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteDeckWithNotes(db, id);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const deckDeletionSummary = useCallback(
+    async (id: string) => {
+      if (!db) throw new Error('Database not initialized');
+      return await dbDeckDeletionSummary(db, id);
+    },
+    [db],
+  );
+
   const createCard = useCallback(
     async (deckId: string, front: string, back: string) => {
       if (!db) throw new Error('Database not initialized');
@@ -333,6 +353,18 @@ export function useStore() {
     [allCards, noteDecks],
   );
 
+  const getNotesForDeck = useCallback(
+    (deckId: string): UserNoteRecord[] => {
+      const noteIds = new Set(
+        noteDecks
+          .filter((noteDeck) => noteDeck.deck_id === deckId)
+          .map((noteDeck) => noteDeck.note_id),
+      );
+      return notes.filter((note) => noteIds.has(note.id));
+    },
+    [notes, noteDecks],
+  );
+
   const getCardsForDeck = useCallback(
     (deckId: string): UserCardRecord[] => {
       const noteIds = new Set(
@@ -404,6 +436,8 @@ export function useStore() {
     createDeck,
     updateDeck,
     deleteDeck,
+    deleteDeckWithNotes,
+    deckDeletionSummary,
     createCard,
     activateWordsInDeck,
     updateCard,
@@ -417,6 +451,7 @@ export function useStore() {
     updateNoteFields,
     getCardsCount,
     getCardsForDeck,
+    getNotesForDeck,
     createUserProfile,
     updateUserProfile,
     createCardsBatch,

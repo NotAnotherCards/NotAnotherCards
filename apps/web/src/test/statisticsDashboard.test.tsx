@@ -96,7 +96,7 @@ describe('Statistics dashboard', () => {
     expect(screen.getByTitle('Sep 16: 50%')).toBeInTheDocument();
     // Annotations: a described series and the range ending today.
     expect(
-      screen.getByRole('img', { name: /reviews, .* highest 2/ }),
+      screen.getByRole('img', { name: /Reviews per day, .* highest 2/ }),
     ).toBeInTheDocument();
     expect(
       within(screen.getByLabelText('Reviews per day')).getByText('Sep 16'),

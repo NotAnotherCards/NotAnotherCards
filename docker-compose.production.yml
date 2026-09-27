@@ -9,3 +9,7 @@ services:
   web:
     ports: !override
       - "127.0.0.1:${WEB_PORT:-5173}:80"
+
+  landing:
+    ports: !override
+      - "127.0.0.1:${LANDING_PORT:-5174}:80"
