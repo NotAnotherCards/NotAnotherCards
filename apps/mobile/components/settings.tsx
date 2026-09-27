@@ -20,6 +20,7 @@ import { profileWrites } from '@/lib/profile';
 import { switchColors } from '@/lib/theme';
 import { ProfileForm } from './profile-form';
 import { ThemeToggle } from './theme-toggle';
+import { LanguageSwitcher } from './language-switcher';
 import { Button } from './ui/button';
 import {
   Card,
@@ -199,6 +200,13 @@ function Preferences({ userId }: { userId: string }) {
         <View className="gap-2">
           <Text className="font-medium">Theme</Text>
           <ThemeToggle />
+        </View>
+        <View className="gap-2">
+          <Text className="font-medium">Language</Text>
+          <Text className="text-sm text-muted-foreground">
+            Select your preferred language
+          </Text>
+          <LanguageSwitcher />
         </View>
         <View className="gap-2">
           <Text className="font-medium">Review mode</Text>

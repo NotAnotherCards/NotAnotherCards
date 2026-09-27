@@ -3,7 +3,6 @@ import { type Card, useStore } from '@/hooks/useStore';
 import { authClient } from '@/lib/auth-client';
 import {
   getReviewPreferences,
-  clearLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
 import { selectDueCards, selectReviewBatch } from '@repo/offline-db';
@@ -62,17 +61,11 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
   const syncController = useSyncController();
 
-  const clearSavedDeckPreference = () => {
-    if (session?.user.id) clearLastReviewDeckId(session.user.id);
-  };
-
   const handleComplete = () => {
-    clearSavedDeckPreference();
     syncController?.syncNow();
   };
 
   const exitReview = () => {
-    clearSavedDeckPreference();
     void navigate({ to: '/dashboard' });
   };
 
@@ -91,17 +84,6 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
         title="Database inactive"
         message="Your offline database is open in another tab."
         actionLabel="Use here instead"
-        onAction={store.reconnect}
-      />
-    );
-  }
-
-  if (store.error) {
-    return (
-      <ReviewRecovery
-        title="Could not load your deck"
-        message={store.error}
-        actionLabel="Retry"
         onAction={store.reconnect}
       />
     );
