@@ -30,6 +30,7 @@ const mockEnable = jest.fn();
 const mockGenerateBackupCodes = jest.fn();
 const mockDisable = jest.fn();
 const mockSignOut = jest.fn();
+const mockClearLocalAuthStorage = jest.fn();
 const mockListAccounts = jest.fn();
 const mockRefetch = jest.fn();
 const mockRequestPasswordReset = jest.fn();
@@ -74,6 +75,10 @@ jest.mock('../lib/auth-client', () => ({
     },
   },
 }));
+jest.mock('../lib/auth-storage', () => ({
+  clearLocalAuthStorage: (...args: unknown[]) =>
+    mockClearLocalAuthStorage(...args),
+}));
 
 const mockSetStringAsync = jest.fn();
 jest.mock('expo-clipboard', () => ({
@@ -106,6 +111,7 @@ describe('two-factor sign-in challenge', () => {
       error: null,
     });
     mockSignOut.mockResolvedValue({ data: { success: true }, error: null });
+    mockClearLocalAuthStorage.mockResolvedValue(undefined);
   });
 
   it('verifies a valid authenticator code before opening the dashboard', async () => {
@@ -186,6 +192,32 @@ describe('two-factor sign-in challenge', () => {
     expect(mockReplace).toHaveBeenCalledWith('/login');
     expect(getTwoFactorChallengeState().pending).toBe(false);
     alertSpy.mockRestore();
+  });
+
+  it('clears local auth when server sign-out fails', async () => {
+    mockSignOut.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Server unavailable' },
+    });
+    const view = render(<TwoFactorChallenge />);
+    fireEvent.press(view.getByText('Back to sign in'));
+
+    await waitFor(() => expect(mockClearLocalAuthStorage).toHaveBeenCalled());
+    expect(mockReplace).toHaveBeenCalledWith('/login');
+    expect(getTwoFactorChallengeState().pending).toBe(false);
+  });
+
+  it('keeps the challenge gate when local sign-out cannot be guaranteed', async () => {
+    mockSignOut.mockRejectedValueOnce(new Error('Network unavailable'));
+    mockClearLocalAuthStorage.mockRejectedValueOnce(
+      new Error('SecureStore unavailable'),
+    );
+    const view = render(<TwoFactorChallenge />);
+    fireEvent.press(view.getByText('Back to sign in'));
+
+    expect(await view.findByText(/Could not safely sign out/)).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalledWith('/login');
+    expect(getTwoFactorChallengeState().pending).toBe(true);
   });
 
   it('hydrates a deep-linked challenge and routes directly to verification', async () => {
@@ -303,6 +335,28 @@ describe('two-factor security settings', () => {
       pathname: '/forgot-password',
       params: { email: 'learner@example.com' },
     });
+  });
+
+  it('explains an account lookup failure and lets the user retry', async () => {
+    mockListAccounts.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Server unavailable' },
+    });
+    const view = render(<TwoFactorSecurity />);
+
+    expect(
+      await view.findByText(/Could not check your sign-in methods/),
+    ).toBeTruthy();
+    fireEvent.press(view.getByText('Retry sign-in methods'));
+
+    await waitFor(() => expect(mockListAccounts).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(
+        view.getByRole('button', {
+          name: 'Enable two-factor authentication',
+        }).props.accessibilityState.disabled,
+      ).toBe(false),
+    );
   });
 });
 

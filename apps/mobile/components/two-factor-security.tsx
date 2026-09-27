@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { usePreventScreenCapture } from 'expo-screen-capture';
@@ -299,6 +305,8 @@ export function TwoFactorSecurity() {
   const { data: session, refetch } = authClient.useSession();
   const [enabledOverride, setEnabledOverride] = useState<boolean | null>(null);
   const [hasCredential, setHasCredential] = useState<boolean | null>(null);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [accountError, setAccountError] = useState<string | null>(null);
   const [showEnrollment, setShowEnrollment] = useState(false);
   const [action, setAction] = useState<ManagementAction | null>(null);
   const [password, setPassword] = useState('');
@@ -312,27 +320,28 @@ export function TwoFactorSecurity() {
   const [credentialError, setCredentialError] = useState<string | null>(null);
   const isEnabled = enabledOverride ?? Boolean(session?.user.twoFactorEnabled);
 
-  useEffect(() => {
-    let active = true;
-    void authClient
-      .listAccounts()
-      .then(({ data, error: accountsError }) => {
-        if (!active) return;
-        if (accountsError || !data) {
-          setHasCredential(null);
-          return;
-        }
-        setHasCredential(
-          data.some((account) => account.providerId === 'credential'),
-        );
-      })
-      .catch(() => {
-        if (active) setHasCredential(null);
-      });
-    return () => {
-      active = false;
-    };
+  const loadAccounts = useCallback(async () => {
+    setIsLoadingAccounts(true);
+    setAccountError(null);
+    try {
+      const { data, error: accountsError } = await authClient.listAccounts();
+      if (accountsError || !data) throw accountsError;
+      setHasCredential(
+        data.some((account) => account.providerId === 'credential'),
+      );
+    } catch {
+      setHasCredential(null);
+      setAccountError(
+        'Could not check your sign-in methods. Retry before changing two-factor authentication.',
+      );
+    } finally {
+      setIsLoadingAccounts(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadAccounts();
+  }, [loadAccounts]);
 
   const resetAction = () => {
     setAction(null);
@@ -432,6 +441,17 @@ export function TwoFactorSecurity() {
           </Text>
         </View>
 
+        {!isEnabled && accountError ? (
+          <View className="gap-2 rounded-xl border border-destructive p-4">
+            <Text accessibilityRole="alert" className="text-destructive">
+              {accountError}
+            </Text>
+            <Button variant="outline" onPress={() => void loadAccounts()}>
+              <Text>Retry sign-in methods</Text>
+            </Button>
+          </View>
+        ) : null}
+
         {!isEnabled && hasCredential === false ? (
           <View className="gap-1 rounded-xl border border-border p-4">
             <Text className="font-semibold">A password is required</Text>
@@ -470,7 +490,8 @@ export function TwoFactorSecurity() {
 
         {!isEnabled && !showEnrollment ? (
           <Button
-            disabled={hasCredential !== true}
+            loading={isLoadingAccounts}
+            disabled={isLoadingAccounts || hasCredential !== true}
             onPress={() => setShowEnrollment(true)}
           >
             <Text>Enable two-factor authentication</Text>

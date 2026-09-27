@@ -41,6 +41,7 @@
     "expo-sqlite": "~57.0.2",
     "expo-status-bar": "~57.0.1",
     "lucide-react-native": "^1.46.0",
+    "expo-web-browser": "~57.0.2",
     "nativewind": "^4.2.6",
     "react": "19.2.3",
     "react-hook-form": "^7.81.0",

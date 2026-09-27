@@ -13,6 +13,7 @@ import {
   finishTwoFactorChallenge,
   isTwoFactorRedirect,
 } from '@/lib/two-factor-challenge';
+import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 export function LoginForm() {
   const router = useRouter();
@@ -74,6 +75,7 @@ export function LoginForm() {
       >
         <Text>Log in</Text>
       </Button>
+      <SocialLoginButtons />
       <Text className="mt-1 text-center text-muted-foreground">
         Forgot your password?{' '}
         <Link href="/forgot-password" asChild>

@@ -3,6 +3,7 @@ import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import { authClient } from '@/lib/auth-client';
+import { clearLocalAuthStorage } from '@/lib/auth-storage';
 import {
   beginTwoFactorChallenge,
   finishTwoFactorChallenge,
@@ -48,18 +49,30 @@ export function TwoFactorChallenge() {
 
   const leaveChallenge = async () => {
     setIsSubmitting(true);
+    let needsLocalFallback = false;
     try {
-      // Clears the temporary challenge cookie from SecureStore. There is no
-      // authenticated session at this point, so no account database is
-      // selected or deleted.
-      await authClient.signOut();
+      const response = await authClient.signOut();
+      needsLocalFallback = Boolean(response.error);
     } catch {
-      // @better-auth/expo clears local auth storage when signOut starts. The
-      // server-side challenge is short lived if the network cannot be reached.
-    } finally {
-      await finishTwoFactorChallenge();
-      router.replace('/login');
+      needsLocalFallback = true;
     }
+
+    if (needsLocalFallback) {
+      try {
+        // The server-side challenge expires shortly. Clearing the device copy
+        // prevents cached auth from reopening protected screens meanwhile.
+        await clearLocalAuthStorage();
+      } catch {
+        setError(
+          'Could not safely sign out on this device. Please try again before leaving verification.',
+        );
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    await finishTwoFactorChallenge();
+    router.replace('/login');
   };
 
   const verify = async () => {
