@@ -1450,9 +1450,11 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
 
   it('persists a time-based GC floor and expires older cursors', async () => {
     const { store, crossValidateChanges } = createAppSyncStore(db);
-    const handlers = createAppSyncEngine({ store, crossValidateChanges }).as(
-      'user-a',
-    );
+    const handlers = createAppSyncEngine({
+      store,
+      crossValidateChanges,
+      db,
+    }).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
     accepted(
       await handlers.push({
@@ -1529,6 +1531,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
     const handlers = createAppSyncEngine({
       store: failingStore,
       crossValidateChanges,
+      db,
     }).as('user-a');
     const start = pulled(await handlers.pull(pullArgs(null)));
     const push: SyncPushArgs = {

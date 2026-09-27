@@ -111,7 +111,7 @@ describe('@repo/offline-db wiring on API', () => {
     );
 
     expect(JSON.parse(output)).toEqual({
-      schemaVersion: 5,
+      schemaVersion: 6,
       userCardsTableDefined: true,
       userDecksTableDefined: true,
       userNotesTableDefined: true,

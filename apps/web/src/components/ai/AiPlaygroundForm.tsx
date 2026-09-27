@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CreateAiJobInput,
   AiModel,
@@ -35,6 +36,7 @@ export function AiPlaygroundForm({
   isSubmitting,
   decks,
 }: AiPlaygroundFormProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'topic_deck' | 'text_cards' | 'word_note'>(
     'topic_deck',
   );
@@ -67,10 +69,16 @@ export function AiPlaygroundForm({
 
     try {
       if (mode === 'topic_deck') {
-        if (!topic.trim()) return setError('Subject/Topic cannot be empty');
+        if (!topic.trim())
+          return setError(
+            t('playground.form.error_topic', 'Subject/Topic cannot be empty'),
+          );
         onSubmit({ type: 'topic_deck', topic: topic.trim(), count, model });
       } else if (mode === 'text_cards') {
-        if (!sourceText.trim()) return setError('Source text cannot be empty');
+        if (!sourceText.trim())
+          return setError(
+            t('playground.form.error_text', 'Source text cannot be empty'),
+          );
         onSubmit({
           type: 'text_cards',
           sourceText: sourceText.trim(),
@@ -78,8 +86,14 @@ export function AiPlaygroundForm({
           model,
         });
       } else if (mode === 'word_note') {
-        if (!word.trim()) return setError('Word cannot be empty');
-        if (!selectedDeckId) return setError('Please select a target deck');
+        if (!word.trim())
+          return setError(
+            t('playground.form.error_word', 'Word cannot be empty'),
+          );
+        if (!selectedDeckId)
+          return setError(
+            t('playground.form.error_deck', 'Please select a target deck'),
+          );
 
         onSubmit({
           type: 'word_note',
@@ -90,7 +104,11 @@ export function AiPlaygroundForm({
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(
+        err instanceof Error
+          ? err.message
+          : t('playground.form.error_generic', 'An error occurred'),
+      );
     }
   };
 
@@ -107,12 +125,16 @@ export function AiPlaygroundForm({
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
             <Sparkles className="size-4 text-amber-500 animate-pulse" />
-            Quota Status
+            {t('playground.form.quota_status', 'Quota Status')}
           </span>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
             {quota
-              ? `${usedCount}/${limitCount} requests used`
-              : 'Loading quota...'}
+              ? t(
+                  'playground.form.quota_used',
+                  '{{used}}/{{limit}} requests used',
+                  { used: usedCount, limit: limitCount },
+                )
+              : t('playground.form.quota_loading', 'Loading quota...')}
           </span>
         </div>
         <div className="w-full bg-muted/60 h-2 rounded-full overflow-hidden">
@@ -138,7 +160,8 @@ export function AiPlaygroundForm({
               : 'text-muted-foreground hover:text-foreground/80'
           }`}
         >
-          <Layers className="size-3.5" /> Topic Deck
+          <Layers className="size-3.5" />{' '}
+          {t('playground.form.mode_topic', 'Topic Deck')}
         </button>
         <button
           type="button"
@@ -149,7 +172,8 @@ export function AiPlaygroundForm({
               : 'text-muted-foreground hover:text-foreground/80'
           }`}
         >
-          <Type className="size-3.5" /> Text Cards
+          <Type className="size-3.5" />{' '}
+          {t('playground.form.mode_text', 'Text Cards')}
         </button>
         <button
           type="button"
@@ -160,27 +184,40 @@ export function AiPlaygroundForm({
               : 'text-muted-foreground hover:text-foreground/80'
           }`}
         >
-          <BookOpen className="size-3.5" /> Word Note
+          <BookOpen className="size-3.5" />{' '}
+          {t('playground.form.mode_word', 'Word Note')}
         </button>
       </div>
 
       {/* Input Fields based on mode */}
       {mode === 'topic_deck' && (
         <Field className="space-y-2">
-          <FieldLabel htmlFor="topic">Subject / Topic</FieldLabel>
+          <FieldLabel htmlFor="topic">
+            {t('playground.form.topic_label', 'Subject / Topic')}
+          </FieldLabel>
           <FieldDescription>
-            Describe what you want to learn (e.g. "Spanish Nouns").
+            {t(
+              'playground.form.topic_desc',
+              'Describe what you want to learn (e.g. "Spanish Nouns").',
+            )}
           </FieldDescription>
           <Input
             id="topic"
-            placeholder="e.g. Spanish Subjunctive"
+            placeholder={t(
+              'playground.form.topic_placeholder',
+              'e.g. Spanish Subjunctive',
+            )}
             value={topic}
             onChange={(e) => setTopic(e.target.value.slice(0, 300))}
             maxLength={300}
             className="w-full border-border/60 focus-visible:ring-violet-500/20"
           />
           <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <span>Limit 300 chars</span>
+            <span>
+              {t('playground.form.limit_chars', 'Limit {{count}} chars', {
+                count: 300,
+              })}
+            </span>
             <span>{topic.length}/300</span>
           </div>
         </Field>
@@ -188,20 +225,32 @@ export function AiPlaygroundForm({
 
       {mode === 'text_cards' && (
         <Field className="space-y-2">
-          <FieldLabel htmlFor="sourceText">Source Text</FieldLabel>
+          <FieldLabel htmlFor="sourceText">
+            {t('playground.form.text_label', 'Source Text')}
+          </FieldLabel>
           <FieldDescription>
-            Paste an article or notes to create cards from.
+            {t(
+              'playground.form.text_desc',
+              'Paste an article or notes to create cards from.',
+            )}
           </FieldDescription>
           <textarea
             id="sourceText"
-            placeholder="Paste text here..."
+            placeholder={t(
+              'playground.form.text_placeholder',
+              'Paste text here...',
+            )}
             value={sourceText}
             onChange={(e) => setSourceText(e.target.value.slice(0, 10000))}
             maxLength={10000}
             className="w-full min-h-30 rounded-2xl border border-border/60 bg-input/50 px-4 py-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none resize-y"
           />
           <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <span>Limit 10000 chars</span>
+            <span>
+              {t('playground.form.limit_chars', 'Limit {{count}} chars', {
+                count: 10000,
+              })}
+            </span>
             <span>{sourceText.length}/10000</span>
           </div>
         </Field>
@@ -210,7 +259,9 @@ export function AiPlaygroundForm({
       {mode === 'word_note' && (
         <div className="space-y-6">
           <div className="bg-muted/20 border border-border/40 rounded-2xl p-4 space-y-4">
-            <FieldLabel>Target Deck</FieldLabel>
+            <FieldLabel>
+              {t('playground.form.target_deck', 'Target Deck')}
+            </FieldLabel>
 
             {wordDecks.length > 0 ? (
               <div className="relative">
@@ -220,7 +271,10 @@ export function AiPlaygroundForm({
                   className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2.5 text-sm focus-visible:ring-3 outline-none appearance-none cursor-pointer"
                 >
                   <option value="" disabled>
-                    -- Choose a Word Deck --
+                    {t(
+                      'playground.form.choose_deck',
+                      '-- Choose a Word Deck --',
+                    )}
                   </option>
                   {wordDecks.map((d) => (
                     <option
@@ -238,17 +292,25 @@ export function AiPlaygroundForm({
               </div>
             ) : (
               <div className="text-sm text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                No word decks available. Please create one in the Decks tab.
+                {t(
+                  'playground.form.no_word_decks',
+                  'No word decks available. Please create one in the Decks tab.',
+                )}
               </div>
             )}
           </div>
 
           <div className="flex gap-4 items-end">
             <Field className="space-y-2 flex-1">
-              <FieldLabel htmlFor="word">Word / Translation</FieldLabel>
+              <FieldLabel htmlFor="word">
+                {t('playground.form.word_label', 'Word / Translation')}
+              </FieldLabel>
               <Input
                 id="word"
-                placeholder="e.g. hello, bonjour"
+                placeholder={t(
+                  'playground.form.word_placeholder',
+                  'e.g. hello, bonjour',
+                )}
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
                 className="w-full border-border/60"
@@ -261,11 +323,16 @@ export function AiPlaygroundForm({
                 setDirection((d) => (d === 'target' ? 'native' : 'target'))
               }
               className="flex items-center gap-2 h-10 px-4 rounded-xl border border-border/60 bg-muted/40 hover:bg-muted/80 transition-colors text-sm font-medium shrink-0"
-              title="Toggle Translation Direction"
+              title={t(
+                'playground.form.toggle_dir',
+                'Toggle Translation Direction',
+              )}
             >
               <ArrowRightLeft className="size-4 text-violet-500" />
               <span className="w-16 text-center">
-                {direction === 'target' ? 'Target' : 'Native'}
+                {direction === 'target'
+                  ? t('playground.form.dir_target', 'Target')
+                  : t('playground.form.dir_native', 'Native')}
               </span>
             </button>
           </div>
@@ -275,18 +342,22 @@ export function AiPlaygroundForm({
               {direction === 'target' ? (
                 <>
                   <strong className="text-foreground font-semibold">
-                    Target Mode:
+                    {t('playground.form.mode_target_title', 'Target Mode:')}
                   </strong>{' '}
-                  Enter a word in the language you are learning (e.g. "bonjour")
-                  to create its dictionary note.
+                  {t(
+                    'playground.form.mode_target_desc',
+                    'Enter a word in the language you are learning (e.g. "bonjour") to create its dictionary note.',
+                  )}
                 </>
               ) : (
                 <>
                   <strong className="text-foreground font-semibold">
-                    Native Mode:
+                    {t('playground.form.mode_native_title', 'Native Mode:')}
                   </strong>{' '}
-                  Enter a word in your native language (e.g. "hello") to
-                  translate it and create a note.
+                  {t(
+                    'playground.form.mode_native_desc',
+                    'Enter a word in your native language (e.g. "hello") to translate it and create a note.',
+                  )}
                 </>
               )}
             </p>
@@ -300,7 +371,9 @@ export function AiPlaygroundForm({
       >
         {/* Model Selector */}
         <Field className="space-y-2">
-          <FieldLabel htmlFor="model">Model Selection</FieldLabel>
+          <FieldLabel htmlFor="model">
+            {t('playground.form.model_label', 'Model Selection')}
+          </FieldLabel>
           <div className="relative">
             <select
               id="model"
@@ -333,9 +406,11 @@ export function AiPlaygroundForm({
         {mode !== 'word_note' && (
           <Field className="space-y-2">
             <div className="flex justify-between items-center">
-              <FieldLabel htmlFor="count">Card Count</FieldLabel>
+              <FieldLabel htmlFor="count">
+                {t('playground.form.card_count', 'Card Count')}
+              </FieldLabel>
               <span className="text-xs font-semibold px-2 py-0.5 rounded bg-muted text-foreground">
-                {count} cards
+                {t('playground.form.cards', '{{count}} cards', { count })}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -362,7 +437,9 @@ export function AiPlaygroundForm({
       >
         <span className="flex items-center justify-center gap-2">
           <Sparkles className="size-4 animate-pulse" />
-          {isSubmitting ? 'Creating...' : 'Create'}
+          {isSubmitting
+            ? t('playground.form.creating', 'Creating...')
+            : t('playground.form.create', 'Create')}
         </span>
       </Button>
     </form>

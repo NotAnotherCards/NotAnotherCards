@@ -1,4 +1,5 @@
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import type { AiJobStatus } from '@repo/schemas';
 
@@ -17,24 +18,31 @@ export function AiJobStatusTracker({
   error,
   type,
 }: AiJobStatusTrackerProps) {
+  const { t } = useTranslation();
   const steps = [
     {
       key: 'pending',
-      label: 'Queuing Job',
-      desc: 'Waiting for processor slot',
+      label: t('playground.tracker.pending_label', 'Queuing Job'),
+      desc: t('playground.tracker.pending_desc', 'Waiting for processor slot'),
     },
     {
       key: 'processing',
-      label: 'Processing LLM',
-      desc: 'Querying model and formatting structured output',
+      label: t('playground.tracker.processing_label', 'Processing LLM'),
+      desc: t(
+        'playground.tracker.processing_desc',
+        'Querying model and formatting structured output',
+      ),
     },
     {
       key: 'completed',
-      label: 'Done',
+      label: t('playground.tracker.completed_label', 'Done'),
       desc:
         type === 'word_note'
-          ? 'Note created successfully'
-          : 'Cards created successfully',
+          ? t('playground.tracker.completed_note', 'Note created successfully')
+          : t(
+              'playground.tracker.completed_cards',
+              'Cards created successfully',
+            ),
     },
   ].filter((step) => jobId || step.key !== 'pending');
 
@@ -56,7 +64,9 @@ export function AiJobStatusTracker({
 
       <div className="text-center space-y-2">
         <h3 className="text-lg font-semibold tracking-tight">
-          {type === 'word_note' ? 'Creating Your Note' : 'Creating Your Deck'}
+          {type === 'word_note'
+            ? t('playground.tracker.creating_note', 'Creating Your Note')
+            : t('playground.tracker.creating_deck', 'Creating Your Deck')}
         </h3>
       </div>
 
@@ -123,7 +133,7 @@ export function AiJobStatusTracker({
 
       {status === 'failed' && error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 text-xs text-destructive text-center font-medium">
-          Error: {error}
+          {t('playground.tracker.error', 'Error:')} {error}
         </div>
       )}
     </div>
