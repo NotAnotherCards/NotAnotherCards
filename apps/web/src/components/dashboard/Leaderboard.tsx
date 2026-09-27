@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import {
   Card,
@@ -15,6 +16,7 @@ import { LeaderboardEntry } from '@repo/schemas';
 const PAGE_SIZE = 20;
 
 export function Leaderboard() {
+  const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const { data, hasMore, isLoading, error, lastUpdated, refetch } =
     useLeaderboard(PAGE_SIZE, page * PAGE_SIZE);
@@ -31,10 +33,10 @@ export function Leaderboard() {
         <div>
           <h2 className="font-heading text-xl font-bold flex items-center gap-2">
             <Trophy className="size-6 text-yellow-500" />
-            Global Leaderboard
+            {t('dashboard.leaderboard.title')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            See how you rank against other learners.
+            {t('dashboard.leaderboard.description')}
           </p>
         </div>
       </div>
@@ -43,29 +45,29 @@ export function Leaderboard() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Info className="size-4" />
-            How scoring works
+            {t('dashboard.leaderboard.how_it_works')}
           </CardTitle>
           <CardDescription>
-            One distinct completed review earns exactly one point, regardless of
-            rating (ratings only affect scheduling). Ties are sorted by the
-            earliest time the score was reached, and then by public username.
+            {t('dashboard.leaderboard.how_it_works_description')}
           </CardDescription>
         </CardHeader>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle>Top Learners</CardTitle>
+          <CardTitle>{t('dashboard.leaderboard.top_learners')}</CardTitle>
           {lastUpdated && (
             <div className="text-xs text-muted-foreground flex items-center gap-2">
-              Snapshot from {new Date(lastUpdated).toLocaleTimeString()}
+              {t('dashboard.leaderboard.snapshot')}
+              {new Date(lastUpdated).toLocaleTimeString()}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => refetch()}
                 className="h-6 px-2"
               >
-                <RefreshCcw className="size-3 mr-1" /> Refresh
+                <RefreshCcw className="size-3 mr-1" />{' '}
+                {t('dashboard.leaderboard.refresh')}
               </Button>
             </div>
           )}
@@ -78,26 +80,24 @@ export function Leaderboard() {
           ) : error && !data ? (
             <div className="flex flex-col h-32 items-center justify-center space-y-4">
               <p className="text-sm text-destructive font-medium">
-                Failed to load leaderboard
+                {t('dashboard.leaderboard.failed_to_load')}
               </p>
               <Button onClick={() => refetch()} variant="outline" size="sm">
-                Retry
+                {t('common.retry')}
               </Button>
             </div>
           ) : data ? (
             <div className="space-y-4">
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md flex items-center justify-between">
-                  <span>
-                    Failed to refresh leaderboard. Showing latest snapshot.
-                  </span>
+                  <span>{t('dashboard.leaderboard.failed_to_refresh')}</span>
                   <Button
                     onClick={() => refetch()}
                     variant="outline"
                     size="sm"
                     className="h-7"
                   >
-                    Retry
+                    {t('common.retry')}
                   </Button>
                 </div>
               )}
@@ -105,9 +105,15 @@ export function Leaderboard() {
                 <table className="w-full text-sm text-left">
                   <thead className="bg-muted/50 text-xs font-semibold uppercase text-muted-foreground border-b">
                     <tr>
-                      <th className="p-3 text-center w-16">Rank</th>
-                      <th className="p-3">Username</th>
-                      <th className="p-3 text-right w-24">Points</th>
+                      <th className="p-3 text-center w-16">
+                        {t('dashboard.leaderboard.rank')}
+                      </th>
+                      <th className="p-3">
+                        {t('dashboard.leaderboard.username')}
+                      </th>
+                      <th className="p-3 text-right w-24">
+                        {t('dashboard.leaderboard.points')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -133,7 +139,7 @@ export function Leaderboard() {
                           colSpan={3}
                           className="p-8 text-center text-muted-foreground"
                         >
-                          No learners found on this page.
+                          {t('dashboard.leaderboard.no_learners')}
                         </td>
                       </tr>
                     )}
@@ -160,10 +166,10 @@ export function Leaderboard() {
                   disabled={page === 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                 >
-                  Previous
+                  {t('common.previous')}
                 </Button>
                 <div className="text-sm text-muted-foreground">
-                  Page {page + 1}
+                  {t('common.page', { page: page + 1 })}
                 </div>
                 <Button
                   variant="outline"
@@ -171,7 +177,7 @@ export function Leaderboard() {
                   disabled={!hasMore}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Next
+                  {t('common.next')}
                 </Button>
               </div>
             </div>
@@ -183,6 +189,7 @@ export function Leaderboard() {
 }
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
+  const { t } = useTranslation();
   const isTop3 = entry.rank <= 3;
 
   return (
@@ -210,7 +217,7 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
         {entry.username}{' '}
         {entry.isCurrentUser && (
           <span className="ml-2 text-xs font-normal text-muted-foreground bg-background px-1.5 py-0.5 rounded-full border">
-            You
+            {t('dashboard.leaderboard.you')}
           </span>
         )}
       </td>

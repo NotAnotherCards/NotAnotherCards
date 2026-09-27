@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Unlink, Eye } from 'lucide-react';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
+import { useTranslation } from 'react-i18next';
 
 interface CardItemProps {
   card: Card;
@@ -30,6 +31,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
     },
     ref,
   ) => {
+    const { t } = useTranslation();
     const hasExample = card.template_key === WORD_TO_TRANSLATION_TEMPLATE_KEY;
 
     return (
@@ -39,7 +41,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
         data-index={dataIndex}
         role="row"
         aria-rowindex={(dataIndex ?? 0) + 2}
-        className="flex flex-col md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
+        className="flex flex-col md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_128px] gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
       >
         <div
           role="cell"
@@ -66,17 +68,20 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
 
         <div
           role="cell"
-          className="flex items-center justify-end md:justify-end gap-1.5 mt-2 md:mt-0"
+          className="flex items-center justify-start md:justify-center gap-1.5 mt-2 md:mt-0"
         >
+          <span className="text-xs font-semibold text-muted-foreground md:hidden">
+            {t('deck.card_item.actions', 'Actions:')}
+          </span>
           <Button
             variant="ghost"
             size="sm"
             className="h-7 px-2 text-xs rounded-lg cursor-pointer text-muted-foreground hover:text-foreground gap-1"
             onClick={() => onViewCard(card)}
-            title="View Card"
+            title={t('deck.card_item.view', 'View Card')}
           >
             <Eye className="size-3.5" />
-            View
+            {t('deck.card_item.view_btn', 'View')}
           </Button>
           {canEdit && (
             <Button
@@ -84,7 +89,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
               size="icon"
               className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
               onClick={() => onEditCard(card)}
-              title="Edit Card"
+              title={t('deck.card_item.edit', 'Edit Card')}
             >
               <Edit className="size-3.5" />
             </Button>
@@ -95,7 +100,7 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
               size="icon"
               className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               onClick={() => onRemoveFromDeck(card)}
-              title="Remove from Deck"
+              title={t('deck.card_item.remove', 'Remove from Deck')}
             >
               <Unlink className="size-3.5" />
             </Button>

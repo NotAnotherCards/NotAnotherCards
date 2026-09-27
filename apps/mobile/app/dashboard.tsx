@@ -34,10 +34,7 @@ import { Settings } from '@/components/settings';
 import { InfoPanel } from '@/components/info-panel';
 import { SyncStatus } from '@/components/sync-status';
 import { useSessionDatabase } from '@/lib/database-provider';
-import {
-  clearLastReviewDeckId,
-  loadLastReviewDeckId,
-} from '@/lib/review-preferences';
+import { loadLastReviewDeckId } from '@/lib/review-preferences';
 import { useReviewOverview } from '@/lib/review';
 import { dailyGoals, useOverviewStats } from '@/lib/overview-stats';
 import { useAchievements, type Achievement } from '@/lib/achievements';
@@ -146,24 +143,16 @@ function StartReviewBar({
   onChooseDeck: () => void;
 }) {
   const router = useRouter();
-  const { dueDeckIds, dueCount, isLoading, error } = useReviewOverview(manager);
+  const { target, dueCount, isLoading, error } = useReviewOverview(
+    manager,
+    userId ? loadLastReviewDeckId(userId) : null,
+  );
 
+  // reviewTarget (#425) picks the deck; the library only when it is unclear.
   const startReview = () => {
-    if (!userId) {
-      onChooseDeck();
-      return;
-    }
-
-    const lastDeckId = loadLastReviewDeckId(userId);
-    // Membership in the set covers "deck still exists" too: a deleted deck
-    // loses its membership rows (see decksWithDueCards).
-    if (lastDeckId && dueDeckIds.has(lastDeckId)) {
-      router.push(`/review/${lastDeckId}`);
-      return;
-    }
-
-    if (lastDeckId) clearLastReviewDeckId(userId);
-    onChooseDeck();
+    if (target === 'nothing-due') return;
+    if (target === 'library') onChooseDeck();
+    else router.push(`/review/${target}`);
   };
 
   return (
@@ -178,8 +167,10 @@ function StartReviewBar({
       <Button
         variant="outline"
         size="lg"
+        // 48 high, Android's touch target size.
+        className="h-12 sm:h-12"
         loading={isLoading}
-        disabled={!!error}
+        disabled={!!error || target === 'nothing-due'}
         onPress={startReview}
       >
         <BookOpenIcon size={18} className="text-foreground" />

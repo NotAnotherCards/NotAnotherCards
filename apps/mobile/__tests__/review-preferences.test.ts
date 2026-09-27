@@ -1,6 +1,5 @@
 import { DEFAULT_REVIEW_PREFERENCES } from '@repo/offline-db';
 import {
-  clearLastReviewDeckId,
   loadLastReviewDeckId,
   loadReviewPreferences,
   saveLastReviewDeckId,
@@ -28,15 +27,11 @@ describe('review preferences storage', () => {
 });
 
 describe('last review deck storage', () => {
-  it('round-trips a deck per user and clears it', () => {
+  it('round-trips a deck per user', () => {
     saveLastReviewDeckId('review-user-1', 'deck-german');
     saveLastReviewDeckId('review-user-2', 'deck-spanish');
 
     expect(loadLastReviewDeckId('review-user-1')).toBe('deck-german');
-    expect(loadLastReviewDeckId('review-user-2')).toBe('deck-spanish');
-
-    clearLastReviewDeckId('review-user-1');
-    expect(loadLastReviewDeckId('review-user-1')).toBeNull();
     expect(loadLastReviewDeckId('review-user-2')).toBe('deck-spanish');
   });
 });
