@@ -33,10 +33,7 @@ import { useStore } from '@/hooks/useStore';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  clearLastReviewDeckId,
-  getLastReviewDeckId,
-} from '@/lib/review-preferences';
+import { getLastReviewDeckId } from '@/lib/review-preferences';
 import { gamificationMeSchema, type SharedDeckSummary } from '@repo/schemas';
 import {
   selectTodayChallengeActivity,
@@ -51,6 +48,7 @@ import {
   UserBadge,
   type UserBadgeRecord,
   rejectedSummary,
+  reviewTarget,
 } from '@repo/offline-db';
 import { formatNumber, formatDate } from '@repo/i18n';
 
@@ -196,25 +194,16 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     email: 'learner@notanothercards.com',
   };
 
+  const target = reviewTarget({
+    lastDeckId: session?.user.id ? getLastReviewDeckId(session.user.id) : null,
+    memberships: store.noteDecks,
+    cards: store.cards,
+    now: Date.now(),
+  });
   const handleStartReview = () => {
-    const userId = session?.user.id;
-    if (!userId) {
-      onChooseDeck();
-      return;
-    }
-
-    const lastDeckId = getLastReviewDeckId(userId);
-    const lastDeckStillExists = (store.decks || []).some(
-      (deck) => deck.id === lastDeckId,
-    );
-
-    if (lastDeckId && lastDeckStillExists) {
-      void navigate({ to: '/deck-review', search: { deckId: lastDeckId } });
-      return;
-    }
-
-    if (lastDeckId) clearLastReviewDeckId(userId);
-    onChooseDeck();
+    if (target === 'nothing-due') return;
+    if (target === 'library') onChooseDeck();
+    else void navigate({ to: '/deck-review', search: { deckId: target } });
   };
 
   // Dynamic statistics from local remelonDB store
@@ -537,6 +526,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 className="flex-1 cursor-pointer gap-1.5"
                 size="sm"
                 onClick={handleStartReview}
+                disabled={target === 'nothing-due'}
               >
                 <Library className="size-3.5" />
                 {t('dashboard.overview.profile.start_review')}
