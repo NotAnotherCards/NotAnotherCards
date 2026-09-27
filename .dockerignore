@@ -4,9 +4,11 @@
 **/.turbo
 node_modules
 **/node_modules
+.pnpm-store
 **/dist
 **/.env
 **/.env.local
+apps/mobile/ios/Pods
+apps/mobile/ios/build
 *.log
 .DS_Store
-
