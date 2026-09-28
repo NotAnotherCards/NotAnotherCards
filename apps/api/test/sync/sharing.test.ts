@@ -19,7 +19,7 @@ import {
   sharedDeckPreviewSchema,
   sharedDeckImportSchema,
 } from '@repo/schemas';
-import { eq, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import {
@@ -1417,10 +1417,37 @@ describePostgres('deck sharing endpoints', () => {
           templateKey: card.templateKey,
           front: card.front,
           back: card.back,
-          active: true,
+          active: false,
           scheduledIntervalMinutes: 0,
         }),
       );
+  });
+
+  it('preserves the published note order for future activation', async () => {
+    await seedDeck(userA, 'ordered-source', {
+      cards: 2,
+      visibility: 'public',
+    });
+
+    const deckId = await importDeck(userB, 'ordered-source');
+    const imported = await db
+      .select({
+        createdAt: userNoteDecks.createdAt,
+        fields: userNotes.fieldsJson,
+      })
+      .from(userNoteDecks)
+      .innerJoin(userNotes, eq(userNotes.id, userNoteDecks.noteId))
+      .where(eq(userNoteDecks.deckId, deckId))
+      .orderBy(asc(userNoteDecks.createdAt));
+
+    const importedFields = imported.map(
+      ({ fields }) => JSON.parse(fields) as { front: string; back: string },
+    );
+    expect(importedFields).toEqual([
+      { front: 'front 0', back: 'back 0' },
+      { front: 'front 1', back: 'back 1' },
+    ]);
+    expect(imported[1].createdAt).toBeGreaterThan(imported[0].createdAt);
   });
 
   it.each(['private', 'unpublished', 'deleted', 'legacy', 'missing'])(

@@ -110,6 +110,11 @@ export function ActivateMoreWords({
   const [count, setCount] = useState(initialCount);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const maxCount = Math.max(1, inactiveItemCount ?? Number.MAX_SAFE_INTEGER);
+  const selectedCount = Math.min(
+    maxCount,
+    Math.max(1, Math.floor(Number(count) || 1)),
+  );
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-center gap-4 text-sm font-medium">
@@ -120,20 +125,33 @@ export function ActivateMoreWords({
           id="activation-count"
           type="number"
           min="1"
-          value={count}
+          max={inactiveItemCount}
+          value={selectedCount}
           onChange={(event) =>
-            setCount(Math.max(1, Number(event.target.value) || 1))
+            setCount(
+              Math.min(maxCount, Math.max(1, Number(event.target.value) || 1)),
+            )
           }
           className="w-14 rounded-md border bg-background px-2 py-2 text-center"
         />
         <span>
           {itemLabel === 'cards'
-            ? t('review.activation.more_cards', {
-                count: inactiveItemCount,
-              })
-            : t('review.activation.more_words', {
-                count: inactiveItemCount,
-              })}
+            ? t(
+                inactiveItemCount === 1
+                  ? 'review.activation.more_card'
+                  : 'review.activation.more_cards',
+                {
+                  count: inactiveItemCount,
+                },
+              )
+            : t(
+                inactiveItemCount === 1
+                  ? 'review.activation.more_word'
+                  : 'review.activation.more_words',
+                {
+                  count: inactiveItemCount,
+                },
+              )}
         </span>
       </div>
       <Button
@@ -141,7 +159,7 @@ export function ActivateMoreWords({
           setIsSaving(true);
           setError(null);
           try {
-            await onActivate(Math.max(1, Math.floor(count)));
+            await onActivate(selectedCount);
           } catch {
             setError(
               t('review.activation.error', 'Activation error. Try again.'),

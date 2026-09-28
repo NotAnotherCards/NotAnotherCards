@@ -192,8 +192,12 @@ export class SharingService {
       );
       // Each statement stays small even for large decks; all writes still
       // share the transaction and scope lock, so pull sees a complete copy.
-      for (const note of snapshot.content.notes) {
+      for (const [noteIndex, note] of snapshot.content.notes.entries()) {
         const id = noteIds.get(note.id)!;
+        const noteTimestamps = {
+          createdAt: now + noteIndex,
+          updatedAt: now + noteIndex,
+        };
         await tx.insert(userNotes).values({
           id,
           userId,
@@ -202,7 +206,7 @@ export class SharingService {
           fieldsVersion: note.fields_version,
           fieldsJson: note.fields_json,
           additionalContent: note.additional_content,
-          ...timestamps,
+          ...noteTimestamps,
         });
         await tx.insert(userNoteDecks).values({
           id: noteDeckId(id, deckId),
@@ -211,7 +215,7 @@ export class SharingService {
           noteId: id,
           deckId,
           active: true,
-          ...timestamps,
+          ...noteTimestamps,
         });
       }
       for (const card of snapshot.content.cards) {
