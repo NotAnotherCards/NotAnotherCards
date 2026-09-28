@@ -9,8 +9,11 @@ import {
   Library,
   LogOut,
   Medal,
+  Pencil,
+  Plus,
   Settings,
   Sparkles,
+  Trash2,
   Trophy,
   User,
   type LucideIcon,
@@ -37,8 +40,11 @@ export const InfoIcon = withClassName(Info);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
 export const MedalIcon = withClassName(Medal);
+export const PencilIcon = withClassName(Pencil);
+export const PlusIcon = withClassName(Plus);
 export const SettingsIcon = withClassName(Settings);
 export const SparklesIcon = withClassName(Sparkles);
+export const TrashIcon = withClassName(Trash2);
 export const TrophyIcon = withClassName(Trophy);
 export const UserIcon = withClassName(User);
 export type { LucideIcon };
