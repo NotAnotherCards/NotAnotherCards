@@ -715,7 +715,11 @@
     },
     "activation": {
       "activate": "Activate",
+      "count_label": "Number of items to activate",
+      "inactive_label": "Inactive",
+      "more_word": "more word from {{count}} inactive word",
       "more_words": "more words from {{count}} inactive words",
+      "more_card": "more card from {{count}} inactive card",
       "more_cards": "more cards from {{count}} inactive cards",
       "continue": "Activate and continue",
       "error": "Activation error. Try again.",

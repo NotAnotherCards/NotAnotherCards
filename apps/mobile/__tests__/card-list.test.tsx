@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/lib/i18n';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { CardList } from '@/components/card-list';
 
@@ -16,7 +17,13 @@ const mockWrites = {
   removeFromDeck: jest.fn(() => Promise.resolve(undefined)),
   deleteNote: jest.fn(() => Promise.resolve(undefined)),
 };
-type MockCard = { id: string; note_id: string; front: string; back: string };
+type MockCard = {
+  id: string;
+  note_id: string;
+  front: string;
+  back: string;
+  active?: boolean;
+};
 type MockNote = {
   id: string;
   note_type: string;
@@ -63,8 +70,14 @@ beforeEach(() => {
       target_language_id: null,
     },
     cards: [
-      { id: 'c1', note_id: 'n1', front: 'hola', back: 'hello' },
-      { id: 'c2', note_id: 'n2', front: 'adiós', back: 'goodbye' },
+      { id: 'c1', note_id: 'n1', front: 'hola', back: 'hello', active: true },
+      {
+        id: 'c2',
+        note_id: 'n2',
+        front: 'adiós',
+        back: 'goodbye',
+        active: true,
+      },
     ],
     isLoading: false,
     error: null,
@@ -102,6 +115,12 @@ describe('CardList', () => {
     expect(getByText('hola')).toBeTruthy();
     expect(getByText('hello')).toBeTruthy();
     expect(getByText('adiós')).toBeTruthy();
+  });
+
+  it('marks inactive cards in the deck list', () => {
+    mockCardsState.cards[1].active = false;
+
+    expect(render(<CardList deckId="d1" />).getByText('Inactive')).toBeTruthy();
   });
 
   it('renders card fronts and backs as markdown', () => {

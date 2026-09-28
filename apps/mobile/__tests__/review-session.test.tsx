@@ -206,10 +206,14 @@ describe('ReviewSession', () => {
     const result = render(<ReviewSession deckId="d1" />);
 
     expect(
-      await result.findByText('more cards from 1 inactive cards'),
+      await result.findByText('more card from 1 inactive card'),
     ).toBeTruthy();
+    expect(result.getByLabelText('Number of items to activate')).toHaveProp(
+      'value',
+      '1',
+    );
     fireEvent.press(result.getByText('Activate and continue'));
-    await waitFor(() => expect(mockActivate).toHaveBeenCalledWith('d1', 5));
+    await waitFor(() => expect(mockActivate).toHaveBeenCalledWith('d1', 1));
     result.rerender(<ReviewSession deckId="d1" />);
     expect(await result.findByText('hola')).toBeTruthy();
   });

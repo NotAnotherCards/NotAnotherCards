@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Stack } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useCards, type Card as CardRecord } from '@/lib/cards';
@@ -50,6 +51,7 @@ function ActiveCardList({
   manager: DatabaseManager;
   deckId: string;
 }) {
+  const { t } = useTranslation();
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
     useCards(manager, deckId);
   const [action, setAction] = useState<CardAction | null>(null);
@@ -232,6 +234,11 @@ function ActiveCardList({
                 <Text className="text-sm text-muted-foreground">
                   <Markdown content={card.back} inline />
                 </Text>
+                {!card.active && (
+                  <Text className="text-xs text-muted-foreground">
+                    {t('review.activation.inactive_label', 'Inactive')}
+                  </Text>
+                )}
               </CardHeader>
               <CardContent>
                 {confirm ? (

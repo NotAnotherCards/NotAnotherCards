@@ -715,7 +715,11 @@
     },
     "activation": {
       "activate": "Aktivieren",
+      "count_label": "Anzahl zu aktivierender Einträge",
+      "inactive_label": "Inaktiv",
+      "more_word": "weiteres Wort aus {{count}} inaktivem Wort",
       "more_words": "weitere Wörter aus {{count}} inaktiven Wörtern",
+      "more_card": "weitere Karte aus {{count}} inaktiver Karte",
       "more_cards": "weitere Karten aus {{count}} inaktiven Karten",
       "continue": "Aktivieren und fortfahren",
       "error": "Aktivierungsfehler. Bitte erneut versuchen.",

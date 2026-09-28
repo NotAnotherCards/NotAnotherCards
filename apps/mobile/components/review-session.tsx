@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
   calculateReviewIntervalMinutes,
@@ -26,6 +26,7 @@ import { useReviewDeck } from '@/lib/review';
 import { cardsForDeck } from '@/lib/cards-in-deck';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
+import { Input } from './ui/input';
 import { Markdown } from './ui/markdown';
 import { Text } from './ui/text';
 import { useTranslation } from 'react-i18next';
@@ -55,19 +56,37 @@ function ActivationControls({
   itemLabel: 'words' | 'cards';
 }) {
   const { t } = useTranslation();
+  const selectedCount = Math.min(
+    inactiveItemCount,
+    Math.max(1, Math.floor(Number(count) || 5)),
+  );
   return (
     <>
       <Text>{t('review.activation.activate', 'Activate')}</Text>
-      <TextInput
-        value={count}
+      <Input
+        value={String(selectedCount)}
         onChangeText={onChangeCount}
         keyboardType="number-pad"
-        className="w-20 rounded border px-3 py-2 text-center"
+        accessibilityLabel={t(
+          'review.activation.count_label',
+          'Number of items to activate',
+        )}
+        className="w-20 text-center"
       />
       <Text>
         {itemLabel === 'cards'
-          ? t('review.activation.more_cards', { count: inactiveItemCount })
-          : t('review.activation.more_words', { count: inactiveItemCount })}
+          ? t(
+              inactiveItemCount === 1
+                ? 'review.activation.more_card'
+                : 'review.activation.more_cards',
+              { count: inactiveItemCount },
+            )
+          : t(
+              inactiveItemCount === 1
+                ? 'review.activation.more_word'
+                : 'review.activation.more_words',
+              { count: inactiveItemCount },
+            )}
       </Text>
       <Button onPress={onActivate} disabled={isActivating}>
         <Text>{t('review.activation.continue', 'Activate and continue')}</Text>
@@ -226,7 +245,10 @@ function ActiveReviewSession({
   const activationItemLabel = isWordDeck ? 'words' : 'cards';
   const activateMore = async () => {
     if (isActivating) return;
-    const count = Math.max(1, Math.floor(Number(activationCount) || 5));
+    const count = Math.min(
+      inactiveItemCount,
+      Math.max(1, Math.floor(Number(activationCount) || 5)),
+    );
     setIsActivating(true);
     setActivationError(null);
     try {
