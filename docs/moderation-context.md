@@ -135,8 +135,7 @@ for Spanish under this revision.
 
 ### Authorized temporary serving-parallelism trial
 
-The active server is Docker container `gx10-stack-ollama-1`; the systemd
-Ollama unit is inactive. The container was independently verified to have
+Ollama runs in a container on the GX10. It was independently verified to have
 `OLLAMA_NUM_PARALLEL=2`, matching the earlier measurements. With approval,
 a temporary Compose override raised it to 8 while keeping context length
 8192, images and model versions unchanged. Both live runners showed `-np 8`.
