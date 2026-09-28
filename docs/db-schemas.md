@@ -596,7 +596,7 @@ CHECK "deck_takedowns_source_check": "deck_takedowns"."source" in ('automatic', 
 Persistent gamification awards (#271, #359). Projected on the server from
 durable review and note rows after a successful sync, so a client cannot
 claim a badge directly. The rules that decide eligibility are shared code in
-[`packages/offline-db/src/activity.ts`](../packages/offline-db/src/activity.ts)
+[`packages/study/src/activity.ts`](../packages/study/src/activity.ts)
 (#339). Exposed through `/api/gamification/me`; nothing cross-user enters a
 sync scope.
 

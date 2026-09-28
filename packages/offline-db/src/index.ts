@@ -15,7 +15,7 @@ import {
   userProfiles,
   userBadges,
 } from './user-dictionary.js';
-import { BASIC_NOTE_TYPE } from './note-constants.js';
+import { BASIC_NOTE_TYPE } from '@repo/study';
 import { PRIVATE_DECK } from './user-dictionary.js';
 
 // encodeURIComponent provides UTF-8 bytes in Hermes without relying on the
@@ -171,18 +171,11 @@ export const migrations = schemaMigrations({
 });
 
 export * from './user-dictionary.js';
-export * from './note-registry.js';
 export * from './note-reconcile.js';
 export * from './note-writes.js';
+// Moved to @repo/study (#430); re-exported so existing imports keep working.
+export * from '@repo/study';
 export * from './ids.js';
-export * from './note-constants.js';
-export * from './review-scheduler.js';
-export * from './review-queue.js';
-export * from './review-answers.js';
-export * from './review-preferences.js';
-export * from './cards-by-deck.js';
-export * from './statistics.js';
-export { utcDayAt, type UtcDay } from './utc-day.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
 export * from './queries.js';
