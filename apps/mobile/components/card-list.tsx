@@ -13,7 +13,7 @@ import { CardForm } from './card-form';
 import { WordNoteForm, type WordFormValues } from './word-note-form';
 import {
   BASIC_NOTE_TYPE,
-  WordNoteFieldsV1,
+  parseWordFields,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 
@@ -173,14 +173,9 @@ function ActiveCardList({
     const { card } = action;
     const note = noteForCard(card);
     if (note?.note_type === WORD_NOTE_TYPE) {
-      let parsed: ReturnType<typeof WordNoteFieldsV1.safeParse> | null = null;
-      try {
-        parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
-      } catch {
-        // Invalid synced payloads remain visible but cannot be edited.
-      }
-      if (!parsed?.success) return <View className="p-6">{header}</View>;
-      const fields = parsed.data;
+      // Invalid synced payloads remain visible but cannot be edited.
+      const fields = parseWordFields(note);
+      if (!fields) return <View className="p-6">{header}</View>;
       const updateWord = (values: WordFormValues) =>
         run(() =>
           writes.updateWord(note.id, {
