@@ -39,13 +39,39 @@ export function getAnswerForReviewGesture(
 // A drag of dx, dy (screen coordinates, y grows downwards) becomes a
 // direction once its longer side reaches the threshold. Horizontal wins a
 // tie; down deletes, and asks first on every client.
+//
+// With diagonalEasy, a swipe down and to the right, between 30 and 60
+// degrees below horizontal, answers very easy, in four-answer mode only:
+// towards the Easy button, at the bottom right. Flatter stays remember,
+// steeper stays delete. A client opts in by passing it (mobile does; web
+// does not yet), and only then can the result be very easy.
 export function getSwipeDirection(
   mode: ReviewMode,
   dx: number,
   dy: number,
   threshold: number,
-): ReviewSwipeDirection | null {
+): ReviewSwipeDirection | null;
+export function getSwipeDirection(
+  mode: ReviewMode,
+  dx: number,
+  dy: number,
+  threshold: number,
+  diagonalEasy: boolean,
+): ReviewSwipeDirection | 'very-easy' | null;
+export function getSwipeDirection(
+  mode: ReviewMode,
+  dx: number,
+  dy: number,
+  threshold: number,
+  diagonalEasy = false,
+): ReviewSwipeDirection | 'very-easy' | null {
   if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return null;
+  if (diagonalEasy && mode === 'four' && dx > 0 && dy > 0) {
+    const degrees = (Math.atan2(dy, dx) * 180) / Math.PI;
+    if (degrees < 30) return 'remember';
+    if (degrees <= 60) return 'very-easy';
+    return 'delete';
+  }
   if (Math.abs(dx) >= Math.abs(dy)) {
     return getAnswerForReviewGesture(mode, dx > 0 ? 'right' : 'left');
   }
