@@ -8,7 +8,6 @@ import { useDatabase, useQuery } from '@remelondb/core/react';
 import {
   getDecksQuery,
   getNoteDecksQuery,
-  getPersonalDictionaryQuery,
   getAllCardsQuery,
   activateWordsInDeck,
   recordReviewEvent,
@@ -52,7 +51,7 @@ export function useReviewOverview(
 ) {
   const db = useDatabase(manager);
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
-  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getAllCardsQuery(db));
 
   const now = Date.now();
 

@@ -24,6 +24,7 @@ import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import {
   countCardsPerDeck,
+  deckLearningCounts,
   type DeckNoteType,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
@@ -211,18 +212,32 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {store.decks.map((deck) => {
-            const totalCards = store.getCardsCount(deck.id);
-            const totalWords =
+            const cards = store.getCardsForDeck(deck.id);
+            const wordNotes =
               deck.note_type === WORD_NOTE_TYPE
-                ? store.getNotesForDeck(deck.id).length
-                : undefined;
+                ? store.getNotesForDeck(deck.id)
+                : [];
+            const counts = deckLearningCounts(
+              cards,
+              wordNotes.map((note) => note.id),
+            );
 
             return (
               <DeckCard
                 key={deck.id}
                 deck={deck}
-                totalCards={totalCards}
-                totalWords={totalWords}
+                totalCards={counts.totalCards}
+                activeCards={counts.activeCards}
+                totalWords={
+                  deck.note_type === WORD_NOTE_TYPE
+                    ? counts.totalNotes
+                    : undefined
+                }
+                activeWords={
+                  deck.note_type === WORD_NOTE_TYPE
+                    ? counts.activeNotes
+                    : undefined
+                }
                 dueCount={dueCardsPerDeck.get(deck.id) ?? 0}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}

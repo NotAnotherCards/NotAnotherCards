@@ -16,7 +16,12 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
-import { loadActivationCount, loadReviewPreferences, saveActivationCount } from '@/lib/review-preferences';
+import {
+  loadActivationCount,
+  loadReviewPreferences,
+  saveActivationCount,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
 import { useReviewDeck } from '@/lib/review';
 import { cardsForDeck } from '@/lib/cards-in-deck';
 import { Button } from './ui/button';
@@ -141,6 +146,10 @@ function ActiveReviewSession({
   useEffect(() => {
     setActivationCount(String(loadActivationCount(userId)));
   }, [userId]);
+
+  useEffect(() => {
+    if (deck && userId) saveLastReviewDeckId(userId, deck.id);
+  }, [deck, userId]);
 
   if (isLoading || !writes) {
     return (

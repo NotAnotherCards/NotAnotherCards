@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { countCardsPerDeck, reviewTarget } from './cards-by-deck.js';
+import {
+  countCardsPerDeck,
+  deckLearningCounts,
+  reviewTarget,
+} from './cards-by-deck.js';
 
 const membership = (deck_id: string, note_id: string) => ({
   deck_id,
@@ -45,6 +49,13 @@ describe('reviewTarget', () => {
       expected: 'nothing-due',
     },
     {
+      name: 'opens the remembered deck when it has inactive words to activate',
+      lastDeckId: 'd1',
+      memberships: [membership('d1', 'n3')],
+      cards: [{ id: 'c3', note_id: 'n3', due_at: now + 1, active: false }],
+      expected: 'd1',
+    },
+    {
       name: 'skips a deleted remembered deck with no memberships',
       lastDeckId: 'deleted',
       memberships: [membership('d2', 'n2')],
@@ -68,11 +79,14 @@ describe('reviewTarget', () => {
       memberships: [],
       expected: 'nothing-due',
     },
-  ])('$name', ({ lastDeckId, memberships, expected }) => {
-    expect(reviewTarget({ lastDeckId, memberships, cards, now })).toBe(
-      expected,
-    );
-  });
+  ])(
+    '$name',
+    ({ lastDeckId, memberships, cards: caseCards = cards, expected }) => {
+      expect(
+        reviewTarget({ lastDeckId, memberships, cards: caseCards, now }),
+      ).toBe(expected);
+    },
+  );
 
   it('returns nothing-due with no cards, including decks without cards', () => {
     expect(
@@ -117,5 +131,27 @@ describe('countCardsPerDeck', () => {
     expect(counts.get('d1')).toBe(0);
     expect(counts.get('d2')).toBeUndefined();
     expect(countCardsPerDeck([], [])).toEqual(new Map());
+  });
+});
+
+describe('deckLearningCounts', () => {
+  it('keeps total, active and due cards separate from total and active words', () => {
+    expect(
+      deckLearningCounts(
+        [
+          { id: 'c1', note_id: 'n1', due_at: 10, active: true },
+          { id: 'c2', note_id: 'n1', due_at: 20, active: true },
+          { id: 'c3', note_id: 'n2', due_at: 0, active: false },
+        ],
+        ['n1', 'n2'],
+        10,
+      ),
+    ).toEqual({
+      totalCards: 3,
+      activeCards: 2,
+      dueCards: 1,
+      totalNotes: 2,
+      activeNotes: 1,
+    });
   });
 });

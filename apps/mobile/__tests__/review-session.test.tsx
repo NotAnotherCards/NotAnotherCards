@@ -26,6 +26,8 @@ let mockReviewState: {
   isLoading: boolean;
   error: Error | null;
   writes: { record: typeof mockRecord } | null;
+  memberships: Array<{ deck_id: string; note_id: string }>;
+  cards: Array<{ id: string; note_id: string; active: boolean }>;
 };
 
 jest.mock('../lib/database-provider', () => ({
@@ -62,7 +64,9 @@ beforeEach(() => {
     ],
     isLoading: false,
     error: null,
-    writes: { record: mockRecord },
+    writes: { record: mockRecord, activate: jest.fn() } as never,
+    memberships: [{ deck_id: 'd1', note_id: 'n1' }],
+    cards: [{ id: 'c1', note_id: 'n1', active: true }],
   };
   // The kv-store mock is shared across tests in this file.
   saveReviewPreferences('user-1', {

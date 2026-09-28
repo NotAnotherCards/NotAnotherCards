@@ -148,7 +148,9 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
 
     expect(
-      screen.getByRole('heading', { name: 'No cards due' }),
+      screen.getByRole('heading', {
+        name: 'No cards are due in German basics right now.',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -203,7 +205,7 @@ describe('DeckReviewRoute', () => {
     );
   });
 
-  it('clears the saved deck when the user exits review', () => {
+  it('keeps the saved deck when the user exits review', () => {
     const dueCard = makeCard('due-card', Date.now() - 1);
     routeTestState.store = makeStore({
       getCardsForDeck: vi.fn(() => [dueCard]),
@@ -212,10 +214,10 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
 
-    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+    expect(clearLastReviewDeckId).not.toHaveBeenCalled();
   });
 
-  it('clears the saved deck when the review session completes', () => {
+  it('keeps the saved deck when the review session completes', () => {
     const dueCard = makeCard('due-card', Date.now() - 1);
     routeTestState.store = makeStore({
       getCardsForDeck: vi.fn(() => [dueCard]),
@@ -224,7 +226,7 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
 
-    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+    expect(clearLastReviewDeckId).not.toHaveBeenCalled();
   });
 
   it('keeps sibling cards out of the first review batch', async () => {

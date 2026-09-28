@@ -475,7 +475,7 @@
     },
     "card": {
       "no_description": "Keine Beschreibung angegeben.",
-      "due": "Fällig",
+      "due": "Fällige Karten",
       "new": "Neu",
       "learned": "Gelernt",
       "actions": {
@@ -486,7 +486,22 @@
         "manage_cards": "Karten verwalten",
         "start_review": "Wiederholung starten"
       },
-      "total_cards": "Alle Karten"
+      "total_cards": "Alle Karten",
+      "total_words": "Alle Wörter",
+      "active_words": "Aktive Wörter",
+      "active_cards": "Aktive Karten",
+      "cards": "Karten",
+      "active": "Aktiv",
+      "due_short": "Fällig"
+    },
+    "stats": {
+      "words_total": "Wörter insgesamt",
+      "active_words": "Aktive Wörter",
+      "cards": "Karten",
+      "cards_due": "Fällige Karten",
+      "cards_total": "Karten insgesamt",
+      "active": "Aktiv",
+      "due": "Fällig"
     },
     "form": {
       "title": "Titel",
@@ -697,6 +712,26 @@
       "cards_reviewed": "Wiederholte Karten",
       "correct_rate": "Richtigkeitsquote",
       "time_spent": "Verbrachte Zeit"
+    },
+    "activation": {
+      "activate": "Aktivieren",
+      "more_words": "weitere Wörter aus {{count}} inaktiven Wörtern",
+      "more_cards": "weitere Karten aus {{count}} inaktiven Karten",
+      "continue": "Aktivieren und fortfahren",
+      "error": "Aktivierungsfehler. Bitte erneut versuchen.",
+      "complete_title": "Wiederholung abgeschlossen",
+      "complete_description": "Alle fälligen Karten in diesem Stapel sind erledigt."
+    },
+    "recovery": {
+      "choose_deck_title": "Wähle zuerst einen Stapel",
+      "choose_deck_message": "Starte eine Wiederholung aus einem bestimmten Stapel.",
+      "database_inactive_title": "Datenbank inaktiv",
+      "database_inactive_message": "Deine lokale Datenbank ist in einem anderen Tab geöffnet.",
+      "use_here": "Hier verwenden",
+      "loading_deck": "Stapel wird geladen...",
+      "deck_not_found_title": "Stapel nicht gefunden",
+      "deck_not_found_message": "Dieser Stapel existiert nicht oder wurde gelöscht.",
+      "no_cards_due": "In {{title}} sind derzeit keine Karten fällig."
     },
     "card": {
       "show_answer": "Antwort anzeigen",

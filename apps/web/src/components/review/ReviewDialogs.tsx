@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/PageContainer';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type DeleteConfirmationDialogProps = {
   onCancel: () => void;
@@ -92,27 +93,45 @@ export function ActivateMoreWords({
   onActivate,
   onExit,
   initialCount,
+  inactiveItemCount,
+  itemLabel,
 }: {
   onActivate: (count: number) => Promise<void>;
   onExit: () => void;
   initialCount: number;
+  inactiveItemCount?: number;
+  itemLabel?: 'words' | 'cards';
 }) {
+  const { t } = useTranslation();
   const [count, setCount] = useState(initialCount);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium" htmlFor="activation-count">
-        Activate more words
-      </label>
-      <input
-        id="activation-count"
-        type="number"
-        min="1"
-        value={count}
-        onChange={(event) => setCount(Math.max(1, Number(event.target.value) || 1))}
-        className="w-24 rounded-md border bg-background px-3 py-2 text-center"
-      />
+      <div className="flex items-center justify-center gap-4 text-sm font-medium">
+        <label htmlFor="activation-count">
+          {t('review.activation.activate', 'Activate')}
+        </label>
+        <input
+          id="activation-count"
+          type="number"
+          min="1"
+          value={count}
+          onChange={(event) =>
+            setCount(Math.max(1, Number(event.target.value) || 1))
+          }
+          className="w-14 rounded-md border bg-background px-2 py-2 text-center"
+        />
+        <span>
+          {itemLabel === 'cards'
+            ? t('review.activation.more_cards', {
+                count: inactiveItemCount,
+              })
+            : t('review.activation.more_words', {
+                count: inactiveItemCount,
+              })}
+        </span>
+      </div>
       <Button
         onClick={async () => {
           setIsSaving(true);
@@ -120,7 +139,9 @@ export function ActivateMoreWords({
           try {
             await onActivate(Math.max(1, Math.floor(count)));
           } catch {
-            setError('An error occurred while activating words. Please try again.');
+            setError(
+              t('review.activation.error', 'Activation error. Try again.'),
+            );
           } finally {
             setIsSaving(false);
           }
@@ -128,11 +149,15 @@ export function ActivateMoreWords({
         disabled={isSaving}
         className="cursor-pointer"
       >
-        Activate and continue
+        {t('review.activation.continue', 'Activate and continue')}
       </Button>
-      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
       <Button variant="outline" onClick={onExit} className="cursor-pointer">
-        Back to dashboard
+        {t('review.session.back_to_dashboard', 'Back to dashboard')}
       </Button>
     </div>
   );
@@ -142,18 +167,28 @@ export function ReviewComplete({
   onExit,
   onActivate,
   activationCount,
+  inactiveItemCount = 0,
+  itemLabel = 'words',
 }: {
   onExit: () => void;
   onActivate?: (count: number) => Promise<void>;
   activationCount?: number;
+  inactiveItemCount: number;
+  itemLabel: 'words' | 'cards';
 }) {
+  const { t } = useTranslation();
   return (
     <PageContainer className="max-w-3xl py-4 sm:py-6">
       <div className="flex min-h-80 flex-col items-center justify-center gap-4 text-center">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Review complete</h1>
+          <h1 className="text-2xl font-bold">
+            {t('review.activation.complete_title', 'Review complete')}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            All due cards in this deck are done for now.
+            {t(
+              'review.activation.complete_description',
+              'All due cards in this deck are done for now.',
+            )}
           </p>
         </div>
         {onActivate && activationCount ? (
@@ -161,11 +196,13 @@ export function ReviewComplete({
             onActivate={onActivate}
             onExit={onExit}
             initialCount={activationCount}
+            inactiveItemCount={inactiveItemCount}
+            itemLabel={itemLabel}
           />
         ) : (
           <Button onClick={onExit} className="cursor-pointer gap-1.5">
-          <ArrowLeft className="size-4" />
-          Back to dashboard
+            <ArrowLeft className="size-4" />
+            {t('review.session.back_to_dashboard', 'Back to dashboard')}
           </Button>
         )}
       </div>

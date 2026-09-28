@@ -10,15 +10,9 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, useStore } from '@/hooks/useStore';
 import { Input } from '@/components/ui/input';
-import {
-  Card as UICard,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from '@/components/ui/card';
+import { Card as UICard, CardHeader, CardContent } from '@/components/ui/card';
 import {
   Search,
-  Library,
   HelpCircle,
   AlertCircle,
   Loader2,
@@ -26,12 +20,15 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { CardItem } from './CardItem';
+import { DeckStat } from './DeckStat';
 import { FlashcardModal } from './FlashcardModal';
 import { Button } from '../ui/button';
 import { useTranslation } from 'react-i18next';
 
 interface CardListProps {
   cards: Card[];
+  activeCardCount?: number;
+  dueCardCount?: number;
   onEditCard: (card: Card) => void;
   onRemoveFromDeck: (card: Card) => void;
   canEditCard: (card: Card) => boolean;
@@ -51,6 +48,8 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
   (
     {
       cards,
+      activeCardCount,
+      dueCardCount,
       onEditCard,
       onRemoveFromDeck,
       canEditCard,
@@ -156,17 +155,24 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
 
     return (
       <UICard className="border border-border/60">
-        <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-          <div>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Library className="size-4 text-primary" />
-              {t('deck.cards.title', '{{count}} Cards', {
-                count: filteredCards.length,
-              })}
-            </CardTitle>
-          </div>
-          {/* Search bar */}
-          <div className="relative w-full md:max-w-xs">
+        <CardHeader className="@container border-b border-border/40 pb-4">
+          {activeCardCount !== undefined && dueCardCount !== undefined && (
+            <div className="grid grid-cols-2 gap-2 @[720px]:grid-cols-3">
+              <DeckStat
+                label={t('deck.stats.cards_total', 'Cards Total')}
+                value={cards.length}
+              />
+              <DeckStat
+                label={t('deck.stats.active', 'Active')}
+                value={activeCardCount}
+              />
+              <DeckStat
+                label={t('deck.stats.due', 'Due')}
+                value={dueCardCount}
+              />
+            </div>
+          )}
+          <div className="relative mt-4 w-full md:max-w-xs">
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder={t(

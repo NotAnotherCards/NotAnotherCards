@@ -1,5 +1,32 @@
 import { selectDueCards, type ReviewQueueCard } from './review-queue.js';
 
+export type DeckLearningCounts = {
+  totalCards: number;
+  activeCards: number;
+  dueCards: number;
+  totalNotes: number;
+  activeNotes: number;
+};
+
+/** Counts one deck's cards and notes from the same card state as review. */
+export function deckLearningCounts(
+  cards: readonly ReviewQueueCard[],
+  noteIds: readonly string[] = cards.map((card) => card.note_id),
+  now: number = Date.now(),
+): DeckLearningCounts {
+  const noteIdSet = new Set(noteIds);
+  const activeNoteIds = new Set(
+    cards.filter((card) => card.active !== false).map((card) => card.note_id),
+  );
+  return {
+    totalCards: cards.length,
+    activeCards: cards.filter((card) => card.active !== false).length,
+    dueCards: selectDueCards(cards, now).length,
+    totalNotes: noteIdSet.size,
+    activeNotes: [...noteIdSet].filter((id) => activeNoteIds.has(id)).length,
+  };
+}
+
 // Cards per deck, counted once for every deck instead of rescanning both
 // lists per rendered deck. Callers pass active-only query results, so nothing
 // is filtered here. A note can carry several cards and sit in several decks;
@@ -23,7 +50,8 @@ export function countCardsPerDeck(
   return counts;
 }
 
-// The deck Start review opens, per #425's four rules. Inputs are active-only.
+// The deck Start review opens, per #425's four rules. `cards` includes active
+// and inactive cards so a remembered deck with new words can open its review.
 export function reviewTarget({
   lastDeckId,
   memberships,
@@ -37,6 +65,19 @@ export function reviewTarget({
 }): string | 'library' | 'nothing-due' {
   const counts = countCardsPerDeck(memberships, selectDueCards(cards, now));
   if (lastDeckId && (counts.get(lastDeckId) ?? 0) > 0) return lastDeckId;
+  const inactiveNoteIds = new Set(
+    cards.filter((card) => card.active === false).map((card) => card.note_id),
+  );
+  if (
+    lastDeckId &&
+    memberships.some(
+      (membership) =>
+        membership.deck_id === lastDeckId &&
+        inactiveNoteIds.has(membership.note_id),
+    )
+  ) {
+    return lastDeckId;
+  }
   const dueDeckIds = [...counts]
     .filter(([, count]) => count > 0)
     .map(([id]) => id);

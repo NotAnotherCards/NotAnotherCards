@@ -212,59 +212,69 @@ describe('Overview Gamification', () => {
       dueDecks: [],
       expected: 'nothing-due',
     },
-  ])('$name', async ({ remembered, dueDecks, expected }) => {
-    if (remembered) saveLastReviewDeckId(mockSession.user.id, remembered);
-    const navigate = vi.fn();
-    vi.mocked(useNavigate).mockReturnValue(navigate);
-    const store = useStoreModule.useStore();
-    const cards = [...dueDecks, 'finished'].map((deckId) => ({
-      id: `card-${deckId}`,
-      note_id: `note-${deckId}`,
-      template_key: 'basic:front-back',
-      active: true,
-      front: 'front',
-      back: 'back',
-      due_at: Date.now() + (deckId === 'finished' ? 60_000 : -1),
-      scheduled_interval_minutes: 0,
-      created_at: 1,
-      updated_at: 1,
-    }));
-    vi.mocked(useStoreModule.useStore).mockReturnValue({
-      ...store,
-      cards,
-      noteDecks: [...dueDecks, 'finished'].map((deckId) => ({
-        id: `membership-${deckId}`,
-        deck_id: deckId,
+    {
+      name: 'opens the remembered deck when it has words to activate',
+      remembered: 'finished',
+      dueDecks: [],
+      inactiveRemembered: true,
+      expected: 'finished',
+    },
+  ])(
+    '$name',
+    async ({ remembered, dueDecks, inactiveRemembered, expected }) => {
+      if (remembered) saveLastReviewDeckId(mockSession.user.id, remembered);
+      const navigate = vi.fn();
+      vi.mocked(useNavigate).mockReturnValue(navigate);
+      const store = useStoreModule.useStore();
+      const cards = [...dueDecks, 'finished'].map((deckId) => ({
+        id: `card-${deckId}`,
         note_id: `note-${deckId}`,
-        active: true,
+        template_key: 'basic:front-back',
+        active: !(deckId === 'finished' && inactiveRemembered),
+        front: 'front',
+        back: 'back',
+        due_at: Date.now() + (deckId === 'finished' ? 60_000 : -1),
+        scheduled_interval_minutes: 0,
         created_at: 1,
         updated_at: 1,
-      })),
-    });
-    const onChooseDeck = vi.fn();
-    render(<Overview onChooseDeck={onChooseDeck} />);
-    const button = screen.getByRole('button', { name: 'Start Review' });
-    expect(button).toHaveTextContent(/^Start Review$/);
-    if (expected === 'nothing-due') expect(button).toBeDisabled();
-    else expect(button).toBeEnabled();
-    await act(async () => {
-      fireEvent.click(button);
-    });
-    if (expected === 'library') {
-      expect(onChooseDeck).toHaveBeenCalledOnce();
-      expect(navigate).not.toHaveBeenCalled();
-    } else if (expected === 'nothing-due') {
-      expect(onChooseDeck).not.toHaveBeenCalled();
-      expect(navigate).not.toHaveBeenCalled();
-    } else {
-      expect(navigate).toHaveBeenCalledWith({
-        to: '/deck-review',
-        search: { deckId: expected },
+      }));
+      vi.mocked(useStoreModule.useStore).mockReturnValue({
+        ...store,
+        cards,
+        noteDecks: [...dueDecks, 'finished'].map((deckId) => ({
+          id: `membership-${deckId}`,
+          deck_id: deckId,
+          note_id: `note-${deckId}`,
+          active: true,
+          created_at: 1,
+          updated_at: 1,
+        })),
       });
-      expect(onChooseDeck).not.toHaveBeenCalled();
-    }
-    expect(getLastReviewDeckId(mockSession.user.id)).toBe(remembered);
-  });
+      const onChooseDeck = vi.fn();
+      render(<Overview onChooseDeck={onChooseDeck} />);
+      const button = screen.getByRole('button', { name: 'Start Review' });
+      expect(button).toHaveTextContent(/^Start Review$/);
+      if (expected === 'nothing-due') expect(button).toBeDisabled();
+      else expect(button).toBeEnabled();
+      await act(async () => {
+        fireEvent.click(button);
+      });
+      if (expected === 'library') {
+        expect(onChooseDeck).toHaveBeenCalledOnce();
+        expect(navigate).not.toHaveBeenCalled();
+      } else if (expected === 'nothing-due') {
+        expect(onChooseDeck).not.toHaveBeenCalled();
+        expect(navigate).not.toHaveBeenCalled();
+      } else {
+        expect(navigate).toHaveBeenCalledWith({
+          to: '/deck-review',
+          search: { deckId: expected },
+        });
+        expect(onChooseDeck).not.toHaveBeenCalled();
+      }
+      expect(getLastReviewDeckId(mockSession.user.id)).toBe(remembered);
+    },
+  );
 
   it('shows rejected changes in the sync badge', async () => {
     vi.spyOn(syncProvider, 'useSyncController').mockReturnValue({

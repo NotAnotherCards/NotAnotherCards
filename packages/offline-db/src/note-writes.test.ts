@@ -7,7 +7,7 @@ import {
   createNotesBatch,
   updateNoteFields,
 } from './note-writes.js';
-import { createDeck } from './queries.js';
+import { activateWordsInDeck, createDeck } from './queries.js';
 import { schema } from './index.js';
 import {
   UserCard,
@@ -105,6 +105,51 @@ describe('createNote', () => {
       fields: { ...word, word: '  Hund  ' },
     });
     expect(JSON.parse(note.fields_json)).toMatchObject({ word: 'Hund' });
+  });
+});
+
+describe('activateWordsInDeck', () => {
+  it('activates every sibling of only the requested oldest words', async () => {
+    await openDb();
+    const deck = await createWordDeck();
+    const first = await createNote(db, deck.id, {
+      noteType: 'word',
+      fieldsVersion: 1,
+      fields: word,
+    });
+    const second = await createNote(db, deck.id, {
+      noteType: 'word',
+      fieldsVersion: 1,
+      fields: { ...word, word: 'Katze', translation: 'cat' },
+    });
+    await db.write(async () => {
+      const firstMembership = await db
+        .get(UserNoteDeck)
+        .find(noteDeckId(first.id, deck.id));
+      const secondMembership = await db
+        .get(UserNoteDeck)
+        .find(noteDeckId(second.id, deck.id));
+      await firstMembership.update((record) => {
+        record.created_at = 10;
+        record.updated_at = 10;
+      });
+      await secondMembership.update((record) => {
+        record.created_at = 20;
+        record.updated_at = 20;
+      });
+    });
+
+    const activated = await activateWordsInDeck(db, deck.id, 1);
+    expect(activated).toEqual([first.id]);
+
+    const firstCards = (await db.get(UserCard).query().fetch()).filter(
+      (card) => card.note_id === first.id,
+    );
+    const secondCards = (await db.get(UserCard).query().fetch()).filter(
+      (card) => card.note_id === second.id,
+    );
+    expect(firstCards.every((card) => card.active)).toBe(true);
+    expect(secondCards.every((card) => !card.active)).toBe(true);
   });
 });
 

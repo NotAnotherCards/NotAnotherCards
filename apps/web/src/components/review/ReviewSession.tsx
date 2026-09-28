@@ -23,6 +23,8 @@ type ReviewSessionProps = {
   onComplete?: () => void;
   onActivateMore?: (count: number) => Promise<void>;
   activationCount?: number;
+  inactiveItemCount?: number;
+  activationItemLabel?: 'words' | 'cards';
   reviewMode?: 'basic' | 'extended';
   showNextReviewInterval?: boolean;
 };
@@ -40,6 +42,8 @@ export function ReviewSession({
   onComplete,
   onActivateMore,
   activationCount,
+  inactiveItemCount = 0,
+  activationItemLabel = 'words',
   reviewMode = 'basic',
   showNextReviewInterval = false,
 }: ReviewSessionProps) {
@@ -224,6 +228,8 @@ export function ReviewSession({
         onExit={onExit}
         onActivate={onActivateMore}
         activationCount={activationCount}
+        inactiveItemCount={inactiveItemCount}
+        itemLabel={activationItemLabel}
       />
     );
   }

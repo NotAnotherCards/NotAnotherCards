@@ -68,6 +68,9 @@ When review has no due cards, the app offers the same action in either place:
 
 The action is: "Activate N more words from this deck".
 
+For a basic deck, the same rule applies to cards rather than words: new cards
+start inactive and the action says "Activate N more cards from this deck".
+
 - `N` defaults to 5;
 - the user can edit `N`;
 - the last chosen `N` is remembered on that device;

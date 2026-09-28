@@ -475,7 +475,7 @@
     },
     "card": {
       "no_description": "Sin descripción.",
-      "due": "Pendientes",
+      "due": "Tarjetas pendientes",
       "new": "Nuevo",
       "learned": "Aprendido",
       "actions": {
@@ -486,7 +486,22 @@
         "manage_cards": "Gestionar Cartas",
         "start_review": "Comenzar Repaso"
       },
-      "total_cards": "Tarjetas totales"
+      "total_cards": "Tarjetas totales",
+      "total_words": "Total de palabras",
+      "active_words": "Palabras activas",
+      "active_cards": "Tarjetas activas",
+      "cards": "Tarjetas",
+      "active": "Activas",
+      "due_short": "Pendientes"
+    },
+    "stats": {
+      "words_total": "Total de palabras",
+      "active_words": "Palabras activas",
+      "cards": "Tarjetas",
+      "cards_due": "Tarjetas pendientes",
+      "cards_total": "Total de tarjetas",
+      "active": "Activas",
+      "due": "Pendientes"
     },
     "form": {
       "title": "Título",
@@ -697,6 +712,26 @@
       "cards_reviewed": "Tarjetas repasadas",
       "correct_rate": "Tasa de aciertos",
       "time_spent": "Tiempo empleado"
+    },
+    "activation": {
+      "activate": "Activar",
+      "more_words": "más palabras de {{count}} palabras inactivas",
+      "more_cards": "más tarjetas de {{count}} tarjetas inactivas",
+      "continue": "Activar y continuar",
+      "error": "Error al activar. Inténtalo de nuevo.",
+      "complete_title": "Repaso completado",
+      "complete_description": "Todas las tarjetas pendientes de este mazo están terminadas."
+    },
+    "recovery": {
+      "choose_deck_title": "Primero elige un mazo",
+      "choose_deck_message": "Inicia un repaso desde un mazo específico.",
+      "database_inactive_title": "Base de datos inactiva",
+      "database_inactive_message": "Tu base de datos local está abierta en otra pestaña.",
+      "use_here": "Usar aquí",
+      "loading_deck": "Cargando tu mazo...",
+      "deck_not_found_title": "Mazo no encontrado",
+      "deck_not_found_message": "Este mazo no existe o fue eliminado.",
+      "no_cards_due": "No hay tarjetas pendientes en {{title}} ahora mismo."
     },
     "card": {
       "show_answer": "Mostrar respuesta",

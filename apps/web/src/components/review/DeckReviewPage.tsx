@@ -5,13 +5,13 @@ import {
   getReviewPreferences,
   getActivationCount,
   saveActivationCount,
-  clearLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
 import { selectDueCards, selectReviewBatch } from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSyncController } from '@/offline/syncProvider';
 import { ReviewSession } from './ReviewSession';
 import { ActivateMoreWords } from './ReviewDialogs';
@@ -26,6 +26,7 @@ type ActiveReviewSession = {
 };
 
 export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
+  const { t } = useTranslation();
   const store = useStore();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
@@ -37,14 +38,14 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const deck = store.decks.find((item) => item.id === deckId);
   const reviewPreferences = getReviewPreferences(session?.user.id);
   const activationCount = getActivationCount(session?.user.id);
-  const inactiveWordCount = deckId
+  const deckCards = deckId ? store.getCardsForDeck(deckId) : [];
+  const isWordDeck = deck?.note_type === 'word';
+  const inactiveItemCount = isWordDeck
     ? new Set(
-        store
-          .getCardsForDeck(deckId)
-          .filter((card) => !card.active)
-          .map((card) => card.note_id),
+        deckCards.filter((card) => !card.active).map((card) => card.note_id),
       ).size
-    : 0;
+    : deckCards.filter((card) => !card.active).length;
+  const activationItemLabel = isWordDeck ? 'words' : 'cards';
 
   useEffect(() => {
     if (deck && session?.user.id) {
@@ -75,12 +76,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
   const syncController = useSyncController();
 
-  const clearSavedDeckPreference = () => {
-    if (session?.user.id) clearLastReviewDeckId(session.user.id);
-  };
-
   const handleComplete = () => {
-    clearSavedDeckPreference();
     syncController?.syncNow();
   };
 
@@ -93,15 +89,17 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   };
 
   const exitReview = () => {
-    clearSavedDeckPreference();
     void navigate({ to: '/dashboard' });
   };
 
   if (!deckId) {
     return (
       <ReviewRecovery
-        title="Choose a deck first"
-        message="Start a review from a specific deck."
+        title={t('review.recovery.choose_deck_title', 'Choose a deck first')}
+        message={t(
+          'review.recovery.choose_deck_message',
+          'Start a review from a specific deck.',
+        )}
       />
     );
   }
@@ -109,9 +107,15 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   if (store.isTakenOver) {
     return (
       <ReviewRecovery
-        title="Database inactive"
-        message="Your offline database is open in another tab."
-        actionLabel="Use here instead"
+        title={t(
+          'review.recovery.database_inactive_title',
+          'Database inactive',
+        )}
+        message={t(
+          'review.recovery.database_inactive_message',
+          'Your offline database is open in another tab.',
+        )}
+        actionLabel={t('review.recovery.use_here', 'Use here instead')}
         onAction={store.reconnect}
       />
     );
@@ -125,7 +129,9 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
         aria-live="polite"
       >
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading your deck...</p>
+        <p className="text-sm text-muted-foreground">
+          {t('review.recovery.loading_deck', 'Loading your deck...')}
+        </p>
       </main>
     );
   }
@@ -133,8 +139,11 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   if (!deck) {
     return (
       <ReviewRecovery
-        title="Deck not found"
-        message="This deck does not exist or was deleted."
+        title={t('review.recovery.deck_not_found_title', 'Deck not found')}
+        message={t(
+          'review.recovery.deck_not_found_message',
+          'This deck does not exist or was deleted.',
+        )}
       />
     );
   }
@@ -142,10 +151,13 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   if (!hasActiveSession && dueCards.length === 0) {
     return (
       <ReviewRecovery
-        title="No cards due"
-        message={`There are no cards due in ${deck.title} right now.`}
-        activationCount={inactiveWordCount > 0 ? activationCount : undefined}
-        onActivate={inactiveWordCount > 0 ? activateMoreWords : undefined}
+        title={t('review.recovery.no_cards_due', {
+          title: deck.title,
+        })}
+        activationCount={inactiveItemCount > 0 ? activationCount : undefined}
+        inactiveItemCount={inactiveItemCount}
+        itemLabel={activationItemLabel}
+        onActivate={inactiveItemCount > 0 ? activateMoreWords : undefined}
         onExit={exitReview}
       />
     );
@@ -158,8 +170,10 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       deckTitle={deck.title}
       onExit={exitReview}
       onComplete={handleComplete}
-      onActivateMore={inactiveWordCount > 0 ? activateMoreWords : undefined}
-      activationCount={inactiveWordCount > 0 ? activationCount : undefined}
+      onActivateMore={inactiveItemCount > 0 ? activateMoreWords : undefined}
+      activationCount={inactiveItemCount > 0 ? activationCount : undefined}
+      inactiveItemCount={inactiveItemCount}
+      activationItemLabel={activationItemLabel}
       onCreateCard={async (data) => {
         await store.createCard(deckId, data.front, data.back);
       }}
@@ -174,10 +188,12 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
 type ReviewRecoveryProps = {
   title: string;
-  message: string;
+  message?: string;
   actionLabel?: string;
   onAction?: () => void;
   activationCount?: number;
+  inactiveItemCount?: number;
+  itemLabel?: 'words' | 'cards';
   onActivate?: (count: number) => Promise<void>;
   onExit?: () => void;
 };
@@ -188,15 +204,18 @@ function ReviewRecovery({
   actionLabel,
   onAction,
   activationCount,
+  inactiveItemCount = 0,
+  itemLabel = 'words',
   onActivate,
   onExit,
 }: ReviewRecoveryProps) {
+  const { t } = useTranslation();
   return (
     <main className="mx-auto flex min-h-80 w-full max-w-md flex-col items-center justify-center gap-4 p-4 text-center">
       <div role="alert" className="space-y-2">
         <AlertCircle className="mx-auto size-8 text-muted-foreground" />
         <h1 className="text-xl font-bold">{title}</h1>
-        <p className="text-sm text-muted-foreground">{message}</p>
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </div>
 
       {onActivate && activationCount && onExit ? (
@@ -204,6 +223,8 @@ function ReviewRecovery({
           onActivate={onActivate}
           onExit={onExit}
           initialCount={activationCount}
+          inactiveItemCount={inactiveItemCount}
+          itemLabel={itemLabel}
         />
       ) : onAction && actionLabel ? (
         <Button onClick={onAction} className="cursor-pointer gap-1.5">
@@ -212,7 +233,9 @@ function ReviewRecovery({
         </Button>
       ) : (
         <Button asChild>
-          <Link to="/dashboard">Back to dashboard</Link>
+          <Link to="/dashboard">
+            {t('review.session.back_to_dashboard', 'Back to dashboard')}
+          </Link>
         </Button>
       )}
     </main>
