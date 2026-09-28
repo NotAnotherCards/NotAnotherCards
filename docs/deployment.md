@@ -160,6 +160,58 @@ file.
   `MODERATION_RECHECK_WINDOW_HOURS` changes the clean-result cache (default
   24 hours).
 
+### Public landing at the apex domain
+
+`https://notanothercards.com` is served by the host Nginx site
+`infra/vps/notanothercards.com.conf`, which proxies to the landing container
+on loopback `127.0.0.1:5174`. DNS carries `A 169.58.127.208` and
+`AAAA 2a02:c207:3020:2790::1`; verify both address families where those
+records are configured:
+
+```bash
+dig +short A    notanothercards.com
+dig +short AAAA notanothercards.com
+```
+
+Install and enable the site on a clean host, then let Certbot add TLS:
+
+```bash
+sudo apt-get install nginx certbot python3-certbot-nginx
+cd /opt/notanothercards
+sudo cp infra/vps/notanothercards.com.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/notanothercards.com.conf \
+           /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d notanothercards.com
+sudo certbot renew --dry-run
+```
+
+Certbot rewrites the installed copy, so never copy the repository file over it
+again. Health checks:
+
+```bash
+curl --fail https://notanothercards.com/
+curl --fail https://notanothercards.com/privacy
+curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://notanothercards.com/
+curl -o /dev/null -w '%{http_code}\n' https://notanothercards.com/not-a-real-page
+```
+
+Troubleshooting starts with `sudo nginx -t`, `sudo systemctl status nginx`,
+`sudo certbot certificates`, and `curl --fail http://127.0.0.1:5174/health`.
+Roll back by removing the enabled site and its certificate, then reverting
+the deploy commit that requires the apex endpoint:
+
+```bash
+sudo rm /etc/nginx/sites-enabled/notanothercards.com.conf
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot delete --cert-name notanothercards.com
+```
+
+The full runbook — DNS and IPv6 detail, troubleshooting, and why the rollback
+needs the deploy commit reverted — is in
+[`infra/vps/README.md`](../infra/vps/README.md), section *Landing page at the
+apex domain*.
+
 ### Password-reset email delivery
 
 Production must configure an email transport in `/opt/notanothercards/.env`.
