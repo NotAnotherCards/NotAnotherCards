@@ -14,10 +14,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# https, then a host (letters, digits, dots, hyphens), an optional port and path
-url_pattern='^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]+)?(/.*)?$'
-if [[ ! "${EXPO_PUBLIC_API_URL:-}" =~ $url_pattern ]]; then
-  echo "EXPO_PUBLIC_API_URL must be an https:// url with a host" >&2
+if ! node -e '
+  try {
+    const url = new URL(process.argv[1]);
+    if (url.protocol !== "https:" || !url.hostname) process.exit(1);
+  } catch {
+    process.exit(1);
+  }
+' "${EXPO_PUBLIC_API_URL:-}"; then
+  echo "EXPO_PUBLIC_API_URL must be a valid HTTPS URL with a host" >&2
   exit 1
 fi
 # Android only updates an installed app in place when the new APK carries the
