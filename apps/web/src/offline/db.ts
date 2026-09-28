@@ -10,6 +10,7 @@ import {
   UserNoteDeck,
   ReviewEvent,
   UserProfile,
+  UserBadge,
   userDbName,
 } from '@repo/offline-db';
 
@@ -39,6 +40,7 @@ export function createUserDatabaseManager(userId: string) {
           UserNoteDeck,
           ReviewEvent,
           UserProfile,
+          UserBadge,
         ],
         name: userDbName(userId),
       }),

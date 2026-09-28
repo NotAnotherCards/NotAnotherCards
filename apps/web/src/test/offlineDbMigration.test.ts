@@ -13,6 +13,7 @@ import {
   UserNote,
   UserNoteDeck,
   UserProfile,
+  UserBadge,
 } from '@repo/offline-db';
 
 const legacySchema = appSchema({
@@ -124,6 +125,7 @@ describe('offline note/card migration', () => {
         UserNoteDeck,
         ReviewEvent,
         UserProfile,
+        UserBadge,
       ],
       name,
     });

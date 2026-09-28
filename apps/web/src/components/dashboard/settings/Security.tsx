@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { Save, Check, Shield } from 'lucide-react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { useDismissTimer } from '@/hooks/useDismissTimer';
 import { z } from 'zod';
 import { TwoFactorSecurity } from './TwoFactorSecurity';
 
@@ -47,8 +49,11 @@ const passwordSchema = z
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export function Security() {
+  const { t } = useTranslation();
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [securitySuccess, setSecuritySuccess] = useState<string | null>(null);
+  const { schedule: scheduleSuccessDismiss } = useDismissTimer(5000);
+  const mounted = useRef(true);
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -59,6 +64,13 @@ export function Security() {
     },
   });
 
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const onPasswordSubmit = async (data: PasswordFormValues) => {
     setSecurityError(null);
     setSecuritySuccess(null);
@@ -68,23 +80,27 @@ export function Security() {
         newPassword: data.newPassword,
         revokeOtherSessions: true,
       });
+      if (!mounted.current) return;
 
       if (error) {
         throw new Error(error.message || 'Failed to update password');
       }
 
-      setSecuritySuccess('Password changed successfully!');
+      setSecuritySuccess(t('dashboard.settings.security.success'));
       passwordForm.reset({
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
-      setTimeout(() => {
+      scheduleSuccessDismiss(() => {
         setSecuritySuccess(null);
-      }, 5000);
+      });
     } catch (err) {
+      if (!mounted.current) return;
       setSecurityError(
-        err instanceof Error ? err.message : 'An unexpected error occurred',
+        err instanceof Error
+          ? err.message
+          : t('dashboard.settings.security.unexpected_error'),
       );
     }
   };
@@ -103,11 +119,10 @@ export function Security() {
             </div>
             <div>
               <CardTitle className="text-base font-bold">
-                Change Password
+                {t('dashboard.settings.security.title')}
               </CardTitle>
               <CardDescription className="text-xs">
-                Update your account password. You will be logged out of other
-                devices.
+                {t('dashboard.settings.security.description')}
               </CardDescription>
             </div>
           </CardHeader>
@@ -120,7 +135,7 @@ export function Security() {
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Current Password
+                        {t('dashboard.settings.security.current_password')}
                       </FieldLabel>
                       <PasswordInput
                         {...field}
@@ -146,7 +161,9 @@ export function Security() {
                   control={passwordForm.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                      <FieldLabel htmlFor={field.name}>
+                        {t('dashboard.settings.security.new_password')}
+                      </FieldLabel>
                       <PasswordInput
                         {...field}
                         id={field.name}
@@ -170,7 +187,7 @@ export function Security() {
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Confirm New Password
+                        {t('dashboard.settings.security.confirm_password')}
                       </FieldLabel>
                       <PasswordInput
                         {...field}
@@ -212,12 +229,12 @@ export function Security() {
                 {passwordForm.formState.isSubmitting ? (
                   <>
                     <Spinner />
-                    Updating...
+                    {t('dashboard.settings.security.updating')}
                   </>
                 ) : (
                   <>
                     <Save className="size-4" />
-                    Update Password
+                    {t('dashboard.settings.security.update_password')}
                   </>
                 )}
               </Button>

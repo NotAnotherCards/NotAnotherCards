@@ -15,7 +15,10 @@ export const { pullChanges, pushChanges } = createAppSyncTransport(
     baseUrl: apiURL,
     headers: (): Record<string, string> => {
       const cookie = authClient.getCookie();
-      return cookie ? { cookie } : {};
+      return {
+        ...(cookie ? { cookie } : {}),
+        'x-sync-version': '2',
+      };
     },
   }),
 );

@@ -1,6 +1,7 @@
 import { RouteErrorComponent } from '@/components/RouteErrorComponent';
 import { authClient } from '@/lib/auth-client';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export const Route = createFileRoute('/_auth')({
   beforeLoad: async () => {
@@ -26,7 +27,10 @@ export const Route = createFileRoute('/_auth')({
 
 function AuthLayout() {
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
+    <div className="flex items-center justify-center min-h-screen p-4 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher variant="icon" />
+      </div>
       <Outlet />
     </div>
   );

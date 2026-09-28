@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  clearLastReviewDeckId,
   DEFAULT_REVIEW_PREFERENCES,
   getLastReviewDeckId,
   getReviewPreferences,
@@ -37,13 +36,6 @@ describe('review preferences', () => {
 
     expect(getLastReviewDeckId('user-1')).toBe('deck-german');
     expect(getLastReviewDeckId('user-2')).toBe('deck-spanish');
-  });
-
-  it('removes an unavailable saved deck preference', () => {
-    saveLastReviewDeckId('user-1', 'deleted-deck');
-    clearLastReviewDeckId('user-1');
-
-    expect(getLastReviewDeckId('user-1')).toBeNull();
   });
 
   it('uses Basic mode with intervals hidden when review preferences are missing', () => {
@@ -96,7 +88,7 @@ describe('review preferences', () => {
     expect(getLastReviewDeckId('user-1')).toBeNull();
   });
 
-  it('continues when saving or clearing browser storage fails', () => {
+  it('continues when saving browser storage fails', () => {
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
       value: {
@@ -116,6 +108,5 @@ describe('review preferences', () => {
     });
 
     expect(() => saveLastReviewDeckId('user-1', 'deck-german')).not.toThrow();
-    expect(() => clearLastReviewDeckId('user-1')).not.toThrow();
   });
 });
