@@ -28,8 +28,8 @@ export function deckLearningCounts(
 }
 
 // Cards per deck, counted once for every deck instead of rescanning both
-// lists per rendered deck. Callers pass active-only query results, so nothing
-// is filtered here. A note can carry several cards and sit in several decks;
+// lists per rendered deck. The caller chooses which cards to include. A note
+// can carry several cards and sit in several decks;
 // each deck counts every card of every note it holds.
 export function countCardsPerDeck(
   memberships: readonly { deck_id: string; note_id: string }[],

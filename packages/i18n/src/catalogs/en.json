@@ -731,7 +731,11 @@
       "loading_deck": "Loading your deck...",
       "deck_not_found_title": "Deck not found",
       "deck_not_found_message": "This deck does not exist or was deleted.",
-      "no_cards_due": "No cards are due in {{title}} right now."
+      "no_cards_due": "No cards are due in {{title}} right now.",
+      "no_cards_due_title": "No cards due",
+      "back_to_deck": "Back to deck",
+      "back": "Back",
+      "load_error": "Failed to load this review: {{message}}"
     },
     "card": {
       "show_answer": "Show answer",

@@ -9,8 +9,8 @@ For one selected deck:
 2. Show this fixed batch. Save each answer before the card leaves the screen and
    before showing the next card.
 3. When the batch ends, read the due cards again for the same deck. Create the
-   next batch. If no cards are due, offer activation of more inactive words in
-   this deck, or finish the session.
+   next batch. If no cards are due, offer activation of more inactive words or
+   cards in this deck, or finish the session.
 
 A **due card** is an active card whose `due_at` time is now or in the past and
 whose required front and back content is present.
@@ -25,12 +25,12 @@ Each answer saves a review event and updates the card's
 due_at = reviewed_at + scheduled_interval_minutes × 60,000
 ```
 
-| Answer | Next interval |
-| --- | --- |
-| `Forgot` | 5 minutes |
-| `Struggled` | `max(1 day, previous interval × 1.2)` |
-| `Remembered` | `max(3 days, previous interval × 2.5)` |
-| `Knew it` | `max(7 days, previous interval × 3.25)` |
+| Answer       | Next interval                           |
+| ------------ | --------------------------------------- |
+| `Forgot`     | 5 minutes                               |
+| `Struggled`  | `max(1 day, previous interval × 1.2)`   |
+| `Remembered` | `max(3 days, previous interval × 2.5)`  |
+| `Knew it`    | `max(7 days, previous interval × 3.25)` |
 
 The interval is stored in whole minutes and is capped at 120 days. A new card
 starts with an interval of `0`.
@@ -66,18 +66,22 @@ When review has no due cards, the app offers the same action in either place:
 - when review starts with no due cards; or
 - when the current review session has no more due cards.
 
-The action is: "Activate N more words from this deck".
+The action is: "Activate N more words from this deck". It selects only
+inactive words.
 
 For a basic deck, the same rule applies to cards rather than words: new cards
 start inactive and the action says "Activate N more cards from this deck".
+It selects only inactive cards.
 
 - `N` defaults to 5;
 - the user can edit `N`;
 - the last chosen `N` is remembered on that device;
 - there is no daily limit and no global activation setting; and
-- only inactive words in the selected deck are candidates for activation.
+- only inactive words or cards in the selected deck are candidates for activation.
 
 For manually or batch-added words, activate the oldest inactive words first.
+For manually or batch-added basic cards, activate the oldest inactive cards
+first. For imported basic cards, keep their order in the import file too.
 For imported words, activate inactive words in their order in the import file.
 The import path stores that order through the existing `created_at` value, so it
 remains stable after synchronization.

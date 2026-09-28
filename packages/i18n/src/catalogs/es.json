@@ -731,7 +731,11 @@
       "loading_deck": "Cargando tu mazo...",
       "deck_not_found_title": "Mazo no encontrado",
       "deck_not_found_message": "Este mazo no existe o fue eliminado.",
-      "no_cards_due": "No hay tarjetas pendientes en {{title}} ahora mismo."
+      "no_cards_due": "No hay tarjetas pendientes en {{title}} ahora mismo.",
+      "no_cards_due_title": "No hay tarjetas pendientes",
+      "back_to_deck": "Volver al mazo",
+      "back": "Volver",
+      "load_error": "No se pudo cargar este repaso: {{message}}"
     },
     "card": {
       "show_answer": "Mostrar respuesta",

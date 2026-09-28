@@ -5,7 +5,7 @@ import {
   getDecksQuery,
   getNoteDecksQuery,
   getNotesQuery,
-  getPersonalDictionaryQuery,
+  getAllCardsQuery,
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
@@ -27,7 +27,7 @@ export function useCards(manager: DatabaseManager, deckId: string) {
   const db = useDatabase(manager);
   const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
-  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getAllCardsQuery(db));
   const notes = useQuery<UserNoteRecord>(db && getNotesQuery(db));
 
   const deck = useMemo(

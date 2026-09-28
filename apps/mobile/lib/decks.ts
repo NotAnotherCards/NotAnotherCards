@@ -3,9 +3,9 @@ import type { DatabaseManager } from '@remelondb/core';
 import { useDatabase, useQuery } from '@remelondb/core/react';
 import {
   countCardsPerDeck,
+  getAllCardsQuery,
   getDecksQuery,
   getNoteDecksQuery,
-  getPersonalDictionaryQuery,
   getUserProfileQuery,
   type UserCardRecord,
   type UserDeckRecord,
@@ -25,12 +25,10 @@ export function useDecks(manager: DatabaseManager) {
   const db = useDatabase(manager);
   const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
-  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getAllCardsQuery(db));
   const profiles = useQuery<UserProfileRecord>(db && getUserProfileQuery(db));
 
-  // Active cards whose note is in the deck, the same count web shows. Not
-  // the membership count: a note can carry several cards once sibling
-  // templates land (#194), and both queries are already active-only.
+  // Every card whose note is in the deck. A note can carry several siblings.
   const cardCounts = useMemo(
     () => countCardsPerDeck(memberships.data, cards.data),
     [cards.data, memberships.data],

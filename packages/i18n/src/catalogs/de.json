@@ -731,7 +731,11 @@
       "loading_deck": "Stapel wird geladen...",
       "deck_not_found_title": "Stapel nicht gefunden",
       "deck_not_found_message": "Dieser Stapel existiert nicht oder wurde gelöscht.",
-      "no_cards_due": "In {{title}} sind derzeit keine Karten fällig."
+      "no_cards_due": "In {{title}} sind derzeit keine Karten fällig.",
+      "no_cards_due_title": "Keine Karten fällig",
+      "back_to_deck": "Zurück zum Stapel",
+      "back": "Zurück",
+      "load_error": "Wiederholung konnte nicht geladen werden: {{message}}"
     },
     "card": {
       "show_answer": "Antwort anzeigen",

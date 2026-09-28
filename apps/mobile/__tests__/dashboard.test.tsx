@@ -196,6 +196,32 @@ describe('Dashboard screen', () => {
     expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });
 
+  it('starts the saved deck when it has inactive items to activate', () => {
+    mockReviewOverview = {
+      target: 'deck-spanish',
+      dueCount: 0,
+      isLoading: false,
+      error: null,
+    };
+    saveLastReviewDeckId('user-dashboard', 'deck-spanish');
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+
+    const { getByRole } = render(<Dashboard />);
+    const button = getByRole('button', { name: 'Start Review' });
+    expect(button.props.accessibilityState.disabled).toBe(false);
+    fireEvent.press(button);
+    expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
+  });
+
   it('does not clear the saved deck while queries are loading', () => {
     mockReviewOverview.isLoading = true;
     saveLastReviewDeckId('user-dashboard', 'deck-spanish');
