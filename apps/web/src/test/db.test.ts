@@ -112,6 +112,7 @@ describe('authenticated user database configuration', () => {
       'UserNoteDeck',
       'ReviewEvent',
       'UserProfile',
+      'UserBadge',
     ]);
   });
 

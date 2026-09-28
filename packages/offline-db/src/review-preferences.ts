@@ -14,6 +14,10 @@ export function reviewPreferencesStorageKey(userId: string) {
   return `not-another-cards:review-preferences:${userId}`;
 }
 
+export function lastReviewDeckStorageKey(userId: string) {
+  return `not-another-cards:last-review-deck:${userId}`;
+}
+
 /** Reads a stored value; anything missing or malformed gives the defaults. */
 export function parseReviewPreferences(
   savedValue: string | null,

@@ -1,6 +1,8 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Register from '@/app/register';
+// The app's root loads the catalogs; these render the forms without it.
+import '@/lib/i18n';
 
 const mockReplace = jest.fn();
 

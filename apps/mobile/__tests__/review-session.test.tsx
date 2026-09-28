@@ -1,7 +1,12 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ReviewSession } from '@/components/review-session';
-import { saveReviewPreferences } from '@/lib/review-preferences';
+import Storage from 'expo-sqlite/kv-store';
+import { lastReviewDeckStorageKey } from '@repo/offline-db';
+import {
+  loadLastReviewDeckId,
+  saveReviewPreferences,
+} from '@/lib/review-preferences';
 
 const manager = { tag: 'manager' };
 let mockManager: unknown = manager;
@@ -49,6 +54,7 @@ beforeEach(() => {
   mockReadDueCards.mockResolvedValue([]);
   mockReplace.mockClear();
   mockBack.mockClear();
+  Storage.removeItemSync(lastReviewDeckStorageKey('user-1'));
   mockReviewState = {
     deck: { id: 'd1', title: 'Spanish' },
     dueCards: [
@@ -81,6 +87,31 @@ describe('ReviewSession', () => {
     ).toBeNull();
   });
 
+  it('remembers an existing deck when review opens', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    expect(loadLastReviewDeckId('user-1')).toBe('d1');
+  });
+
+  it('does not remember a missing deck', async () => {
+    mockReviewState.deck = null;
+    const result = render(<ReviewSession deckId="missing" />);
+
+    await result.findByText('Deck not found');
+    expect(loadLastReviewDeckId('user-1')).toBeNull();
+  });
+
+  it('keeps the remembered deck when review is exited', async () => {
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Exit review'));
+
+    expect(loadLastReviewDeckId('user-1')).toBe('d1');
+    expect(mockReplace).toHaveBeenCalledWith('/deck/d1');
+  });
+
   it('follows the saved review preference: four labels and the next interval', async () => {
     saveReviewPreferences('user-1', {
       reviewMode: 'extended',
@@ -110,6 +141,23 @@ describe('ReviewSession', () => {
     expect(result.getByText('gato')).toBeTruthy();
   });
 
+  it('follows the saved review preference: four labels and the next interval', async () => {
+    saveReviewPreferences('user-1', {
+      reviewMode: 'extended',
+      showNextReviewInterval: true,
+    });
+    const result = render(<ReviewSession deckId="d1" />);
+
+    fireEvent.press(await result.findByText('Show answer'));
+    expect(result.getByText('Again')).toBeTruthy();
+    expect(result.getByText('Hard')).toBeTruthy();
+    expect(result.getByText('Good')).toBeTruthy();
+    expect(result.getByText('Easy')).toBeTruthy();
+    // A new card: Again schedules 5 minutes, Good three days.
+    expect(result.getByText('5 min')).toBeTruthy();
+    expect(result.getByText('3 days')).toBeTruthy();
+  });
+
   it('renders Markdown, shows the back alone after flipping, and records a rating', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 
@@ -126,6 +174,7 @@ describe('ReviewSession', () => {
     fireEvent.press(result.getByText('Remembered'));
     await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
     expect(await result.findByText('Review complete')).toBeTruthy();
+    expect(loadLastReviewDeckId('user-1')).toBe('d1');
   });
 
   it('builds the next batch from a fresh read, not the opening snapshot', async () => {
