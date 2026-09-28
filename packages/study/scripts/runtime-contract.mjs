@@ -110,7 +110,7 @@ try {
     bundledSources.some((path) => /(^|[/\\])src[/\\]activity\.ts$/.test(path))
   ) {
     throw new Error(
-      'The main @repo/offline-db entrypoint must not bundle activity rules; import them from @repo/offline-db/activity',
+      'The main @repo/study entrypoint must not bundle activity rules; import them from @repo/study/activity',
     );
   }
 
