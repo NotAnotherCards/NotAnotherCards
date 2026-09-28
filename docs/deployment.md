@@ -12,8 +12,9 @@ and the AI box is an external backend behind a config value.
 
 ```
 users ── HTTPS ──> production VPS (public + tailnet)
-                   ├─ nginx + certbot
-                   ├─ web (static build)
+                   ├─ nginx + certbot (app / grafana / apex landing)
+                   ├─ web (static build)     :5173
+                   ├─ landing (static)       :5174
                    ├─ api (NestJS) ───────────────────────┐
                    ├─ postgres                             │
                    ├─ monitoring compose:                  │ WireGuard-encrypted
@@ -68,9 +69,11 @@ The same `docker-compose.yml` runs in three places:
    is compliant but not much of a demo.
 
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
-   host nginx/certbot serving `app.notanothercards.com`. The production
-   override removes the postgres host port and binds app diagnostic ports to
-   loopback. The non-secret AI settings in `/opt/notanothercards/.env` are:
+   host nginx/certbot serving `app.notanothercards.com`,
+   `grafana.notanothercards.com`, and the apex landing page
+   `notanothercards.com`. The production override removes the postgres host
+   port and binds the API, web, and landing diagnostic ports to loopback. The
+   non-secret AI settings in `/opt/notanothercards/.env` are:
 
    ```dotenv
    AI_API_BASE=http://100.64.0.1:4000/v1
@@ -121,9 +124,21 @@ file.
   SSH with a dedicated deploy key to the `deploy` user on the project VPS,
   then run the base and production compose files with `--wait`. Merging a PR
   is deploying; reverting a PR is rolling back.
-- The compose files, HTTP bootstrap nginx config
-  (`infra/vps/app.notanothercards.com.conf`), and reproducible setup guide
+- The compose files, HTTP bootstrap nginx configs
+  (`infra/vps/app.notanothercards.com.conf`,
+  `infra/vps/grafana.notanothercards.com.conf`, and
+  `infra/vps/notanothercards.com.conf`), and the reproducible setup guide
   (`infra/vps/README.md`) live in the repo.
+- After the stacks are up, the deployment verifies the monitoring stack, its
+  Prometheus targets, and the public endpoints: application and Grafana health
+  plus the apex landing page (`https://notanothercards.com/` and `/privacy`
+  over hostname-validated HTTPS, a real 404 for an unknown path, the
+  HTTP-to-HTTPS redirect, and a certificate naming the apex domain). Any of
+  those failing fails the deployment.
+- `pnpm test:infra` validates the same nginx host configurations offline: it
+  loads all three virtual hosts into a throwaway nginx, asserts the apex site
+  proxies to the loopback landing container on `5174`, and proves the
+  application and Grafana routes still reach `5173` and `3001`.
 - Production values stay in `/opt/notanothercards/.env` and the team password
   manager; deployment credentials use GitHub's protected `production`
   environment (subject III.3).

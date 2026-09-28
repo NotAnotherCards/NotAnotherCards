@@ -176,3 +176,86 @@ jobs:
               --retry-all-errors \
               --retry-delay 3 \
               https://grafana.notanothercards.com/api/health
+
+            # 8. Verify the public landing page over hostname-validated HTTPS.
+            # curl keeps its default certificate and hostname verification, and
+            # never uses --fail: the status is compared literally so that a
+            # redirect to a login page cannot satisfy the landing checks.
+            landing_status() {
+              curl \
+                --silent \
+                --show-error \
+                --output /tmp/nac-landing-body \
+                --dump-header /tmp/nac-landing-headers \
+                --write-out '%{http_code}' \
+                --retry 5 \
+                --retry-connrefused \
+                --retry-all-errors \
+                --retry-delay 3 \
+                "$1" || true
+            }
+
+            status="$(landing_status https://notanothercards.com/)"
+            if [ "$status" != "200" ]; then
+              echo "FATAL: https://notanothercards.com/ returned HTTP ${status:-unreachable}, expected 200 (host Nginx site, TLS certificate, or landing container)" >&2
+              exit 1
+            fi
+            if grep -qi '^location:' /tmp/nac-landing-headers; then
+              echo "FATAL: https://notanothercards.com/ redirected instead of serving the landing page" >&2
+              exit 1
+            fi
+            echo "Landing home page serves HTTP 200 over verified HTTPS"
+
+            status="$(landing_status https://notanothercards.com/privacy)"
+            if [ "$status" != "200" ]; then
+              echo "FATAL: https://notanothercards.com/privacy returned HTTP ${status:-unreachable}, expected 200" >&2
+              exit 1
+            fi
+            echo "Landing privacy policy serves HTTP 200 over verified HTTPS"
+
+            status=""
+            for attempt in 1 2 3 4 5; do
+              status="$(landing_status https://notanothercards.com/not-a-real-page-383)"
+              if [ "$status" = "404" ]; then
+                break
+              fi
+              sleep 3
+            done
+            if [ "$status" != "404" ]; then
+              echo "FATAL: https://notanothercards.com/not-a-real-page-383 returned HTTP ${status:-unreachable}, expected a real 404" >&2
+              exit 1
+            fi
+            echo "Landing unknown paths return a real HTTP 404"
+
+            redirect="$(curl \
+              --silent \
+              --show-error \
+              --output /dev/null \
+              --write-out '%{http_code} %{redirect_url}' \
+              http://notanothercards.com/ || true)"
+            if [ "$redirect" != "301 https://notanothercards.com/" ]; then
+              echo "FATAL: http://notanothercards.com/ must redirect to https, got '${redirect}'" >&2
+              exit 1
+            fi
+            echo "Plain HTTP redirects to the equivalent HTTPS URL"
+
+            cert_sans="$(echo | openssl s_client -connect 127.0.0.1:443 -servername notanothercards.com 2>/dev/null \
+              | openssl x509 -noout -ext subjectAltName 2>/dev/null || true)"
+            case "$cert_sans" in
+              *DNS:notanothercards.com*) ;;
+              *)
+                echo "FATAL: the certificate presented for notanothercards.com does not name the apex domain (${cert_sans:-no certificate})" >&2
+                exit 1
+                ;;
+            esac
+            echo "Certificate names notanothercards.com"
+
+            if ! ss -ltn | grep -q '127.0.0.1:5174'; then
+              echo "FATAL: the landing container is not listening on 127.0.0.1:5174" >&2
+              exit 1
+            fi
+            if ss -ltn | grep -qE '(0\.0\.0\.0|\[::\]):5174'; then
+              echo "FATAL: landing port 5174 is reachable beyond loopback" >&2
+              exit 1
+            fi
+            echo "Landing port 5174 stays bound to loopback"
