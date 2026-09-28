@@ -133,6 +133,37 @@ live publication acceptance test remains a blocker rather than being
 weakened to accept a timeout. No completed whole-deck safety verdict exists
 for Spanish under this revision.
 
+### Authorized temporary serving-parallelism trial
+
+The active server is Docker container `gx10-stack-ollama-1`; the systemd
+Ollama unit is inactive. The container was independently verified to have
+`OLLAMA_NUM_PARALLEL=2`, matching the earlier measurements. With approval,
+a temporary Compose override raised it to 8 while keeping context length
+8192, images and model versions unchanged. Both live runners showed `-np 8`.
+Models were warmed before timing; API pools ran sequentially, 8 then 4 then 1.
+
+| API pool, server parallelism 8 | Wall time | Completed texts | Unfinished |
+| ------------------------------ | --------- | --------------- | ---------- |
+| 1                              | 240.074 s | 961             | 1,575      |
+| 4                              | 240.074 s | 1,908           | 628        |
+| 8                              | 240.062 s | 2,278           | 258        |
+
+All are deadline failures, not completed screening times. Pool 8 improved
+completion from 1,569 to 2,278 texts but still missed the requirement. No
+run left half the budget, so no second pass was added. These partial runs
+cannot establish the safety outcome of the complete Spanish deck.
+
+There were no judge downgrades. Pool 4 flagged `note-324`'s `pronunciation`
+field (`ˈnegɾo`) and made one judge request without a recorded verdict; the
+refusal remained. Server logs included a 30-second HTTP 500 during that run.
+This is not evidence that the judge confirmed the finding. Pools 1 and 8
+made no judge requests before their deadlines.
+
+The original Compose configuration and parallelism 2 were restored after
+the trial. The shared serving configuration was not permanently changed.
+The 240-second acceptance criterion remains blocked; raising parallelism
+to 8 alone did not solve it.
+
 ## Historical comparisons, not current acceptance results
 
 For 100 harmful-labelled items, raw corpus input gave 0 safe / 15
