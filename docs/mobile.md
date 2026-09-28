@@ -87,9 +87,14 @@ therefore writes `~/.gradle/gradle.properties`, if you have none, with fewer
 parallel workers, a smaller Kotlin daemon and a 10-minute idle timeout.
 Delete the file for full-speed builds on a bigger machine. After a build,
 `cd apps/mobile/android && ./gradlew --stop` frees the daemons' memory at once.
+Docker and a local API on top of the build and the emulator can freeze a
+school machine. Point the app at a remote backend instead (Environment above:
+staging or production need nothing local), or start the API only after the
+build has finished.
 
-To use `adb` or `emulator` manually in your own shell, source the env file
-the script writes:
+In a new shell, source the env file the script writes before
+`npx expo run:android` or using `adb` and `emulator` manually. Otherwise Expo
+cannot find the SDK and fails with `spawn adb ENOENT`:
 
 ```sh
 source /goinfre/$USER/android-sdk/env.sh
