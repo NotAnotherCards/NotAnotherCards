@@ -15,7 +15,23 @@ import {
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
 } from './note-constants.js';
-import { BASIC_FRONT_BACK_TEMPLATE_KEY } from './ids.js';
+
+// A template key is half of the tuple hashed by cardId, so changing it would
+// derive a different card ID for the built-in basic note.
+export const BASIC_FRONT_BACK_TEMPLATE_KEY = 'front-back';
+
+// Only a basic note's front-back card is edited with the front/back form;
+// any other card keeps its own editor. The caller looks up the note.
+export function isBasicCard(
+  card: { template_key: string },
+  note: { note_type: string; fields_version: number } | null | undefined,
+): boolean {
+  return (
+    note?.note_type === BASIC_NOTE_TYPE &&
+    note.fields_version === BASIC_NOTE_FIELDS_VERSION &&
+    card.template_key === BASIC_FRONT_BACK_TEMPLATE_KEY
+  );
+}
 
 export interface RenderedCard {
   readonly front: string;
@@ -25,7 +41,7 @@ export interface RenderedCard {
 /**
  * One sibling card of a note type. `key` is half of the tuple hashed by
  * cardId, so it is a sync protocol constant: changing it re-derives a
- * different card id on every device (see ids.ts).
+ * different card id on every device (see ids.ts in @repo/offline-db).
  *
  * `render` returns null when the fields cannot yield this card, so
  * "can this card exist" and "what does it say" cannot drift apart.
@@ -103,7 +119,20 @@ export const WordNoteFieldsV1 = WordNoteFieldsV1Base.refine(
 );
 export type WordNoteFields = z.output<typeof WordNoteFieldsV1>;
 
-// Sync protocol constants, like BASIC_FRONT_BACK_TEMPLATE_KEY in ids.ts:
+// A stored word note's fields, or null when the JSON is broken or the
+// fields fail word@1. Such a note stays visible but cannot be edited.
+export function parseWordFields(note: {
+  fields_json: string;
+}): WordNoteFields | null {
+  try {
+    const parsed = WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+// Sync protocol constants, like BASIC_FRONT_BACK_TEMPLATE_KEY above:
 // each is half of the cardId tuple and must never change. Declared in
 // #157's sibling order (word→translation, translation→word, listen,
 // example) so a progressive-activation policy can later map onto the

@@ -7,12 +7,12 @@
  */
 import type { BatchOperation, Database } from '@remelondb/core';
 import { noteDeckId } from './ids.js';
-import { BASIC_NOTE_TYPE } from './note-constants.js';
+import { BASIC_NOTE_TYPE } from '@repo/study';
 import {
   prepareCardsForNewNote,
   prepareReconcileNoteCards,
 } from './note-reconcile.js';
-import { compileNote } from './note-registry.js';
+import { compileNote } from '@repo/study';
 import {
   UserDeck,
   UserNote,
