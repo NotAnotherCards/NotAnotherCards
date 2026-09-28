@@ -18,6 +18,7 @@ describe('ModerationService', () => {
   ) => ({
     deckId: 'deck-1',
     notes: cards.map((card) => ({
+      id: `note-${card.id}`,
       cardIds: [card.id],
       text: `${card.front}\n${card.back}`,
     })),
@@ -107,6 +108,22 @@ describe('ModerationService', () => {
         categories: null,
         error: 'gateway_unconfigured',
       })),
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('refuses a cardless note without undefined card IDs or a model request', async () => {
+    await expect(
+      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check({
+        deckId: 'deck',
+        notes: [{ id: 'empty-note', cardIds: [], text: 'Text' }],
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'a note has no cards',
+      flagged: [],
+      warnings: [],
+      results: [],
     });
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -221,7 +238,10 @@ describe('ModerationService', () => {
         AI_API_BASE: process.env.MODERATION_LIVE_API_BASE,
         AI_API_KEY: process.env.MODERATION_LIVE_API_KEY,
         AI_DEFAULT_MODEL: process.env.MODERATION_LIVE_JUDGE_MODEL,
-      }).check({ deckId: 'live-judge', notes: [{ cardIds: ['card'], text }] });
+      }).check({
+        deckId: 'live-judge',
+        notes: [{ id: 'note', cardIds: ['card'], text }],
+      });
       expect(result.results[1]).toMatchObject({
         verdict: expected === 'warn' ? 'controversial' : 'unsafe',
       });
@@ -251,7 +271,7 @@ describe('ModerationService', () => {
       AI_DEFAULT_MODEL: 'configured-judge',
     }).check({
       deckId: 'spanish',
-      notes: [{ cardIds: ['forward', 'reverse', 'example'], text }],
+      notes: [{ id: 'note', cardIds: ['forward', 'reverse', 'example'], text }],
     });
     expect(result.ok).toBe(true);
     expect(result.flagged).toEqual([]);

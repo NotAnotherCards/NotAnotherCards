@@ -3,6 +3,7 @@ import { languageFor } from '@repo/schemas';
 import type { PublishedContent } from './schema';
 
 export interface ModerationNote {
+  id: string;
   cardIds: string[];
   text: string;
 }
@@ -21,13 +22,30 @@ export function moderationNotes(snapshot: {
     cards.push(card);
     cardsByNote.set(card.note_id, cards);
   }
-  return snapshot.content.notes.map((note) => {
+  const notes = snapshot.content.notes.map((note) => {
     const cards = cardsByNote.get(note.id) ?? [];
-    const compiled = compileNote(
-      note.note_type,
-      note.fields_version,
-      JSON.parse(note.fields_json),
-    );
+    cardsByNote.delete(note.id);
+    let compiled: ReturnType<typeof compileNote>;
+    try {
+      compiled = compileNote(
+        note.note_type,
+        note.fields_version,
+        JSON.parse(note.fields_json),
+      );
+    } catch {
+      // Newer clients and legacy/corrupt fields must not bypass screening or
+      // crash publication. The snapshot's rendered text remains authoritative.
+      return {
+        id: note.id,
+        cardIds: cards.map((card) => card.id),
+        text: [
+          ...cards.map(({ front, back }) => `${front}\n${back}`),
+          note.additional_content,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      };
+    }
     const fields = JSON.parse(compiled.fieldsJson) as Record<string, unknown>;
     delete fields.image;
     delete fields.word_audio;
@@ -60,6 +78,7 @@ export function moderationNotes(snapshot: {
         ? `Vocabulary note from a ${target} course for ${native} speakers.`
         : '';
     return {
+      id: note.id,
       cardIds: cards.map((card) => card.id),
       text: [
         text,
@@ -71,4 +90,13 @@ export function moderationNotes(snapshot: {
         .join('\n'),
     };
   });
+  // Do not silently omit cards when a snapshot is missing their parent note.
+  for (const [id, cards] of cardsByNote) {
+    notes.push({
+      id,
+      cardIds: cards.map((card) => card.id),
+      text: cards.map(({ front, back }) => `${front}\n${back}`).join('\n'),
+    });
+  }
+  return notes;
 }

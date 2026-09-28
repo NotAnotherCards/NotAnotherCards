@@ -716,9 +716,18 @@ export class SharingService {
     const notes = new Map<string, PublishedContent['notes'][number]>();
     const cards = rows.map(({ note, ...card }) => {
       if (!notes.has(note.id)) {
-        const fields = z
-          .record(z.string(), z.unknown())
-          .parse(JSON.parse(note.fields_json));
+        let fields: Record<string, unknown>;
+        try {
+          fields = z
+            .record(z.string(), z.unknown())
+            .parse(JSON.parse(note.fields_json));
+        } catch {
+          // Do not publish malformed fields that cannot be safely redacted.
+          throw new UnprocessableEntityException({
+            reason: 'a note has invalid fields',
+            flagged: [],
+          });
+        }
         delete fields.image;
         delete fields.word_audio;
         notes.set(note.id, { ...note, fields_json: JSON.stringify(fields) });

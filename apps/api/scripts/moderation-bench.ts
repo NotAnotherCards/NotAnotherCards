@@ -38,10 +38,10 @@ async function main() {
     !values.corpus ||
     !values.out ||
     !values.base ||
-    !['raw', 'publish'].includes(values.mode)
+    !['raw', 'publish', 'judge'].includes(values.mode)
   ) {
     throw new Error(
-      'usage: moderation-bench.ts --mode raw|publish --corpus <jsonl> --out <new-jsonl> --base <url/v1> [--model moderation] [--judge-model gemma4]',
+      'usage: moderation-bench.ts --mode raw|publish|judge --corpus <jsonl> --out <new-jsonl> --base <url/v1> [--model moderation] [--judge-model gemma4]',
     );
   }
   const base = values.base.replace(/\/+$/, '');
@@ -57,6 +57,21 @@ async function main() {
   // path otherwise executes the production code, policy, parser and budgets.
   globalThis.fetch = (url: string | URL | Request, init?: RequestInit) => {
     const body = JSON.parse(init?.body as string) as { model: string };
+    if (values.mode === 'judge' && body.model === 'moderation') {
+      // Isolate injection resistance even when the fast model would not flag
+      // an item. The production judge request, parser and deadline stay real.
+      return Promise.resolve(
+        Response.json({
+          choices: [
+            {
+              message: {
+                content: 'Safety: Unsafe\nCategories: Unethical Acts',
+              },
+            },
+          ],
+        }),
+      );
+    }
     if (body.model === 'moderation') body.model = model;
     return realFetch(url, { ...init, body: JSON.stringify(body) });
   };
@@ -118,7 +133,7 @@ async function main() {
         } else {
           const result = await service.check({
             deckId: item.id,
-            notes: [{ cardIds: [item.id], text: item.text }],
+            notes: [{ id: item.id, cardIds: [item.id], text: item.text }],
           });
           const fast = result.results[0];
           verdict = fast?.verdict;
@@ -177,7 +192,7 @@ async function main() {
     JSON.stringify({
       mode: values.mode,
       model,
-      judge_model: values.mode === 'publish' ? judgeModel : null,
+      judge_model: values.mode !== 'raw' ? judgeModel : null,
       items: items.length,
       unsafe: tp + fn,
       safe: fp + tn,

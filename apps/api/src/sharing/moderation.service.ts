@@ -155,11 +155,20 @@ export class ModerationService {
     deckId: string;
     notes: ModerationNote[];
   }): Promise<ModerationVerdict> {
+    if (input.notes.some((note) => note.cardIds.length === 0)) {
+      return {
+        ok: false,
+        reason: 'a note has no cards',
+        flagged: [],
+        warnings: [],
+        results: [],
+      };
+    }
     const verdict = await this.checkWithModels(
       {
         deckId: input.deckId,
         items: input.notes.map((note) => ({
-          id: note.cardIds[0],
+          id: note.id,
           text: note.text,
         })),
       },
@@ -168,7 +177,7 @@ export class ModerationService {
       true,
     );
     const siblings = new Map(
-      input.notes.map((note) => [note.cardIds[0], note.cardIds]),
+      input.notes.map((note) => [note.id, note.cardIds]),
     );
     // Keep the existing card-based response and audit contract for clients.
     const expand = <T extends { cardId: string }>(entries: T[]): T[] =>
@@ -217,7 +226,6 @@ export class ModerationService {
     }
 
     const apiBase = this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, '');
-    const apiKey = this.config.get<string>('AI_API_KEY') ?? '';
     const unavailable = (
       results: ModerationClassifierResult[],
     ): ModerationVerdict => ({
@@ -252,29 +260,15 @@ export class ModerationService {
       const deadline = Date.now() + moderationDeadlineMs(input.items.length);
       for (const card of input.items) {
         try {
-          const remaining = deadline - Date.now();
-          if (remaining <= 0) throw new Error('Moderation deadline exceeded');
-
-          const response = await fetch(`${apiBase}/chat/completions`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            },
-            body: JSON.stringify({
+          const content = await this.complete(
+            {
               model: classifier.model,
               temperature: 0,
               stream: false,
               messages: [{ role: 'user', content: card.text }],
-            }),
-            signal: AbortSignal.timeout(
-              Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
-            ),
-          });
-          if (!response.ok) throw new Error('Moderation gateway error');
-
-          const data = (await response.json()) as ChatCompletionResponse;
-          const content = data.choices?.[0]?.message?.content ?? '';
+            },
+            deadline,
+          );
           const parsed = parseModerationOutput(classifier.format, content);
           if (!parsed) throw new Error('Unparseable moderation verdict');
 
@@ -297,61 +291,13 @@ export class ModerationService {
               const model =
                 this.config.get<string>('AI_DEFAULT_MODEL') ?? 'gemma4';
               try {
-                const remaining = deadline - Date.now();
-                if (remaining <= 0)
-                  throw new Error('Moderation deadline exceeded');
-                const response = await fetch(`${apiBase}/chat/completions`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-                  },
-                  body: JSON.stringify({
-                    model,
-                    temperature: 0,
-                    stream: false,
-                    reasoning_effort: 'none',
-                    response_format: {
-                      type: 'json_schema',
-                      json_schema: {
-                        name: 'moderation_review',
-                        strict: true,
-                        schema: judgePolicy.schema,
-                      },
-                    },
-                    messages: [
-                      { role: 'system', content: judgePolicy.system },
-                      {
-                        role: 'user',
-                        content: JSON.stringify({
-                          category: finding.reason,
-                          study_content: card.text,
-                        }),
-                      },
-                    ],
-                  }),
-                  signal: AbortSignal.timeout(
-                    Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
-                  ),
-                });
-                if (!response.ok) throw new Error('Moderation gateway error');
-                const data = (await response.json()) as ChatCompletionResponse;
-                let decision: z.infer<typeof judgeVerdict>;
-                try {
-                  decision = judgeVerdict.parse(
-                    JSON.parse(data.choices?.[0]?.message?.content ?? ''),
-                  );
-                } catch {
-                  throw new Error('Unparseable moderation verdict');
-                }
+                warning = await this.judge(card.text, finding.reason, deadline);
                 results.push({
                   cardId: card.id,
                   classifier: model,
-                  verdict:
-                    decision.verdict === 'warn' ? 'controversial' : 'unsafe',
+                  verdict: warning ? 'controversial' : 'unsafe',
                   categories: null,
                 });
-                if (decision.verdict === 'warn') warning = decision.reason;
               } catch (error) {
                 results.push({
                   cardId: card.id,
@@ -395,5 +341,67 @@ export class ModerationService {
     }
 
     return { ok: flagged.length === 0, flagged, warnings, results };
+  }
+
+  /** Only an explicit, validated warning may override the fast refusal. */
+  private async judge(
+    text: string,
+    category: string,
+    deadline: number,
+  ): Promise<string | undefined> {
+    const content = await this.complete(
+      {
+        model: this.config.get<string>('AI_DEFAULT_MODEL') ?? 'gemma4',
+        temperature: 0,
+        stream: false,
+        reasoning_effort: 'none',
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'moderation_review',
+            strict: true,
+            schema: judgePolicy.schema,
+          },
+        },
+        messages: [
+          { role: 'system', content: judgePolicy.system },
+          {
+            role: 'user',
+            content: JSON.stringify({ category, study_content: text }),
+          },
+        ],
+      },
+      deadline,
+    );
+    try {
+      const decision = judgeVerdict.parse(JSON.parse(content));
+      return decision.verdict === 'warn' ? decision.reason : undefined;
+    } catch {
+      throw new Error('Unparseable moderation verdict');
+    }
+  }
+
+  private async complete(
+    body: Record<string, unknown>,
+    deadline: number,
+  ): Promise<string> {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new Error('Moderation deadline exceeded');
+    const apiBase = this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, '');
+    const apiKey = this.config.get<string>('AI_API_KEY') ?? '';
+    const response = await fetch(`${apiBase}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(
+        Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
+      ),
+    });
+    if (!response.ok) throw new Error('Moderation gateway error');
+    const data = (await response.json()) as ChatCompletionResponse;
+    return data.choices?.[0]?.message?.content ?? '';
   }
 }

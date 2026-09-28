@@ -404,7 +404,7 @@ describePostgres('deck sharing endpoints', () => {
   });
 
   it('refuses a deck the moderator flags and names the offending card', async () => {
-    const { cardIds } = await seedDeck(userA, 'flagged', { cards: 2 });
+    const { cardIds, noteIds } = await seedDeck(userA, 'flagged', { cards: 2 });
     const before = await storedDeck('flagged');
     const check = vi
       .spyOn(app.get(ModerationService), 'check')
@@ -426,6 +426,7 @@ describePostgres('deck sharing endpoints', () => {
     expect(check).toHaveBeenCalledWith({
       deckId: 'flagged',
       notes: cardIds.map((id, index) => ({
+        id: noteIds[index],
         cardIds: [id],
         text: `front ${index}\nback ${index}`,
       })),
@@ -487,6 +488,59 @@ describePostgres('deck sharing endpoints', () => {
       })
       .expect(404);
   });
+
+  it.each([
+    ['broken JSON', 'basic', '{'],
+    ['newer note type', 'cloze', '{}'],
+  ])(
+    'returns a controlled refusal instead of crashing on %s',
+    async (_label, noteType, fieldsJson) => {
+      const { cardIds, noteIds } = await seedDeck(userA, 'fallback');
+      await db
+        .update(userNotes)
+        .set({ noteType, fieldsJson })
+        .where(eq(userNotes.id, noteIds[0]));
+      process.env.MODERATION_ALLOW_ALL = '0';
+      const config = app.get(ConfigService);
+      const readConfig = config.get.bind(config) as (key: string) => unknown;
+      vi.spyOn(config, 'get').mockImplementation((key: string) =>
+        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : readConfig(key),
+      );
+      const completion = (content: string) =>
+        Response.json({ choices: [{ message: { content } }] });
+      const fetch = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(
+          completion('Safety: Unsafe\nCategories: Violent'),
+        )
+        .mockResolvedValueOnce(
+          completion(
+            JSON.stringify({ verdict: 'confirm', reason: 'Violates policy.' }),
+          ),
+        );
+      const response = await post(userA, '/api/decks/fallback/publish').expect(
+        422,
+      );
+      if (fieldsJson === '{') {
+        expect(moderationRefusalSchema.parse(response.body)).toEqual({
+          reason: 'a note has invalid fields',
+          flagged: [],
+        });
+        expect(fetch).not.toHaveBeenCalled();
+      } else {
+        expect(moderationRefusalSchema.parse(response.body).flagged).toEqual([
+          { cardId: cardIds[0], reason: 'Violent' },
+        ]);
+        const request = JSON.parse(fetch.mock.calls[0][1]?.body as string) as {
+          messages: { content: string }[];
+        };
+        expect(request.messages[0].content).toBe('front 0\nback 0');
+        expect(fetch).toHaveBeenCalledTimes(2);
+      }
+      expect((await storedDeck('fallback')).visibility).toBe('private');
+      expect(await db.select().from(publishedDecks)).toHaveLength(0);
+    },
+  );
 
   it.each(['confirm', 'warn', 'error'] as const)(
     'uses the real publish gate when the judge returns %s',
