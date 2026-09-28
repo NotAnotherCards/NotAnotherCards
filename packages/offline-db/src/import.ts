@@ -260,7 +260,7 @@ async function validateAndImportJson(
       }
       cardSourceIds.add(card.source_id);
 
-      if (typeof card.active !== 'boolean') {
+      if (card.active !== undefined && typeof card.active !== 'boolean') {
         errors.push({
           code: 'INVALID_CARD_ACTIVE',
           message: 'Card active must be boolean',
@@ -425,7 +425,7 @@ async function validateAndImportJson(
           id: newCardId,
           note_id: newNoteId,
           template_key: templateKey,
-          active: false,
+          active: sourceCard?.active ?? false,
           front: compiledCard.front,
           back: compiledCard.back,
           due_at: sourceCard?.due_at ?? now,
@@ -598,7 +598,7 @@ async function validateAndImportCsv(
       });
     }
 
-    let active = true;
+    let active = false;
     if (activeIdx !== -1 && row[activeIdx]) {
       const val = row[activeIdx].toLowerCase();
       if (val === 'false' || val === '0') active = false;
@@ -722,7 +722,7 @@ async function validateAndImportCsv(
         id: generatedCardId,
         note_id: noteId,
         template_key: templateKey,
-        active: false,
+        active: item.active,
         front: item.front,
         back: item.back,
         due_at: item.dueAt,

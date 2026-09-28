@@ -929,6 +929,33 @@ describePostgres('deck sharing endpoints', () => {
     await get(userA, '/api/shared/decks/secret').expect(200);
   });
 
+  it('publishes inactive complete cards but leaves incomplete cards out', async () => {
+    const source = await seedDeck(userA, 'publishable', { cards: 2 });
+    await db
+      .update(userCards)
+      .set({ active: false })
+      .where(eq(userCards.id, source.cardIds[0]));
+    await db
+      .update(userCards)
+      .set({ front: '' })
+      .where(eq(userCards.id, source.cardIds[1]));
+
+    await post(userA, '/api/decks/publishable/publish').expect(200);
+
+    const shared = await get(userB, '/api/shared/decks/publishable').expect(
+      200,
+    );
+    expect(shared.body).toMatchObject({
+      deck: {
+        cardCount: 1,
+        cards: [{ front: 'front 0', back: 'back 0' }],
+      },
+    });
+    expect(
+      (await browse(userB)).find((deck) => deck.id === 'publishable'),
+    ).toMatchObject({ cardCount: 1 });
+  });
+
   it('caps a preview at ten cards and exposes nothing but their text', async () => {
     await seedDeck(userA, 'long', { cards: 12, visibility: 'public' });
 
@@ -1309,7 +1336,7 @@ describePostgres('deck sharing endpoints', () => {
         front: 'front 0',
         back: 'back 0',
         scheduledIntervalMinutes: 0,
-        active: true,
+        active: false,
       });
       expect(card.dueAt).toBeGreaterThanOrEqual(before);
       expect(card.dueAt).toBeLessThanOrEqual(Date.now());
