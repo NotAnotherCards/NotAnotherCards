@@ -13,6 +13,7 @@ import {
   UserCard,
   UserNoteDeck,
   ReviewEvent,
+  PRIVATE_DECK,
 } from './user-dictionary.js';
 import type {
   BackupJsonFormat,
@@ -362,6 +363,7 @@ async function validateAndImportJson(
         note_type: d.note_type ?? BASIC_NOTE_TYPE,
         native_language_id: d.native_language ?? null,
         target_language_id: d.target_language ?? null,
+        visibility: PRIVATE_DECK,
         created_at: now,
         updated_at: now,
       }),
@@ -685,6 +687,7 @@ async function validateAndImportCsv(
         note_type: BASIC_NOTE_TYPE,
         native_language_id: null,
         target_language_id: null,
+        visibility: PRIVATE_DECK,
         created_at: now,
         updated_at: now,
       }),

@@ -3,14 +3,23 @@ import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
+  calculateReviewIntervalMinutes,
+  extendedReviewAnswerLabels,
+  formatReviewInterval,
   reviewAnswerLabels,
   reviewRatingByAnswer,
   selectReviewBatch,
   type ReviewAnswer,
+  type ReviewPreferences,
   type UserCardRecord,
 } from '@repo/offline-db';
+import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
+import {
+  loadReviewPreferences,
+  saveLastReviewDeckId,
+} from '@/lib/review-preferences';
 import { useReviewDeck } from '@/lib/review';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
@@ -23,9 +32,15 @@ type ReviewBatch = {
   remaining: UserCardRecord[];
 };
 
-// Mobile has no persisted review preference yet, so match web's default
-// basic mode until that setting is available here.
-const answers: ReviewAnswer[] = ['forgot', 'remember'];
+// Web's two modes, same labels: basic asks whether you knew it, extended
+// keeps the four scheduler ratings apart. Settings stores the choice.
+const BASIC_ANSWERS: ReviewAnswer[] = ['forgot', 'remember'];
+const EXTENDED_ANSWERS: ReviewAnswer[] = [
+  'forgot',
+  'hard',
+  'remember',
+  'very-easy',
+];
 
 function makeBatch(deckId: string, cards: UserCardRecord[]): ReviewBatch {
   const batch = selectReviewBatch(cards);
@@ -39,6 +54,7 @@ function makeBatch(deckId: string, cards: UserCardRecord[]): ReviewBatch {
 
 export function ReviewSession({ deckId }: { deckId: string }) {
   const { manager } = useSessionDatabase();
+  const { data: authSession } = authClient.useSession();
   if (!manager) {
     return (
       <View className="items-center py-12">
@@ -46,16 +62,29 @@ export function ReviewSession({ deckId }: { deckId: string }) {
       </View>
     );
   }
-  return <ActiveReviewSession manager={manager} deckId={deckId} />;
+  return (
+    <ActiveReviewSession
+      manager={manager}
+      deckId={deckId}
+      userId={authSession?.user.id}
+      preferences={loadReviewPreferences(authSession?.user.id ?? '')}
+    />
+  );
 }
 
 function ActiveReviewSession({
   manager,
   deckId,
+  userId,
+  preferences,
 }: {
   manager: DatabaseManager;
   deckId: string;
+  userId: string | undefined;
+  preferences: ReviewPreferences;
 }) {
+  const answers =
+    preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS;
   const router = useRouter();
   const { deck, dueCards, isLoading, error, writes } = useReviewDeck(
     manager,
@@ -67,6 +96,10 @@ function ActiveReviewSession({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (deck && userId) saveLastReviewDeckId(userId, deck.id);
+  }, [deck, userId]);
 
   useEffect(() => {
     if (!isLoading && deck && session?.deckId !== deckId) {
@@ -227,11 +260,25 @@ function ActiveReviewSession({
             <Button
               key={answer}
               variant="outline"
-              className="min-w-[45%] flex-1"
+              className="min-w-[45%] flex-1 flex-col gap-0"
               disabled={isSaving}
               onPress={() => void record(answer)}
             >
-              <Text>{reviewAnswerLabels[answer]}</Text>
+              <Text>
+                {preferences.reviewMode === 'extended'
+                  ? extendedReviewAnswerLabels[answer]
+                  : reviewAnswerLabels[answer]}
+              </Text>
+              {preferences.showNextReviewInterval && (
+                <Text className="text-xs text-muted-foreground">
+                  {formatReviewInterval(
+                    calculateReviewIntervalMinutes(
+                      card.scheduled_interval_minutes,
+                      reviewRatingByAnswer[answer],
+                    ),
+                  )}
+                </Text>
+              )}
             </Button>
           ))}
         </View>

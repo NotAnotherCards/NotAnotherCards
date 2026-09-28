@@ -1,65 +1,147 @@
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, ScrollView, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { DatabaseManager } from '@remelondb/core';
 import { authClient } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
+import {
+  BookOpenIcon,
+  LibraryIcon,
+  SettingsIcon,
+  type LucideIcon,
+} from '@/components/ui/icon';
+import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
 import { DeckList } from '@/components/deck-list';
 import { RequireSession } from '@/components/require-session';
+import { Settings } from '@/components/settings';
+import { useSessionDatabase } from '@/lib/database-provider';
+import { loadLastReviewDeckId } from '@/lib/review-preferences';
+import { useReviewOverview } from '@/lib/review';
+
+// Web's dashboard strip: Overview, My Library, Profile & Settings, same
+// icons. Tab state lives here like web's, no native tab navigator. The
+// strip is the screen's top bar; the native header is hidden in _layout.
+type Tab = 'overview' | 'library' | 'settings';
+
+const TABS: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
+  { value: 'overview', label: 'Overview', icon: BookOpenIcon },
+  { value: 'library', label: 'My Library', icon: LibraryIcon },
+  { value: 'settings', label: 'Profile & Settings', icon: SettingsIcon },
+];
 
 export default function Dashboard() {
-  const router = useRouter();
   const { data: session } = authClient.useSession();
-
-  // SessionDatabaseProvider closes the offline database when the session
-  // goes away; nothing to do here beyond signing out.
-  //
-  // @better-auth/expo clears the stored session while the request is being
-  // built (its init hook), so whatever the server answers, this device is
-  // already logged out and /login is the only coherent destination. What
-  // we owe the user is the truth when the server was not reached: the
-  // server-side session then lives on until it expires (#237).
-  const onLogout = async () => {
-    let failed = false;
-    try {
-      const result = await authClient.signOut();
-      failed = result?.error != null;
-    } catch {
-      failed = true;
-    }
-    if (failed) {
-      Alert.alert(
-        'Signed out on this device only',
-        'The server could not be reached, so your session elsewhere may stay active until it expires.',
-      );
-    }
-    router.replace('/login');
-  };
+  const { manager } = useSessionDatabase();
+  const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState<Tab>('overview');
 
   return (
     <RequireSession>
-      <ScrollView
-        className="flex-1 bg-background"
-        contentContainerClassName="gap-4 p-6"
-      >
-        <View className="gap-1">
-          <Text className="text-2xl font-semibold">Dashboard</Text>
-          <Text className="text-base">
-            Welcome, <Text className="font-semibold">{session?.user.name}</Text>
-            !
-          </Text>
-          <Text className="text-muted-foreground">
-            Logged in as {session?.user.email}
-          </Text>
+      <View className="flex-1 bg-background">
+        <View
+          className="border-b border-border bg-card px-4 pb-3"
+          style={{ paddingTop: insets.top + 8 }}
+        >
+          <Segmented
+            label="Dashboard sections"
+            role="tablist"
+            value={tab}
+            options={TABS}
+            onChange={setTab}
+            stacked
+            renderIcon={(value, selected) => {
+              const Icon = TABS.find((item) => item.value === value)!.icon;
+              return (
+                <Icon
+                  size={18}
+                  className={
+                    selected ? 'text-foreground' : 'text-muted-foreground'
+                  }
+                />
+              );
+            }}
+          />
         </View>
-        <DeckList />
-        <View className="gap-2 pt-4">
-          <ThemeToggle />
-          <Button onPress={onLogout}>
-            <Text>Log out</Text>
-          </Button>
-        </View>
-      </ScrollView>
+        {/* Settings holds the only text input on this screen; without this
+            the first tap on Save only dismisses the keyboard. */}
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-4 p-6"
+          keyboardShouldPersistTaps="handled"
+        >
+          {tab === 'overview' && (
+            <View className="gap-4">
+              {/* The email stays in the Settings account header; the first
+                  screen is the one others see over your shoulder. */}
+              <Text className="text-base">
+                Welcome,{' '}
+                <Text className="font-semibold">{session?.user.name}</Text>!
+              </Text>
+              {manager ? (
+                <ReviewOverview
+                  manager={manager}
+                  userId={session?.user.id}
+                  onChooseDeck={() => setTab('library')}
+                />
+              ) : (
+                <ActivityIndicator accessibilityLabel="Loading review overview" />
+              )}
+            </View>
+          )}
+          {tab === 'library' && <DeckList />}
+          {tab === 'settings' && <Settings />}
+        </ScrollView>
+      </View>
     </RequireSession>
+  );
+}
+
+function ReviewOverview({
+  manager,
+  userId,
+  onChooseDeck,
+}: {
+  manager: DatabaseManager;
+  userId: string | undefined;
+  onChooseDeck: () => void;
+}) {
+  const router = useRouter();
+  const { target, dueCount, isLoading, error } = useReviewOverview(
+    manager,
+    userId ? loadLastReviewDeckId(userId) : null,
+  );
+
+  // reviewTarget (#425) picks the deck; the library only when it is unclear.
+  const startReview = () => {
+    if (target === 'nothing-due') return;
+    if (target === 'library') onChooseDeck();
+    else router.push(`/review/${target}`);
+  };
+
+  return (
+    <View className="gap-3">
+      <Text className={error ? 'text-destructive' : 'text-muted-foreground'}>
+        {error
+          ? `Could not load cards due: ${error.message}`
+          : isLoading
+            ? 'Loading cards due…'
+            : `${dueCount} ${dueCount === 1 ? 'card' : 'cards'} due`}
+      </Text>
+      {/* The same button as each library row, so the two read as one action. */}
+      <Button
+        variant="outline"
+        size="lg"
+        // 48 high, Android's touch target size.
+        className="h-12 sm:h-12"
+        loading={isLoading}
+        disabled={!!error || target === 'nothing-due'}
+        onPress={startReview}
+      >
+        <BookOpenIcon size={18} className="text-foreground" />
+        <Text>Start Review</Text>
+      </Button>
+    </View>
   );
 }

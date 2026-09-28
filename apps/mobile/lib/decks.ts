@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { DatabaseManager } from '@remelondb/core';
 import { useDatabase, useQuery } from '@remelondb/core/react';
 import {
+  countCardsPerDeck,
   getDecksQuery,
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
@@ -11,7 +12,6 @@ import {
   type UserNoteDeckRecord,
   type UserProfileRecord,
 } from '@repo/offline-db';
-import { countCardsPerDeck } from './card-counts';
 import { deckWrites } from './deck-writes';
 import { useSessionDatabase } from './database-provider';
 

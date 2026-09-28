@@ -14,7 +14,9 @@
 :root {
   --background: 255 255 255;
   --foreground: 10 10 10;
-  --card: 255 255 255;
+  /* The muted tone, so a card reads as a panel against the white page.
+     Dark mode gets that separation from its lighter card tone already. */
+  --card: 245 245 245;
   --card-foreground: 10 10 10;
   --primary: 23 23 23;
   --primary-foreground: 250 250 250;

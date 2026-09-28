@@ -62,6 +62,9 @@ jobs:
       - name: Run Linter
         run: pnpm lint
 
+      - name: Typecheck
+        run: pnpm typecheck
+
       - name: Check Formatting
         run: pnpm format:check
 
@@ -70,6 +73,18 @@ jobs:
 
       - name: Check Dependencies
         run: pnpm check:deps
+
+      - name: Build Schema Check Dependencies
+        run: pnpm build:db-docs-deps
+
+      - name: Check Schema Freshness
+        run: node scripts/check-schema-fresh.mjs
+
+      - name: Check Database Docs
+        run: node scripts/check-db-docs.mjs
+
+      - name: Test Database Documentation Checks
+        run: node --test scripts/schema-docs.test.mjs
 
       - name: Run Unit Tests
         run: pnpm test

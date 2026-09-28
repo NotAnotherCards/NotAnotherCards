@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   BADGE_CODES,
@@ -17,6 +18,7 @@ import {
   userCards,
   userNotes,
   userProfiles,
+  userBadges,
 } from '../sync/schema';
 import { syncScopeLockKey } from '../sync/sync-store';
 import { badgeAwards, dailyChallengeCompletions } from './schema';
@@ -48,7 +50,8 @@ export class GamificationService {
         sql`select pg_advisory_xact_lock(${syncScopeLockKey(userId).toString()})`,
       );
 
-      return this.refreshAwardsInTransaction(tx, userId, now);
+      const { me } = await this.refreshAwardsInTransaction(tx, userId, now);
+      return me;
     });
   }
 
@@ -56,13 +59,17 @@ export class GamificationService {
     tx: AppTransaction,
     userId: string,
     now: number = Date.now(),
-  ): Promise<GamificationMe> {
+  ): Promise<{
+    me: GamificationMe;
+    newlyUnlocked: (typeof userBadges.$inferSelect)[];
+  }> {
     const records = await this.activityRecords(tx, userId);
     const summary = selectActivitySummary({ ...records, now });
     const awardedAt = new Date(now);
+    let newlyUnlocked: (typeof userBadges.$inferSelect)[] = [];
 
     if (summary.eligibleBadgeCodes.length > 0) {
-      await tx
+      const inserted = await tx
         .insert(badgeAwards)
         .values(
           summary.eligibleBadgeCodes.map((badgeCode) => ({
@@ -71,7 +78,28 @@ export class GamificationService {
             awardedAt,
           })),
         )
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning({ badgeCode: badgeAwards.badgeCode });
+
+      if (inserted.length > 0) {
+        newlyUnlocked = await tx
+          .insert(userBadges)
+          .values(
+            inserted.map(({ badgeCode }) => ({
+              id: randomUUID(),
+              rev: sql<number>`nextval('remelon_rev')`,
+              userId,
+              badgeId: badgeCode,
+              unlockedAt: now,
+              createdAt: now,
+              updatedAt: now,
+            })),
+          )
+          .onConflictDoNothing({
+            target: [userBadges.userId, userBadges.badgeId],
+          })
+          .returning();
+      }
     }
 
     const completedChallenges = selectDailyChallengeHistory(
@@ -127,7 +155,7 @@ export class GamificationService {
       ]),
     );
 
-    return {
+    const me = {
       utcDate: summary.utcDate,
       points: summary.reviewPoints,
       reviewCount: summary.reviewCount,
@@ -147,6 +175,7 @@ export class GamificationService {
         };
       }),
     };
+    return { me, newlyUnlocked };
   }
 
   async leaderboard(
