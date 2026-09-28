@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +23,7 @@ export function TotpCodeInput({
   errorId,
   autoFocus = false,
 }: TotpCodeInputProps) {
+  const { t } = useTranslation();
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
   const digits = Array.from(
     { length: CODE_LENGTH },
@@ -56,7 +58,7 @@ export function TotpCodeInput({
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-medium">
-        Six-digit authentication code
+        {t('auth.two_factor.totp_legend')}
       </legend>
       <div
         className="grid grid-cols-6 gap-1.5 sm:gap-2"
@@ -120,7 +122,10 @@ export function TotpCodeInput({
             inputMode="numeric"
             pattern="[0-9]*"
             autoComplete={index === 0 ? 'one-time-code' : 'off'}
-            aria-label={`Digit ${index + 1} of ${CODE_LENGTH}`}
+            aria-label={t('auth.two_factor.totp_digit_aria', {
+              digit: index + 1,
+              total: CODE_LENGTH,
+            })}
             aria-invalid={Boolean(errorId)}
             aria-describedby={errorId}
             disabled={disabled}

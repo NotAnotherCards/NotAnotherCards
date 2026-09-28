@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { User, Settings as SettingsIcon, Shield, Database } from 'lucide-react';
@@ -9,6 +10,7 @@ import { ImportExport } from './ImportExport';
 import { useStore } from '@/hooks/useStore';
 
 export function Settings() {
+  const { t } = useTranslation();
   const { data: session } = authClient.useSession();
   const { profile } = useStore();
   const [activeSubTab, setActiveSubTab] = useState<
@@ -46,7 +48,7 @@ export function Settings() {
               className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
             >
               <User className="size-4" />
-              Profile & Languages
+              {t('dashboard.settings.tabs.profile_languages')}
             </Button>
             <Button
               type="button"
@@ -55,7 +57,7 @@ export function Settings() {
               className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
             >
               <SettingsIcon className="size-4" />
-              Preferences
+              {t('dashboard.settings.tabs.preferences')}
             </Button>
             <Button
               type="button"
@@ -64,7 +66,7 @@ export function Settings() {
               className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
             >
               <Shield className="size-4" />
-              Security
+              {t('dashboard.settings.tabs.security')}
             </Button>
             <Button
               type="button"
@@ -73,7 +75,7 @@ export function Settings() {
               className="w-full justify-start gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200"
             >
               <Database className="size-4" />
-              Data Import / Export
+              {t('dashboard.settings.tabs.import_export')}
             </Button>
           </div>
         </div>

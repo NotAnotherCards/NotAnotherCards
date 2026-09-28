@@ -12,7 +12,7 @@ const compat = new FlatCompat({
 
 module.exports = defineConfig([
   {
-    ignores: ['apps/web/src/routeTree.gen.ts'],
+    ignores: ['apps/web/src/routeTree.gen.ts', '**/dist/**'],
   },
   {
     extends: compat.extends('@repo/eslint-config/index.js'),

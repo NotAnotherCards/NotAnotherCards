@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Deck } from '@/hooks/useStore';
 import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
 import { Button } from '@/components/ui/button';
@@ -9,11 +10,12 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
-import { noteTypeRegistry } from '@repo/offline-db';
+import { noteTypeRegistry, WORD_NOTE_TYPE } from '@repo/offline-db';
 
 interface DeckCardProps {
   deck: Deck;
   totalCards: number;
+  totalWords?: number;
   dueCount: number;
   onSelectDeck: (deckId: string) => void;
   onStartReview: (deckId: string) => void;
@@ -24,6 +26,7 @@ interface DeckCardProps {
 export function DeckCard({
   deck,
   totalCards,
+  totalWords,
   dueCount,
   onSelectDeck,
   onStartReview,
@@ -36,6 +39,7 @@ export function DeckCard({
   // stays: a tombstone carries ids only, so there is nothing to lose, and it
   // is the only way to be rid of a deck this client cannot use.
   const isKnownType = deck.note_type in noteTypeRegistry;
+  const { t } = useTranslation();
 
   return (
     <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
@@ -65,7 +69,7 @@ export function DeckCard({
                 size="icon"
                 className="size-7 rounded-lg cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
                 onClick={() => onEditDeck(deck)}
-                title="Edit Deck Details"
+                title={t('deck.card.actions.edit')}
               >
                 <Edit className="size-3.5" />
               </Button>
@@ -75,23 +79,40 @@ export function DeckCard({
               size="icon"
               className="size-7 rounded-lg cursor-pointer hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
               onClick={() => onDeleteDeck(deck.id)}
-              title="Delete Deck"
+              title={t('deck.card.actions.delete')}
             >
               <Trash2 className="size-3.5" />
             </Button>
           </div>
         </div>
         <CardDescription className="text-xs line-clamp-2 min-h-8 mt-1">
-          {deck.description || 'No description provided.'}
+          {deck.description || t('deck.card.no_description')}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* Card count tags */}
-        <div className="grid grid-cols-2 divide-x divide-border/40 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center">
+        <div
+          className={`grid divide-x divide-border/40 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center ${
+            deck.note_type === WORD_NOTE_TYPE ? 'grid-cols-3' : 'grid-cols-2'
+          }`}
+        >
+          {deck.note_type === WORD_NOTE_TYPE && (
+            <div>
+              <div className="text-xs text-muted-foreground font-medium">
+                Total Words
+              </div>
+              <span
+                className="text-sm font-bold text-foreground"
+                data-testid="total-words-badge"
+              >
+                {totalWords ?? 0}
+              </span>
+            </div>
+          )}
           <div>
             <div className="text-xs text-muted-foreground font-medium">
-              Total Cards
+              {t('deck.card.total_cards', 'Total Cards')}
             </div>
             <span
               className="text-sm font-bold text-foreground"
@@ -101,7 +122,9 @@ export function DeckCard({
             </span>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground font-medium">Due</div>
+            <div className="text-xs text-muted-foreground font-medium">
+              {t('deck.card.due')}
+            </div>
             {/* A deck with work reads at a glance; zero stays quiet. */}
             <span
               className={
@@ -123,7 +146,7 @@ export function DeckCard({
             size="sm"
           >
             <FolderOpen className="size-3.5" />
-            Manage Cards
+            {t('deck.card.actions.manage_cards', 'Manage Cards')}
           </Button>
           <Button
             variant="outline"
@@ -132,7 +155,7 @@ export function DeckCard({
             size="sm"
           >
             <BookOpen className="size-3.5" />
-            Start Review
+            {t('deck.card.actions.start_review', 'Start Review')}
           </Button>
         </div>
       </CardContent>
