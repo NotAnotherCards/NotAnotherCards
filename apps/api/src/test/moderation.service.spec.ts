@@ -20,7 +20,8 @@ describe('ModerationService', () => {
     notes: cards.map((card) => ({
       id: `note-${card.id}`,
       cardIds: [card.id],
-      text: `${card.front}\n${card.back}`,
+      fields: { front: `${card.front}\n${card.back}` },
+      languages: {},
     })),
   });
   const manyCards = (count: number) =>
@@ -33,7 +34,9 @@ describe('ModerationService', () => {
 
   const serviceWith = (values: Record<string, string | undefined>) =>
     new ModerationService({
-      get: jest.fn((key: string) => values[key]),
+      get: jest.fn((key: string) =>
+        key === 'MODERATION_CONCURRENCY' ? (values[key] ?? '1') : values[key],
+      ),
     } as unknown as ConfigService);
 
   const response = (content: string) =>
@@ -116,7 +119,14 @@ describe('ModerationService', () => {
     await expect(
       serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check({
         deckId: 'deck',
-        notes: [{ id: 'empty-note', cardIds: [], text: 'Text' }],
+        notes: [
+          {
+            id: 'empty-note',
+            cardIds: [],
+            fields: { front: 'Text' },
+            languages: {},
+          },
+        ],
       }),
     ).resolves.toEqual({
       ok: false,
@@ -217,14 +227,8 @@ describe('ModerationService', () => {
   });
 
   (process.env.MODERATION_LIVE_API_BASE ? it : it.skip).each([
-    [
-      'word: gordo\ntranslation: fat\nexample: El gato está gordo.\nexample_translation: The cat is fat.\nVocabulary note from a Spanish course for English speakers.',
-      'warn',
-    ],
-    [
-      'You worthless idiot, I will kill you. This is a threat addressed to a person, not vocabulary study.',
-      'confirm',
-    ],
+    ['gordo', 'warn'],
+    ['I will kill you.', 'confirm'],
   ])(
     'checks the production JSON judge request against a live model (%s)',
     async (text, expected) => {
@@ -240,7 +244,14 @@ describe('ModerationService', () => {
         AI_DEFAULT_MODEL: process.env.MODERATION_LIVE_JUDGE_MODEL,
       }).check({
         deckId: 'live-judge',
-        notes: [{ id: 'note', cardIds: ['card'], text }],
+        notes: [
+          {
+            id: 'note',
+            cardIds: ['card'],
+            fields: { word: text },
+            languages: { native: 'English', target: 'Spanish' },
+          },
+        ],
       });
       expect(result.results[1]).toMatchObject({
         verdict: expected === 'warn' ? 'controversial' : 'unsafe',
@@ -251,56 +262,123 @@ describe('ModerationService', () => {
     15_000,
   );
 
-  it('downgrades an explicit false positive and reports the reason on every sibling', async () => {
+  it('screens each text once, maps all siblings, and restricts judge context', async () => {
     const mockFetch = jest.mocked(global.fetch);
     mockFetch
       .mockResolvedValueOnce(
-        response('Safety: Unsafe\nCategories: Unethical Acts'),
+        response('Safety: Unsafe Categories: Unethical Acts'),
       )
       .mockResolvedValueOnce(
-        response(
-          JSON.stringify({
-            verdict: 'warn',
-            reason: 'Ordinary Spanish vocabulary, not an insult.',
-          }),
-        ),
-      );
-    const text = 'Vocabulary note. {"word":"gordo","translation":"fat"}';
+        response(JSON.stringify({ verdict: 'warn', reason: 'Vocabulary.' })),
+      )
+      .mockResolvedValue(response('Safety: Safe'));
     const result = await serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-      AI_DEFAULT_MODEL: 'configured-judge',
     }).check({
-      deckId: 'spanish',
-      notes: [{ id: 'note', cardIds: ['forward', 'reverse', 'example'], text }],
+      deckId: 'deck',
+      notes: [
+        {
+          id: 'n',
+          cardIds: ['a', 'b'],
+          fields: {
+            word: 'fat',
+            translation: 'gordo',
+            example: 'x'.repeat(41),
+          },
+          languages: { native: 'English', target: 'Spanish' },
+        },
+      ],
     });
-    expect(result.ok).toBe(true);
-    expect(result.flagged).toEqual([]);
     expect(result.warnings).toEqual(
-      ['forward', 'reverse', 'example'].map((cardId) => ({
-        cardId,
-        reason: 'Ordinary Spanish vocabulary, not an insult.',
-      })),
+      ['a', 'b'].map((cardId) => ({ cardId, reason: 'Vocabulary.' })),
     );
-    expect(result.results).toHaveLength(6);
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledTimes(4);
     const body = JSON.parse(mockFetch.mock.calls[1][1]?.body as string) as {
-      model: string;
-      messages: { role: string; content: string }[];
+      messages: { content: string }[];
     };
-    expect(body.model).toBe('configured-judge');
-    expect(body.messages[0].role).toBe('system');
     expect(JSON.parse(body.messages[1].content)).toEqual({
       category: 'Unethical Acts',
-      study_content: text,
+      study_content: 'fat',
+      context: {
+        fields: { translation: 'gordo' },
+        languages: { native: 'English', target: 'Spanish' },
+      },
     });
-    expect(result.results).toContainEqual({
-      cardId: 'reverse',
-      classifier: 'configured-judge',
-      verdict: 'controversial',
-      categories: null,
-    });
+    const texts = [0, 2, 3].map(
+      (i) =>
+        (
+          JSON.parse(mockFetch.mock.calls[i][1]?.body as string) as {
+            messages: { content: string }[];
+          }
+        ).messages[0].content,
+    );
+    expect(texts).toEqual(['fat', 'gordo', 'x'.repeat(41)]);
   });
 
+  it('never judges a refused text longer than forty characters', async () => {
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValue(response('Safety: Unsafe Categories: Hate'));
+    const result = await serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+    }).check(publishInput([{ id: 'a', front: 'x'.repeat(41), back: '' }]));
+    expect(result.ok).toBe(false);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not let a permissive context override another containing note', async () => {
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce(response('Safety: Unsafe Categories: Hate'))
+      .mockResolvedValueOnce(
+        response(JSON.stringify({ verdict: 'warn', reason: 'Vocabulary.' })),
+      )
+      .mockResolvedValueOnce(
+        response(JSON.stringify({ verdict: 'confirm', reason: 'Abuse.' })),
+      );
+    const result = await serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+    }).check({
+      deckId: 'd',
+      notes: [
+        {
+          id: 'a',
+          cardIds: ['a'],
+          fields: { word: 'fat' },
+          languages: { target: 'Spanish' },
+        },
+        { id: 'b', cardIds: ['b'], fields: { word: 'fat' }, languages: {} },
+      ],
+    });
+    expect(result.flagged.map((row) => row.cardId)).toEqual(['a', 'b']);
+    expect(result.warnings).toEqual([]);
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('bounds the worker pool and deduplicates repeated text across notes', async () => {
+    let active = 0,
+      peak = 0;
+    jest.mocked(global.fetch).mockImplementation(async () => {
+      active++;
+      peak = Math.max(peak, active);
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      active--;
+      return response('Safety: Safe');
+    });
+    const notes = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i),
+      cardIds: [String(i)],
+      fields: { word: String(i % 10) },
+      languages: {},
+    }));
+    const result = await serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+      MODERATION_CONCURRENCY: '8',
+    }).check({ deckId: 'd', notes });
+    expect(peak).toBe(8);
+    expect(global.fetch).toHaveBeenCalledTimes(10);
+    expect(result.results).toHaveLength(20);
+  });
   it.each([
     ['invalid JSON', 'not json'],
     ['unknown verdict', '{"verdict":"safe","reason":"ok"}'],
@@ -702,7 +780,7 @@ describe('ModerationService', () => {
     });
   });
 
-  it('sends one non-streaming moderation request per note', async () => {
+  it('sends each classifier text unchanged in a non-streaming request', async () => {
     const mockFetch = jest.mocked(global.fetch);
     mockFetch.mockResolvedValue(response('Safety: Safe'));
 

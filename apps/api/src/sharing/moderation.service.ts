@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
-import type { ModerationNote } from './moderation-context';
+import {
+  isShortText,
+  moderationTexts,
+  type ModerationNote,
+} from './moderation-context';
 import judgePolicy from './moderation-judge-policy.json';
 
 const judgeVerdict = z.strictObject({
@@ -164,26 +168,31 @@ export class ModerationService {
         results: [],
       };
     }
+    const items = moderationTexts(input.notes);
+    const configuredPool = Number(
+      this.config.get('MODERATION_CONCURRENCY') ?? 8,
+    );
+    const pool =
+      Number.isInteger(configuredPool) &&
+      configuredPool >= 1 &&
+      configuredPool <= 8
+        ? configuredPool
+        : 8;
     const verdict = await this.checkWithModels(
       {
         deckId: input.deckId,
-        items: input.notes.map((note) => ({
-          id: note.id,
-          text: note.text,
-        })),
+        items,
       },
       [FAST_CLASSIFIER],
       false,
       true,
+      pool,
     );
-    const siblings = new Map(
-      input.notes.map((note) => [note.id, note.cardIds]),
-    );
-    // Keep the existing card-based response and audit contract for clients.
-    const expand = <T extends { cardId: string }>(entries: T[]): T[] =>
-      entries.flatMap((entry) =>
-        (siblings.get(entry.cardId) ?? [entry.cardId]).map((cardId) => ({
-          ...entry,
+    const cardsByText = new Map(items.map((item) => [item.id, item.cardIds]));
+    const expand = <T extends { cardId: string }>(rows: T[]): T[] =>
+      rows.flatMap((row) =>
+        (cardsByText.get(row.cardId) ?? []).map((cardId) => ({
+          ...row,
           cardId,
         })),
       );
@@ -216,10 +225,14 @@ export class ModerationService {
   }
 
   private async checkWithModels(
-    input: { deckId: string; items: { id: string; text: string }[] },
+    input: {
+      deckId: string;
+      items: { id: string; text: string; contexts?: string[] }[];
+    },
     classifiers: Classifier[],
     identifyClassifier: boolean,
     judgeFlagged = false,
+    concurrency = 1,
   ): Promise<ModerationVerdict> {
     if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
       return { ok: true, flagged: [], warnings: [], results: [] };
@@ -258,7 +271,11 @@ export class ModerationService {
       // Each required classifier gets an independent budget. A hung fast gate
       // must not consume the thorough classifier's opportunity to decide.
       const deadline = Date.now() + moderationDeadlineMs(input.items.length);
-      for (const card of input.items) {
+      const checkItem = async (index: number) => {
+        const card = input.items[index];
+        const flagged: ModerationVerdict['flagged'] = [];
+        const warnings: ModerationVerdict['warnings'] = [];
+        const results: ModerationClassifierResult[] = [];
         try {
           const content = await this.complete(
             {
@@ -287,18 +304,31 @@ export class ModerationService {
           if (parsed.grade === 'unsafe') {
             // A judge error must retain the known refusal, not erase it.
             let warning: string | undefined;
-            if (judgeFlagged) {
+            if (judgeFlagged && isShortText(card.text)) {
               const model =
                 this.config.get<string>('AI_DEFAULT_MODEL') ?? 'gemma4';
               try {
-                warning = await this.judge(card.text, finding.reason, deadline);
-                results.push({
-                  cardId: card.id,
-                  classifier: model,
-                  verdict: warning ? 'controversial' : 'unsafe',
-                  categories: null,
-                });
+                for (const context of card.contexts ?? ['{}']) {
+                  const opinion = await this.judge(
+                    card.text,
+                    finding.reason,
+                    deadline,
+                    context,
+                  );
+                  results.push({
+                    cardId: card.id,
+                    classifier: model,
+                    verdict: opinion ? 'controversial' : 'unsafe',
+                    categories: null,
+                  });
+                  if (!opinion) {
+                    warning = undefined;
+                    break;
+                  }
+                  warning = opinion;
+                }
               } catch (error) {
+                warning = undefined;
                 results.push({
                   cardId: card.id,
                   classifier: model,
@@ -323,6 +353,25 @@ export class ModerationService {
             error: code,
           });
         }
+        return { flagged, warnings, results };
+      };
+      const outcomes: Awaited<ReturnType<typeof checkItem>>[] = [];
+      let next = 0;
+      await Promise.all(
+        Array.from(
+          { length: Math.min(concurrency, input.items.length) },
+          async () => {
+            while (next < input.items.length) {
+              const index = next++;
+              outcomes[index] = await checkItem(index);
+            }
+          },
+        ),
+      );
+      for (const outcome of outcomes) {
+        flagged.push(...outcome.flagged);
+        warnings.push(...outcome.warnings);
+        results.push(...outcome.results);
       }
     }
 
@@ -348,6 +397,7 @@ export class ModerationService {
     text: string,
     category: string,
     deadline: number,
+    context: string,
   ): Promise<string | undefined> {
     const content = await this.complete(
       {
@@ -367,7 +417,11 @@ export class ModerationService {
           { role: 'system', content: judgePolicy.system },
           {
             role: 'user',
-            content: JSON.stringify({ category, study_content: text }),
+            content: JSON.stringify({
+              category,
+              study_content: text,
+              context: JSON.parse(context) as unknown,
+            }),
           },
         ],
       },

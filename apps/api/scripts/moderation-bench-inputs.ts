@@ -4,12 +4,19 @@
 import { readFileSync } from 'node:fs';
 import { BASIC_FRONT_BACK_TEMPLATE_KEY, compileNote } from '@repo/offline-db';
 import { ENGLISH, SPANISH } from '@repo/schemas';
-import { moderationNotes } from '../src/sharing/moderation-context';
+import {
+  moderationNotes,
+  type ModerationNote,
+} from '../src/sharing/moderation-context';
 import type { PublishedContent } from '../src/sharing/schema';
 
 const [mode, path] = process.argv.slice(2);
-const emit = (id: string, label: string, text: string) =>
-  process.stdout.write(`${JSON.stringify({ id, label, text })}\n`);
+const emit = (
+  id: string,
+  label: string,
+  note: ModerationNote,
+  cards: PublishedContent['cards'],
+) => process.stdout.write(`${JSON.stringify({ id, label, note, cards })}\n`);
 
 // Paired probes: same first ten harmful-labelled items with and without an
 // appended instruction. These are attack data, never part of the judge policy.
@@ -61,7 +68,7 @@ if (
           target_language_id: SPANISH,
         })
       : null;
-    const [note] = moderationNotes({
+    const snapshot = {
       nativeLanguageId: word ? ENGLISH : null,
       targetLanguageId: word ? SPANISH : null,
       content: {
@@ -70,8 +77,15 @@ if (
             id: item.id,
             note_type: word ? 'word' : 'basic',
             fields_version: 1,
-            fields_json:
-              compiled?.fieldsJson ?? JSON.stringify({ front: text, back: '' }),
+            fields_json: compiled
+              ? JSON.stringify({
+                  ...(JSON.parse(compiled.fieldsJson) as Record<
+                    string,
+                    unknown
+                  >),
+                  example: text,
+                })
+              : JSON.stringify({ front: text, back: '' }),
             additional_content: null,
           },
         ],
@@ -93,8 +107,9 @@ if (
               },
             ],
       },
-    });
-    emit(item.id, item.label, note.text);
+    };
+    const [note] = moderationNotes(snapshot);
+    emit(item.id, item.label, note, snapshot.content.cards);
   }
 } else if (mode === 'deck') {
   const backup = JSON.parse(readFileSync(path, 'utf8')) as {
@@ -135,7 +150,14 @@ if (
     content,
     nativeLanguageId: backup.decks[0].native_language,
     targetLanguageId: backup.decks[0].target_language,
-  }).forEach((note, index) => emit(`note-${index}`, 'safe', note.text));
+  }).forEach((note) =>
+    emit(
+      note.id,
+      'safe',
+      note,
+      content.cards.filter((card) => card.note_id === note.id),
+    ),
+  );
 } else {
   throw new Error(
     'usage: moderation-bench-inputs.ts corpus|word-corpus|injection|injection-control|deck <path>',

@@ -5,17 +5,22 @@ import type { PublishedContent } from './schema';
 export interface ModerationNote {
   id: string;
   cardIds: string[];
-  text: string;
+  fields: Record<string, string>;
+  languages: { native?: string; target?: string };
 }
 
-/** Use the immutable publish snapshot, never client-supplied prompt context. */
+export const isShortText = (text: string) => Array.from(text).length <= 40;
+
+/** Snapshot values only. Preserve each original string for the classifier. */
 export function moderationNotes(snapshot: {
   nativeLanguageId: string | null;
   targetLanguageId: string | null;
   content: PublishedContent;
 }): ModerationNote[] {
-  const native = languageFor(snapshot.nativeLanguageId)?.name;
-  const target = languageFor(snapshot.targetLanguageId)?.name;
+  const languages = {
+    native: languageFor(snapshot.nativeLanguageId)?.name,
+    target: languageFor(snapshot.targetLanguageId)?.name,
+  };
   const cardsByNote = new Map<string, PublishedContent['cards']>();
   for (const card of snapshot.content.cards) {
     const cards = cardsByNote.get(card.note_id) ?? [];
@@ -25,36 +30,24 @@ export function moderationNotes(snapshot: {
   const notes = snapshot.content.notes.map((note) => {
     const cards = cardsByNote.get(note.id) ?? [];
     cardsByNote.delete(note.id);
-    let compiled: ReturnType<typeof compileNote>;
+    const fields: Record<string, string> = {};
+    let differingCards = cards;
     try {
-      compiled = compileNote(
-        note.note_type,
-        note.fields_version,
-        JSON.parse(note.fields_json),
-      );
-    } catch {
-      // Newer clients and legacy/corrupt fields must not bypass screening or
-      // crash publication. The snapshot's rendered text remains authoritative.
-      return {
-        id: note.id,
-        cardIds: cards.map((card) => card.id),
-        text: [
-          ...cards.map(({ front, back }) => `${front}\n${back}`),
-          note.additional_content,
-        ]
-          .filter(Boolean)
-          .join('\n'),
-      };
-    }
-    const fields = JSON.parse(compiled.fieldsJson) as Record<string, unknown>;
-    delete fields.image;
-    delete fields.word_audio;
-    delete fields.native_language_id;
-    delete fields.target_language_id;
-    // Legacy cards can differ from the current templates. Check that visible
-    // text too: trusting fields alone would leave a publish bypass.
-    const differingCards = cards
-      .filter(
+      const raw = JSON.parse(note.fields_json) as Record<string, unknown>;
+      const compiled = compileNote(note.note_type, note.fields_version, raw);
+      for (const [key, value] of Object.entries(raw)) {
+        if (
+          typeof value === 'string' &&
+          ![
+            'image',
+            'word_audio',
+            'native_language_id',
+            'target_language_id',
+          ].includes(key)
+        )
+          fields[key] = value;
+      }
+      differingCards = cards.filter(
         (card) =>
           !compiled.cards.some(
             (rendered) =>
@@ -62,41 +55,71 @@ export function moderationNotes(snapshot: {
               rendered.front === card.front &&
               rendered.back === card.back,
           ),
-      )
-      .map(({ front, back }) => ({ front, back }));
-    // Do not label arbitrary basic-card prose as educational. That framing
-    // reduced harmful-corpus recall even before the judge ran. Word fields
-    // supply actual vocabulary context, including examples and languages.
-    const text =
-      note.note_type === 'basic'
-        ? [fields.front, fields.back].filter(Boolean).join('\n')
-        : Object.entries(fields)
-            .map(([key, value]) => `${key}: ${String(value)}`)
-            .join('\n');
-    const context =
-      note.note_type === 'word' && native && target
-        ? `Vocabulary note from a ${target} course for ${native} speakers.`
-        : '';
+      );
+    } catch {
+      // Unknown/newer types and corrupt fields fall back to rendered text.
+    }
+    for (const [index, card] of differingCards.entries()) {
+      fields[`card_${index}_front`] = card.front;
+      fields[`card_${index}_back`] = card.back;
+    }
+    if (note.additional_content)
+      fields.additional_content = note.additional_content;
     return {
       id: note.id,
       cardIds: cards.map((card) => card.id),
-      text: [
-        text,
-        note.additional_content,
-        ...differingCards.map(({ front, back }) => `${front}\n${back}`),
-        context,
-      ]
-        .filter(Boolean)
-        .join('\n'),
+      fields,
+      languages,
     };
   });
-  // Do not silently omit cards when a snapshot is missing their parent note.
   for (const [id, cards] of cardsByNote) {
+    const fields: Record<string, string> = {};
+    cards.forEach((card, index) => {
+      fields[`card_${index}_front`] = card.front;
+      fields[`card_${index}_back`] = card.back;
+    });
     notes.push({
       id,
       cardIds: cards.map((card) => card.id),
-      text: cards.map(({ front, back }) => `${front}\n${back}`).join('\n'),
+      fields,
+      languages,
     });
   }
   return notes;
+}
+
+/** A shared text is classified once, but every containing note must clear it. */
+export function moderationTexts(notes: ModerationNote[]) {
+  const texts = new Map<
+    string,
+    { id: string; text: string; cardIds: Set<string>; contexts: Set<string> }
+  >();
+  for (const note of notes) {
+    for (const text of Object.values(note.fields)) {
+      if (!text.trim()) continue;
+      const item = texts.get(text) ?? {
+        id: `text-${texts.size}`,
+        text,
+        cardIds: new Set<string>(),
+        contexts: new Set<string>(),
+      };
+      note.cardIds.forEach((id) => item.cardIds.add(id));
+      item.contexts.add(
+        JSON.stringify({
+          fields: Object.fromEntries(
+            Object.entries(note.fields).filter(
+              ([, value]) => value !== text && isShortText(value),
+            ),
+          ),
+          languages: note.languages,
+        }),
+      );
+      texts.set(text, item);
+    }
+  }
+  return [...texts.values()].map((item) => ({
+    ...item,
+    cardIds: [...item.cardIds],
+    contexts: [...item.contexts],
+  }));
 }

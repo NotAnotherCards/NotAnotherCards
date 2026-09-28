@@ -133,7 +133,14 @@ async function main() {
         } else {
           const result = await service.check({
             deckId: item.id,
-            notes: [{ id: item.id, cardIds: [item.id], text: item.text }],
+            notes: [
+              {
+                id: item.id,
+                cardIds: [item.id],
+                fields: { text: item.text },
+                languages: {},
+              },
+            ],
           });
           const fast = result.results[0];
           verdict = fast?.verdict;

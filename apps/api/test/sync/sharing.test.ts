@@ -428,7 +428,8 @@ describePostgres('deck sharing endpoints', () => {
       notes: cardIds.map((id, index) => ({
         id: noteIds[index],
         cardIds: [id],
-        text: `front ${index}\nback ${index}`,
+        fields: { front: `front ${index}`, back: `back ${index}` },
+        languages: {},
       })),
     });
     expect(await storedDeck('flagged')).toEqual(before);
@@ -510,14 +511,28 @@ describePostgres('deck sharing endpoints', () => {
         Response.json({ choices: [{ message: { content } }] });
       const fetch = vi
         .spyOn(globalThis, 'fetch')
-        .mockResolvedValueOnce(
-          completion('Safety: Unsafe\nCategories: Violent'),
-        )
-        .mockResolvedValueOnce(
-          completion(
-            JSON.stringify({ verdict: 'confirm', reason: 'Violates policy.' }),
-          ),
-        );
+        .mockImplementation((_url, init) => {
+          const body = JSON.parse(init?.body as string) as {
+            model: string;
+            messages: { content: string }[];
+          };
+          if (body.model !== 'moderation')
+            return Promise.resolve(
+              completion(
+                JSON.stringify({
+                  verdict: 'confirm',
+                  reason: 'Violates policy.',
+                }),
+              ),
+            );
+          return Promise.resolve(
+            completion(
+              body.messages[0].content === 'front 0'
+                ? 'Safety: Unsafe\nCategories: Violent'
+                : 'Safety: Safe',
+            ),
+          );
+        });
       const response = await post(userA, '/api/decks/fallback/publish').expect(
         422,
       );
@@ -534,8 +549,8 @@ describePostgres('deck sharing endpoints', () => {
         const request = JSON.parse(fetch.mock.calls[0][1]?.body as string) as {
           messages: { content: string }[];
         };
-        expect(request.messages[0].content).toBe('front 0\nback 0');
-        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(request.messages[0].content).toBe('front 0');
+        expect(fetch).toHaveBeenCalledTimes(3);
       }
       expect((await storedDeck('fallback')).visibility).toBe('private');
       expect(await db.select().from(publishedDecks)).toHaveLength(0);
@@ -558,31 +573,49 @@ describePostgres('deck sharing endpoints', () => {
         new Response(JSON.stringify({ choices: [{ message: { content } }] }));
       const fetch = vi
         .spyOn(globalThis, 'fetch')
-        .mockResolvedValueOnce(
-          completion('Safety: Unsafe\nCategories: Unethical Acts'),
-        );
-      if (decision === 'error')
-        fetch.mockRejectedValueOnce(new TypeError('judge offline'));
-      else
-        fetch.mockResolvedValueOnce(
-          completion(
-            JSON.stringify({
-              verdict: decision,
-              reason: 'A contextual explanation.',
-            }),
-          ),
-        );
+        .mockImplementation((_url, init) => {
+          const body = JSON.parse(init?.body as string) as {
+            model: string;
+            messages: { content: string }[];
+          };
+          if (body.model === 'moderation')
+            return Promise.resolve(
+              completion(
+                body.messages[0].content === 'front 0'
+                  ? 'Safety: Unsafe\nCategories: Unethical Acts'
+                  : 'Safety: Safe',
+              ),
+            );
+          if (decision === 'error') throw new TypeError('judge offline');
+          return Promise.resolve(
+            completion(
+              JSON.stringify({
+                verdict: decision,
+                reason: 'A contextual explanation.',
+              }),
+            ),
+          );
+        });
 
       const response = await post(userA, '/api/decks/judged/publish').expect(
         decision === 'warn' ? 200 : 422,
       );
-      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(fetch).toHaveBeenCalledTimes(3);
       const body = JSON.parse(fetch.mock.calls[0][1]?.body as string) as {
         messages: { content: string }[];
       };
-      expect(body.messages[0].content).toContain(
+      expect(body.messages[0].content).not.toContain(
         'German course for English speakers',
       );
+      const judgeCall = fetch.mock.calls.find(
+        (call) =>
+          (JSON.parse(call[1]?.body as string) as { model: string }).model !==
+          'moderation',
+      )!;
+      const judgeBody = JSON.parse(judgeCall[1]?.body as string) as {
+        messages: { content: string }[];
+      };
+      expect(judgeBody.messages[1].content).toContain('German');
       const snapshots = await db.select().from(publishedDecks);
       if (decision === 'warn') {
         const published = publishResponseSchema.parse(response.body);
@@ -600,9 +633,10 @@ describePostgres('deck sharing endpoints', () => {
         await get(userB, '/api/shared/decks/judged').expect(200);
       } else {
         expect(moderationRefusalSchema.parse(response.body).flagged).toEqual(
-          [...cardIds]
-            .sort()
-            .map((cardId) => ({ cardId, reason: 'Unethical Acts' })),
+          [...cardIds].sort().map((cardId) => ({
+            cardId,
+            reason: 'Unethical Acts',
+          })),
         );
         expect(snapshots).toHaveLength(0);
         expect((await storedDeck('judged')).visibility).toBe('private');
@@ -665,8 +699,7 @@ describePostgres('deck sharing endpoints', () => {
         '/api/decks/spanish-live/publish',
       ).expect(200);
       publishResponseSchema.parse(response.body);
-      expect(fetch.mock.calls.length).toBeGreaterThanOrEqual(513);
-      expect(fetch.mock.calls.length).toBeLessThan(1539);
+      expect(fetch.mock.calls.length).toBeGreaterThan(1539);
       const [snapshot] = await db.select().from(publishedDecks);
       expect(snapshot.cardCount).toBe(1539);
       expect(snapshot.content.notes).toHaveLength(513);
@@ -1250,7 +1283,7 @@ describePostgres('deck sharing endpoints', () => {
       };
       vi.spyOn(app.get(ModerationService), 'check').mockImplementationOnce(
         async ({ notes }) => {
-          expect(notes[0].text).toContain('front 0');
+          expect(notes[0].fields.front).toBe('front 0');
           const { table, row } = edits[changed];
           // A real push must finish while moderation is in progress. Holding
           // the owner's scope lock across the check would deadlock this test.

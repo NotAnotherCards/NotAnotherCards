@@ -80,16 +80,23 @@ chunk never arrived, so only the request cap stops a failing loop.
 
 ## Moderation at publish
 
-Only the publish endpoint calls it, once per note of the immutable deck
-snapshot, through the `moderation` gateway alias (Qwen3Guard). Word notes
-include their fields, examples and deck language names; ordinary basic-note
-text is not prefaced with an assertion that it is educational. Visible card
-text differing from the current note templates is included too. A word note
-with three sibling cards therefore needs one fast-classifier request.
+The publish endpoint screens each user-written text separately through the
+`moderation` gateway alias (Qwen3Guard): word-note fields, basic front/back,
+additional content, and legacy card faces differing from current templates.
+It sends the original string alone, without field labels, language names or
+educational framing. Exact duplicate strings are checked once per immutable
+deck snapshot and findings map to every card of every containing note.
+Unknown note types fall back to rendered faces; orphan cards are included.
+Malformed fields that cannot be safely redacted return HTTP 422.
 
-`Safe` passes and `Controversial` remains a warning. `Unsafe` goes to
-`AI_DEFAULT_MODEL` (default `gemma4`) with the same text enclosed in JSON
-data and a fixed policy. Only a strictly validated `warn` verdict with a
+`Safe` passes and `Controversial` remains a warning. Only `Unsafe` texts of
+40 Unicode code points or fewer go to `AI_DEFAULT_MODEL` (default `gemma4`).
+The judge gets the refused text, other named fields of at most 40 code
+points, and deck language names, enclosed in JSON data with a fixed policy.
+Long refused texts remain refused without a judge request. A shared text
+must be cleared in every distinct containing-note context; a warning in one
+context cannot override a refusal or error in another.
+Only a strictly validated `warn` verdict with a
 nonempty reason downgrades the refusal to a warning; `confirm`, timeouts,
 failed requests and invalid verdicts retain the refusal. Findings expand
 back to every sibling card so existing clients can show the affected rows.
@@ -97,8 +104,12 @@ The stored audit retains both the fast classifier's opinion and the judge's
 opinion (or error); warnings carry the judge's reason.
 
 An unavailable fast classifier still refuses publication with `moderation
-unavailable`. All calls share a budget of 5 s plus 1 s per note, capped at
-240 s, with at most 30 s per request. A judge cannot extend that deadline.
+unavailable`. A bounded worker pool defaults to 8; `MODERATION_CONCURRENCY`
+accepts integers 1–8 for measurement/tuning. All calls share a budget of 5 s
+plus 1 s per distinct text, capped at 240 s, with at most 30 s per request.
+A judge cannot extend that deadline. Requests queued past the deadline fail
+closed without further HTTP calls. See `docs/moderation-context.md` for
+the GX10 timings and any outstanding release blockers.
 Private decks are never checked. These calls do not use `AiGatewayService`.
 `MODERATION_ALLOW_ALL=1` bypasses the classifier, for tests and demos only.
 
