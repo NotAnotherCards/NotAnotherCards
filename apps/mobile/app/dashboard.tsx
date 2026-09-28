@@ -40,6 +40,7 @@ import { Settings } from '@/components/settings';
 import { InfoPanel } from '@/components/info-panel';
 import { SyncStatus } from '@/components/sync-status';
 import { useSessionDatabase } from '@/lib/database-provider';
+import { usePullToSync } from '@/lib/use-pull-to-sync';
 import { loadLastReviewDeckId } from '@/lib/review-preferences';
 import { useReviewOverview } from '@/lib/review';
 import { dailyGoals, useOverviewStats } from '@/lib/overview-stats';
@@ -59,7 +60,7 @@ const TABS: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
 export default function Dashboard() {
   const { data: session } = authClient.useSession();
   const { manager, syncController } = useSessionDatabase();
-  const [refreshing, setRefreshing] = useState(false);
+  const pullToSync = usePullToSync(syncController);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('overview');
 
@@ -97,20 +98,10 @@ export default function Dashboard() {
           contentContainerClassName="grow gap-4 p-6"
           keyboardShouldPersistTaps="handled"
           // A pull runs a sync; the lists update through their live queries.
-          // A failed sync is reported by the sync status, not here.
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={async () => {
-                setRefreshing(true);
-                try {
-                  await syncController?.syncNow();
-                } catch {
-                  // reported by the sync status
-                } finally {
-                  setRefreshing(false);
-                }
-              }}
+              refreshing={pullToSync.refreshing}
+              onRefresh={pullToSync.onRefresh}
             />
           }
         >

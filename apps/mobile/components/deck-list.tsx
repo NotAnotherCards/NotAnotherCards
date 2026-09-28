@@ -164,16 +164,19 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
           return (
             <Card key={deck.id} role="listitem">
               {/* The header opens the deck. Edit and delete sit in its row as
-              on web's card: pencil and trash, ghost icons, 48 touch targets. */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${deck.title}`}
-                onPress={() => router.push(`/deck/${deck.id}`)}
-              >
-                <CardHeader>
-                  {/* One row: the kind (named as web names it, the language
-                    pair for a word deck), the name, and the two icons. */}
-                  <View className="flex-row items-center gap-2">
+              on web's card: pencil and trash, ghost icons, 48 touch targets.
+              They are beside the opening press target, not inside it, so a
+              screen reader reaches each of the three on its own. */}
+              <CardHeader>
+                {/* One row: the kind (named as web names it, the language
+                  pair for a word deck), the name, and the two icons. */}
+                <View className="flex-row items-center gap-2">
+                  <Pressable
+                    className="flex-1 flex-row items-center gap-2"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${deck.title}`}
+                    onPress={() => router.push(`/deck/${deck.id}`)}
+                  >
                     <Text
                       accessibilityLabel={deckKind(deck)}
                       className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
@@ -183,37 +186,43 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                     <CardTitle className="flex-1" numberOfLines={1}>
                       {deck.title}
                     </CardTitle>
-                    {/* The glyphs sit inside 48 boxes; pulled right so the
+                  </Pressable>
+                  {/* The glyphs sit inside 48 boxes; pulled right so the
                       trash lines up with the content's edge, as on web. */}
-                    <View className="-mr-4 flex-row">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-12 w-12 sm:h-12 sm:w-12"
-                        disabled={pending}
-                        accessibilityLabel={`Edit ${deck.title}`}
-                        onPress={() => open({ kind: 'edit', deck })}
-                      >
-                        <SquarePenIcon
-                          size={20}
-                          className="text-muted-foreground"
-                        />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-12 w-12 sm:h-12 sm:w-12"
-                        disabled={pending}
-                        accessibilityLabel={`Delete ${deck.title}`}
-                        onPress={() => open({ kind: 'delete', deck })}
-                      >
-                        <TrashIcon
-                          size={20}
-                          className="text-muted-foreground"
-                        />
-                      </Button>
-                    </View>
+                  <View className="-mr-4 flex-row">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 sm:h-12 sm:w-12"
+                      disabled={pending}
+                      accessibilityLabel={`Edit ${deck.title}`}
+                      onPress={() => open({ kind: 'edit', deck })}
+                    >
+                      <SquarePenIcon
+                        size={20}
+                        className="text-muted-foreground"
+                      />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 sm:h-12 sm:w-12"
+                      disabled={pending}
+                      accessibilityLabel={`Delete ${deck.title}`}
+                      onPress={() => open({ kind: 'delete', deck })}
+                    >
+                      <TrashIcon size={20} className="text-muted-foreground" />
+                    </Button>
                   </View>
+                </View>
+                {/* The rest of the header opens the deck on a tap too. It is
+                  no second target for a screen reader, which has the one
+                  above. */}
+                <Pressable
+                  accessible={false}
+                  className="gap-1.5"
+                  onPress={() => router.push(`/deck/${deck.id}`)}
+                >
                   {deck.description ? (
                     <CardDescription numberOfLines={2}>
                       {deck.description}
@@ -247,8 +256,8 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                       </Text>
                     </View>
                   </View>
-                </CardHeader>
-              </Pressable>
+                </Pressable>
+              </CardHeader>
               <CardContent>
                 {action?.kind === 'delete' && action.deck.id === deck.id ? (
                   <View className="gap-2">

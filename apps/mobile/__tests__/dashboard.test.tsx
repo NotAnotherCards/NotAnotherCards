@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, fireEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
 import Storage from 'expo-sqlite/kv-store';
@@ -12,7 +12,6 @@ import {
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
 const mockManager = { tag: 'manager' };
-const mockSyncNow = jest.fn(() => Promise.resolve());
 let mockSyncController: {
   state: {
     status: string;
@@ -21,7 +20,7 @@ let mockSyncController: {
     cause: null;
     lastResult: null;
   };
-  subscribe: () => () => void;
+  subscribe: (notify: () => void) => () => void;
   syncNow: jest.Mock;
 } | null = null;
 const mockUseReviewOverview = jest.fn(
@@ -135,7 +134,7 @@ describe('Dashboard screen', () => {
     mockAchievements = { achievements: [], isLoading: false, error: null };
   });
 
-  it('runs a sync when pulled down', async () => {
+  it('shows the pull spinner for as long as the sync runs', () => {
     mockUseSession.mockReturnValue({
       data: {
         user: {
@@ -147,7 +146,14 @@ describe('Dashboard screen', () => {
       },
       isPending: false,
     });
-    mockSyncController = {
+    // As the controller does: syncNow() returns nothing, sets the state to
+    // syncing before it returns, and reports the end through its state.
+    const listeners = new Set<() => void>();
+    const setStatus = (status: string) => {
+      controller.state = { ...controller.state, status };
+      listeners.forEach((notify) => notify());
+    };
+    const controller = {
       state: {
         status: 'idle',
         lastSyncAt: null,
@@ -155,9 +161,15 @@ describe('Dashboard screen', () => {
         cause: null,
         lastResult: null,
       },
-      subscribe: () => () => {},
-      syncNow: mockSyncNow,
+      subscribe: (notify: () => void) => {
+        listeners.add(notify);
+        return () => {
+          listeners.delete(notify);
+        };
+      },
+      syncNow: jest.fn(() => setStatus('syncing')),
     };
+    mockSyncController = controller;
     const result = render(<Dashboard />);
 
     // jest-expo mocks RefreshControl away, so the control is read off the
@@ -166,11 +178,20 @@ describe('Dashboard screen', () => {
       result.UNSAFE_getByProps({ keyboardShouldPersistTaps: 'handled' }).props
         .refreshControl as ReactElement<{
         refreshing: boolean;
-        onRefresh: () => Promise<void>;
+        onRefresh: () => void;
       }>;
-    await refresh().props.onRefresh();
-    expect(mockSyncNow).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(refresh().props.refreshing).toBe(false));
+    expect(refresh().props.refreshing).toBe(false);
+
+    act(() => refresh().props.onRefresh());
+    expect(controller.syncNow).toHaveBeenCalledTimes(1);
+    expect(refresh().props.refreshing).toBe(true);
+
+    act(() => setStatus('idle'));
+    expect(refresh().props.refreshing).toBe(false);
+
+    // a sync that starts by itself shows no pull spinner
+    act(() => setStatus('syncing'));
+    expect(refresh().props.refreshing).toBe(false);
   });
 
   it('redirects to login when there is no session', () => {

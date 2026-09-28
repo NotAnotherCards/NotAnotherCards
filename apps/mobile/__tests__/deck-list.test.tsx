@@ -271,4 +271,27 @@ describe('DeckList action state', () => {
     fireEvent.press(r.getByLabelText('Delete Spanish'));
     expect(r.queryByText('Database not initialized')).toBeNull();
   });
+
+  it('keeps open, edit and delete as three separate press targets', () => {
+    mockPush.mockClear();
+    const { getByLabelText, queryByText } = render(<DeckList />);
+    const open = getByLabelText('Open Spanish');
+    const edit = getByLabelText('Edit Spanish');
+    const remove = getByLabelText('Delete Spanish');
+
+    // Neither button sits inside the opening target.
+    const inside = (node: typeof edit | null, ancestor: typeof open) => {
+      for (let at = node; at; at = at.parent) if (at === ancestor) return true;
+      return false;
+    };
+    expect(inside(edit, open)).toBe(false);
+    expect(inside(remove, open)).toBe(false);
+
+    fireEvent.press(remove);
+    expect(queryByText(/Delete this deck\?/)).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+
+    fireEvent.press(open);
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
+  });
 });
