@@ -8,6 +8,7 @@ import {
   formatReviewInterval,
   reviewAnswerLabels,
   reviewRatingByAnswer,
+  nextReviewBatch,
   selectReviewBatch,
   type ReviewAnswer,
   type ReviewPreferences,
@@ -87,6 +88,9 @@ function ActiveReviewSession({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  // The answer was saved but the next batch could not be read: only the read
+  // is retried, so the answer is never recorded twice.
+  const [nextBatchFailed, setNextBatchFailed] = useState(false);
 
   useEffect(() => {
     if (deck && userId) saveLastReviewDeckId(userId, deck.id);
@@ -152,13 +156,25 @@ function ActiveReviewSession({
       return;
     }
 
-    const next = makeBatch(deckId, await readDueCards());
-    if (next.cards.length > 0) {
-      setSession(next);
+    const cards = await nextReviewBatch(readDueCards);
+    if (cards.length > 0) {
+      setSession({ deckId, cards });
       setCardIndex(0);
       return;
     }
     setIsComplete(true);
+  };
+
+  const retryNextBatch = async () => {
+    setNextBatchFailed(false);
+    setIsSaving(true);
+    try {
+      await advance();
+    } catch {
+      setNextBatchFailed(true);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const record = async (answer: ReviewAnswer) => {
@@ -167,16 +183,39 @@ function ActiveReviewSession({
     setIsSaving(true);
     try {
       await writes.record(card.id, reviewRatingByAnswer[answer]);
-      setIsFlipped(false);
-      await advance();
     } catch (cause) {
       setSaveError(writeErrorMessage(cause, 'Could not save your answer'));
+      setIsSaving(false);
+      return;
+    }
+    setIsFlipped(false);
+    try {
+      await advance();
+    } catch {
+      setNextBatchFailed(true);
     } finally {
       setIsSaving(false);
     }
   };
 
   const leave = () => router.replace(`/deck/${deckId}`);
+
+  if (nextBatchFailed) {
+    return (
+      <View className="items-center gap-4 py-12">
+        <Stack.Screen options={{ title: deck.title }} />
+        <Text className="text-center text-destructive">
+          Your answer is saved, but the next cards could not be loaded.
+        </Text>
+        <Button onPress={() => void retryNextBatch()} disabled={isSaving}>
+          <Text>Retry</Text>
+        </Button>
+        <Button variant="outline" onPress={leave}>
+          <Text>Back to deck</Text>
+        </Button>
+      </View>
+    );
+  }
 
   if (isComplete) {
     return (

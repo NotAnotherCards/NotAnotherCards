@@ -200,6 +200,37 @@ describe('ReviewSession', () => {
     expect(result.queryByText('Review complete')).toBeNull();
   });
 
+  it('retries only the read when the next batch cannot be loaded', async () => {
+    // The answer is saved, then reading the next batch fails once: the card
+    // must not come back to be answered, or it would be recorded twice.
+    mockReadDueCards.mockRejectedValueOnce(new Error('read failed'));
+    mockReadDueCards.mockResolvedValueOnce([
+      {
+        id: 'c2',
+        note_id: 'n2',
+        front: 'perro',
+        back: 'dog',
+        due_at: 2,
+        scheduled_interval_minutes: 0,
+      },
+    ]);
+    const result = render(<ReviewSession deckId="d1" />);
+
+    await result.findByText('gato');
+    fireEvent.press(result.getByText('Show answer'));
+    fireEvent.press(result.getByText('Remembered'));
+
+    expect(
+      await result.findByText(/next cards could not be loaded/),
+    ).toBeTruthy();
+    expect(result.queryByText('Remembered')).toBeNull();
+    fireEvent.press(result.getByText('Retry'));
+
+    expect(await result.findByText('perro')).toBeTruthy();
+    expect(mockRecord).toHaveBeenCalledTimes(1);
+    expect(mockReadDueCards).toHaveBeenCalledTimes(2);
+  });
+
   it('drops a card from the opening snapshot that is gone by the next batch', async () => {
     // A sibling of the first card, so the batch rules leave it for the next
     // batch. It was deleted meanwhile, so the fresh read no longer has it.
