@@ -19,7 +19,7 @@ const review = (
 
 describe('overviewStats', () => {
   it('is all zeros for a new account', () => {
-    expect(overviewStats([], [], [], now)).toMatchObject({
+    expect(overviewStats([], [], [], [], now)).toMatchObject({
       dictionarySize: 0,
       streak: 0,
       wordsLearned: 0,
@@ -30,12 +30,18 @@ describe('overviewStats', () => {
     });
   });
 
-  it('counts the cards in the dictionary, not the notes', () => {
-    // A word note yields sibling cards; web's tile counts cards too.
+  it('counts the notes that are in a deck, each once, as web does', () => {
+    // n1 has sibling cards and sits in two decks; n3 is in no deck.
     const cards = [card('c1', 'n1'), card('c2', 'n1'), card('c3', 'n2')];
+    const notes = [note('n1'), note('n2'), note('n3')];
+    const memberships = [
+      { note_id: 'n1', deck_id: 'd1' },
+      { note_id: 'n1', deck_id: 'd2' },
+      { note_id: 'n2', deck_id: 'd1' },
+    ];
     expect(
-      overviewStats([], cards, [note('n1'), note('n2')], now).dictionarySize,
-    ).toBe(3);
+      overviewStats([], cards, notes, memberships, now).dictionarySize,
+    ).toBe(2);
   });
 
   it('counts a streak of consecutive UTC days ending today', () => {
@@ -45,7 +51,7 @@ describe('overviewStats', () => {
       review('r2', 'c1', 3, now - DAY),
       review('r3', 'c1', 3, now),
     ];
-    expect(overviewStats(events, cards, [note('n1')], now).streak).toBe(3);
+    expect(overviewStats(events, cards, [note('n1')], [], now).streak).toBe(3);
   });
 
   it('counts a note once when several of its cards were answered well', () => {
@@ -57,7 +63,8 @@ describe('overviewStats', () => {
       review('r3', 'c3', 1, now),
     ];
     expect(
-      overviewStats(events, cards, [note('n1'), note('n2')], now).wordsLearned,
+      overviewStats(events, cards, [note('n1'), note('n2')], [], now)
+        .wordsLearned,
     ).toBe(1);
   });
 
@@ -65,7 +72,7 @@ describe('overviewStats', () => {
     // The hook turns this into an error message on the Overview
     const events = [review('r1', 'c1', 9, now)];
     expect(() =>
-      overviewStats(events, [card('c1', 'n1')], [note('n1')], now),
+      overviewStats(events, [card('c1', 'n1')], [note('n1')], [], now),
     ).toThrow('Unsupported review rating');
   });
 });
@@ -86,6 +93,7 @@ describe('today in the daily challenges', () => {
       events,
       cards,
       notes,
+      [],
       now,
     ).challenges;
     // A failed answer still counts: one review, one point

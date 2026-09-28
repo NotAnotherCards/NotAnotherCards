@@ -2,11 +2,13 @@ import type { DatabaseManager } from '@remelondb/core';
 import { useDatabase, useQuery } from '@remelondb/core/react';
 import { useNow } from './use-now';
 import {
+  getNoteDecksQuery,
   getNotesQuery,
   getPersonalDictionaryQuery,
   getReviewHistoryQuery,
   type ReviewEventRecord,
   type UserCardRecord,
+  type UserNoteDeckRecord,
   type UserNoteRecord,
 } from '@repo/offline-db';
 import {
@@ -69,10 +71,13 @@ export function overviewStats(
   reviewEvents: readonly ActivityReviewEvent[],
   cards: readonly ActivityCard[],
   notes: readonly ActivityNote[],
+  memberships: readonly { note_id: string }[],
   now: number,
 ): OverviewStats {
   return {
-    dictionarySize: cards.length,
+    // Web's count: the notes that are in a deck, each once, however many
+    // cards it has and however many decks hold it.
+    dictionarySize: new Set(memberships.map((m) => m.note_id)).size,
     streak: selectStreakActivity(reviewEvents, now).currentStreak,
     wordsLearned: selectLearnedNoteCount(reviewEvents, cards, notes),
     challenges: selectTodayChallengeActivity(reviewEvents, notes, now)
@@ -87,6 +92,7 @@ export function useOverviewStats(manager: DatabaseManager) {
   );
   const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
   const notes = useQuery<UserNoteRecord>(db && getNotesQuery(db));
+  const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
   const now = useNow();
 
   // Recomputed on each render and at least every minute (useNow), so the
@@ -96,7 +102,13 @@ export function useOverviewStats(manager: DatabaseManager) {
   let stats: OverviewStats | null = null;
   let selectorError: Error | null = null;
   try {
-    stats = overviewStats(reviewEvents.data, cards.data, notes.data, now);
+    stats = overviewStats(
+      reviewEvents.data,
+      cards.data,
+      notes.data,
+      memberships.data,
+      now,
+    );
   } catch (error) {
     selectorError = error instanceof Error ? error : new Error(String(error));
   }
@@ -104,7 +116,16 @@ export function useOverviewStats(manager: DatabaseManager) {
   return {
     stats,
     isLoading:
-      !db || reviewEvents.isLoading || cards.isLoading || notes.isLoading,
-    error: reviewEvents.error ?? cards.error ?? notes.error ?? selectorError,
+      !db ||
+      reviewEvents.isLoading ||
+      cards.isLoading ||
+      notes.isLoading ||
+      memberships.isLoading,
+    error:
+      reviewEvents.error ??
+      cards.error ??
+      notes.error ??
+      memberships.error ??
+      selectorError,
   };
 }

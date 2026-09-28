@@ -246,7 +246,7 @@ describe('Dashboard screen', () => {
 
     const { getByText } = render(<Dashboard />);
     expect(getByText('Personal Dictionary')).toBeTruthy();
-    expect(getByText('1540 cards')).toBeTruthy();
+    expect(getByText('1540 words')).toBeTruthy();
     expect(getByText('Learning Streak')).toBeTruthy();
     expect(getByText('1 Day')).toBeTruthy();
     expect(getByText('Words Learned')).toBeTruthy();

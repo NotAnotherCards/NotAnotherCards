@@ -212,7 +212,7 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
   }[] = [
     {
       title: 'Personal Dictionary',
-      value: `${stats.dictionarySize} ${stats.dictionarySize === 1 ? 'card' : 'cards'}`,
+      value: `${stats.dictionarySize} ${stats.dictionarySize === 1 ? 'word' : 'words'}`,
       description: 'Added to your collection',
       icon: BookMarkedIcon,
       iconClass: 'text-blue-500',
