@@ -176,6 +176,7 @@ export * from './note-writes.js';
 // Moved to @repo/study (#430); re-exported so existing imports keep working.
 export * from '@repo/study';
 export * from './ids.js';
+export * from './deck-kind.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
 export * from './queries.js';

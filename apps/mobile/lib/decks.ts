@@ -7,6 +7,7 @@ import {
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
   getUserProfileQuery,
+  selectDueCards,
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
@@ -14,6 +15,7 @@ import {
 } from '@repo/offline-db';
 import { deckWrites } from './deck-writes';
 import { useSessionDatabase } from './database-provider';
+import { useNow } from './use-now';
 
 export type Deck = UserDeckRecord;
 
@@ -37,6 +39,17 @@ export function useDecks(manager: DatabaseManager) {
   );
   const cardCount = (deckId: string) => cardCounts.get(deckId) ?? 0;
 
+  // The same count over the due cards only, so the list shows where the work
+  // is. The Overview's total (#381) is the sum across decks. Recounted as the
+  // clock moves too: a card coming due changes no data, so the list would
+  // otherwise keep 0 and Start Review stay off until something reloads it.
+  const now = useNow();
+  const dueCounts = useMemo(
+    () => countCardsPerDeck(memberships.data, selectDueCards(cards.data, now)),
+    [cards.data, memberships.data, now],
+  );
+  const dueCount = (deckId: string) => dueCounts.get(deckId) ?? 0;
+
   return {
     db,
     decks: decks.data,
@@ -47,6 +60,7 @@ export function useDecks(manager: DatabaseManager) {
       profiles.isLoading,
     error: decks.error ?? memberships.error ?? cards.error ?? profiles.error,
     cardCount,
+    dueCount,
     profile: profiles.data[0] ?? null,
     writes: db ? deckWrites(db, syncController) : null,
   };

@@ -21,12 +21,14 @@ import { CardForm } from './CardForm';
 import { WordNoteForm, type WordFormValues } from './WordNoteForm';
 import {
   BASIC_NOTE_TYPE,
+  deckKind,
+  deckKindShort,
   parseWordFields,
   type UserNoteRecord,
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
 } from '@repo/offline-db';
-import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
+import { deckKindClassName } from './deck-kind';
 import { CardList } from './CardList';
 import { WordNoteList } from './WordNoteList';
 import { WordNoteView } from './WordNoteView';
