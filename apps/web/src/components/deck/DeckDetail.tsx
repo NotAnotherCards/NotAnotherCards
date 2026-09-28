@@ -23,6 +23,7 @@ import {
   BASIC_NOTE_TYPE,
   deckKind,
   deckKindShort,
+  parseWordFields,
   type UserNoteRecord,
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
@@ -31,7 +32,6 @@ import { deckKindClassName } from './deck-kind';
 import { CardList } from './CardList';
 import { WordNoteList } from './WordNoteList';
 import { WordNoteView } from './WordNoteView';
-import { parseWordFields } from './word-note-fields';
 import { toWordRow } from './word-note-rows';
 import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';

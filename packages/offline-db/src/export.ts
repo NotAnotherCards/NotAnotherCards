@@ -13,7 +13,7 @@ import {
   BackupNote,
   BackupReviewEvent,
 } from './export-import-types.js';
-import { compileNote } from './note-registry.js';
+import { compileNote } from '@repo/study';
 
 function escapeCsvField(val: unknown): string {
   if (val === null || val === undefined) return '';
