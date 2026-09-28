@@ -68,6 +68,7 @@ describe('Onboarding Flow and Guard Specs', () => {
       decks: [],
       cards: [],
       notes: [],
+      noteDecks: [],
       dueCards: [],
       db: null,
       getCardsCount: () => 0,

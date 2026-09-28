@@ -10,6 +10,7 @@ import {
   getNoteDecksQuery,
   getPersonalDictionaryQuery,
   recordReviewEvent,
+  reviewTarget,
   selectDueCards,
   type ReviewRating,
   type UserCardRecord,
@@ -35,6 +36,29 @@ export function reviewWrites(db: Database, sync: SyncController | null) {
       sync?.notifyLocalWrite();
       return review;
     },
+  };
+}
+
+export function useReviewOverview(
+  manager: DatabaseManager,
+  lastDeckId: string | null,
+) {
+  const db = useDatabase(manager);
+  const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+
+  const now = Date.now();
+
+  return {
+    target: reviewTarget({
+      lastDeckId,
+      memberships: memberships.data,
+      cards: cards.data,
+      now,
+    }),
+    dueCount: selectDueCards(cards.data, now).length,
+    isLoading: !db || memberships.isLoading || cards.isLoading,
+    error: memberships.error ?? cards.error,
   };
 }
 

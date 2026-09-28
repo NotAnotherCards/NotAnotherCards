@@ -6,4 +6,7 @@ export default {
   setItemSync: (key: string, value: string) => {
     store.set(key, value);
   },
+  removeItemSync: (key: string) => {
+    store.delete(key);
+  },
 };
