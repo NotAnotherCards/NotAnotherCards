@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/PageContainer';
 import {
   BarChart3,
+  Trophy,
   BookOpen,
   Library,
   Settings as SettingsIcon,
@@ -107,7 +108,7 @@ export function DashboardComponent() {
           }}
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
-          <BarChart3 className="size-3.5 mr-1.5" />
+          <Trophy className="size-3.5 mr-1.5" />
           {t('dashboard.tabs.leaderboard')}
         </Button>
         <Button

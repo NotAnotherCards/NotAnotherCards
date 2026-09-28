@@ -1,13 +1,13 @@
 import type { Card } from '@/hooks/useStore';
 import {
   EXAMPLE_TO_TRANSLATION_TEMPLATE_KEY,
+  parseWordFields,
   TRANSLATION_TO_WORD_TEMPLATE_KEY,
   WORD_TO_TRANSLATION_TEMPLATE_KEY,
   type WordNoteFields,
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { languageFor } from '@repo/schemas';
-import { parseWordFields } from './word-note-fields';
 
 type WordCardBadge = 'Word' | 'Translation' | 'Example';
 

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Deck } from '@/hooks/useStore';
-import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
+import { deckKindClassName } from './deck-kind';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,7 +10,12 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
-import { noteTypeRegistry, WORD_NOTE_TYPE } from '@repo/offline-db';
+import {
+  deckKind,
+  deckKindShort,
+  noteTypeRegistry,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
 
 interface DeckCardProps {
   deck: Deck;
