@@ -9,14 +9,20 @@
 #   NAC_KEY_ALIAS            key alias (default nac-release)
 #   JAVA_HOME                defaults to /usr/lib/jvm/java-21-openjdk
 #   NAC_ARCHS                gradle reactNativeArchitectures (default arm64-v8a; x86_64 for the emulator)
+#   NAC_EXPECTED_CERT_SHA256 signing certificate the APK must carry (default: the published releases')
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-case "${EXPO_PUBLIC_API_URL:-}" in
-  https://*) ;;
-  *) echo "EXPO_PUBLIC_API_URL must be an https:// url" >&2; exit 1 ;;
-esac
+# https, then a host (letters, digits, dots, hyphens), an optional port and path
+url_pattern='^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]+)?(/.*)?$'
+if [[ ! "${EXPO_PUBLIC_API_URL:-}" =~ $url_pattern ]]; then
+  echo "EXPO_PUBLIC_API_URL must be an https:// url with a host" >&2
+  exit 1
+fi
+# Android only updates an installed app in place when the new APK carries the
+# same signing certificate, so a build signed with any other key is refused.
+expected_cert="${NAC_EXPECTED_CERT_SHA256:-d04b0db8f7053d6f77eee2a1809dda8dba6dd86ceb95eb060fa9c7d6d1a28a3f}"
 : "${NAC_KEYSTORE:?NAC_KEYSTORE is not set}"
 : "${NAC_KEYSTORE_PASSWORD:?NAC_KEYSTORE_PASSWORD is not set}"
 keystore="$NAC_KEYSTORE"
@@ -49,6 +55,11 @@ build_tools="$(ls -d "${ANDROID_HOME:-$HOME/Android/Sdk}"/build-tools/[0-9]*.[0-
 certs="$("$build_tools/apksigner" verify --print-certs "$apk")"
 if grep -q "CN=Android Debug" <<<"$certs"; then
   echo "APK is signed with the debug key" >&2
+  exit 1
+fi
+actual_cert="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<<"$certs")"
+if [[ "$actual_cert" != "$expected_cert" ]]; then
+  echo "APK is signed with $actual_cert, the published releases with $expected_cert: installed apps could not update" >&2
   exit 1
 fi
 echo "$certs" | grep 'certificate DN'

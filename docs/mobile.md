@@ -292,6 +292,13 @@ Fingerprint:
 
     F575B1E6A8EAF886DECB02E5EDEB6A18FD7CD10D041BA2BC218CD05BE813DD39
 
+The APKs are signed with the certificate (SHA-256):
+
+    d04b0db8f7053d6f77eee2a1809dda8dba6dd86ceb95eb060fa9c7d6d1a28a3f
+
+`build-release.sh` refuses a build signed with any other key, because an
+installed app only updates in place from the same certificate.
+
 The current builds talk to the staging server at cards.dustyway.org and are
 arm64 only. Updates arrive through the client like any other app.
 
