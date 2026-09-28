@@ -29,8 +29,12 @@ export function saveReviewPreferences(
 }
 
 export function loadActivationCount(userId: string): number {
-  const value = Number(Storage.getItemSync(`${ACTIVATION_COUNT_PREFIX}${userId}`));
-  return Number.isInteger(value) && value > 0 ? value : DEFAULT_ACTIVATION_COUNT;
+  const value = Number(
+    Storage.getItemSync(`${ACTIVATION_COUNT_PREFIX}${userId}`),
+  );
+  return Number.isInteger(value) && value > 0
+    ? value
+    : DEFAULT_ACTIVATION_COUNT;
 }
 
 export function saveActivationCount(userId: string, count: number): void {

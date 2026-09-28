@@ -150,8 +150,7 @@ export function useStore() {
     db && getPersonalDictionaryQuery(db),
     {
       select: useCallback(
-        (rows: UserCardRecord[]) =>
-          selectDueCards(rows, now),
+        (rows: UserCardRecord[]) => selectDueCards(rows, now),
         [now],
       ),
     },
