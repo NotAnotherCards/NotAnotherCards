@@ -17,6 +17,7 @@ export function DeleteConfirmationDialog({
   error,
   isDeleting,
 }: DeleteConfirmationDialogProps) {
+  const { t } = useTranslation();
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -57,7 +58,10 @@ export function DeleteConfirmationDialog({
         className="w-full rounded-3xl border border-border/80 bg-background p-5 shadow-2xl sm:max-w-lg sm:p-6"
       >
         <h2 id="delete-word-title" className="text-xl font-bold">
-          Does permanently delete this word?
+          {t(
+            'review.dialogs.delete_word_title',
+            'Permanently delete this word?',
+          )}
         </h2>
         {error && (
           <p className="mt-2 text-sm text-destructive" role="alert">
@@ -72,7 +76,7 @@ export function DeleteConfirmationDialog({
             disabled={isDeleting}
             className="min-h-12 cursor-pointer"
           >
-            No
+            {t('common.cancel', 'Cancel')}
           </Button>
           <Button
             ref={confirmButtonRef}
@@ -81,7 +85,7 @@ export function DeleteConfirmationDialog({
             disabled={isDeleting}
             className="min-h-12 cursor-pointer"
           >
-            Yes
+            {t('review.dialogs.delete_confirmation', 'Delete')}
           </Button>
         </div>
       </div>
