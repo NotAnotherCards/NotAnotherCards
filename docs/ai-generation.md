@@ -80,15 +80,26 @@ chunk never arrived, so only the request cap stops a failing loop.
 
 ## Moderation at publish
 
-Only the publish endpoint calls it, on every card of the deck's snapshot,
-through the separate `moderation` gateway alias (qwen3guard-8b); it does not
-go through `AiGatewayService`. The classifier grades each card `Safe`,
-`Unsafe` or `Controversial`: an unsafe card refuses publication with the
-card and its category in the 422 body; a controversial card is returned as a
-warning on the successful response. An unreachable gateway, a timeout or an
-unparsable verdict refuses publication with `moderation unavailable`; there
-is no allow-on-error path. A deck check has a budget of 5 s plus 1 s per card,
-capped at 240 s, and fails closed when that budget runs out. Private decks are never checked.
+Only the publish endpoint calls it, once per note of the immutable deck
+snapshot, through the `moderation` gateway alias (Qwen3Guard). Word notes
+include their fields, examples and deck language names; ordinary basic-note
+text is not prefaced with an assertion that it is educational. Visible card
+text differing from the current note templates is included too. A word note
+with three sibling cards therefore needs one fast-classifier request.
+
+`Safe` passes and `Controversial` remains a warning. `Unsafe` goes to
+`AI_DEFAULT_MODEL` (default `gemma4`) with the same text enclosed in JSON
+data and a fixed policy. Only a strictly validated `warn` verdict with a
+nonempty reason downgrades the refusal to a warning; `confirm`, timeouts,
+failed requests and invalid verdicts retain the refusal. Findings expand
+back to every sibling card so existing clients can show the affected rows.
+The stored audit retains both the fast classifier's opinion and the judge's
+opinion (or error); warnings carry the judge's reason.
+
+An unavailable fast classifier still refuses publication with `moderation
+unavailable`. All calls share a budget of 5 s plus 1 s per note, capped at
+240 s, with at most 30 s per request. A judge cannot extend that deadline.
+Private decks are never checked. These calls do not use `AiGatewayService`.
 `MODERATION_ALLOW_ALL=1` bypasses the classifier, for tests and demos only.
 
 ## Moderation after a report

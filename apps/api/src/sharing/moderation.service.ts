@@ -1,5 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { z } from 'zod';
+import type { ModerationNote } from './moderation-context';
+import judgePolicy from './moderation-judge-policy.json';
+
+const judgeVerdict = z.strictObject({
+  verdict: z.enum(['confirm', 'warn']),
+  reason: z.string().trim().min(1).max(500),
+});
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
@@ -143,8 +151,39 @@ export class ModerationService {
 
   constructor(private readonly config: ConfigService) {}
 
-  async check(input: ModerationInput): Promise<ModerationVerdict> {
-    return this.checkWithModels(input, [FAST_CLASSIFIER], false);
+  async check(input: {
+    deckId: string;
+    notes: ModerationNote[];
+  }): Promise<ModerationVerdict> {
+    const verdict = await this.checkWithModels(
+      {
+        deckId: input.deckId,
+        items: input.notes.map((note) => ({
+          id: note.cardIds[0],
+          text: note.text,
+        })),
+      },
+      [FAST_CLASSIFIER],
+      false,
+      true,
+    );
+    const siblings = new Map(
+      input.notes.map((note) => [note.cardIds[0], note.cardIds]),
+    );
+    // Keep the existing card-based response and audit contract for clients.
+    const expand = <T extends { cardId: string }>(entries: T[]): T[] =>
+      entries.flatMap((entry) =>
+        (siblings.get(entry.cardId) ?? [entry.cardId]).map((cardId) => ({
+          ...entry,
+          cardId,
+        })),
+      );
+    return {
+      ...verdict,
+      flagged: expand(verdict.flagged),
+      warnings: expand(verdict.warnings),
+      results: expand(verdict.results),
+    };
   }
 
   /**
@@ -155,16 +194,23 @@ export class ModerationService {
    */
   async checkThorough(input: ModerationInput): Promise<ModerationVerdict> {
     return this.checkWithModels(
-      input,
+      {
+        deckId: input.deckId,
+        items: input.cards.map((card) => ({
+          id: card.id,
+          text: `${card.front}\n${card.back}`,
+        })),
+      },
       [FAST_CLASSIFIER, THOROUGH_CLASSIFIER],
       true,
     );
   }
 
   private async checkWithModels(
-    input: ModerationInput,
+    input: { deckId: string; items: { id: string; text: string }[] },
     classifiers: Classifier[],
     identifyClassifier: boolean,
+    judgeFlagged = false,
   ): Promise<ModerationVerdict> {
     if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
       return { ok: true, flagged: [], warnings: [], results: [] };
@@ -184,7 +230,7 @@ export class ModerationService {
     if (!apiBase) {
       return unavailable(
         classifiers.flatMap((classifier) =>
-          input.cards.map((card) => ({
+          input.items.map((card) => ({
             cardId: card.id,
             classifier: classifier.model,
             verdict: 'error' as const,
@@ -203,8 +249,8 @@ export class ModerationService {
     for (const classifier of classifiers) {
       // Each required classifier gets an independent budget. A hung fast gate
       // must not consume the thorough classifier's opportunity to decide.
-      const deadline = Date.now() + moderationDeadlineMs(input.cards.length);
-      for (const card of input.cards) {
+      const deadline = Date.now() + moderationDeadlineMs(input.items.length);
+      for (const card of input.items) {
         try {
           const remaining = deadline - Date.now();
           if (remaining <= 0) throw new Error('Moderation deadline exceeded');
@@ -219,9 +265,7 @@ export class ModerationService {
               model: classifier.model,
               temperature: 0,
               stream: false,
-              messages: [
-                { role: 'user', content: `${card.front}\n${card.back}` },
-              ],
+              messages: [{ role: 'user', content: card.text }],
             }),
             signal: AbortSignal.timeout(
               Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
@@ -246,7 +290,81 @@ export class ModerationService {
             reason: findingReason(result),
             ...(identifyClassifier ? { classifier: classifier.model } : {}),
           };
-          if (parsed.grade === 'unsafe') flagged.push(finding);
+          if (parsed.grade === 'unsafe') {
+            // A judge error must retain the known refusal, not erase it.
+            let warning: string | undefined;
+            if (judgeFlagged) {
+              const model =
+                this.config.get<string>('AI_DEFAULT_MODEL') ?? 'gemma4';
+              try {
+                const remaining = deadline - Date.now();
+                if (remaining <= 0)
+                  throw new Error('Moderation deadline exceeded');
+                const response = await fetch(`${apiBase}/chat/completions`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+                  },
+                  body: JSON.stringify({
+                    model,
+                    temperature: 0,
+                    stream: false,
+                    reasoning_effort: 'none',
+                    response_format: {
+                      type: 'json_schema',
+                      json_schema: {
+                        name: 'moderation_review',
+                        strict: true,
+                        schema: judgePolicy.schema,
+                      },
+                    },
+                    messages: [
+                      { role: 'system', content: judgePolicy.system },
+                      {
+                        role: 'user',
+                        content: JSON.stringify({
+                          category: finding.reason,
+                          study_content: card.text,
+                        }),
+                      },
+                    ],
+                  }),
+                  signal: AbortSignal.timeout(
+                    Math.min(MODERATION_CARD_TIMEOUT_MS, remaining),
+                  ),
+                });
+                if (!response.ok) throw new Error('Moderation gateway error');
+                const data = (await response.json()) as ChatCompletionResponse;
+                let decision: z.infer<typeof judgeVerdict>;
+                try {
+                  decision = judgeVerdict.parse(
+                    JSON.parse(data.choices?.[0]?.message?.content ?? ''),
+                  );
+                } catch {
+                  throw new Error('Unparseable moderation verdict');
+                }
+                results.push({
+                  cardId: card.id,
+                  classifier: model,
+                  verdict:
+                    decision.verdict === 'warn' ? 'controversial' : 'unsafe',
+                  categories: null,
+                });
+                if (decision.verdict === 'warn') warning = decision.reason;
+              } catch (error) {
+                results.push({
+                  cardId: card.id,
+                  classifier: model,
+                  verdict: 'error',
+                  categories: null,
+                  error: moderationErrorCode(error),
+                });
+              }
+            }
+            if (warning) warnings.push({ ...finding, reason: warning });
+            else flagged.push(finding);
+          }
           if (parsed.grade === 'controversial') warnings.push(finding);
         } catch (error: unknown) {
           const code = moderationErrorCode(error);

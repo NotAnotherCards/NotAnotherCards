@@ -520,7 +520,7 @@ FOREIGN KEY "ai_usage_user_id_user_id_fk" ("user_id") REFERENCES "public"."user"
 
 The immutable snapshot readers browse and import. It is content only: the
 live deck's `visibility` and tombstone remain the gate for whether the
-snapshot is served. Publishing runs every card through moderation (#263)
+snapshot is served. Publishing screens each note with its card context (#450)
 before the row is written; `moderation_status` is flipped to `blocked` by a
 takedown.
 

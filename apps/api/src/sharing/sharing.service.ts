@@ -33,6 +33,7 @@ import {
 } from '../sync/schema';
 import { syncScopeLockKey } from '../sync/sync-store';
 import { ModerationService } from './moderation.service';
+import { moderationNotes } from './moderation-context';
 import { aiGenerationJobs } from '../ai/schema';
 import {
   deckReports,
@@ -128,11 +129,7 @@ export class SharingService {
     );
     const verdict = await this.moderation.check({
       deckId,
-      cards: snapshot.content.cards.map(({ id, front, back }) => ({
-        id,
-        front,
-        back,
-      })),
+      notes: moderationNotes(snapshot),
     });
     if (!verdict.ok) {
       throw new UnprocessableEntityException({

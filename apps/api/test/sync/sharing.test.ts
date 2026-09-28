@@ -9,7 +9,10 @@ import {
   cardId,
   compileNote,
   noteDeckId,
+  type WordNoteFields,
 } from '@repo/offline-db';
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
 import {
   ENGLISH,
   GERMAN,
@@ -147,9 +150,14 @@ describePostgres('deck sharing endpoints', () => {
       updatedAt?: number;
       /** A word deck carries a language pair; the CHECK requires both. */
       languages?: { native: string; target: string };
+      wordFields?: WordNoteFields[];
     } = {},
   ) => {
-    const { cards = 1, visibility = 'private', deleted = false } = options;
+    const {
+      cards = options.wordFields?.length ?? 1,
+      visibility = 'private',
+      deleted = false,
+    } = options;
     const now = options.updatedAt ?? Date.now();
     const noteIds = Array.from(
       { length: cards },
@@ -177,14 +185,14 @@ describePostgres('deck sharing endpoints', () => {
         options.languages ? WORD_NOTE_TYPE : BASIC_NOTE_TYPE,
         BASIC_NOTE_FIELDS_VERSION,
         options.languages
-          ? {
+          ? (options.wordFields?.[index] ?? {
               word: `front ${index}`,
               translation: `back ${index}`,
               native_language_id: options.languages.native,
               target_language_id: options.languages.target,
               image: 'private-image-id',
               word_audio: 'private-audio-id',
-            }
+            })
           : { front: `front ${index}`, back: `back ${index}` },
       ),
     );
@@ -417,10 +425,10 @@ describePostgres('deck sharing endpoints', () => {
 
     expect(check).toHaveBeenCalledWith({
       deckId: 'flagged',
-      cards: [
-        { id: cardIds[0], front: 'front 0', back: 'back 0' },
-        { id: cardIds[1], front: 'front 1', back: 'back 1' },
-      ],
+      notes: cardIds.map((id, index) => ({
+        cardIds: [id],
+        text: `front ${index}\nback ${index}`,
+      })),
     });
     expect(await storedDeck('flagged')).toEqual(before);
   });
@@ -479,6 +487,140 @@ describePostgres('deck sharing endpoints', () => {
       })
       .expect(404);
   });
+
+  it.each(['confirm', 'warn', 'error'] as const)(
+    'uses the real publish gate when the judge returns %s',
+    async (decision) => {
+      const { cardIds } = await seedDeck(userA, 'judged', {
+        languages: { native: ENGLISH, target: GERMAN },
+      });
+      process.env.MODERATION_ALLOW_ALL = '0';
+      const config = app.get(ConfigService);
+      const readConfig = config.get.bind(config) as (key: string) => unknown;
+      vi.spyOn(config, 'get').mockImplementation((key: string) =>
+        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : readConfig(key),
+      );
+      const completion = (content: string) =>
+        new Response(JSON.stringify({ choices: [{ message: { content } }] }));
+      const fetch = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(
+          completion('Safety: Unsafe\nCategories: Unethical Acts'),
+        );
+      if (decision === 'error')
+        fetch.mockRejectedValueOnce(new TypeError('judge offline'));
+      else
+        fetch.mockResolvedValueOnce(
+          completion(
+            JSON.stringify({
+              verdict: decision,
+              reason: 'A contextual explanation.',
+            }),
+          ),
+        );
+
+      const response = await post(userA, '/api/decks/judged/publish').expect(
+        decision === 'warn' ? 200 : 422,
+      );
+      expect(fetch).toHaveBeenCalledTimes(2);
+      const body = JSON.parse(fetch.mock.calls[0][1]?.body as string) as {
+        messages: { content: string }[];
+      };
+      expect(body.messages[0].content).toContain(
+        'German course for English speakers',
+      );
+      const snapshots = await db.select().from(publishedDecks);
+      if (decision === 'warn') {
+        const published = publishResponseSchema.parse(response.body);
+        expect(published.warnings).toEqual(
+          [...cardIds].sort().map((cardId) => ({
+            cardId,
+            reason: 'A contextual explanation.',
+          })),
+        );
+        expect(snapshots).toHaveLength(1);
+        expect(snapshots[0].moderationVerdict?.warnings).toEqual(
+          published.warnings,
+        );
+        expect((await storedDeck('judged')).visibility).toBe('public');
+        await get(userB, '/api/shared/decks/judged').expect(200);
+      } else {
+        expect(moderationRefusalSchema.parse(response.body).flagged).toEqual(
+          [...cardIds]
+            .sort()
+            .map((cardId) => ({ cardId, reason: 'Unethical Acts' })),
+        );
+        expect(snapshots).toHaveLength(0);
+        expect((await storedDeck('judged')).visibility).toBe('private');
+      }
+    },
+  );
+
+  it.skipIf(!process.env.MODERATION_LIVE_API_BASE)(
+    'publishes the 513-note Spanish sample through the live moderation gate',
+    async () => {
+      const backup = JSON.parse(
+        execFileSync(
+          process.execPath,
+          [
+            resolve('../../decks/build.mjs'),
+            resolve('../../decks/spanish-a1.txt'),
+          ],
+          { encoding: 'utf8' },
+        ),
+      ) as {
+        decks: { native_language: string; target_language: string }[];
+        notes: { fields: WordNoteFields }[];
+      };
+      expect(backup.notes).toHaveLength(513);
+      await seedDeck(userA, 'spanish-live', {
+        languages: {
+          native: backup.decks[0].native_language,
+          target: backup.decks[0].target_language,
+        },
+        wordFields: backup.notes.map((note) => note.fields),
+      });
+      process.env.MODERATION_ALLOW_ALL = '0';
+      const config = app.get(ConfigService);
+      const readConfig = config.get.bind(config) as (key: string) => unknown;
+      vi.spyOn(config, 'get').mockImplementation((key: string) => {
+        if (key === 'AI_API_BASE') return process.env.MODERATION_LIVE_API_BASE;
+        if (key === 'AI_API_KEY')
+          return process.env.MODERATION_LIVE_API_KEY ?? '';
+        if (key === 'AI_DEFAULT_MODEL')
+          return process.env.MODERATION_LIVE_JUDGE_MODEL ?? 'gemma4';
+        return readConfig(key);
+      });
+      // A direct Ollama run needs the alias expanded, but uses real HTTP and
+      // the exact production request/response parser and deadline throughout.
+      const realFetch = globalThis.fetch;
+      const fetch = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation((url, init) => {
+          const body = JSON.parse(init?.body as string) as { model: string };
+          if (
+            body.model === 'moderation' &&
+            process.env.MODERATION_LIVE_FAST_MODEL
+          ) {
+            body.model = process.env.MODERATION_LIVE_FAST_MODEL;
+          }
+          return realFetch(url, { ...init, body: JSON.stringify(body) });
+        });
+      const response = await post(
+        userA,
+        '/api/decks/spanish-live/publish',
+      ).expect(200);
+      publishResponseSchema.parse(response.body);
+      expect(fetch.mock.calls.length).toBeGreaterThanOrEqual(513);
+      expect(fetch.mock.calls.length).toBeLessThan(1539);
+      const [snapshot] = await db.select().from(publishedDecks);
+      expect(snapshot.cardCount).toBe(1539);
+      expect(snapshot.content.notes).toHaveLength(513);
+      expect((await storedDeck('spanish-live')).visibility).toBe('public');
+      await get(userB, '/api/shared/decks/spanish-live').expect(200);
+    },
+    270_000,
+  );
 
   it('refuses to publish where moderation is not switched on', async () => {
     await seedDeck(userA, 'unchecked');
@@ -1053,8 +1195,8 @@ describePostgres('deck sharing endpoints', () => {
         },
       };
       vi.spyOn(app.get(ModerationService), 'check').mockImplementationOnce(
-        async ({ cards }) => {
-          expect(cards[0].front).toBe('front 0');
+        async ({ notes }) => {
+          expect(notes[0].text).toContain('front 0');
           const { table, row } = edits[changed];
           // A real push must finish while moderation is in progress. Holding
           // the owner's scope lock across the check would deadlock this test.
@@ -1098,8 +1240,8 @@ describePostgres('deck sharing endpoints', () => {
     const { noteIds } = await seedDeck(userA, 'source');
     const cursor = (await pull(userA)).cursor;
     vi.spyOn(app.get(ModerationService), 'check').mockImplementationOnce(
-      async ({ cards }) => {
-        expect(cards).toEqual([]);
+      async ({ notes }) => {
+        expect(notes).toEqual([]);
         const now = Date.now();
         const response = await post(userA, '/sync/push')
           .send({

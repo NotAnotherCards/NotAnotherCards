@@ -13,6 +13,15 @@ describe('ModerationService', () => {
     { id: 'card-3', front: 'front 3', back: 'back 3' },
   ];
   const input = { deckId: 'deck-1', cards };
+  const publishInput = (
+    cards: { id: string; front: string; back: string }[],
+  ) => ({
+    deckId: 'deck-1',
+    notes: cards.map((card) => ({
+      cardIds: [card.id],
+      text: `${card.front}\n${card.back}`,
+    })),
+  });
   const manyCards = (count: number) =>
     Array.from({ length: count }, (_, index) => ({
       id: `card-${index}`,
@@ -71,7 +80,7 @@ describe('ModerationService', () => {
 
   it('allows every card without a request when the escape hatch is active', async () => {
     const result = await serviceWith({ MODERATION_ALLOW_ALL: '1' }).check(
-      input,
+      publishInput(cards),
     );
 
     expect(result).toEqual({
@@ -84,7 +93,7 @@ describe('ModerationService', () => {
   });
 
   it('fails closed without AI_API_BASE', async () => {
-    const result = await serviceWith({}).check(input);
+    const result = await serviceWith({}).check(publishInput(cards));
 
     expect(result).toEqual({
       ok: false,
@@ -110,12 +119,20 @@ describe('ModerationService', () => {
         response('Safety: Unsafe Categories: Unethical Acts'),
       )
       .mockResolvedValueOnce(
+        response(
+          JSON.stringify({
+            verdict: 'confirm',
+            reason: 'Violates the policy.',
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
         response('Safety: Controversial\nCategories: Violent'),
       );
 
     const result = await serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-    }).check(input);
+    }).check(publishInput(cards));
 
     expect(result).toEqual({
       ok: false,
@@ -135,6 +152,12 @@ describe('ModerationService', () => {
           categories: ['Unethical Acts'],
         },
         {
+          cardId: 'card-2',
+          classifier: 'gemma4',
+          verdict: 'unsafe',
+          categories: null,
+        },
+        {
           cardId: 'card-3',
           classifier: 'moderation',
           verdict: 'controversial',
@@ -142,7 +165,7 @@ describe('ModerationService', () => {
         },
       ],
     });
-    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 
   it('passes when every card is Safe', async () => {
@@ -153,7 +176,7 @@ describe('ModerationService', () => {
 
     const result = await serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-    }).check({ ...input, cards: cards.slice(0, 2) });
+    }).check(publishInput(cards.slice(0, 2)));
 
     expect(result).toEqual({
       ok: true,
@@ -173,6 +196,166 @@ describe('ModerationService', () => {
           categories: [],
         },
       ],
+    });
+  });
+
+  (process.env.MODERATION_LIVE_API_BASE ? it : it.skip).each([
+    [
+      'word: gordo\ntranslation: fat\nexample: El gato está gordo.\nexample_translation: The cat is fat.\nVocabulary note from a Spanish course for English speakers.',
+      'warn',
+    ],
+    [
+      'You worthless idiot, I will kill you. This is a threat addressed to a person, not vocabulary study.',
+      'confirm',
+    ],
+  ])(
+    'checks the production JSON judge request against a live model (%s)',
+    async (text, expected) => {
+      jest
+        .mocked(global.fetch)
+        .mockResolvedValueOnce(
+          response('Safety: Unsafe\nCategories: Unethical Acts'),
+        )
+        .mockImplementationOnce(originalFetch);
+      const result = await serviceWith({
+        AI_API_BASE: process.env.MODERATION_LIVE_API_BASE,
+        AI_API_KEY: process.env.MODERATION_LIVE_API_KEY,
+        AI_DEFAULT_MODEL: process.env.MODERATION_LIVE_JUDGE_MODEL,
+      }).check({ deckId: 'live-judge', notes: [{ cardIds: ['card'], text }] });
+      expect(result.results[1]).toMatchObject({
+        verdict: expected === 'warn' ? 'controversial' : 'unsafe',
+      });
+      expect(result.results[1].error).toBeUndefined();
+      expect(result.ok).toBe(expected === 'warn');
+    },
+    15_000,
+  );
+
+  it('downgrades an explicit false positive and reports the reason on every sibling', async () => {
+    const mockFetch = jest.mocked(global.fetch);
+    mockFetch
+      .mockResolvedValueOnce(
+        response('Safety: Unsafe\nCategories: Unethical Acts'),
+      )
+      .mockResolvedValueOnce(
+        response(
+          JSON.stringify({
+            verdict: 'warn',
+            reason: 'Ordinary Spanish vocabulary, not an insult.',
+          }),
+        ),
+      );
+    const text = 'Vocabulary note. {"word":"gordo","translation":"fat"}';
+    const result = await serviceWith({
+      AI_API_BASE: 'https://mock-ai.test/v1',
+      AI_DEFAULT_MODEL: 'configured-judge',
+    }).check({
+      deckId: 'spanish',
+      notes: [{ cardIds: ['forward', 'reverse', 'example'], text }],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.flagged).toEqual([]);
+    expect(result.warnings).toEqual(
+      ['forward', 'reverse', 'example'].map((cardId) => ({
+        cardId,
+        reason: 'Ordinary Spanish vocabulary, not an insult.',
+      })),
+    );
+    expect(result.results).toHaveLength(6);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const body = JSON.parse(mockFetch.mock.calls[1][1]?.body as string) as {
+      model: string;
+      messages: { role: string; content: string }[];
+    };
+    expect(body.model).toBe('configured-judge');
+    expect(body.messages[0].role).toBe('system');
+    expect(JSON.parse(body.messages[1].content)).toEqual({
+      category: 'Unethical Acts',
+      study_content: text,
+    });
+    expect(result.results).toContainEqual({
+      cardId: 'reverse',
+      classifier: 'configured-judge',
+      verdict: 'controversial',
+      categories: null,
+    });
+  });
+
+  it.each([
+    ['invalid JSON', 'not json'],
+    ['unknown verdict', '{"verdict":"safe","reason":"ok"}'],
+    ['missing reason', '{"verdict":"warn"}'],
+    ['blank reason', '{"verdict":"warn","reason":" "}'],
+    ['extra fields', '{"verdict":"warn","reason":"ok","override":true}'],
+  ])(
+    'retains the refusal when the judge returns %s',
+    async (_label, content) => {
+      jest
+        .mocked(global.fetch)
+        .mockResolvedValueOnce(response('Safety: Unsafe Categories: Hate'))
+        .mockResolvedValueOnce(response(content));
+      const result = await serviceWith({
+        AI_API_BASE: 'https://mock-ai.test/v1',
+      }).check(publishInput(cards.slice(0, 1)));
+      expect(result.ok).toBe(false);
+      expect(result.flagged).toEqual([{ cardId: 'card-1', reason: 'Hate' }]);
+      expect(result.warnings).toEqual([]);
+      expect(result.results[1]).toMatchObject({
+        classifier: 'gemma4',
+        verdict: 'error',
+        error: 'unparseable',
+      });
+    },
+  );
+
+  it.each(['network', 'http'])(
+    'retains the refusal on a judge %s failure',
+    async (failure) => {
+      const mockFetch = jest
+        .mocked(global.fetch)
+        .mockResolvedValueOnce(response('Safety: Unsafe Categories: Hate'));
+      if (failure === 'network')
+        mockFetch.mockRejectedValueOnce(new TypeError('offline'));
+      else
+        mockFetch.mockResolvedValueOnce({ ok: false, status: 503 } as Response);
+      const result = await serviceWith({
+        AI_API_BASE: 'https://mock-ai.test/v1',
+      }).check(publishInput(cards.slice(0, 1)));
+      expect(result.ok).toBe(false);
+      expect(result.flagged).toEqual([{ cardId: 'card-1', reason: 'Hate' }]);
+      expect(result.warnings).toEqual([]);
+      expect(result.results[1].verdict).toBe('error');
+    },
+  );
+
+  it('bounds a hung judge by the remaining deck budget and keeps the refusal', async () => {
+    jest.useFakeTimers({ doNotFake: [] });
+    jest.setSystemTime(0);
+    fakeAbortTimeouts();
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce(response('Safety: Unsafe Categories: Hate'))
+      .mockImplementationOnce(
+        (_input, init) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener(
+              'abort',
+              () => reject(new DOMException('Aborted', 'AbortError')),
+              { once: true },
+            );
+          }),
+      );
+    const check = serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check(
+      publishInput(cards.slice(0, 1)),
+    );
+    await jest.advanceTimersByTimeAsync(6_000);
+    const result = await check;
+    expect(result.flagged).toEqual([{ cardId: 'card-1', reason: 'Hate' }]);
+    expect(result.ok).toBe(false);
+    expect(result.results[1]).toMatchObject({
+      classifier: 'gemma4',
+      verdict: 'error',
+      error: 'timeout',
     });
   });
 
@@ -431,10 +614,9 @@ describe('ModerationService', () => {
       .mockResolvedValue({ ok: false, status: 503 } as Response);
 
     await expect(
-      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check({
-        ...input,
-        cards: cards.slice(0, 1),
-      }),
+      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check(
+        publishInput(cards.slice(0, 1)),
+      ),
     ).resolves.toEqual({
       ok: false,
       reason: 'moderation unavailable',
@@ -456,10 +638,9 @@ describe('ModerationService', () => {
     jest.mocked(global.fetch).mockRejectedValue(new TypeError('offline'));
 
     await expect(
-      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check({
-        ...input,
-        cards: cards.slice(0, 1),
-      }),
+      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check(
+        publishInput(cards.slice(0, 1)),
+      ),
     ).resolves.toEqual({
       ok: false,
       reason: 'moderation unavailable',
@@ -481,10 +662,9 @@ describe('ModerationService', () => {
     jest.mocked(global.fetch).mockResolvedValue(response('No verdict here'));
 
     await expect(
-      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check({
-        ...input,
-        cards: cards.slice(0, 1),
-      }),
+      serviceWith({ AI_API_BASE: 'https://mock-ai.test/v1' }).check(
+        publishInput(cards.slice(0, 1)),
+      ),
     ).resolves.toEqual({
       ok: false,
       reason: 'moderation unavailable',
@@ -502,14 +682,14 @@ describe('ModerationService', () => {
     });
   });
 
-  it('sends one non-streaming moderation request per card', async () => {
+  it('sends one non-streaming moderation request per note', async () => {
     const mockFetch = jest.mocked(global.fetch);
     mockFetch.mockResolvedValue(response('Safety: Safe'));
 
     await serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1/',
       AI_API_KEY: 'test-key',
-    }).check({ ...input, cards: cards.slice(0, 1) });
+    }).check(publishInput(cards.slice(0, 1)));
 
     expect(mockFetch).toHaveBeenCalledWith(
       'https://mock-ai.test/v1/chat/completions',
@@ -556,7 +736,7 @@ describe('ModerationService', () => {
     // Forty cards give a 45 s deck budget, so the 30 s per-card cap fires first.
     const check = serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-    }).check({ deckId: 'deck-1', cards: manyCards(40) });
+    }).check(publishInput(manyCards(40)));
     await jest.advanceTimersByTimeAsync(45_000);
 
     const result = await check;
@@ -587,7 +767,7 @@ describe('ModerationService', () => {
 
     const check = serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-    }).check(input);
+    }).check(publishInput(cards));
     await jest.advanceTimersByTimeAsync(8_000);
 
     const result = await check;
@@ -614,7 +794,7 @@ describe('ModerationService', () => {
 
     const check = serviceWith({
       AI_API_BASE: 'https://mock-ai.test/v1',
-    }).check({ deckId: 'deck-1', cards: manyCards(20) });
+    }).check(publishInput(manyCards(20)));
     await jest.advanceTimersByTimeAsync(2_000);
 
     await expect(check).resolves.toEqual({
