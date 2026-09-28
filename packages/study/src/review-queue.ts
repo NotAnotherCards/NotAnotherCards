@@ -38,3 +38,16 @@ export function selectReviewBatch<T extends ReviewQueueCard>(
 
   return batch;
 }
+
+/**
+ * The next batch, from the due cards as they are when it is asked for: a card
+ * that became due, arrived through sync or was deleted since the session began
+ * is taken into account. Each client passes its own read; the selection is the
+ * same on all of them.
+ */
+export async function nextReviewBatch<T extends ReviewQueueCard>(
+  readDueCards: () => Promise<readonly T[]> | readonly T[],
+  batchSize: number = REVIEW_BATCH_SIZE,
+): Promise<T[]> {
+  return selectReviewBatch(await readDueCards(), batchSize);
+}

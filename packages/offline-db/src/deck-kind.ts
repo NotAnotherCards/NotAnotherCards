@@ -1,4 +1,4 @@
-import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from './note-constants.js';
+import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/study';
 import { languageFor, languageLabel } from '@repo/schemas';
 
 // What kind of deck this is, since the type is chosen once and decides which

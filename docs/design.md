@@ -167,6 +167,7 @@ deck descriptions and word-note notes through the shared `Input` component.
 | `dropdown-menu`                             |                                                       |
 | `field`, `label`, `input`, `password-input` | `form-field`, `label`, `input`                        |
 | `MarkdownRenderer`                          | `markdown`                                            |
+| `progress`                                  | `progress` (value and indicator colour; no animation) |
 | `separator`                                 |                                                       |
 | `spinner`                                   |                                                       |
 | `switch`                                    |                                                       |

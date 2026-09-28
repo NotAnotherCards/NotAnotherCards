@@ -1,0 +1,37 @@
+{
+  "name": "@repo/study",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./activity": {
+      "types": "./dist/activity.d.ts",
+      "default": "./dist/activity.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "test": "pnpm test:unit && pnpm test:runtime-contract",
+    "test:unit": "vitest run",
+    "test:runtime-contract": "node scripts/runtime-contract.mjs",
+    "lint": "eslint ."
+  },
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "esbuild": "0.28.2",
+    "hermes-engine-cli": "0.12.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.10"
+  }
+}
