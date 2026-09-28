@@ -23,6 +23,7 @@ import {
   ProfileFormValues,
   userProfileFormSchema,
 } from '@repo/schemas';
+import { useTranslation } from 'react-i18next';
 
 export function OnBoardingComponent() {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ export function OnBoardingComponent() {
   // getSession() does not update it. Without this refetch the provider
   // still holds onBoardingComplete: false when the protected layout mounts, and the
   // layout renders nothing.
+  const { t } = useTranslation();
   const { refetch: refetchSession } = authClient.useSession();
   const [apiError, setApiError] = useState<string | null>(null);
   const form = useForm<ProfileFormValues>({
@@ -63,7 +65,7 @@ export function OnBoardingComponent() {
         const { message } = apiErrorBodySchema.parse(
           await res.json().catch(() => null),
         );
-        throw new Error(message || 'Failed to save onboarding data');
+        throw new Error(message || t('onboarding.error_default'));
       }
       await refetchSession();
       void navigate({ to: '/dashboard' });
@@ -77,8 +79,8 @@ export function OnBoardingComponent() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 flex-1">
       <AuthCard
-        title="Welcome!"
-        description="Choose your username and language preferences to get started"
+        title={t('onboarding.title')}
+        description={t('onboarding.description')}
         footerText=""
         footerLinkText=""
         footerLinkTo=""
@@ -91,7 +93,9 @@ export function OnBoardingComponent() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Username</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>
+                      {t('onboarding.username')}
+                    </FieldLabel>
                     <Input
                       {...field}
                       value={field.value ?? ''}
@@ -125,7 +129,7 @@ export function OnBoardingComponent() {
                               if (!available) {
                                 form.setError('username', {
                                   type: 'manual',
-                                  message: 'Username is already taken',
+                                  message: t('onboarding.username_taken'),
                                 });
                               } else if (
                                 form.getFieldState('username').error?.type ===
@@ -157,7 +161,7 @@ export function OnBoardingComponent() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>
-                      Native Language
+                      {t('onboarding.nativeLanguage')}
                     </FieldLabel>
                     <div className="relative w-full">
                       <select
@@ -177,7 +181,7 @@ export function OnBoardingComponent() {
                           disabled
                           className="bg-background text-foreground"
                         >
-                          Select language
+                          {t('onboarding.selectLanguage')}
                         </option>
                         {LANGUAGES.map((lang) => (
                           <option
@@ -208,7 +212,7 @@ export function OnBoardingComponent() {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor={field.name}>
-                      Target Language
+                      {t('onboarding.targetLanguage')}
                     </FieldLabel>
                     <div className="relative w-full">
                       <select
@@ -228,7 +232,7 @@ export function OnBoardingComponent() {
                           disabled
                           className="bg-background text-foreground"
                         >
-                          Select language
+                          {t('onboarding.selectLanguage')}
                         </option>
                         {LANGUAGES.filter(
                           (lang) => lang.value !== nativeLanguage,
@@ -260,10 +264,10 @@ export function OnBoardingComponent() {
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner />
-                    Saving...
+                    {t('onboarding.saving')}
                   </span>
                 ) : (
-                  'Complete registration'
+                  t('onboarding.submit')
                 )}
               </Button>
             </FieldGroup>

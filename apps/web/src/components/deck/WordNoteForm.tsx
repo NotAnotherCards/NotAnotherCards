@@ -14,6 +14,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { WordNoteEditableFieldsV1 } from '@repo/offline-db';
+import { useTranslation } from 'react-i18next';
 import { gendersFor, languageFor } from '@repo/schemas';
 import {
   Field,
@@ -97,6 +98,7 @@ export function WordNoteForm({
   error,
   alwaysShowDetails = false,
 }: WordNoteFormProps) {
+  const { t } = useTranslation();
   const form = useForm<WordFormFields>({
     resolver: zodResolver(wordFormSchema),
     defaultValues: {
@@ -237,7 +239,10 @@ export function WordNoteForm({
               {title}
             </CardTitle>
             <CardDescription>
-              The word and what it means. Everything else is optional.
+              {t(
+                'deck.word_form.desc',
+                'The word and what it means. Everything else is optional.',
+              )}
             </CardDescription>
           </CardHeader>
 
@@ -253,7 +258,10 @@ export function WordNoteForm({
                       <input
                         {...field}
                         id={field.name}
-                        placeholder="the word you are learning"
+                        placeholder={t(
+                          'deck.word_form.word_placeholder',
+                          'the word you are learning',
+                        )}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid ? 'word-error' : undefined
@@ -277,7 +285,10 @@ export function WordNoteForm({
                       <input
                         {...field}
                         id={field.name}
-                        placeholder="what it means in your language"
+                        placeholder={t(
+                          'deck.word_form.translation_placeholder',
+                          'what it means in your language',
+                        )}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
                           fieldState.invalid ? 'translation-error' : undefined
@@ -302,7 +313,7 @@ export function WordNoteForm({
                     <ChevronDown
                       className={`size-4 transition-transform ${showDetails ? 'rotate-180' : ''}`}
                     />
-                    More details
+                    {t('deck.word_form.more_details', 'More details')}
                   </button>
                 )}
 
@@ -313,12 +324,16 @@ export function WordNoteForm({
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
                         <FieldLabel htmlFor={field.name}>
-                          Pronunciation
+                          {t('deck.word_form.pronunciation', 'Pronunciation')}
                         </FieldLabel>
                         <input
                           {...field}
+                          value={field.value ?? ''}
                           id={field.name}
-                          placeholder="IPA"
+                          placeholder={t(
+                            'deck.word_form.pronunciation_placeholder',
+                            'IPA',
+                          )}
                           aria-invalid={fieldState.invalid}
                           className={inputClass(fieldState.invalid)}
                         />
@@ -334,14 +349,18 @@ export function WordNoteForm({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor={field.name}>Gender</FieldLabel>
+                        <FieldLabel htmlFor={field.name}>
+                          {t('deck.word_form.gender', 'Gender')}
+                        </FieldLabel>
                         <select
                           {...field}
                           value={field.value ?? ''}
                           id={field.name}
                           className={inputClass(fieldState.invalid)}
                         >
-                          <option value="">Not set</option>
+                          <option value="">
+                            {t('deck.word_form.not_set', 'Not set')}
+                          </option>
                           {genders.map((gender) => (
                             <option key={gender} value={gender}>
                               {gender}
@@ -361,7 +380,7 @@ export function WordNoteForm({
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
                         <FieldLabel htmlFor={field.name}>
-                          Part of speech
+                          {t('deck.word_form.part_of_speech', 'Part of speech')}
                         </FieldLabel>
                         <select
                           {...field}
@@ -369,7 +388,9 @@ export function WordNoteForm({
                           id={field.name}
                           className={inputClass(fieldState.invalid)}
                         >
-                          <option value="">Not set</option>
+                          <option value="">
+                            {t('deck.word_form.not_set', 'Not set')}
+                          </option>
                           {hasLegacyPartOfSpeech && (
                             <option value={initialPartOfSpeech}>
                               {initialPartOfSpeech}
@@ -377,7 +398,7 @@ export function WordNoteForm({
                           )}
                           {PARTS_OF_SPEECH.map(([value, label]) => (
                             <option key={value} value={value}>
-                              {label}
+                              {t(`deck.word_form.${value}`, label)}
                             </option>
                           ))}
                         </select>
@@ -395,12 +416,18 @@ export function WordNoteForm({
                       control={form.control}
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                          <FieldLabel htmlFor={field.name}>
+                            {t(`deck.word_form.${name}`, label)}
+                          </FieldLabel>
                           <textarea
                             {...field}
                             value={field.value ?? ''}
                             id={field.name}
-                            placeholder={placeholder}
+                            placeholder={
+                              placeholder
+                                ? t(`deck.word_form.${name}_desc`, placeholder)
+                                : ''
+                            }
                             aria-invalid={fieldState.invalid}
                             className={textAreaClass(fieldState.invalid)}
                           />
@@ -435,7 +462,7 @@ export function WordNoteForm({
                 onClick={onCancel}
                 disabled={form.formState.isSubmitting}
               >
-                Cancel
+                {t('deck.word_form.cancel', 'Cancel')}
               </Button>
               <Button
                 type="submit"
@@ -444,7 +471,9 @@ export function WordNoteForm({
                   form.formState.isSubmitting || staleCandidate || generating
                 }
               >
-                {form.formState.isSubmitting ? 'Saving…' : 'Save'}
+                {form.formState.isSubmitting
+                  ? t('deck.word_form.saving', 'Saving…')
+                  : t('deck.word_form.save', 'Save')}
               </Button>
             </div>
           </CardFooter>

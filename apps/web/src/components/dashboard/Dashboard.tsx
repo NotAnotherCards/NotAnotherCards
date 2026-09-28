@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { PageContainer } from '@/components/PageContainer';
 import {
@@ -18,6 +19,7 @@ import { AiGenerationPlaygroundComponent } from '../ai/AiGenerationPlaygroundCom
 import { Leaderboard } from './Leaderboard';
 
 export function DashboardComponent() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     | 'overview'
@@ -34,13 +36,13 @@ export function DashboardComponent() {
 
   return (
     <PageContainer
-      title="Dashboard Page"
-      description="Welcome to your language learning portal. Track your vocabulary review progress, explore dictionaries, and build your learning streak."
+      title={t('dashboard.title')}
+      description={t('dashboard.description')}
     >
       {/* Navigation Tabs */}
       <div
         role="tablist"
-        aria-label="Dashboard sections"
+        aria-label={t('dashboard.aria_sections')}
         className="flex flex-col sm:flex-row border border-border/50 sm:border-0 sm:border-b gap-2 p-1.5 bg-muted/30 rounded-2xl w-full sm:w-fit"
       >
         <Button
@@ -54,7 +56,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <BookOpen className="size-3.5 mr-1.5" />
-          Overview
+          {t('dashboard.tabs.overview')}
         </Button>
         <Button
           role="tab"
@@ -68,7 +70,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <Library className="size-3.5 mr-1.5" />
-          My Library
+          {t('dashboard.tabs.library')}
         </Button>
         <Button
           role="tab"
@@ -81,7 +83,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <BookOpen className="size-3.5 mr-1.5" />
-          Playground
+          {t('dashboard.tabs.playground')}
         </Button>
         <Button
           role="tab"
@@ -94,7 +96,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <BarChart3 className="size-3.5 mr-1.5" />
-          Statistics
+          {t('dashboard.tabs.statistics')}
         </Button>{' '}
         <Button
           role="tab"
@@ -107,7 +109,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <Trophy className="size-3.5 mr-1.5" />
-          Leaderboard
+          {t('dashboard.tabs.leaderboard')}
         </Button>
         <Button
           role="tab"
@@ -120,7 +122,7 @@ export function DashboardComponent() {
           className="cursor-pointer font-semibold rounded-xl text-xs px-4 justify-start sm:justify-center"
         >
           <SettingsIcon className="size-3.5 mr-1.5" />
-          Profile & Settings
+          {t('dashboard.tabs.settings')}
         </Button>
       </div>
 

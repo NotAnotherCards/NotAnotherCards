@@ -7,10 +7,6 @@ import {
   ReviewEvent,
 } from './user-dictionary.js';
 import {
-  BASIC_NOTE_FIELDS_VERSION,
-  BASIC_NOTE_TYPE,
-} from './note-constants.js';
-import {
   BackupCard,
   BackupDeck,
   BackupJsonFormat,

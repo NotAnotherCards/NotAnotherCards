@@ -81,7 +81,7 @@ describe('Protected Layout Guards', () => {
       await router.navigate({ to: '/dashboard' });
     });
     expect(
-      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+      await screen.findByRole('heading', { name: /Dashboard/i }),
     ).toBeInTheDocument();
   });
 

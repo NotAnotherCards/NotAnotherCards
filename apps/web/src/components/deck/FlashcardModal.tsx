@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/hooks/useStore';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
+import { useTranslation } from 'react-i18next';
 
 type FlashcardModalProps = {
   card: Card;
@@ -11,6 +12,7 @@ type FlashcardModalProps = {
 
 /** Read-only preview. Review answers belong to the deck review route. */
 export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
+  const { t } = useTranslation();
   const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
@@ -47,14 +49,14 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
             data-testid="flashcard-front"
           >
             <span className="absolute top-4 left-4 rounded-full bg-muted/40 px-2 py-0.5 text-[10px] font-bold tracking-wider text-muted-foreground/60 uppercase">
-              Question / Front
+              {t('deck.card_modal.front', 'Question / Front')}
             </span>
             <div className="max-h-48 max-w-full overflow-y-auto wrap-break-word pr-1 text-center font-heading text-3xl font-bold tracking-tight text-foreground">
               <MarkdownRenderer content={card.front} />
             </div>
             <div className="absolute bottom-4 flex items-center gap-1.5 text-xs font-medium text-muted-foreground/60">
               <RefreshCw className="size-3.5" />
-              Click card to flip
+              {t('deck.card_modal.flip', 'Click card to flip')}
             </div>
           </div>
           <div
@@ -66,7 +68,7 @@ export function FlashcardModal({ card, onClose }: FlashcardModalProps) {
             data-testid="flashcard-back"
           >
             <span className="absolute top-4 left-4 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary/60 uppercase">
-              Answer / Back
+              {t('deck.card_modal.back', 'Answer / Back')}
             </span>
             <div className="max-h-32 max-w-full overflow-y-auto wrap-break-word pr-1 text-center font-heading text-3xl font-bold tracking-tight text-primary">
               <MarkdownRenderer

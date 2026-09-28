@@ -1,5 +1,6 @@
 import Storage from 'expo-sqlite/kv-store';
 import {
+  lastReviewDeckStorageKey,
   parseReviewPreferences,
   reviewPreferencesStorageKey,
   type ReviewPreferences,
@@ -22,4 +23,12 @@ export function saveReviewPreferences(
     reviewPreferencesStorageKey(userId),
     JSON.stringify(preferences),
   );
+}
+
+export function loadLastReviewDeckId(userId: string): string | null {
+  return Storage.getItemSync(lastReviewDeckStorageKey(userId));
+}
+
+export function saveLastReviewDeckId(userId: string, deckId: string): void {
+  Storage.setItemSync(lastReviewDeckStorageKey(userId), deckId);
 }

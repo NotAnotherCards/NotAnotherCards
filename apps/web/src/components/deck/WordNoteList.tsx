@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { type UserNoteRecord } from '@repo/offline-db';
 import { toWordListRow, type WordListRow } from './word-note-rows';
+import { useTranslation } from 'react-i18next';
 
 // Word rows switch once: a stacked layout below 880px and a table above it.
 const WORD_TABLE_LAYOUT = {
@@ -52,6 +53,7 @@ export function WordNoteList({
   canRemove,
   onAddWord,
 }: WordNoteListProps) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const cardsByNoteId = useMemo(() => {
     const result = new Map<string, Card[]>();
@@ -101,7 +103,9 @@ export function WordNoteList({
         <div className="flex flex-nowrap items-center gap-x-4 text-base font-bold whitespace-nowrap">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Library className="size-4 text-primary" />
-            {filteredRows.length} Words
+            {t('deck.words.title', '{{count}} Words', {
+              count: filteredRows.length,
+            })}
           </CardTitle>
           <span>{filteredCards.length} Cards</span>
           <span>{filteredDueCount} Cards Due</span>
@@ -109,7 +113,10 @@ export function WordNoteList({
         <div className="relative mt-4 w-full md:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
-            placeholder="Search word, translation..."
+            placeholder={t(
+              'deck.words.search_placeholder',
+              'Search word, translation...',
+            )}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             className="pl-9 h-9 text-xs"
@@ -120,15 +127,23 @@ export function WordNoteList({
         {filteredRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground min-h-50 gap-4">
             <HelpCircle className="size-10 mb-2 stroke-1 opacity-60" />
-            <p className="text-sm font-semibold">No Words Found</p>
+            <p className="text-sm font-semibold">
+              {t('deck.words.no_found', 'No Words Found')}
+            </p>
             <p className="text-xs max-w-xs mt-1">
               {searchTerm
-                ? 'Try refining your search term to find a word in this deck.'
-                : 'This deck is empty. Click Add Word above to start building your collection.'}
+                ? t(
+                    'deck.words.refine_search',
+                    'Try refining your search term to find a word in this deck.',
+                  )
+                : t(
+                    'deck.words.empty_deck',
+                    'This deck is empty. Click Add Word above to start building your collection.',
+                  )}
             </p>
             {!searchTerm && notes.length === 0 && (
               <Button onClick={onAddWord} className="cursor-pointer">
-                Add Word
+                {t('deck.detail.add_word', 'Add Word')}
               </Button>
             )}
           </div>
@@ -140,16 +155,20 @@ export function WordNoteList({
                   role="row"
                   className="sr-only @[880px]:not-sr-only @[880px]:grid @[880px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-4 @[880px]:!px-6 @[880px]:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
                 >
-                  <div role="columnheader">Word</div>
-                  <div role="columnheader">Translation</div>
-                  <div role="columnheader" className="text-center">
-                    Cards
+                  <div role="columnheader">
+                    {t('deck.words.col_word', 'Word')}
+                  </div>
+                  <div role="columnheader">
+                    {t('deck.words.col_translation', 'Translation')}
                   </div>
                   <div role="columnheader" className="text-center">
-                    Extra info
+                    {t('deck.words.col_cards', 'Cards')}
                   </div>
                   <div role="columnheader" className="text-center">
-                    Actions
+                    {t('deck.words.col_details', 'Details')}
+                  </div>
+                  <div role="columnheader" className="text-center">
+                    {t('deck.words.col_actions', 'Actions')}
                   </div>
                 </div>
               </div>
@@ -168,7 +187,10 @@ export function WordNoteList({
                       >
                         <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
                         <span className="mr-auto text-sm font-medium text-amber-900 dark:text-amber-200">
-                          This word can't be shown
+                          {t(
+                            'deck.words.cant_show',
+                            "This word can't be shown",
+                          )}
                         </span>
                         {canRemove && (
                           <Button
@@ -177,7 +199,7 @@ export function WordNoteList({
                             className="cursor-pointer"
                             onClick={() => onRemoveWord(row.note)}
                           >
-                            Remove word
+                            {t('deck.words.remove_word', 'Remove word')}
                           </Button>
                         )}
                       </div>
@@ -192,7 +214,7 @@ export function WordNoteList({
                             type="button"
                             className="max-w-full cursor-pointer truncate text-left hover:text-primary"
                             onClick={() => onViewNote(row.note)}
-                            title="View Word"
+                            title={t('deck.words.view_word', 'View Word')}
                           >
                             {row.word}
                           </button>
@@ -212,7 +234,11 @@ export function WordNoteList({
                           >
                             <span className="text-left text-xs text-muted-foreground">
                               <span className="@[880px]:hidden">
-                                Cards: {row.cards.length}
+                                {t(
+                                  'deck.words.cards_count',
+                                  'Cards: {{count}}',
+                                  { count: row.cards.length },
+                                )}
                               </span>
                               <span className="hidden @[880px]:inline">
                                 {row.cards.length}
@@ -226,7 +252,11 @@ export function WordNoteList({
                             >
                               <span className="text-left text-xs text-muted-foreground">
                                 <span className="@[880px]:hidden">
-                                  Extra info: {row.detailsCount}
+                                  {t(
+                                    'deck.words.details_count',
+                                    'Extra info: {{count}}',
+                                    { count: row.detailsCount },
+                                  )}
                                 </span>
                                 <span className="hidden @[880px]:inline">
                                   {row.detailsCount}
@@ -243,7 +273,7 @@ export function WordNoteList({
                                   size="icon"
                                   className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
                                   onClick={() => onViewNote(row.note)}
-                                  title="View Word"
+                                  title={t('deck.words.view_word', 'View Word')}
                                 >
                                   <Eye className="size-3.5" />
                                 </Button>
@@ -253,7 +283,10 @@ export function WordNoteList({
                                     size="icon"
                                     className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
                                     onClick={() => onEditWord(row.note)}
-                                    title="Edit Word"
+                                    title={t(
+                                      'deck.word_view.edit_word',
+                                      'Edit Word',
+                                    )}
                                   >
                                     <Edit className="size-3.5" />
                                   </Button>
@@ -264,7 +297,10 @@ export function WordNoteList({
                                     size="icon"
                                     className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                     onClick={() => onRemoveWord(row.note)}
-                                    title="Remove word from this deck"
+                                    title={t(
+                                      'deck.card_item.remove',
+                                      'Remove from Deck',
+                                    )}
                                   >
                                     <Unlink className="size-3.5" />
                                   </Button>

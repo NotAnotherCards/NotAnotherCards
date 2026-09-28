@@ -1,6 +1,8 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Login from '@/app/login';
+// The app's root loads the catalogs; these render the forms without it.
+import '@/lib/i18n';
 
 const mockReplace = jest.fn();
 
@@ -64,6 +66,11 @@ describe('Login screen', () => {
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
   });
 
+  it('offers a way to reset a forgotten password', () => {
+    const { getByText } = render(<Login />);
+    expect(getByText('Reset here!')).toBeTruthy();
+  });
+
   it('renders the card and both fields', () => {
     const { getByText, getByPlaceholderText } = render(<Login />);
     expect(getByText('Welcome back')).toBeTruthy();
@@ -78,6 +85,7 @@ describe('Login screen', () => {
       'not-an-email',
     );
     fireEvent.press(getByText('Log in'));
+    // The shared schema gives a key; the field shows its translation.
     expect(await findByText('Please enter a valid email address')).toBeTruthy();
   });
 

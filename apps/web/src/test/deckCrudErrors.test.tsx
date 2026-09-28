@@ -61,7 +61,7 @@ vi.mock('@/hooks/useStore', () => ({
   }),
 }));
 
-const saveButton = () => screen.queryByRole('button', { name: /save deck/i });
+const saveButton = () => screen.queryByRole('button', { name: /save/i });
 const confirmDeleteButton = () =>
   screen.queryByRole('button', { name: /delete deck only/i });
 
@@ -124,7 +124,7 @@ describe('deck CRUD error handling', () => {
     const openForm = () => {
       decks = [existingDeck];
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Edit Deck Details'));
+      fireEvent.click(screen.getByTitle('Edit'));
     };
 
     it('keeps the dialog open when the write fails', async () => {
@@ -144,7 +144,7 @@ describe('deck CRUD error handling', () => {
     const openDelete = () => {
       decks = [existingDeck];
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Delete Deck'));
+      fireEvent.click(screen.getByTitle('Delete'));
     };
 
     it.each([0, 1])(
@@ -158,18 +158,16 @@ describe('deck CRUD error handling', () => {
         });
         openDelete();
         const button = await screen.findByRole('button', {
-          name: 'Delete deck and 1 card',
+          name: /Delete deck and 1 card/,
         });
         expect(
-          screen.getByText(/1 card is only in this deck/),
+          screen.getByText(/This will delete 1 orphaned card/),
         ).toBeInTheDocument();
         if (sharedCardCount === 0)
-          expect(
-            screen.queryByText(/also in other decks/),
-          ).not.toBeInTheDocument();
+          expect(screen.queryByText(/shared card/)).not.toBeInTheDocument();
         else
           expect(
-            screen.getByText(/1 card is also in other decks/),
+            screen.getByText(/1 shared card will be kept/),
           ).toBeInTheDocument();
         fireEvent.click(button);
         expect(screen.getByRole('dialog')).toHaveAccessibleName(
@@ -181,10 +179,10 @@ describe('deck CRUD error handling', () => {
     it('shows card counts and requires a second confirmation', async () => {
       openDelete();
       const destructive = await screen.findByRole('button', {
-        name: 'Delete deck and 3 cards',
+        name: /Delete deck and 3 card/,
       });
       expect(
-        screen.getByText(/2 cards are also in other decks/),
+        screen.getByText(/2 shared cards will be kept/),
       ).toBeInTheDocument();
       fireEvent.click(destructive);
       expect(screen.getByRole('dialog')).toHaveAccessibleName(
@@ -194,9 +192,13 @@ describe('deck CRUD error handling', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Back' }));
       expect(deleteDeckWithNotes).not.toHaveBeenCalled();
       fireEvent.click(
-        screen.getByRole('button', { name: 'Delete deck and 3 cards' }),
+        screen.getByRole('button', { name: /Delete deck and 3 card/ }),
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      const dialog = screen.getByRole('dialog');
+      const dialogButton = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      );
+      if (dialogButton) fireEvent.click(dialogButton);
       await waitFor(() =>
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
       );
@@ -208,12 +210,19 @@ describe('deck CRUD error handling', () => {
       deleteDeckWithNotes.mockRejectedValueOnce(new Error('Deletion failed'));
       openDelete();
       fireEvent.click(
-        await screen.findByRole('button', { name: 'Delete deck and 3 cards' }),
+        await screen.findByRole('button', { name: /Delete deck and 3 card/ }),
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      const dialog = screen.getByRole('dialog');
+      let dialogButton = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      );
+      if (dialogButton) fireEvent.click(dialogButton);
       await screen.findByRole('alert');
       expect(screen.getByRole('alert')).toHaveTextContent('Deletion failed');
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      dialogButton = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      );
+      if (dialogButton) fireEvent.click(dialogButton);
       await waitFor(() =>
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
       );
@@ -229,11 +238,12 @@ describe('deck CRUD error handling', () => {
       );
       openDelete();
       fireEvent.click(
-        await screen.findByRole('button', { name: 'Delete deck and 3 cards' }),
+        await screen.findByRole('button', { name: /Delete deck and 3 card/ }),
       );
-      const button = screen.getByRole('button', {
-        name: 'Delete',
-      });
+      const dialog = screen.getByRole('dialog');
+      const button = Array.from(dialog.querySelectorAll('button')).find(
+        (b) => b.textContent === 'Delete',
+      ) as HTMLElement;
       fireEvent.click(button);
       expect(button).toBeDisabled();
       expect(screen.getByRole('button', { name: 'Back' })).toBeDisabled();
@@ -279,7 +289,7 @@ describe('deck CRUD error handling', () => {
       decks = [existingDeck];
 
       render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
-      fireEvent.click(screen.getByTitle('Delete Deck'));
+      fireEvent.click(screen.getByTitle('Delete'));
       fireEvent.click(confirmDeleteButton()!);
 
       await waitFor(() => expect(deleteDeck).toHaveBeenCalledTimes(1));

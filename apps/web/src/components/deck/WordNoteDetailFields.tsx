@@ -1,4 +1,5 @@
 import type { WordNoteFields } from '@repo/offline-db';
+import { useTranslation } from 'react-i18next';
 
 const fields = [
   ['Part of speech', 'part_of_speech'],
@@ -14,6 +15,7 @@ export function WordNoteDetailFields({
 }: {
   fields: WordNoteFields;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       {fields.map(([label, key]) => {
@@ -23,7 +25,7 @@ export function WordNoteDetailFields({
         return (
           <dl key={key}>
             <dt className="text-xs font-medium text-muted-foreground">
-              {label}
+              {t(`deck.word_form.${key}`, label)}
             </dt>
             <dd className="mt-1.5 min-h-9 rounded-lg border border-input bg-background px-3 py-2 text-sm whitespace-pre-wrap break-words">
               {value}

@@ -125,7 +125,7 @@ describe('Auth Guards', () => {
 
     // Verify the dashboard route component is rendered
     expect(
-      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+      await screen.findByRole('heading', { name: /Dashboard/i }),
     ).toBeInTheDocument();
 
     // Verify welcome message with user name
@@ -159,7 +159,7 @@ describe('Auth Guards', () => {
 
     // Verify user is redirected to dashboard
     expect(
-      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+      await screen.findByRole('heading', { name: /Dashboard/i }),
     ).toBeInTheDocument();
 
     // Verify the URL is updated to /dashboard
@@ -275,7 +275,7 @@ describe('Auth Guards', () => {
 
     // Check we made it to dashboard page
     expect(
-      await screen.findByRole('heading', { name: /DASHBOARD PAGE/i }),
+      await screen.findByRole('heading', { name: /Dashboard/i }),
     ).toBeInTheDocument();
   });
 });
