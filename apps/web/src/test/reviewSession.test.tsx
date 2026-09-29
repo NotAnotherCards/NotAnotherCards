@@ -714,7 +714,7 @@ describe('ReviewSession', () => {
   });
 
   it('loads a new batch after the current batch is completed', async () => {
-    const onRequestNextBatch = vi.fn(() => [secondCard]);
+    const onRequestNextBatch = vi.fn(async () => [secondCard]);
     render(
       <ReviewSession
         cards={[card]}
@@ -734,6 +734,9 @@ describe('ReviewSession', () => {
       await Promise.resolve();
     });
     finishCardExit();
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(onRequestNextBatch).toHaveBeenCalledOnce();
     expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
