@@ -2,7 +2,11 @@
 # languages: 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000003
 # German high-frequency words for English speakers. One entry per line:
 # word | translation | part of speech | article | example | example translation
-# Frequency order: Wordhoard (OpenSubtitles); translations and examples: NotAnotherCards.
+# Source data: Wordhoard (https://github.com/natema/wordhoard), CC BY-SA 4.0.
+# Attribution: Wiktionary contributors via gambolputty/german-nouns; OpenSubtitles
+# frequency lists via hermitdave/FrequencyWords; spaCy for lemma and part-of-speech data.
+# Changes: filtered to 500 learner-appropriate lemmas; translations and example
+# sentences added by NotAnotherCards. This adapted deck is shared under CC BY-SA 4.0.
 
 sein | to be | verb |  | Ich bin heute zu Hause. | I am at home today.
 werden | to become | verb |  | Das Wetter wird besser. | The weather is getting better.
