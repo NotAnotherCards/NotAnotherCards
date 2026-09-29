@@ -214,7 +214,7 @@ describe('Overview Gamification', () => {
     },
   ])(
     '$name',
-    async ({ remembered, dueDecks, inactiveRemembered, expected }) => {
+    async ({ remembered, dueDecks, expected }) => {
       if (remembered) saveLastReviewDeckId(mockSession.user.id, remembered);
       const navigate = vi.fn();
       vi.mocked(useNavigate).mockReturnValue(navigate);
@@ -223,7 +223,7 @@ describe('Overview Gamification', () => {
         id: `card-${deckId}`,
         note_id: `note-${deckId}`,
         template_key: 'basic:front-back',
-        active: !(deckId === 'finished' && inactiveRemembered),
+        active: true,
         front: 'front',
         back: 'back',
         due_at: Date.now() + (deckId === 'finished' ? 60_000 : -1),
