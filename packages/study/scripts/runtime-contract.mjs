@@ -138,33 +138,22 @@ try {
     html,
     '<!doctype html><html><body><script src="activity-contract.js"></script></body></html>',
   );
-  const browserArgs = [
-    '--headless',
-    '--disable-gpu',
-    '--disable-dev-shm-usage',
-    '--no-sandbox',
-    `--user-data-dir=${join(directory, 'chrome-profile')}`,
-    '--no-first-run',
-    '--no-default-browser-check',
-    '--dump-dom',
-    pathToFileURL(html).href,
-  ];
-  const runBrowser = () =>
-    execFileSync(chrome, browserArgs, {
+  const browserDom = execFileSync(
+    chrome,
+    [
+      '--headless',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
+      '--dump-dom',
+      pathToFileURL(html).href,
+    ],
+    {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
       timeout: 20_000,
-    });
-  let browserDom;
-  try {
-    browserDom = runBrowser();
-  } catch (error) {
-    // GitHub's shared runners occasionally time out while creating Chrome,
-    // before the browser has read the contract. Retry that transient failure
-    // once; every other browser error remains a test failure.
-    if (error?.code !== 'ETIMEDOUT') throw error;
-    browserDom = runBrowser();
-  }
+    },
+  );
   const browserOutput = /<body>(.*)<\/body>/s.exec(browserDom)?.[1];
 
   if (!nodeOutput || !hermesOutput || !browserOutput) {
