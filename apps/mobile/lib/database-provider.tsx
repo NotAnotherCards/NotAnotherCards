@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { View } from 'react-native';
 import type { DatabaseManager, SyncController } from '@remelondb/core';
 import {
@@ -10,6 +10,7 @@ import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
+import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -45,6 +46,17 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
     sync: { pullChanges, pushChanges, migrationsEnabledAtVersion: 1 },
     controller: { triggers: nativeSyncTriggers },
   });
+
+  useEffect(() => {
+    if (!manager || !syncController || manager.state?.status !== 'ready') {
+      return;
+    }
+
+    return normalizeLegacyCardContentAfterSync(
+      manager.database,
+      syncController,
+    );
+  }, [manager, syncController]);
 
   if (closeError) {
     return <DatabaseUnrecoverable error={closeError} />;

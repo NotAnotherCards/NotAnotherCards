@@ -35,7 +35,12 @@ export function getDecksQuery(db: Database) {
 export function getPersonalDictionaryQuery(db: Database) {
   return db
     .get(UserCard)
-    .query(Q.where('active', true), Q.sortBy('created_at', Q.desc));
+    .query(
+      Q.where('active', true),
+      Q.where('front', Q.notEq('')),
+      Q.where('back', Q.notEq('')),
+      Q.sortBy('created_at', Q.desc),
+    );
 }
 
 export function getAllCardsQuery(db: Database) {
@@ -284,7 +289,7 @@ export async function disableCard(db: Database, cardId: string) {
   });
 }
 
-/** Activate the oldest inactive words in one deck, including every sibling. */
+/** Activate the oldest words with no active sibling in one deck. */
 export async function activateWordsInDeck(
   db: Database,
   deckId: string,
@@ -307,11 +312,10 @@ export async function activateWordsInDeck(
       cardsByNote.set(card.note_id, siblings);
     }
     const selected = memberships
-      .filter((membership) =>
-        (cardsByNote.get(membership.note_id) ?? []).some(
-          (card) => !card.active,
-        ),
-      )
+      .filter((membership) => {
+        const siblings = cardsByNote.get(membership.note_id) ?? [];
+        return siblings.length > 0 && siblings.every((card) => !card.active);
+      })
       .sort(
         (first, second) =>
           first.created_at - second.created_at ||

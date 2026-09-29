@@ -233,9 +233,15 @@ describe('derived-card validation (#194)', () => {
     ).toEqual([cardId('note-a', 'invented-template')]);
   });
 
-  it('requires a card its fields cannot yield to arrive deactivated', async () => {
-    const active = cardFor('note-a', 'example-to-translation', 's', 't');
-    const inactive = cardFor(
+  it('accepts an active blank card its fields cannot currently yield', async () => {
+    const activeBlank = cardFor('note-a', 'example-to-translation', '', '');
+    expect(
+      await rejectedIds(emptyTx, [activeBlank], [wordNote('note-a')]),
+    ).toHaveLength(0);
+  });
+
+  it('accepts an inactive old card with stale content for old clients', async () => {
+    const inactiveStale = cardFor(
       'note-a',
       'example-to-translation',
       's',
@@ -243,11 +249,15 @@ describe('derived-card validation (#194)', () => {
       false,
     );
     expect(
-      await rejectedIds(emptyTx, [active], [wordNote('note-a')]),
-    ).toHaveLength(1);
-    expect(
-      await rejectedIds(emptyTx, [inactive], [wordNote('note-a')]),
+      await rejectedIds(emptyTx, [inactiveStale], [wordNote('note-a')]),
     ).toHaveLength(0);
+  });
+
+  it('rejects an active card with stale content', async () => {
+    const activeStale = cardFor('note-a', 'example-to-translation', 's', 't');
+    expect(
+      await rejectedIds(emptyTx, [activeStale], [wordNote('note-a')]),
+    ).toEqual([cardId('note-a', 'example-to-translation')]);
   });
 
   describe('cards of stored notes', () => {

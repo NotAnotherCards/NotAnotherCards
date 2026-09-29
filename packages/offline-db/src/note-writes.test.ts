@@ -7,7 +7,11 @@ import {
   createNotesBatch,
   updateNoteFields,
 } from './note-writes.js';
-import { activateWordsInDeck, createDeck } from './queries.js';
+import {
+  activateWordsInDeck,
+  createDeck,
+  getPersonalDictionaryQuery,
+} from './queries.js';
 import { schema } from './index.js';
 import {
   UserCard,
@@ -150,6 +154,69 @@ describe('activateWordsInDeck', () => {
     );
     expect(firstCards.every((card) => card.active)).toBe(true);
     expect(secondCards.every((card) => !card.active)).toBe(true);
+  });
+
+  it('does not activate a word again when one sibling is already active', async () => {
+    await openDb();
+    const deck = await createWordDeck();
+    const first = await createNote(db, deck.id, {
+      noteType: 'word',
+      fieldsVersion: 1,
+      fields: word,
+    });
+    const second = await createNote(db, deck.id, {
+      noteType: 'word',
+      fieldsVersion: 1,
+      fields: { ...word, word: 'Katze', translation: 'cat' },
+    });
+    await db.write(async () => {
+      const [firstCard, firstMembership, secondMembership] = await Promise.all([
+        db
+          .get(UserCard)
+          .query()
+          .fetch()
+          .then((cards) => cards.find((card) => card.note_id === first.id)!),
+        db.get(UserNoteDeck).find(noteDeckId(first.id, deck.id)),
+        db.get(UserNoteDeck).find(noteDeckId(second.id, deck.id)),
+      ]);
+      await firstCard.update((record) => {
+        record.active = true;
+      });
+      await firstMembership.update((record) => {
+        record.created_at = 10;
+      });
+      await secondMembership.update((record) => {
+        record.created_at = 20;
+      });
+    });
+
+    await expect(activateWordsInDeck(db, deck.id, 1)).resolves.toEqual([
+      second.id,
+    ]);
+  });
+
+  it('excludes active cards with an empty side from the personal dictionary', async () => {
+    await openDb();
+    const deck = await createWordDeck();
+    const note = await createNote(db, deck.id, {
+      noteType: 'word',
+      fieldsVersion: 1,
+      fields: word,
+    });
+    await activateWordsInDeck(db, deck.id, 1);
+    const stale = (await db.get(UserCard).query().fetch()).find(
+      (card) => card.note_id === note.id,
+    )!;
+    await db.write(async () => {
+      await stale.update((record) => {
+        record.front = '';
+      });
+    });
+
+    const cards = await getPersonalDictionaryQuery(db).fetch();
+    expect(cards).toHaveLength(1);
+    expect(cards[0]!.front).not.toBe('');
+    expect(cards[0]!.back).not.toBe('');
   });
 });
 

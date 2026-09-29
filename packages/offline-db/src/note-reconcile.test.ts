@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Database } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { cardId } from './ids.js';
-import { prepareReconcileNoteCards } from './note-reconcile.js';
+import {
+  normalizeLegacyCardContent,
+  prepareReconcileNoteCards,
+} from './note-reconcile.js';
 import { compileNote, type WordNoteFields } from '@repo/study';
 import { schema } from './index.js';
 import { UserCard, UserNote } from './user-dictionary.js';
@@ -174,6 +177,70 @@ describe('prepareReconcileNoteCards', () => {
     expect(() => compileNote('phrase', 1, {})).toThrow(
       /Unsupported note type phrase@1/,
     );
+  });
+});
+
+describe('normalizeLegacyCardContent', () => {
+  it('clears old stale content and activates it when a sibling is active', async () => {
+    await openDb();
+    await createWordNote(withExample);
+    await db.write(async () => {
+      const note = await db.get(UserNote).find('note-1');
+      await note.update((record) => {
+        record.fields_json = compileNote('word', 1, word).fieldsJson;
+      });
+    });
+    const exampleId = cardId('note-1', 'example-to-translation');
+    const wordCardId = cardId('note-1', 'word-to-translation');
+    await db.write(async () => {
+      const [example, wordCard] = await Promise.all([
+        db.get(UserCard).find(exampleId),
+        db.get(UserCard).find(wordCardId),
+      ]);
+      await wordCard.update((record) => {
+        record.active = true;
+      });
+      await example.update((record) => {
+        record.active = false;
+      });
+    });
+    await reconcile('note-1', word);
+    await db.write(async () => {
+      const example = await db.get(UserCard).find(exampleId);
+      await example.update((record) => {
+        record.front = 'old example';
+        record.back = 'old translation';
+      });
+    });
+
+    expect(await normalizeLegacyCardContent(db)).toBe(1);
+    const example = await db.get(UserCard).find(exampleId);
+    expect(example).toMatchObject({ active: true, front: '', back: '' });
+    expect(await normalizeLegacyCardContent(db)).toBe(0);
+  });
+
+  it('leaves an old stale card inactive when no sibling is active', async () => {
+    await openDb();
+    await createWordNote(withExample);
+    await db.write(async () => {
+      const note = await db.get(UserNote).find('note-1');
+      await note.update((record) => {
+        record.fields_json = compileNote('word', 1, word).fieldsJson;
+      });
+    });
+    const exampleId = cardId('note-1', 'example-to-translation');
+    await reconcile('note-1', word);
+    await db.write(async () => {
+      const example = await db.get(UserCard).find(exampleId);
+      await example.update((record) => {
+        record.front = 'old example';
+        record.back = 'old translation';
+      });
+    });
+
+    expect(await normalizeLegacyCardContent(db)).toBe(1);
+    const example = await db.get(UserCard).find(exampleId);
+    expect(example).toMatchObject({ active: false, front: '', back: '' });
   });
 });
 

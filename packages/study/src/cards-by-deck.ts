@@ -1,4 +1,8 @@
-import { selectDueCards, type ReviewQueueCard } from './review-queue.js';
+import {
+  isStudyable,
+  selectDueCards,
+  type ReviewQueueCard,
+} from './review-queue.js';
 
 export type DeckLearningCounts = {
   totalCards: number;
@@ -16,11 +20,11 @@ export function deckLearningCounts(
 ): DeckLearningCounts {
   const noteIdSet = new Set(noteIds);
   const activeNoteIds = new Set(
-    cards.filter((card) => card.active !== false).map((card) => card.note_id),
+    cards.filter((card) => card.active === true).map((card) => card.note_id),
   );
   return {
     totalCards: cards.length,
-    activeCards: cards.filter((card) => card.active !== false).length,
+    activeCards: cards.filter(isStudyable).length,
     dueCards: selectDueCards(cards, now).length,
     totalNotes: noteIdSet.size,
     activeNotes: [...noteIdSet].filter((id) => activeNoteIds.has(id)).length,

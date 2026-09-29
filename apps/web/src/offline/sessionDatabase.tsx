@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { DatabaseManager, SyncController } from '@remelondb/core';
@@ -10,6 +10,7 @@ import { authClient } from '@/lib/auth-client';
 import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
 import { browserSyncTriggers } from './syncController';
+import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -46,6 +47,17 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
     sync: { pullChanges, pushChanges, migrationsEnabledAtVersion: 1 },
     controller: { triggers: browserSyncTriggers },
   });
+
+  useEffect(() => {
+    if (!manager || !syncController || manager.state?.status !== 'ready') {
+      return;
+    }
+
+    return normalizeLegacyCardContentAfterSync(
+      manager.database,
+      syncController,
+    );
+  }, [manager, syncController]);
 
   if (closeError) {
     return <DatabaseUnrecoverable error={closeError} />;

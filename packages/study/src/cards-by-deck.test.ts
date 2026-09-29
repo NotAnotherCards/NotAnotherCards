@@ -15,9 +15,30 @@ const card = (note_id: string) => ({ note_id });
 describe('reviewTarget', () => {
   const now = 1000;
   const cards = [
-    { id: 'c1', note_id: 'n1', due_at: now },
-    { id: 'c2', note_id: 'n2', due_at: now - 1 },
-    { id: 'c3', note_id: 'n3', due_at: now + 1 },
+    {
+      id: 'c1',
+      note_id: 'n1',
+      due_at: now,
+      active: true,
+      front: 'a',
+      back: 'b',
+    },
+    {
+      id: 'c2',
+      note_id: 'n2',
+      due_at: now - 1,
+      active: true,
+      front: 'a',
+      back: 'b',
+    },
+    {
+      id: 'c3',
+      note_id: 'n3',
+      due_at: now + 1,
+      active: true,
+      front: 'a',
+      back: 'b',
+    },
   ];
 
   it.each([
@@ -133,16 +154,37 @@ describe('deckLearningCounts', () => {
     expect(
       deckLearningCounts(
         [
-          { id: 'c1', note_id: 'n1', due_at: 10, active: true },
-          { id: 'c2', note_id: 'n1', due_at: 20, active: true },
-          { id: 'c3', note_id: 'n2', due_at: 0, active: false },
+          {
+            id: 'c1',
+            note_id: 'n1',
+            due_at: 10,
+            active: true,
+            front: 'a',
+            back: 'b',
+          },
+          {
+            id: 'c2',
+            note_id: 'n1',
+            due_at: 20,
+            active: true,
+            front: '',
+            back: '',
+          },
+          {
+            id: 'c3',
+            note_id: 'n2',
+            due_at: 0,
+            active: false,
+            front: 'a',
+            back: 'b',
+          },
         ],
         ['n1', 'n2'],
         10,
       ),
     ).toEqual({
       totalCards: 3,
-      activeCards: 2,
+      activeCards: 1,
       dueCards: 1,
       totalNotes: 2,
       activeNotes: 1,

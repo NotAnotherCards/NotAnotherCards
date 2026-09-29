@@ -7,7 +7,14 @@ import {
 } from './review-queue.js';
 
 function makeCard(id: string, noteId: string): ReviewQueueCard {
-  return { id, note_id: noteId, due_at: 1 };
+  return {
+    id,
+    note_id: noteId,
+    due_at: 1,
+    active: true,
+    front: 'front',
+    back: 'back',
+  };
 }
 
 describe('selectReviewBatch', () => {
@@ -38,10 +45,38 @@ describe('selectReviewBatch', () => {
 describe('selectDueCards', () => {
   it('keeps cards due at or before now, earliest first', () => {
     const cards = [
-      { id: 'later', note_id: 'n1', due_at: 300 },
-      { id: 'future', note_id: 'n2', due_at: 501 },
-      { id: 'now', note_id: 'n3', due_at: 500 },
-      { id: 'earliest', note_id: 'n4', due_at: 100 },
+      {
+        id: 'later',
+        note_id: 'n1',
+        due_at: 300,
+        active: true,
+        front: 'a',
+        back: 'b',
+      },
+      {
+        id: 'future',
+        note_id: 'n2',
+        due_at: 501,
+        active: true,
+        front: 'a',
+        back: 'b',
+      },
+      {
+        id: 'now',
+        note_id: 'n3',
+        due_at: 500,
+        active: true,
+        front: 'a',
+        back: 'b',
+      },
+      {
+        id: 'earliest',
+        note_id: 'n4',
+        due_at: 100,
+        active: true,
+        front: 'a',
+        back: 'b',
+      },
     ];
     expect(selectDueCards(cards, 500).map((card) => card.id)).toEqual([
       'earliest',

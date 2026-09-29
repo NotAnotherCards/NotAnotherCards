@@ -10,19 +10,24 @@ export type ReviewQueueCard = {
   readonly back?: string;
 };
 
+/** A card that is activated and has both rendered sides ready for review. */
+export function isStudyable(card: ReviewQueueCard): boolean {
+  return (
+    card.active === true &&
+    typeof card.front === 'string' &&
+    card.front.length > 0 &&
+    typeof card.back === 'string' &&
+    card.back.length > 0
+  );
+}
+
 /** The cards due at `now`, earliest first; the order `selectReviewBatch` keeps. */
 export function selectDueCards<T extends ReviewQueueCard>(
   cards: readonly T[],
   now: number = Date.now(),
 ): T[] {
   return cards
-    .filter(
-      (card) =>
-        card.active !== false &&
-        card.front !== '' &&
-        card.back !== '' &&
-        card.due_at <= now,
-    )
+    .filter((card) => isStudyable(card) && card.due_at <= now)
     .sort((first, second) => first.due_at - second.due_at);
 }
 
