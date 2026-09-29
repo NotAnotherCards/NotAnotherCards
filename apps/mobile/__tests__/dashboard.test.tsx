@@ -455,36 +455,7 @@ describe('Dashboard screen', () => {
     expect(queryByText(/Start Review/)).toBeNull();
   });
 
-  it('disables Start Review when nothing is due', () => {
-    saveLastReviewDeckId('user-dashboard', 'deck-spanish');
-    mockUseSession.mockReturnValue({
-      data: {
-        user: {
-          id: 'user-dashboard',
-          name: 'Jane Doe',
-          onBoardingComplete: true,
-        },
-      },
-      isPending: false,
-    });
-
-    const { getByRole } = render(<Dashboard />);
-    const button = getByRole('button', { name: 'Start Review · 0 due' });
-    expect(button.props.accessibilityState.disabled).toBe(true);
-    fireEvent.press(button);
-
-    expect(mockPush).not.toHaveBeenCalled();
-    // Nothing due now does not forget the deck: it can be due again later.
-    expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
-  });
-
-  it('starts the saved deck when it has inactive items to activate', () => {
-    mockReviewOverview = {
-      target: 'deck-spanish',
-      dueCount: 0,
-      isLoading: false,
-      error: null,
-    };
+  it('opens the library when nothing is due', () => {
     saveLastReviewDeckId('user-dashboard', 'deck-spanish');
     mockUseSession.mockReturnValue({
       data: {
@@ -501,7 +472,13 @@ describe('Dashboard screen', () => {
     const button = getByRole('button', { name: 'Start Review · 0 due' });
     expect(button.props.accessibilityState.disabled).toBe(false);
     fireEvent.press(button);
-    expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
+
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(
+      getByRole('tab', { name: 'My Library' }).props.accessibilityState,
+    ).toEqual({ selected: true });
+    // Nothing due now does not forget the deck: it can be due again later.
+    expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });
 
   it('does not clear the saved deck while queries are loading', () => {

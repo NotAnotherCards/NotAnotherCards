@@ -9,6 +9,7 @@ import {
   getDecksQuery,
   getNoteDecksQuery,
   getAllCardsQuery,
+  getPersonalDictionaryQuery,
   activateWordsInDeck,
   cardsForDeck,
   recordReviewEvent,
@@ -52,7 +53,7 @@ export function useReviewOverview(
 ) {
   const db = useDatabase(manager);
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
-  const cards = useQuery<UserCardRecord>(db && getAllCardsQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
   // Cards come due as time passes, not only when data changes
   const now = useNow();
 

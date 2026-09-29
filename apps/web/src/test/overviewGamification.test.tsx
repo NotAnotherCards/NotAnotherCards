@@ -207,17 +207,10 @@ describe('Overview Gamification', () => {
       expected: 'library',
     },
     {
-      name: 'disables review when nothing is due',
+      name: 'opens the library when nothing is due',
       remembered: 'finished',
       dueDecks: [],
-      expected: 'nothing-due',
-    },
-    {
-      name: 'opens the remembered deck when it has words to activate',
-      remembered: 'finished',
-      dueDecks: [],
-      inactiveRemembered: true,
-      expected: 'finished',
+      expected: 'library',
     },
   ])(
     '$name',
@@ -254,16 +247,12 @@ describe('Overview Gamification', () => {
       render(<Overview onChooseDeck={onChooseDeck} />);
       const button = screen.getByRole('button', { name: 'Start Review' });
       expect(button).toHaveTextContent(/^Start Review$/);
-      if (expected === 'nothing-due') expect(button).toBeDisabled();
-      else expect(button).toBeEnabled();
+      expect(button).toBeEnabled();
       await act(async () => {
         fireEvent.click(button);
       });
       if (expected === 'library') {
         expect(onChooseDeck).toHaveBeenCalledOnce();
-        expect(navigate).not.toHaveBeenCalled();
-      } else if (expected === 'nothing-due') {
-        expect(onChooseDeck).not.toHaveBeenCalled();
         expect(navigate).not.toHaveBeenCalled();
       } else {
         expect(navigate).toHaveBeenCalledWith({

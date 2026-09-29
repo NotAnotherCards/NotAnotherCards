@@ -50,13 +50,6 @@ describe('reviewTarget', () => {
       expected: 'nothing-due',
     },
     {
-      name: 'opens the remembered deck when it has inactive words to activate',
-      lastDeckId: 'd1',
-      memberships: [membership('d1', 'n3')],
-      cards: [{ id: 'c3', note_id: 'n3', due_at: now + 1, active: false }],
-      expected: 'd1',
-    },
-    {
       name: 'skips a deleted remembered deck with no memberships',
       lastDeckId: 'deleted',
       memberships: [membership('d2', 'n2')],

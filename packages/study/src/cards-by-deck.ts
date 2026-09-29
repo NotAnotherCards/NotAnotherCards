@@ -62,8 +62,8 @@ export function cardsForDeck<C extends { note_id: string }>(
   return cards.filter((card) => noteIds.has(card.note_id));
 }
 
-// The deck Start review opens, per #425's four rules. `cards` includes active
-// and inactive cards so a remembered deck with new words can open its review.
+// The deck Start review opens a due deck when there is one. Starting from an
+// empty queue belongs to the library, where the learner chooses a deck.
 export function reviewTarget({
   lastDeckId,
   memberships,
@@ -77,19 +77,6 @@ export function reviewTarget({
 }): string | 'library' | 'nothing-due' {
   const counts = countCardsPerDeck(memberships, selectDueCards(cards, now));
   if (lastDeckId && (counts.get(lastDeckId) ?? 0) > 0) return lastDeckId;
-  const inactiveNoteIds = new Set(
-    cards.filter((card) => card.active === false).map((card) => card.note_id),
-  );
-  if (
-    lastDeckId &&
-    memberships.some(
-      (membership) =>
-        membership.deck_id === lastDeckId &&
-        inactiveNoteIds.has(membership.note_id),
-    )
-  ) {
-    return lastDeckId;
-  }
   const dueDeckIds = [...counts]
     .filter(([, count]) => count > 0)
     .map(([id]) => id);
