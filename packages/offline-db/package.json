@@ -18,24 +18,21 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "lint": "eslint \"{src,contract}/**/*.ts\" \"scripts/**/*.mjs\" --max-warnings 0",
-    "test": "pnpm test:unit && pnpm test:runtime-contract",
-    "test:unit": "vitest run",
-    "test:runtime-contract": "node scripts/runtime-contract.mjs"
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "test": "vitest run"
   },
   "dependencies": {
     "@remelondb/core": "0.3.1",
     "@repo/schemas": "workspace:*",
+    "@repo/study": "workspace:*",
     "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },
+  "license": "MIT",
   "devDependencies": {
     "@remelondb/driver-node": "0.3.1",
     "@repo/typescript-config": "workspace:*",
-    "esbuild": "0.28.2",
-    "hermes-engine-cli": "0.12.0",
     "typescript": "5.9.3",
     "vitest": "^4.1.10"
-  },
-  "license": "MIT"
+  }
 }

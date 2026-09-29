@@ -7,11 +7,8 @@ import {
   UserNoteRecord,
   UserNoteDeckRecord,
   UserProfileRecord,
-  BASIC_FRONT_BACK_TEMPLATE_KEY,
-  BASIC_NOTE_FIELDS_VERSION,
-  BASIC_NOTE_TYPE,
   type DeckNoteType,
-  WordNoteFieldsV1,
+  parseWordFields,
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
@@ -41,8 +38,12 @@ import {
   updateUserProfile as dbUpdateUserProfile,
   activateWordsInDeck as dbActivateWordsInDeck,
   CreateCardsBatchOptions,
-  selectDueCards,
 } from '@repo/offline-db';
+import {
+  cardsForDeck,
+  isBasicCard as isBasicNoteCard,
+  selectDueCards,
+} from '@repo/study';
 
 export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
@@ -303,11 +304,7 @@ export function useStore() {
   const isBasicCard = useCallback(
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
-      return (
-        note?.note_type === BASIC_NOTE_TYPE &&
-        note.fields_version === BASIC_NOTE_FIELDS_VERSION &&
-        card.template_key === BASIC_FRONT_BACK_TEMPLATE_KEY
-      );
+      return isBasicNoteCard(card, note);
     },
     [notes],
   );
@@ -321,11 +318,7 @@ export function useStore() {
       ) {
         return false;
       }
-      try {
-        return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
-      } catch {
-        return false;
-      }
+      return parseWordFields(note) !== null;
     },
     [notes],
   );
@@ -341,14 +334,8 @@ export function useStore() {
   );
 
   const getCardsCount = useCallback(
-    (deckId: string): number => {
-      const noteIds = new Set(
-        noteDecks
-          .filter((noteDeck) => noteDeck.deck_id === deckId)
-          .map((noteDeck) => noteDeck.note_id),
-      );
-      return allCards.filter((card) => noteIds.has(card.note_id)).length;
-    },
+    (deckId: string): number =>
+      cardsForDeck(noteDecks, allCards, deckId).length,
     [allCards, noteDecks],
   );
 
@@ -365,14 +352,8 @@ export function useStore() {
   );
 
   const getCardsForDeck = useCallback(
-    (deckId: string): UserCardRecord[] => {
-      const noteIds = new Set(
-        noteDecks
-          .filter((noteDeck) => noteDeck.deck_id === deckId)
-          .map((noteDeck) => noteDeck.note_id),
-      );
-      return allCards.filter((card) => noteIds.has(card.note_id));
-    },
+    (deckId: string): UserCardRecord[] =>
+      cardsForDeck(noteDecks, allCards, deckId),
     [allCards, noteDecks],
   );
 

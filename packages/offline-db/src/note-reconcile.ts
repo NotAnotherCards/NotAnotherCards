@@ -15,7 +15,7 @@
  */
 import { Q, type BatchOperation, type Database } from '@remelondb/core';
 import { cardId } from './ids.js';
-import type { CompiledNote } from './note-registry.js';
+import type { CompiledNote } from '@repo/study';
 import { UserCard } from './user-dictionary.js';
 
 /** Cards for a brand-new note: no queries, nothing can exist yet. */

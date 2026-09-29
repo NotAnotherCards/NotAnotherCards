@@ -50,6 +50,18 @@ export function countCardsPerDeck(
   return counts;
 }
 
+// Cards whose note is in the deck, in the cards' own order. The same join as
+// countCardsPerDeck for one deck; nothing is filtered here.
+export function cardsForDeck<C extends { note_id: string }>(
+  memberships: readonly { deck_id: string; note_id: string }[],
+  cards: readonly C[],
+  deckId: string,
+): C[] {
+  const noteIds = new Set<string>();
+  for (const m of memberships) if (m.deck_id === deckId) noteIds.add(m.note_id);
+  return cards.filter((card) => noteIds.has(card.note_id));
+}
+
 // The deck Start review opens, per #425's four rules. `cards` includes active
 // and inactive cards so a remembered deck with new words can open its review.
 export function reviewTarget({

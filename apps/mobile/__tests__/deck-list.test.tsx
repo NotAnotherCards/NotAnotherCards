@@ -17,10 +17,18 @@ const mockWrites = {
   remove: jest.fn(() => Promise.resolve(undefined)),
 };
 let mockDecksState: {
-  decks: { id: string; title: string; description: string | null }[];
+  decks: {
+    id: string;
+    title: string;
+    description: string | null;
+    note_type: string;
+    native_language_id?: string | null;
+    target_language_id?: string | null;
+  }[];
   isLoading: boolean;
   error: Error | null;
   cardCount: (id: string) => number;
+  dueCount: (id: string) => number;
   profile: {
     native_language_id: string | null;
     target_language_id: string | null;
@@ -35,12 +43,20 @@ beforeEach(() => {
   mockSessionDb = { manager };
   mockDecksState = {
     decks: [
-      { id: 'd1', title: 'Spanish', description: 'Verbs' },
-      { id: 'd2', title: 'Yoga', description: null },
+      {
+        id: 'd1',
+        title: 'Spanish',
+        description: 'Verbs',
+        note_type: 'word',
+        native_language_id: '00000000-0000-0000-0000-000000000003',
+        target_language_id: '00000000-0000-0000-0000-000000000002',
+      },
+      { id: 'd2', title: 'Yoga', description: null, note_type: 'basic' },
     ],
     isLoading: false,
     error: null,
     cardCount: (id) => (id === 'd1' ? 12 : 0),
+    dueCount: (id) => (id === 'd1' ? 3 : 0),
     profile: null,
     writes: mockWrites,
   };
@@ -51,6 +67,12 @@ beforeEach(() => {
 });
 
 describe('DeckList', () => {
+  it('opens the deck from Manage cards', async () => {
+    const { findByLabelText } = render(<DeckList />);
+    fireEvent.press(await findByLabelText('Manage cards of Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
+  });
+
   it('waits for the database manager before rendering decks', () => {
     mockSessionDb = { manager: null };
     const { queryByText } = render(<DeckList />);
@@ -58,7 +80,8 @@ describe('DeckList', () => {
   });
 
   it('lists decks with their card counts', () => {
-    const { getByText, UNSAFE_getAllByProps } = render(<DeckList />);
+    const { getByText, getByTestId, getByLabelText, UNSAFE_getAllByProps } =
+      render(<DeckList />);
     expect(
       UNSAFE_getAllByProps({ role: 'listitem' }).filter(
         (el) => typeof el.type === 'string',
@@ -66,8 +89,28 @@ describe('DeckList', () => {
     ).toHaveLength(2);
     expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('Verbs')).toBeTruthy();
-    expect(getByText('12 cards')).toBeTruthy();
-    expect(getByText('0 cards')).toBeTruthy();
+    expect(getByText('12')).toBeTruthy();
+    // the kind pill names the deck the way web does
+    expect(getByLabelText('🇩🇪 German → 🇪🇸 Spanish')).toBeTruthy();
+    expect(getByLabelText('Card deck')).toBeTruthy();
+    // the deck with work is accented, the empty one stays muted
+    expect(getByTestId('deck-due-d1')).toHaveTextContent('3');
+    expect(getByTestId('deck-due-d1').props.className).toContain(
+      'text-primary',
+    );
+    expect(getByTestId('deck-due-d2').props.className).toContain(
+      'text-muted-foreground',
+    );
+  });
+
+  it('starts a deck review from the list, unless nothing is due', () => {
+    const { getByLabelText } = render(<DeckList />);
+
+    const empty = getByLabelText('Start review of Yoga');
+    expect(empty.props.accessibilityState.disabled).toBe(true);
+
+    fireEvent.press(getByLabelText('Start review of Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/review/d1');
   });
 
   it('shows the empty state without decks', () => {
@@ -80,7 +123,7 @@ describe('DeckList', () => {
     const { getByText, getByPlaceholderText, queryByText } = render(
       <DeckList />,
     );
-    fireEvent.press(getByText('New deck'));
+    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -104,7 +147,7 @@ describe('DeckList', () => {
     const { getByText, getByPlaceholderText, getByDisplayValue } = render(
       <DeckList />,
     );
-    fireEvent.press(getByText('New deck'));
+    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -151,7 +194,7 @@ describe('DeckList action state', () => {
     message = 'Database not initialized',
   ) => {
     mockWrites.create.mockRejectedValueOnce(new Error(message));
-    fireEvent.press(r.getByText('New deck'));
+    fireEvent.press(r.getByText('Create deck'));
     fireEvent.changeText(
       r.getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -227,5 +270,28 @@ describe('DeckList action state', () => {
     fireEvent.press(r.getByText('Cancel'));
     fireEvent.press(r.getByLabelText('Delete Spanish'));
     expect(r.queryByText('Database not initialized')).toBeNull();
+  });
+
+  it('keeps open, edit and delete as three separate press targets', () => {
+    mockPush.mockClear();
+    const { getByLabelText, queryByText } = render(<DeckList />);
+    const open = getByLabelText('Open Spanish');
+    const edit = getByLabelText('Edit Spanish');
+    const remove = getByLabelText('Delete Spanish');
+
+    // Neither button sits inside the opening target.
+    const inside = (node: typeof edit | null, ancestor: typeof open) => {
+      for (let at = node; at; at = at.parent) if (at === ancestor) return true;
+      return false;
+    };
+    expect(inside(edit, open)).toBe(false);
+    expect(inside(remove, open)).toBe(false);
+
+    fireEvent.press(remove);
+    expect(queryByText(/Delete this deck\?/)).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+
+    fireEvent.press(open);
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
   });
 });

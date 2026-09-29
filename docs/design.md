@@ -100,6 +100,8 @@ defaults, so the same class names produce 0.5rem and 0.75rem. The React Native
 Reusables adoption (#143) closes the gap: the first component that needs
 `--radius` adds it to `global.css` at web's 0.625rem and maps `borderRadius` in
 `tailwind.config.js`, after which the class names mean the same on both clients.
+Buttons are the exception that already matches: web's `rounded-4xl` and
+mobile's `rounded-full` both make a pill at button height.
 
 ## Motion and micro-animations
 
@@ -153,21 +155,25 @@ is missing; the fix is to add it there, not to copy the markup.
 
 ### Inventory
 
+Mobile multiline inputs use a minimum height of 6rem and top-aligned text;
+single-line inputs keep their compact height. This applies to card sides,
+deck descriptions and word-note notes through the shared `Input` component.
+
 | web `apps/web/src/components/ui`            | mobile `apps/mobile/components/ui`                    |
 | ------------------------------------------- | ----------------------------------------------------- |
 | `alert`                                     |                                                       |
 | `button`                                    | `button` (primary, secondary, destructive; `loading`) |
-| `card`                                      |                                                       |
-| `field`, `label`, `input`, `password-input` | `form-field`, `input`                                 |
+| `card`                                      | `card`                                                |
+| `dropdown-menu`                             |                                                       |
+| `field`, `label`, `input`, `password-input` | `form-field`, `label`, `input`                        |
+| `MarkdownRenderer`                          | `markdown`                                            |
+| `progress`                                  | `progress` (value and indicator colour; no animation) |
 | `separator`                                 |                                                       |
 | `spinner`                                   |                                                       |
-| `google-icon`, `facebook-icon`              |                                                       |
+| `switch`                                    |                                                       |
+| `google-icon`, `facebook-icon`              | `icon` (lucide wrappers)                              |
+|                                             | `segmented`                                           |
 |                                             | `text`                                                |
-
-The first mobile deck CRUD slice in #68 introduces the `secondary` and
-`destructive` button variants. They are listed here because this document is
-the review contract for that work; until the slice lands, `main` has only the
-primary variant and `loading` state.
 
 Web components come from shadcn (`components.json`: style `radix-luma`, base
 colour `neutral`, CSS variables on, icon library lucide). They are added with

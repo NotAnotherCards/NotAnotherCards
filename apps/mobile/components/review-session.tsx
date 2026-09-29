@@ -3,16 +3,21 @@ import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
+  type UserCardRecord,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
+import {
   calculateReviewIntervalMinutes,
   extendedReviewAnswerLabels,
   formatReviewInterval,
   reviewAnswerLabels,
   reviewRatingByAnswer,
+  nextReviewBatch,
   selectReviewBatch,
   type ReviewAnswer,
   type ReviewPreferences,
-  type UserCardRecord,
-} from '@repo/offline-db';
+  cardsForDeck,
+} from '@repo/study';
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
@@ -23,19 +28,16 @@ import {
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
 import { useReviewDeck } from '@/lib/review';
-import { cardsForDeck } from '@/lib/cards-in-deck';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Input } from './ui/input';
 import { Markdown } from './ui/markdown';
 import { Text } from './ui/text';
 import { useTranslation } from 'react-i18next';
-import { WORD_NOTE_TYPE } from '@repo/offline-db';
 
 type ReviewBatch = {
   deckId: string;
   cards: UserCardRecord[];
-  remaining: UserCardRecord[];
 };
 
 function ActivationControls({
@@ -107,13 +109,7 @@ const EXTENDED_ANSWERS: ReviewAnswer[] = [
 ];
 
 function makeBatch(deckId: string, cards: UserCardRecord[]): ReviewBatch {
-  const batch = selectReviewBatch(cards);
-  const selectedIds = new Set(batch.map((card) => card.id));
-  return {
-    deckId,
-    cards: batch,
-    remaining: cards.filter((card) => !selectedIds.has(card.id)),
-  };
+  return { deckId, cards: selectReviewBatch(cards) };
 }
 
 export function ReviewSession({ deckId }: { deckId: string }) {
@@ -151,7 +147,16 @@ function ActiveReviewSession({
   const answers =
     preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS;
   const router = useRouter();
-  const { deck, dueCards, memberships, cards, isLoading, error, writes } =
+  const {
+    deck,
+    dueCards,
+    readDueCards,
+    memberships,
+    cards,
+    isLoading,
+    error,
+    writes,
+  } =
     useReviewDeck(manager, deckId);
   const [session, setSession] = useState<ReviewBatch | null>(null);
   const [cardIndex, setCardIndex] = useState(0);
@@ -163,6 +168,9 @@ function ActiveReviewSession({
   const [activationPending, setActivationPending] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const [activationError, setActivationError] = useState<string | null>(null);
+  // The answer was saved but the next batch could not be read: only the read
+  // is retried, so the answer is never recorded twice.
+  const [nextBatchFailed, setNextBatchFailed] = useState(false);
 
   useEffect(() => {
     if (!isLoading && deck && activationPending) {
@@ -254,6 +262,7 @@ function ActiveReviewSession({
     try {
       await writes.activate(deckId, count);
       saveActivationCount(userId, count);
+      setNextBatchFailed(false);
       setSession(null);
       setActivationPending(true);
     } catch {
@@ -264,19 +273,34 @@ function ActiveReviewSession({
       setIsActivating(false);
     }
   };
-  const advance = () => {
+  // The batch in hand stays as it is; the next one comes from a fresh read,
+  // so cards that became due, arrived through sync or were deleted during the
+  // session are taken into account.
+  const advance = async () => {
     if (cardIndex < session.cards.length - 1) {
       setCardIndex((index) => index + 1);
       return;
     }
 
-    const next = makeBatch(deckId, session.remaining);
-    if (next.cards.length > 0) {
-      setSession(next);
+    const cards = await nextReviewBatch(readDueCards);
+    if (cards.length > 0) {
+      setSession({ deckId, cards });
       setCardIndex(0);
       return;
     }
     setIsComplete(true);
+  };
+
+  const retryNextBatch = async () => {
+    setNextBatchFailed(false);
+    setIsSaving(true);
+    try {
+      await advance();
+    } catch {
+      setNextBatchFailed(true);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const record = async (answer: ReviewAnswer) => {
@@ -285,16 +309,39 @@ function ActiveReviewSession({
     setIsSaving(true);
     try {
       await writes.record(card.id, reviewRatingByAnswer[answer]);
-      setIsFlipped(false);
-      advance();
     } catch (cause) {
       setSaveError(writeErrorMessage(cause, 'Could not save your answer'));
+      setIsSaving(false);
+      return;
+    }
+    setIsFlipped(false);
+    try {
+      await advance();
+    } catch {
+      setNextBatchFailed(true);
     } finally {
       setIsSaving(false);
     }
   };
 
   const leave = () => router.replace(`/deck/${deckId}`);
+
+  if (nextBatchFailed) {
+    return (
+      <View className="items-center gap-4 py-12">
+        <Stack.Screen options={{ title: deck.title }} />
+        <Text className="text-center text-destructive">
+          Your answer is saved, but the next cards could not be loaded.
+        </Text>
+        <Button onPress={() => void retryNextBatch()} disabled={isSaving}>
+          <Text>Retry</Text>
+        </Button>
+        <Button variant="outline" onPress={leave}>
+          <Text>Back to deck</Text>
+        </Button>
+      </View>
+    );
+  }
 
   if (isComplete) {
     return (

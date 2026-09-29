@@ -7,7 +7,11 @@ import {
   saveActivationCount,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
-import { selectDueCards, selectReviewBatch } from '@repo/offline-db';
+import {
+  nextReviewBatch,
+  selectDueCards,
+  selectReviewBatch,
+} from '@repo/offline-db';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -179,7 +183,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       }}
       onRecordReview={store.recordReview}
       onDeleteNote={store.deleteNote}
-      onRequestNextBatch={() => selectReviewBatch(getDueCards(deckId))}
+      onRequestNextBatch={() => nextReviewBatch(() => getDueCards(deckId))}
       reviewMode={reviewPreferences.reviewMode}
       showNextReviewInterval={reviewPreferences.showNextReviewInterval}
     />
