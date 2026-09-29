@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  nextReviewBatch,
   selectDueCards,
   selectReviewBatch,
   type ReviewQueueCard,
@@ -47,5 +48,23 @@ describe('selectDueCards', () => {
       'later',
       'now',
     ]);
+  });
+});
+
+describe('nextReviewBatch', () => {
+  it('reads the due cards when asked, then selects from them', async () => {
+    let due = [makeCard('a', 'note-a')];
+    const read = async () => due;
+    due = [makeCard('b', 'note-b'), makeCard('b2', 'note-b')];
+
+    await expect(nextReviewBatch(read)).resolves.toEqual([
+      makeCard('b', 'note-b'),
+    ]);
+  });
+
+  it('passes a failed read on to the caller', async () => {
+    await expect(
+      nextReviewBatch(() => Promise.reject(new Error('read failed'))),
+    ).rejects.toThrow('read failed');
   });
 });
