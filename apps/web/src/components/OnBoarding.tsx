@@ -13,7 +13,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AuthCard } from '@/components/auth/auth-card';
 import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { authClient, checkUsernameAvailable } from '@/lib/auth-client';
 import {
@@ -44,6 +44,15 @@ export function OnBoardingComponent() {
   });
 
   const nativeLanguage = form.watch('native_language_id');
+  const targetLanguage = form.watch('target_language_id');
+
+  // The target options leave out the native language, so a target equal to
+  // it would be kept but not shown. Clear it instead, as mobile does (#455).
+  useEffect(() => {
+    if (nativeLanguage && nativeLanguage === targetLanguage) {
+      form.setValue('target_language_id', '', { shouldValidate: true });
+    }
+  }, [form, nativeLanguage, targetLanguage]);
 
   const { isSubmitting } = form.formState;
 
