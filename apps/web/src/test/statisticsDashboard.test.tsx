@@ -49,6 +49,7 @@ describe('Statistics dashboard', () => {
         {
           id: 'card-1',
           note_id: 'note-1',
+          active: true,
           front: 'front',
           back: 'back',
           due_at: at('2026-09-16T08:00:00.000Z'),
@@ -57,6 +58,7 @@ describe('Statistics dashboard', () => {
         {
           id: 'card-2',
           note_id: 'note-2',
+          active: true,
           front: 'front',
           back: 'back',
           due_at: at('2026-09-17T08:00:00.000Z'),
@@ -65,6 +67,7 @@ describe('Statistics dashboard', () => {
         {
           id: 'card-3',
           note_id: 'note-3',
+          active: true,
           front: 'front',
           back: 'back',
           due_at: at('2026-09-18T08:00:00.000Z'),
