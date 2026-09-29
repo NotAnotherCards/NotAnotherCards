@@ -107,14 +107,19 @@ export function ActivateMoreWords({
   itemLabel?: 'words' | 'cards';
 }) {
   const { t } = useTranslation();
-  const [count, setCount] = useState(initialCount);
+  const maxCount = Math.max(1, inactiveItemCount ?? Number.MAX_SAFE_INTEGER);
+  const [count, setCount] = useState(() =>
+    String(Math.min(maxCount, Math.max(1, initialCount))),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const maxCount = Math.max(1, inactiveItemCount ?? Number.MAX_SAFE_INTEGER);
-  const selectedCount = Math.min(
-    maxCount,
-    Math.max(1, Math.floor(Number(count) || 1)),
-  );
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selectedCount = () => {
+    const value = Number(count);
+    if (!Number.isInteger(value) || value < 1) return null;
+    return Math.min(maxCount, value);
+  };
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-center gap-4 text-sm font-medium">
@@ -125,13 +130,11 @@ export function ActivateMoreWords({
           id="activation-count"
           type="number"
           min="1"
+          step="1"
           max={inactiveItemCount}
-          value={selectedCount}
-          onChange={(event) =>
-            setCount(
-              Math.min(maxCount, Math.max(1, Number(event.target.value) || 1)),
-            )
-          }
+          ref={inputRef}
+          value={count}
+          onChange={(event) => setCount(event.target.value)}
           className="w-14 rounded-md border bg-background px-2 py-2 text-center"
         />
         <span>
@@ -156,10 +159,15 @@ export function ActivateMoreWords({
       </div>
       <Button
         onClick={async () => {
+          const value = selectedCount();
+          if (value === null) {
+            inputRef.current?.reportValidity();
+            return;
+          }
           setIsSaving(true);
           setError(null);
           try {
-            await onActivate(selectedCount);
+            await onActivate(value);
           } catch {
             setError(
               t('review.activation.error', 'Activation error. Try again.'),

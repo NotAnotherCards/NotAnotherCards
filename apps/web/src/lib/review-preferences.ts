@@ -65,19 +65,30 @@ export function getActivationCount(userId: string | undefined) {
   if (!userId) return DEFAULT_ACTIVATION_COUNT;
   const storage = getReviewStorage();
   if (!storage) return DEFAULT_ACTIVATION_COUNT;
-  const value = Number(
-    storage.getItem(`${ACTIVATION_COUNT_STORAGE_PREFIX}${userId}`),
-  );
-  return Number.isInteger(value) && value > 0
-    ? value
-    : DEFAULT_ACTIVATION_COUNT;
+  try {
+    const value = Number(
+      storage.getItem(`${ACTIVATION_COUNT_STORAGE_PREFIX}${userId}`),
+    );
+    return Number.isInteger(value) && value > 0
+      ? value
+      : DEFAULT_ACTIVATION_COUNT;
+  } catch {
+    return DEFAULT_ACTIVATION_COUNT;
+  }
 }
 
 export function saveActivationCount(userId: string | undefined, count: number) {
   if (!userId || !Number.isInteger(count) || count < 1) return;
   const storage = getReviewStorage();
   if (!storage) return;
-  storage.setItem(`${ACTIVATION_COUNT_STORAGE_PREFIX}${userId}`, String(count));
+  try {
+    storage.setItem(
+      `${ACTIVATION_COUNT_STORAGE_PREFIX}${userId}`,
+      String(count),
+    );
+  } catch {
+    // Activation works even if this local preference cannot be saved.
+  }
 }
 
 export function getReviewPreferences(
