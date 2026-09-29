@@ -4,9 +4,9 @@ import type { SyncController } from '@remelondb/core';
 const noController = () => () => {};
 
 // A pull runs a sync and shows its spinner for as long as that sync runs.
-// The spinner follows the controller's state, not what syncNow() returns:
-// syncNow() only starts the sync. A sync that started by itself shows no
-// spinner, and a failed one is reported by the sync status.
+// The spinner follows the controller's state rather than awaiting
+// syncNow(): a sync that started by itself shows no spinner, and a failed
+// one is reported by the sync status.
 export function usePullToSync(controller: SyncController | null) {
   const [pulled, setPulled] = useState(false);
   const status = useSyncExternalStore(
@@ -25,7 +25,7 @@ export function usePullToSync(controller: SyncController | null) {
       if (!controller) return;
       setPulled(true);
       // Sets the state to syncing before it returns.
-      controller.syncNow();
+      void controller.syncNow();
     },
   };
 }
