@@ -154,8 +154,7 @@ function ActiveReviewSession({
     isLoading,
     error,
     writes,
-  } =
-    useReviewDeck(manager, deckId);
+  } = useReviewDeck(manager, deckId);
   const [session, setSession] = useState<ReviewBatch | null>(null);
   const [cardIndex, setCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
