@@ -23,7 +23,7 @@ jest.mock('@repo/offline-db', () => ({
   ...jest.requireActual('@repo/offline-db'),
   getDecksQuery: () => 'decks',
   getNoteDecksQuery: () => 'memberships',
-  getPersonalDictionaryQuery: () => 'cards',
+  getAllCardsQuery: () => 'cards',
   getUserProfileQuery: () => 'profiles',
 }));
 jest.mock('../lib/database-provider', () => ({
