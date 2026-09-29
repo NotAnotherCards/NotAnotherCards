@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { act, render, fireEvent } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
 import Storage from 'expo-sqlite/kv-store';
 import { lastReviewDeckStorageKey } from '@repo/offline-db';
@@ -19,7 +20,7 @@ let mockSyncController: {
     cause: null;
     lastResult: null;
   };
-  subscribe: () => () => void;
+  subscribe: (notify: () => void) => () => void;
   syncNow: jest.Mock;
 } | null = null;
 const mockUseReviewOverview = jest.fn(
@@ -131,6 +132,66 @@ describe('Dashboard screen', () => {
     };
     mockSyncController = null;
     mockAchievements = { achievements: [], isLoading: false, error: null };
+  });
+
+  it('shows the pull spinner for as long as the sync runs', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    // As the controller does: syncNow() returns nothing, sets the state to
+    // syncing before it returns, and reports the end through its state.
+    const listeners = new Set<() => void>();
+    const setStatus = (status: string) => {
+      controller.state = { ...controller.state, status };
+      listeners.forEach((notify) => notify());
+    };
+    const controller = {
+      state: {
+        status: 'idle',
+        lastSyncAt: null,
+        error: null,
+        cause: null,
+        lastResult: null,
+      },
+      subscribe: (notify: () => void) => {
+        listeners.add(notify);
+        return () => {
+          listeners.delete(notify);
+        };
+      },
+      syncNow: jest.fn(() => setStatus('syncing')),
+    };
+    mockSyncController = controller;
+    const result = render(<Dashboard />);
+
+    // jest-expo mocks RefreshControl away, so the control is read off the
+    // ScrollView's prop.
+    const refresh = () =>
+      result.UNSAFE_getByProps({ keyboardShouldPersistTaps: 'handled' }).props
+        .refreshControl as ReactElement<{
+        refreshing: boolean;
+        onRefresh: () => void;
+      }>;
+    expect(refresh().props.refreshing).toBe(false);
+
+    act(() => refresh().props.onRefresh());
+    expect(controller.syncNow).toHaveBeenCalledTimes(1);
+    expect(refresh().props.refreshing).toBe(true);
+
+    act(() => setStatus('idle'));
+    expect(refresh().props.refreshing).toBe(false);
+
+    // a sync that starts by itself shows no pull spinner
+    act(() => setStatus('syncing'));
+    expect(refresh().props.refreshing).toBe(false);
   });
 
   it('redirects to login when there is no session', () => {
