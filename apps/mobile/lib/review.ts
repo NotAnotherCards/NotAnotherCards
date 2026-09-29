@@ -10,13 +10,15 @@ import {
   getNoteDecksQuery,
   getAllCardsQuery,
   activateWordsInDeck,
+  cardsForDeck,
   recordReviewEvent,
+  reviewTarget,
+  selectDueCards,
   type ReviewRating,
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
 } from '@repo/offline-db';
-import { cardsForDeck, reviewTarget, selectDueCards } from '@repo/study';
 import { useSessionDatabase } from './database-provider';
 import { useNow } from './use-now';
 

@@ -3,21 +3,19 @@ import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
-  type UserCardRecord,
-  WORD_NOTE_TYPE,
-} from '@repo/offline-db';
-import {
   calculateReviewIntervalMinutes,
+  cardsForDeck,
   extendedReviewAnswerLabels,
   formatReviewInterval,
+  nextReviewBatch,
   reviewAnswerLabels,
   reviewRatingByAnswer,
-  nextReviewBatch,
   selectReviewBatch,
   type ReviewAnswer,
   type ReviewPreferences,
-  cardsForDeck,
-} from '@repo/study';
+  type UserCardRecord,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
