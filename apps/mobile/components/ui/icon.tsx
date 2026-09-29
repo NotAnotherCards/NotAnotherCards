@@ -3,14 +3,19 @@ import {
   BookMarked,
   BookOpen,
   Flame,
+  FolderOpen,
   Globe,
   GraduationCap,
   Info,
   Library,
+  Pencil,
+  Plus,
   LogOut,
   Medal,
   Settings,
   Sparkles,
+  SquarePen,
+  Trash2,
   Trophy,
   User,
   type LucideIcon,
@@ -31,14 +36,19 @@ function withClassName(icon: LucideIcon): LucideIcon {
 export const BookMarkedIcon = withClassName(BookMarked);
 export const BookOpenIcon = withClassName(BookOpen);
 export const FlameIcon = withClassName(Flame);
+export const FolderOpenIcon = withClassName(FolderOpen);
 export const GlobeIcon = withClassName(Globe);
 export const GraduationCapIcon = withClassName(GraduationCap);
 export const InfoIcon = withClassName(Info);
 export const LibraryIcon = withClassName(Library);
 export const LogOutIcon = withClassName(LogOut);
 export const MedalIcon = withClassName(Medal);
+export const PencilIcon = withClassName(Pencil);
+export const SquarePenIcon = withClassName(SquarePen);
+export const PlusIcon = withClassName(Plus);
 export const SettingsIcon = withClassName(Settings);
 export const SparklesIcon = withClassName(Sparkles);
+export const TrashIcon = withClassName(Trash2);
 export const TrophyIcon = withClassName(Trophy);
 export const UserIcon = withClassName(User);
 export type { LucideIcon };

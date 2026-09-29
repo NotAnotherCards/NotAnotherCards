@@ -67,6 +67,12 @@ beforeEach(() => {
 });
 
 describe('DeckList', () => {
+  it('opens the deck from Manage cards', async () => {
+    const { findByLabelText } = render(<DeckList />);
+    fireEvent.press(await findByLabelText('Manage cards of Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
+  });
+
   it('waits for the database manager before rendering decks', () => {
     mockSessionDb = { manager: null };
     const { queryByText } = render(<DeckList />);
@@ -117,7 +123,7 @@ describe('DeckList', () => {
     const { getByText, getByPlaceholderText, queryByText } = render(
       <DeckList />,
     );
-    fireEvent.press(getByText('New deck'));
+    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -141,7 +147,7 @@ describe('DeckList', () => {
     const { getByText, getByPlaceholderText, getByDisplayValue } = render(
       <DeckList />,
     );
-    fireEvent.press(getByText('New deck'));
+    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -188,7 +194,7 @@ describe('DeckList action state', () => {
     message = 'Database not initialized',
   ) => {
     mockWrites.create.mockRejectedValueOnce(new Error(message));
-    fireEvent.press(r.getByText('New deck'));
+    fireEvent.press(r.getByText('Create deck'));
     fireEvent.changeText(
       r.getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -264,5 +270,28 @@ describe('DeckList action state', () => {
     fireEvent.press(r.getByText('Cancel'));
     fireEvent.press(r.getByLabelText('Delete Spanish'));
     expect(r.queryByText('Database not initialized')).toBeNull();
+  });
+
+  it('keeps open, edit and delete as three separate press targets', () => {
+    mockPush.mockClear();
+    const { getByLabelText, queryByText } = render(<DeckList />);
+    const open = getByLabelText('Open Spanish');
+    const edit = getByLabelText('Edit Spanish');
+    const remove = getByLabelText('Delete Spanish');
+
+    // Neither button sits inside the opening target.
+    const inside = (node: typeof edit | null, ancestor: typeof open) => {
+      for (let at = node; at; at = at.parent) if (at === ancestor) return true;
+      return false;
+    };
+    expect(inside(edit, open)).toBe(false);
+    expect(inside(remove, open)).toBe(false);
+
+    fireEvent.press(remove);
+    expect(queryByText(/Delete this deck\?/)).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+
+    fireEvent.press(open);
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
   });
 });
