@@ -498,7 +498,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByRole } = render(<Dashboard />);
-    const button = getByRole('button', { name: 'Start Review' });
+    const button = getByRole('button', { name: 'Start Review · 0 due' });
     expect(button.props.accessibilityState.disabled).toBe(false);
     fireEvent.press(button);
     expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
