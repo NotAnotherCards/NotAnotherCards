@@ -199,18 +199,31 @@ export async function normalizeLegacyCardContent(
   });
 }
 
-/** Run the idempotent legacy cleanup after each completed synchronization. */
+export const LEGACY_CARD_CONTENT_CLEANUP_VERSION = 1;
+
+export function legacyCardContentCleanupStorageKey(userId: string) {
+  return `not-another-cards:legacy-card-content-cleanup:${userId}`;
+}
+
+export type LegacyCardContentCleanupState = {
+  isComplete: () => boolean;
+  markComplete: () => void;
+};
+
+/** Run the legacy cleanup once after the first completed synchronization. */
 export function normalizeLegacyCardContentAfterSync(
   db: Database,
   syncController: Pick<SyncController, 'notifyLocalWrite' | 'subscribe'>,
+  cleanupState: LegacyCardContentCleanupState,
 ): () => void {
   let live = true;
   let normalizing = false;
   const normalize = async () => {
-    if (normalizing) return;
+    if (normalizing || cleanupState.isComplete()) return;
     normalizing = true;
     try {
       const normalized = await normalizeLegacyCardContent(db);
+      cleanupState.markComplete();
       if (live && normalized > 0) syncController.notifyLocalWrite();
     } catch {
       // A later sync or app start retries. Failure here must not prevent the

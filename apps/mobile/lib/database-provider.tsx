@@ -11,6 +11,7 @@ import { pullChanges, pushChanges } from './sync';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
 import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
+import { legacyCardContentCleanupState } from './legacy-card-content-cleanup';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -48,15 +49,21 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!manager || !syncController || manager.state?.status !== 'ready') {
+    if (
+      !manager ||
+      !syncController ||
+      !userId ||
+      manager.state?.status !== 'ready'
+    ) {
       return;
     }
 
     return normalizeLegacyCardContentAfterSync(
       manager.database,
       syncController,
+      legacyCardContentCleanupState(userId),
     );
-  }, [manager, syncController]);
+  }, [manager, syncController, userId]);
 
   if (closeError) {
     return <DatabaseUnrecoverable error={closeError} />;

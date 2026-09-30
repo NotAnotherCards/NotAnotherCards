@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { Database } from '@remelondb/core';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Database, type SyncControllerState } from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { cardId } from './ids.js';
 import {
   normalizeLegacyCardContent,
+  normalizeLegacyCardContentAfterSync,
   prepareReconcileNoteCards,
 } from './note-reconcile.js';
 import { compileNote, type WordNoteFields } from '@repo/study';
@@ -241,6 +242,72 @@ describe('normalizeLegacyCardContent', () => {
     expect(await normalizeLegacyCardContent(db)).toBe(1);
     const example = await db.get(UserCard).find(exampleId);
     expect(example).toMatchObject({ active: false, front: '', back: '' });
+  });
+
+  it('runs once after a completed sync', async () => {
+    await openDb();
+    await createWordNote(withExample);
+    await db.write(async () => {
+      const note = await db.get(UserNote).find('note-1');
+      await note.update((record) => {
+        record.fields_json = compileNote('word', 1, word).fieldsJson;
+      });
+    });
+    const exampleId = cardId('note-1', 'example-to-translation');
+    await reconcile('note-1', word);
+    await db.write(async () => {
+      const example = await db.get(UserCard).find(exampleId);
+      await example.update((record) => {
+        record.front = 'old example';
+        record.back = 'old translation';
+      });
+    });
+    let listener: (state: SyncControllerState) => void;
+    let complete = false;
+    const markComplete = vi.fn(() => {
+      complete = true;
+    });
+    const syncController = {
+      notifyLocalWrite: vi.fn(),
+      subscribe(callback: (state: SyncControllerState) => void) {
+        listener = callback;
+        return () => undefined;
+      },
+    };
+    const stop = normalizeLegacyCardContentAfterSync(db, syncController, {
+      isComplete: () => complete,
+      markComplete,
+    });
+    const completedSync: SyncControllerState = {
+      status: 'idle',
+      lastSyncAt: Date.now(),
+      error: null,
+      lastResult: null,
+    };
+
+    listener(completedSync);
+    await vi.waitFor(() => expect(markComplete).toHaveBeenCalledTimes(1));
+    expect(await db.get(UserCard).find(exampleId)).toMatchObject({
+      front: '',
+      back: '',
+    });
+    expect(syncController.notifyLocalWrite).toHaveBeenCalledTimes(1);
+    await db.write(async () => {
+      const example = await db.get(UserCard).find(exampleId);
+      await example.update((record) => {
+        record.front = 'old example again';
+        record.back = 'old translation again';
+      });
+    });
+    listener(completedSync);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(markComplete).toHaveBeenCalledTimes(1);
+    expect(syncController.notifyLocalWrite).toHaveBeenCalledTimes(1);
+    expect(await db.get(UserCard).find(exampleId)).toMatchObject({
+      front: 'old example again',
+      back: 'old translation again',
+    });
+    stop();
   });
 });
 
