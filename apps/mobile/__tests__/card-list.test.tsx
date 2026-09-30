@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { CardList } from '@/components/card-list';
+import { Markdown } from '@/components/ui/markdown';
 
 const manager = { tag: 'manager' };
 let mockSessionDb: { manager: unknown } = { manager };
@@ -102,6 +103,23 @@ describe('CardList', () => {
     expect(getByText('hola')).toBeTruthy();
     expect(getByText('hello')).toBeTruthy();
     expect(getByText('adiós')).toBeTruthy();
+  });
+
+  it('renders only a small window of a 300-card deck', () => {
+    mockCardsState.cards = Array.from({ length: 300 }, (_, index) => ({
+      id: `c${index}`,
+      note_id: `n${index}`,
+      front: `Front ${index}`,
+      back: `Back ${index}`,
+    }));
+
+    const result = render(<CardList deckId="d1" />);
+
+    expect(result.getByText('Cards')).toBeTruthy();
+    expect(result.getByText('Front 0')).toBeTruthy();
+    expect(result.getByText('Back 0')).toBeTruthy();
+    expect(result.UNSAFE_getAllByType(Markdown).length).toBeLessThan(100);
+    expect(result.queryByText('Front 299')).toBeNull();
   });
 
   it('renders card fronts and backs as markdown', () => {
