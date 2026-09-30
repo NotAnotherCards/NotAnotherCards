@@ -10,6 +10,7 @@ import { useReviewSession } from '@/lib/use-review-session';
 import { useReviewSwipe } from '@/lib/use-review-swipe';
 import { CardEditor } from './card-editor';
 import { AnswerButtons } from './review/answer-buttons';
+import { DeleteQuestion } from './review/delete-question';
 import { ReviewCards } from './review/review-cards';
 import { ReviewTopRow } from './review/review-top-row';
 import { Button } from './ui/button';
@@ -62,7 +63,7 @@ function ActiveReviewSession({
     enabled: !!card && session.revealed && !session.busy,
     canDelete: canEdit,
     onAnswer: session.answer,
-    onDelete: () => session.edit(true),
+    onDelete: session.confirmDelete,
   });
 
   if (session.status === 'loading') {
@@ -151,6 +152,24 @@ function ActiveReviewSession({
 
   const { card: current, editing, revealed, busy } = session;
 
+  // Deleting removes the whole note, so its other cards leave the rest of
+  // the session too; then it moves on as after an answer, without counting
+  // one.
+  if (editing?.kind === 'delete' && editor.writes) {
+    return (
+      <View className="gap-4">
+        <Stack.Screen options={{ title: deck.title }} />
+        <DeleteQuestion
+          card={editing.card}
+          note={editor.noteForCard(editing.card)}
+          writes={editor.writes}
+          onCancel={session.closeEditor}
+          onDeleted={() => session.noteDeleted(editing.card.note_id)}
+        />
+      </View>
+    );
+  }
+
   // The editor replaces the card until it is saved or cancelled; the
   // session keeps its place, and an edit shows on the same card.
   if (editing && editor.deck && editor.writes) {
@@ -163,11 +182,7 @@ function ActiveReviewSession({
           card={editCard}
           note={editCard ? editor.noteForCard(editCard) : null}
           writes={editor.writes}
-          confirmDelete={editing.kind === 'edit' && editing.confirmDelete}
           onDone={session.closeEditor}
-          // Deleting removes the whole note, so its other cards leave the
-          // rest of the session too; then it moves on as after an answer,
-          // without counting one.
           onDeleted={() => {
             if (editCard) session.noteDeleted(editCard.note_id);
             else session.closeEditor();

@@ -178,13 +178,13 @@ describe('reviewSessionReducer', () => {
   it('opens and closes the editor without moving', () => {
     const opened = run(
       { type: 'started', deckId: 'd1', cards: cards(2) },
-      { type: 'edit', card: card('c1'), confirmDelete: true },
+      { type: 'edit', card: card('c1') },
     );
-    expect(opened.editing).toEqual({
-      kind: 'edit',
-      card: card('c1'),
-      confirmDelete: true,
-    });
+    expect(opened.editing).toEqual({ kind: 'edit', card: card('c1') });
+    expect(
+      reviewSessionReducer(opened, { type: 'delete', card: card('c1') })
+        .editing,
+    ).toEqual({ kind: 'delete', card: card('c1') });
     expect(reviewSessionReducer(opened, { type: 'add' }).editing).toEqual({
       kind: 'new',
     });

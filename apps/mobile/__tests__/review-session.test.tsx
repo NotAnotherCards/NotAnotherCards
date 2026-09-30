@@ -685,7 +685,7 @@ describe('ReviewSession', () => {
       expect(await extended.findByText('Review complete')).toBeTruthy();
     });
 
-    it('opens the delete question for a swipe down', async () => {
+    it('asks before deleting on a swipe down, without the editor', async () => {
       const result = render(<ReviewSession deckId="d1" />);
 
       await result.findByText('gato');
@@ -693,7 +693,17 @@ describe('ReviewSession', () => {
       drag(0, 300);
 
       expect(await result.findByText('Delete "**gato**"?')).toBeTruthy();
+      expect(result.queryByText('Edit card')).toBeNull();
       expect(mockDeleteNote).not.toHaveBeenCalled();
+
+      // No brings the card back, still revealed.
+      fireEvent.press(result.getByText('No'));
+      expect(result.getByText('Remembered')).toBeTruthy();
+
+      drag(0, 300);
+      fireEvent.press(await result.findByText('Delete'));
+      await waitFor(() => expect(mockDeleteNote).toHaveBeenCalledWith('n1'));
+      expect(await result.findByText('Review complete')).toBeTruthy();
       expect(mockRecord).not.toHaveBeenCalled();
     });
   });

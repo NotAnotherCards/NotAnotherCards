@@ -104,9 +104,12 @@ export function useReviewSession(
     },
     reveal: () => dispatch({ type: 'revealed' }),
     answer,
-    // The current card, straight at the delete question if asked.
-    edit: (confirmDelete?: boolean) => {
-      if (card) dispatch({ type: 'edit', card, confirmDelete });
+    edit: () => {
+      if (card) dispatch({ type: 'edit', card });
+    },
+    // The swipe down's question, without the editor.
+    confirmDelete: () => {
+      if (card) dispatch({ type: 'delete', card });
     },
     add: () => dispatch({ type: 'add' }),
     closeEditor: () => dispatch({ type: 'editor-closed' }),

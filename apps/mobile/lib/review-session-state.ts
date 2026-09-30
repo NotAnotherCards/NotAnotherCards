@@ -36,9 +36,11 @@ export type ReviewSessionState = {
   answered: number;
   // What asked for the next batch, so a failed read can say what is safe.
   lastStep: 'answer' | 'delete' | null;
+  // The full editor, or the swipe down's short delete question.
   editing:
     | { kind: 'new' }
-    | { kind: 'edit'; card: Card; confirmDelete?: boolean }
+    | { kind: 'edit'; card: Card }
+    | { kind: 'delete'; card: Card }
     | null;
 };
 
@@ -51,7 +53,8 @@ export type ReviewSessionAction =
   | { type: 'next-batch'; cards: Card[] }
   | { type: 'next-batch-failed' }
   | { type: 'next-batch-retry' }
-  | { type: 'edit'; card: Card; confirmDelete?: boolean }
+  | { type: 'edit'; card: Card }
+  | { type: 'delete'; card: Card }
   | { type: 'add' }
   | { type: 'editor-closed' }
   | { type: 'note-deleted'; noteId: string };
@@ -130,14 +133,9 @@ export function reviewSessionReducer(
         ? { ...state, phase: 'loading-next' }
         : state;
     case 'edit':
-      return {
-        ...state,
-        editing: {
-          kind: 'edit',
-          card: action.card,
-          confirmDelete: action.confirmDelete,
-        },
-      };
+      return { ...state, editing: { kind: 'edit', card: action.card } };
+    case 'delete':
+      return { ...state, editing: { kind: 'delete', card: action.card } };
     case 'add':
       return { ...state, editing: { kind: 'new' } };
     case 'editor-closed':
