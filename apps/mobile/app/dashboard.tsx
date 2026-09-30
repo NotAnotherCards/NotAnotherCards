@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { DatabaseManager } from '@remelondb/core';
 import { authClient } from '@/lib/auth-client';
@@ -34,6 +40,7 @@ import { Settings } from '@/components/settings';
 import { InfoPanel } from '@/components/info-panel';
 import { SyncStatus } from '@/components/sync-status';
 import { useSessionDatabase } from '@/lib/database-provider';
+import { usePullToSync } from '@/lib/use-pull-to-sync';
 import { loadLastReviewDeckId } from '@/lib/review-preferences';
 import { useReviewOverview } from '@/lib/review';
 import { dailyGoals, useOverviewStats } from '@/lib/overview-stats';
@@ -52,7 +59,8 @@ const TABS: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
 
 export default function Dashboard() {
   const { data: session } = authClient.useSession();
-  const { manager } = useSessionDatabase();
+  const { manager, syncController } = useSessionDatabase();
+  const pullToSync = usePullToSync(syncController);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('overview');
 
@@ -89,6 +97,13 @@ export default function Dashboard() {
           className="flex-1"
           contentContainerClassName="grow gap-4 p-6"
           keyboardShouldPersistTaps="handled"
+          // A pull runs a sync; the lists update through their live queries.
+          refreshControl={
+            <RefreshControl
+              refreshing={pullToSync.refreshing}
+              onRefresh={pullToSync.onRefresh}
+            />
+          }
         >
           {tab === 'overview' && (
             // Greeting, tiles, goals and badges share the free height

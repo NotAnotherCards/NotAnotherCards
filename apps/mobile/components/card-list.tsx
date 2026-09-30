@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useCards, type Card as CardRecord } from '@/lib/cards';
@@ -13,16 +13,25 @@ import { CardEditor } from './card-editor';
 import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/offline-db';
 
 // Readiness gate, as DeckList: no manager yet means no database to query.
-export function CardList({ deckId }: { deckId: string }) {
+export function CardList({
+  deckId,
+  header,
+}: {
+  deckId: string;
+  header?: ReactNode;
+}) {
   const { manager } = useSessionDatabase();
   if (!manager) {
     return (
-      <View className="items-center py-6">
-        <ActivityIndicator />
+      <View className="gap-4 p-6">
+        {header}
+        <View className="items-center py-6">
+          <ActivityIndicator />
+        </View>
       </View>
     );
   }
-  return <ActiveCardList manager={manager} deckId={deckId} />;
+  return <ActiveCardList manager={manager} deckId={deckId} header={header} />;
 }
 
 // One action at a time, same union as DeckList. Two removal scopes, and
@@ -41,9 +50,11 @@ type CardAction =
 function ActiveCardList({
   manager,
   deckId,
+  header,
 }: {
   manager: DatabaseManager;
   deckId: string;
+  header?: ReactNode;
 }) {
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
     useCards(manager, deckId);
@@ -74,25 +85,34 @@ function ActiveCardList({
 
   if (isLoading || !writes) {
     return (
-      <View className="items-center py-6">
-        <ActivityIndicator />
+      <View className="gap-4 p-6">
+        {header}
+        <View className="items-center py-6">
+          <ActivityIndicator />
+        </View>
       </View>
     );
   }
 
   if (error) {
     return (
-      <Text className="text-destructive">
-        Failed to load cards: {error.message}
-      </Text>
+      <View className="gap-4 p-6">
+        {header}
+        <Text className="text-destructive">
+          Failed to load cards: {error.message}
+        </Text>
+      </View>
     );
   }
 
   if (!deck) {
     return (
-      <Text className="text-muted-foreground">
-        This deck is not on this device.
-      </Text>
+      <View className="gap-4 p-6">
+        {header}
+        <Text className="text-muted-foreground">
+          This deck is not on this device.
+        </Text>
+      </View>
     );
   }
 
@@ -103,13 +123,20 @@ function ActiveCardList({
   if (action?.kind === 'create' || action?.kind === 'edit') {
     const card = action.kind === 'edit' ? action.card : undefined;
     return (
-      <CardEditor
-        deck={deck}
-        card={card}
-        note={card ? noteForCard(card) : null}
-        writes={writes}
-        onDone={() => open(null)}
-      />
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="gap-4 p-6"
+        keyboardShouldPersistTaps="handled"
+      >
+        {header}
+        <CardEditor
+          deck={deck}
+          card={card}
+          note={card ? noteForCard(card) : null}
+          writes={writes}
+          onDone={() => open(null)}
+        />
+      </ScrollView>
     );
   }
 
@@ -120,32 +147,50 @@ function ActiveCardList({
       : null;
 
   return (
-    <View className="gap-3">
+    <>
       {/* The deck's title belongs in the header; the route sets a fallback. */}
       <Stack.Screen options={{ title: deck.title }} />
-      <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-semibold">Cards</Text>
-        {isKnownDeck && (
-          <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
-            <Text>{isWordDeck ? 'New word' : 'New card'}</Text>
-          </Button>
-        )}
-      </View>
-      {!isKnownDeck && (
-        <Text className="text-muted-foreground">
-          This deck uses a note type this app cannot edit yet.
-        </Text>
-      )}
-      {cards.length === 0 && (
-        <Text className="text-muted-foreground">
-          No cards yet. Add your first one.
-        </Text>
-      )}
-      <View role="list" className="gap-3">
-        {cards.map((card) => {
+      <FlatList
+        className="flex-1"
+        contentContainerClassName="p-6"
+        keyboardShouldPersistTaps="handled"
+        role="list"
+        data={cards}
+        keyExtractor={(card) => card.id}
+        initialNumToRender={12}
+        ItemSeparatorComponent={() => <View className="h-3" />}
+        ListHeaderComponent={
+          <View className="gap-4 pb-3">
+            {header}
+            <View className="gap-3">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-lg font-semibold">Cards</Text>
+                {isKnownDeck && (
+                  <Button
+                    disabled={pending}
+                    onPress={() => open({ kind: 'create' })}
+                  >
+                    <Text>{isWordDeck ? 'New word' : 'New card'}</Text>
+                  </Button>
+                )}
+              </View>
+              {!isKnownDeck && (
+                <Text className="text-muted-foreground">
+                  This deck uses a note type this app cannot edit yet.
+                </Text>
+              )}
+            </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <Text className="text-muted-foreground">
+            No cards yet. Add your first one.
+          </Text>
+        }
+        renderItem={({ item: card }) => {
           const confirm = confirming(card);
           return (
-            <Card key={card.id} role="listitem">
+            <Card role="listitem">
               <CardHeader>
                 <CardTitle>
                   <Markdown content={card.front} inline />
@@ -236,8 +281,8 @@ function ActiveCardList({
               </CardContent>
             </Card>
           );
-        })}
-      </View>
-    </View>
+        }}
+      />
+    </>
   );
 }

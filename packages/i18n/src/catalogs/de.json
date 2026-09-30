@@ -139,7 +139,8 @@
       "username_min": "Der Benutzername muss mindestens 3 Zeichen lang sein",
       "username_regex": "Der Benutzername darf nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten",
       "native_language_required": "Die Muttersprache ist erforderlich",
-      "target_language_required": "Die Zielsprache ist erforderlich"
+      "target_language_required": "Die Zielsprache ist erforderlich",
+      "languages_must_differ": "Wähle eine Zielsprache, die sich von deiner Muttersprache unterscheidet"
     }
   },
   "preferences": {

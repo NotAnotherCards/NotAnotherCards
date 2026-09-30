@@ -139,7 +139,8 @@
       "username_min": "El nombre de usuario debe tener al menos 3 caracteres",
       "username_regex": "El nombre de usuario solo puede contener letras, números, guiones y guiones bajos",
       "native_language_required": "El idioma nativo es obligatorio",
-      "target_language_required": "El idioma de destino es obligatorio"
+      "target_language_required": "El idioma de destino es obligatorio",
+      "languages_must_differ": "Elige un idioma de destino distinto de tu idioma nativo"
     }
   },
   "preferences": {
