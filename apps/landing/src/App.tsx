@@ -150,8 +150,8 @@ function LandingPage() {
             More than individual words
           </h2>
           <p className="mt-5 text-lg leading-8 text-muted">
-            Create cards for vocabulary, phrases, grammar, ideas, facts, and
-            any information you want to remember. Use your own cards or shared
+            Create cards for vocabulary, phrases, grammar, ideas, facts, and any
+            information you want to remember. Use your own cards or shared
             decks.
           </p>
         </div>
@@ -267,7 +267,10 @@ function NotFoundPage() {
 function BrandLogo() {
   return (
     <picture>
-      <source media="(max-width: 375px)" srcSet="/brand/notanothercards-mark.svg" />
+      <source
+        media="(max-width: 375px)"
+        srcSet="/brand/notanothercards-mark.svg"
+      />
       <source
         media="(prefers-color-scheme: dark)"
         srcSet="/brand/notanothercards-logo-dark.svg"
