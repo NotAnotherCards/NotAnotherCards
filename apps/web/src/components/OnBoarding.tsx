@@ -198,7 +198,10 @@ export function OnBoardingComponent() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {languageLabel(lang)}
+                            {languageLabel(
+                              lang,
+                              t(`languages.${lang.locale}`),
+                            )}
                           </option>
                         ))}
                       </select>
@@ -251,7 +254,10 @@ export function OnBoardingComponent() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {languageLabel(lang)}
+                            {languageLabel(
+                              lang,
+                              t(`languages.${lang.locale}`),
+                            )}
                           </option>
                         ))}
                       </select>
