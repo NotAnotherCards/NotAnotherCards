@@ -62,24 +62,29 @@ function getLanding(config, environment) {
   return landing;
 }
 
-function findLandingPort(landing, environment) {
-  const port = landing.ports?.find(
+function landingPortEntries(landing, environment) {
+  const entries = (landing.ports ?? []).filter(
     (candidate) =>
       String(candidate.target) === '80' && String(candidate.published) === '5174',
   );
-  assert(port, `${environment}: landing must publish port 5174 to container port 80`);
-  return port;
+  assert(
+    entries.length > 0,
+    `${environment}: landing must publish port 5174 to container port 80`,
+  );
+  return entries;
 }
 
-findLandingPort(getLanding(localConfig, 'local Compose'), 'local Compose');
-const productionPort = findLandingPort(
+landingPortEntries(getLanding(localConfig, 'local Compose'), 'local Compose');
+const productionEntries = landingPortEntries(
   getLanding(productionConfig, 'production Compose'),
   'production Compose',
 );
-assert(
-  productionPort.host_ip === '127.0.0.1',
-  'production Compose: landing must bind only to 127.0.0.1',
-);
+for (const entry of productionEntries) {
+  assert(
+    entry.host_ip === '127.0.0.1',
+    `production Compose: every 5174 binding must be 127.0.0.1, found ${JSON.stringify(entry)}`,
+  );
+}
 
 console.log('  [OK] landing service, healthcheck, and production loopback binding');
 NODE

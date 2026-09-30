@@ -250,12 +250,26 @@ jobs:
             esac
             echo "Certificate names notanothercards.com"
 
-            if ! ss -ltn | grep -q '127.0.0.1:5174'; then
-              echo "FATAL: the landing container is not listening on 127.0.0.1:5174" >&2
+            # Every socket bound to 5174 must be loopback, and at least one must
+            # exist: a second listener on the VPS public address would expose
+            # the container even though a wildcard-only check still passes.
+            listeners="$(ss -ltn | awk 'NR > 1 && $4 ~ /:5174$/ { print $4 }')"
+            if [ -z "$listeners" ]; then
+              echo "FATAL: nothing is listening on port 5174" >&2
               exit 1
             fi
-            if ss -ltn | grep -qE '(0\.0\.0\.0|\[::\]):5174'; then
-              echo "FATAL: landing port 5174 is reachable beyond loopback" >&2
-              exit 1
-            fi
+            for bound in $listeners; do
+              addr="${bound%:*}"
+              addr="${addr#[}"
+              addr="${addr%]}"
+              case "$addr" in
+                127.*|::1|::ffff:127.*)
+                  echo "  listener ${bound} is loopback"
+                  ;;
+                *)
+                  echo "FATAL: port 5174 also has a listener on the non-loopback address ${bound}" >&2
+                  exit 1
+                  ;;
+              esac
+            done
             echo "Landing port 5174 stays bound to loopback"

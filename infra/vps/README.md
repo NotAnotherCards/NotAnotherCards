@@ -277,10 +277,13 @@ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://notanothercards.com
 curl -o /dev/null -w '%{http_code}\n' https://notanothercards.com/not-a-real-page
 echo | openssl s_client -connect 127.0.0.1:443 -servername notanothercards.com 2>/dev/null \
   | openssl x509 -noout -ext subjectAltName
+ss -ltn | awk 'NR > 1 && $4 ~ /:5174$/ { print "  listener", $4 }'
 ```
 
-Expected: two `200`s, `301 https://notanothercards.com/`, `404`, and a
-certificate whose subject alternative name lists `DNS:notanothercards.com`.
+Expected: two `200`s, `301 https://notanothercards.com/`, `404`, a
+certificate whose subject alternative name lists `DNS:notanothercards.com`,
+and a single `listener 127.0.0.1:5174` line: nothing on port 5174 may bind to
+`0.0.0.0`, `*`, `[::]`, or the VPS public address.
 The same checks run automatically after every deployment.
 
 ### Troubleshooting
