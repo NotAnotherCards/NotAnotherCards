@@ -193,7 +193,7 @@ describe('community and publishing endpoints', () => {
       ),
     ).rejects.toThrow('too large');
   });
-  it('uses 15 s for JSON and 60 s for streams, including body reads', async () => {
+  it('uses 15 s for JSON and 75 s for streams, including body reads', async () => {
     vi.useFakeTimers();
     const cancel = vi.fn();
     const fetch = vi
@@ -216,7 +216,7 @@ describe('community and publishing endpoints', () => {
     await vi.advanceTimersByTimeAsync(15_000);
     await json;
     expect(settled).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(45_000);
+    await vi.advanceTimersByTimeAsync(60_000);
     await streamCheck;
     expect(cancel).toHaveBeenCalled();
   });

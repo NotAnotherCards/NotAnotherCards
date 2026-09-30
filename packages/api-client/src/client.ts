@@ -31,6 +31,12 @@ import { readPlaygroundStream } from './read-playground-stream.js';
 // client waits a little longer than the server, so the server's own answer,
 // published, refused or timed out, always arrives first.
 const PUBLISH_TIMEOUT_MS = 270_000;
+// The AI streams end with the server's own event: the model gets 60 s
+// (AI_REQUEST_TIMEOUT_MS), then usage is recorded and the final event sent.
+// The client waits past that, so a run that finishes near the deadline still
+// delivers its result, or the server's timeout event, before the client
+// gives up.
+const STREAM_TIMEOUT_MS = 75_000;
 
 export type PublishOutcome =
   | { published: true; warnings: ModerationWarning[] }
@@ -94,7 +100,7 @@ export function createApiClient(transport: ApiTransport) {
               throw new Error('Creation response has no stream.');
             return readPlaygroundStream(response.body, onEvent, signal);
           },
-          { ...options, timeoutMs: options?.timeoutMs ?? 60_000 },
+          { ...options, timeoutMs: options?.timeoutMs ?? STREAM_TIMEOUT_MS },
         );
       },
     },
@@ -202,7 +208,7 @@ export function createApiClient(transport: ApiTransport) {
               },
             });
           },
-          { ...options, timeoutMs: options?.timeoutMs ?? 60_000 },
+          { ...options, timeoutMs: options?.timeoutMs ?? STREAM_TIMEOUT_MS },
         );
       },
     },

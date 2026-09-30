@@ -109,7 +109,7 @@ describe('AI endpoints', () => {
       ),
     ).rejects.toThrow('too large');
   });
-  it('uses the 60 s stream deadline and cancels the reader', async () => {
+  it("waits past the server's 60 s for a final event, then gives up", async () => {
     vi.useFakeTimers();
     const cancel = vi.fn();
     const fetch = vi
@@ -121,8 +121,36 @@ describe('AI endpoints', () => {
     );
     const check = expect(pending).rejects.toBeInstanceOf(ApiTimeoutError);
     await vi.advanceTimersByTimeAsync(60_000);
+    expect(cancel).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(15_000);
     await check;
     expect(cancel).toHaveBeenCalled();
+  });
+  it('returns a result whose final event arrives after 60 s', async () => {
+    // The server records usage after the model's 60 s and only then sends
+    // the result; a run that used the whole deadline must still come back.
+    vi.useFakeTimers();
+    const cards = [{ front: 'a', back: 'b' }];
+    let send!: (chunk: string) => void;
+    const encoder = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        send = (chunk) => {
+          controller.enqueue(encoder.encode(chunk));
+          controller.close();
+        };
+      },
+    });
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response(body));
+    const pending = createApiClient({ baseUrl: '', fetch }).ai.playgroundStream(
+      input,
+      () => {},
+    );
+    await vi.advanceTimersByTimeAsync(65_000);
+    send('data: ' + JSON.stringify({ type: 'result', cards }) + '\n\n');
+    expect(await pending).toEqual(cards);
   });
   it('passes caller cancellation to streamed requests', async () => {
     const controller = new AbortController();
