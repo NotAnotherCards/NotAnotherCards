@@ -460,6 +460,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                     await unpublish(
                       deckId,
                       controller ? () => controller.syncNow() : undefined,
+                      store.db,
                     );
                   } finally {
                     setIsPendingPublishAction(false);
@@ -482,6 +483,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                     const published = await publish(
                       deckId,
                       controller ? () => controller.syncNow() : undefined,
+                      store.db,
                     );
                     if (published) await refreshModerationStatus();
                   } finally {

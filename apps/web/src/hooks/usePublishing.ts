@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { SyncControllerState } from '@remelondb/core';
-import { REJECTION_EXPLANATION } from '@repo/offline-db';
+import type { Database, SyncControllerState } from '@remelondb/core';
+import { REJECTION_EXPLANATION, rejectionsConcernDeck } from '@repo/offline-db';
 import {
   moderationRefusalSchema,
   apiErrorBodySchema,
@@ -20,7 +20,14 @@ export interface ModerationError {
   completed?: boolean;
 }
 
-async function syncForPublishing(onSync?: () => Promise<SyncControllerState>) {
+// Publishing acts on what the server holds, so the deck's local changes must
+// be there first. A refused row of another deck is not this deck's problem;
+// without a database to tell, a refusal blocks.
+async function syncForPublishing(
+  deckId: string,
+  onSync?: () => Promise<SyncControllerState>,
+  db?: Database | null,
+) {
   if (!onSync)
     throw new Error('Sync is unavailable. Please try again when connected.');
   const state = await onSync();
@@ -32,7 +39,26 @@ async function syncForPublishing(onSync?: () => Promise<SyncControllerState>) {
       state.error || 'Sync did not complete. Please try again when connected.',
     );
   }
-  if (state.lastResult.rejected > 0) {
+  // With the database shared between tabs only one of them syncs at a
+  // time; a run another tab locked out transferred nothing, and its zero
+  // rejections say nothing. The other tab keeps the lease for as long as
+  // it keeps syncing, so there is no wait after which a retry is sure to
+  // get it: say so and let the user try again.
+  if (state.lastResult.lease === 'unavailable') {
+    throw new Error(
+      'Another tab is syncing right now. Please try again in a moment.',
+    );
+  }
+  // 'lost' (the lease was taken during the run) or absent: nothing says
+  // the changes arrived.
+  if (state.lastResult.lease !== 'acquired') {
+    throw new Error('Sync could not be confirmed. Please try again.');
+  }
+  const { rejected, rejectedRecords } = state.lastResult;
+  if (
+    rejected > 0 &&
+    (!db || (await rejectionsConcernDeck(db, deckId, rejectedRecords)))
+  ) {
     throw new Error(
       `The deck's changes were not accepted by the server. ${REJECTION_EXPLANATION}`,
     );
@@ -52,13 +78,14 @@ export function usePublishing() {
   const publish = async (
     deckId: string,
     onSync?: () => Promise<SyncControllerState>,
+    db?: Database | null,
   ): Promise<boolean> => {
     setIsPublishing(true);
     setError(null);
     setWarnings([]);
     let completed = false;
     try {
-      await syncForPublishing(onSync);
+      await syncForPublishing(deckId, onSync, db);
       const res = await fetch(
         `/api/decks/${encodeURIComponent(deckId)}/publish`,
         {
@@ -85,7 +112,7 @@ export function usePublishing() {
       setWarnings(published.warnings);
       completed = true;
       setRemoteVisibility({ deckId, visibility: 'public' });
-      await syncForPublishing(onSync);
+      await syncForPublishing(deckId, onSync, db);
       return true;
     } catch (err) {
       setError({
@@ -103,12 +130,13 @@ export function usePublishing() {
   const unpublish = async (
     deckId: string,
     onSync?: () => Promise<SyncControllerState>,
+    db?: Database | null,
   ): Promise<boolean> => {
     setIsUnpublishing(true);
     setError(null);
     let completed = false;
     try {
-      await syncForPublishing(onSync);
+      await syncForPublishing(deckId, onSync, db);
       const res = await fetch(
         `/api/decks/${encodeURIComponent(deckId)}/unpublish`,
         {
@@ -123,7 +151,7 @@ export function usePublishing() {
       completed = true;
       setRemoteVisibility({ deckId, visibility: 'private' });
       setWarnings([]);
-      await syncForPublishing(onSync);
+      await syncForPublishing(deckId, onSync, db);
       return true;
     } catch (err) {
       setError({

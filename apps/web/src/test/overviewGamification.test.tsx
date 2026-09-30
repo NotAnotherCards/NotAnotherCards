@@ -182,7 +182,7 @@ describe('Overview Gamification', () => {
     vi.useRealTimers();
   });
 
-  it.each(['idle', 'offline', 'error', 'rejected'] as const)(
+  it.each(['idle', 'offline', 'error', 'rejected', 'lease-denied'] as const)(
     'waits for import sync and handles %s',
     async (outcome) => {
       let completeSync!: (state: SyncControllerState) => void;
@@ -233,11 +233,16 @@ describe('Overview Gamification', () => {
       ).toHaveLength(1);
       await act(async () =>
         completeSync({
-          status: outcome === 'rejected' ? 'idle' : outcome,
+          status:
+            outcome === 'rejected' || outcome === 'lease-denied'
+              ? 'idle'
+              : outcome,
           error: outcome === 'offline' ? 'No connection' : null,
           cause: null,
           lastSyncAt: 1,
           lastResult: {
+            // another tab held the lease: nothing was transferred
+            lease: outcome === 'lease-denied' ? 'unavailable' : 'acquired',
             resynced: false,
             rejected: outcome === 'rejected' ? 1 : 0,
             rejectedRecords: {},

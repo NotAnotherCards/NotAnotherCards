@@ -14,7 +14,12 @@ const synced: SyncControllerState = {
   error: null,
   cause: null,
   lastSyncAt: 1,
-  lastResult: { resynced: false, rejected: 0, rejectedRecords: {} },
+  lastResult: {
+    lease: 'acquired',
+    resynced: false,
+    rejected: 0,
+    rejectedRecords: {},
+  },
 };
 
 const mockDeck = {
@@ -30,12 +35,28 @@ const mockDeck = {
 const mockStore = {
   ready: true,
   isTakenOver: false,
+  db: {},
   decks: [mockDeck],
   getCardsForDeck: vi.fn(() => []),
   isBasicCard: vi.fn(),
   isWordCard: vi.fn(),
 };
 
+// The real rule reads the database (offline-db's own tests cover it); here
+// a refused row concerns the deck when it is the deck.
+const mockRejectionsConcernDeck = vi.fn(
+  (
+    _db: unknown,
+    deckId: string,
+    rejectedRecords: Readonly<Record<string, readonly string[]>>,
+  ) => Promise.resolve((rejectedRecords.user_decks ?? []).includes(deckId)),
+);
+vi.mock('@repo/offline-db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@repo/offline-db')>()),
+  rejectionsConcernDeck: (
+    ...args: Parameters<typeof mockRejectionsConcernDeck>
+  ) => mockRejectionsConcernDeck(...args),
+}));
 vi.mock('@/hooks/useStore', () => ({
   useStore: () => mockStore,
 }));
@@ -304,6 +325,7 @@ describe('Deck Publishing Controls', () => {
         ...synced,
         status,
         lastResult: {
+          lease: 'acquired',
           resynced: false,
           rejected: 1,
           rejectedRecords: { user_decks: ['deck-1'] },
@@ -325,6 +347,100 @@ describe('Deck Publishing Controls', () => {
       ).toHaveLength(0);
     },
   );
+
+  it.each(['publish', 'unpublish'] as const)(
+    'stops %s when another tab held the sync lease',
+    async (action) => {
+      // A locked-out run transfers nothing; its clean result proves nothing.
+      mockDeck.visibility = action === 'publish' ? 'private' : 'public';
+      mockSyncController.syncNow.mockResolvedValueOnce({
+        ...synced,
+        lastResult: { ...synced.lastResult!, lease: 'unavailable' },
+      });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(response({ status: 'clear' }));
+      vi.stubGlobal('fetch', fetchMock);
+      render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: action === 'publish' ? 'Publish' : 'Unpublish',
+        }),
+      );
+      expect(
+        await screen.findByText(/Another tab is syncing right now/),
+      ).toBeInTheDocument();
+      expect(
+        fetchMock.mock.calls.filter(([url]) =>
+          String(url).endsWith(`/${action}`),
+        ),
+      ).toHaveLength(0);
+    },
+  );
+
+  it.each([
+    ['lost', /Sync could not be confirmed/],
+    [undefined, /Sync could not be confirmed/],
+  ] as const)(
+    'stops publishing when the lease is %s',
+    async (lease, message) => {
+      mockSyncController.syncNow.mockResolvedValueOnce({
+        ...synced,
+        lastResult: { ...synced.lastResult!, lease },
+      });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(response({ status: 'clear' }));
+      vi.stubGlobal('fetch', fetchMock);
+      render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+      expect(await screen.findByText(message)).toBeInTheDocument();
+      expect(
+        fetchMock.mock.calls.filter(([url]) =>
+          String(url).endsWith('/publish'),
+        ),
+      ).toHaveLength(0);
+    },
+  );
+
+  it('publishes when the refused rows belong to another deck', async () => {
+    mockSyncController.syncNow.mockResolvedValue({
+      ...synced,
+      lastResult: {
+        lease: 'acquired',
+        resynced: false,
+        rejected: 1,
+        rejectedRecords: { user_decks: ['deck-2'] },
+      },
+    });
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        Promise.resolve(
+          String(url).endsWith('/publish')
+            ? response({ published: true, warnings: [] })
+            : response({ status: 'clear' }),
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([url]) =>
+          String(url).endsWith('/publish'),
+        ),
+      ).toHaveLength(1),
+    );
+    expect(mockRejectionsConcernDeck).toHaveBeenCalledWith(
+      mockStore.db,
+      'deck-1',
+      { user_decks: ['deck-2'] },
+    );
+    expect(
+      screen.queryByText(/The deck's changes were not accepted/),
+    ).not.toBeInTheDocument();
+  });
 
   it.each(['publish', 'unpublish'] as const)(
     'retains %s success when the second sync fails',

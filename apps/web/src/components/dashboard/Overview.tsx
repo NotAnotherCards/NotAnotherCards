@@ -706,6 +706,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                                     (state.status === 'idle' ||
                                       state.status === 'resync-required') &&
                                     state.lastResult &&
+                                    // a run another tab locked out
+                                    // transferred nothing
+                                    state.lastResult.lease === 'acquired' &&
                                     state.lastResult.rejected === 0;
                                   setImportedDecks((prev) => ({
                                     ...prev,
