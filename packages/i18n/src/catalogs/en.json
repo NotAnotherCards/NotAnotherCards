@@ -139,7 +139,8 @@
       "username_min": "Username must be at least 3 characters",
       "username_regex": "Username can only contain letters, numbers, underscores, and hyphens",
       "native_language_required": "Native language is required",
-      "target_language_required": "Target language is required"
+      "target_language_required": "Target language is required",
+      "languages_must_differ": "Choose a target language different from your native language"
     }
   },
   "preferences": {

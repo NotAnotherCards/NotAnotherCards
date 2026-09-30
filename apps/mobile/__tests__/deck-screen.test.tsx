@@ -12,7 +12,10 @@ jest.mock('../lib/auth-client', () => ({
 // URL reaches CardList, and the session guard wraps it.
 const mockCardList = jest.fn((_props: { deckId: string }) => null);
 jest.mock('../components/card-list', () => ({
-  CardList: (props: { deckId: string }) => mockCardList(props),
+  CardList: (props: { deckId: string; header?: React.ReactNode }) => {
+    mockCardList(props);
+    return props.header ?? null;
+  },
 }));
 jest.mock('expo-router', () => {
   const React = require('react');
