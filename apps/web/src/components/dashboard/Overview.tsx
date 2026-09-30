@@ -192,8 +192,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     now: Date.now(),
   });
   const handleStartReview = () => {
-    if (target === 'nothing-due') return;
-    if (target === 'library') onChooseDeck();
+    if (target === 'library' || target === 'nothing-due') onChooseDeck();
     else void navigate({ to: '/deck-review', search: { deckId: target } });
   };
 
@@ -517,7 +516,6 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 className="flex-1 cursor-pointer gap-1.5"
                 size="sm"
                 onClick={handleStartReview}
-                disabled={target === 'nothing-due'}
               >
                 <Library className="size-3.5" />
                 {t('dashboard.overview.profile.start_review')}

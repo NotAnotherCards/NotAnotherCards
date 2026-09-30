@@ -27,6 +27,7 @@ import {
   type UserNoteRecord,
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
+  deckLearningCounts,
 } from '@repo/offline-db';
 import { deckKindClassName } from './deck-kind';
 import { CardList } from './CardList';
@@ -89,6 +90,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const wordNotes = useMemo(
     () => (isWordDeck ? store.getNotesForDeck(deckId) : []),
     [deckId, isWordDeck, store.getNotesForDeck],
+  );
+  const learningCounts = useMemo(
+    () =>
+      deckLearningCounts(
+        cards,
+        isWordDeck ? wordNotes.map((note) => note.id) : undefined,
+      ),
+    [cards, isWordDeck, wordNotes],
   );
 
   if (store.isTakenOver) {
@@ -564,7 +573,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <WordNoteList
           notes={wordNotes}
           cards={cards}
-          dueCards={store.dueCards ?? []}
+          activeWordCount={learningCounts.activeNotes}
+          totalCardCount={learningCounts.totalCards}
+          dueCardCount={learningCounts.dueCards}
           onViewNote={(note) => setViewingWordNote(note)}
           onEditWord={(note) => setEditingWordNote(note)}
           onRemoveWord={(note) => setNoteIdToRemove(note.id)}
@@ -575,6 +586,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       ) : (
         <CardList
           cards={cards}
+          activeCardCount={learningCounts.activeCards}
+          dueCardCount={learningCounts.dueCards}
           onEditCard={(card) => setEditingCard(card)}
           onRemoveFromDeck={(card) => setNoteIdToRemove(card.note_id)}
           canEditCard={isBasicDeck ? store.isBasicCard : () => false}

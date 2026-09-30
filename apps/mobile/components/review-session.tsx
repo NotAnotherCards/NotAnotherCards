@@ -4,33 +4,97 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import {
   calculateReviewIntervalMinutes,
+  cardsForDeck,
   extendedReviewAnswerLabels,
   formatReviewInterval,
+  nextReviewBatch,
   reviewAnswerLabels,
   reviewRatingByAnswer,
-  nextReviewBatch,
   selectReviewBatch,
   type ReviewAnswer,
   type ReviewPreferences,
   type UserCardRecord,
+  WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { writeErrorMessage } from '@/lib/errors';
 import {
+  loadActivationCount,
   loadReviewPreferences,
+  saveActivationCount,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
 import { useReviewDeck } from '@/lib/review';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader } from './ui/card';
+import { Input } from './ui/input';
 import { Markdown } from './ui/markdown';
 import { Text } from './ui/text';
+import { useTranslation } from 'react-i18next';
 
 type ReviewBatch = {
   deckId: string;
   cards: UserCardRecord[];
 };
+
+function ActivationControls({
+  count,
+  onChangeCount,
+  onActivate,
+  isActivating,
+  error,
+  inactiveItemCount,
+  itemLabel,
+}: {
+  count: string;
+  onChangeCount: (value: string) => void;
+  onActivate: () => void;
+  isActivating: boolean;
+  error: string | null;
+  inactiveItemCount: number;
+  itemLabel: 'words' | 'cards';
+}) {
+  const { t } = useTranslation();
+  const selectedCount = Math.min(
+    inactiveItemCount,
+    Math.max(1, Math.floor(Number(count) || 5)),
+  );
+  return (
+    <>
+      <Text>{t('review.activation.activate', 'Activate')}</Text>
+      <Input
+        value={String(selectedCount)}
+        onChangeText={onChangeCount}
+        keyboardType="number-pad"
+        accessibilityLabel={t(
+          'review.activation.count_label',
+          'Number of items to activate',
+        )}
+        className="w-20 text-center"
+      />
+      <Text>
+        {itemLabel === 'cards'
+          ? t(
+              inactiveItemCount === 1
+                ? 'review.activation.more_card'
+                : 'review.activation.more_cards',
+              { count: inactiveItemCount },
+            )
+          : t(
+              inactiveItemCount === 1
+                ? 'review.activation.more_word'
+                : 'review.activation.more_words',
+              { count: inactiveItemCount },
+            )}
+      </Text>
+      <Button onPress={onActivate} disabled={isActivating}>
+        <Text>{t('review.activation.continue', 'Activate and continue')}</Text>
+      </Button>
+      {error && <Text className="text-destructive">{error}</Text>}
+    </>
+  );
+}
 
 // Web's two modes, same labels: basic asks whether you knew it, extended
 // keeps the four scheduler ratings apart. Settings stores the choice.
@@ -60,7 +124,7 @@ export function ReviewSession({ deckId }: { deckId: string }) {
     <ActiveReviewSession
       manager={manager}
       deckId={deckId}
-      userId={authSession?.user.id}
+      userId={authSession?.user.id ?? ''}
       preferences={loadReviewPreferences(authSession?.user.id ?? '')}
     />
   );
@@ -74,37 +138,64 @@ function ActiveReviewSession({
 }: {
   manager: DatabaseManager;
   deckId: string;
-  userId: string | undefined;
+  userId: string;
   preferences: ReviewPreferences;
 }) {
+  const { t } = useTranslation();
   const answers =
     preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS;
   const router = useRouter();
-  const { deck, dueCards, readDueCards, isLoading, error, writes } =
-    useReviewDeck(manager, deckId);
+  const {
+    deck,
+    dueCards,
+    readDueCards,
+    memberships,
+    cards,
+    isLoading,
+    error,
+    writes,
+  } = useReviewDeck(manager, deckId);
   const [session, setSession] = useState<ReviewBatch | null>(null);
   const [cardIndex, setCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [activationCount, setActivationCount] = useState('5');
+  const [activationPending, setActivationPending] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
   // The answer was saved but the next batch could not be read: only the read
   // is retried, so the answer is never recorded twice.
   const [nextBatchFailed, setNextBatchFailed] = useState(false);
 
   useEffect(() => {
-    if (deck && userId) saveLastReviewDeckId(userId, deck.id);
-  }, [deck, userId]);
-
-  useEffect(() => {
-    if (!isLoading && deck && session?.deckId !== deckId) {
+    if (!isLoading && deck && activationPending) {
+      setSession(makeBatch(deckId, dueCards));
+      setCardIndex(0);
+      setIsComplete(false);
+      setActivationPending(false);
+    } else if (
+      !isLoading &&
+      deck &&
+      (session?.deckId !== deckId ||
+        (session?.cards.length === 0 && dueCards.length > 0))
+    ) {
       setSession(makeBatch(deckId, dueCards));
       setCardIndex(0);
       setIsFlipped(false);
       setSaveError(null);
       setIsComplete(false);
     }
-  }, [deck, deckId, dueCards, isLoading, session?.deckId]);
+  }, [activationPending, deck, deckId, dueCards, isLoading, session?.deckId]);
+
+  useEffect(() => {
+    setActivationCount(String(loadActivationCount(userId)));
+  }, [userId]);
+
+  useEffect(() => {
+    if (deck && userId) saveLastReviewDeckId(userId, deck.id);
+  }, [deck, userId]);
 
   if (isLoading || !writes) {
     return (
@@ -118,10 +209,10 @@ function ActiveReviewSession({
     return (
       <View className="gap-4 py-8">
         <Text className="text-center text-destructive">
-          Failed to load this review: {error.message}
+          {t('review.recovery.load_error', { message: error.message })}
         </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );
@@ -130,9 +221,11 @@ function ActiveReviewSession({
   if (!deck) {
     return (
       <View className="gap-4 py-8">
-        <Text className="text-center font-semibold">Deck not found</Text>
+        <Text className="text-center font-semibold">
+          {t('review.recovery.deck_not_found_title', 'Deck not found')}
+        </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>Back</Text>
+          <Text>{t('review.recovery.back', 'Back')}</Text>
         </Button>
       </View>
     );
@@ -147,6 +240,36 @@ function ActiveReviewSession({
   }
 
   const card = session.cards[cardIndex];
+  const deckCards = cardsForDeck(memberships, cards, deckId);
+  const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
+  const inactiveItemCount = isWordDeck
+    ? new Set(
+        deckCards.filter((item) => !item.active).map((item) => item.note_id),
+      ).size
+    : deckCards.filter((item) => !item.active).length;
+  const activationItemLabel = isWordDeck ? 'words' : 'cards';
+  const activateMore = async () => {
+    if (isActivating) return;
+    const count = Math.min(
+      inactiveItemCount,
+      Math.max(1, Math.floor(Number(activationCount) || 5)),
+    );
+    setIsActivating(true);
+    setActivationError(null);
+    try {
+      await writes.activate(deckId, count);
+      saveActivationCount(userId, count);
+      setNextBatchFailed(false);
+      setSession(null);
+      setActivationPending(true);
+    } catch {
+      setActivationError(
+        t('review.activation.error', 'Activation error. Try again.'),
+      );
+    } finally {
+      setIsActivating(false);
+    }
+  };
   // The batch in hand stays as it is; the next one comes from a fresh read,
   // so cards that became due, arrived through sync or were deleted during the
   // session are taken into account.
@@ -221,12 +344,28 @@ function ActiveReviewSession({
     return (
       <View className="items-center gap-4 py-12">
         <Stack.Screen options={{ title: deck.title }} />
-        <Text className="text-2xl font-semibold">Review complete</Text>
-        <Text className="text-center text-muted-foreground">
-          All due cards in this deck are done for now.
+        <Text className="text-2xl font-semibold">
+          {t('review.activation.complete_title', 'Review complete')}
         </Text>
+        <Text className="text-center text-muted-foreground">
+          {t(
+            'review.activation.complete_description',
+            'All due cards in this deck are done for now.',
+          )}
+        </Text>
+        {inactiveItemCount > 0 && (
+          <ActivationControls
+            count={activationCount}
+            onChangeCount={setActivationCount}
+            onActivate={() => void activateMore()}
+            isActivating={isActivating}
+            error={activationError}
+            inactiveItemCount={inactiveItemCount}
+            itemLabel={activationItemLabel}
+          />
+        )}
         <Button onPress={leave}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );
@@ -236,12 +375,25 @@ function ActiveReviewSession({
     return (
       <View className="items-center gap-4 py-12">
         <Stack.Screen options={{ title: deck.title }} />
-        <Text className="text-2xl font-semibold">No cards due</Text>
-        <Text className="text-center text-muted-foreground">
-          There are no cards due in {deck.title} right now.
+        <Text className="text-2xl font-semibold">
+          {t('review.recovery.no_cards_due_title', 'No cards due')}
         </Text>
+        <Text className="text-center text-muted-foreground">
+          {t('review.recovery.no_cards_due', { title: deck.title })}
+        </Text>
+        {inactiveItemCount > 0 && (
+          <ActivationControls
+            count={activationCount}
+            onChangeCount={setActivationCount}
+            onActivate={() => void activateMore()}
+            isActivating={isActivating}
+            error={activationError}
+            inactiveItemCount={inactiveItemCount}
+            itemLabel={activationItemLabel}
+          />
+        )}
         <Button onPress={leave}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );

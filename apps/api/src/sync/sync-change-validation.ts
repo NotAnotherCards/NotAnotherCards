@@ -239,7 +239,11 @@ export function validateCardRows(
     const compiledCards = compiledByNoteId.get(noteId);
     if (compiledCards === undefined) return false;
     const rendered = compiledCards.get(templateKey);
-    if (rendered === undefined) return card['active'] === true;
+    if (rendered === undefined) {
+      return (
+        card['active'] === true && (card['front'] !== '' || card['back'] !== '')
+      );
+    }
     return card['front'] !== rendered.front || card['back'] !== rendered.back;
   });
   const rejectedCardIds = new Set(rejectedCards.map((card) => card.id));

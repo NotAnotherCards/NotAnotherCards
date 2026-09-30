@@ -2,23 +2,18 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import type { Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Card as UICard,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card as UICard, CardContent, CardHeader } from '@/components/ui/card';
 import {
   AlertCircle,
   Edit,
   Eye,
   HelpCircle,
-  Library,
   Search,
   Unlink,
 } from 'lucide-react';
 import { type UserNoteRecord } from '@repo/offline-db';
 import { toWordListRow, type WordListRow } from './word-note-rows';
+import { DeckStat } from './DeckStat';
 import { useTranslation } from 'react-i18next';
 
 // Word rows switch once: a stacked layout below 880px and a table above it.
@@ -33,7 +28,9 @@ const EMPTY_CARDS: readonly Card[] = [];
 interface WordNoteListProps {
   notes: UserNoteRecord[];
   cards: Card[];
-  dueCards: Card[];
+  activeWordCount?: number;
+  totalCardCount?: number;
+  dueCardCount?: number;
   onViewNote: (note: UserNoteRecord) => void;
   onEditWord: (note: UserNoteRecord) => void;
   onRemoveWord: (note: UserNoteRecord) => void;
@@ -45,7 +42,9 @@ interface WordNoteListProps {
 export function WordNoteList({
   notes,
   cards,
-  dueCards,
+  activeWordCount = 0,
+  totalCardCount = cards.length,
+  dueCardCount = 0,
   onViewNote,
   onEditWord,
   onRemoveWord,
@@ -79,11 +78,6 @@ export function WordNoteList({
       row.translation.toLowerCase().includes(search)
     );
   });
-  const filteredCards = filteredRows.flatMap((row) => row.cards);
-  const dueCardIds = new Set(dueCards.map((card) => card.id));
-  const filteredDueCount = filteredCards.filter((card) =>
-    dueCardIds.has(card.id),
-  ).length;
   const tableStyle: CSSProperties &
     Record<
       | '--word-column-min'
@@ -99,16 +93,24 @@ export function WordNoteList({
   };
   return (
     <UICard className="border border-border/60">
-      <CardHeader className="border-b border-border/40 pb-4">
-        <div className="flex flex-nowrap items-center gap-x-4 text-base font-bold whitespace-nowrap">
-          <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <Library className="size-4 text-primary" />
-            {t('deck.words.title', '{{count}} Words', {
-              count: filteredRows.length,
-            })}
-          </CardTitle>
-          <span>{filteredCards.length} Cards</span>
-          <span>{filteredDueCount} Cards Due</span>
+      <CardHeader className="@container border-b border-border/40 pb-4">
+        <div className="grid grid-cols-2 gap-2 @[720px]:grid-cols-4">
+          <DeckStat
+            label={t('deck.stats.words_total', 'Words Total')}
+            value={notes.length}
+          />
+          <DeckStat
+            label={t('deck.stats.active_words', 'Active Words')}
+            value={activeWordCount}
+          />
+          <DeckStat
+            label={t('deck.stats.cards', 'Cards')}
+            value={totalCardCount}
+          />
+          <DeckStat
+            label={t('deck.stats.cards_due', 'Cards Due')}
+            value={dueCardCount}
+          />
         </div>
         <div className="relative mt-4 w-full md:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />

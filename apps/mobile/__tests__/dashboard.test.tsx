@@ -455,7 +455,7 @@ describe('Dashboard screen', () => {
     expect(queryByText(/Start Review/)).toBeNull();
   });
 
-  it('disables Start Review when nothing is due', () => {
+  it('opens the library when nothing is due', () => {
     saveLastReviewDeckId('user-dashboard', 'deck-spanish');
     mockUseSession.mockReturnValue({
       data: {
@@ -470,10 +470,13 @@ describe('Dashboard screen', () => {
 
     const { getByRole } = render(<Dashboard />);
     const button = getByRole('button', { name: 'Start Review · 0 due' });
-    expect(button.props.accessibilityState.disabled).toBe(true);
+    expect(button.props.accessibilityState.disabled).toBe(false);
     fireEvent.press(button);
 
     expect(mockPush).not.toHaveBeenCalled();
+    expect(
+      getByRole('tab', { name: 'My Library' }).props.accessibilityState,
+    ).toEqual({ selected: true });
     // Nothing due now does not forget the deck: it can be due again later.
     expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });

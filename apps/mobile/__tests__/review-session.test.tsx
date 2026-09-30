@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/lib/i18n';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ReviewSession } from '@/components/review-session';
 import Storage from 'expo-sqlite/kv-store';
@@ -11,6 +12,7 @@ import {
 const manager = { tag: 'manager' };
 let mockManager: unknown = manager;
 const mockRecord = jest.fn(() => Promise.resolve({ id: 'review-1' }));
+const mockActivate = jest.fn(() => Promise.resolve(['n1']));
 const mockReadDueCards = jest.fn<Promise<Card[]>, []>(() =>
   Promise.resolve([]),
 );
@@ -25,12 +27,14 @@ type Card = {
   scheduled_interval_minutes: number;
 };
 let mockReviewState: {
-  deck: { id: string; title: string } | null;
+  deck: { id: string; title: string; note_type?: string } | null;
   dueCards: Card[];
   readDueCards: typeof mockReadDueCards;
   isLoading: boolean;
   error: Error | null;
-  writes: { record: typeof mockRecord } | null;
+  writes: { record: typeof mockRecord; activate: typeof mockActivate } | null;
+  memberships: Array<{ deck_id: string; note_id: string }>;
+  cards: Array<{ id: string; note_id: string; active: boolean }>;
 };
 
 jest.mock('../lib/database-provider', () => ({
@@ -50,6 +54,7 @@ jest.mock('expo-router', () => ({
 beforeEach(() => {
   mockManager = manager;
   mockRecord.mockClear();
+  mockActivate.mockClear();
   mockReadDueCards.mockClear();
   mockReadDueCards.mockResolvedValue([]);
   mockReplace.mockClear();
@@ -70,7 +75,9 @@ beforeEach(() => {
     readDueCards: mockReadDueCards,
     isLoading: false,
     error: null,
-    writes: { record: mockRecord },
+    writes: { record: mockRecord, activate: mockActivate },
+    memberships: [{ deck_id: 'd1', note_id: 'n1' }],
+    cards: [{ id: 'c1', note_id: 'n1', active: true }],
   };
   // The kv-store mock is shared across tests in this file.
   saveReviewPreferences('user-1', {
@@ -112,7 +119,7 @@ describe('ReviewSession', () => {
     expect(mockReplace).toHaveBeenCalledWith('/deck/d1');
   });
 
-  it('follows the saved review preference: four labels and the next interval', async () => {
+  it('shows basic answer labels after revealing the answer', async () => {
     saveReviewPreferences('user-1', {
       reviewMode: 'extended',
       showNextReviewInterval: true,
@@ -262,6 +269,39 @@ describe('ReviewSession', () => {
     expect(await result.findByText('No cards due')).toBeTruthy();
     fireEvent.press(result.getByText('Back to deck'));
     expect(mockReplace).toHaveBeenCalledWith('/deck/d1');
+  });
+
+  it('activates inactive cards from an empty basic review', async () => {
+    mockReviewState.deck = { id: 'd1', title: 'Spanish', note_type: 'basic' };
+    mockReviewState.dueCards = [];
+    mockReviewState.cards = [{ id: 'c1', note_id: 'n1', active: false }];
+    mockActivate.mockImplementationOnce(async () => {
+      mockReviewState.cards = [{ id: 'c1', note_id: 'n1', active: true }];
+      mockReviewState.dueCards = [
+        {
+          id: 'c1',
+          note_id: 'n1',
+          front: 'hola',
+          back: 'hello',
+          due_at: 1,
+          scheduled_interval_minutes: 0,
+        },
+      ];
+      return ['n1'];
+    });
+    const result = render(<ReviewSession deckId="d1" />);
+
+    expect(
+      await result.findByText('more card from 1 inactive card'),
+    ).toBeTruthy();
+    expect(result.getByLabelText('Number of items to activate')).toHaveProp(
+      'value',
+      '1',
+    );
+    fireEvent.press(result.getByText('Activate and continue'));
+    await waitFor(() => expect(mockActivate).toHaveBeenCalledWith('d1', 1));
+    result.rerender(<ReviewSession deckId="d1" />);
+    expect(await result.findByText('hola')).toBeTruthy();
   });
 
   it('keeps the answer visible so a failed rating can be retried', async () => {

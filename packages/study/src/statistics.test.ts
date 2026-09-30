@@ -43,6 +43,8 @@ function card(
     active: true,
     due_at: dueAt,
     scheduled_interval_minutes: interval,
+    front: 'front',
+    back: 'back',
   };
 }
 
