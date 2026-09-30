@@ -22,7 +22,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@remelondb/core": "0.3.2",
+    "@remelondb/core": "0.3.3",
     "@repo/schemas": "workspace:*",
     "@repo/study": "workspace:*",
     "uuid": "^14.0.2",
@@ -30,7 +30,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@remelondb/driver-node": "0.3.2",
+    "@remelondb/driver-node": "0.3.3",
     "@repo/typescript-config": "workspace:*",
     "typescript": "5.9.3",
     "vitest": "^4.1.10"
