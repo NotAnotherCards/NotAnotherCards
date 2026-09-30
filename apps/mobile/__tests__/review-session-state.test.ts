@@ -96,7 +96,11 @@ describe('reviewSessionReducer', () => {
       ...answer,
       { type: 'next-batch-failed' },
     );
-    expect(failed).toMatchObject({ answered: 1, phase: 'read-failed' });
+    expect(failed).toMatchObject({
+      answered: 1,
+      phase: 'read-failed',
+      lastStep: 'answer',
+    });
 
     const retried = reviewSessionReducer(failed, { type: 'next-batch-retry' });
     expect(retried).toMatchObject({ answered: 1, phase: 'loading-next' });
@@ -220,6 +224,10 @@ describe('reviewSessionReducer', () => {
       { type: 'note-deleted', noteId: 'note-a' },
     );
 
-    expect(state).toMatchObject({ phase: 'loading-next', answered: 0 });
+    expect(state).toMatchObject({
+      phase: 'loading-next',
+      answered: 0,
+      lastStep: 'delete',
+    });
   });
 });

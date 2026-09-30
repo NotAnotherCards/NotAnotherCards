@@ -105,7 +105,9 @@ function ActiveReviewSession({
       <View className="items-center gap-4 py-12">
         <Stack.Screen options={{ title: deck.title }} />
         <Text className="text-center text-destructive">
-          The next cards could not be loaded.
+          {session.lastStep === 'delete'
+            ? 'The card is deleted, but the next cards could not be loaded.'
+            : 'Your answer is saved, but the next cards could not be loaded.'}
         </Text>
         <Button onPress={session.retryNextBatch}>
           <Text>Retry</Text>

@@ -34,6 +34,8 @@ export type ReviewSessionState = {
   error: string | null;
   // Answers given so far, for progress across batches.
   answered: number;
+  // What asked for the next batch, so a failed read can say what is safe.
+  lastStep: 'answer' | 'delete' | null;
   editing:
     | { kind: 'new' }
     | { kind: 'edit'; card: Card; confirmDelete?: boolean }
@@ -61,6 +63,7 @@ export const initialReviewSession: ReviewSessionState = {
   phase: 'reviewing',
   error: null,
   answered: 0,
+  lastStep: null,
   editing: null,
 };
 
@@ -102,7 +105,7 @@ export function reviewSessionReducer(
     case 'saved':
       if (state.phase !== 'saving' || !state.batch) return state;
       return moveTo(
-        { ...state, answered: state.answered + 1 },
+        { ...state, answered: state.answered + 1, lastStep: 'answer' },
         state.batch,
         state.index + 1,
       );
@@ -143,7 +146,7 @@ export function reviewSessionReducer(
     // the session too; then it moves on as after an answer, without counting
     // one.
     case 'note-deleted': {
-      const closed = { ...state, editing: null };
+      const closed = { ...state, editing: null, lastStep: 'delete' as const };
       if (!state.batch) return closed;
       const kept = (card: Card) => card.note_id !== action.noteId;
       const { batch, index } = state;

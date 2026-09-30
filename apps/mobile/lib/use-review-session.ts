@@ -120,7 +120,12 @@ export function useReviewSession(
   if (state.batch?.deckId !== deckId)
     return { ...session, status: 'loading' as const };
   if (state.phase === 'read-failed')
-    return { ...session, status: 'next-batch-failed' as const, deck };
+    return {
+      ...session,
+      status: 'next-batch-failed' as const,
+      deck,
+      lastStep: state.lastStep,
+    };
   if (state.phase === 'complete')
     return { ...session, status: 'complete' as const, deck };
   // The batch ran out through a delete and the next one is being read.

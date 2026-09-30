@@ -307,7 +307,9 @@ describe('ReviewSession', () => {
     fireEvent.press(result.getByText('Remembered'));
 
     expect(
-      await result.findByText(/next cards could not be loaded/),
+      await result.findByText(
+        /Your answer is saved, but the next cards could not be loaded/,
+      ),
     ).toBeTruthy();
     expect(result.queryByText('Remembered')).toBeNull();
     fireEvent.press(result.getByText('Retry'));
