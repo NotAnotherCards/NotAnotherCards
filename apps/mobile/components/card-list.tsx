@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react';
 import { Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';

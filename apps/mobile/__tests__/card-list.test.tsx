@@ -122,6 +122,8 @@ describe('CardList', () => {
     mockCardsState.cards[1].active = false;
 
     expect(render(<CardList deckId="d1" />).getByText('Inactive')).toBeTruthy();
+  });
+
   it('renders only a small window of a 300-card deck', () => {
     mockCardsState.cards = Array.from({ length: 300 }, (_, index) => ({
       id: `c${index}`,
