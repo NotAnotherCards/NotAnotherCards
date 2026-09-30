@@ -1,7 +1,8 @@
 # Production VPS operations guide
 
 NotAnotherCards production runs on our Ubuntu VPS at
-<https://app.notanothercards.com>. The initial host, Docker, Nginx, TLS, DNS,
+<https://app.notanothercards.com>, with the public landing page at
+<https://notanothercards.com>. The initial host, Docker, Nginx, TLS, DNS,
 firewall, deployment user, and GitHub Actions setup are complete. This document
 is the day-to-day guide for developers. The architecture is described
 in [`docs/deployment.md`](../../docs/deployment.md).
@@ -11,12 +12,14 @@ in [`docs/deployment.md`](../../docs/deployment.md).
 | Item                 | Value                                                         |
 | -------------------- | ------------------------------------------------------------- |
 | Public application   | `https://app.notanothercards.com`                             |
+| Public landing       | `https://notanothercards.com`                                 |
 | Monitoring Grafana   | `https://grafana.notanothercards.com`                         |
 | VPS IPv4             | `169.58.127.208`                                              |
 | VPS IPv6             | `2a02:c207:3020:2790::1`                                      |
 | Production checkout  | `/opt/notanothercards`                                        |
 | Runtime environment  | `/opt/notanothercards/.env`                                   |
 | Host Nginx site      | `/etc/nginx/sites-available/app.notanothercards.com.conf`     |
+| Host Nginx landing   | `/etc/nginx/sites-available/notanothercards.com.conf`         |
 | Host Nginx Grafana   | `/etc/nginx/sites-available/grafana.notanothercards.com.conf` |
 | Compose files        | `docker-compose.yml` and `docker-compose.production.yml`      |
 | Monitoring Compose   | `infra/monitoring/docker-compose.yml`                         |
@@ -183,8 +186,13 @@ Production deployment is automated. A merge or direct push to `main` starts
 1. connects as `deploy` with host-fingerprint verification;
 2. resets `/opt/notanothercards` to `origin/main`;
 3. builds and starts both Compose files with `--wait`;
-4. prints container status; and
-5. verifies `https://app.notanothercards.com/health`.
+4. prints container status;
+5. verifies the monitoring stack, the Slack notification path, and every named
+   Prometheus target; and
+6. verifies the public endpoints: application and Grafana health, and the apex
+   landing home page and `/privacy` over hostname-validated HTTPS, including a
+   real HTTP 404 for an unknown path, the HTTP-to-HTTPS redirect, and the apex
+   certificate.
 
 Review deployment status under **GitHub → Actions → Continuous Deployment**.
 Reverting a commit on `main` deploys the reverted source state.
@@ -205,6 +213,110 @@ sudo -u deploy docker compose \
 curl --fail https://app.notanothercards.com/health
 ```
 
+## Landing page at the apex domain
+
+The public landing and legal pages are served at
+<https://notanothercards.com>. The `landing` container publishes
+`127.0.0.1:5174` only, so host Nginx is the sole public entry point; nothing
+else may bind that port. The checked-in bootstrap configuration is
+`infra/vps/notanothercards.com.conf`.
+
+### DNS
+
+Both address families must resolve to the VPS before Certbot can issue a
+certificate, and both should keep resolving afterwards:
+
+```bash
+dig +short A    notanothercards.com   # 169.58.127.208
+dig +short AAAA notanothercards.com   # 2a02:c207:3020:2790::1
+curl -4 -sS -o /dev/null -w '%{http_code}\n' http://notanothercards.com/
+curl -6 -sS -o /dev/null -w '%{http_code}\n' http://notanothercards.com/
+```
+
+`www.notanothercards.com` resolves to the same VPS but is deliberately not
+served; it must keep returning 404.
+
+### Installing the host site
+
+Run from the production checkout. On a host that has no Nginx yet, install it
+first:
+
+```bash
+sudo apt-get update
+sudo apt-get install nginx certbot python3-certbot-nginx
+
+cd /opt/notanothercards
+sudo cp infra/vps/notanothercards.com.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/notanothercards.com.conf \
+           /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Do not copy the file again after the next step: Certbot rewrites the installed
+copy to add TLS and the HTTP-to-HTTPS redirect, and re-copying it would remove
+them.
+
+### Issuing the certificate
+
+```bash
+sudo certbot --nginx -d notanothercards.com
+sudo certbot certificates
+sudo certbot renew --dry-run
+```
+
+Certbot edits `/etc/nginx/sites-available/notanothercards.com.conf` in place
+and reloads Nginx. The other virtual hosts are untouched.
+
+### Health checks
+
+```bash
+curl --fail https://notanothercards.com/
+curl --fail https://notanothercards.com/privacy
+curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://notanothercards.com/
+curl -o /dev/null -w '%{http_code}\n' https://notanothercards.com/not-a-real-page
+echo | openssl s_client -connect 127.0.0.1:443 -servername notanothercards.com 2>/dev/null \
+  | openssl x509 -noout -ext subjectAltName
+ss -ltn | awk 'NR > 1 && $4 ~ /:5174$/ { print "  listener", $4 }'
+```
+
+Expected: two `200`s, `301 https://notanothercards.com/`, `404`, a
+certificate whose subject alternative name lists `DNS:notanothercards.com`,
+and a single `listener 127.0.0.1:5174` line: nothing on port 5174 may bind to
+`0.0.0.0`, `*`, `[::]`, or the VPS public address.
+The same checks run automatically after every deployment.
+
+### Troubleshooting
+
+```bash
+sudo nginx -t
+sudo systemctl status nginx --no-pager
+sudo journalctl -u nginx --no-pager -n 50
+sudo certbot certificates
+sudo -u deploy docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.production.yml ps
+curl --fail http://127.0.0.1:5174/health
+ss -ltnp | grep 5174
+```
+
+`ss` must show `127.0.0.1:5174` and never `0.0.0.0:5174` or `[::]:5174`. If
+HTTPS fails while HTTP works, the certificate is missing or expired; if both
+fail, the site is not enabled or the container is down.
+
+### Rollback
+
+Remove the public landing route and its certificate:
+
+```bash
+sudo rm /etc/nginx/sites-enabled/notanothercards.com.conf
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot delete --cert-name notanothercards.com
+```
+
+Then revert the deployment smoke-check commit that requires the apex endpoint,
+otherwise the next deployment fails its verification step.
+
 ## Production checks and logs
 
 ```bash
@@ -219,7 +331,10 @@ sudo -u deploy docker compose \
   -f docker-compose.production.yml logs --tail=200
 
 curl --fail https://app.notanothercards.com/health
+curl --fail https://notanothercards.com/
+curl --fail https://notanothercards.com/privacy
 curl --fail http://127.0.0.1:5173/health
+curl --fail http://127.0.0.1:5174/health
 sudo nginx -t
 sudo systemctl status nginx --no-pager
 sudo certbot certificates
@@ -236,8 +351,9 @@ sudo -u deploy docker compose \
   logs --follow --tail=200 api
 ```
 
-Replace `api` with `web` or `postgres` as needed. Application deployments do
-not reload host Nginx because its upstream remains `127.0.0.1:5173`.
+Replace `api` with `web`, `landing`, or `postgres` as needed. Application
+deployments do not reload host Nginx because its upstreams remain
+`127.0.0.1:5173` and `127.0.0.1:5174`.
 
 ## Testing a branch without replacing production
 
@@ -342,10 +458,11 @@ sudo -u deploy docker compose \
 
 ## Certificate, firewall, and backup responsibilities
 
-- Certbot manages the installed TLS configuration and renewal timer. Check it
-  periodically with `sudo certbot renew --dry-run`.
+- Certbot manages the installed TLS configuration and renewal timer, covering
+  `app.notanothercards.com`, `grafana.notanothercards.com`, and
+  `notanothercards.com`. Check it periodically with `sudo certbot renew --dry-run`.
 - Provider firewall and UFW allow public TCP 22, 80, and 443 only. Do not
-  expose ports 3000, 5173, 5432, or branch-test ports publicly.
+  expose ports 3000, 5173, 5174, 5432, or branch-test ports publicly.
 - Docker volumes provide persistence, not backups. Keep encrypted PostgreSQL
   backups outside the VPS and periodically test restoration.
 
