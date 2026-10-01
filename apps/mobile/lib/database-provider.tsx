@@ -12,6 +12,7 @@ import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
 import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
 import { legacyCardContentCleanupState } from './legacy-card-content-cleanup';
+import LanguageEnforcer from './language-enforcer';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -74,7 +75,10 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   // unmount the navigator, including the signed-out screens. Consumers
   // reach the manager through useSessionDatabase, which is null-safe.
   const content = manager ? (
-    <DatabaseProvider manager={manager}>{children}</DatabaseProvider>
+    <DatabaseProvider manager={manager}>
+      <LanguageEnforcer />
+      {children}
+    </DatabaseProvider>
   ) : (
     children
   );
