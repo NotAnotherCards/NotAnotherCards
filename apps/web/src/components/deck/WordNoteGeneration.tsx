@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  aiJobResponseSchema,
-  apiErrorBodySchema,
   createAiJobSchema,
   languageFor,
   type AiJob,
@@ -12,6 +10,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { useTranslation } from 'react-i18next';
+import { apiClient } from '@/lib/api-client';
 
 export interface WordGenerationDeck {
   deckId: string;
@@ -21,13 +20,7 @@ export interface WordGenerationDeck {
 
 type WordJob = Extract<AiJob, { type: 'word_note' }>;
 
-async function readJob(response: Response): Promise<WordJob> {
-  const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const { message } = apiErrorBodySchema.parse(body);
-    throw new Error(message || 'Unable to generate a word. Please try again.');
-  }
-  const { job } = aiJobResponseSchema.parse(body);
+function wordJob(job: AiJob): WordJob {
   if (job.type !== 'word_note')
     throw new Error('Unexpected generation result.');
   return job;
@@ -72,10 +65,12 @@ export function WordNoteGeneration({
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
-        const updated = await readJob(
-          await fetch(`/api/ai/jobs/${encodeURIComponent(jobId)}`, {
-            signal: controller.signal,
-          }),
+        const updated = wordJob(
+          (
+            await apiClient.ai.job(jobId, {
+              signal: controller.signal,
+            })
+          ).job,
         );
         if (controller.signal.aborted) return;
         if (updated.id !== jobId) throw new Error('Unexpected generation job.');
@@ -123,13 +118,12 @@ export function WordNoteGeneration({
     setJob(null);
     setPollPaused(false);
     try {
-      const created = await readJob(
-        await fetch('/api/ai/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(parsed.data),
-          signal: controller.signal,
-        }),
+      const created = wordJob(
+        (
+          await apiClient.ai.generate(parsed.data, {
+            signal: controller.signal,
+          })
+        ).job,
       );
       if (!controller.signal.aborted) setJob(created);
     } catch (err) {

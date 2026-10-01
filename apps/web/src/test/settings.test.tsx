@@ -221,6 +221,45 @@ describe('Settings Tab Component Specs', () => {
     expect(frenchOption).toBeUndefined();
   });
 
+  it('clears the target when the native language becomes the target, and saves only once one is chosen', async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+
+    const nativeSelect = screen.getByLabelText(
+      /Native Language/i,
+    ) as HTMLSelectElement;
+    const targetSelect = screen.getByLabelText(
+      /Target Language/i,
+    ) as HTMLSelectElement;
+
+    // The profile is native English, target Spanish; Spanish becomes native
+    await user.selectOptions(
+      nativeSelect,
+      '00000000-0000-0000-0000-000000000002',
+    );
+    await waitFor(() => expect(targetSelect.value).toBe(''));
+
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    expect(
+      await screen.findByText('Target language is required'),
+    ).toBeInTheDocument();
+    expect(mockUpdateUserProfile).not.toHaveBeenCalled();
+
+    await user.selectOptions(
+      targetSelect,
+      '00000000-0000-0000-0000-000000000001',
+    );
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() =>
+      expect(mockUpdateUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          native_language_id: '00000000-0000-0000-0000-000000000002',
+          target_language_id: '00000000-0000-0000-0000-000000000001',
+        }),
+      ),
+    );
+  });
+
   it('displays validation error for too-short usernames', async () => {
     const user = userEvent.setup();
     render(<Settings />);

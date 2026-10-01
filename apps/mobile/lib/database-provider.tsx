@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { View } from 'react-native';
 import type { DatabaseManager, SyncController } from '@remelondb/core';
 import {
@@ -11,6 +11,8 @@ import { pullChanges, pushChanges } from './sync';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
 import { useTwoFactorChallengeState } from './two-factor-challenge';
+import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
+import { legacyCardContentCleanupState } from './legacy-card-content-cleanup';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -57,6 +59,23 @@ export function SessionDatabaseProvider({
     sync: { pullChanges, pushChanges, migrationsEnabledAtVersion: 1 },
     controller: { triggers: nativeSyncTriggers },
   });
+
+  useEffect(() => {
+    if (
+      !manager ||
+      !syncController ||
+      !userId ||
+      manager.state?.status !== 'ready'
+    ) {
+      return;
+    }
+
+    return normalizeLegacyCardContentAfterSync(
+      manager.database,
+      syncController,
+      legacyCardContentCleanupState(userId),
+    );
+  }, [manager, syncController, userId]);
 
   if (closeError) {
     return <DatabaseUnrecoverable error={closeError} />;

@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   DEFAULT_REVIEW_PREFERENCES,
   getLastReviewDeckId,
+  getActivationCount,
   getReviewPreferences,
+  saveActivationCount,
   saveLastReviewDeckId,
   saveReviewPreferences,
 } from '@/lib/review-preferences';
@@ -108,5 +110,45 @@ describe('review preferences', () => {
     });
 
     expect(() => saveLastReviewDeckId('user-1', 'deck-german')).not.toThrow();
+  });
+
+  it('uses the default activation count when browser storage reads fail', () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        clear: () => entries.clear(),
+        getItem: () => {
+          throw new Error('Storage access denied');
+        },
+        key: () => null,
+        get length() {
+          return 0;
+        },
+        removeItem: () => undefined,
+        setItem: () => undefined,
+      } satisfies Storage,
+    });
+
+    expect(getActivationCount('user-1')).toBe(5);
+  });
+
+  it('continues when saving the activation count fails', () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        clear: () => entries.clear(),
+        getItem: () => null,
+        key: () => null,
+        get length() {
+          return 0;
+        },
+        removeItem: () => undefined,
+        setItem: () => {
+          throw new Error('Storage access denied');
+        },
+      } satisfies Storage,
+    });
+
+    expect(() => saveActivationCount('user-1', 3)).not.toThrow();
   });
 });

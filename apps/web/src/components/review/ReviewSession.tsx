@@ -19,8 +19,12 @@ type ReviewSessionProps = {
   onCreateCard: (data: { front: string; back: string }) => Promise<void>;
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
-  onRequestNextBatch?: () => Card[];
+  onRequestNextBatch?: () => Promise<Card[]>;
   onComplete?: () => void;
+  onActivateMore?: (count: number) => Promise<void>;
+  activationCount?: number;
+  inactiveItemCount?: number;
+  activationItemLabel?: 'words' | 'cards';
   reviewMode?: 'basic' | 'extended';
   showNextReviewInterval?: boolean;
 };
@@ -36,6 +40,10 @@ export function ReviewSession({
   onDeleteNote,
   onRequestNextBatch,
   onComplete,
+  onActivateMore,
+  activationCount,
+  inactiveItemCount = 0,
+  activationItemLabel = 'words',
   reviewMode = 'basic',
   showNextReviewInterval = false,
 }: ReviewSessionProps) {
@@ -130,17 +138,29 @@ export function ReviewSession({
         return;
       }
 
-      const isLastCardInBatch = currentCardIndex === sessionCards.length - 1;
-      const nextBatch = isLastCardInBatch ? onRequestNextBatch?.() : [];
+      const moveOn = (nextBatch: Card[]) => {
+        setIsFlipped(false);
+        if (nextBatch.length > 0) {
+          setSessionCards(nextBatch);
+          setCurrentCardIndex(0);
+        } else {
+          setCurrentCardIndex((index) => index + 1);
+        }
+        setExitDirection(null);
+      };
 
-      setIsFlipped(false);
-      if (nextBatch && nextBatch.length > 0) {
-        setSessionCards(nextBatch);
-        setCurrentCardIndex(0);
-      } else {
-        setCurrentCardIndex((index) => index + 1);
+      // The next batch is read when it is asked for (@repo/study's
+      // nextReviewBatch). The answer is already saved, so a failed read ends
+      // the session instead of offering the card again.
+      // The read is in memory on web and cannot fail today. If it becomes a
+      // database read, show an error with a retry here instead of ending the
+      // session.
+      const isLastCardInBatch = currentCardIndex === sessionCards.length - 1;
+      if (isLastCardInBatch && onRequestNextBatch) {
+        void onRequestNextBatch().then(moveOn, () => moveOn([]));
+        return;
       }
-      setExitDirection(null);
+      moveOn([]);
     }, REVIEW_CARD_EXIT_DURATION_MS);
   };
 
@@ -215,7 +235,15 @@ export function ReviewSession({
   });
 
   if (!card) {
-    return <ReviewComplete onExit={onExit} />;
+    return (
+      <ReviewComplete
+        onExit={onExit}
+        onActivate={onActivateMore}
+        activationCount={activationCount}
+        inactiveItemCount={inactiveItemCount}
+        itemLabel={activationItemLabel}
+      />
+    );
   }
 
   return (

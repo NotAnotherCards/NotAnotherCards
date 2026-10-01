@@ -2,7 +2,7 @@
   "expo": {
     "name": "NotAnotherCards",
     "slug": "not-another-cards",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "icon": "./assets/icon.png",
     "orientation": "portrait",
     "scheme": "notanothercards",

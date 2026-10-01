@@ -91,9 +91,10 @@ describe('due-cards reactivity', () => {
       deckId = deck.id;
       const card = await result.current.createCard(deckId, 'front', 'back');
       cardId = card.id;
+      await result.current.activateWordsInDeck(deckId, 1);
     });
 
-    // The freshly created card is due immediately.
+    // Manually activate the new card; activated cards are due immediately.
     await waitFor(() =>
       expect(result.current.dueCards.map((c) => c.id)).toContain(cardId),
     );

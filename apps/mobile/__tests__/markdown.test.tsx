@@ -21,6 +21,22 @@ describe('Markdown', () => {
     expect(result.getByText('(m.)')).toBeTruthy();
   });
 
+  it('keeps text selectable outside the review', () => {
+    const result = render(<Markdown content="gato" inline />);
+
+    expect(result.getByText('gato').props.selectable).toBe(true);
+  });
+
+  it("renders a review card's text and links so they cannot be selected", () => {
+    const result = render(
+      <Markdown content="gato [link](https://example.com)" variant="card" />,
+    );
+
+    for (const text of result.UNSAFE_getAllByType(Text)) {
+      expect(text.props.selectable).not.toBe(true);
+    }
+  });
+
   it('opens safe links', async () => {
     const result = render(
       <Markdown content="[Example](https://example.com)" inline />,

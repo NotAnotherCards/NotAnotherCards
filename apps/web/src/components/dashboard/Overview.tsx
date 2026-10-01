@@ -160,6 +160,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     error: sharedDecksError,
   } = useSharedDecks();
   const { importDeck, importingIds, error: importError } = useImportDeck();
+  const [importedDecks, setImportedDecks] = useState<
+    Record<
+      string,
+      {
+        deckId: string;
+        status: 'syncing' | 'pending' | 'ready';
+      }
+    >
+  >({});
   const {
     reportDeck,
     reportingIds,
@@ -192,8 +201,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     now: Date.now(),
   });
   const handleStartReview = () => {
-    if (target === 'nothing-due') return;
-    if (target === 'library') onChooseDeck();
+    if (target === 'library' || target === 'nothing-due') onChooseDeck();
     else void navigate({ to: '/deck-review', search: { deckId: target } });
   };
 
@@ -517,7 +525,6 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 className="flex-1 cursor-pointer gap-1.5"
                 size="sm"
                 onClick={handleStartReview}
-                disabled={target === 'nothing-due'}
               >
                 <Library className="size-3.5" />
                 {t('dashboard.overview.profile.start_review')}
@@ -571,6 +578,24 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
+            {sharedDecks
+              .filter(
+                (deck) =>
+                  importedDecks[deck.id]?.status === 'pending' &&
+                  !store.decks.some(
+                    (local) => local.id === importedDecks[deck.id].deckId,
+                  ),
+              )
+              .map((deck) => (
+                <p
+                  key={deck.id}
+                  role="status"
+                  className="mx-6 mt-4 text-sm text-muted-foreground"
+                >
+                  {deck.title}: imported. It will appear after the next
+                  successful sync.
+                </p>
+              ))}
             {(importError || (reportError && !reportingDeck)) && (
               <div className="mx-6 mt-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20 flex items-center gap-2">
                 <AlertCircle className="size-4" />
@@ -659,16 +684,45 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                               variant="outline"
                               size="sm"
                               className="cursor-pointer min-w-17.5"
-                              disabled={importingIds.has(deck.id)}
+                              disabled={
+                                importingIds.has(deck.id) ||
+                                !!importedDecks[deck.id]
+                              }
                               onClick={async () => {
                                 const result = await importDeck(deck.id);
                                 if (result) {
-                                  controller?.syncNow();
+                                  setImportedDecks((prev) => ({
+                                    ...prev,
+                                    [deck.id]: {
+                                      deckId: result.deckId,
+                                      status: 'syncing',
+                                    },
+                                  }));
+                                  const state = await controller?.syncNow();
+                                  const synced =
+                                    state &&
+                                    (state.status === 'idle' ||
+                                      state.status === 'resync-required') &&
+                                    state.lastResult &&
+                                    // a run another tab locked out
+                                    // transferred nothing
+                                    state.lastResult.lease === 'acquired' &&
+                                    state.lastResult.rejected === 0;
+                                  setImportedDecks((prev) => ({
+                                    ...prev,
+                                    [deck.id]: {
+                                      deckId: result.deckId,
+                                      status: synced ? 'ready' : 'pending',
+                                    },
+                                  }));
                                 }
                               }}
                             >
-                              {importingIds.has(deck.id) ? (
+                              {importingIds.has(deck.id) ||
+                              importedDecks[deck.id]?.status === 'syncing' ? (
                                 <Loader2 className="size-4 animate-spin" />
+                              ) : importedDecks[deck.id] ? (
+                                'Imported'
                               ) : (
                                 t('dashboard.overview.community.import')
                               )}

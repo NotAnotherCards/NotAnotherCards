@@ -13,15 +13,16 @@ import {
   UserProfile,
   PRIVATE_DECK,
 } from './user-dictionary.js';
-import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId } from './ids.js';
+import { BASIC_FRONT_BACK_TEMPLATE_KEY } from '@repo/study';
+import { cardId } from './ids.js';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
   DECK_NOTE_TYPES,
   type DeckNoteType,
   WORD_NOTE_TYPE,
-} from './note-constants.js';
-import { calculateReviewSchedule } from './review-scheduler.js';
+} from '@repo/study';
+import { calculateReviewSchedule } from '@repo/study';
 
 // ==========================================
 // QUERIES
@@ -34,21 +35,20 @@ export function getDecksQuery(db: Database) {
 export function getPersonalDictionaryQuery(db: Database) {
   return db
     .get(UserCard)
-    .query(Q.where('active', true), Q.sortBy('created_at', Q.desc));
+    .query(
+      Q.where('active', true),
+      Q.where('front', Q.notEq('')),
+      Q.where('back', Q.notEq('')),
+      Q.sortBy('created_at', Q.desc),
+    );
+}
+
+export function getAllCardsQuery(db: Database) {
+  return db.get(UserCard).query(Q.sortBy('created_at', Q.desc));
 }
 
 export function getNotesQuery(db: Database) {
   return db.get(UserNote).query(Q.sortBy('created_at', Q.desc));
-}
-
-export function getDueCardsQuery(db: Database, now: number = Date.now()) {
-  return db
-    .get(UserCard)
-    .query(
-      Q.where('active', true),
-      Q.where('due_at', Q.lte(now)),
-      Q.sortBy('due_at', Q.asc),
-    );
 }
 
 export function getCardDetailQuery(db: Database, cardId: string) {
@@ -205,7 +205,6 @@ export async function deleteDeckWithNotes(db: Database, deckId: string) {
       .get(UserNoteDeck)
       .query(Q.where('deck_id', deckId))
       .fetch();
-    // ponytail: four reads per orphan; bulk-fetch with Q.oneOf if large decks make deletion slow.
     const noteDeletions = await Promise.all(
       orphanedNoteIds.map(async (noteId) => {
         const note = await db.get(UserNote).find(noteId);
@@ -287,6 +286,56 @@ export async function disableCard(db: Database, cardId: string) {
       record.active = false;
       record.updated_at = now;
     });
+  });
+}
+
+/** Activate the oldest words with no active sibling in one deck. */
+export async function activateWordsInDeck(
+  db: Database,
+  deckId: string,
+  count: number,
+) {
+  if (!Number.isInteger(count) || count < 1) return [];
+
+  return await db.write(async () => {
+    const [memberships, cards] = await Promise.all([
+      db
+        .get(UserNoteDeck)
+        .query(Q.where('deck_id', deckId), Q.where('active', true))
+        .fetch(),
+      db.get(UserCard).query().fetch(),
+    ]);
+    const cardsByNote = new Map<string, typeof cards>();
+    for (const card of cards) {
+      const siblings = cardsByNote.get(card.note_id) ?? [];
+      siblings.push(card);
+      cardsByNote.set(card.note_id, siblings);
+    }
+    const selected = memberships
+      .filter((membership) => {
+        const siblings = cardsByNote.get(membership.note_id) ?? [];
+        return siblings.length > 0 && siblings.every((card) => !card.active);
+      })
+      .sort(
+        (first, second) =>
+          first.created_at - second.created_at ||
+          first.note_id.localeCompare(second.note_id),
+      )
+      .slice(0, count);
+    const now = Date.now();
+    await db.batch(
+      selected.flatMap((membership) =>
+        (cardsByNote.get(membership.note_id) ?? []).map((card) =>
+          card.prepareUpdate((record) => {
+            const wasInactive = !record.active;
+            record.active = true;
+            if (wasInactive) record.due_at = now;
+            record.updated_at = now;
+          }),
+        ),
+      ),
+    );
+    return selected.map((membership) => membership.note_id);
   });
 }
 

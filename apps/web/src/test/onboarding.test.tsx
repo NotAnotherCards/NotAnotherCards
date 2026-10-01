@@ -195,6 +195,38 @@ describe('Onboarding Flow and Guard Specs', () => {
     ).toBeInTheDocument();
   });
 
+  it('clears the target when the same language is then picked as native', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const targetSelect = (await screen.findByLabelText(
+      /Target Language/i,
+      {},
+      { timeout: 5000 },
+    )) as HTMLSelectElement;
+    await user.selectOptions(
+      targetSelect,
+      '00000000-0000-0000-0000-000000000002',
+    ); // Spanish
+    await user.selectOptions(
+      screen.getByLabelText(/Native Language/i),
+      '00000000-0000-0000-0000-000000000002',
+    ); // Spanish again
+    await waitFor(() => expect(targetSelect.value).toBe(''));
+
+    await user.type(screen.getByLabelText(/Username/i), 'alex_test');
+    await user.click(
+      screen.getByRole('button', { name: /Complete Registration/i }),
+    );
+    expect(
+      await screen.findByText('Target language is required'),
+    ).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      '/api/auth/onboard',
+      expect.anything(),
+    );
+  });
+
   it('submits the form successfully and calls the onboarding API endpoint', async () => {
     const user = userEvent.setup();
 

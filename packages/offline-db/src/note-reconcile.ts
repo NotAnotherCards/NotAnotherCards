@@ -3,9 +3,9 @@
  * compiled note. By the deterministic cardId(noteId, templateKey):
  *
  * - compiled and missing  → create, due now
- * - compiled and existing → update front/back in place; if it was
- *   deactivated, reactivate as due now with its history intact (#157)
- * - uncompiled and active → deactivate; never delete
+ * - compiled and existing → update front/back in place; a card restored from
+ *   empty content becomes due now, without changing its activation
+ * - uncompiled → clear its rendered sides; never delete or deactivate
  * - a card whose template key the registry does not know (written by a
  *   newer client) is left strictly alone
  *
@@ -13,10 +13,15 @@
  * the note write itself into one db.batch: note and cards change
  * atomically or not at all.
  */
-import { Q, type BatchOperation, type Database } from '@remelondb/core';
+import {
+  Q,
+  type BatchOperation,
+  type Database,
+  type SyncController,
+} from '@remelondb/core';
 import { cardId } from './ids.js';
-import type { CompiledNote } from './note-registry.js';
-import { UserCard } from './user-dictionary.js';
+import { compileNote, noteTypeRegistry, type CompiledNote } from '@repo/study';
+import { UserCard, UserNote } from './user-dictionary.js';
 
 /** Cards for a brand-new note: no queries, nothing can exist yet. */
 export function prepareCardsForNewNote(
@@ -30,7 +35,7 @@ export function prepareCardsForNewNote(
       id: cardId(noteId, card.templateKey),
       note_id: noteId,
       template_key: card.templateKey,
-      active: true,
+      active: false,
       front: card.front,
       back: card.back,
       due_at: now,
@@ -74,7 +79,7 @@ export async function prepareReconcileNoteCards(
             id,
             note_id: noteId,
             template_key: templateKey,
-            active: true,
+            active: existing.some((sibling) => sibling.active),
             front: wanted.front,
             back: wanted.back,
             due_at: now,
@@ -84,19 +89,18 @@ export async function prepareReconcileNoteCards(
           }),
         );
       } else {
-        const reactivate = !card.active;
+        const wasIncomplete = card.front === '' || card.back === '';
         if (
           card.front !== wanted.front ||
           card.back !== wanted.back ||
-          reactivate
+          wasIncomplete
         ) {
           operations.push(
             card.prepareUpdate((record) => {
               record.front = wanted.front;
               record.back = wanted.back;
-              if (reactivate) {
-                // #157's reactivation rule: due now, history kept.
-                record.active = true;
+              if (wasIncomplete) {
+                // Restored content is immediately available if its word is active.
                 record.due_at = now;
               }
               record.updated_at = now;
@@ -104,10 +108,11 @@ export async function prepareReconcileNoteCards(
           );
         }
       }
-    } else if (card && card.active) {
+    } else if (card && (card.front !== '' || card.back !== '')) {
       operations.push(
         card.prepareUpdate((record) => {
-          record.active = false;
+          record.front = '';
+          record.back = '';
           record.updated_at = now;
         }),
       );
@@ -115,4 +120,125 @@ export async function prepareReconcileNoteCards(
   }
 
   return operations;
+}
+
+/**
+ * Clears content left by the pre-#408 reconcile behavior.
+ *
+ * Old clients deactivated an unrenderable card but retained its previous
+ * sides. New clients represent an unrenderable sibling with blank sides.
+ * This pass only changes old rows that still have content, so already-correct
+ * blank cards stay untouched.
+ */
+export async function normalizeLegacyCardContent(
+  db: Database,
+): Promise<number> {
+  return await db.write(async () => {
+    const [notes, cards] = await Promise.all([
+      db.get(UserNote).query().fetch(),
+      db.get(UserCard).query().fetch(),
+    ]);
+    const cardsByNote = new Map<string, typeof cards>();
+    for (const card of cards) {
+      const siblings = cardsByNote.get(card.note_id) ?? [];
+      siblings.push(card);
+      cardsByNote.set(card.note_id, siblings);
+    }
+
+    const operations: BatchOperation[] = [];
+    const now = Date.now();
+    for (const note of notes) {
+      const entry = noteTypeRegistry[note.note_type]?.[note.fields_version];
+      if (!entry) continue;
+
+      let compiled: CompiledNote;
+      try {
+        compiled = compileNote(
+          note.note_type,
+          note.fields_version,
+          JSON.parse(note.fields_json),
+        );
+      } catch {
+        // A client that cannot understand a future or malformed note must not
+        // erase card content it cannot safely reconstruct.
+        continue;
+      }
+      const renderedKeys = new Set(
+        compiled.cards.map((card) => card.templateKey),
+      );
+      const siblings = cardsByNote.get(note.id) ?? [];
+
+      for (const card of siblings) {
+        const templateIsKnown = entry.templates.some(
+          (template) => template.key === card.template_key,
+        );
+        if (
+          !templateIsKnown ||
+          renderedKeys.has(card.template_key) ||
+          (card.front === '' && card.back === '')
+        ) {
+          continue;
+        }
+
+        const wordIsActive = siblings.some(
+          (sibling) => sibling.id !== card.id && sibling.active,
+        );
+        operations.push(
+          card.prepareUpdate((record) => {
+            record.active = wordIsActive;
+            record.front = '';
+            record.back = '';
+            record.updated_at = now;
+          }),
+        );
+      }
+    }
+
+    if (operations.length > 0) await db.batch(operations);
+    return operations.length;
+  });
+}
+
+export const LEGACY_CARD_CONTENT_CLEANUP_VERSION = 1;
+
+export function legacyCardContentCleanupStorageKey(userId: string) {
+  return `not-another-cards:legacy-card-content-cleanup:${userId}`;
+}
+
+export type LegacyCardContentCleanupState = {
+  isComplete: () => boolean;
+  markComplete: () => void;
+};
+
+/** Run the legacy cleanup once after the first completed synchronization. */
+export function normalizeLegacyCardContentAfterSync(
+  db: Database,
+  syncController: Pick<SyncController, 'notifyLocalWrite' | 'subscribe'>,
+  cleanupState: LegacyCardContentCleanupState,
+): () => void {
+  let live = true;
+  let normalizing = false;
+  const normalize = async () => {
+    if (normalizing || cleanupState.isComplete()) return;
+    normalizing = true;
+    try {
+      const normalized = await normalizeLegacyCardContent(db);
+      cleanupState.markComplete();
+      if (live && normalized > 0) syncController.notifyLocalWrite();
+    } catch {
+      // A later sync or app start retries. Failure here must not prevent the
+      // already-open local database from being used.
+    } finally {
+      normalizing = false;
+    }
+  };
+  const unsubscribe = syncController.subscribe((state) => {
+    if (state.status === 'idle' && state.lastSyncAt !== null) {
+      void normalize();
+    }
+  });
+  return () => {
+    live = false;
+    unsubscribe();
+  };
 }
