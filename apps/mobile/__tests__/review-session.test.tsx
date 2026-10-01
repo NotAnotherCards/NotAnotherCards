@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/lib/i18n';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { State } from 'react-native-gesture-handler';
 import {
@@ -9,6 +10,8 @@ import { ReviewSession } from '@/components/review-session';
 import Storage from 'expo-sqlite/kv-store';
 import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
+  loadActivationCount,
+  saveActivationCount,
   loadLastReviewDeckId,
   loadReviewPreferences,
   saveReviewPreferences,
@@ -20,6 +23,9 @@ const mockRecord = jest.fn((_cardId: string, _rating: number) =>
   Promise.resolve({ id: 'review-1' }),
 );
 const mockCreate = jest.fn(() => Promise.resolve());
+const mockActivate = jest.fn((_deckId: string, _count: number) =>
+  Promise.resolve(['n1']),
+);
 const mockUpdate = jest.fn(() => Promise.resolve());
 const mockDeleteNote = jest.fn((_noteId: string) => Promise.resolve());
 const mockReadDueCards = jest.fn<Promise<Card[]>, []>(() =>
@@ -42,7 +48,9 @@ let mockReviewState: {
   readDueCards: typeof mockReadDueCards;
   isLoading: boolean;
   error: Error | null;
-  writes: { record: typeof mockRecord } | null;
+  writes: { record: typeof mockRecord; activate: typeof mockActivate } | null;
+  memberships: Array<{ deck_id: string; note_id: string }>;
+  cards: Array<{ id: string; note_id: string; active: boolean }>;
 };
 
 jest.mock('../lib/database-provider', () => ({
@@ -81,6 +89,9 @@ jest.mock('expo-router', () => ({
 beforeEach(() => {
   mockManager = manager;
   mockRecord.mockClear();
+  mockActivate.mockReset();
+  mockActivate.mockResolvedValue(['n1']);
+  saveActivationCount('user-1', 5);
   mockCreate.mockClear();
   mockUpdate.mockClear();
   mockDeleteNote.mockClear();
@@ -104,7 +115,9 @@ beforeEach(() => {
     readDueCards: mockReadDueCards,
     isLoading: false,
     error: null,
-    writes: { record: mockRecord },
+    writes: { record: mockRecord, activate: mockActivate },
+    memberships: [{ deck_id: 'd1', note_id: 'n1' }],
+    cards: [{ id: 'c1', note_id: 'n1', active: true }],
   };
   // The kv-store mock is shared across tests in this file.
   saveReviewPreferences('user-1', {
@@ -145,21 +158,12 @@ describe('ReviewSession', () => {
     expect(loadLastReviewDeckId('user-1')).toBeNull();
   });
 
-  it('follows the saved review preference: four labels and the next interval', async () => {
-    saveReviewPreferences('user-1', {
-      reviewMode: 'extended',
-      showNextReviewInterval: true,
-    });
+  it('shows basic answer labels after revealing the answer', async () => {
     const result = render(<ReviewSession deckId="d1" />);
 
     fireEvent.press(await result.findByText('Show answer'));
-    expect(result.getByText('Again')).toBeTruthy();
-    expect(result.getByText('Hard')).toBeTruthy();
-    expect(result.getByText('Good')).toBeTruthy();
-    expect(result.getByText('Easy')).toBeTruthy();
-    // A new card: Again schedules 5 minutes, Good three days.
-    expect(result.getByText('5 min')).toBeTruthy();
-    expect(result.getByText('3 days')).toBeTruthy();
+    expect(result.getByText('Forgot')).toBeTruthy();
+    expect(result.getByText('Remembered')).toBeTruthy();
   });
 
   it('reveals the answer below the question when the question is tapped', async () => {
@@ -350,6 +354,134 @@ describe('ReviewSession', () => {
     expect(await result.findByText('No cards due')).toBeTruthy();
     fireEvent.press(result.getByText('Back to deck'));
     expect(mockReplace).toHaveBeenCalledWith('/deck/d1');
+  });
+
+  it('activates inactive cards from an empty basic review', async () => {
+    mockReviewState.dueCards = [];
+    mockReviewState.cards = [{ id: 'c1', note_id: 'n1', active: false }];
+    mockActivate.mockImplementationOnce(async () => {
+      mockReviewState.cards = [{ id: 'c1', note_id: 'n1', active: true }];
+      mockReviewState.dueCards = [
+        {
+          id: 'c1',
+          note_id: 'n1',
+          front: 'hola',
+          back: 'hello',
+          due_at: 1,
+          scheduled_interval_minutes: 0,
+        },
+      ];
+      mockReadDueCards.mockResolvedValue(mockReviewState.dueCards);
+      return ['n1'];
+    });
+    const result = render(<ReviewSession deckId="d1" />);
+    expect(
+      await result.findByText('more card from 1 inactive card'),
+    ).toBeTruthy();
+    expect(result.getByLabelText('Number of items to activate')).toHaveProp(
+      'value',
+      '1',
+    );
+    fireEvent.press(result.getByText('Activate and continue'));
+    await waitFor(() => expect(mockActivate).toHaveBeenCalledWith('d1', 1));
+    expect(await result.findByText('hola')).toBeTruthy();
+    expect(mockReadDueCards).toHaveBeenCalledTimes(1);
+    expect(loadActivationCount('user-1')).toBe(1);
+  });
+
+  it('counts word siblings once, excludes other decks, and remembers the count', async () => {
+    mockReviewState.deck!.note_type = 'word';
+    mockReviewState.dueCards = [];
+    mockReviewState.memberships = [
+      { deck_id: 'd1', note_id: 'n1' },
+      { deck_id: 'd1', note_id: 'n2' },
+      { deck_id: 'd2', note_id: 'n3' },
+    ];
+    mockReviewState.cards = [
+      { id: 'c1', note_id: 'n1', active: false },
+      { id: 'c2', note_id: 'n1', active: false },
+      { id: 'c3', note_id: 'n2', active: false },
+      { id: 'c4', note_id: 'n3', active: false },
+    ];
+    saveActivationCount('user-1', 1);
+    const result = render(<ReviewSession deckId="d1" />);
+    expect(
+      await result.findByText('more words from 2 inactive words'),
+    ).toBeTruthy();
+    const input = result.getByLabelText('Number of items to activate');
+    expect(input).toHaveProp('value', '1');
+    fireEvent.changeText(input, '9999');
+    expect(input).toHaveProp('value', '2');
+    fireEvent.press(result.getByText('Activate and continue'));
+    await waitFor(() => expect(mockActivate).toHaveBeenCalledWith('d1', 2));
+    await waitFor(() => expect(loadActivationCount('user-1')).toBe(2));
+    await result.findByText('Review complete');
+  });
+
+  it('activates more cards after completing a review', async () => {
+    const nextCard = {
+      ...mockReviewState.dueCards[0]!,
+      id: 'c2',
+      note_id: 'n2',
+      front: 'hola',
+    };
+    mockReviewState.memberships.push({ deck_id: 'd1', note_id: 'n2' });
+    mockReviewState.cards.push({ id: 'c2', note_id: 'n2', active: false });
+    const result = render(<ReviewSession deckId="d1" />);
+    fireEvent.press(await result.findByText('Show answer'));
+    fireEvent.press(result.getByText('Remembered'));
+    await result.findByText('Review complete');
+    mockReadDueCards.mockResolvedValueOnce([nextCard]);
+    fireEvent.press(result.getByText('Activate and continue'));
+    expect(await result.findByText('hola')).toBeTruthy();
+    expect(mockActivate).toHaveBeenCalledWith('d1', 1);
+    expect(mockRecord).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows activation errors and disables activation while saving', async () => {
+    mockReviewState.dueCards = [];
+    mockReviewState.cards = [{ id: 'c1', note_id: 'n1', active: false }];
+    let rejectActivation!: (error: Error) => void;
+    mockActivate.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectActivation = reject;
+        }),
+    );
+    const result = render(<ReviewSession deckId="d1" />);
+    fireEvent.press(await result.findByText('Activate and continue'));
+    expect(
+      result.getByRole('button', { name: 'Activate and continue' }),
+    ).toBeDisabled();
+    fireEvent.press(result.getByText('Activate and continue'));
+    expect(mockActivate).toHaveBeenCalledTimes(1);
+    await act(async () => rejectActivation(new Error('disk full')));
+    expect(
+      await result.findByText('Activation error. Try again.'),
+    ).toBeTruthy();
+    expect(mockReadDueCards).not.toHaveBeenCalled();
+    fireEvent.press(result.getByText('Activate and continue'));
+    await waitFor(() => expect(mockActivate).toHaveBeenCalledTimes(2));
+    await result.findByText('Review complete');
+  });
+
+  it('retries only the read when loading activated cards fails', async () => {
+    const due = mockReviewState.dueCards;
+    mockReviewState.dueCards = [];
+    mockReviewState.cards = [{ id: 'c1', note_id: 'n1', active: false }];
+    mockReadDueCards.mockRejectedValueOnce(new Error('read failed'));
+    const result = render(<ReviewSession deckId="d1" />);
+    fireEvent.press(await result.findByText('Activate and continue'));
+    expect(
+      await result.findByText(
+        'The items are activated, but the next cards could not be loaded.',
+      ),
+    ).toBeTruthy();
+    mockReadDueCards.mockResolvedValueOnce(due);
+    fireEvent.press(result.getByText('Retry'));
+    expect(await result.findByText('gato')).toBeTruthy();
+    expect(mockActivate).toHaveBeenCalledTimes(1);
+    expect(mockRecord).not.toHaveBeenCalled();
   });
 
   it('keeps the answer visible so a failed rating can be retried', async () => {

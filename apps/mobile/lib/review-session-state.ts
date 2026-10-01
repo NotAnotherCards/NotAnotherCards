@@ -21,8 +21,8 @@ type ReviewBatch = {
 };
 
 // One thing at a time. Only `reviewing` takes a reveal or an answer.
-// `read-failed` follows a saved answer or a delete whose next batch could
-// not be read: only the read is retried, so nothing is saved twice.
+// `read-failed` follows a saved answer, delete or activation whose next batch
+// could not be read: only the read is retried, so nothing is written twice.
 export type ReviewPhase =
   'reviewing' | 'saving' | 'loading-next' | 'read-failed' | 'complete';
 
@@ -35,7 +35,7 @@ export type ReviewSessionState = {
   // Answers given so far, for progress across batches.
   answered: number;
   // What asked for the next batch, so a failed read can say what is safe.
-  lastStep: 'answer' | 'delete' | null;
+  lastStep: 'answer' | 'delete' | 'activation' | null;
   // The full editor, or the swipe down's short delete question.
   editing:
     | { kind: 'new' }
@@ -53,6 +53,7 @@ export type ReviewSessionAction =
   | { type: 'next-batch'; cards: Card[] }
   | { type: 'next-batch-failed' }
   | { type: 'next-batch-retry' }
+  | { type: 'activated' }
   | { type: 'edit'; card: Card }
   | { type: 'delete'; card: Card }
   | { type: 'add' }
@@ -131,6 +132,12 @@ export function reviewSessionReducer(
     case 'next-batch-retry':
       return state.phase === 'read-failed'
         ? { ...state, phase: 'loading-next' }
+        : state;
+    case 'activated':
+      return state.batch &&
+        (state.phase === 'complete' ||
+          (state.phase === 'reviewing' && state.batch.cards.length === 0))
+        ? { ...state, phase: 'loading-next', lastStep: 'activation' }
         : state;
     case 'edit':
       return { ...state, editing: { kind: 'edit', card: action.card } };

@@ -37,6 +37,39 @@ const answer: ReviewSessionAction[] = [
 ];
 
 describe('reviewSessionReducer', () => {
+  it('reads a fresh batch after activating from an empty review', () => {
+    const state = run(
+      { type: 'started', deckId: 'd1', cards: [] },
+      { type: 'activated' },
+    );
+    expect(state).toMatchObject({
+      phase: 'loading-next',
+      lastStep: 'activation',
+    });
+  });
+
+  it('reads a fresh batch after activating from a completed review', () => {
+    const state = run(
+      { type: 'started', deckId: 'd1', cards: cards(1) },
+      ...answer,
+      { type: 'next-batch', cards: [] },
+      { type: 'activated' },
+    );
+    expect(state).toMatchObject({
+      phase: 'loading-next',
+      answered: 1,
+      lastStep: 'activation',
+    });
+  });
+
+  it('ignores activation before starting, during review, and while saving', () => {
+    const reviewing = run({ type: 'started', deckId: 'd1', cards: cards(1) });
+    const saving = reviewSessionReducer(reviewing, { type: 'saving' });
+    for (const state of [initialReviewSession, reviewing, saving]) {
+      expect(reviewSessionReducer(state, { type: 'activated' })).toBe(state);
+    }
+  });
+
   it('starts with a batch of ten, the answer hidden', () => {
     const state = run({ type: 'started', deckId: 'd1', cards: cards(12) });
 

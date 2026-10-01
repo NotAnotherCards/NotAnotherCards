@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
@@ -8,7 +10,12 @@ import { useCards } from '@/lib/cards';
 import { useReviewLayout } from '@/lib/use-review-layout';
 import { useReviewSession } from '@/lib/use-review-session';
 import { useReviewSwipe } from '@/lib/use-review-swipe';
+import {
+  loadActivationCount,
+  saveActivationCount,
+} from '@/lib/review-preferences';
 import { CardEditor } from './card-editor';
+import { ActivationControls } from './review/activation-controls';
 import { AnswerButtons } from './review/answer-buttons';
 import { DeleteQuestion } from './review/delete-question';
 import { ReviewCards } from './review/review-cards';
@@ -49,6 +56,13 @@ function ActiveReviewSession({
   userId: string;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
+  const [activationCount, setActivationCount] = useState('5');
+  const [isActivating, setIsActivating] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
+  useEffect(() => {
+    setActivationCount(String(loadActivationCount(userId)));
+  }, [userId]);
   const layout = useReviewLayout(userId);
   const session = useReviewSession(manager, deckId, userId);
   const editor = useCards(manager, deckId);
@@ -78,10 +92,10 @@ function ActiveReviewSession({
     return (
       <View className="gap-4 py-8">
         <Text className="text-center text-destructive">
-          Failed to load this review: {session.error.message}
+          {t('review.recovery.load_error', { message: session.error.message })}
         </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );
@@ -90,9 +104,11 @@ function ActiveReviewSession({
   if (session.status === 'missing') {
     return (
       <View className="gap-4 py-8">
-        <Text className="text-center font-semibold">Deck not found</Text>
+        <Text className="text-center font-semibold">
+          {t('review.recovery.deck_not_found_title', 'Deck not found')}
+        </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>Back</Text>
+          <Text>{t('review.recovery.back', 'Back')}</Text>
         </Button>
       </View>
     );
@@ -108,43 +124,69 @@ function ActiveReviewSession({
         <Text className="text-center text-destructive">
           {session.lastStep === 'delete'
             ? 'The card is deleted, but the next cards could not be loaded.'
-            : 'Your answer is saved, but the next cards could not be loaded.'}
+            : session.lastStep === 'activation'
+              ? 'The items are activated, but the next cards could not be loaded.'
+              : 'Your answer is saved, but the next cards could not be loaded.'}
         </Text>
         <Button onPress={session.retryNextBatch}>
           <Text>Retry</Text>
         </Button>
         <Button variant="outline" onPress={leave}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );
   }
 
-  if (session.status === 'complete') {
+  if (session.status === 'complete' || session.status === 'empty') {
+    const activateMore = async () => {
+      if (isActivating) return;
+      const count = Math.min(
+        session.inactiveCount,
+        Math.max(1, Math.floor(Number(activationCount) || 5)),
+      );
+      setIsActivating(true);
+      setActivationError(null);
+      try {
+        await session.activate(count);
+        saveActivationCount(userId, count);
+      } catch {
+        setActivationError(
+          t('review.activation.error', 'Activation error. Try again.'),
+        );
+      } finally {
+        setIsActivating(false);
+      }
+    };
     return (
       <View className="items-center gap-4 py-12">
         <Stack.Screen options={{ title: deck.title }} />
-        <Text className="text-2xl font-semibold">Review complete</Text>
-        <Text className="text-center text-muted-foreground">
-          All due cards in this deck are done for now.
+        <Text className="text-2xl font-semibold">
+          {session.status === 'complete'
+            ? t('review.activation.complete_title', 'Review complete')
+            : t('review.recovery.no_cards_due_title', 'No cards due')}
         </Text>
-        <Button onPress={leave}>
-          <Text>Back to deck</Text>
-        </Button>
-      </View>
-    );
-  }
-
-  if (session.status === 'empty') {
-    return (
-      <View className="items-center gap-4 py-12">
-        <Stack.Screen options={{ title: deck.title }} />
-        <Text className="text-2xl font-semibold">No cards due</Text>
         <Text className="text-center text-muted-foreground">
-          There are no cards due in {deck.title} right now.
+          {session.status === 'complete'
+            ? t(
+                'review.activation.complete_description',
+                'All due cards in this deck are done for now.',
+              )
+            : t('review.recovery.no_cards_due', { title: deck.title })}
         </Text>
+        {session.inactiveCount > 0 && (
+          <ActivationControls
+            count={activationCount}
+            onChangeCount={setActivationCount}
+            onActivate={() => void activateMore()}
+            isActivating={isActivating}
+            error={activationError}
+            inactiveItemCount={session.inactiveCount}
+            itemLabel={session.itemLabel}
+          />
+        )}
         <Button onPress={leave}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );

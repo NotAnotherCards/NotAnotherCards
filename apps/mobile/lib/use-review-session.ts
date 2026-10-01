@@ -2,6 +2,8 @@ import { useEffect, useReducer } from 'react';
 import type { DatabaseManager } from '@remelondb/core';
 import {
   nextReviewBatch,
+  cardsForDeck,
+  WORD_NOTE_TYPE,
   reviewRatingByAnswer,
   type ReviewAnswer,
 } from '@repo/offline-db';
@@ -25,8 +27,16 @@ export function useReviewSession(
   deckId: string,
   userId: string,
 ) {
-  const { deck, dueCards, readDueCards, isLoading, error, writes } =
-    useReviewDeck(manager, deckId);
+  const {
+    deck,
+    dueCards,
+    readDueCards,
+    memberships,
+    cards,
+    isLoading,
+    error,
+    writes,
+  } = useReviewDeck(manager, deckId);
   const [state, dispatch] = useReducer(
     reviewSessionReducer,
     initialReviewSession,
@@ -129,11 +139,29 @@ export function useReviewSession(
       deck,
       lastStep: state.lastStep,
     };
+  const inactiveCards = cardsForDeck(memberships, cards, deckId).filter(
+    (item) => !item.active,
+  );
+  const activation = {
+    inactiveCount:
+      deck.note_type === WORD_NOTE_TYPE
+        ? new Set(inactiveCards.map((item) => item.note_id)).size
+        : inactiveCards.length,
+    itemLabel:
+      deck.note_type === WORD_NOTE_TYPE
+        ? ('words' as const)
+        : ('cards' as const),
+    activate: async (count: number) => {
+      await writes.activate(deckId, count);
+      dispatch({ type: 'activated' });
+    },
+  };
   if (state.phase === 'complete')
-    return { ...session, status: 'complete' as const, deck };
+    return { ...session, ...activation, status: 'complete' as const, deck };
   // The batch ran out through a delete and the next one is being read.
   if (!card && state.phase === 'loading-next')
     return { ...session, status: 'loading' as const };
-  if (!card) return { ...session, status: 'empty' as const, deck };
+  if (!card)
+    return { ...session, ...activation, status: 'empty' as const, deck };
   return { ...session, status: 'active' as const, deck, card };
 }
