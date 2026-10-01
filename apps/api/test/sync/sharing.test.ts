@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import {
   BASIC_FRONT_BACK_TEMPLATE_KEY,
@@ -18,7 +19,7 @@ import {
   sharedDeckPreviewSchema,
   sharedDeckImportSchema,
 } from '@repo/schemas';
-import { eq, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import {
@@ -482,7 +483,11 @@ describePostgres('deck sharing endpoints', () => {
   it('refuses to publish where moderation is not switched on', async () => {
     await seedDeck(userA, 'unchecked');
     const before = await storedDeck('unchecked');
-    delete process.env.MODERATION_ALLOW_ALL;
+    const config = app.get(ConfigService);
+    const getSpy = vi.spyOn(config, 'get').mockImplementation((key) => {
+      if (key === 'MODERATION_ALLOW_ALL') return undefined;
+      return process.env[key as string];
+    });
 
     const response = await post(userA, '/api/decks/unchecked/publish').expect(
       422,
@@ -492,6 +497,7 @@ describePostgres('deck sharing endpoints', () => {
       flagged: [],
     });
     expect(await storedDeck('unchecked')).toEqual(before);
+    getSpy.mockRestore();
   });
 
   it('answers 404 for someone else’s deck and for a tombstoned one', async () => {
@@ -923,6 +929,33 @@ describePostgres('deck sharing endpoints', () => {
     await get(userA, '/api/shared/decks/secret').expect(200);
   });
 
+  it('publishes inactive complete cards but leaves incomplete cards out', async () => {
+    const source = await seedDeck(userA, 'publishable', { cards: 2 });
+    await db
+      .update(userCards)
+      .set({ active: false })
+      .where(eq(userCards.id, source.cardIds[0]));
+    await db
+      .update(userCards)
+      .set({ front: '' })
+      .where(eq(userCards.id, source.cardIds[1]));
+
+    await post(userA, '/api/decks/publishable/publish').expect(200);
+
+    const shared = await get(userB, '/api/shared/decks/publishable').expect(
+      200,
+    );
+    expect(shared.body).toMatchObject({
+      deck: {
+        cardCount: 1,
+        cards: [{ front: 'front 0', back: 'back 0' }],
+      },
+    });
+    expect(
+      (await browse(userB)).find((deck) => deck.id === 'publishable'),
+    ).toMatchObject({ cardCount: 1 });
+  });
+
   it('caps a preview at ten cards and exposes nothing but their text', async () => {
     await seedDeck(userA, 'long', { cards: 12, visibility: 'public' });
 
@@ -1303,7 +1336,7 @@ describePostgres('deck sharing endpoints', () => {
         front: 'front 0',
         back: 'back 0',
         scheduledIntervalMinutes: 0,
-        active: true,
+        active: false,
       });
       expect(card.dueAt).toBeGreaterThanOrEqual(before);
       expect(card.dueAt).toBeLessThanOrEqual(Date.now());
@@ -1384,10 +1417,37 @@ describePostgres('deck sharing endpoints', () => {
           templateKey: card.templateKey,
           front: card.front,
           back: card.back,
-          active: true,
+          active: false,
           scheduledIntervalMinutes: 0,
         }),
       );
+  });
+
+  it('preserves the published note order for future activation', async () => {
+    await seedDeck(userA, 'ordered-source', {
+      cards: 2,
+      visibility: 'public',
+    });
+
+    const deckId = await importDeck(userB, 'ordered-source');
+    const imported = await db
+      .select({
+        createdAt: userNoteDecks.createdAt,
+        fields: userNotes.fieldsJson,
+      })
+      .from(userNoteDecks)
+      .innerJoin(userNotes, eq(userNotes.id, userNoteDecks.noteId))
+      .where(eq(userNoteDecks.deckId, deckId))
+      .orderBy(asc(userNoteDecks.createdAt));
+
+    const importedFields = imported.map(
+      ({ fields }) => JSON.parse(fields) as { front: string; back: string },
+    );
+    expect(importedFields).toEqual([
+      { front: 'front 0', back: 'back 0' },
+      { front: 'front 1', back: 'back 1' },
+    ]);
+    expect(imported[1].createdAt).toBeGreaterThan(imported[0].createdAt);
   });
 
   it.each(['private', 'unpublished', 'deleted', 'legacy', 'missing'])(

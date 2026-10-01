@@ -12,6 +12,7 @@ import { Layers } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { CARD_SIDE_MAX_LENGTH } from '@repo/schemas';
 import {
   Field,
   FieldError,
@@ -19,18 +20,25 @@ import {
   FieldLabel,
   FieldSet,
 } from '@/components/ui/field';
+import { useTranslation } from 'react-i18next';
 
 const cardSchema = z.object({
   front: z
     .string()
     .trim()
     .min(1, 'Front content is required')
-    .max(1000, 'Content cannot exceed 1000 characters'),
+    .max(
+      CARD_SIDE_MAX_LENGTH,
+      `Content cannot exceed ${CARD_SIDE_MAX_LENGTH} characters`,
+    ),
   back: z
     .string()
     .trim()
     .min(1, 'Back content is required')
-    .max(1000, 'Content cannot exceed 1000 characters'),
+    .max(
+      CARD_SIDE_MAX_LENGTH,
+      `Content cannot exceed ${CARD_SIDE_MAX_LENGTH} characters`,
+    ),
 });
 
 type CardFormData = z.infer<typeof cardSchema>;
@@ -50,6 +58,7 @@ export function CardForm({
   title,
   error,
 }: CardFormProps) {
+  const { t } = useTranslation();
   const form = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
@@ -82,7 +91,10 @@ export function CardForm({
               {title}
             </CardTitle>
             <CardDescription>
-              Create the question and answer for this study card.
+              {t(
+                'deck.card_form.desc',
+                'Create the question and answer for this study card.',
+              )}
             </CardDescription>
           </CardHeader>
 
@@ -95,12 +107,18 @@ export function CardForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Front (Question, term, or prompt)
+                        {t(
+                          'deck.card_form.front_label',
+                          'Front (Question, term, or prompt)',
+                        )}
                       </FieldLabel>
                       <textarea
                         {...field}
                         id={field.name}
-                        placeholder="e.g. What is the capital of Spain? or ¿Cómo estás?"
+                        placeholder={t(
+                          'deck.card_form.front_placeholder',
+                          'e.g. What is the capital of Spain? or ¿Cómo estás?',
+                        )}
                         rows={3}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
@@ -127,12 +145,18 @@ export function CardForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>
-                        Back (Answer, definition, or translation)
+                        {t(
+                          'deck.card_form.back_label',
+                          'Back (Answer, definition, or translation)',
+                        )}
                       </FieldLabel>
                       <textarea
                         {...field}
                         id={field.name}
-                        placeholder="e.g. Madrid or How are you? (Informal)"
+                        placeholder={t(
+                          'deck.card_form.back_placeholder',
+                          'e.g. Madrid or How are you? (Informal)',
+                        )}
                         rows={3}
                         aria-invalid={fieldState.invalid}
                         aria-describedby={
@@ -160,14 +184,14 @@ export function CardForm({
               onClick={onCancel}
               className="cursor-pointer"
             >
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </Button>
             <Button
               type="submit"
               disabled={form.formState.isSubmitting}
               className="cursor-pointer"
             >
-              Save Card
+              {t('deck.card_form.save_btn', 'Save Card')}
             </Button>
           </CardFooter>
         </form>

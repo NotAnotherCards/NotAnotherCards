@@ -16,6 +16,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-pa
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
+import { Route as AuthTwoFactorRouteImport } from './routes/_auth/two-factor'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedDeckReviewRouteImport } from './routes/_protected/deck-review'
 import { Route as ProtectedOnboardingRouteImport } from './routes/_protected/onboarding'
@@ -53,6 +54,11 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthTwoFactorRoute = AuthTwoFactorRouteImport.update({
+  id: '/two-factor',
+  path: '/two-factor',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
+  '/two-factor': typeof AuthTwoFactorRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/deck-review': typeof ProtectedDeckReviewRoute
   '/onboarding': typeof ProtectedOnboardingRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
+  '/two-factor': typeof AuthTwoFactorRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/deck-review': typeof ProtectedDeckReviewRoute
   '/onboarding': typeof ProtectedOnboardingRoute
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_auth/reset-password': typeof AuthResetPasswordRoute
+  '/_auth/two-factor': typeof AuthTwoFactorRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/deck-review': typeof ProtectedDeckReviewRoute
   '/_protected/onboarding': typeof ProtectedOnboardingRoute
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/two-factor'
     | '/dashboard'
     | '/deck-review'
     | '/onboarding'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/two-factor'
     | '/dashboard'
     | '/deck-review'
     | '/onboarding'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/_auth/login'
     | '/_auth/register'
     | '/_auth/reset-password'
+    | '/_auth/two-factor'
     | '/_protected/dashboard'
     | '/_protected/deck-review'
     | '/_protected/onboarding'
@@ -194,6 +206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthResetPasswordRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/two-factor': {
+      id: '/_auth/two-factor'
+      path: '/two-factor'
+      fullPath: '/two-factor'
+      preLoaderRoute: typeof AuthTwoFactorRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_protected/dashboard': {
       id: '/_protected/dashboard'
       path: '/dashboard'
@@ -223,6 +242,7 @@ interface AuthRouteRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  AuthTwoFactorRoute: typeof AuthTwoFactorRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
@@ -230,6 +250,7 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  AuthTwoFactorRoute: AuthTwoFactorRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(

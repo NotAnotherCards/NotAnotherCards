@@ -2,10 +2,18 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
+import { deckKind, deckKindShort } from '@repo/offline-db';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useDecks, type Deck } from '@/lib/decks';
 import { writeErrorMessage } from '@/lib/errors';
 import { Button } from './ui/button';
+import {
+  BookOpenIcon,
+  FolderOpenIcon,
+  PlusIcon,
+  SquarePenIcon,
+  TrashIcon,
+} from './ui/icon';
 import {
   Card,
   CardContent,
@@ -40,7 +48,7 @@ type DeckAction =
 
 function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
   const router = useRouter();
-  const { decks, isLoading, error, cardCount, profile, writes } =
+  const { decks, isLoading, error, cardCount, dueCount, profile, writes } =
     useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
@@ -59,7 +67,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
 
   // A form closes only once its write landed, so a failed write is never
   // shown as a success (same rule as web's DeckList).
-  const run = async (write: () => Promise<unknown>) => {
+  const run = async <T,>(write: () => Promise<T>) => {
     setWriteError(null);
     setPending(true);
     try {
@@ -135,8 +143,15 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
         <Text className="text-lg font-semibold">My decks</Text>
-        <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
-          <Text>New deck</Text>
+        {/* Web's Create Deck: the plus and the label at the default height.
+            The row buttons below are 48 high, Android's touch target size. */}
+        <Button
+          className="gap-1.5"
+          disabled={pending}
+          onPress={() => open({ kind: 'create' })}
+        >
+          <PlusIcon size={16} className="text-primary-foreground" />
+          <Text>Create deck</Text>
         </Button>
       </View>
       {decks.length === 0 && (
@@ -145,78 +160,167 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
         </Text>
       )}
       <View role="list" className="gap-3">
-        {decks.map((deck) => (
-          <Card key={deck.id} role="listitem">
-            {/* The header opens the deck; edit and delete stay below it, so
-              the two targets never overlap. */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${deck.title}`}
-              onPress={() => router.push(`/deck/${deck.id}`)}
-            >
+        {decks.map((deck) => {
+          return (
+            <Card key={deck.id} role="listitem">
+              {/* The header opens the deck. Edit and delete sit in its row as
+              on web's card: pencil and trash, ghost icons, 48 touch targets.
+              They are beside the opening press target, not inside it, so a
+              screen reader reaches each of the three on its own. */}
               <CardHeader>
-                <CardTitle>{deck.title}</CardTitle>
-                {deck.description ? (
-                  <CardDescription>{deck.description}</CardDescription>
-                ) : null}
-                <Text className="text-xs text-muted-foreground">
-                  {cardCount(deck.id)} cards
-                </Text>
-              </CardHeader>
-            </Pressable>
-            <CardContent>
-              {action?.kind === 'delete' && action.deck.id === deck.id ? (
-                <View className="gap-2">
-                  <Text className="text-sm">
-                    Delete this deck? Its cards are kept and stay in review.
-                  </Text>
-                  {writeError && (
-                    <Text className="text-destructive">{writeError}</Text>
-                  )}
-                  <View className="flex-row gap-2">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onPress={() => open(null)}
-                      disabled={pending}
+                {/* One row: the kind (named as web names it, the language
+                  pair for a word deck), the name, and the two icons. */}
+                <View className="flex-row items-center gap-2">
+                  <Pressable
+                    className="flex-1 flex-row items-center gap-2"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${deck.title}`}
+                    onPress={() => router.push(`/deck/${deck.id}`)}
+                  >
+                    <Text
+                      accessibilityLabel={deckKind(deck)}
+                      className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                     >
-                      <Text>Cancel</Text>
+                      {deckKindShort(deck)}
+                    </Text>
+                    <CardTitle className="flex-1" numberOfLines={1}>
+                      {deck.title}
+                    </CardTitle>
+                  </Pressable>
+                  {/* The glyphs sit inside 48 boxes; pulled right so the
+                      trash lines up with the content's edge, as on web. */}
+                  <View className="-mr-4 flex-row">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 sm:h-12 sm:w-12"
+                      disabled={pending}
+                      accessibilityLabel={`Edit ${deck.title}`}
+                      onPress={() => open({ kind: 'edit', deck })}
+                    >
+                      <SquarePenIcon
+                        size={20}
+                        className="text-muted-foreground"
+                      />
                     </Button>
                     <Button
-                      variant="destructive"
-                      className="flex-1"
-                      loading={pending}
-                      onPress={() => run(() => writes.remove(deck.id))}
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 sm:h-12 sm:w-12"
+                      disabled={pending}
+                      accessibilityLabel={`Delete ${deck.title}`}
+                      onPress={() => open({ kind: 'delete', deck })}
                     >
-                      <Text>Delete deck</Text>
+                      <TrashIcon size={20} className="text-muted-foreground" />
                     </Button>
                   </View>
                 </View>
-              ) : (
-                <View className="flex-row gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={pending}
-                    accessibilityLabel={`Edit ${deck.title}`}
-                    onPress={() => open({ kind: 'edit', deck })}
-                  >
-                    <Text className="text-primary">Edit</Text>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={pending}
-                    accessibilityLabel={`Delete ${deck.title}`}
-                    onPress={() => open({ kind: 'delete', deck })}
-                  >
-                    <Text className="text-destructive">Delete</Text>
-                  </Button>
-                </View>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                {/* The rest of the header opens the deck on a tap too. It is
+                  no second target for a screen reader, which has the one
+                  above. */}
+                <Pressable
+                  accessible={false}
+                  className="gap-1.5"
+                  onPress={() => router.push(`/deck/${deck.id}`)}
+                >
+                  {deck.description ? (
+                    <CardDescription numberOfLines={2}>
+                      {deck.description}
+                    </CardDescription>
+                  ) : null}
+                  {/* Web's two figures side by side, same wording. A deck with
+                    work reads at a glance; zero stays quiet. */}
+                  <View className="mt-1 flex-row rounded-2xl border border-border px-3 py-2">
+                    <View className="flex-1 items-center">
+                      <Text className="text-xs font-medium text-muted-foreground">
+                        Total Cards
+                      </Text>
+                      <Text className="text-sm font-bold">
+                        {cardCount(deck.id)}
+                      </Text>
+                    </View>
+                    <View className="w-px bg-border" />
+                    <View className="flex-1 items-center">
+                      <Text className="text-xs font-medium text-muted-foreground">
+                        Due
+                      </Text>
+                      <Text
+                        testID={`deck-due-${deck.id}`}
+                        className={
+                          dueCount(deck.id) > 0
+                            ? 'text-sm font-bold text-primary'
+                            : 'text-sm font-bold text-muted-foreground'
+                        }
+                      >
+                        {dueCount(deck.id)}
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              </CardHeader>
+              <CardContent>
+                {action?.kind === 'delete' && action.deck.id === deck.id ? (
+                  <View className="gap-2">
+                    <Text className="text-sm">
+                      Delete this deck? Its cards are kept and stay in review.
+                    </Text>
+                    {writeError && (
+                      <Text className="text-destructive">{writeError}</Text>
+                    )}
+                    <View className="flex-row gap-2">
+                      <Button
+                        variant="secondary"
+                        className="h-12 flex-1 sm:h-12"
+                        onPress={() => open(null)}
+                        disabled={pending}
+                      >
+                        <Text>Cancel</Text>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="h-12 flex-1 sm:h-12"
+                        loading={pending}
+                        onPress={() => run(() => writes.remove(deck.id))}
+                      >
+                        <Text>Delete deck</Text>
+                      </Button>
+                    </View>
+                  </View>
+                ) : (
+                  <View className="flex-row items-center gap-2">
+                    {/* Web's two row actions, half the row each: Manage Cards
+                      with web's folder, then the outline review button with
+                      its icon. At least 48 high; a longer label in
+                      another language wraps instead of being cut off.
+                      Nothing due, nothing to start. */}
+                    <Button
+                      className="h-auto min-h-12 flex-1 gap-1.5 py-2 sm:h-auto"
+                      disabled={pending}
+                      accessibilityLabel={`Manage cards of ${deck.title}`}
+                      onPress={() => router.push(`/deck/${deck.id}`)}
+                    >
+                      <FolderOpenIcon
+                        size={16}
+                        className="text-primary-foreground"
+                      />
+                      <Text className="shrink text-center">Manage cards</Text>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-auto min-h-12 flex-1 py-2 sm:h-auto"
+                      disabled={pending}
+                      accessibilityLabel={`Start review of ${deck.title}`}
+                      onPress={() => router.push(`/review/${deck.id}`)}
+                    >
+                      <BookOpenIcon size={16} className="text-foreground" />
+                      <Text className="shrink text-center">Start Review</Text>
+                    </Button>
+                  </View>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </View>
     </View>
   );

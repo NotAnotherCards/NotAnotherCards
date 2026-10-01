@@ -13,7 +13,7 @@ const routeTestState = vi.hoisted(() => ({
     reviewMode: 'basic' as 'basic' | 'extended',
     showNextReviewInterval: false,
   },
-  requestNextBatch: null as (() => Card[]) | null,
+  requestNextBatch: null as (() => Promise<Card[]>) | null,
   reviewSession: vi.fn(),
   reviewSessionProps: null as Record<string, unknown> | null,
   store: null as Record<string, unknown> | null,
@@ -36,6 +36,8 @@ vi.mock('@/lib/auth-client', () => ({
 
 vi.mock('@/lib/review-preferences', () => ({
   getReviewPreferences: () => routeTestState.reviewPreferences,
+  getActivationCount: () => 5,
+  saveActivationCount: vi.fn(),
   clearLastReviewDeckId: vi.fn(),
   saveLastReviewDeckId: vi.fn(),
 }));
@@ -43,11 +45,10 @@ vi.mock('@/lib/review-preferences', () => ({
 vi.mock('@/components/review/ReviewSession', () => ({
   ReviewSession: (props: {
     cards: Card[];
-    onComplete?: () => void;
     onExit: () => void;
-    onRequestNextBatch?: () => Card[];
+    onRequestNextBatch?: () => Promise<Card[]>;
   }) => {
-    const { cards, onComplete, onExit, onRequestNextBatch } = props;
+    const { cards, onExit, onRequestNextBatch } = props;
 
     routeTestState.requestNextBatch = onRequestNextBatch ?? null;
     routeTestState.reviewSession(cards);
@@ -56,7 +57,6 @@ vi.mock('@/components/review/ReviewSession', () => ({
     return (
       <div data-testid="review-session">
         <button onClick={onExit}>Exit review</button>
-        <button onClick={onComplete}>Complete review</button>
       </div>
     );
   },
@@ -146,7 +146,9 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
 
     expect(
-      screen.getByRole('heading', { name: 'No cards due' }),
+      screen.getByRole('heading', {
+        name: 'No cards are due in German basics right now.',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -201,7 +203,7 @@ describe('DeckReviewRoute', () => {
     );
   });
 
-  it('clears the saved deck when the user exits review', () => {
+  it('keeps the saved deck when the user exits review', () => {
     const dueCard = makeCard('due-card', Date.now() - 1);
     routeTestState.store = makeStore({
       getCardsForDeck: vi.fn(() => [dueCard]),
@@ -210,19 +212,7 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
 
-    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
-  });
-
-  it('clears the saved deck when the review session completes', () => {
-    const dueCard = makeCard('due-card', Date.now() - 1);
-    routeTestState.store = makeStore({
-      getCardsForDeck: vi.fn(() => [dueCard]),
-    });
-
-    render(<DeckReviewPage deckId={deck.id} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
-
-    expect(clearLastReviewDeckId).toHaveBeenCalledWith('user-1');
+    expect(clearLastReviewDeckId).not.toHaveBeenCalled();
   });
 
   it('keeps sibling cards out of the first review batch', async () => {
@@ -256,7 +246,7 @@ describe('DeckReviewRoute', () => {
     );
   });
 
-  it('applies the sibling rule when requesting the next review batch', () => {
+  it('applies the sibling rule when requesting the next review batch', async () => {
     const now = Date.now();
     const firstSibling = {
       ...makeCard('sibling-first', now - 3),
@@ -273,7 +263,7 @@ describe('DeckReviewRoute', () => {
 
     render(<DeckReviewPage deckId={deck.id} />);
 
-    expect(routeTestState.requestNextBatch?.()).toEqual([
+    await expect(routeTestState.requestNextBatch?.()).resolves.toEqual([
       firstSibling,
       otherCard,
     ]);

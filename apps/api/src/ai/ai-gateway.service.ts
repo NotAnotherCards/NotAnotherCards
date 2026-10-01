@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { CardOutput } from './schema';
 import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
+import { CARD_SIDE_MAX_LENGTH } from '@repo/schemas';
 
 export interface InferenceResult {
   cards: CardOutput[];
@@ -407,15 +408,8 @@ export class AiGatewayService {
     raw: string,
     requestedCount: number,
   ): CardOutput[] {
-    const cleaned = this.stripThinking(raw);
-    // 2. Extract JSON bracket boundaries [ ... ]
-    const start = cleaned.indexOf('[');
-    const end = cleaned.lastIndexOf(']');
-    if (start === -1 || end === -1 || end <= start) {
-      throw new Error('AI response did not contain a valid JSON array');
-    }
-
-    const jsonStr = cleaned.slice(start, end + 1);
+    const cleaned = this.stripThinking(raw, '[');
+    const jsonStr = this.sliceJson(cleaned, '[');
     const parsed = JSON.parse(jsonStr) as unknown;
 
     if (!Array.isArray(parsed)) {
@@ -435,21 +429,15 @@ export class AiGatewayService {
         throw new Error(`Card at index ${idx} is missing front or back string`);
       }
       return {
-        front: item.front.slice(0, 1000),
-        back: item.back.slice(0, 1000),
+        front: item.front.slice(0, CARD_SIDE_MAX_LENGTH),
+        back: item.back.slice(0, CARD_SIDE_MAX_LENGTH),
       };
     });
   }
 
   private parseObjectFromJson(raw: string): Record<string, unknown> {
-    const cleaned = this.stripThinking(raw);
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start === -1 || end === -1 || end <= start) {
-      throw new Error('AI response did not contain a valid JSON object');
-    }
-
-    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as unknown;
+    const cleaned = this.stripThinking(raw, '{');
+    const parsed = JSON.parse(this.sliceJson(cleaned, '{')) as unknown;
     if (
       typeof parsed !== 'object' ||
       parsed === null ||
@@ -460,8 +448,62 @@ export class AiGatewayService {
     return parsed as Record<string, unknown>;
   }
 
-  private stripThinking(raw: string): string {
-    return raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  private sliceJson(text: string, open: '{' | '['): string {
+    const close = open === '{' ? '}' : ']';
+    const start = text.indexOf(open);
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+
+    for (let i = start; i >= 0 && i < text.length; i++) {
+      const character = text[i];
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (character === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (character === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+      if (character === open) depth++;
+      else if (character === close && --depth === 0) {
+        return text.slice(start, i + 1);
+      }
+    }
+
+    throw new Error(
+      `AI response did not contain a valid JSON ${open === '{' ? 'object' : 'array'}`,
+    );
+  }
+
+  private stripThinking(raw: string, jsonStart: '[' | '{'): string {
+    let cleaned = raw.trim();
+
+    while (true) {
+      const opening = /<\s*think(?:ing)?\s*>/i.exec(cleaned);
+      const jsonStartIndex = cleaned.indexOf(jsonStart);
+      if (
+        !opening ||
+        (jsonStartIndex !== -1 && jsonStartIndex < opening.index)
+      ) {
+        return cleaned;
+      }
+
+      const afterOpening = opening.index + opening[0].length;
+      const closing = /<\s*\/\s*think(?:ing)?\s*>/i.exec(
+        cleaned.slice(afterOpening),
+      );
+      if (!closing) return cleaned.slice(0, opening.index).trim();
+
+      const afterClosing = afterOpening + closing.index + closing[0].length;
+      cleaned =
+        `${cleaned.slice(0, opening.index)}${cleaned.slice(afterClosing)}`.trim();
+    }
   }
 
   private requestSignal(signal?: AbortSignal): AbortSignal {

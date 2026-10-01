@@ -15,6 +15,7 @@ vi.mock('@tanstack/react-router', () => ({
     component: () => null,
   }),
   useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
 }));
 
 describe('Submit Button Loading States', () => {

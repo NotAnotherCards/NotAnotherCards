@@ -5,16 +5,17 @@ const preset = require('jest-expo/jest-preset');
 // and the mismatch breaks hooks in tests ("Cannot read properties of null
 // (reading 'useRef')"). Pin every react import in the test env to this package's
 // single copy. Do not remove: a lockfile change silently reintroduces the split.
-// @remelondb packages and uuid ship ESM-only builds, and @rn-primitives (the
-// behaviour layer under the react-native-reusables components) ships untranspiled
-// JSX. react-native-marked and its parser dependencies also ship ESM. Two
-// things keep jest from parsing them: the preset ignores their inner
-// node_modules path segments, and its transform only matches .js/.ts. Whitelist
-// those dependencies and send .mjs through the same babel transformer.
+// @remelondb packages, uuid and lucide-react-native ship ESM-only builds, and
+// @rn-primitives (the behaviour layer under the react-native-reusables
+// components) ships untranspiled JSX. react-native-marked and its parser
+// dependencies also ship ESM. Two things keep jest from parsing them: the
+// preset ignores their inner node_modules path segments, and its transform
+// only matches .js/.ts. Whitelist those dependencies and send .mjs through
+// the same babel transformer.
 const transformIgnorePatterns = preset.transformIgnorePatterns.map((pattern) =>
   pattern.replace(
     '(?!(.pnpm|',
-    '(?!(.pnpm|@jsamr|@remelondb|@rn-primitives|github-slugger|html-entities|marked|react-native-marked|react-native-reanimated-table|svg-parser|uuid|',
+    '(?!(.pnpm|@jsamr|@remelondb|@rn-primitives|github-slugger|html-entities|lucide-react-native|marked|react-native-marked|react-native-reanimated-table|svg-parser|uuid|',
   ),
 );
 
@@ -28,6 +29,12 @@ module.exports = {
   // The first render in a file pays the full babel transform of the RN
   // component graph; on CI runners that alone brushes the 5s default.
   testTimeout: 15000,
+  // Gesture handler and Reanimated are native; their test setups stand in.
+  setupFiles: [
+    ...(preset.setupFiles || []),
+    'react-native-gesture-handler/jestSetup',
+    '<rootDir>/jest.setup.ts',
+  ],
   moduleNameMapper: {
     ...(preset.moduleNameMapper || {}),
     '^react$': '<rootDir>/node_modules/react',

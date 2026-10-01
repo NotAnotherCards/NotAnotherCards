@@ -4,15 +4,16 @@ import {
   BASIC_NOTE_TYPE,
   BASIC_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
-} from './note-constants.js';
+} from '@repo/study';
 import { LANGUAGES } from '@repo/schemas';
-import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
+import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/study';
 import {
   UserDeck,
   UserNote,
   UserCard,
   UserNoteDeck,
   ReviewEvent,
+  PRIVATE_DECK,
 } from './user-dictionary.js';
 import type {
   BackupJsonFormat,
@@ -25,7 +26,7 @@ import {
   noteFieldsSchemas,
   validateNoteFieldsJson,
   compileNote,
-} from './note-registry.js';
+} from '@repo/study';
 
 export interface ImportError {
   row?: number;
@@ -259,7 +260,7 @@ async function validateAndImportJson(
       }
       cardSourceIds.add(card.source_id);
 
-      if (typeof card.active !== 'boolean') {
+      if (card.active !== undefined && typeof card.active !== 'boolean') {
         errors.push({
           code: 'INVALID_CARD_ACTIVE',
           message: 'Card active must be boolean',
@@ -362,13 +363,15 @@ async function validateAndImportJson(
         note_type: d.note_type ?? BASIC_NOTE_TYPE,
         native_language_id: d.native_language ?? null,
         target_language_id: d.target_language ?? null,
+        visibility: PRIVATE_DECK,
         created_at: now,
         updated_at: now,
       }),
     );
   }
   // Create notes, deck memberships, and cards
-  for (const note of notesData) {
+  for (const [noteIndex, note] of notesData.entries()) {
+    const createdAt = now + noteIndex;
     const newNoteId = randomId();
     batchOps.push(
       db.get(UserNote).prepareCreate({
@@ -377,8 +380,8 @@ async function validateAndImportJson(
         fields_version: note.fields_version ?? BASIC_NOTE_FIELDS_VERSION,
         fields_json: JSON.stringify(note.fields ?? {}),
         additional_content: note.additional_content ?? null,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
     // Deck memberships
@@ -392,8 +395,8 @@ async function validateAndImportJson(
             note_id: newNoteId,
             deck_id: newDeckId,
             active: true,
-            created_at: now,
-            updated_at: now,
+            created_at: createdAt,
+            updated_at: createdAt,
           }),
         );
       }
@@ -422,14 +425,14 @@ async function validateAndImportJson(
           id: newCardId,
           note_id: newNoteId,
           template_key: templateKey,
-          active: sourceCard?.active ?? true,
+          active: sourceCard?.active ?? false,
           front: compiledCard.front,
           back: compiledCard.back,
           due_at: sourceCard?.due_at ?? now,
           scheduled_interval_minutes:
             sourceCard?.scheduled_interval_minutes ?? 0,
-          created_at: now,
-          updated_at: now,
+          created_at: createdAt,
+          updated_at: createdAt,
         }),
       );
     }
@@ -595,7 +598,7 @@ async function validateAndImportCsv(
       });
     }
 
-    let active = true;
+    let active = false;
     if (activeIdx !== -1 && row[activeIdx]) {
       const val = row[activeIdx].toLowerCase();
       if (val === 'false' || val === '0') active = false;
@@ -685,6 +688,7 @@ async function validateAndImportCsv(
         note_type: BASIC_NOTE_TYPE,
         native_language_id: null,
         target_language_id: null,
+        visibility: PRIVATE_DECK,
         created_at: now,
         updated_at: now,
       }),
@@ -692,7 +696,8 @@ async function validateAndImportCsv(
   }
 
   // Create a note + card + deck membership per CSV row
-  for (const item of parsedRows) {
+  for (const [itemIndex, item] of parsedRows.entries()) {
+    const createdAt = now + itemIndex;
     const noteId = randomId();
     const targetDeckId =
       deckTitleToIdMap.get(item.deckTitle.toLowerCase()) ?? randomId();
@@ -707,8 +712,8 @@ async function validateAndImportCsv(
         fields_version: BASIC_NOTE_FIELDS_VERSION,
         fields_json: JSON.stringify({ front: item.front, back: item.back }),
         additional_content: null,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
 
@@ -722,8 +727,8 @@ async function validateAndImportCsv(
         back: item.back,
         due_at: item.dueAt,
         scheduled_interval_minutes: item.interval,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
 
@@ -733,8 +738,8 @@ async function validateAndImportCsv(
         note_id: noteId,
         deck_id: targetDeckId,
         active: true,
-        created_at: now,
-        updated_at: now,
+        created_at: createdAt,
+        updated_at: createdAt,
       }),
     );
   }

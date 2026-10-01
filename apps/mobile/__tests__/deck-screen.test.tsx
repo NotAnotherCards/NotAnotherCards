@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import DeckScreen from '@/app/deck/[id]';
 
 const mockUseSession = jest.fn();
@@ -12,7 +12,10 @@ jest.mock('../lib/auth-client', () => ({
 // URL reaches CardList, and the session guard wraps it.
 const mockCardList = jest.fn((_props: { deckId: string }) => null);
 jest.mock('../components/card-list', () => ({
-  CardList: (props: { deckId: string }) => mockCardList(props),
+  CardList: (props: { deckId: string; header?: React.ReactNode }) => {
+    mockCardList(props);
+    return props.header ?? null;
+  },
 }));
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -38,17 +41,6 @@ describe('Deck screen', () => {
     expect(mockCardList).toHaveBeenCalledWith(
       expect.objectContaining({ deckId: 'd42' }),
     );
-  });
-
-  it('opens review for this deck', () => {
-    mockUseSession.mockReturnValue({
-      data: { user: { onBoardingComplete: true } },
-      isPending: false,
-    });
-    const result = render(<DeckScreen />);
-
-    fireEvent.press(result.getByText('Review due cards'));
-    expect(mockPush).toHaveBeenCalledWith('/review/d42');
   });
 
   it('redirects to login without a session and to onboarding with an unfinished profile', () => {

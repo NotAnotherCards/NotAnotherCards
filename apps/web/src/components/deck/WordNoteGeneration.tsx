@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  aiJobResponseSchema,
-  apiErrorBodySchema,
   createAiJobSchema,
   languageFor,
   type AiJob,
@@ -11,6 +9,8 @@ import { WordNoteFieldsV1 } from '@repo/offline-db';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
+import { useTranslation } from 'react-i18next';
+import { apiClient } from '@/lib/api-client';
 
 export interface WordGenerationDeck {
   deckId: string;
@@ -20,13 +20,7 @@ export interface WordGenerationDeck {
 
 type WordJob = Extract<AiJob, { type: 'word_note' }>;
 
-async function readJob(response: Response): Promise<WordJob> {
-  const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const { message } = apiErrorBodySchema.parse(body);
-    throw new Error(message || 'Unable to generate a word. Please try again.');
-  }
-  const { job } = aiJobResponseSchema.parse(body);
+function wordJob(job: AiJob): WordJob {
   if (job.type !== 'word_note')
     throw new Error('Unexpected generation result.');
   return job;
@@ -47,6 +41,7 @@ export function WordNoteGeneration({
   };
   onBusyChange: (busy: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const [job, setJob] = useState<WordJob | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,10 +65,12 @@ export function WordNoteGeneration({
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
-        const updated = await readJob(
-          await fetch(`/api/ai/jobs/${encodeURIComponent(jobId)}`, {
-            signal: controller.signal,
-          }),
+        const updated = wordJob(
+          (
+            await apiClient.ai.job(jobId, {
+              signal: controller.signal,
+            })
+          ).job,
         );
         if (controller.signal.aborted) return;
         if (updated.id !== jobId) throw new Error('Unexpected generation job.');
@@ -84,7 +81,10 @@ export function WordNoteGeneration({
       } catch {
         if (controller.signal.aborted) return;
         setError(
-          'Unable to check generation. Check your connection and try again.',
+          t(
+            'ai.validation.network_error',
+            'Unable to check generation. Check your connection and try again.',
+          ),
         );
         setPollPaused(true);
       }
@@ -118,20 +118,19 @@ export function WordNoteGeneration({
     setJob(null);
     setPollPaused(false);
     try {
-      const created = await readJob(
-        await fetch('/api/ai/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(parsed.data),
-          signal: controller.signal,
-        }),
+      const created = wordJob(
+        (
+          await apiClient.ai.generate(parsed.data, {
+            signal: controller.signal,
+          })
+        ).job,
       );
       if (!controller.signal.aborted) setJob(created);
     } catch (err) {
       if (!controller.signal.aborted) {
-        setError(
-          err instanceof Error ? err.message : 'Unable to start generation.',
-        );
+        const rawMessage =
+          err instanceof Error ? err.message : 'Unable to start generation.';
+        setError(t(rawMessage, rawMessage) as string);
       }
     } finally {
       if (!controller.signal.aborted) setStarting(false);
@@ -160,7 +159,11 @@ export function WordNoteGeneration({
     try {
       apply.current?.(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to fill the form.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : t('ai.validation.fill_error', 'Unable to fill the form.'),
+      );
     }
   }, [job, deck.deckId, deck.nativeLanguageId, deck.targetLanguageId]);
 

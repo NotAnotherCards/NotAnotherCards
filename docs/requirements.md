@@ -22,8 +22,9 @@ at very low priority and not counted in the 17, advanced search open and not
 counted; see section 6). By module: done 4
 (6 pts), in review 1 (1 pt), in progress 4 (6 pts), not started 4 (4 pts).
 Weighted by points and module progress, about **57%** of the claimed 17 points
-is done. Two mandatory gaps remain (Privacy and Terms pages, README first line),
-along with the README sections, which are at about 15%.
+is done. The Privacy Policy and Terms of Service pages are in review. One
+mandatory gap remains: the required first line of the README, along with the
+README sections, which are at about 15%.
 
 How the percentages are made: a module's figure is the share of its subject
 bullets that are met; a partly met bullet gets partial credit, stated in its
@@ -34,15 +35,15 @@ are estimates, not measurements; the evidence column is what to check.
 
 The subject says the project is rejected if one of these is not met.
 
-| Requirement                                                                                                                                                                                                                                                                                                       | Status            |   % | Evidence                                                                               |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --: | -------------------------------------------------------------------------------------- |
-| The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done              | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                             |
-| The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done              | 100 | 10 authors on `main` (`git shortlog -sn`)                                              |
-| Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done              | 100 | `docker compose up`, `README.md`                                                       |
-| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | not verified      |  90 | no evidence recorded                                                                   |
-| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | not verified      |  70 | A21 in the plan                                                                        |
-| The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | **gap**           |   0 | no such page in `apps/web/src`                                                         |
-| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | per-user databases and sync (#151, #177); updates arrive on sync triggers, not by push |
+| Requirement                                                                                                                                                                                                                                                                                                       | Status            |   % | Evidence                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --: | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done              | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                                                                                  |
+| The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done              | 100 | 10 authors on `main` (`git shortlog -sn`)                                                                                                   |
+| Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done              | 100 | `docker compose up`, `README.md`                                                                                                            |
+| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | not verified      |  90 | no evidence recorded                                                                                                                        |
+| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | not verified      |  70 | A21 in the plan                                                                                                                             |
+| The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | in review         |  90 | public `/privacy` and `/terms` in `apps/landing`, linked from its footer and covered by `apps/landing/src/App.test.tsx` (PRs #374 and #379) |
+| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | per-user databases and sync (#151, #177); updates arrive on sync triggers, not by push                                                      |
 
 ## 2. Technical requirements (subject III.3)
 
@@ -149,7 +150,7 @@ base, and daily challenges — 3 of the 6 listed options.
 - Secure access to Grafana. **done**: #162 requires admin credentials and serves
   Grafana through the HTTPS nginx endpoint.
 
-### 4.13 User Management: user activity analytics and insights dashboard — Minor, 1 — in progress — 50%
+### 4.13 User Management: user activity analytics and insights dashboard — Minor, 1 — done — 100%
 
 Reclassified 2026-09-03. This was tracked as the Data and Analytics
 "advanced analytics dashboard" (Major, 2: interactive charts,
@@ -161,14 +162,27 @@ learned words, due cards, streak, points by day, added words by day, reset
 progress. The implementation work is unchanged; only the module and the
 point count change.
 
-- User activity analytics and insights dashboard. **in progress**:
-  `apps/web/src/components/dashboard/Overview.tsx` shows the due-card count
-  and the personal dictionary size, both computed live from the store. The
-  learning streak (`7 Days`), words learned (`1,240 / 10,000`, `12.4%`) and
-  the ready-made dictionary progress are still string literals from the
-  concept mockup. The streak and the words-learned figure are computable
-  today from `getReviewHistoryQuery`; replacing the literals is the
-  remaining work. No issue exists yet.
+- User activity analytics and insights dashboard. **done** (#361):
+  - Due today counts active cards whose `due_at` has passed.
+  - Personal dictionary size counts active cards.
+  - Current and longest streaks count distinct UTC dates with reviews.
+  - Learned notes count notes with a rating 2–4 review on one of their cards.
+  - Reviews per day count review events by `reviewed_at` UTC date.
+  - Notes added per day count distinct notes by `created_at` UTC date.
+  - Forgot rate is the share of a UTC day's reviews rated 1.
+  - Due forecast groups active cards by `due_at`: overdue through today,
+    tomorrow, and the following seven UTC days.
+  - Card maturity groups active cards by `scheduled_interval_minutes`: new
+    (0, never reviewed), learning (under a day), young (1 to 20 days),
+    mature (21 days and up).
+  - The per-day series cover 7 or 30 days; the one-year range sums the same
+    figures into 12 UTC months.
+  - Reset progress from plan A11 is deliberately not built: it deletes
+    review history across synced devices and the module does not need it.
+
+All figures are derived from reactive local remelonDB queries and work
+offline. The optional deck filter follows active note-to-deck memberships;
+a note shared by several decks contributes to each of them.
 
 ### 4.14 Accessibility and Internationalization: multiple languages — Minor, 1 — not started — 0%
 
@@ -268,8 +282,8 @@ languages, 2FA — 3 modules). To reach 14, at most 3 of
 the remaining 11 points may be missing at evaluation; advanced search (1) is
 an additional reserve outside the 17.
 
-Before any of this: the Privacy Policy and Terms of Service pages, and the
-README. They give 0 points and their absence rejects the project.
+Before any of this: the required first line of the README. It gives 0 points
+and its absence rejects the project.
 
 ## 7. Evaluation dry run
 

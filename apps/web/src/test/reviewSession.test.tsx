@@ -49,7 +49,6 @@ function renderSession(
     reviewMode?: 'basic' | 'extended';
     showNextReviewInterval?: boolean;
   } = {},
-  onComplete = vi.fn(),
 ) {
   const { reviewMode, showNextReviewInterval } = reviewPreferences;
   const onExit = vi.fn();
@@ -63,10 +62,9 @@ function renderSession(
       onDeleteNote={onDeleteNote}
       reviewMode={reviewMode ?? 'extended'}
       showNextReviewInterval={showNextReviewInterval}
-      onComplete={onComplete}
     />,
   );
-  return { onComplete, onCreateCard, onExit, onRecordReview, onDeleteNote };
+  return { onCreateCard, onExit, onRecordReview, onDeleteNote };
 }
 
 function revealCard() {
@@ -100,6 +98,36 @@ describe('ReviewSession', () => {
     revealCard();
 
     expect(screen.getAllByText('gehen')).not.toHaveLength(0);
+    expect(screen.getByText('to go')).toBeInTheDocument();
+  });
+
+  it('flips back to the question when the card is clicked again', () => {
+    renderSession();
+    const flip = screen.getByTestId('review-card-flip');
+    expect(flip).toHaveAttribute('data-flipped', 'false');
+
+    revealCard();
+    expect(flip).toHaveAttribute('data-flipped', 'true');
+
+    revealCard();
+    expect(flip).toHaveAttribute('data-flipped', 'false');
+  });
+
+  it('keeps the answer visible after a swipe that stopped short', () => {
+    renderSession();
+    const flip = screen.getByTestId('review-card-flip');
+    const reviewCard = screen.getByTestId('review-card');
+    revealCard();
+    expect(flip).toHaveAttribute('data-flipped', 'true');
+
+    // A 30 px drag is under the 48 px swipe threshold: the card recenters
+    // and the browser still fires a click.
+    fireEvent.pointerDown(reviewCard, { clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(reviewCard, { clientX: 230, clientY: 200 });
+    fireEvent.pointerUp(reviewCard, { clientX: 230, clientY: 200 });
+    fireEvent.click(reviewCard);
+
+    expect(flip).toHaveAttribute('data-flipped', 'true');
     expect(screen.getByText('to go')).toBeInTheDocument();
   });
 
@@ -410,13 +438,13 @@ describe('ReviewSession', () => {
 
     expect(screen.getByRole('button', { name: 'Show answer' })).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: 'Forgot' }),
+      screen.queryByRole('button', { name: 'Again' }),
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 
-    expect(screen.getByRole('button', { name: 'Forgot' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Remembered' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Again' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Good' })).toBeVisible();
     expect(
       screen.queryByRole('button', { name: 'Struggled' }),
     ).not.toBeInTheDocument();
@@ -436,10 +464,8 @@ describe('ReviewSession', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 
-    expect(screen.getByRole('button', { name: /Forgot.*5 min/ })).toBeVisible();
-    expect(
-      screen.getByRole('button', { name: /Remembered.*8 days/ }),
-    ).toBeVisible();
+    expect(screen.getByRole('button', { name: /Again.*5 min/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Good.*8 days/ })).toBeVisible();
   });
 
   it('shows all Extended intervals from the existing scheduler ratings', () => {
@@ -555,9 +581,9 @@ describe('ReviewSession', () => {
   });
 
   it.each([
-    ['Forgot', 'ArrowLeft'],
+    ['Again', 'ArrowLeft'],
     ['Struggled', 'ArrowUp'],
-    ['Remembered', 'ArrowRight'],
+    ['Good', 'ArrowRight'],
   ])('moves to the next card after %s', async (_, key) => {
     renderSession([card, secondCard]);
     revealCard();
@@ -685,34 +711,54 @@ describe('ReviewSession', () => {
     );
   });
 
-  it('loads a new batch after the current batch is completed', async () => {
-    const onRequestNextBatch = vi.fn(() => [secondCard]);
-    render(
-      <ReviewSession
-        cards={[card]}
-        deckTitle="German basics"
-        onExit={vi.fn()}
-        onCreateCard={vi.fn().mockResolvedValue(undefined)}
-        onRecordReview={vi.fn().mockResolvedValue({ id: 'review-1' })}
-        onDeleteNote={vi.fn().mockResolvedValue(undefined)}
-        onRequestNextBatch={onRequestNextBatch}
-        reviewMode="extended"
-      />,
-    );
+  it.each(['available', 'empty', 'failed'] as const)(
+    'advances after the saved final answer when the next batch is %s',
+    async (outcome) => {
+      const onRequestNextBatch = vi.fn(async () => {
+        if (outcome === 'failed') throw new Error('Next batch unavailable');
+        return outcome === 'available' ? [secondCard] : [];
+      });
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      render(
+        <ReviewSession
+          cards={[card]}
+          deckTitle="German basics"
+          onExit={vi.fn()}
+          onCreateCard={vi.fn().mockResolvedValue(undefined)}
+          onRecordReview={onRecordReview}
+          onDeleteNote={vi.fn().mockResolvedValue(undefined)}
+          onRequestNextBatch={onRequestNextBatch}
+          reviewMode="extended"
+        />,
+      );
 
-    revealCard();
-    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    finishCardExit();
+      revealCard();
+      fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(onRecordReview).toHaveBeenCalledExactlyOnceWith(card.id, 3);
+      expect(onRequestNextBatch).not.toHaveBeenCalled();
 
-    expect(onRequestNextBatch).toHaveBeenCalledOnce();
-    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
-      'data-card-id',
-      'card-2',
-    );
-  });
+      finishCardExit();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRequestNextBatch).toHaveBeenCalledOnce();
+      expect(onRecordReview).toHaveBeenCalledTimes(1);
+      if (outcome === 'available') {
+        expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+          'data-card-id',
+          'card-2',
+        );
+      } else {
+        expect(
+          screen.getByRole('heading', { name: 'Review complete' }),
+        ).toBeInTheDocument();
+      }
+    },
+  );
 
   it('shows the matching feedback while dragging the answer side', () => {
     renderSession();
@@ -769,7 +815,7 @@ describe('ReviewSession', () => {
     fireEvent.pointerMove(reviewCard, { clientX: 200, clientY: 201 });
 
     expect(screen.getByTestId('swipe-feedback')).toHaveTextContent(
-      'Delete word',
+      'Delete Card',
     );
     expect(screen.getByTestId('review-answer-buttons')).toBeVisible();
   });
@@ -880,7 +926,7 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
 
-    const cancelButton = screen.getByRole('button', { name: 'No' });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     expect(cancelButton).toHaveFocus();
 
     fireEvent.keyDown(cancelButton, { key: 'ArrowRight' });
@@ -895,8 +941,8 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
 
-    const cancelButton = screen.getByRole('button', { name: 'No' });
-    const confirmButton = screen.getByRole('button', { name: 'Yes' });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    const confirmButton = screen.getByRole('button', { name: 'Delete' });
 
     fireEvent.keyDown(cancelButton, { key: 'Tab' });
     expect(confirmButton).toHaveFocus();
@@ -916,7 +962,7 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
 
-    fireEvent.keyDown(screen.getByRole('button', { name: 'No' }), {
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Cancel' }), {
       key: 'Escape',
     });
 
@@ -948,11 +994,11 @@ describe('ReviewSession', () => {
     );
     expect(
       screen.getByRole('heading', {
-        name: 'Does permanently delete this word?',
+        name: 'Permanently delete this word?',
       }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -971,7 +1017,7 @@ describe('ReviewSession', () => {
 
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -988,7 +1034,7 @@ describe('ReviewSession', () => {
 
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     finishCardExit();
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -996,7 +1042,7 @@ describe('ReviewSession', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Could not delete this word. Try again.',
     );
-    expect(screen.getByRole('button', { name: 'Yes' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled();
   });
 
   it('keeps the visible answer buttons without shadows', () => {
@@ -1077,17 +1123,15 @@ describe('ReviewSession', () => {
   });
 
   it('shows the completed-session state when the session has no cards', () => {
-    const { onComplete } = renderSession([]);
+    renderSession([]);
 
     expect(
       screen.getByRole('heading', { name: 'Review complete' }),
     ).toBeInTheDocument();
-    expect(onComplete).toHaveBeenCalledOnce();
   });
 
-  it('notifies its parent when the final card is completed', async () => {
-    const onComplete = vi.fn();
-    renderSession([card], undefined, undefined, undefined, {}, onComplete);
+  it('saves the final answer and shows review completion', async () => {
+    const { onRecordReview } = renderSession([card]);
     revealCard();
     fireEvent.click(screen.getByRole('button', { name: 'Good' }));
 
@@ -1096,6 +1140,9 @@ describe('ReviewSession', () => {
     });
     finishCardExit();
 
-    expect(onComplete).toHaveBeenCalledOnce();
+    expect(onRecordReview).toHaveBeenCalledExactlyOnceWith(card.id, 3);
+    expect(
+      screen.getByRole('heading', { name: 'Review complete' }),
+    ).toBeInTheDocument();
   });
 });

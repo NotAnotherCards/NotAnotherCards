@@ -13,8 +13,9 @@ import {
   userNoteDecks,
   reviewEvents,
   userProfiles,
+  userBadges,
 } from './user-dictionary.js';
-import { BASIC_NOTE_TYPE } from './note-constants.js';
+import { BASIC_NOTE_TYPE } from '@repo/study';
 import { PRIVATE_DECK } from './user-dictionary.js';
 
 // encodeURIComponent provides UTF-8 bytes in Hermes without relying on the
@@ -36,7 +37,7 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 5,
+  version: 6,
   tables: [
     userDecks,
     userNotes,
@@ -44,6 +45,7 @@ export const schema = appSchema({
     userNoteDecks,
     reviewEvents,
     userProfiles,
+    userBadges,
   ],
 });
 
@@ -151,22 +153,38 @@ export const migrations = schemaMigrations({
         ),
       ],
     },
+    {
+      toVersion: 6,
+      steps: [
+        createTable({
+          name: 'user_badges',
+          columns: {
+            badge_id: column.string().indexed(),
+            unlocked_at: column.number(),
+            created_at: column.number(),
+            updated_at: column.number(),
+          },
+        }),
+      ],
+    },
   ],
 });
 
 export * from './user-dictionary.js';
-export * from './note-registry.js';
 export * from './note-reconcile.js';
 export * from './note-writes.js';
+// Moved to @repo/study (#430); re-exported so existing imports keep working.
+export * from '@repo/study';
 export * from './ids.js';
-export * from './note-constants.js';
-export * from './review-scheduler.js';
-export * from './review-queue.js';
-export * from './review-answers.js';
-export * from './review-preferences.js';
+export * from './deck-kind.js';
 export * from './sync-schemas.js';
 export * from './sync-transport.js';
 export * from './queries.js';
 export * from './export-import-types.js';
 export * from './export.js';
 export * from './import.js';
+export {
+  rejectedSummary,
+  rejectionsConcernDeck,
+  REJECTION_EXPLANATION,
+} from './sync-status.js';

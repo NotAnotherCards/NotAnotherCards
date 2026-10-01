@@ -2,13 +2,14 @@ import { syncSchemas } from '@remelondb/core/zod';
 import { z } from 'zod';
 import {
   ReviewEventRow,
+  UserBadgeRow,
   UserCardRow,
   UserDeckRow,
   UserNoteDeckRow,
   UserNoteRow,
   UserProfileRow,
 } from './user-dictionary.js';
-import { refineNoteFields } from './note-registry.js';
+import { refineNoteFields } from '@repo/study';
 
 const baseSyncWireSchemas = syncSchemas({
   user_decks: UserDeckRow,
@@ -17,6 +18,7 @@ const baseSyncWireSchemas = syncSchemas({
   user_note_decks: UserNoteDeckRow,
   review_events: ReviewEventRow,
   user_profiles: UserProfileRow,
+  user_badges: UserBadgeRow,
 });
 
 const UserNoteWireRow = z
@@ -53,6 +55,7 @@ export const syncWireSchemas = {
     user_note_decks: baseSyncWireSchemas.rows.user_note_decks!,
     review_events: baseSyncWireSchemas.rows.review_events!,
     user_profiles: baseSyncWireSchemas.rows.user_profiles!,
+    user_badges: baseSyncWireSchemas.rows.user_badges!,
   },
   changes: baseSyncWireSchemas.changes.superRefine(validateNoteChanges),
   pullResult: baseSyncWireSchemas.pullResult.superRefine((result, context) => {

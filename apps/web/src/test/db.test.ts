@@ -3,7 +3,7 @@ vi.unmock('@/offline/db');
 import { Database } from '@remelondb/core';
 
 type ManagerOptions = {
-  open: (onTakenOver: () => void) => Promise<unknown>;
+  open: (onTakenOver: () => void) => Promise<Database>;
 };
 
 type ProposedDatabaseModule = {
@@ -112,6 +112,7 @@ describe('authenticated user database configuration', () => {
       'UserNoteDeck',
       'ReviewEvent',
       'UserProfile',
+      'UserBadge',
     ]);
   });
 

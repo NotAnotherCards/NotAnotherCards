@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CARD_SIDE_MAX_LENGTH } from './card.js';
 
 // Gateway aliases (infra/gx10/litellm-config.yaml). 'qwen' is the deprecated
 // name for 'qwen3.6', kept for clients that still send the legacy alias.
@@ -47,8 +48,8 @@ export const createAiJobSchema = z.discriminatedUnion('type', [
     topic: z
       .string()
       .trim()
-      .min(1, 'Topic cannot be empty')
-      .max(300, 'Topic is too long'),
+      .min(1, 'ai.validation.topic_empty')
+      .max(300, 'ai.validation.topic_too_long'),
     count,
     model,
   }),
@@ -57,8 +58,8 @@ export const createAiJobSchema = z.discriminatedUnion('type', [
     sourceText: z
       .string()
       .trim()
-      .min(1, 'Source text cannot be empty')
-      .max(10000, 'Source text cannot exceed 10000 characters'),
+      .min(1, 'ai.validation.source_text_empty')
+      .max(10000, 'ai.validation.source_text_too_long'),
     count,
     model,
   }),
@@ -74,8 +75,8 @@ export const createAiJobSchema = z.discriminatedUnion('type', [
 export type CreateAiJobInput = z.infer<typeof createAiJobSchema>;
 
 export const aiCardOutputSchema = z.object({
-  front: z.string().min(1).max(1000),
-  back: z.string().min(1).max(1000),
+  front: z.string().min(1).max(CARD_SIDE_MAX_LENGTH),
+  back: z.string().min(1).max(CARD_SIDE_MAX_LENGTH),
 });
 
 export type AiCardOutput = z.infer<typeof aiCardOutputSchema>;
