@@ -20,6 +20,7 @@ import {
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { GERMAN, RUSSIAN } from '@repo/schemas';
+import i18n from '@/lib/i18n';
 
 vi.mock('@/offline/db', () => {
   const manager = {
@@ -97,6 +98,54 @@ describe('DeckCard Component', () => {
     expect(screen.getByTestId('active-words-badge')).toHaveTextContent('1');
     expect(screen.getByText('Cards Due')).toBeInTheDocument();
     expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
+  });
+
+  it('localizes the word deck accessibility label without changing its flags', async () => {
+    await i18n.changeLanguage('de');
+    const { rerender } = render(
+      <DeckCard
+        deck={{
+          ...mockDeck,
+          note_type: 'word',
+          native_language_id: GERMAN,
+          target_language_id: RUSSIAN,
+        }}
+        totalCards={0}
+        dueCount={0}
+        onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('🇩🇪 Deutsch → 🇷🇺 Russisch')).toHaveTextContent(
+      '🇩🇪→🇷🇺',
+    );
+
+    await i18n.changeLanguage('ru');
+    rerender(
+      <DeckCard
+        deck={{
+          ...mockDeck,
+          note_type: 'word',
+          native_language_id: GERMAN,
+          target_language_id: RUSSIAN,
+        }}
+        totalCards={0}
+        dueCount={0}
+        onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByLabelText('🇩🇪 Немецкий → 🇷🇺 Русский'),
+    ).toBeInTheDocument();
+
+    await i18n.changeLanguage('en');
   });
 
   // A push sends the client's whole view of a row, so an old client

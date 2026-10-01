@@ -648,6 +648,10 @@ importers:
         version: 3.3.0(eslint@10.8.1(jiti@2.7.0))
 
   packages/i18n:
+    dependencies:
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*

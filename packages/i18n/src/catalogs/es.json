@@ -463,6 +463,11 @@
     }
   },
   "deck": {
+    "type": {
+      "basic": "Mazo de tarjetas",
+      "word": "Mazo de palabras",
+      "unknown": "Tipo de mazo desconocido: {{noteType}}"
+    },
     "list": {
       "my_library": "Mi Biblioteca",
       "add_deck": "Añadir Mazo",

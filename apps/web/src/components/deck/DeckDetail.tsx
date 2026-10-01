@@ -21,7 +21,6 @@ import { CardForm } from './CardForm';
 import { WordNoteForm, type WordFormValues } from './WordNoteForm';
 import {
   BASIC_NOTE_TYPE,
-  deckKind,
   deckKindShort,
   parseWordFields,
   type UserNoteRecord,
@@ -29,6 +28,7 @@ import {
   WORD_NOTE_FIELDS_VERSION,
   deckLearningCounts,
 } from '@repo/offline-db';
+import { deckTypeAccessibilityLabel } from '@repo/i18n';
 import { deckKindClassName } from './deck-kind';
 import { CardList } from './CardList';
 import { WordNoteList } from './WordNoteList';
@@ -51,7 +51,7 @@ interface DeckDetailProps {
 }
 
 export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -182,6 +182,12 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       </div>
     );
   }
+
+  const kindLabel = deckTypeAccessibilityLabel(
+    deck,
+    i18n.resolvedLanguage ?? i18n.language,
+    (key, options) => t(`deck.type.${key}`, options),
+  );
 
   const viewingWordCards =
     viewingWordNote === null
@@ -439,8 +445,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               <span
                 className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
                 data-testid="deck-kind"
-                title={deckKind(deck)}
-                aria-label={deckKind(deck)}
+                title={kindLabel}
+                aria-label={kindLabel}
               >
                 {deckKindShort(deck)}
               </span>
