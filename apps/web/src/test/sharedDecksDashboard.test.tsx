@@ -119,7 +119,7 @@ describe('Shared Decks Dashboard Feed', () => {
     ).toBeInTheDocument();
   });
 
-  it('handles importing a deck successfully', async () => {
+  it('keeps a completed import pending when no sync controller is available', async () => {
     let completeImport!: (value: Response) => void;
 
     const fetchMock = vi
@@ -165,8 +165,14 @@ describe('Shared Decks Dashboard Feed', () => {
       completeImport(response({ deckId: 'new-deck-123' }));
     });
 
-    // Button restores its state
-    await waitFor(() => expect(importBtn).not.toBeDisabled());
+    expect(
+      await screen.findByRole('button', { name: 'Imported' }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText(
+        'Spanish Basics: imported. It will appear after the next successful sync.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('lets a signed-in user report a community deck', async () => {

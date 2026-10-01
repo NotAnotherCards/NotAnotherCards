@@ -134,7 +134,7 @@ describe('Dashboard screen', () => {
     mockAchievements = { achievements: [], isLoading: false, error: null };
   });
 
-  it('shows the pull spinner for as long as the sync runs', () => {
+  it('shows the pull spinner until the sync it started settles', async () => {
     mockUseSession.mockReturnValue({
       data: {
         user: {
@@ -146,28 +146,31 @@ describe('Dashboard screen', () => {
       },
       isPending: false,
     });
-    // As the controller does: syncNow() returns nothing, sets the state to
-    // syncing before it returns, and reports the end through its state.
+    // As the controller does: syncNow() resolves with the state once the run
+    // has settled, and never rejects.
     const listeners = new Set<() => void>();
-    const setStatus = (status: string) => {
-      controller.state = { ...controller.state, status };
-      listeners.forEach((notify) => notify());
+    let settle: () => void = () => {};
+    const state = {
+      status: 'idle',
+      lastSyncAt: null,
+      error: null,
+      cause: null,
+      lastResult: null,
     };
     const controller = {
-      state: {
-        status: 'idle',
-        lastSyncAt: null,
-        error: null,
-        cause: null,
-        lastResult: null,
-      },
+      state,
       subscribe: (notify: () => void) => {
         listeners.add(notify);
         return () => {
           listeners.delete(notify);
         };
       },
-      syncNow: jest.fn(() => setStatus('syncing')),
+      syncNow: jest.fn(
+        () =>
+          new Promise<typeof state>((resolve) => {
+            settle = () => resolve(controller.state);
+          }),
+      ),
     };
     mockSyncController = controller;
     const result = render(<Dashboard />);
@@ -182,15 +185,18 @@ describe('Dashboard screen', () => {
       }>;
     expect(refresh().props.refreshing).toBe(false);
 
+    // a sync that starts by itself shows no pull spinner
+    act(() => {
+      controller.state = { ...state, status: 'syncing' };
+      listeners.forEach((notify) => notify());
+    });
+    expect(refresh().props.refreshing).toBe(false);
+
     act(() => refresh().props.onRefresh());
     expect(controller.syncNow).toHaveBeenCalledTimes(1);
     expect(refresh().props.refreshing).toBe(true);
 
-    act(() => setStatus('idle'));
-    expect(refresh().props.refreshing).toBe(false);
-
-    // a sync that starts by itself shows no pull spinner
-    act(() => setStatus('syncing'));
+    await act(async () => settle());
     expect(refresh().props.refreshing).toBe(false);
   });
 
@@ -455,7 +461,7 @@ describe('Dashboard screen', () => {
     expect(queryByText(/Start Review/)).toBeNull();
   });
 
-  it('disables Start Review when nothing is due', () => {
+  it('opens the library when nothing is due', () => {
     saveLastReviewDeckId('user-dashboard', 'deck-spanish');
     mockUseSession.mockReturnValue({
       data: {
@@ -470,10 +476,13 @@ describe('Dashboard screen', () => {
 
     const { getByRole } = render(<Dashboard />);
     const button = getByRole('button', { name: 'Start Review · 0 due' });
-    expect(button.props.accessibilityState.disabled).toBe(true);
+    expect(button.props.accessibilityState.disabled).toBe(false);
     fireEvent.press(button);
 
     expect(mockPush).not.toHaveBeenCalled();
+    expect(
+      getByRole('tab', { name: 'My Library' }).props.accessibilityState,
+    ).toEqual({ selected: true });
     // Nothing due now does not forget the deck: it can be due again later.
     expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });

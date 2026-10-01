@@ -12,8 +12,9 @@ and the AI box is an external backend behind a config value.
 
 ```
 users ── HTTPS ──> production VPS (public + tailnet)
-                   ├─ nginx + certbot
-                   ├─ web (static build)
+                   ├─ nginx + certbot (app / grafana / apex landing)
+                   ├─ web (static build)     :5173
+                   ├─ landing (static)       :5174
                    ├─ api (NestJS) ───────────────────────┐
                    ├─ postgres                             │
                    ├─ monitoring compose:                  │ WireGuard-encrypted
@@ -68,9 +69,11 @@ The same `docker-compose.yml` runs in three places:
    is compliant but not much of a demo.
 
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
-   host nginx/certbot serving `app.notanothercards.com`. The production
-   override removes the postgres host port and binds app diagnostic ports to
-   loopback. The non-secret AI settings in `/opt/notanothercards/.env` are:
+   host nginx/certbot serving `app.notanothercards.com`,
+   `grafana.notanothercards.com`, and the apex landing page
+   `notanothercards.com`. The production override removes the postgres host
+   port and binds the API, web, and landing diagnostic ports to loopback. The
+   non-secret AI settings in `/opt/notanothercards/.env` are:
 
    ```dotenv
    AI_API_BASE=http://100.64.0.1:4000/v1
@@ -121,9 +124,21 @@ file.
   SSH with a dedicated deploy key to the `deploy` user on the project VPS,
   then run the base and production compose files with `--wait`. Merging a PR
   is deploying; reverting a PR is rolling back.
-- The compose files, HTTP bootstrap nginx config
-  (`infra/vps/app.notanothercards.com.conf`), and reproducible setup guide
+- The compose files, HTTP bootstrap nginx configs
+  (`infra/vps/app.notanothercards.com.conf`,
+  `infra/vps/grafana.notanothercards.com.conf`, and
+  `infra/vps/notanothercards.com.conf`), and the reproducible setup guide
   (`infra/vps/README.md`) live in the repo.
+- After the stacks are up, the deployment verifies the monitoring stack, its
+  Prometheus targets, and the public endpoints: application and Grafana health
+  plus the apex landing page (`https://notanothercards.com/` and `/privacy`
+  over hostname-validated HTTPS, a real 404 for an unknown path, the
+  HTTP-to-HTTPS redirect, and a certificate naming the apex domain). Any of
+  those failing fails the deployment.
+- `pnpm test:infra` validates the same nginx host configurations offline: it
+  loads all three virtual hosts into a throwaway nginx, asserts the apex site
+  proxies to the loopback landing container on `5174`, and proves the
+  application and Grafana routes still reach `5173` and `3001`.
 - Production values stay in `/opt/notanothercards/.env` and the team password
   manager; deployment credentials use GitHub's protected `production`
   environment (subject III.3).
@@ -144,6 +159,58 @@ file.
   `MODERATION_MAX_DAILY_REPORTS_PER_USER` changes that cap, and
   `MODERATION_RECHECK_WINDOW_HOURS` changes the clean-result cache (default
   24 hours).
+
+### Public landing at the apex domain
+
+`https://notanothercards.com` is served by the host Nginx site
+`infra/vps/notanothercards.com.conf`, which proxies to the landing container
+on loopback `127.0.0.1:5174`. DNS carries `A 169.58.127.208` and
+`AAAA 2a02:c207:3020:2790::1`; verify both address families where those
+records are configured:
+
+```bash
+dig +short A    notanothercards.com
+dig +short AAAA notanothercards.com
+```
+
+Install and enable the site on a clean host, then let Certbot add TLS:
+
+```bash
+sudo apt-get install nginx certbot python3-certbot-nginx
+cd /opt/notanothercards
+sudo cp infra/vps/notanothercards.com.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/notanothercards.com.conf \
+           /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d notanothercards.com
+sudo certbot renew --dry-run
+```
+
+Certbot rewrites the installed copy, so never copy the repository file over it
+again. Health checks:
+
+```bash
+curl --fail https://notanothercards.com/
+curl --fail https://notanothercards.com/privacy
+curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://notanothercards.com/
+curl -o /dev/null -w '%{http_code}\n' https://notanothercards.com/not-a-real-page
+```
+
+Troubleshooting starts with `sudo nginx -t`, `sudo systemctl status nginx`,
+`sudo certbot certificates`, and `curl --fail http://127.0.0.1:5174/health`.
+Roll back by removing the enabled site and its certificate, then reverting
+the deploy commit that requires the apex endpoint:
+
+```bash
+sudo rm /etc/nginx/sites-enabled/notanothercards.com.conf
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot delete --cert-name notanothercards.com
+```
+
+The full runbook — DNS and IPv6 detail, troubleshooting, and why the rollback
+needs the deploy commit reverted — is in
+[`infra/vps/README.md`](../infra/vps/README.md), section _Landing page at the
+apex domain_.
 
 ### Password-reset email delivery
 

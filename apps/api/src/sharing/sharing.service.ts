@@ -45,12 +45,15 @@ import {
 /** How much of a deck a stranger gets to read before importing it. */
 const PREVIEW_CARDS = 10;
 
-const activeCardCount = sql<number>`(
+const publishableCardCount = sql<number>`(
   select count(*)::int
   from ${userNoteDecks} nd
   join ${userNotes} n on n.id = nd.note_id and n.deleted_at is null
   join ${userCards} c
-    on c.note_id = n.id and c.active and c.deleted_at is null
+    on c.note_id = n.id
+      and c.front <> ''
+      and c.back <> ''
+      and c.deleted_at is null
   where nd.deck_id = ${userDecks.id} and nd.active and nd.deleted_at is null
 )`;
 
@@ -62,7 +65,7 @@ const summaryColumns = {
   nativeLanguageId: userDecks.nativeLanguageId,
   targetLanguageId: userDecks.targetLanguageId,
   updatedAt: userDecks.updatedAt,
-  cardCount: activeCardCount,
+  cardCount: publishableCardCount,
   // Inner join on a live profile with a username, so a deck is listed only
   // with a real owner name. Onboarding sets the username before anything
   // else is reachable, and publish refuses without one, so nothing real is
@@ -189,8 +192,12 @@ export class SharingService {
       );
       // Each statement stays small even for large decks; all writes still
       // share the transaction and scope lock, so pull sees a complete copy.
-      for (const note of snapshot.content.notes) {
+      for (const [noteIndex, note] of snapshot.content.notes.entries()) {
         const id = noteIds.get(note.id)!;
+        const noteTimestamps = {
+          createdAt: now + noteIndex,
+          updatedAt: now + noteIndex,
+        };
         await tx.insert(userNotes).values({
           id,
           userId,
@@ -199,7 +206,7 @@ export class SharingService {
           fieldsVersion: note.fields_version,
           fieldsJson: note.fields_json,
           additionalContent: note.additional_content,
-          ...timestamps,
+          ...noteTimestamps,
         });
         await tx.insert(userNoteDecks).values({
           id: noteDeckId(id, deckId),
@@ -208,7 +215,7 @@ export class SharingService {
           noteId: id,
           deckId,
           active: true,
-          ...timestamps,
+          ...noteTimestamps,
         });
       }
       for (const card of snapshot.content.cards) {
@@ -220,7 +227,7 @@ export class SharingService {
           rev: sql`nextval('remelon_rev')`,
           noteId,
           templateKey: card.template_key,
-          active: true,
+          active: false,
           front: card.front,
           back: card.back,
           dueAt: now,
@@ -735,7 +742,7 @@ export class SharingService {
     };
   }
 
-  /** The deck's active cards, already rendered by the client that pushed them. */
+  /** The deck's complete cards, already rendered by the client that pushed them. */
   private async deckCards(
     deckId: string,
     limit?: number,
@@ -765,7 +772,8 @@ export class SharingService {
           eq(userNoteDecks.active, true),
           isNull(userNoteDecks.deletedAt),
           isNull(userNotes.deletedAt),
-          eq(userCards.active, true),
+          sql`${userCards.front} <> ''`,
+          sql`${userCards.back} <> ''`,
           isNull(userCards.deletedAt),
         ),
       )

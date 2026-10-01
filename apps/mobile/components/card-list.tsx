@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useCards, type Card as CardRecord } from '@/lib/cards';
@@ -18,16 +19,25 @@ import {
 } from '@repo/offline-db';
 
 // Readiness gate, as DeckList: no manager yet means no database to query.
-export function CardList({ deckId }: { deckId: string }) {
+export function CardList({
+  deckId,
+  header,
+}: {
+  deckId: string;
+  header?: ReactNode;
+}) {
   const { manager } = useSessionDatabase();
   if (!manager) {
     return (
-      <View className="items-center py-6">
-        <ActivityIndicator />
+      <View className="gap-4 p-6">
+        {header}
+        <View className="items-center py-6">
+          <ActivityIndicator />
+        </View>
       </View>
     );
   }
-  return <ActiveCardList manager={manager} deckId={deckId} />;
+  return <ActiveCardList manager={manager} deckId={deckId} header={header} />;
 }
 
 // One action at a time, same union as DeckList. Two removal scopes, and
@@ -46,10 +56,13 @@ type CardAction =
 function ActiveCardList({
   manager,
   deckId,
+  header,
 }: {
   manager: DatabaseManager;
   deckId: string;
+  header?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
     useCards(manager, deckId);
   const [action, setAction] = useState<CardAction | null>(null);
@@ -65,7 +78,7 @@ function ActiveCardList({
     setAction(next);
   };
 
-  const run = async (write: () => Promise<unknown>) => {
+  const run = async <T,>(write: () => Promise<T>) => {
     setWriteError(null);
     setPending(true);
     try {
@@ -79,25 +92,34 @@ function ActiveCardList({
 
   if (isLoading || !writes) {
     return (
-      <View className="items-center py-6">
-        <ActivityIndicator />
+      <View className="gap-4 p-6">
+        {header}
+        <View className="items-center py-6">
+          <ActivityIndicator />
+        </View>
       </View>
     );
   }
 
   if (error) {
     return (
-      <Text className="text-destructive">
-        Failed to load cards: {error.message}
-      </Text>
+      <View className="gap-4 p-6">
+        {header}
+        <Text className="text-destructive">
+          Failed to load cards: {error.message}
+        </Text>
+      </View>
     );
   }
 
   if (!deck) {
     return (
-      <Text className="text-muted-foreground">
-        This deck is not on this device.
-      </Text>
+      <View className="gap-4 p-6">
+        {header}
+        <Text className="text-muted-foreground">
+          This deck is not on this device.
+        </Text>
+      </View>
     );
   }
 
@@ -105,45 +127,48 @@ function ActiveCardList({
   const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
 
+  let form: ReactNode;
   if (action?.kind === 'create') {
     const nativeLanguageId = deck.native_language_id;
     const targetLanguageId = deck.target_language_id;
     if (isWordDeck) {
       if (!(nativeLanguageId && targetLanguageId)) {
-        return (
+        form = (
           <Text className="text-destructive">
             This word deck does not have a valid language pair.
           </Text>
         );
+      } else {
+        form = (
+          <WordNoteForm
+            title="New word"
+            targetLanguageId={targetLanguageId}
+            error={writeError}
+            onSubmit={(values) =>
+              run(() =>
+                writes.createWord(deckId, {
+                  ...values,
+                  native_language_id: nativeLanguageId,
+                  target_language_id: targetLanguageId,
+                }),
+              )
+            }
+            onCancel={() => open(null)}
+          />
+        );
       }
-      return (
-        <WordNoteForm
-          title="New word"
-          targetLanguageId={targetLanguageId}
+    } else {
+      form = (
+        <CardForm
+          title="New card"
           error={writeError}
           onSubmit={(values) =>
-            run(() =>
-              writes.createWord(deckId, {
-                ...values,
-                native_language_id: nativeLanguageId,
-                target_language_id: targetLanguageId,
-              }),
-            )
+            run(() => writes.create(deckId, values.front, values.back))
           }
           onCancel={() => open(null)}
         />
       );
     }
-    return (
-      <CardForm
-        title="New card"
-        error={writeError}
-        onSubmit={(values) =>
-          run(() => writes.create(deckId, values.front, values.back))
-        }
-        onCancel={() => open(null)}
-      />
-    );
   }
 
   if (action?.kind === 'edit') {
@@ -152,7 +177,7 @@ function ActiveCardList({
     if (note?.note_type === WORD_NOTE_TYPE) {
       // Invalid synced payloads remain visible but cannot be edited.
       const fields = parseWordFields(note);
-      if (!fields) return null;
+      if (!fields) return <View className="p-6">{header}</View>;
       const updateWord = (values: WordFormValues) =>
         run(() =>
           writes.updateWord(note.id, {
@@ -163,7 +188,7 @@ function ActiveCardList({
             ...(fields.word_audio ? { word_audio: fields.word_audio } : {}),
           }),
         );
-      return (
+      form = (
         <WordNoteForm
           title="Edit word"
           initialValues={fields}
@@ -173,17 +198,31 @@ function ActiveCardList({
           onCancel={() => open(null)}
         />
       );
+    } else {
+      form = (
+        <CardForm
+          title="Edit card"
+          initialValues={{ front: card.front, back: card.back }}
+          error={writeError}
+          onSubmit={(values) =>
+            run(() => writes.update(card.id, values.front, values.back))
+          }
+          onCancel={() => open(null)}
+        />
+      );
     }
+  }
+
+  if (action?.kind === 'create' || action?.kind === 'edit') {
     return (
-      <CardForm
-        title="Edit card"
-        initialValues={{ front: card.front, back: card.back }}
-        error={writeError}
-        onSubmit={(values) =>
-          run(() => writes.update(card.id, values.front, values.back))
-        }
-        onCancel={() => open(null)}
-      />
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="gap-4 p-6"
+        keyboardShouldPersistTaps="handled"
+      >
+        {header}
+        {form}
+      </ScrollView>
     );
   }
 
@@ -194,32 +233,50 @@ function ActiveCardList({
       : null;
 
   return (
-    <View className="gap-3">
+    <>
       {/* The deck's title belongs in the header; the route sets a fallback. */}
       <Stack.Screen options={{ title: deck.title }} />
-      <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-semibold">Cards</Text>
-        {isKnownDeck && (
-          <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
-            <Text>{isWordDeck ? 'New word' : 'New card'}</Text>
-          </Button>
-        )}
-      </View>
-      {!isKnownDeck && (
-        <Text className="text-muted-foreground">
-          This deck uses a note type this app cannot edit yet.
-        </Text>
-      )}
-      {cards.length === 0 && (
-        <Text className="text-muted-foreground">
-          No cards yet. Add your first one.
-        </Text>
-      )}
-      <View role="list" className="gap-3">
-        {cards.map((card) => {
+      <FlatList
+        className="flex-1"
+        contentContainerClassName="p-6"
+        keyboardShouldPersistTaps="handled"
+        role="list"
+        data={cards}
+        keyExtractor={(card) => card.id}
+        initialNumToRender={12}
+        ItemSeparatorComponent={() => <View className="h-3" />}
+        ListHeaderComponent={
+          <View className="gap-4 pb-3">
+            {header}
+            <View className="gap-3">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-lg font-semibold">Cards</Text>
+                {isKnownDeck && (
+                  <Button
+                    disabled={pending}
+                    onPress={() => open({ kind: 'create' })}
+                  >
+                    <Text>{isWordDeck ? 'New word' : 'New card'}</Text>
+                  </Button>
+                )}
+              </View>
+              {!isKnownDeck && (
+                <Text className="text-muted-foreground">
+                  This deck uses a note type this app cannot edit yet.
+                </Text>
+              )}
+            </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <Text className="text-muted-foreground">
+            No cards yet. Add your first one.
+          </Text>
+        }
+        renderItem={({ item: card }) => {
           const confirm = confirming(card);
           return (
-            <Card key={card.id} role="listitem">
+            <Card role="listitem">
               <CardHeader>
                 <CardTitle>
                   <Markdown content={card.front} inline />
@@ -227,6 +284,11 @@ function ActiveCardList({
                 <Text className="text-sm text-muted-foreground">
                   <Markdown content={card.back} inline />
                 </Text>
+                {!card.active && (
+                  <Text className="text-xs text-muted-foreground">
+                    {t('review.activation.inactive_label', 'Inactive')}
+                  </Text>
+                )}
               </CardHeader>
               <CardContent>
                 {confirm ? (
@@ -310,8 +372,8 @@ function ActiveCardList({
               </CardContent>
             </Card>
           );
-        })}
-      </View>
-    </View>
+        }}
+      />
+    </>
   );
 }

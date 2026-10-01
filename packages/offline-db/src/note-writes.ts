@@ -166,9 +166,9 @@ export async function createNotesBatch(
     }
     assertNoteTypesMatchDeck(deckType, options.notes);
 
-    for (const input of options.notes) {
+    for (const [index, input] of options.notes.entries()) {
       operations.push(
-        ...prepareNewNote(db, targetDeckId, input, now).operations,
+        ...prepareNewNote(db, targetDeckId, input, now + index).operations,
       );
     }
 

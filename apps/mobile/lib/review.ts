@@ -8,7 +8,10 @@ import { useDatabase, useQuery } from '@remelondb/core/react';
 import {
   getDecksQuery,
   getNoteDecksQuery,
+  getAllCardsQuery,
   getPersonalDictionaryQuery,
+  activateWordsInDeck,
+  cardsForDeck,
   recordReviewEvent,
   reviewTarget,
   selectDueCards,
@@ -16,7 +19,6 @@ import {
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
-  cardsForDeck,
 } from '@repo/offline-db';
 import { useSessionDatabase } from './database-provider';
 import { useNow } from './use-now';
@@ -36,6 +38,11 @@ export function reviewWrites(db: Database, sync: SyncController | null) {
       const review = await recordReviewEvent(db, cardId, rating);
       sync?.notifyLocalWrite();
       return review;
+    },
+    activate: async (deckId: string, count: number) => {
+      const noteIds = await activateWordsInDeck(db, deckId, count);
+      sync?.notifyLocalWrite();
+      return noteIds;
     },
   };
 }
@@ -68,7 +75,7 @@ export function useReviewDeck(manager: DatabaseManager, deckId: string) {
   const db = useDatabase(manager);
   const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
-  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getAllCardsQuery(db));
 
   const deck = useMemo(
     () => decks.data.find((item) => item.id === deckId) ?? null,
@@ -90,13 +97,15 @@ export function useReviewDeck(manager: DatabaseManager, deckId: string) {
     if (!db) return [];
     const [memberRows, cardRows] = await Promise.all([
       getNoteDecksQuery(db).fetch(),
-      getPersonalDictionaryQuery(db).fetch(),
+      getAllCardsQuery(db).fetch(),
     ]);
     return dueCardsForDeck(memberRows, cardRows, deckId);
   }, [db, deckId]);
 
   return {
     deck,
+    memberships: memberships.data,
+    cards: cards.data,
     dueCards,
     readDueCards,
     isLoading: decks.isLoading || memberships.isLoading || cards.isLoading,

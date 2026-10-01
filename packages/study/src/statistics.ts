@@ -3,6 +3,7 @@ import type {
   ActivityNote,
   ActivityReviewEvent,
 } from './activity.js';
+import { isStudyable } from './review-queue.js';
 import { MILLISECONDS_PER_DAY, utcDayAt } from './utc-day.js';
 
 const MINUTES_PER_DAY = 1_440;
@@ -15,6 +16,8 @@ export type StatisticsNote = ActivityNote;
 export interface StatisticsCard extends ActivityCard {
   readonly due_at: number;
   readonly scheduled_interval_minutes: number;
+  readonly front: string;
+  readonly back: string;
 }
 
 export interface StatisticsMembership {
@@ -46,7 +49,7 @@ export function selectStatisticsRowsForDeck(
   // Inactive cards leave the forecast and the maturity picture, but their
   // past reviews still happened: deleting a card must not lower a streak
   // or a per-day count.
-  const activeCards = cards.filter((card) => card.active !== false);
+  const activeCards = cards.filter(isStudyable);
   if (deckId === undefined) {
     return { reviewEvents, cards: activeCards, notes };
   }
@@ -180,7 +183,7 @@ export function selectDueForecast(
   let nextSevenDays = 0;
 
   for (const card of cards) {
-    if (card.active === false) continue;
+    if (!isStudyable(card)) continue;
     if (card.due_at < endOfToday) dueToday += 1;
     else if (card.due_at < endOfTomorrow) tomorrow += 1;
     else if (card.due_at < endOfNextSevenDays) nextSevenDays += 1;
@@ -193,7 +196,7 @@ export function selectMaturity(cards: readonly StatisticsCard[]) {
   const counts = { new: 0, learning: 0, young: 0, mature: 0 };
 
   for (const card of cards) {
-    if (card.active === false) continue;
+    if (!isStudyable(card)) continue;
     const interval = card.scheduled_interval_minutes;
     // Sync validation keeps intervals non-negative; a bad row that slipped
     // through should not blank the statistics tab, so it counts as new.

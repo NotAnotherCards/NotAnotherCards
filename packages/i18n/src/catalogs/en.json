@@ -139,7 +139,8 @@
       "username_min": "Username must be at least 3 characters",
       "username_regex": "Username can only contain letters, numbers, underscores, and hyphens",
       "native_language_required": "Native language is required",
-      "target_language_required": "Target language is required"
+      "target_language_required": "Target language is required",
+      "languages_must_differ": "Choose a target language different from your native language"
     }
   },
   "preferences": {
@@ -475,7 +476,7 @@
     },
     "card": {
       "no_description": "No description provided.",
-      "due": "Due",
+      "due": "Cards Due",
       "new": "New",
       "learned": "Learned",
       "actions": {
@@ -486,7 +487,22 @@
         "manage_cards": "Manage Cards",
         "start_review": "Start Review"
       },
-      "total_cards": "Total Cards"
+      "total_cards": "Total Cards",
+      "total_words": "Total Words",
+      "active_words": "Active Words",
+      "active_cards": "Active Cards",
+      "cards": "Cards",
+      "active": "Active",
+      "due_short": "Due"
+    },
+    "stats": {
+      "words_total": "Words Total",
+      "active_words": "Active Words",
+      "cards": "Cards",
+      "cards_due": "Cards Due",
+      "cards_total": "Cards Total",
+      "active": "Active",
+      "due": "Due"
     },
     "form": {
       "title": "Title",
@@ -697,6 +713,34 @@
       "cards_reviewed": "Cards Reviewed",
       "correct_rate": "Correct Rate",
       "time_spent": "Time Spent"
+    },
+    "activation": {
+      "activate": "Activate",
+      "count_label": "Number of items to activate",
+      "inactive_label": "Inactive",
+      "more_word": "more word from {{count}} inactive word",
+      "more_words": "more words from {{count}} inactive words",
+      "more_card": "more card from {{count}} inactive card",
+      "more_cards": "more cards from {{count}} inactive cards",
+      "continue": "Activate and continue",
+      "error": "Activation error. Try again.",
+      "complete_title": "Review complete",
+      "complete_description": "All due cards in this deck are done for now."
+    },
+    "recovery": {
+      "choose_deck_title": "Choose a deck first",
+      "choose_deck_message": "Start a review from a specific deck.",
+      "database_inactive_title": "Database inactive",
+      "database_inactive_message": "Your offline database is open in another tab.",
+      "use_here": "Use here instead",
+      "loading_deck": "Loading your deck...",
+      "deck_not_found_title": "Deck not found",
+      "deck_not_found_message": "This deck does not exist or was deleted.",
+      "no_cards_due": "No cards are due in {{title}} right now.",
+      "no_cards_due_title": "No cards due",
+      "back_to_deck": "Back to deck",
+      "back": "Back",
+      "load_error": "Failed to load this review: {{message}}"
     },
     "card": {
       "show_answer": "Show answer",
