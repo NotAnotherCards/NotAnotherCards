@@ -8,15 +8,26 @@ import {
   isSupportedLocale,
 } from '@repo/i18n';
 
+import * as Localization from 'expo-localization';
+
 const STORAGE_KEY = 'i18nextLng';
 
 /**
- * Read the saved locale from SQLite KV storage. Falls back to the default
- * locale if the saved value is missing, empty, or unsupported.
+ * Read the saved locale from SQLite KV storage. Falls back to the device
+ * locale on first launch, or the default locale if unsupported.
  */
 function loadSavedLocale(): string | undefined {
   const saved = Storage.getItemSync(STORAGE_KEY);
   if (saved && isSupportedLocale(saved)) return saved;
+
+  const deviceLocales = Localization.getLocales();
+  if (deviceLocales.length > 0) {
+    const langCode = deviceLocales[0].languageCode;
+    if (langCode && isSupportedLocale(langCode)) {
+      return langCode;
+    }
+  }
+
   return undefined;
 }
 

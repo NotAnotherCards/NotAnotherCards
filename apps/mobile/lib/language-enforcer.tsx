@@ -6,6 +6,11 @@ import { useSessionDatabase } from './database-provider';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Keeps the mobile app's UI language synchronized with the user's profile preferences.
+ * Watches the local offline database for changes to the target/native language selection,
+ * applies them to i18next, and caches the result for future offline boots.
+ */
 function LanguageEnforcer() {
   const manager = useSessionDatabase().manager;
   const db = useDatabase(manager!);
