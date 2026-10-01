@@ -1,4 +1,4 @@
-import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/study';
+import { WORD_NOTE_TYPE } from '@repo/study';
 import { languageFor } from '@repo/schemas';
 
 // The same, as short as it gets: flags for a word deck, the type otherwise.
