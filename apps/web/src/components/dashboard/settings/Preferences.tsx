@@ -25,7 +25,7 @@ import { useTranslation } from 'react-i18next';
 import { useStore } from '@/hooks/useStore';
 
 export function Preferences() {
-  const { profile, updateUserProfile } = useStore()
+  const { profile, updateUserProfile } = useStore();
   const { t } = useTranslation();
   const { data: session } = authClient.useSession();
   const [reviewPreferences, setReviewPreferences] = useState(() =>

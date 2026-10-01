@@ -448,9 +448,12 @@ export async function updateUserProfile(
     if (!existing) return null;
     return await existing.update((record) => {
       if (profile.username !== undefined) record.username = profile.username;
-      if (profile.native_language_id !== undefined) record.native_language_id = profile.native_language_id;
-      if (profile.target_language_id !== undefined) record.target_language_id = profile.target_language_id;
-      if (profile.target_language_active !== undefined) record.target_language_active = profile.target_language_active;
+      if (profile.native_language_id !== undefined)
+        record.native_language_id = profile.native_language_id;
+      if (profile.target_language_id !== undefined)
+        record.target_language_id = profile.target_language_id;
+      if (profile.target_language_active !== undefined)
+        record.target_language_active = profile.target_language_active;
       record.updated_at = Date.now();
     });
   });
