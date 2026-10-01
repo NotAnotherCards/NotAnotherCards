@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
@@ -10,34 +10,22 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
 import { Markdown } from './ui/markdown';
-import { CardForm } from './card-form';
-import { WordNoteForm, type WordFormValues } from './word-note-form';
-import {
-  BASIC_NOTE_TYPE,
-  parseWordFields,
-  WORD_NOTE_TYPE,
-} from '@repo/offline-db';
+import { CardEditor } from './card-editor';
+import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/offline-db';
 
 // Readiness gate, as DeckList: no manager yet means no database to query.
-export function CardList({
-  deckId,
-  header,
-}: {
-  deckId: string;
-  header?: ReactNode;
-}) {
+export function CardList({ deckId }: { deckId: string }) {
   const { manager } = useSessionDatabase();
   if (!manager) {
     return (
       <View className="gap-4 p-6">
-        {header}
         <View className="items-center py-6">
           <ActivityIndicator />
         </View>
       </View>
     );
   }
-  return <ActiveCardList manager={manager} deckId={deckId} header={header} />;
+  return <ActiveCardList manager={manager} deckId={deckId} />;
 }
 
 // One action at a time, same union as DeckList. Two removal scopes, and
@@ -56,11 +44,9 @@ type CardAction =
 function ActiveCardList({
   manager,
   deckId,
-  header,
 }: {
   manager: DatabaseManager;
   deckId: string;
-  header?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
@@ -93,7 +79,6 @@ function ActiveCardList({
   if (isLoading || !writes) {
     return (
       <View className="gap-4 p-6">
-        {header}
         <View className="items-center py-6">
           <ActivityIndicator />
         </View>
@@ -104,7 +89,6 @@ function ActiveCardList({
   if (error) {
     return (
       <View className="gap-4 p-6">
-        {header}
         <Text className="text-destructive">
           Failed to load cards: {error.message}
         </Text>
@@ -115,7 +99,6 @@ function ActiveCardList({
   if (!deck) {
     return (
       <View className="gap-4 p-6">
-        {header}
         <Text className="text-muted-foreground">
           This deck is not on this device.
         </Text>
@@ -127,101 +110,21 @@ function ActiveCardList({
   const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
 
-  let form: ReactNode;
-  if (action?.kind === 'create') {
-    const nativeLanguageId = deck.native_language_id;
-    const targetLanguageId = deck.target_language_id;
-    if (isWordDeck) {
-      if (!(nativeLanguageId && targetLanguageId)) {
-        form = (
-          <Text className="text-destructive">
-            This word deck does not have a valid language pair.
-          </Text>
-        );
-      } else {
-        form = (
-          <WordNoteForm
-            title="New word"
-            targetLanguageId={targetLanguageId}
-            error={writeError}
-            onSubmit={(values) =>
-              run(() =>
-                writes.createWord(deckId, {
-                  ...values,
-                  native_language_id: nativeLanguageId,
-                  target_language_id: targetLanguageId,
-                }),
-              )
-            }
-            onCancel={() => open(null)}
-          />
-        );
-      }
-    } else {
-      form = (
-        <CardForm
-          title="New card"
-          error={writeError}
-          onSubmit={(values) =>
-            run(() => writes.create(deckId, values.front, values.back))
-          }
-          onCancel={() => open(null)}
-        />
-      );
-    }
-  }
-
-  if (action?.kind === 'edit') {
-    const { card } = action;
-    const note = noteForCard(card);
-    if (note?.note_type === WORD_NOTE_TYPE) {
-      // Invalid synced payloads remain visible but cannot be edited.
-      const fields = parseWordFields(note);
-      if (!fields) return <View className="p-6">{header}</View>;
-      const updateWord = (values: WordFormValues) =>
-        run(() =>
-          writes.updateWord(note.id, {
-            ...values,
-            native_language_id: fields.native_language_id,
-            target_language_id: fields.target_language_id,
-            ...(fields.image ? { image: fields.image } : {}),
-            ...(fields.word_audio ? { word_audio: fields.word_audio } : {}),
-          }),
-        );
-      form = (
-        <WordNoteForm
-          title="Edit word"
-          initialValues={fields}
-          targetLanguageId={fields.target_language_id}
-          error={writeError}
-          onSubmit={updateWord}
-          onCancel={() => open(null)}
-        />
-      );
-    } else {
-      form = (
-        <CardForm
-          title="Edit card"
-          initialValues={{ front: card.front, back: card.back }}
-          error={writeError}
-          onSubmit={(values) =>
-            run(() => writes.update(card.id, values.front, values.back))
-          }
-          onCancel={() => open(null)}
-        />
-      );
-    }
-  }
-
   if (action?.kind === 'create' || action?.kind === 'edit') {
+    const card = action.kind === 'edit' ? action.card : undefined;
     return (
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-4 p-6"
         keyboardShouldPersistTaps="handled"
       >
-        {header}
-        {form}
+        <CardEditor
+          deck={deck}
+          card={card}
+          note={card ? noteForCard(card) : null}
+          writes={writes}
+          onDone={() => open(null)}
+        />
       </ScrollView>
     );
   }
@@ -247,7 +150,6 @@ function ActiveCardList({
         ItemSeparatorComponent={() => <View className="h-3" />}
         ListHeaderComponent={
           <View className="gap-4 pb-3">
-            {header}
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
                 <Text className="text-lg font-semibold">Cards</Text>

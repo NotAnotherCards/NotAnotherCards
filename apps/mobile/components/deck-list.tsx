@@ -308,7 +308,7 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                     <Button
                       variant="outline"
                       className="h-auto min-h-12 flex-1 py-2 sm:h-auto"
-                      disabled={pending || dueCount(deck.id) === 0}
+                      disabled={pending}
                       accessibilityLabel={`Start review of ${deck.title}`}
                       onPress={() => router.push(`/review/${deck.id}`)}
                     >
