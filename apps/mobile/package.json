@@ -19,6 +19,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@remelondb/core": "0.3.3",
     "@remelondb/driver-rn": "0.3.3",
+    "@repo/api-client": "workspace:*",
     "@repo/i18n": "workspace:*",
     "@repo/offline-db": "workspace:*",
     "@repo/schemas": "workspace:*",
