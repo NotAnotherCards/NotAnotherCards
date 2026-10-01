@@ -70,6 +70,17 @@ export function isTwoFactorRequiredParam(value: unknown): boolean {
   return value === true || value === 'true';
 }
 
+/** The Expo adapter's getCookie() excludes expired cookies. */
+export function hasTwoFactorChallengeCookie(cookie: string): boolean {
+  // Mirrors TWO_FACTOR_COOKIE_NAME in the API's two-factor-oauth.hook.ts.
+  // HTTPS deployments add Better Auth's __Secure- prefix.
+  return cookie
+    .split(';')
+    .some((part) =>
+      /^(?:__Secure-)?better-auth\.two_factor=.+$/.test(part.trim()),
+    );
+}
+
 export function beginTwoFactorChallenge() {
   mutationVersion += 1;
   publish({

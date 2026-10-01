@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import { authClient } from '@/lib/auth-client';
 import { clearLocalAuthStorage } from '@/lib/auth-storage';
 import {
-  beginTwoFactorChallenge,
   finishTwoFactorChallenge,
+  hydrateTwoFactorChallenge,
   isTerminalTwoFactorChallengeError,
   markTwoFactorChallengeVerified,
   twoFactorChallengeError,
@@ -35,20 +35,32 @@ export function TwoFactorChallenge() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmingSession, setIsConfirmingSession] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
-  const { verifiedUserId } = useTwoFactorChallengeState();
+  const { hydrated, pending, verifiedUserId } = useTwoFactorChallengeState();
 
   useEffect(() => {
-    void beginTwoFactorChallenge();
+    // Sign-in and OAuth callbacks own challenge creation. Opening the database
+    // can remount this screen after verification; mounting must not restart it.
+    void hydrateTwoFactorChallenge();
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
+    if (!pending) {
+      if (!isSessionPending) {
+        router.replace(
+          !session
+            ? '/login'
+            : session.user.onBoardingComplete
+              ? '/dashboard'
+              : '/onboarding',
+        );
+      }
+      return;
+    }
     if (!verifiedUserId) return;
     if (session?.user.id === verifiedUserId) {
-      void finishTwoFactorChallenge().then(() => {
-        router.replace(
-          session.user.onBoardingComplete ? '/dashboard' : '/onboarding',
-        );
-      });
+      // Navigate from the completed state, including on a fresh screen instance.
+      void finishTwoFactorChallenge();
       return;
     }
     if (!isConfirmingSession && !isSessionPending && !isSessionRefetching) {
@@ -57,6 +69,8 @@ export function TwoFactorChallenge() {
       );
     }
   }, [
+    hydrated,
+    pending,
     isConfirmingSession,
     isSessionPending,
     isSessionRefetching,
@@ -160,6 +174,14 @@ export function TwoFactorChallenge() {
       setIsSubmitting(false);
     }
   };
+
+  if (!hydrated || !pending) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <AuthCard

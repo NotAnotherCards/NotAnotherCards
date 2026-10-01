@@ -9,6 +9,7 @@ import {
   secretFromTotpUri,
 } from '@/components/two-factor-security';
 import {
+  beginTwoFactorChallenge,
   finishTwoFactorChallenge,
   getTwoFactorChallengeState,
 } from '@/lib/two-factor-challenge';
@@ -100,9 +101,10 @@ jest.mock('react-native-qrcode-svg', () => ({
 }));
 
 describe('two-factor sign-in challenge', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-    finishTwoFactorChallenge();
+    await finishTwoFactorChallenge();
+    await beginTwoFactorChallenge();
     mockSession = { data: null, refetch: mockRefetch };
     mockVerifyTotp.mockResolvedValue({
       data: { token: 'session-token', user: { id: 'user-1' } },
@@ -184,6 +186,25 @@ describe('two-factor sign-in challenge', () => {
 
     expect(await view.findByText(/invalid or has expired/i)).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('does not create a challenge when its route is opened while signed out', async () => {
+    await finishTwoFactorChallenge();
+    const view = render(<TwoFactorChallenge />);
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/login'));
+    expect(view.queryByLabelText('Authentication code')).toBeNull();
+    expect(getTwoFactorChallengeState().pending).toBe(false);
+  });
+
+  it('does not restart verification when the completed screen remounts', async () => {
+    await finishTwoFactorChallenge();
+    mockSession = signedInSession;
+    render(<TwoFactorChallenge />);
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+    expect(getTwoFactorChallengeState().pending).toBe(false);
+    expect(mockVerifyTotp).not.toHaveBeenCalled();
   });
 
   it('recovers with a backup code', async () => {

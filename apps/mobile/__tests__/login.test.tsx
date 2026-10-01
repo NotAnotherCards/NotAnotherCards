@@ -52,6 +52,7 @@ jest.mock('../lib/auth-client', () => ({
       social: (input: unknown) => mockSocialSignIn(input),
     },
     useSession: () => mockSession,
+    getCookie: () => '',
   },
 }));
 

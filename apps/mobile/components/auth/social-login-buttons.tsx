@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { GoogleIcon } from '@/components/ui/google-icon';
 import { FacebookIcon } from '@/components/ui/facebook-icon';
+import {
+  beginTwoFactorChallenge,
+  hasTwoFactorChallengeCookie,
+  isTwoFactorRedirect,
+} from '@/lib/two-factor-challenge';
 
 export type SocialProvider = 'google' | 'facebook';
 
@@ -20,6 +26,7 @@ const LABELS: Record<SocialProvider, string> = {
 // scheme it stores the session. A relative callbackURL becomes that scheme
 // URL. The screen's session effect then navigates, as it does for email.
 export function SocialLoginButtons() {
+  const router = useRouter();
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -27,12 +34,23 @@ export function SocialLoginButtons() {
     setApiError(null);
     setBusy(provider);
     try {
-      const { error } = await authClient.signIn.social({
+      const { data, error } = await authClient.signIn.social({
         provider,
         callbackURL: '/dashboard',
         errorCallbackURL: '/login',
       });
-      if (error) setApiError(apiErrorMessage(error));
+      if (error) {
+        setApiError(apiErrorMessage(error));
+      } else if (
+        isTwoFactorRedirect(data) ||
+        hasTwoFactorChallengeCookie(authClient.getCookie())
+      ) {
+        // iOS returns the browser callback to ASWebAuthenticationSession, not
+        // Expo Router. The adapter has saved its cookies before this resolves,
+        // even though the response still describes the initial OAuth redirect.
+        await beginTwoFactorChallenge();
+        router.replace('/two-factor');
+      }
     } catch (err) {
       setApiError(apiErrorMessage(err));
     } finally {
