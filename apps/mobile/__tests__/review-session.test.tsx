@@ -709,6 +709,31 @@ describe('ReviewSession', () => {
       expect(await result.findByText('Review complete')).toBeTruthy();
     });
 
+    it('keeps the answered card in view while the end of the batch is read', async () => {
+      // The last card flew off and nothing follows it in the batch: until
+      // the read says what comes next, the card shows its question again
+      // rather than an empty card.
+      let finishRead!: (cards: Card[]) => void;
+      mockReadDueCards.mockImplementationOnce(
+        () =>
+          new Promise<Card[]>((resolve) => {
+            finishRead = resolve;
+          }),
+      );
+      const result = render(<ReviewSession deckId="d1" />);
+
+      await result.findByText('gato');
+      fireEvent.press(result.getByText('Show answer'));
+      drag(300, 0);
+      await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
+
+      expect(result.getByText('gato')).toBeTruthy();
+      expect(result.queryByText('Review complete')).toBeNull();
+
+      await act(async () => finishRead([]));
+      expect(await result.findByText('Review complete')).toBeTruthy();
+    });
+
     it('answers a card once when a button is pressed while it leaves', async () => {
       const result = render(<ReviewSession deckId="d1" />);
 

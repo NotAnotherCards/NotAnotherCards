@@ -100,8 +100,11 @@ export function ReviewCards({
         onLongPress={onEdit}
       >
         {hasLanded ? (
+          // Without a next card the answered one stays, as it does with the
+          // buttons, until the next batch (or the end) is known: not an
+          // empty card.
           <Card className="flex-1 items-center justify-center overflow-hidden px-6 py-6">
-            {nextFront && <Markdown content={nextFront} variant="card" />}
+            <Markdown content={nextFront ?? card.front} variant="card" />
           </Card>
         ) : null}
         {!hasLanded && nextFront && (
