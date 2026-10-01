@@ -81,9 +81,9 @@ jest.mock('../lib/overview-stats', () => ({
 
 // The deck list and settings have their own tests; keep this one about the
 // session guard and the tab strip. Each tab renders a marker instead.
-jest.mock('../components/deck-list', () => {
+jest.mock('../components/library', () => {
   const { Text } = require('react-native');
-  return { DeckList: () => <Text>deck-list</Text> };
+  return { Library: () => <Text>deck-list</Text> };
 });
 jest.mock('../components/settings', () => {
   const { Text } = require('react-native');

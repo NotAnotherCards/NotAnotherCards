@@ -24,6 +24,7 @@ let mockDecksState: {
     note_type: string;
     native_language_id?: string | null;
     target_language_id?: string | null;
+    visibility?: string;
   }[];
   isLoading: boolean;
   error: Error | null;
@@ -67,6 +68,16 @@ beforeEach(() => {
 });
 
 describe('DeckList', () => {
+  it('marks a published deck', () => {
+    mockDecksState.decks = [
+      { ...mockDecksState.decks[0]!, visibility: 'public' },
+      ...mockDecksState.decks.slice(1),
+    ];
+    const { getByText, queryByText } = render(<DeckList />);
+    expect(getByText('Published')).toBeTruthy();
+    expect(queryByText('Private')).toBeNull();
+  });
+
   it('opens the deck from Manage cards', async () => {
     const { findByLabelText } = render(<DeckList />);
     fireEvent.press(await findByLabelText('Manage cards of Spanish'));
@@ -117,14 +128,13 @@ describe('DeckList', () => {
   it('shows the empty state without decks', () => {
     mockDecksState.decks = [];
     const { getByText } = render(<DeckList />);
-    expect(getByText('No decks yet. Create your first one.')).toBeTruthy();
+    expect(getByText(/No decks yet/)).toBeTruthy();
   });
 
   it('creates a deck and closes the form once the write landed', async () => {
     const { getByText, getByPlaceholderText, queryByText } = render(
-      <DeckList />,
+      <DeckList createRequestKey={1} />,
     );
-    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -146,9 +156,8 @@ describe('DeckList', () => {
       new Error('Database not initialized'),
     );
     const { getByText, getByPlaceholderText, getByDisplayValue } = render(
-      <DeckList />,
+      <DeckList createRequestKey={1} />,
     );
-    fireEvent.press(getByText('Create deck'));
     fireEvent.changeText(
       getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -195,7 +204,6 @@ describe('DeckList action state', () => {
     message = 'Database not initialized',
   ) => {
     mockWrites.create.mockRejectedValueOnce(new Error(message));
-    fireEvent.press(r.getByText('Create deck'));
     fireEvent.changeText(
       r.getByPlaceholderText('e.g. Spanish vocabulary'),
       'Anatomy',
@@ -223,6 +231,26 @@ describe('DeckList action state', () => {
     await act(async () => finish());
     expect(queryByText(/Delete this deck\?/)).toBeNull();
     expect(queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
+  });
+
+  it('drops a create request that arrives during a write', async () => {
+    let finish!: () => void;
+    mockWrites.remove.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finish = () => resolve(undefined);
+        }),
+    );
+    const r = render(<DeckList createRequestKey={0} />);
+    fireEvent.press(r.getByLabelText('Delete Yoga'));
+    fireEvent.press(r.getByText('Delete deck'));
+    // the library's plus during the delete: the form must not replace the
+    // pending action and inherit its outcome
+    r.rerender(<DeckList createRequestKey={1} />);
+    expect(r.queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
+    expect(r.getByText(/Delete this deck\?/)).toBeTruthy();
+    await act(async () => finish());
+    expect(r.queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
   });
 
   it('does not start a second delete while one is pending', async () => {
@@ -256,14 +284,14 @@ describe('DeckList action state', () => {
   });
 
   it('clears the error when a failed action is cancelled', async () => {
-    const r = render(<DeckList />);
+    const r = render(<DeckList createRequestKey={1} />);
     await failCreate(r);
     fireEvent.press(r.getByText('Cancel'));
     expect(r.queryByText('Database not initialized')).toBeNull();
   });
 
   it('does not carry an earlier error into the next action', async () => {
-    const r = render(<DeckList />);
+    const r = render(<DeckList createRequestKey={1} />);
     await failCreate(r);
     fireEvent.press(r.getByText('Cancel'));
     fireEvent.press(r.getByLabelText('Edit Spanish'));

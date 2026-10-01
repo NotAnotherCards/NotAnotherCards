@@ -34,7 +34,7 @@ import { Progress } from '@/components/ui/progress';
 import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
-import { DeckList } from '@/components/deck-list';
+import { Library } from '@/components/library';
 import { RequireSession } from '@/components/require-session';
 import { Settings } from '@/components/settings';
 import { InfoPanel } from '@/components/info-panel';
@@ -126,7 +126,7 @@ export default function Dashboard() {
               )}
             </View>
           )}
-          {tab === 'library' && <DeckList />}
+          {tab === 'library' && <Library />}
           {tab === 'settings' && <Settings />}
         </ScrollView>
         {/* Start Review sits under the thumb, below the scrolling content,
