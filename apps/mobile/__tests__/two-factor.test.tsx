@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import '@/lib/i18n';
 import { TwoFactorChallenge } from '@/components/auth/two-factor-challenge';
@@ -133,6 +133,43 @@ describe('two-factor sign-in challenge', () => {
     mockSession = signedInSession;
     view.rerender(<TwoFactorChallenge />);
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+  });
+
+  it('finishes login when the auth session update remounts the challenge', async () => {
+    let resolveVerification: (value: {
+      data: { token: string; user: { id: string } };
+      error: null;
+    }) => void = () => {};
+    const verification = new Promise<{
+      data: { token: string; user: { id: string } };
+      error: null;
+    }>((resolve) => {
+      resolveVerification = resolve;
+    });
+    mockVerifyTotp.mockReturnValueOnce(verification);
+    mockSession = { data: null, refetch: mockRefetch };
+    const firstView = render(<TwoFactorChallenge />);
+    fireEvent.changeText(
+      firstView.getByLabelText('Authentication code'),
+      '123456',
+    );
+    fireEvent.press(firstView.getByText('Verify and continue'));
+
+    await waitFor(() => expect(mockVerifyTotp).toHaveBeenCalled());
+    firstView.unmount();
+
+    mockSession = signedInSession;
+    render(<TwoFactorChallenge />);
+    await act(async () => {
+      resolveVerification({
+        data: { token: 'session-token', user: { id: 'user-1' } },
+        error: null,
+      });
+      await verification;
+    });
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+    expect(getTwoFactorChallengeState().pending).toBe(false);
   });
 
   it('keeps an invalid code signed out and explains the error', async () => {
@@ -270,6 +307,7 @@ describe('two-factor sign-in challenge', () => {
     expect(getTwoFactorChallengeState()).toEqual({
       pending: true,
       hydrated: true,
+      verifiedUserId: null,
     });
   });
 });

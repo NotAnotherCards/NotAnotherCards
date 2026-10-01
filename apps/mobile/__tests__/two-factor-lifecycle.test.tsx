@@ -17,7 +17,7 @@ jest.mock('expo-secure-store', () => ({
 describe('two-factor startup lifecycle', () => {
   it('routes a persisted challenge after a process restart', async () => {
     mockGetItem.mockResolvedValueOnce('true');
-    render(<TwoFactorLifecycle deepLinkPending={false} />);
+    const view = render(<TwoFactorLifecycle deepLinkPending={false} />);
 
     await waitFor(() =>
       expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
@@ -25,5 +25,8 @@ describe('two-factor startup lifecycle', () => {
     expect(mockGetItem).toHaveBeenCalledWith(
       'notanothercards.pending-two-factor',
     );
+
+    view.rerender(<TwoFactorLifecycle deepLinkPending={false} />);
+    expect(mockReplace).toHaveBeenCalledTimes(1);
   });
 });

@@ -14,12 +14,14 @@ type TwoFactorRedirect = {
 export type TwoFactorChallengeState = {
   pending: boolean;
   hydrated: boolean;
+  verifiedUserId: string | null;
 };
 
 const PENDING_CHALLENGE_KEY = 'notanothercards.pending-two-factor';
 const UNHYDRATED_STATE: TwoFactorChallengeState = {
   pending: false,
   hydrated: false,
+  verifiedUserId: null,
 };
 let state: TwoFactorChallengeState = UNHYDRATED_STATE;
 let mutationVersion = 0;
@@ -29,7 +31,11 @@ const listeners = new Set<() => void>();
 const TwoFactorDeepLinkContext = createContext(false);
 
 function publish(next: TwoFactorChallengeState) {
-  if (state.pending === next.pending && state.hydrated === next.hydrated) {
+  if (
+    state.pending === next.pending &&
+    state.hydrated === next.hydrated &&
+    state.verifiedUserId === next.verifiedUserId
+  ) {
     return;
   }
   state = next;
@@ -66,13 +72,25 @@ export function isTwoFactorRequiredParam(value: unknown): boolean {
 
 export function beginTwoFactorChallenge() {
   mutationVersion += 1;
-  publish({ pending: true, hydrated: true });
+  publish({
+    pending: true,
+    hydrated: true,
+    // A session-cookie update can remount the challenge while verification
+    // is completing. Re-entering the same pending challenge must not discard
+    // that accepted result.
+    verifiedUserId: state.pending ? state.verifiedUserId : null,
+  });
   return persistPendingChallenge();
+}
+
+export function markTwoFactorChallengeVerified(userId: string) {
+  mutationVersion += 1;
+  publish({ pending: true, hydrated: true, verifiedUserId: userId });
 }
 
 export function finishTwoFactorChallenge() {
   mutationVersion += 1;
-  publish({ pending: false, hydrated: true });
+  publish({ pending: false, hydrated: true, verifiedUserId: null });
   return removePendingChallenge();
 }
 
@@ -84,7 +102,11 @@ export function hydrateTwoFactorChallenge(): Promise<TwoFactorChallengeState> {
   hydration = SecureStore.getItemAsync(PENDING_CHALLENGE_KEY)
     .then((stored) => {
       if (mutationVersion === versionAtStart) {
-        publish({ pending: stored === 'true', hydrated: true });
+        publish({
+          pending: stored === 'true',
+          hydrated: true,
+          verifiedUserId: null,
+        });
       } else if (!state.hydrated) {
         publish({ ...state, hydrated: true });
       }

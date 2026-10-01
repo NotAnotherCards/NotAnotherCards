@@ -8,7 +8,9 @@ import {
   beginTwoFactorChallenge,
   finishTwoFactorChallenge,
   isTerminalTwoFactorChallengeError,
+  markTwoFactorChallengeVerified,
   twoFactorChallengeError,
+  useTwoFactorChallengeState,
 } from '@/lib/two-factor-challenge';
 import { AuthCard } from './auth-card';
 import { Button } from '../ui/button';
@@ -31,9 +33,9 @@ export function TwoFactorChallenge() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
   const [isConfirmingSession, setIsConfirmingSession] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const { verifiedUserId } = useTwoFactorChallengeState();
 
   useEffect(() => {
     void beginTwoFactorChallenge();
@@ -150,7 +152,7 @@ export function TwoFactorChallenge() {
         return;
       }
 
-      setVerifiedUserId(response.data.user.id);
+      markTwoFactorChallengeVerified(response.data.user.id);
       await confirmSession();
     } catch {
       setError('Verification is temporarily unavailable. Please try again.');

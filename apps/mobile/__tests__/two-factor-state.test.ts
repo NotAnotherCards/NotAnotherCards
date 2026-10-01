@@ -14,6 +14,7 @@ import {
   getTwoFactorChallengeState,
   hydrateTwoFactorChallenge,
   isTwoFactorRequiredParam,
+  markTwoFactorChallengeVerified,
 } from '@/lib/two-factor-challenge';
 
 describe('persisted two-factor challenge state', () => {
@@ -29,10 +30,25 @@ describe('persisted two-factor challenge state', () => {
     await expect(hydrateTwoFactorChallenge()).resolves.toEqual({
       pending: true,
       hydrated: true,
+      verifiedUserId: null,
     });
     expect(mockGetItem).toHaveBeenCalledWith(
       'notanothercards.pending-two-factor',
     );
+  });
+
+  it('keeps an accepted verification result across challenge remounts', () => {
+    finishTwoFactorChallenge();
+    beginTwoFactorChallenge();
+    markTwoFactorChallengeVerified('user-1');
+
+    beginTwoFactorChallenge();
+
+    expect(getTwoFactorChallengeState()).toEqual({
+      pending: true,
+      hydrated: true,
+      verifiedUserId: 'user-1',
+    });
   });
 
   it('persists begin and removes the marker when the challenge finishes', () => {
