@@ -37,7 +37,7 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 6,
+  version: 7,
   tables: [
     userDecks,
     userNotes,
