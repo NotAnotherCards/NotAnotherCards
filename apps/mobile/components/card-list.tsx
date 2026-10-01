@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
 import { Markdown } from './ui/markdown';
 import { CardEditor } from './card-editor';
+import { PublishPanel } from './publish-panel';
 import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/offline-db';
 
 // Readiness gate, as DeckList: no manager yet means no database to query.
@@ -150,6 +151,7 @@ function ActiveCardList({
         ItemSeparatorComponent={() => <View className="h-3" />}
         ListHeaderComponent={
           <View className="gap-4 pb-3">
+            <PublishPanel deck={deck} cards={cards} />
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
                 <Text className="text-lg font-semibold">Cards</Text>

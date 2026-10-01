@@ -47,6 +47,7 @@ let mockCardsState: {
   writes: typeof mockWrites | null;
 };
 const mockScreenOptions = jest.fn();
+jest.mock('../components/publish-panel', () => ({ PublishPanel: () => null }));
 jest.mock('expo-router', () => ({
   Stack: {
     Screen: ({ options }: { options: unknown }) => {
