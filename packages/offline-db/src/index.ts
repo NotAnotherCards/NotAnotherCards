@@ -183,4 +183,8 @@ export * from './queries.js';
 export * from './export-import-types.js';
 export * from './export.js';
 export * from './import.js';
-export { rejectedSummary, REJECTION_EXPLANATION } from './sync-status.js';
+export {
+  rejectedSummary,
+  rejectionsConcernDeck,
+  REJECTION_EXPLANATION,
+} from './sync-status.js';

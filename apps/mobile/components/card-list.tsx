@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
@@ -56,6 +57,7 @@ function ActiveCardList({
   deckId: string;
   header?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
     useCards(manager, deckId);
   const [action, setAction] = useState<CardAction | null>(null);
@@ -71,7 +73,7 @@ function ActiveCardList({
     setAction(next);
   };
 
-  const run = async (write: () => Promise<unknown>) => {
+  const run = async <T,>(write: () => Promise<T>) => {
     setWriteError(null);
     setPending(true);
     try {
@@ -198,6 +200,11 @@ function ActiveCardList({
                 <Text className="text-sm text-muted-foreground">
                   <Markdown content={card.back} inline />
                 </Text>
+                {!card.active && (
+                  <Text className="text-xs text-muted-foreground">
+                    {t('review.activation.inactive_label', 'Inactive')}
+                  </Text>
+                )}
               </CardHeader>
               <CardContent>
                 {confirm ? (

@@ -21,6 +21,10 @@ type ReviewSessionProps = {
   onDeleteNote: (noteId: string) => Promise<void>;
   onRequestNextBatch?: () => Promise<Card[]>;
   onComplete?: () => void;
+  onActivateMore?: (count: number) => Promise<void>;
+  activationCount?: number;
+  inactiveItemCount?: number;
+  activationItemLabel?: 'words' | 'cards';
   reviewMode?: 'basic' | 'extended';
   showNextReviewInterval?: boolean;
 };
@@ -36,6 +40,10 @@ export function ReviewSession({
   onDeleteNote,
   onRequestNextBatch,
   onComplete,
+  onActivateMore,
+  activationCount,
+  inactiveItemCount = 0,
+  activationItemLabel = 'words',
   reviewMode = 'basic',
   showNextReviewInterval = false,
 }: ReviewSessionProps) {
@@ -227,7 +235,15 @@ export function ReviewSession({
   });
 
   if (!card) {
-    return <ReviewComplete onExit={onExit} />;
+    return (
+      <ReviewComplete
+        onExit={onExit}
+        onActivate={onActivateMore}
+        activationCount={activationCount}
+        inactiveItemCount={inactiveItemCount}
+        itemLabel={activationItemLabel}
+      />
+    );
   }
 
   return (

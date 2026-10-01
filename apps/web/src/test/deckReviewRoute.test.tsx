@@ -34,9 +34,12 @@ vi.mock('@/lib/auth-client', () => ({
   },
 }));
 
-vi.mock('@/lib/review-preferences', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/review-preferences')>()),
+vi.mock('@/lib/review-preferences', () => ({
   getReviewPreferences: () => routeTestState.reviewPreferences,
+  getActivationCount: () => 5,
+  saveActivationCount: vi.fn(),
+  clearLastReviewDeckId: vi.fn(),
+  saveLastReviewDeckId: vi.fn(),
 }));
 
 vi.mock('@/components/review/ReviewSession', () => ({
@@ -62,7 +65,7 @@ vi.mock('@/components/review/ReviewSession', () => ({
 }));
 
 import { DeckReviewPage } from '@/components/review/DeckReviewPage';
-import { getLastReviewDeckId } from '@/lib/review-preferences';
+import { clearLastReviewDeckId } from '@/lib/review-preferences';
 
 const deck: Deck = {
   id: 'deck-1',
@@ -116,7 +119,7 @@ describe('DeckReviewRoute', () => {
     };
     routeTestState.reviewSession.mockReset();
     routeTestState.reviewSessionProps = null;
-    localStorage.clear();
+    vi.mocked(clearLastReviewDeckId).mockReset();
   });
 
   it('asks the user to choose a deck when deckId is missing', () => {
@@ -145,7 +148,9 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
 
     expect(
-      screen.getByRole('heading', { name: 'No cards due' }),
+      screen.getByRole('heading', {
+        name: 'No cards are due in German basics right now.',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -209,7 +214,7 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
 
-    expect(getLastReviewDeckId('user-1')).toBe(deck.id);
+    expect(clearLastReviewDeckId).not.toHaveBeenCalled();
   });
 
   it('keeps the saved deck when the review session completes', () => {
@@ -221,7 +226,7 @@ describe('DeckReviewRoute', () => {
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
 
-    expect(getLastReviewDeckId('user-1')).toBe(deck.id);
+    expect(clearLastReviewDeckId).not.toHaveBeenCalled();
   });
 
   it('keeps sibling cards out of the first review batch', async () => {

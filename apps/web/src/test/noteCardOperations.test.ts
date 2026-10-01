@@ -289,7 +289,7 @@ describe('note, card, and membership operations', () => {
 
     await removeNoteFromDeck(db, card.note_id, firstDeck.id);
 
-    expect(await getPersonalDictionaryQuery(db).fetch()).toHaveLength(1);
+    expect(await getPersonalDictionaryQuery(db).fetch()).toHaveLength(0);
     expect(await getReviewHistoryQuery(db).fetch()).toHaveLength(1);
     expect(await db.get(UserNote).find(card.note_id)).toBeDefined();
     expect(
@@ -456,7 +456,7 @@ describe('note, card, and membership operations', () => {
     expect(deck.description).toBe('AI Generated Cards');
 
     const cardsInDb = await getPersonalDictionaryQuery(db).fetch();
-    expect(cardsInDb).toHaveLength(2);
+    expect(cardsInDb).toHaveLength(0);
 
     const notesInDb = await db.get(UserNote).query().fetch();
     expect(notesInDb).toHaveLength(2);

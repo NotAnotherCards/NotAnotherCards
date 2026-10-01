@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cardsForDeck,
   countCardsPerDeck,
+  deckLearningCounts,
   reviewTarget,
 } from './cards-by-deck.js';
 
@@ -14,9 +15,30 @@ const card = (note_id: string) => ({ note_id });
 describe('reviewTarget', () => {
   const now = 1000;
   const cards = [
-    { id: 'c1', note_id: 'n1', due_at: now },
-    { id: 'c2', note_id: 'n2', due_at: now - 1 },
-    { id: 'c3', note_id: 'n3', due_at: now + 1 },
+    {
+      id: 'c1',
+      note_id: 'n1',
+      due_at: now,
+      active: true,
+      front: 'a',
+      back: 'b',
+    },
+    {
+      id: 'c2',
+      note_id: 'n2',
+      due_at: now - 1,
+      active: true,
+      front: 'a',
+      back: 'b',
+    },
+    {
+      id: 'c3',
+      note_id: 'n3',
+      due_at: now + 1,
+      active: true,
+      front: 'a',
+      back: 'b',
+    },
   ];
 
   it.each([
@@ -72,11 +94,14 @@ describe('reviewTarget', () => {
       memberships: [],
       expected: 'nothing-due',
     },
-  ])('$name', ({ lastDeckId, memberships, expected }) => {
-    expect(reviewTarget({ lastDeckId, memberships, cards, now })).toBe(
-      expected,
-    );
-  });
+  ])(
+    '$name',
+    ({ lastDeckId, memberships, cards: caseCards = cards, expected }) => {
+      expect(
+        reviewTarget({ lastDeckId, memberships, cards: caseCards, now }),
+      ).toBe(expected);
+    },
+  );
 
   it('returns nothing-due with no cards, including decks without cards', () => {
     expect(
@@ -121,6 +146,49 @@ describe('countCardsPerDeck', () => {
     expect(counts.get('d1')).toBe(0);
     expect(counts.get('d2')).toBeUndefined();
     expect(countCardsPerDeck([], [])).toEqual(new Map());
+  });
+});
+
+describe('deckLearningCounts', () => {
+  it('keeps total, active and due cards separate from total and active words', () => {
+    expect(
+      deckLearningCounts(
+        [
+          {
+            id: 'c1',
+            note_id: 'n1',
+            due_at: 10,
+            active: true,
+            front: 'a',
+            back: 'b',
+          },
+          {
+            id: 'c2',
+            note_id: 'n1',
+            due_at: 20,
+            active: true,
+            front: '',
+            back: '',
+          },
+          {
+            id: 'c3',
+            note_id: 'n2',
+            due_at: 0,
+            active: false,
+            front: 'a',
+            back: 'b',
+          },
+        ],
+        ['n1', 'n2'],
+        10,
+      ),
+    ).toEqual({
+      totalCards: 3,
+      activeCards: 1,
+      dueCards: 1,
+      totalNotes: 2,
+      activeNotes: 1,
+    });
   });
 });
 

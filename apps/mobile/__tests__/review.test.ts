@@ -37,7 +37,14 @@ const openDb = () =>
 describe('mobile review data', () => {
   it('selects only due cards from the requested deck in due order', () => {
     const card = (id: string, noteId: string, dueAt: number): UserCardRecord =>
-      ({ id, note_id: noteId, due_at: dueAt }) as UserCardRecord;
+      ({
+        id,
+        note_id: noteId,
+        due_at: dueAt,
+        active: true,
+        front: 'front',
+        back: 'back',
+      }) as UserCardRecord;
     const cards = [
       card('later', 'n1', 20),
       card('future', 'n2', 31),

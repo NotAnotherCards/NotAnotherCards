@@ -163,10 +163,10 @@ function StartReviewBar({
     userId ? loadLastReviewDeckId(userId) : null,
   );
 
-  // reviewTarget (#425) picks the deck; the library only when it is unclear.
+  // Without due cards, Start Review opens the library so the learner chooses
+  // which deck to continue with and can activate words there.
   const startReview = () => {
-    if (target === 'nothing-due') return;
-    if (target === 'library') onChooseDeck();
+    if (target === 'library' || target === 'nothing-due') onChooseDeck();
     else router.push(`/review/${target}`);
   };
 
@@ -185,7 +185,7 @@ function StartReviewBar({
         // 48 high, Android's touch target size.
         className="h-12 sm:h-12"
         loading={isLoading}
-        disabled={!!error || target === 'nothing-due'}
+        disabled={!!error}
         onPress={startReview}
       >
         <BookOpenIcon size={18} className="text-foreground" />

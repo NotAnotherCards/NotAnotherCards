@@ -13,6 +13,7 @@ export default function ReviewScreen() {
       <ScrollView
         className="flex-1 bg-background"
         contentContainerClassName="flex-grow justify-center p-6"
+        keyboardShouldPersistTaps="handled"
       >
         <ReviewSession deckId={deckId} />
       </ScrollView>

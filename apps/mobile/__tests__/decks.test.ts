@@ -7,7 +7,16 @@ const NOW = Date.UTC(2026, 8, 27, 12, 0);
 const mockData: Record<string, unknown[]> = {
   decks: [{ id: 'd1' }],
   memberships: [{ deck_id: 'd1', note_id: 'n1' }],
-  cards: [{ id: 'c1', note_id: 'n1', due_at: NOW + 30_000 }],
+  cards: [
+    {
+      id: 'c1',
+      note_id: 'n1',
+      due_at: NOW + 30_000,
+      active: true,
+      front: 'front',
+      back: 'back',
+    },
+  ],
   profiles: [],
 };
 
@@ -23,7 +32,7 @@ jest.mock('@repo/offline-db', () => ({
   ...jest.requireActual('@repo/offline-db'),
   getDecksQuery: () => 'decks',
   getNoteDecksQuery: () => 'memberships',
-  getPersonalDictionaryQuery: () => 'cards',
+  getAllCardsQuery: () => 'cards',
   getUserProfileQuery: () => 'profiles',
 }));
 jest.mock('../lib/database-provider', () => ({

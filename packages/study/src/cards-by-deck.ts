@@ -1,8 +1,39 @@
-import { selectDueCards, type ReviewQueueCard } from './review-queue.js';
+import {
+  isStudyable,
+  selectDueCards,
+  type ReviewQueueCard,
+} from './review-queue.js';
+
+export type DeckLearningCounts = {
+  totalCards: number;
+  activeCards: number;
+  dueCards: number;
+  totalNotes: number;
+  activeNotes: number;
+};
+
+/** Counts one deck's cards and notes from the same card state as review. */
+export function deckLearningCounts(
+  cards: readonly ReviewQueueCard[],
+  noteIds: readonly string[] = cards.map((card) => card.note_id),
+  now: number = Date.now(),
+): DeckLearningCounts {
+  const noteIdSet = new Set(noteIds);
+  const activeNoteIds = new Set(
+    cards.filter((card) => card.active === true).map((card) => card.note_id),
+  );
+  return {
+    totalCards: cards.length,
+    activeCards: cards.filter(isStudyable).length,
+    dueCards: selectDueCards(cards, now).length,
+    totalNotes: noteIdSet.size,
+    activeNotes: [...noteIdSet].filter((id) => activeNoteIds.has(id)).length,
+  };
+}
 
 // Cards per deck, counted once for every deck instead of rescanning both
-// lists per rendered deck. Callers pass active-only query results, so nothing
-// is filtered here. A note can carry several cards and sit in several decks;
+// lists per rendered deck. The caller chooses which cards to include. A note
+// can carry several cards and sit in several decks;
 // each deck counts every card of every note it holds.
 export function countCardsPerDeck(
   memberships: readonly { deck_id: string; note_id: string }[],
@@ -24,8 +55,7 @@ export function countCardsPerDeck(
 }
 
 // Cards whose note is in the deck, in the cards' own order. The same join as
-// countCardsPerDeck for one deck; callers pass active-only query results,
-// and nothing is filtered here.
+// countCardsPerDeck for one deck; nothing is filtered here.
 export function cardsForDeck<C extends { note_id: string }>(
   memberships: readonly { deck_id: string; note_id: string }[],
   cards: readonly C[],
@@ -36,7 +66,8 @@ export function cardsForDeck<C extends { note_id: string }>(
   return cards.filter((card) => noteIds.has(card.note_id));
 }
 
-// The deck Start review opens, per #425's four rules. Inputs are active-only.
+// The deck Start review opens a due deck when there is one. Starting from an
+// empty queue belongs to the library, where the learner chooses a deck.
 export function reviewTarget({
   lastDeckId,
   memberships,
