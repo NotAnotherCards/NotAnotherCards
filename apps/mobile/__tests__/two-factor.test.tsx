@@ -324,6 +324,13 @@ describe('two-factor security settings', () => {
     fireEvent.press(view.getByText('Continue'));
 
     expect(await view.findByDisplayValue('MANUALKEY')).toBeTruthy();
+    expect(mockEnable).toHaveBeenCalledWith(
+      {
+        password: 'Password1!',
+        issuer: 'NotAnotherCards',
+      },
+      { disableSignal: true },
+    );
     expect(view.queryByText('recovery-one')).toBeNull();
     fireEvent.press(view.getByText('Copy manual setup key'));
     await waitFor(() =>
@@ -333,6 +340,11 @@ describe('two-factor security settings', () => {
     fireEvent.press(view.getByText('Verify and enable'));
 
     expect(await view.findByText('recovery-one')).toBeTruthy();
+    expect(mockVerifyTotp).toHaveBeenCalledWith(
+      { code: '123456' },
+      { disableSignal: true },
+    );
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
     expect(mockPreventScreenCapture).toHaveBeenCalled();
   });
 
@@ -349,6 +361,10 @@ describe('two-factor security settings', () => {
     fireEvent.changeText(view.getByLabelText('Current password'), 'Password1!');
     fireEvent.press(view.getByText('Generate new codes'));
     expect(await view.findByText('new-recovery')).toBeTruthy();
+    expect(mockGenerateBackupCodes).toHaveBeenCalledWith(
+      { password: 'Password1!' },
+      { disableSignal: true },
+    );
     fireEvent.press(view.getByText('I saved my codes'));
 
     fireEvent.press(view.getByText('Disable two-factor'));
@@ -356,7 +372,10 @@ describe('two-factor security settings', () => {
     fireEvent.press(view.getByText('Disable two-factor'));
 
     await waitFor(() =>
-      expect(mockDisable).toHaveBeenCalledWith({ password: 'Password1!' }),
+      expect(mockDisable).toHaveBeenCalledWith(
+        { password: 'Password1!' },
+        { disableSignal: true },
+      ),
     );
     expect(view.getByText('Two-factor is off')).toBeTruthy();
   });

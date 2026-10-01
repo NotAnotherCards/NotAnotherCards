@@ -146,10 +146,16 @@ function Enrollment({
     setError(null);
     setIsSubmitting(true);
     try {
-      const response = await authClient.twoFactor.enable({
-        password,
-        issuer: 'NotAnotherCards',
-      });
+      // Better Auth signals every two-factor request as a session change.
+      // Starting enrollment does not change the session, and that signal can
+      // remount the mobile navigator before the transient QR material is used.
+      const response = await authClient.twoFactor.enable(
+        {
+          password,
+          issuer: 'NotAnotherCards',
+        },
+        { disableSignal: true },
+      );
       if (response.error || !response.data) {
         setError(
           managementError(
@@ -181,9 +187,11 @@ function Enrollment({
     setError(null);
     setIsSubmitting(true);
     try {
-      const response = await authClient.twoFactor.verifyTotp({
-        code: normalizedCode,
-      });
+      const response = await authClient.twoFactor.verifyTotp(
+        { code: normalizedCode },
+        // onVerified lifts the backup codes first, then explicitly refetches.
+        { disableSignal: true },
+      );
       if (response.error) {
         setError('That code is invalid or has expired. Try the current code.');
         return;
@@ -384,9 +392,10 @@ export function TwoFactorSecurity() {
     setIsSubmitting(true);
     try {
       if (action === 'regenerate') {
-        const response = await authClient.twoFactor.generateBackupCodes({
-          password,
-        });
+        const response = await authClient.twoFactor.generateBackupCodes(
+          { password },
+          { disableSignal: true },
+        );
         if (response.error || !response.data) {
           setError(
             managementError(
@@ -400,7 +409,11 @@ export function TwoFactorSecurity() {
         setBackupCodesTitle('Your new backup codes');
         setPassword('');
       } else if (action === 'disable') {
-        const response = await authClient.twoFactor.disable({ password });
+        const response = await authClient.twoFactor.disable(
+          { password },
+          // Local state is updated before the explicit refetch below.
+          { disableSignal: true },
+        );
         if (response.error) {
           setError(
             managementError(
