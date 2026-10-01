@@ -4,14 +4,14 @@ import { schema, userDbName } from '@repo/offline-db';
 
 // Capture the open callback that lib/db.ts hands to createDatabaseManager,
 // so we can inspect what it would open without touching native sqlite.
-let capturedOpen: (() => Promise<unknown>) | undefined;
+let capturedOpen: (() => Promise<Database>) | undefined;
 
 jest.mock('@remelondb/core', () => {
   const actual = jest.requireActual('@remelondb/core');
   return {
     ...actual,
     createDatabaseManager: jest.fn(
-      (options: { open: () => Promise<unknown> }) => {
+      (options: { open: () => Promise<Database> }) => {
         capturedOpen = options.open;
         return {
           state: { status: 'idle', error: null },

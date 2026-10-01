@@ -81,7 +81,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const syncController = useSyncController();
 
   const handleComplete = () => {
-    syncController?.syncNow();
+    void syncController?.syncNow();
   };
 
   const activateMoreWords = async (count: number) => {

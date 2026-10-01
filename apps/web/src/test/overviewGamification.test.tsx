@@ -10,6 +10,7 @@ import {
   getLastReviewDeckId,
   saveLastReviewDeckId,
 } from '@/lib/review-preferences';
+import type { SyncControllerState } from '@remelondb/core';
 import { Component, type ReactNode } from 'react';
 import { Overview } from '../components/dashboard/Overview';
 import { Progress } from '../components/ui/progress';
@@ -180,6 +181,90 @@ describe('Overview Gamification', () => {
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
+
+  it.each(['idle', 'offline', 'error', 'rejected', 'lease-denied'] as const)(
+    'waits for import sync and handles %s',
+    async (outcome) => {
+      let completeSync!: (state: SyncControllerState) => void;
+      const syncNow = vi.fn(
+        () =>
+          new Promise<SyncControllerState>((resolve) => {
+            completeSync = resolve;
+          }),
+      );
+      vi.spyOn(syncProvider, 'useSyncController').mockReturnValue({
+        syncNow,
+      } as unknown as ReturnType<typeof syncProvider.useSyncController>);
+      mockFetch.mockImplementation(async (url: string) => ({
+        ok: true,
+        json: async () =>
+          url.endsWith('/import')
+            ? { deckId: 'copy-1' }
+            : url === '/api/shared/decks'
+              ? {
+                  decks: [
+                    {
+                      id: 'shared-1',
+                      title: 'Shared Spanish',
+                      description: null,
+                      noteType: 'basic',
+                      nativeLanguageId: null,
+                      targetLanguageId: null,
+                      cardCount: 1,
+                      owner: { username: 'sam' },
+                      updatedAt: 1,
+                    },
+                  ],
+                }
+              : gamificationResponse('2026-09-17'),
+      }));
+      render(<Overview onChooseDeck={() => {}} />);
+      const button = await screen.findByRole('button', { name: 'Import' });
+      fireEvent.click(button);
+      await waitFor(() => expect(syncNow).toHaveBeenCalledTimes(1));
+      expect(button).toBeDisabled();
+      expect(screen.queryByText('Imported')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/It will appear after/),
+      ).not.toBeInTheDocument();
+      fireEvent.click(button);
+      expect(
+        mockFetch.mock.calls.filter(([url]) => String(url).endsWith('/import')),
+      ).toHaveLength(1);
+      await act(async () =>
+        completeSync({
+          status:
+            outcome === 'rejected' || outcome === 'lease-denied'
+              ? 'idle'
+              : outcome,
+          error: outcome === 'offline' ? 'No connection' : null,
+          cause: null,
+          lastSyncAt: 1,
+          lastResult: {
+            // another tab held the lease: nothing was transferred
+            lease: outcome === 'lease-denied' ? 'unavailable' : 'acquired',
+            resynced: false,
+            rejected: outcome === 'rejected' ? 1 : 0,
+            rejectedRecords: {},
+          },
+        }),
+      );
+      expect(
+        await screen.findByRole('button', { name: 'Imported' }),
+      ).toBeDisabled();
+      if (outcome === 'idle') {
+        expect(
+          screen.queryByText(/It will appear after/),
+        ).not.toBeInTheDocument();
+      } else {
+        expect(
+          screen.getByText(
+            'Shared Spanish: imported. It will appear after the next successful sync.',
+          ),
+        ).toBeInTheDocument();
+      }
+    },
+  );
 
   it.each([
     {

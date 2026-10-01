@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import type { UserProfileRecord } from '@repo/offline-db';
 import { type ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 import { apiErrorMessage } from '@/lib/errors';
-import { checkUsernameAvailable } from '@/lib/profile';
+import { checkUsernameAvailable, type profileWrites } from '@/lib/profile';
 import {
   Card,
   CardContent,
@@ -36,7 +36,7 @@ export function ProfileForm({
   onSave,
 }: {
   profile: UserProfileRecord | null;
-  onSave: (values: ProfileFormValues) => Promise<unknown>;
+  onSave: ReturnType<typeof profileWrites>['update'];
 }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
