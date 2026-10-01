@@ -40,10 +40,7 @@ export function LanguageField({
               onPress={() => onChange(language.value)}
             >
               <Text className={selected ? 'font-semibold text-primary' : ''}>
-                {languageLabel(
-                  language,
-                  t(`languages.${language.locale}`),
-                )}
+                {languageLabel(language, t(`languages.${language.locale}`))}
               </Text>
             </Pressable>
           );

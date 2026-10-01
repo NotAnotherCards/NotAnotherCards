@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { act, render, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { DeckForm } from '../components/deck/DeckForm';
 import { LANGUAGES } from '@repo/schemas';
 import i18n from '@/lib/i18n';

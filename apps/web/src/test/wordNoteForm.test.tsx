@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { act, render, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { WordNoteForm } from '../components/deck/WordNoteForm';
 import { ENGLISH, GERMAN, RUSSIAN, SPANISH } from '@repo/schemas';
 import i18n from '@/lib/i18n';
