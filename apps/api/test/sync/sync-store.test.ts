@@ -269,6 +269,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       avatar_file_id: null,
       native_language_id: null,
       target_language_id: null,
+      target_language_active: false,
       created_at: now,
       updated_at: now,
     };
@@ -307,6 +308,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       avatar_file_id: null,
       native_language_id: null,
       target_language_id: null,
+      target_language_active: false,
       created_at: now,
       updated_at: updatedAt,
     });
@@ -418,6 +420,7 @@ describePostgres('PostgreSQL-backed sync behavior', () => {
       avatar_file_id: null,
       native_language_id: null,
       target_language_id: null,
+      target_language_active: false,
       created_at: now,
       updated_at: updatedAt,
     });

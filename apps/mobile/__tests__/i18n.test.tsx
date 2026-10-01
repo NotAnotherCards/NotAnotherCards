@@ -4,17 +4,38 @@ import i18n from '@/lib/i18n';
 import Storage from 'expo-sqlite/kv-store';
 import { LanguageSwitcher } from '@/components/language-switcher';
 
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageCode: 'en', languageTag: 'en-US' }]),
+}));
+
 // Reset the storage mock before testing
 beforeEach(() => {
   Storage.setItemSync('i18nextLng', '');
 });
 
 describe('Mobile i18n adapter', () => {
-  it('falls back to English when storage is empty', () => {
-    // We already imported i18n, which initialized synchronously, but we can
-    // test the fallback behavior by observing its current state or re-initializing.
-    // Given the singleton nature of i18next in tests, it should default to 'en'.
-    expect(i18n.options.fallbackLng).toContain('en');
+  it('falls back to English when storage is empty and device locale is unsupported', () => {
+    let freshI18n!: typeof i18n;
+    jest.isolateModules(() => {
+      const Loc = require('expo-localization');
+      Loc.getLocales.mockReturnValue([
+        { languageCode: 'it', languageTag: 'it-IT' },
+      ]);
+      freshI18n = require('@/lib/i18n').default;
+    });
+    expect(freshI18n.options.fallbackLng).toContain('en');
+  });
+
+  it('uses supported device locale on first launch if storage is empty', () => {
+    let freshI18n!: typeof i18n;
+    jest.isolateModules(() => {
+      const Loc = require('expo-localization');
+      Loc.getLocales.mockReturnValue([
+        { languageCode: 'es', languageTag: 'es-ES' },
+      ]);
+      freshI18n = require('@/lib/i18n').default;
+    });
+    expect(freshI18n.options.lng).toBe('es');
   });
 });
 

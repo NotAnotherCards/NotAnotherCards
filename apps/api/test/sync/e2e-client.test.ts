@@ -9,7 +9,15 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { Database, Q, randomId, synchronize, appSchema } from '@remelondb/core';
+import {
+  Database,
+  Q,
+  randomId,
+  synchronize,
+  appSchema,
+  table,
+  column,
+} from '@remelondb/core';
 import { NodeSqliteDriver } from '@remelondb/driver-node';
 import { randomBytes } from 'node:crypto';
 import { rmSync } from 'node:fs';
@@ -155,9 +163,21 @@ describePostgres('client-server sync, end to end', () => {
 
   const v5Schema = appSchema({
     version: 5,
-    tables: Object.values(schema.tables).filter(
-      (t: { name: string }) => t.name !== 'user_badges',
-    ),
+    tables: [
+      ...Object.values(schema.tables).filter(
+        (t: { name: string }) =>
+          t.name !== 'user_badges' && t.name !== 'user_profiles',
+      ),
+      table('user_profiles', {
+        username: column.string().optional(),
+        bio: column.string().optional(),
+        avatar_file_id: column.string().optional(),
+        native_language_id: column.string().optional(),
+        target_language_id: column.string().optional(),
+        created_at: column.number(),
+        updated_at: column.number().indexed(),
+      }),
+    ],
   });
 
   const openLegacyClient = (name: string) =>

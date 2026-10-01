@@ -369,7 +369,7 @@ TABLE "public"."user_profiles" RLS DISABLED
 "deleted_at" timestamp with time zone NULL
 "native_language_id" uuid NULL
 "rev" bigint NOT NULL
-"target_language_active" boolean NOT NULL DEFAULT false
+"target_language_active" boolean NULL DEFAULT false
 "target_language_id" uuid NULL
 "updated_at" double precision NOT NULL
 "user_id" text NOT NULL PRIMARY KEY

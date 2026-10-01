@@ -18,12 +18,24 @@ describe('deck visibility offline migration', () => {
         version: 4,
         tables: [
           ...Object.values(schema.tables).filter(
-            (t) => t.name !== 'user_decks' && t.name !== 'user_badges',
+            (t) =>
+              t.name !== 'user_decks' &&
+              t.name !== 'user_badges' &&
+              t.name !== 'user_profiles',
           ),
           table('user_decks', {
             title: column.string(),
             description: column.string().optional(),
             note_type: column.string(),
+            native_language_id: column.string().optional(),
+            target_language_id: column.string().optional(),
+            created_at: column.number(),
+            updated_at: column.number().indexed(),
+          }),
+          table('user_profiles', {
+            username: column.string().optional(),
+            bio: column.string().optional(),
+            avatar_file_id: column.string().optional(),
             native_language_id: column.string().optional(),
             target_language_id: column.string().optional(),
             created_at: column.number(),
