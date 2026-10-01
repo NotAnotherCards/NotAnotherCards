@@ -711,37 +711,54 @@ describe('ReviewSession', () => {
     );
   });
 
-  it('loads a new batch after the current batch is completed', async () => {
-    const onRequestNextBatch = vi.fn(async () => [secondCard]);
-    render(
-      <ReviewSession
-        cards={[card]}
-        deckTitle="German basics"
-        onExit={vi.fn()}
-        onCreateCard={vi.fn().mockResolvedValue(undefined)}
-        onRecordReview={vi.fn().mockResolvedValue({ id: 'review-1' })}
-        onDeleteNote={vi.fn().mockResolvedValue(undefined)}
-        onRequestNextBatch={onRequestNextBatch}
-        reviewMode="extended"
-      />,
-    );
+  it.each(['available', 'empty', 'failed'] as const)(
+    'advances after the saved final answer when the next batch is %s',
+    async (outcome) => {
+      const onRequestNextBatch = vi.fn(async () => {
+        if (outcome === 'failed') throw new Error('Next batch unavailable');
+        return outcome === 'available' ? [secondCard] : [];
+      });
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      render(
+        <ReviewSession
+          cards={[card]}
+          deckTitle="German basics"
+          onExit={vi.fn()}
+          onCreateCard={vi.fn().mockResolvedValue(undefined)}
+          onRecordReview={onRecordReview}
+          onDeleteNote={vi.fn().mockResolvedValue(undefined)}
+          onRequestNextBatch={onRequestNextBatch}
+          reviewMode="extended"
+        />,
+      );
 
-    revealCard();
-    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    finishCardExit();
-    await act(async () => {
-      await Promise.resolve();
-    });
+      revealCard();
+      fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(onRecordReview).toHaveBeenCalledExactlyOnceWith(card.id, 3);
+      expect(onRequestNextBatch).not.toHaveBeenCalled();
 
-    expect(onRequestNextBatch).toHaveBeenCalledOnce();
-    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
-      'data-card-id',
-      'card-2',
-    );
-  });
+      finishCardExit();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRequestNextBatch).toHaveBeenCalledOnce();
+      expect(onRecordReview).toHaveBeenCalledTimes(1);
+      if (outcome === 'available') {
+        expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+          'data-card-id',
+          'card-2',
+        );
+      } else {
+        expect(
+          screen.getByRole('heading', { name: 'Review complete' }),
+        ).toBeInTheDocument();
+      }
+    },
+  );
 
   it('shows the matching feedback while dragging the answer side', () => {
     renderSession();
