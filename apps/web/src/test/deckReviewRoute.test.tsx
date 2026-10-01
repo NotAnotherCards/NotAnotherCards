@@ -45,11 +45,10 @@ vi.mock('@/lib/review-preferences', () => ({
 vi.mock('@/components/review/ReviewSession', () => ({
   ReviewSession: (props: {
     cards: Card[];
-    onComplete?: () => void;
     onExit: () => void;
     onRequestNextBatch?: () => Promise<Card[]>;
   }) => {
-    const { cards, onComplete, onExit, onRequestNextBatch } = props;
+    const { cards, onExit, onRequestNextBatch } = props;
 
     routeTestState.requestNextBatch = onRequestNextBatch ?? null;
     routeTestState.reviewSession(cards);
@@ -58,7 +57,6 @@ vi.mock('@/components/review/ReviewSession', () => ({
     return (
       <div data-testid="review-session">
         <button onClick={onExit}>Exit review</button>
-        <button onClick={onComplete}>Complete review</button>
       </div>
     );
   },
@@ -213,18 +211,6 @@ describe('DeckReviewRoute', () => {
 
     render(<DeckReviewPage deckId={deck.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
-
-    expect(clearLastReviewDeckId).not.toHaveBeenCalled();
-  });
-
-  it('keeps the saved deck when the review session completes', () => {
-    const dueCard = makeCard('due-card', Date.now() - 1);
-    routeTestState.store = makeStore({
-      getCardsForDeck: vi.fn(() => [dueCard]),
-    });
-
-    render(<DeckReviewPage deckId={deck.id} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Complete review' }));
 
     expect(clearLastReviewDeckId).not.toHaveBeenCalled();
   });
