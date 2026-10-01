@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { AuthCard } from '@/components/auth/auth-card';
@@ -13,12 +13,16 @@ export default function Login() {
   const { data: session } = authClient.useSession();
   const challenge = useTwoFactorChallengeState();
   const deepLinkPending = useTwoFactorDeepLinkPending();
+  const isFocused = useIsFocused();
 
   // Navigate from session state, not from the signIn response: the session
   // store updates a moment after the request resolves, and the dashboard
-  // bounces to /login if it mounts before then.
+  // bounces to /login if it mounts before then. Only while this screen is
+  // the one showing: left under the dashboard (Log in → Sign up → the
+  // dashboard), it would otherwise replace the live screen with a fresh
+  // dashboard on every later session change, such as enabling 2FA.
   useEffect(() => {
-    if (!challenge.hydrated) return;
+    if (!isFocused || !challenge.hydrated) return;
     if (deepLinkPending || challenge.pending) {
       router.replace('/two-factor');
     } else if (session) {
@@ -26,7 +30,7 @@ export default function Login() {
         session.user.onBoardingComplete ? '/dashboard' : '/onboarding',
       );
     }
-  }, [challenge, deepLinkPending, session, router]);
+  }, [challenge, deepLinkPending, isFocused, session, router]);
 
   return (
     <AuthCard
