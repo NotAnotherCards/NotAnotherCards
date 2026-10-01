@@ -72,6 +72,8 @@ export function CardEditor({
       return (
         <WordNoteForm
           title="New word"
+          deckId={deck.id}
+          nativeLanguageId={nativeLanguageId}
           busy={pending}
           targetLanguageId={targetLanguageId}
           error={writeError}
@@ -166,6 +168,8 @@ export function CardEditor({
         {...deleteHeader(fields.word)}
         busy={pending}
         initialValues={fields}
+        deckId={deck.id}
+        nativeLanguageId={fields.native_language_id}
         targetLanguageId={fields.target_language_id}
         error={writeError}
         onSubmit={updateWord}

@@ -365,3 +365,6 @@ describe('CardList', () => {
     expect(r.queryByText('Database not initialized')).toBeNull();
   });
 });
+jest.mock('@/lib/api-client', () => ({
+  apiClient: { ai: { generateWordNote: jest.fn() } },
+}));

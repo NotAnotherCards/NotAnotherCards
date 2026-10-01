@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pressable, View } from 'react-native';
@@ -9,6 +9,10 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { FormField } from './ui/form-field';
 import { Text } from './ui/text';
+import { SparklesIcon } from './ui/icon';
+import { apiClient } from '@/lib/api-client';
+import { useConnected } from '@/lib/connectivity';
+import { aiErrorMessage } from '@/lib/ai-error';
 
 const editableFields = WordNoteEditableFieldsV1;
 const blank = z.literal('');
@@ -35,6 +39,8 @@ const OPTIONAL_FIELDS = [
 export function WordNoteForm({
   title,
   initialValues,
+  deckId,
+  nativeLanguageId,
   targetLanguageId,
   error,
   onSubmit,
@@ -44,6 +50,8 @@ export function WordNoteForm({
 }: {
   title: string;
   initialValues?: Partial<WordFormValues>;
+  deckId?: string;
+  nativeLanguageId?: string | null;
   targetLanguageId?: string | null;
   error?: string | null;
   onSubmit: (values: WordFormValues) => Promise<void>;
@@ -52,20 +60,87 @@ export function WordNoteForm({
   // Another write of the editor is running, e.g. its delete.
   busy?: boolean;
 }) {
-  const { control, handleSubmit, formState } = useForm<WordFormFields>({
-    resolver: zodResolver(wordFormSchema),
-    defaultValues: {
-      word: initialValues?.word ?? '',
-      translation: initialValues?.translation ?? '',
-      example: initialValues?.example ?? '',
-      example_translation: initialValues?.example_translation ?? '',
-      part_of_speech: initialValues?.part_of_speech ?? '',
-      gender: initialValues?.gender ?? '',
-      pronunciation: initialValues?.pronunciation ?? '',
-      notes: initialValues?.notes ?? '',
-    },
-  });
+  const { control, handleSubmit, formState, getValues, setValue, watch } =
+    useForm<WordFormFields>({
+      resolver: zodResolver(wordFormSchema),
+      defaultValues: {
+        word: initialValues?.word ?? '',
+        translation: initialValues?.translation ?? '',
+        example: initialValues?.example ?? '',
+        example_translation: initialValues?.example_translation ?? '',
+        part_of_speech: initialValues?.part_of_speech ?? '',
+        gender: initialValues?.gender ?? '',
+        pronunciation: initialValues?.pronunciation ?? '',
+        notes: initialValues?.notes ?? '',
+      },
+    });
   const genders = gendersFor(targetLanguageId);
+  const connected = useConnected();
+  const word = watch('word');
+  const request = useRef<AbortController | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  useEffect(() => {
+    setGenerating(false);
+    setGenerationError(null);
+    return () => {
+      request.current?.abort();
+      request.current = null;
+    };
+  }, [deckId, nativeLanguageId, targetLanguageId]);
+
+  const fill = async () => {
+    if (
+      request.current ||
+      busy ||
+      formState.isSubmitting ||
+      !connected ||
+      !word.trim() ||
+      !deckId ||
+      !nativeLanguageId ||
+      !targetLanguageId
+    )
+      return;
+    const controller = new AbortController();
+    request.current = controller;
+    setGenerating(true);
+    setGenerationError(null);
+    try {
+      const fields = await apiClient.ai.generateWordNote(
+        {
+          deckId,
+          word: word.trim(),
+          direction: 'target',
+          nativeLanguageId,
+          targetLanguageId,
+        },
+        { signal: controller.signal },
+      );
+      if (controller.signal.aborted) return;
+      if (getValues('word').trim() !== word.trim()) {
+        setGenerationError('The word changed. Fill in again for the new word.');
+        return;
+      }
+      for (const name of [
+        'translation',
+        'gender',
+        ...OPTIONAL_FIELDS.map(([name]) => name),
+      ] as const) {
+        if (!getValues(name)?.trim() && fields[name])
+          setValue(name, fields[name], {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) setGenerationError(aiErrorMessage(error));
+    } finally {
+      if (request.current === controller) {
+        request.current = null;
+        setGenerating(false);
+      }
+    }
+  };
 
   const submit = async (values: WordFormFields) => {
     const cleaned: WordFormValues = {
@@ -88,13 +163,48 @@ export function WordNoteForm({
         {headerAction}
       </CardHeader>
       <CardContent className="gap-4">
-        <FormField
-          control={control}
-          name="word"
-          label="Word"
-          placeholder="The word you are learning"
-          autoFocus
-        />
+        <View className="flex-row items-end gap-2">
+          <View className="flex-1">
+            <FormField
+              control={control}
+              name="word"
+              label="Word"
+              placeholder="The word you are learning"
+              autoFocus
+            />
+          </View>
+          <Button
+            className="h-12 sm:h-12"
+            accessibilityLabel="Fill in with AI"
+            disabled={
+              !word.trim() ||
+              !connected ||
+              generating ||
+              busy ||
+              formState.isSubmitting ||
+              !deckId ||
+              !nativeLanguageId ||
+              !targetLanguageId
+            }
+            onPress={() => void fill()}
+          >
+            <SparklesIcon size={18} className="text-primary-foreground" />
+            <Text>Fill in</Text>
+          </Button>
+        </View>
+        {!connected && (
+          <Text className="text-muted-foreground">
+            Fill in needs a connection.
+          </Text>
+        )}
+        {generating && (
+          <Text accessibilityLiveRegion="polite">Generating…</Text>
+        )}
+        {generationError && (
+          <Text accessibilityLiveRegion="polite" className="text-destructive">
+            {generationError}
+          </Text>
+        )}
         <FormField
           control={control}
           name="translation"
@@ -153,7 +263,7 @@ export function WordNoteForm({
           <Button
             className="flex-1"
             loading={formState.isSubmitting}
-            disabled={busy}
+            disabled={busy || generating}
             onPress={handleSubmit(submit)}
           >
             <Text>Save</Text>

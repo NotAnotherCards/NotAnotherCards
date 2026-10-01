@@ -29,7 +29,9 @@ export function nativeSyncTriggers(fire: () => void): () => void {
   // not overwrite a newer connectivity event.
   void Network.getNetworkStateAsync()
     .then((state) => {
-      if (!reported) report(state);
+      // start() already runs sync. Seed UI availability only; the first
+      // listener report still counts as a trigger, as before.
+      if (active && !reported) reportConnectivity(state.isConnected === true);
     })
     .catch(() => {});
   const appState = AppState.addEventListener('change', (state) => {
