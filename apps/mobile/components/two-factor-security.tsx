@@ -189,7 +189,9 @@ function Enrollment({
     try {
       const response = await authClient.twoFactor.verifyTotp(
         { code: normalizedCode },
-        // onVerified lifts the backup codes first, then explicitly refetches.
+        // The parent lifts the backup codes before refreshing the session.
+        // Refreshing here can remount the dashboard and hide the one-time
+        // codes before the user acknowledges them.
         { disableSignal: true },
       );
       if (response.error) {
@@ -322,6 +324,8 @@ export function TwoFactorSecurity() {
   const [backupCodesTitle, setBackupCodesTitle] = useState(
     'Save your backup codes',
   );
+  const [refreshSessionAfterCodes, setRefreshSessionAfterCodes] =
+    useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingCredential, setIsCreatingCredential] = useState(false);
@@ -356,6 +360,13 @@ export function TwoFactorSecurity() {
     setPassword('');
     setError(null);
     setBackupCodes(null);
+    setRefreshSessionAfterCodes(false);
+  };
+
+  const acknowledgeBackupCodes = () => {
+    const shouldRefreshSession = refreshSessionAfterCodes;
+    resetAction();
+    if (shouldRefreshSession) void refetch();
   };
 
   const startPasswordCreation = async () => {
@@ -407,6 +418,7 @@ export function TwoFactorSecurity() {
         }
         setBackupCodes([...response.data.backupCodes]);
         setBackupCodesTitle('Your new backup codes');
+        setRefreshSessionAfterCodes(false);
         setPassword('');
       } else if (action === 'disable') {
         const response = await authClient.twoFactor.disable(
@@ -491,12 +503,12 @@ export function TwoFactorSecurity() {
         {!isEnabled && showEnrollment ? (
           <Enrollment
             onCancel={() => setShowEnrollment(false)}
-            onVerified={async (codes) => {
+            onVerified={(codes) => {
               setBackupCodes(codes);
               setBackupCodesTitle('Save your backup codes');
+              setRefreshSessionAfterCodes(true);
               setShowEnrollment(false);
               setEnabledOverride(true);
-              await refetch();
             }}
           />
         ) : null}
@@ -515,7 +527,7 @@ export function TwoFactorSecurity() {
           <BackupCodes
             codes={backupCodes}
             title={backupCodesTitle}
-            onDone={resetAction}
+            onDone={acknowledgeBackupCodes}
           />
         ) : null}
 

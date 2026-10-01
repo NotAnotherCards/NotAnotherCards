@@ -382,8 +382,12 @@ describe('two-factor security settings', () => {
       { code: '123456' },
       { disableSignal: true },
     );
-    expect(mockRefetch).toHaveBeenCalledTimes(1);
+    expect(mockRefetch).not.toHaveBeenCalled();
     expect(mockPreventScreenCapture).toHaveBeenCalled();
+
+    fireEvent.press(view.getByText('I saved my codes'));
+    await waitFor(() => expect(mockRefetch).toHaveBeenCalledTimes(1));
+    expect(view.queryByText('recovery-one')).toBeNull();
   });
 
   it('regenerates backup codes and disables two-factor with a password', async () => {
