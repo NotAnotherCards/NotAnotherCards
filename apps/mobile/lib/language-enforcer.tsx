@@ -1,19 +1,19 @@
 import { useDatabase, useQuery } from '@remelondb/core/react';
-import { getUserProfileQuery, type UserProfileRecord } from '@repo/offline-db';
+import { getUserProfileQuery } from '@repo/offline-db';
+import type { UserProfileRecord } from '@repo/offline-db';
 import { languageFor } from '@repo/schemas';
 import Storage from 'expo-sqlite/kv-store';
-import { useSessionDatabase } from './database-provider';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { DatabaseManager } from '@remelondb/core';
 
 /**
  * Keeps the mobile app's UI language synchronized with the user's profile preferences.
  * Watches the local offline database for changes to the target/native language selection,
  * applies them to i18next, and caches the result for future offline boots.
  */
-function LanguageEnforcer() {
-  const manager = useSessionDatabase().manager;
-  const db = useDatabase(manager!);
+function LanguageEnforcer({ manager }: { manager: DatabaseManager }) {
+  const db = useDatabase(manager);
   const profiles = useQuery<UserProfileRecord>(db && getUserProfileQuery(db));
   const { i18n } = useTranslation();
 

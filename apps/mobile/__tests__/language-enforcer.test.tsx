@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Storage from 'expo-sqlite/kv-store';
 import LanguageEnforcer from '../lib/language-enforcer';
 import { useSessionDatabase } from '../lib/database-provider';
+import type { DatabaseManager } from '@remelondb/core';
 
 jest.mock('../lib/database-provider', () => ({
   useSessionDatabase: jest.fn(),
@@ -53,7 +54,7 @@ describe('LanguageEnforcer', () => {
       ],
     });
 
-    render(<LanguageEnforcer />);
+    render(<LanguageEnforcer manager={{} as unknown as DatabaseManager} />);
 
     expect(mockChangeLanguage).toHaveBeenCalledWith('es');
     expect(Storage.setItemSync).toHaveBeenCalledWith('i18nextLng', 'es');
@@ -77,7 +78,7 @@ describe('LanguageEnforcer', () => {
       ],
     });
 
-    render(<LanguageEnforcer />);
+    render(<LanguageEnforcer manager={{} as unknown as DatabaseManager} />);
 
     expect(mockChangeLanguage).toHaveBeenCalledWith('en');
     expect(Storage.setItemSync).toHaveBeenCalledWith('i18nextLng', 'en');
@@ -101,7 +102,7 @@ describe('LanguageEnforcer', () => {
       ],
     });
 
-    render(<LanguageEnforcer />);
+    render(<LanguageEnforcer manager={{} as unknown as DatabaseManager} />);
 
     expect(mockChangeLanguage).not.toHaveBeenCalled();
     expect(Storage.setItemSync).not.toHaveBeenCalled();

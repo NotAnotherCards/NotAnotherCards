@@ -76,7 +76,7 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   // reach the manager through useSessionDatabase, which is null-safe.
   const content = manager ? (
     <DatabaseProvider manager={manager}>
-      <LanguageEnforcer />
+      <LanguageEnforcer manager={manager} />
       {children}
     </DatabaseProvider>
   ) : (
