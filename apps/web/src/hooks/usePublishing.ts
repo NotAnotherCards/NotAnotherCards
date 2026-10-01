@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import type { Database, SyncControllerState } from '@remelondb/core';
 import { REJECTION_EXPLANATION, rejectionsConcernDeck } from '@repo/offline-db';
-import {
-  moderationRefusalSchema,
-  apiErrorBodySchema,
-  publishResponseSchema,
-  type ModerationWarning,
-} from '@repo/schemas';
+import { type ModerationWarning } from '@repo/schemas';
+import { apiClient } from '@/lib/api-client';
 
 export interface FlaggedCard {
   cardId: string;
@@ -86,29 +82,15 @@ export function usePublishing() {
     let completed = false;
     try {
       await syncForPublishing(deckId, onSync, db);
-      const res = await fetch(
-        `/api/decks/${encodeURIComponent(deckId)}/publish`,
-        {
-          method: 'POST',
-        },
-      );
-      if (!res.ok) {
-        const json: unknown = await res.json().catch(() => null);
-        if (res.status === 422) {
-          const body = moderationRefusalSchema.safeParse(json);
-          if (body.success) {
-            setError({
-              action: 'publish',
-              reason: body.data.reason || 'Moderation failed',
-              flagged: body.data.flagged || [],
-            });
-            return false;
-          }
-        }
-        const errorBody = apiErrorBodySchema.parse(json);
-        throw new Error(errorBody.message || 'Failed to publish deck');
+      const published = await apiClient.publishing.publish(deckId);
+      if (!published.published) {
+        setError({
+          action: 'publish',
+          reason: published.refusal.reason || 'Moderation failed',
+          flagged: published.refusal.flagged,
+        });
+        return false;
       }
-      const published = publishResponseSchema.parse(await res.json());
       setWarnings(published.warnings);
       completed = true;
       setRemoteVisibility({ deckId, visibility: 'public' });
@@ -137,17 +119,7 @@ export function usePublishing() {
     let completed = false;
     try {
       await syncForPublishing(deckId, onSync, db);
-      const res = await fetch(
-        `/api/decks/${encodeURIComponent(deckId)}/unpublish`,
-        {
-          method: 'POST',
-        },
-      );
-      if (!res.ok) {
-        const json: unknown = await res.json().catch(() => null);
-        const errorBody = apiErrorBodySchema.parse(json);
-        throw new Error(errorBody.message || 'Failed to unpublish deck');
-      }
+      await apiClient.publishing.unpublish(deckId);
       completed = true;
       setRemoteVisibility({ deckId, visibility: 'private' });
       setWarnings([]);

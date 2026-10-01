@@ -209,8 +209,8 @@ sudo certbot delete --cert-name notanothercards.com
 
 The full runbook — DNS and IPv6 detail, troubleshooting, and why the rollback
 needs the deploy commit reverted — is in
-[`infra/vps/README.md`](../infra/vps/README.md), section *Landing page at the
-apex domain*.
+[`infra/vps/README.md`](../infra/vps/README.md), section _Landing page at the
+apex domain_.
 
 ### Password-reset email delivery
 
