@@ -103,11 +103,12 @@ describe('DeckList', () => {
     );
   });
 
-  it('starts a deck review from the list, unless nothing is due', () => {
+  it('starts a deck review from the list, whatever is due', () => {
+    // nothing due: the review screen offers to activate more
     const { getByLabelText } = render(<DeckList />);
 
-    const empty = getByLabelText('Start review of Yoga');
-    expect(empty.props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(getByLabelText('Start review of Yoga'));
+    expect(mockPush).toHaveBeenCalledWith('/review/d2');
 
     fireEvent.press(getByLabelText('Start review of Spanish'));
     expect(mockPush).toHaveBeenCalledWith('/review/d1');
