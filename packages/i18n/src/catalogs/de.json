@@ -472,6 +472,11 @@
     }
   },
   "deck": {
+    "type": {
+      "basic": "Kartenstapel",
+      "word": "Wortstapel",
+      "unknown": "Unbekannter Stapeltyp: {{noteType}}"
+    },
     "list": {
       "my_library": "Meine Bibliothek",
       "add_deck": "Stapel hinzufügen",

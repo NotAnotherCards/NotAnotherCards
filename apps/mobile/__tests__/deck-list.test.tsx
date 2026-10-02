@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { DeckList } from '@/components/deck-list';
+import i18n from '@/lib/i18n';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -101,6 +102,24 @@ describe('DeckList', () => {
     expect(getByTestId('deck-due-d2').props.className).toContain(
       'text-muted-foreground',
     );
+  });
+
+  it('localizes the word deck accessibility label', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+    const { getByLabelText, rerender } = render(<DeckList />);
+    expect(getByLabelText('🇩🇪 Deutsch → 🇪🇸 Spanisch')).toBeTruthy();
+
+    await act(async () => {
+      await i18n.changeLanguage('ru');
+    });
+    rerender(<DeckList />);
+    expect(getByLabelText('🇩🇪 Немецкий → 🇪🇸 Испанский')).toBeTruthy();
+
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
   });
 
   it('starts a deck review from the list, whatever is due', () => {

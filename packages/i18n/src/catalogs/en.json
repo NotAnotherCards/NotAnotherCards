@@ -472,6 +472,11 @@
     }
   },
   "deck": {
+    "type": {
+      "basic": "Card deck",
+      "word": "Word deck",
+      "unknown": "Unknown deck type: {{noteType}}"
+    },
     "list": {
       "my_library": "My Library",
       "add_deck": "Add Deck",
