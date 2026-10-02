@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { CommunityDecks } from './community-decks';
 import { DeckList } from './deck-list';
@@ -16,7 +17,12 @@ type Section = (typeof SECTIONS)[number]['value'];
 // The library tab: my decks, or the community's, one list at a time. The
 // plus for a new deck shares the section row and shows only for my decks.
 export function Library() {
-  const [section, setSection] = useState<Section>('mine');
+  const router = useRouter();
+  const { section: requestedSection } = useLocalSearchParams<{
+    section?: string;
+  }>();
+  const section: Section =
+    requestedSection === 'community' ? 'community' : 'mine';
   const [createRequestKey, setCreateRequestKey] = useState(0);
   return (
     <View className="gap-4">
@@ -31,7 +37,7 @@ export function Library() {
             // would reopen the form when it comes back.
             onChange={(next) => {
               setCreateRequestKey(0);
-              setSection(next);
+              router.setParams({ section: next });
             }}
           />
         </View>

@@ -1,5 +1,7 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
+import { renderRouter } from 'expo-router/testing-library';
+import { router, Stack } from 'expo-router';
 import { Library } from '@/components/library';
 
 jest.mock('../components/deck-list', () => {
@@ -17,7 +19,10 @@ jest.mock('../components/community-decks', () => {
 
 describe('Library', () => {
   it('opens on my decks and switches to the community decks', () => {
-    const result = render(<Library />);
+    const result = renderRouter(
+      { dashboard: Library },
+      { initialUrl: '/dashboard' },
+    );
 
     expect(result.getByText('my decks list 0')).toBeTruthy();
     expect(result.queryByText('community list')).toBeNull();
@@ -34,5 +39,37 @@ describe('Library', () => {
     // Back on my decks, the earlier request is forgotten.
     fireEvent.press(result.getByRole('tab', { name: 'My decks' }));
     expect(result.getByText('my decks list 0')).toBeTruthy();
+  });
+
+  it('returns to My decks without remounting the dashboard after import', async () => {
+    let mounts = 0;
+    function Dashboard() {
+      React.useEffect(() => {
+        mounts += 1;
+      }, []);
+      return <Library />;
+    }
+    const result = renderRouter(
+      {
+        _layout: () => <Stack />,
+        dashboard: Dashboard,
+        'community/[id]': () => null,
+      },
+      { initialUrl: '/dashboard' },
+    );
+    for (const id of ['d1', 'd2']) {
+      fireEvent.press(result.getByRole('tab', { name: 'Community' }));
+      expect(result.getByText('community list')).toBeTruthy();
+      await act(async () => router.push(`/community/${id}`));
+      await act(async () =>
+        router.dismissTo({
+          pathname: '/dashboard',
+          params: { tab: 'library', section: 'mine' },
+        }),
+      );
+      expect(result.getByText('my decks list 0')).toBeTruthy();
+      expect(result.queryByText('community list')).toBeNull();
+      expect(mounts).toBe(1);
+    }
   });
 });

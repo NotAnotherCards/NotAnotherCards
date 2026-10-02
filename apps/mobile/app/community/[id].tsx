@@ -67,7 +67,10 @@ export default function CommunityDeckScreen() {
       );
       return;
     }
-    router.back();
+    router.dismissTo({
+      pathname: '/dashboard',
+      params: { tab: 'library', section: 'mine' },
+    });
   };
 
   const run = async (

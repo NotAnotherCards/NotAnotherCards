@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import CommunityDeckScreen from '@/app/community/[id]';
 
 const mockBack = jest.fn();
+const mockDismissTo = jest.fn();
 const mockPreview = jest.fn();
 const mockImport = jest.fn();
 const mockReport = jest.fn();
@@ -20,7 +21,11 @@ const IDLE = {
 };
 const mockSyncNow = jest.fn((): Promise<unknown> => Promise.resolve(IDLE));
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: mockBack, push: jest.fn() }),
+  useRouter: () => ({
+    back: mockBack,
+    dismissTo: mockDismissTo,
+    push: jest.fn(),
+  }),
   useLocalSearchParams: () => ({ id: 'd1' }),
   Stack: { Screen: () => null },
 }));
@@ -75,14 +80,19 @@ describe('CommunityDeckScreen', () => {
     mockReport.mockResolvedValue(undefined);
   });
 
-  it('shows the cards, imports, syncs and goes back', async () => {
+  it('shows the cards, imports, syncs and returns to My decks', async () => {
     const result = render(<CommunityDeckScreen />);
 
     expect(await result.findByText('hola')).toBeTruthy();
     expect(result.getByText('hello')).toBeTruthy();
     fireEvent.press(result.getByText('Import'));
 
-    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(mockDismissTo).toHaveBeenCalledWith({
+        pathname: '/dashboard',
+        params: { tab: 'library', section: 'mine' },
+      }),
+    );
     expect(mockImport).toHaveBeenCalledWith('d1');
     expect(mockSyncNow).toHaveBeenCalledTimes(1);
   });
@@ -97,10 +107,15 @@ describe('CommunityDeckScreen', () => {
     fireEvent.press(result.getByText('Import'));
 
     expect(await result.findByText(/after the next sync/)).toBeTruthy();
-    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
     fireEvent.press(result.getByText('Retry sync'));
 
-    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(mockDismissTo).toHaveBeenCalledWith({
+        pathname: '/dashboard',
+        params: { tab: 'library', section: 'mine' },
+      }),
+    );
     expect(mockImport).toHaveBeenCalledTimes(1);
     expect(mockSyncNow).toHaveBeenCalledTimes(2);
   });
@@ -114,7 +129,7 @@ describe('CommunityDeckScreen', () => {
 
     expect(await result.findByText(/Sync is unavailable/)).toBeTruthy();
     expect(result.getByText('Retry sync')).toBeTruthy();
-    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
     expect(mockImport).toHaveBeenCalledTimes(1);
   });
 
@@ -132,7 +147,7 @@ describe('CommunityDeckScreen', () => {
     finish(IDLE);
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
   });
 
   it('reports with a reason, asked in place', async () => {
@@ -168,6 +183,6 @@ describe('CommunityDeckScreen', () => {
 
     expect(await result.findByText('Deck not found')).toBeTruthy();
     expect(result.getByText('Import')).toBeTruthy();
-    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
   });
 });
