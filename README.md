@@ -10,7 +10,7 @@ The project provides a web application, a mobile application, and an API. A lear
 
 Key features include:
 
-- user accounts, including Google and Facebook sign-in;
+- user accounts, including Google sign-in;
 - deck, note, card, and review management;
 - offline-first learning data synchronisation between web, mobile, and API;
 - AI-assisted card generation and content moderation;
@@ -87,7 +87,7 @@ In production, the landing port is bound only to `127.0.0.1:5174` on the VPS. It
 
    Without migrations, the database is empty and authentication requests fail.
 
-6. Optionally configure Google and Facebook sign-in by following the [OAuth setup guide](docs/oauth-setup.md).
+6. Optionally configure Google sign-in by following the [OAuth setup guide](docs/oauth-setup.md).
 7. Start the monorepo:
 
    ```bash
@@ -119,7 +119,7 @@ In production, the landing port is bound only to `127.0.0.1:5174` on the VPS. It
 | --- | --- | --- |
 | ChatGPT and Codex | Code implementation, interface design, learning the JavaScript/TypeScript stack, and technical reference research. AI output was reviewed and adapted before use. | @amoiseik |
 | To be completed | To be completed | @dgomez-a |
-| To be completed | To be completed | @samcasti |
+| ChatGPT and Gemini | Code review, technical research and debugging. Output was reviewed and adapted before use. | @samcasti |
 | opencode (free models) | API endpoints, continuous integration, VPS deployment, Prometheus and Grafana monitoring, and the two-factor authentication flow, using the Grafana, Prometheus, and Better Auth documentation as reference. AI output was reviewed and adapted before use. | @tpandya |
 | To be completed | To be completed | @pschneid |
 
@@ -165,23 +165,23 @@ For the complete table descriptions and relationship diagram, see [Database sche
 
 | Feature | What it does | Contributors |
 | --- | --- | --- |
-| Account management and social sign-in | Lets users register, sign in, keep a session, recover access, and use Google or Facebook as a sign-in provider. | @amoiseik; @tpandya; other contributors to be completed by the team. |
+| Account management and social sign-in | Lets users register, sign in, keep a session, recover access, and use Google as a sign-in provider. | @amoiseik; @tpandya; @samcasti; other contributors to be completed by the team. |
 | Two-factor authentication | Lets users protect an account with time-based one-time passwords and backup codes. | @tpandya; other contributors to be completed by the team. |
-| Password management and recovery | Lets users reset a forgotten password by email and change their password while signed in. | To be completed by the team. |
-| User profile and preferences | Lets users manage their profile, language, theme, and review preferences. | To be completed by the team. |
-| Theme preferences | Lets users choose and retain a light or dark application theme. | To be completed by the team. |
-| Deck, note, and card management | Lets a learner create, edit, organise, and delete decks, notes, and cards. | To be completed by the team. |
+| Password management and recovery | Lets users reset a forgotten password by email and change their password while signed in. | @samcasti; other contributors to be completed by the team. |
+| User profile and preferences | Lets users manage their profile, language, theme, and review preferences. | @samcasti; other contributors to be completed by the team. |
+| Theme preferences | Lets users choose and retain a light or dark application theme. | @samcasti; other contributors to be completed by the team. |
+| Deck, note, and card management | Lets a learner create, edit, organise, and delete decks, notes, and cards. | @samcasti; other contributors to be completed by the team. |
 | Starter sample decks | Provides ready-to-use learning decks that help a new learner begin studying. | To be completed by the team. |
-| Word-note deck views | Displays word notes and their details in deck views, including compact counters, filtering, actions, and responsive layouts. | @amoiseik |
+| Word-note deck views | Displays word notes and their details in deck views, including compact counters, filtering, actions, and responsive layouts. | @amoiseik; @samcasti |
 | Deck review session and answer modes | Lets a learner start a deck-scoped review session, reveal cards, answer with ratings, use keyboard controls, and move through a review batch. | @amoiseik |
-| Offline-first learning data | Keeps each user's learning data locally available on web and mobile, then synchronises accepted changes with the API and PostgreSQL. | To be completed by the team. |
-| Community deck sharing | Lets owners publish decks, lets learners import personal copies, and preserves ownership of an imported copy. | To be completed by the team. |
-| AI card generation | Creates card drafts from user input through queued generation jobs and a streamed web playground. | @tpandya; other contributors to be completed by the team. |
+| Offline-first learning data | Keeps each user's learning data locally available on web and mobile, then synchronises accepted changes with the API and PostgreSQL. | @samcasti; other contributors to be completed by the team. |
+| Community deck sharing | Lets owners publish decks, lets learners import personal copies, and preserves ownership of an imported copy. | @samcasti; other contributors to be completed by the team. |
+| AI card generation | Creates card drafts from user input through queued generation jobs and a streamed web playground. | @tpandya; @samcasti; other contributors to be completed by the team. |
 | AI content moderation | Checks published content, refuses unsafe content, supports reports and independent re-checks, and explains moderation decisions to owners. | To be completed by the team. |
-| Import and export | Exports learning data as JSON or CSV and imports validated data as one all-or-nothing operation. | To be completed by the team. |
+| Import and export | Exports learning data as JSON or CSV and imports validated data as one all-or-nothing operation. | @samcasti |
 | Learning analytics | Shows due cards, dictionary size, review activity, streaks, forecasts, and card maturity, including while offline. | To be completed by the team. |
-| Gamification | Provides badges, global leaderboards, and daily challenges with persistent progress and feedback. | To be completed by the team. |
-| Multiple languages | Provides a language switcher and translated user-facing text. | To be completed by the team. |
+| Gamification | Provides badges, global leaderboards, and daily challenges with persistent progress and feedback. |@samcasti; other contributors to be completed by the team. |
+| Multiple languages | Provides a language switcher and translated user-facing text. | @samcasti; other contributors to be completed by the team. |
 | Native mobile application | Provides Android and iOS learning flows with local data, synchronisation, deck/card management, and review. | To be completed by the team. |
 | Standalone landing application | Provides a separate public marketing application, packaged with the project services and branded with the project identity. | @amoiseik |
 | Privacy Policy and Terms of Service | Makes the required public legal information available from the landing application. | @amoiseik |
@@ -195,17 +195,17 @@ The project claims the 13 modules below: four Major modules worth 2 points each 
 
 | Module | Points | Implementation and justification | Contributors |
 | --- | ---: | --- | --- |
-| Web: framework for frontend and backend | Major, 2 | React implements the web client and NestJS implements the API. | @amoiseik, team |
-| Web: ORM for the database | Minor, 1 | Drizzle ORM defines the PostgreSQL schema and provides typed database queries. | @tpandya, team |
-| Web: custom design system | Minor, 1 | The web application has reusable UI components, a shared palette, typography, icons, and responsive layouts. | @amoiseik, team |
-| User Management: OAuth 2.0 | Minor, 1 | Google and Facebook social sign-in are implemented through Better Auth and tested through the API. | @amoiseik, team |
-| Artificial Intelligence: complete LLM system interface | Major, 2 | Card-generation jobs accept user input, stream results in the web playground, record usage, and enforce quotas and rate limits. | @tpandya, team |
-| Data and Analytics: data export and import | Minor, 1 | The application exports JSON and CSV, validates imports with Zod, and applies an import in one all-or-nothing database batch. | To be completed by the team. |
-| Gaming and user experience: gamification | Minor, 1 | The system provides badges, global leaderboards, and daily challenges, with persistent storage, visual feedback, and clear progression rules. | To be completed by the team. |
+| Web: framework for frontend and backend | Major, 2 | React implements the web client and NestJS implements the API. | @amoiseik, @samcasti, team |
+| Web: ORM for the database | Minor, 1 | Drizzle ORM defines the PostgreSQL schema and provides typed database queries. | @tpandya, @samcasti, team |
+| Web: custom design system | Minor, 1 | The web application has reusable UI components, a shared palette, typography, icons, and responsive layouts. | @amoiseik, @samcasti, team |
+| User Management: OAuth 2.0 | Minor, 1 | Google social sign-in are implemented through Better Auth and tested through the API. | @amoiseik, @samcasti, team |
+| Artificial Intelligence: complete LLM system interface | Major, 2 | Card-generation jobs accept user input, stream results in the web playground, record usage, and enforce quotas and rate limits. | @tpandya, @samcasti, team |
+| Data and Analytics: data export and import | Minor, 1 | The application exports JSON and CSV, validates imports with Zod, and applies an import in one all-or-nothing database batch. | @samcasti |
+| Gaming and user experience: gamification | Minor, 1 | The system provides badges, global leaderboards, and daily challenges, with persistent storage, visual feedback, and clear progression rules. | @samcasti |
 | Modules of choice: mobile app | Major, 2 | The native Expo and React Native application extends learning to Android and iOS with per-account offline data, synchronisation, route guards, review, and deck/card management. It addresses mobile offline use and shared-data synchronisation rather than wrapping the web application. | To be completed by the team. |
 | DevOps: monitoring with Prometheus and Grafana | Major, 2 | Prometheus collects API, PostgreSQL, VPS, GPU, and AI metrics; Grafana provides dashboards; Alertmanager sends alerts to Slack; Grafana is served through authenticated HTTPS access. | @tpandya, team |
-| User Management: user activity analytics and insights dashboard | Minor, 1 | Offline-capable statistics show due cards, dictionary size, streaks, review activity, forecasts, and card maturity from local learning data. | To be completed by the team. |
-| Accessibility and Internationalization: multiple languages | Minor, 1 | The application provides an internationalization system, at least three complete translations, a language switcher, and translatable user-facing text. | To be completed by the team. |
+| User Management: user activity analytics and insights dashboard | Minor, 1 | Offline-capable statistics show due cards, dictionary size, streaks, review activity, forecasts, and card maturity from local learning data. | @samcasti, team |
+| Accessibility and Internationalization: multiple languages | Minor, 1 | The application provides an internationalization system, at least three complete translations, a language switcher, and translatable user-facing text. | @samcasti, team |
 | User Management: 2FA | Minor, 1 | The application provides a complete two-factor authentication flow for users. | @tpandya, team |
 | Artificial Intelligence: content moderation AI | Minor, 1 | Published content is classified before publication. Unsafe content is refused, reports trigger an independent re-check, and owners can inspect classifier verdicts and request an explanation. | To be completed by the team. |
 
@@ -225,7 +225,9 @@ To be completed.
 
 ### @samcasti
 
-To be completed.
+@samcasti is the main Frontend developer. He led the implementation of the core web dashboard, user profile and settings, bringing the user interface to life with a custom design system and reactive components. His major feature contributions include the gamification system (badges, leaderboards, and daily challenges), the Playground tab for AI-assisted card generation, the global internationalization (i18n) setup with multiple language translations, and the reactivity layer that drives the offline-first data synchronization and local database operations. 
+
+A significant technical challenge he addressed was ensuring the reliability of the UI and offline logic across different devices and scenarios. 
 
 ### @tpandya
 
