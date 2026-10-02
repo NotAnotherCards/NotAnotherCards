@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { ModerationWarning, OwnerModerationStatus } from '@repo/schemas';
 import type { UserCardRecord, UserDeckRecord } from '@repo/offline-db';
@@ -131,19 +131,26 @@ export function PublishPanel({
 
   // Supplemental to the offline deck: offline, the panel simply has no
   // moderation status to show.
-  const refreshStatus = async () => {
+  const statusRequest = useRef(0);
+  const mounted = useRef(false);
+  const refreshStatus = useCallback(async () => {
+    if (!mounted.current) return;
+    const request = ++statusRequest.current;
     try {
-      setStatus(await apiClient.publishing.moderationStatus(deckId));
+      const next = await apiClient.publishing.moderationStatus(deckId);
+      if (request === statusRequest.current) setStatus(next);
     } catch {
       // stays as it was
     }
-  };
-  useEffect(() => {
-    apiClient.publishing
-      .moderationStatus(deckId)
-      .then(setStatus)
-      .catch(() => {});
   }, [deckId]);
+  useEffect(() => {
+    mounted.current = true;
+    void refreshStatus();
+    return () => {
+      mounted.current = false;
+      ++statusRequest.current;
+    };
+  }, [refreshStatus]);
 
   const isPublic =
     (remoteVisibility ?? deck.visibility) === 'public' &&
@@ -210,6 +217,7 @@ export function PublishPanel({
             onPress={() =>
               run(async () => {
                 await apiClient.publishing.unpublish(deckId);
+                ++statusRequest.current;
                 setWarnings([]);
                 setRemoteVisibility('private');
                 // The server's answer is the status until a refresh says
@@ -229,6 +237,7 @@ export function PublishPanel({
             onPress={() =>
               run(async () => {
                 const outcome = await apiClient.publishing.publish(deckId);
+                ++statusRequest.current;
                 if (outcome.published) {
                   setWarnings(outcome.warnings);
                   setRemoteVisibility('public');

@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { PublishPanel } from '@/components/publish-panel';
 
 const IDLE = {
@@ -138,6 +138,25 @@ describe('PublishPanel', () => {
     expect(result.getByText('Published to the community')).toBeTruthy();
     expect(result.queryByText('Taken down by moderation')).toBeNull();
     expect(result.queryByText('Removed after a report')).toBeNull();
+  });
+
+  it('ignores an initial status that arrives after publishing', async () => {
+    let finishInitial!: (status: unknown) => void;
+    mockStatus.mockImplementationOnce(
+      () => new Promise((resolve) => (finishInitial = resolve)),
+    );
+    mockPublish.mockResolvedValue({ published: true, warnings: [] });
+    const result = render(panel('private'));
+
+    fireEvent.press(result.getByText('Publish'));
+    await result.findByText('Unpublish');
+    await act(async () => {
+      finishInitial({ status: 'blocked', flagged: [], reason: 'Old refusal' });
+    });
+
+    expect(result.getByText('Published to the community')).toBeTruthy();
+    expect(result.getByText('Unpublish')).toBeTruthy();
+    expect(result.queryByText('Taken down by moderation')).toBeNull();
   });
 
   it('ends at a refusal: no second sync, and the refusal stays', async () => {
