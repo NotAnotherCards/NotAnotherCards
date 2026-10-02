@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -137,6 +138,23 @@ function Enrollment({
     () => (material ? secretFromTotpUri(material.totpURI) : ''),
     [material],
   );
+  // A copied setup key would outlive the setup on the clipboard. When the
+  // key goes away (verified, cancelled, left) it is cleared, but only if the
+  // clipboard still holds it: anything copied since is the user's.
+  const copiedKey = useRef<string | null>(null);
+  useEffect(
+    () => () => {
+      const key = copiedKey.current;
+      if (!key) return;
+      copiedKey.current = null;
+      void Clipboard.getStringAsync()
+        .then((current) =>
+          current === key ? Clipboard.setStringAsync('') : undefined,
+        )
+        .catch(() => {});
+    },
+    [secret],
+  );
 
   const enable = async () => {
     if (!password) {
@@ -259,6 +277,7 @@ function Enrollment({
               onPress={async () => {
                 try {
                   await Clipboard.setStringAsync(secret);
+                  copiedKey.current = secret;
                   setCopyStatus('Setup key copied.');
                 } catch {
                   setCopyStatus('Select the setup key and copy it manually.');

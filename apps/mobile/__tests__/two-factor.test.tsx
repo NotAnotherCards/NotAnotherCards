@@ -84,8 +84,10 @@ jest.mock('../lib/auth-storage', () => ({
 }));
 
 const mockSetStringAsync = jest.fn();
+const mockGetStringAsync = jest.fn();
 jest.mock('expo-clipboard', () => ({
   setStringAsync: (...args: unknown[]) => mockSetStringAsync(...args),
+  getStringAsync: () => mockGetStringAsync(),
 }));
 const mockPreventScreenCapture = jest.fn();
 jest.mock('expo-screen-capture', () => ({
@@ -225,6 +227,25 @@ describe('two-factor sign-in challenge', () => {
     mockSession = signedInSession;
     view.rerender(<TwoFactorChallenge />);
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+  });
+
+  it('rejects a used backup code and keeps the challenge pending', async () => {
+    mockVerifyBackupCode.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'INVALID_BACKUP_CODE', message: 'Invalid backup code' },
+    });
+    const view = render(<TwoFactorChallenge />);
+    fireEvent.press(view.getByText('Backup code'));
+    fireEvent.changeText(view.getByLabelText('Backup code'), 'recovery-one');
+    fireEvent.press(view.getByText('Verify and continue'));
+
+    expect(
+      await view.findByText(
+        'That backup code is invalid or has already been used.',
+      ),
+    ).toBeTruthy();
+    expect(getTwoFactorChallengeState().pending).toBe(true);
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
   });
 
   it('lets the user retry when the verified session cannot be refreshed', async () => {
@@ -369,6 +390,7 @@ describe('two-factor security settings', () => {
       error: null,
     });
     mockSetStringAsync.mockResolvedValue(undefined);
+    mockGetStringAsync.mockResolvedValue('MANUALKEY');
 
     const view = render(<TwoFactorSecurity />);
     await waitFor(() =>
@@ -409,6 +431,10 @@ describe('two-factor security settings', () => {
     fireEvent.press(view.getByText('I saved my codes'));
     await waitFor(() => expect(mockRefetch).toHaveBeenCalledTimes(1));
     expect(view.queryByText('recovery-one')).toBeNull();
+    // the copied setup key does not outlive the setup
+    await waitFor(() =>
+      expect(mockSetStringAsync).toHaveBeenLastCalledWith(''),
+    );
   });
 
   it('regenerates backup codes and disables two-factor with a password', async () => {
