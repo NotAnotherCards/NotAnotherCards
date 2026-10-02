@@ -10,6 +10,7 @@ import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
+import { useTwoFactorChallengeState } from './two-factor-challenge';
 import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
 import { legacyCardContentCleanupState } from './legacy-card-content-cleanup';
 import LanguageEnforcer from './language-enforcer';
@@ -31,14 +32,25 @@ const SessionDatabaseContext = createContext<SessionDatabase | null>(null);
  * so mounting it inside a screen would lose that queue on every
  * navigation.
  */
-export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
+export function SessionDatabaseProvider({
+  children,
+  blockAccountAccess = false,
+}: {
+  children: ReactNode;
+  blockAccountAccess?: boolean;
+}) {
   const { data: session, isPending } = authClient.useSession();
+  const challenge = useTwoFactorChallengeState();
   // Null while the session check runs: useSession keeps the previous
   // user visible while it refetches, and that user's database is the
   // wrong one to open. Also null until onboarding completed: the profile
   // row the first pull expects is created by the /onboard transaction.
   const userId =
-    isPending || !session?.user.onBoardingComplete
+    isPending ||
+    !challenge.hydrated ||
+    challenge.pending ||
+    blockAccountAccess ||
+    !session?.user.onBoardingComplete
       ? null
       : (session.user.id ?? null);
 

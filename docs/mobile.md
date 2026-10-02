@@ -34,7 +34,7 @@ EXPO_PUBLIC_API_URL=https://cards.dustyway.org
 ```
 
 Use `https://app.notanothercards.com` for production (real accounts, and
-the only one with Facebook sign-in and reset mail configured),
+the only one with Google sign-in and reset mail configured),
 `http://10.0.2.2:3000` for a local API from the Android emulator, or
 `http://localhost:3000` from an iOS simulator. The value is baked into the
 bundle when Metro starts, so change it, restart Metro, reload the app.

@@ -1,8 +1,12 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
-import Login from '@/app/login';
 // The app's root loads the catalogs; these render the forms without it.
 import '@/lib/i18n';
+import Login from '@/app/login';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+} from '@/lib/two-factor-challenge';
 
 const mockReplace = jest.fn();
 
@@ -12,14 +16,20 @@ jest.mock('expo-router', () => {
   const { Text } = require('react-native');
   return {
     useRouter: () => ({ replace: mockReplace }),
+    useIsFocused: () => true,
     Link: ({ children }: { children: React.ReactNode }) =>
       React.createElement(Text, null, children),
   };
 });
 
 // The real auth client pulls in native modules; mock it like web does in setup.ts.
+type MockSignInResult = {
+  data: { twoFactorRedirect?: boolean } | null;
+  error: { message?: string } | null;
+};
 const mockSignIn = jest.fn(
-  async (): Promise<{ error: { message?: string } | null }> => ({
+  async (_input?: unknown): Promise<MockSignInResult> => ({
+    data: {},
     error: null,
   }),
 );
@@ -30,16 +40,28 @@ let mockSession: {
   isPending: boolean;
 };
 
+const mockSocialSignIn = jest.fn(
+  async (_input: unknown): Promise<{ error: { message?: string } | null }> => ({
+    error: null,
+  }),
+);
+
 jest.mock('../lib/auth-client', () => ({
   authClient: {
-    signIn: { email: () => mockSignIn() },
+    signIn: {
+      email: (input: unknown) => mockSignIn(input),
+      social: (input: unknown) => mockSocialSignIn(input),
+    },
     useSession: () => mockSession,
+    getCookie: () => '',
   },
 }));
 
 beforeEach(() => {
+  finishTwoFactorChallenge();
   mockSession = { data: null, isPending: false };
   mockReplace.mockClear();
+  mockSocialSignIn.mockClear();
 });
 
 describe('Login screen', () => {
@@ -73,7 +95,7 @@ describe('Login screen', () => {
 
   it('renders the card and both fields', () => {
     const { getByText, getByPlaceholderText } = render(<Login />);
-    expect(getByText('Welcome back')).toBeTruthy();
+    expect(getByText('Welcome Back')).toBeTruthy();
     expect(getByPlaceholderText('you@example.com')).toBeTruthy();
     expect(getByPlaceholderText('Your password')).toBeTruthy();
   });
@@ -107,6 +129,7 @@ describe('Login screen', () => {
 
   it('shows the server message on an API error', async () => {
     mockSignIn.mockResolvedValueOnce({
+      data: null,
       error: { message: 'Invalid email or password' },
     });
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
@@ -119,6 +142,39 @@ describe('Login screen', () => {
     expect(await findByText('Invalid email or password')).toBeTruthy();
   });
 
+  it('routes a two-factor sign-in to verification before session navigation', async () => {
+    mockSignIn.mockResolvedValueOnce({
+      data: { twoFactorRedirect: true },
+      error: null,
+    });
+    const { getByText, getByPlaceholderText } = render(<Login />);
+    fireEvent.changeText(
+      getByPlaceholderText('you@example.com'),
+      'jane@example.com',
+    );
+    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
+    fireEvent.press(getByText('Log in'));
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
+    );
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('does not let a cached session bypass a pending challenge', async () => {
+    beginTwoFactorChallenge();
+    mockSession = {
+      data: { user: { name: 'Previous User', onBoardingComplete: true } },
+      isPending: false,
+    };
+    render(<Login />);
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
+    );
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
+  });
+
   it('routes to onboarding when the profile is unfinished', async () => {
     mockSession = {
       data: { user: { name: 'Jane Doe', onBoardingComplete: false } },
@@ -127,6 +183,31 @@ describe('Login screen', () => {
     render(<Login />);
     await waitFor(() =>
       expect(mockReplace).toHaveBeenCalledWith('/onboarding'),
+    );
+  });
+  it('starts a social sign-in with the provider and in-app callbacks', async () => {
+    const { getByText } = render(<Login />);
+    fireEvent.press(getByText('Google'));
+    await waitFor(() => expect(mockSocialSignIn).toHaveBeenCalledTimes(1));
+    // relative paths: the Expo client turns them into the app's scheme URL
+    expect(mockSocialSignIn).toHaveBeenCalledWith({
+      provider: 'google',
+      callbackURL: '/dashboard',
+      errorCallbackURL: '/login',
+    });
+    // navigation still waits for the session, as with email
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('shows the message when a social sign-in fails', async () => {
+    mockSocialSignIn.mockResolvedValueOnce({
+      error: { message: 'Provider refused' },
+    });
+    const { getByText, findByText } = render(<Login />);
+    fireEvent.press(getByText('Google'));
+    expect(await findByText('Provider refused')).toBeTruthy();
+    expect(mockSocialSignIn).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'google' }),
     );
   });
 });

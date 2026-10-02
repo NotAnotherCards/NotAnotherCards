@@ -11,6 +11,7 @@ jest.mock('expo-router', () => {
   const { Text } = require('react-native');
   return {
     useRouter: () => ({ replace: mockReplace }),
+    useIsFocused: () => true,
     Link: ({ children }: { children: React.ReactNode }) =>
       React.createElement(Text, null, children),
   };
