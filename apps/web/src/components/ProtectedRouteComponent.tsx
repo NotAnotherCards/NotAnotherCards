@@ -35,7 +35,9 @@ export function ProtectedLayoutComponent() {
     const enforceLanguage = () => {
       if (!profile) return;
       const preferences = getUiPreferences(session?.user.id);
-      const languageId = preferences.useTargetLanguageForUi
+      const useTargetActive =
+        profile.target_language_active ?? preferences.useTargetLanguageForUi;
+      const languageId = useTargetActive
         ? profile.target_language_id
         : profile.native_language_id;
 
@@ -55,6 +57,7 @@ export function ProtectedLayoutComponent() {
   }, [
     profile?.native_language_id,
     profile?.target_language_id,
+    profile?.target_language_active,
     session?.user.id,
     i18n,
   ]);

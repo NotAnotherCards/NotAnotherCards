@@ -2,6 +2,7 @@ type NetworkListener = (state: { isConnected: boolean }) => void;
 const mockNetworkRemove = jest.fn();
 let mockNetworkListener: NetworkListener = () => {};
 jest.mock('expo-network', () => ({
+  getNetworkStateAsync: jest.fn(async () => ({ isConnected: false })),
   addNetworkStateListener: (listener: NetworkListener) => {
     mockNetworkListener = listener;
     return { remove: mockNetworkRemove };
@@ -10,8 +11,42 @@ jest.mock('expo-network', () => ({
 
 import { AppState } from 'react-native';
 import { nativeSyncTriggers } from '../lib/sync-triggers';
+import * as Network from 'expo-network';
+import { renderHook, act } from '@testing-library/react-native';
+import { useConnected } from '../lib/connectivity';
 
 describe('nativeSyncTriggers', () => {
+  it('seeds availability without syncing, then counts the first listener report once', async () => {
+    jest
+      .mocked(Network.getNetworkStateAsync)
+      .mockResolvedValueOnce({ isConnected: true });
+    const fire = jest.fn();
+    const stop = nativeSyncTriggers(fire);
+    const { result, unmount } = renderHook(() => useConnected());
+    await act(async () => {});
+    expect(result.current).toBe(true);
+    expect(fire).not.toHaveBeenCalled();
+    act(() => mockNetworkListener({ isConnected: true }));
+    act(() => mockNetworkListener({ isConnected: true }));
+    expect(fire).toHaveBeenCalledTimes(1);
+    unmount();
+    stop();
+  });
+  it('ignores an initial read that arrives after a newer network event', async () => {
+    let resolve!: (state: { isConnected: boolean }) => void;
+    jest.mocked(Network.getNetworkStateAsync).mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done as typeof resolve;
+      }),
+    );
+    const fire = jest.fn();
+    const stop = nativeSyncTriggers(fire);
+    mockNetworkListener({ isConnected: false });
+    resolve({ isConnected: true });
+    await Promise.resolve();
+    expect(fire).not.toHaveBeenCalled();
+    stop();
+  });
   it('fires on reconnect and foreground, not on repeats, disconnect or background', () => {
     const listeners: ((state: string) => void)[] = [];
     const appStateRemove = jest.fn();

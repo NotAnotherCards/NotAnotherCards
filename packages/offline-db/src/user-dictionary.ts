@@ -86,6 +86,7 @@ export const UserProfileRow = z.object({
   avatar_file_id: z.string().nullable(),
   native_language_id: z.string().nullable(),
   target_language_id: z.string().nullable(),
+  target_language_active: z.boolean().nullable(),
   created_at: z.number().int().nonnegative(),
   updated_at: z.number().int().nonnegative(),
 });

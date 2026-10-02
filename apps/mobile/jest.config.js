@@ -12,10 +12,12 @@ const preset = require('jest-expo/jest-preset');
 // preset ignores their inner node_modules path segments, and its transform
 // only matches .js/.ts. Whitelist those dependencies and send .mjs through
 // the same babel transformer.
+// Native OAuth regression tests also run the real Better Auth/Expo client and
+// its cookie helpers, whose ESM dependencies need the same treatment.
 const transformIgnorePatterns = preset.transformIgnorePatterns.map((pattern) =>
   pattern.replace(
     '(?!(.pnpm|',
-    '(?!(.pnpm|@jsamr|@remelondb|@rn-primitives|github-slugger|html-entities|lucide-react-native|marked|react-native-marked|react-native-reanimated-table|svg-parser|uuid|',
+    '(?!(.pnpm|@better-auth|@better-fetch|better-auth|better-call|defu|nanostores|@noble|jose|rou3|@jsamr|@remelondb|@rn-primitives|github-slugger|html-entities|lucide-react-native|marked|react-native-marked|react-native-reanimated-table|svg-parser|uuid|',
   ),
 );
 
@@ -41,6 +43,8 @@ module.exports = {
     '^react/(.*)$': '<rootDir>/node_modules/react/$1',
     // The theme preference reads it synchronously at render time.
     '^expo-sqlite/kv-store$': '<rootDir>/__mocks__/kv-store.ts',
+    // expo/fetch wraps a native module; the mock delegates to global fetch.
+    '^expo/fetch$': '<rootDir>/__mocks__/expo-fetch.ts',
     '^@/(.*)$': '<rootDir>/$1',
   },
 };

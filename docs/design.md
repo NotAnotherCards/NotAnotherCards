@@ -155,7 +155,7 @@ that is a design decision, not a gap to fix.
 ## Icons
 
 - **Web** uses `lucide-react` for general UI icons. Brand marks are dedicated
-  components: `components/ui/google-icon.tsx` and `facebook-icon.tsx`.
+  components: `components/ui/google-icon.tsx`.
 - **Mobile** uses no icon library today. When #143 lands it uses
   `lucide-react-native`, the same icon set with the same names. Brand marks
   stay dedicated assets.
@@ -187,7 +187,7 @@ deck descriptions and word-note notes through the shared `Input` component.
 | `separator`                                 |                                                       |
 | `spinner`                                   |                                                       |
 | `switch`                                    |                                                       |
-| `google-icon`, `facebook-icon`              | `icon` (lucide wrappers)                              |
+| `google-icon`                               | `icon` (lucide wrappers)                              |
 |                                             | `segmented`                                           |
 |                                             | `text`                                                |
 

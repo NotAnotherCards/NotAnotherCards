@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Pressable,
@@ -34,7 +34,7 @@ import { Progress } from '@/components/ui/progress';
 import { Segmented } from '@/components/ui/segmented';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
-import { DeckList } from '@/components/deck-list';
+import { Library } from '@/components/library';
 import { RequireSession } from '@/components/require-session';
 import { Settings } from '@/components/settings';
 import { InfoPanel } from '@/components/info-panel';
@@ -47,7 +47,7 @@ import { dailyGoals, useOverviewStats } from '@/lib/overview-stats';
 import { useAchievements, type Achievement } from '@/lib/achievements';
 
 // Web's dashboard strip: Overview, My Library, Profile & Settings, same
-// icons. Tab state lives here like web's, no native tab navigator. The
+// icons. Route params select the tab, with no native tab navigator. The
 // strip is the screen's top bar; the native header is hidden in _layout.
 type Tab = 'overview' | 'library' | 'settings';
 
@@ -62,7 +62,13 @@ export default function Dashboard() {
   const { manager, syncController } = useSessionDatabase();
   const pullToSync = usePullToSync(syncController);
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<Tab>('overview');
+  const router = useRouter();
+  const { tab: requestedTab } = useLocalSearchParams<{ tab?: string }>();
+  const tab: Tab =
+    requestedTab === 'library' || requestedTab === 'settings'
+      ? requestedTab
+      : 'overview';
+  const setTab = (next: Tab) => router.setParams({ tab: next });
 
   return (
     <RequireSession>
@@ -126,7 +132,7 @@ export default function Dashboard() {
               )}
             </View>
           )}
-          {tab === 'library' && <DeckList />}
+          {tab === 'library' && <Library />}
           {tab === 'settings' && <Settings />}
         </ScrollView>
         {/* Start Review sits under the thumb, below the scrolling content,

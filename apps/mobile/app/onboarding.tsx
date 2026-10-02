@@ -11,10 +11,16 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
 import { LanguageField } from '@/components/language-field';
+import {
+  useTwoFactorChallengeState,
+  useTwoFactorDeepLinkPending,
+} from '@/lib/two-factor-challenge';
 
 export default function Onboarding() {
   const router = useRouter();
   const { data: session, isPending, error, refetch } = authClient.useSession();
+  const challenge = useTwoFactorChallengeState();
+  const deepLinkPending = useTwoFactorDeepLinkPending();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState, watch, setValue } =
     useForm<ProfileFormValues>({
@@ -29,8 +35,15 @@ export default function Onboarding() {
   const targetLanguage = watch('target_language_id');
 
   useEffect(() => {
-    if (session?.user.onBoardingComplete) router.replace('/dashboard');
-  }, [router, session?.user.onBoardingComplete]);
+    if (
+      challenge.hydrated &&
+      !challenge.pending &&
+      !deepLinkPending &&
+      session?.user.onBoardingComplete
+    ) {
+      router.replace('/dashboard');
+    }
+  }, [challenge, deepLinkPending, router, session?.user.onBoardingComplete]);
 
   useEffect(() => {
     if (nativeLanguage && nativeLanguage === targetLanguage) {
@@ -48,12 +61,16 @@ export default function Onboarding() {
     }
   };
 
-  if (isPending) {
+  if (isPending || !challenge.hydrated) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator />
       </View>
     );
+  }
+
+  if (deepLinkPending || challenge.pending) {
+    return <Redirect href="/two-factor" />;
   }
 
   // refetch() resolves even when the request failed and stores the error

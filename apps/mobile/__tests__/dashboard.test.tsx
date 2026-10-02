@@ -2,6 +2,11 @@ import React from 'react';
 import { act, render, fireEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+  TwoFactorDeepLinkProvider,
+} from '@/lib/two-factor-challenge';
 import Storage from 'expo-sqlite/kv-store';
 import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
@@ -11,6 +16,8 @@ import {
 
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
+let mockParams: { tab?: string } = {};
+let mockSetParams: (params: { tab?: string }) => void;
 const mockManager = { tag: 'manager' };
 let mockSyncController: {
   state: {
@@ -81,9 +88,9 @@ jest.mock('../lib/overview-stats', () => ({
 
 // The deck list and settings have their own tests; keep this one about the
 // session guard and the tab strip. Each tab renders a marker instead.
-jest.mock('../components/deck-list', () => {
+jest.mock('../components/library', () => {
   const { Text } = require('react-native');
-  return { DeckList: () => <Text>deck-list</Text> };
+  return { Library: () => <Text>deck-list</Text> };
 });
 jest.mock('../components/settings', () => {
   const { Text } = require('react-native');
@@ -111,13 +118,23 @@ jest.mock('expo-router', () => {
   return {
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
-    useRouter: () => ({ push: mockPush }),
+    useLocalSearchParams: () => {
+      const [params, setParams] = React.useState(mockParams);
+      mockSetParams = setParams;
+      return params;
+    },
+    useRouter: () => ({
+      push: mockPush,
+      setParams: (params: { tab?: string }) => mockSetParams(params),
+    }),
   };
 });
 
 describe('Dashboard screen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockParams = {};
+    finishTwoFactorChallenge();
     Storage.removeItemSync(lastReviewDeckStorageKey('user-dashboard'));
     mockReviewOverview = {
       target: 'nothing-due',
@@ -200,6 +217,43 @@ describe('Dashboard screen', () => {
     expect(refresh().props.refreshing).toBe(false);
   });
 
+  it('redirects a pending challenge before rendering a cached session', () => {
+    beginTwoFactorChallenge();
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
+  });
+
+  it('gates a deep-linked challenge before its persisted state is written', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(
+      <TwoFactorDeepLinkProvider pending>
+        <Dashboard />
+      </TwoFactorDeepLinkProvider>,
+    );
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
+  });
+
   it('redirects to login when there is no session', () => {
     mockUseSession.mockReturnValue({ data: null, isPending: false });
     const { getByText } = render(<Dashboard />);
@@ -221,6 +275,17 @@ describe('Dashboard screen', () => {
     const { getByText, queryByText } = render(<Dashboard />);
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(queryByText(/jane@example.com/)).toBeNull();
+  });
+
+  it('opens the library when returning from a community import', () => {
+    mockParams = { tab: 'library' };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+    const result = render(<Dashboard />);
+    expect(result.getByText('deck-list')).toBeTruthy();
+    expect(result.queryByText('Jane Doe')).toBeNull();
   });
 
   it('opens on Overview and switches to the library and settings tabs', () => {

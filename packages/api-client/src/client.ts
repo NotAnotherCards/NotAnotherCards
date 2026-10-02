@@ -24,6 +24,11 @@ import {
 } from './transport.js';
 import { readEventStream } from './read-event-stream.js';
 import { readPlaygroundStream } from './read-playground-stream.js';
+import {
+  generateWordNote,
+  type WordNoteGenerationInput,
+  type WordNoteGenerationOptions,
+} from './generate-word-note.js';
 
 // Publishing moderates every card before it answers. The server's deadline
 // grows with the deck and stops at 240 s (moderationDeadlineMs in
@@ -65,6 +70,12 @@ export function createApiClient(transport: ApiTransport) {
 
   return {
     ai: {
+      generateWordNote(
+        input: WordNoteGenerationInput,
+        options?: WordNoteGenerationOptions,
+      ) {
+        return generateWordNote(this, input, options);
+      },
       generate(input: CreateAiJobInput, options?: RequestOptions) {
         return json(
           '/api/ai/generate',

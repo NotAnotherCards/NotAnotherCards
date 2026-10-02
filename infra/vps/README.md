@@ -403,8 +403,7 @@ AI_API_BASE=
 AI_API_KEY=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-FACEBOOK_CLIENT_ID=
-FACEBOOK_CLIENT_SECRET=
+
 ```
 
 Start the isolated stack with a unique Compose project name:
