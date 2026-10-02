@@ -4,6 +4,8 @@ import es from './catalogs/es.json';
 import de from './catalogs/de.json';
 import ru from './catalogs/ru.json';
 
+export { deckTypeAccessibilityLabel } from './deck-type-label';
+
 export const catalogs = {
   en: { translation: en },
   es: { translation: es },

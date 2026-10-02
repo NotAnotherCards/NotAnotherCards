@@ -16,7 +16,6 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSyncController } from '@/offline/syncProvider';
 import { ReviewSession } from './ReviewSession';
 import { ActivateMoreWords } from './ReviewDialogs';
 
@@ -77,12 +76,6 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const sessionCards = hasActiveSession
     ? activeSession.cards
     : selectReviewBatch(dueCards);
-
-  const syncController = useSyncController();
-
-  const handleComplete = () => {
-    void syncController?.syncNow();
-  };
 
   const activateMoreWords = async (count: number) => {
     if (!deckId) return;
@@ -173,7 +166,6 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
       cards={sessionCards}
       deckTitle={deck.title}
       onExit={exitReview}
-      onComplete={handleComplete}
       onActivateMore={inactiveItemCount > 0 ? activateMoreWords : undefined}
       activationCount={inactiveItemCount > 0 ? activationCount : undefined}
       inactiveItemCount={inactiveItemCount}

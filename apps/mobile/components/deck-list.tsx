@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
-import { deckKind, deckKindShort } from '@repo/offline-db';
+import { deckKindShort } from '@repo/offline-db';
+import { deckTypeAccessibilityLabel } from '@repo/i18n';
+import { useTranslation } from 'react-i18next';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useDecks, type Deck } from '@/lib/decks';
 import { writeErrorMessage } from '@/lib/errors';
@@ -60,6 +62,7 @@ function ActiveDeckList({
   createRequestKey: number;
 }) {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { decks, isLoading, error, cardCount, dueCount, profile, writes } =
     useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
@@ -171,6 +174,11 @@ function ActiveDeckList({
       )}
       <View role="list" className="gap-3">
         {decks.map((deck) => {
+          const kindLabel = deckTypeAccessibilityLabel(
+            deck,
+            i18n.resolvedLanguage ?? i18n.language,
+            (key, options) => t(`deck.type.${key}`, options),
+          );
           return (
             <Card key={deck.id} role="listitem">
               {/* The header opens the deck. Edit and delete sit in its row as
@@ -188,7 +196,7 @@ function ActiveDeckList({
                     onPress={() => router.push(`/deck/${deck.id}`)}
                   >
                     <Text
-                      accessibilityLabel={deckKind(deck)}
+                      accessibilityLabel={kindLabel}
                       className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                     >
                       {deckKindShort(deck)}

@@ -1,7 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { DeckForm } from '../components/deck/DeckForm';
 import { LANGUAGES } from '@repo/schemas';
+import i18n from '@/lib/i18n';
 
 // A deck's note type is chosen once, at creation. Its notes are compiled
 // against it, so the edit form never offers the choice.
@@ -10,7 +17,10 @@ const onSubmit = vi.fn();
 const onCancel = vi.fn();
 const [english, spanish, german] = LANGUAGES;
 
-beforeEach(() => {
+beforeEach(async () => {
+  await act(async () => {
+    await i18n.changeLanguage('en');
+  });
   onSubmit.mockReset();
   onSubmit.mockResolvedValue(undefined);
   onCancel.mockReset();
@@ -34,6 +44,21 @@ const chooseWords = () =>
   fireEvent.click(screen.getByRole('button', { name: /words/i }));
 
 describe('DeckForm note type', () => {
+  it('uses the interface language for word deck language options', async () => {
+    renderCreate();
+    chooseWords();
+
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+
+    const [nativeSelect, targetSelect] = screen.getAllByRole('combobox');
+    expect(nativeSelect).toHaveTextContent('🇺🇸 Englisch');
+    expect(nativeSelect).toHaveTextContent('🇩🇪 Deutsch');
+    expect(targetSelect).toHaveTextContent('🇷🇺 Russisch');
+    expect(nativeSelect).not.toHaveTextContent('🇩🇪 German');
+  });
+
   it('treats whitespace-only optional descriptions as empty before length validation', async () => {
     render(
       <DeckForm title="Create deck" onSubmit={onSubmit} onCancel={vi.fn()} />,

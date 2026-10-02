@@ -294,7 +294,10 @@ export function DeckForm({
                                 key={language.value}
                                 value={language.value}
                               >
-                                {languageLabel(language)}
+                                {languageLabel(
+                                  language,
+                                  t(`languages.${language.locale}`),
+                                )}
                               </option>
                             ))}
                           </select>
