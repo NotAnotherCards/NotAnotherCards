@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { AuthCard } from '@/components/auth/auth-card';
 import { SignupForm } from '@/components/auth/signup-form';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 export default function Register() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function Register() {
       footerLinkTo="/login"
     >
       <SignupForm />
+      {!session ? <LanguageSwitcher /> : null}
     </AuthCard>
   );
 }

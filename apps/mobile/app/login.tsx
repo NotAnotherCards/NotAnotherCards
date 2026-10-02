@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { AuthCard } from '@/components/auth/auth-card';
 import { LoginForm } from '@/components/auth/login-form';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import {
   useTwoFactorChallengeState,
   useTwoFactorDeepLinkPending,
@@ -41,6 +42,7 @@ export default function Login() {
       footerLinkTo="/register"
     >
       <LoginForm />
+      {!session ? <LanguageSwitcher /> : null}
     </AuthCard>
   );
 }

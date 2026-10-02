@@ -153,6 +153,7 @@
     }
   },
   "preferences": {
+    "language_save_error": "Die Spracheinstellung konnte nicht gespeichert werden. Versuche es erneut.",
     "title": "Einstellungen",
     "language": "Sprache",
     "systemDefault": "Systemstandard"

@@ -53,12 +53,15 @@ describe('Settings', () => {
   });
 
   it('shows the account header and the saved preferences', () => {
-    const { getByText, getByLabelText } = render(<Settings />);
+    const { getByText, getByLabelText, queryByLabelText } = render(
+      <Settings />,
+    );
     fireEvent.press(getByText('Preferences'));
     expect(getByText('JD')).toBeTruthy();
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(getByText(/jane@example.com/)).toBeTruthy();
     expect(getByLabelText('Review mode')).toBeTruthy();
+    expect(queryByLabelText('Language')).toBeNull();
     expect(getByText('Basic').props.className).toContain('font-semibold');
   });
 

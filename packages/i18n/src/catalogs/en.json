@@ -153,6 +153,7 @@
     }
   },
   "preferences": {
+    "language_save_error": "Could not save the language preference. Try again.",
     "title": "Preferences",
     "language": "Language",
     "systemDefault": "System Default"

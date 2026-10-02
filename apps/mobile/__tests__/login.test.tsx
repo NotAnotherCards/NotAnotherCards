@@ -65,6 +65,16 @@ beforeEach(() => {
 });
 
 describe('Login screen', () => {
+  it('offers the language picker only before login', () => {
+    const screen = render(<Login />);
+    expect(screen.getByLabelText('Language')).toBeTruthy();
+    mockSession = {
+      data: { user: { name: 'Jane', onBoardingComplete: true } },
+      isPending: false,
+    };
+    screen.rerender(<Login />);
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
   it('navigates to the dashboard only once the session exists', async () => {
     const { getByText, getByPlaceholderText, rerender } = render(<Login />);
     fireEvent.changeText(

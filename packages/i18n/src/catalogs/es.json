@@ -153,6 +153,7 @@
     }
   },
   "preferences": {
+    "language_save_error": "No se pudo guardar la preferencia de idioma. Inténtalo de nuevo.",
     "title": "Preferencias",
     "language": "Idioma",
     "systemDefault": "Predeterminado del sistema"

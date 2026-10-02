@@ -1,9 +1,6 @@
 import type { Database, SyncController } from '@remelondb/core';
 import { updateUserProfile } from '@repo/offline-db';
-import {
-  type ProfileFormValues,
-  usernameAvailabilitySchema,
-} from '@repo/schemas';
+import { usernameAvailabilitySchema } from '@repo/schemas';
 import { authClient } from './auth-client';
 import { apiURL } from './api-url';
 import { apiErrorMessage } from './errors';
@@ -35,7 +32,7 @@ export async function checkUsernameAvailable(
 // The shared write plus the sync wake-up, the same shape as card-writes.
 export function profileWrites(db: Database, sync: SyncController | null) {
   return {
-    update: (values: ProfileFormValues) =>
+    update: (values: Parameters<typeof updateUserProfile>[1]) =>
       updateUserProfile(db, values).then((result) => {
         sync?.notifyLocalWrite();
         return result;

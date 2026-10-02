@@ -4,6 +4,8 @@ import i18n from '@/lib/i18n';
 import Storage from 'expo-sqlite/kv-store';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { LanguageField } from '@/components/language-field';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
+import { act, waitFor } from '@testing-library/react-native';
 
 jest.mock('expo-localization', () => ({
   getLocales: jest.fn(() => [{ languageCode: 'en', languageTag: 'en-US' }]),
@@ -42,6 +44,20 @@ describe('Mobile i18n adapter', () => {
 });
 
 describe('LanguageSwitcher', () => {
+  it('translates its label and follows locale changes outside the picker', async () => {
+    const screen = await renderWithLocale(<LanguageSwitcher />, 'de');
+    expect(screen.getByLabelText('Sprache')).toBeTruthy();
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByLabelText('Idioma')).toBeTruthy();
+    expect(screen.getByRole('radio', { selected: true })).toHaveTextContent(
+      /Español/,
+    );
+    fireEvent.press(screen.getByText('Deutsch'));
+    await waitFor(() => expect(screen.i18n.resolvedLanguage).toBe('de'));
+    expect(Storage.getItemSync('i18nextLng')).toBe('de');
+  });
   it('renders the language options and switches language on press', async () => {
     await i18n.changeLanguage('en');
 

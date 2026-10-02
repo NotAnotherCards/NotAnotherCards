@@ -20,7 +20,7 @@ import { profileWrites } from '@/lib/profile';
 import { switchColors } from '@/lib/theme';
 import { ProfileForm } from './profile-form';
 import { ThemeToggle } from './theme-toggle';
-import { LanguageSwitcher } from './language-switcher';
+import { InterfaceLanguagePreference } from './interface-language-preference';
 import { Button } from './ui/button';
 import {
   Card,
@@ -180,6 +180,7 @@ const MODE_OPTIONS = [
 ] as const;
 
 function Preferences({ userId }: { userId: string }) {
+  const { manager } = useSessionDatabase();
   const { colorScheme } = useColorScheme();
   const colors = switchColors[colorScheme === 'dark' ? 'dark' : 'light'];
   const [preferences, setPreferences] = useState(() =>
@@ -207,13 +208,7 @@ function Preferences({ userId }: { userId: string }) {
           <Text className="font-medium">Theme</Text>
           <ThemeToggle />
         </View>
-        <View className="gap-2">
-          <Text className="font-medium">Language</Text>
-          <Text className="text-sm text-muted-foreground">
-            Select your preferred language
-          </Text>
-          <LanguageSwitcher />
-        </View>
+        {manager ? <InterfaceLanguagePreference manager={manager} /> : null}
         <View className="gap-2">
           <Text className="font-medium">Review mode</Text>
           <Text className="text-sm text-muted-foreground">
