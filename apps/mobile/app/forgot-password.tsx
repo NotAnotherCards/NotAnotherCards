@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { AuthCard } from '@/components/auth/auth-card';
 import {
   ForgotPasswordForm,
@@ -7,6 +8,8 @@ import {
 
 export default function ForgotPassword() {
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const search = useLocalSearchParams<{ email?: string | string[] }>();
+  const email = Array.isArray(search.email) ? search.email[0] : search.email;
 
   if (sentTo) {
     return (
@@ -30,7 +33,7 @@ export default function ForgotPassword() {
       footerLinkText="Back to login"
       footerLinkTo="/login"
     >
-      <ForgotPasswordForm onSent={setSentTo} />
+      <ForgotPasswordForm onSent={setSentTo} defaultEmail={email} />
     </AuthCard>
   );
 }

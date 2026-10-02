@@ -1,12 +1,14 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import ForgotPassword from '@/app/forgot-password';
+import '@/lib/i18n';
 
 jest.mock('expo-router', () => {
   const React = require('react');
   const { Text } = require('react-native');
   return {
     useRouter: () => ({ replace: jest.fn() }),
+    useLocalSearchParams: () => ({}),
     Link: ({ children }: { children: React.ReactNode }) =>
       React.createElement(Text, null, children),
   };

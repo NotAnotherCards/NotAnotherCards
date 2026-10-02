@@ -25,13 +25,15 @@ async function requestReset(email: string) {
 
 export function ForgotPasswordForm({
   onSent,
+  defaultEmail = '',
 }: {
   onSent: (email: string) => void;
+  defaultEmail?: string;
 }) {
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '' },
+    defaultValues: { email: defaultEmail },
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
