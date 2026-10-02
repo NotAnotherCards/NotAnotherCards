@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pressable, View } from 'react-native';
@@ -13,7 +13,7 @@ import { SparklesIcon } from './ui/icon';
 import { apiClient } from '@/lib/api-client';
 import { useConnected } from '@/lib/connectivity';
 import { aiErrorMessage } from '@/lib/ai-error';
-import { AiJobPollError } from '@repo/api-client';
+import { useWordNoteGeneration } from '@repo/api-client/react';
 
 const editableFields = WordNoteEditableFieldsV1;
 const blank = z.literal('');
@@ -78,34 +78,26 @@ export function WordNoteForm({
   const genders = gendersFor(targetLanguageId);
   const connected = useConnected();
   const word = watch('word');
-  const request = useRef<AbortController | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [generationError, setGenerationError] = useState<string | null>(null);
-  const [jobId, setJobId] = useState<string | null>(null);
-  useEffect(() => {
-    setGenerating(false);
-    setGenerationError(null);
-    setJobId(null);
-    return () => {
-      request.current?.abort();
-      request.current = null;
-    };
-  }, [deckId, nativeLanguageId, targetLanguageId]);
+  const generation = useWordNoteGeneration(apiClient);
+  const { cancel } = generation;
+  const generating = generation.status === 'generating';
+  const paused = generation.status === 'paused';
+  const [inputError, setInputError] = useState<string | null>(null);
+  const generationError =
+    inputError || (generation.error ? aiErrorMessage(generation.error) : null);
 
   useEffect(() => {
-    setJobId(null);
-    setGenerationError(null);
-    if (request.current) {
-      request.current.abort();
-      request.current = null;
-      setGenerating(false);
-      setGenerationError('The word changed. Fill in again for the new word.');
-    }
-  }, [word]);
+    cancel();
+    setInputError(null);
+  }, [deckId, nativeLanguageId, targetLanguageId, cancel]);
+  useEffect(() => {
+    setInputError(
+      cancel() ? 'The word changed. Fill in again for the new word.' : null,
+    );
+  }, [word, cancel]);
 
   const fill = async () => {
     if (
-      request.current ||
       busy ||
       formState.isSubmitting ||
       !connected ||
@@ -115,54 +107,31 @@ export function WordNoteForm({
       !targetLanguageId
     )
       return;
-    const controller = new AbortController();
-    request.current = controller;
-    setGenerating(true);
-    setGenerationError(null);
-    try {
-      const fields = await apiClient.ai.generateWordNote(
-        {
+    setInputError(null);
+    const fields = paused
+      ? await generation.resume()
+      : await generation.generate({
           deckId,
           word: word.trim(),
           direction: 'target',
           nativeLanguageId,
           targetLanguageId,
-        },
-        {
-          signal: controller.signal,
-          jobId: jobId ?? undefined,
-          onJob: (id) => {
-            if (!controller.signal.aborted) setJobId(id);
-          },
-        },
-      );
-      if (controller.signal.aborted) return;
-      setJobId(null);
-      if (getValues('word').trim() !== word.trim()) {
-        setGenerationError('The word changed. Fill in again for the new word.');
-        return;
-      }
-      for (const name of [
-        'translation',
-        'gender',
-        ...OPTIONAL_FIELDS.map(([name]) => name),
-      ] as const) {
-        if (!getValues(name)?.trim() && fields[name])
-          setValue(name, fields[name], {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-      }
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        setJobId(error instanceof AiJobPollError ? error.jobId : null);
-        setGenerationError(aiErrorMessage(error));
-      }
-    } finally {
-      if (request.current === controller) {
-        request.current = null;
-        setGenerating(false);
-      }
+        });
+    if (!fields) return;
+    if (getValues('word').trim() !== word.trim()) {
+      setInputError('The word changed. Fill in again for the new word.');
+      return;
+    }
+    for (const name of [
+      'translation',
+      'gender',
+      ...OPTIONAL_FIELDS.map(([name]) => name),
+    ] as const) {
+      if (!getValues(name)?.trim() && fields[name])
+        setValue(name, fields[name], {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
     }
   };
 
@@ -200,9 +169,7 @@ export function WordNoteForm({
           <Button
             className="h-12 sm:h-12"
             accessibilityLabel={
-              jobId && !generating
-                ? 'Check generation again'
-                : 'Fill in with AI'
+              paused ? 'Check generation again' : 'Fill in with AI'
             }
             disabled={
               !word.trim() ||
@@ -217,9 +184,7 @@ export function WordNoteForm({
             onPress={() => void fill()}
           >
             <SparklesIcon size={18} className="text-primary-foreground" />
-            <Text>
-              {jobId && !generating ? 'Check generation again' : 'Fill in'}
-            </Text>
+            <Text>{paused ? 'Check generation again' : 'Fill in'}</Text>
           </Button>
         </View>
         {!connected && (
@@ -230,7 +195,7 @@ export function WordNoteForm({
         {generating && (
           <Text accessibilityLiveRegion="polite">Generating…</Text>
         )}
-        {jobId && !generating && (
+        {paused && (
           <Text accessibilityLiveRegion="polite">
             Generation may still be running.
           </Text>
@@ -291,10 +256,7 @@ export function WordNoteForm({
             variant="secondary"
             className="flex-1"
             onPress={() => {
-              request.current?.abort();
-              request.current = null;
-              setJobId(null);
-              setGenerating(false);
+              cancel();
               onCancel();
             }}
             disabled={formState.isSubmitting || busy}

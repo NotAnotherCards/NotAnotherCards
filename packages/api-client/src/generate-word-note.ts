@@ -18,6 +18,8 @@ export type WordNoteGenerationInput = Omit<
 export interface WordNoteGenerationOptions {
   signal?: AbortSignal;
   pollMs?: number;
+  /** Check a newly created job immediately, then use the usual poll interval. */
+  pollImmediately?: boolean;
   onStatus?: (status: AiJobStatus) => void;
   onJob?: (id: string) => void;
   /** Resume polling this job without submitting or spending quota again. */
@@ -75,6 +77,7 @@ export async function generateWordNote(
   {
     signal,
     pollMs = 1000,
+    pollImmediately = false,
     onStatus,
     onJob,
     jobId,
@@ -100,6 +103,7 @@ export async function generateWordNote(
       : await poll(jobId);
   const id = jobId ?? job.id;
   onJob?.(id);
+  let waitBeforePoll = !pollImmediately || jobId !== undefined;
   for (;;) {
     if (signal?.aborted) throw cancelled();
     if (
@@ -124,7 +128,8 @@ export async function generateWordNote(
         );
       return fields;
     }
-    await wait(pollMs, signal);
+    if (waitBeforePoll) await wait(pollMs, signal);
+    waitBeforePoll = true;
     ({ job } = await poll(id));
   }
 }

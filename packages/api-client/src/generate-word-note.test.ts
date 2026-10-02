@@ -3,6 +3,22 @@ import { createApiClient, AiJobFailedError, ApiError } from './index.js';
 
 afterEach(() => vi.useRealTimers());
 
+it('can check immediately for UI callers, then waits a second between polls', async () => {
+  vi.useFakeTimers();
+  const { ai, fetch } = setup(
+    job('pending'),
+    job('processing'),
+    job('completed'),
+  );
+  const result = ai.generateWordNote(input, { pollImmediately: true });
+  await vi.advanceTimersByTimeAsync(0);
+  expect(fetch).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(999);
+  expect(fetch).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(1);
+  await expect(result).resolves.toEqual(fields);
+});
+
 it('keeps the job id on a failed poll and resumes without another generation', async () => {
   vi.useFakeTimers();
   const { ai, fetch } = setup(job('pending'));
