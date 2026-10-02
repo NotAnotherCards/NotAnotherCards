@@ -37,7 +37,7 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 6,
+  version: 7,
   tables: [
     userDecks,
     userNotes,
@@ -163,6 +163,17 @@ export const migrations = schemaMigrations({
             unlocked_at: column.number(),
             created_at: column.number(),
             updated_at: column.number(),
+          },
+        }),
+      ],
+    },
+    {
+      toVersion: 7,
+      steps: [
+        addColumns({
+          table: 'user_profiles',
+          columns: {
+            target_language_active: column.boolean().optional(),
           },
         }),
       ],

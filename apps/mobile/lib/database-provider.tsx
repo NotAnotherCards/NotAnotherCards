@@ -13,6 +13,7 @@ import { Text } from '@/components/ui/text';
 import { useTwoFactorChallengeState } from './two-factor-challenge';
 import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
 import { legacyCardContentCleanupState } from './legacy-card-content-cleanup';
+import LanguageEnforcer from './language-enforcer';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -86,7 +87,10 @@ export function SessionDatabaseProvider({
   // unmount the navigator, including the signed-out screens. Consumers
   // reach the manager through useSessionDatabase, which is null-safe.
   const content = manager ? (
-    <DatabaseProvider manager={manager}>{children}</DatabaseProvider>
+    <DatabaseProvider manager={manager}>
+      <LanguageEnforcer manager={manager} />
+      {children}
+    </DatabaseProvider>
   ) : (
     children
   );

@@ -387,11 +387,14 @@ export function useStore() {
   );
 
   const updateUserProfile = useCallback(
-    async (profile: {
-      username: string;
-      native_language_id: string;
-      target_language_id: string;
-    }) => {
+    async (
+      profile: Partial<{
+        username: string | null;
+        native_language_id: string | null;
+        target_language_id: string | null;
+        target_language_active: boolean | null;
+      }>,
+    ) => {
       if (!db) throw new Error('Database not initialized');
       const result = await dbUpdateUserProfile(db, profile);
       sync?.notifyLocalWrite();

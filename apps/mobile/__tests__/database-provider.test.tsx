@@ -45,6 +45,7 @@ jest.mock('@remelondb/core/react', () => ({
 jest.mock('../lib/db', () => ({
   createUserDatabaseManager: jest.fn(() => fakeManager),
 }));
+jest.mock('../lib/language-enforcer', () => () => null);
 jest.mock('../lib/sync', () => ({
   pullChanges: 'pull',
   pushChanges: 'push',

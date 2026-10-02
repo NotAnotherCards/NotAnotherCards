@@ -435,19 +435,25 @@ export async function createUserProfile(
 
 export async function updateUserProfile(
   db: Database,
-  profile: {
-    username: string;
-    native_language_id: string;
-    target_language_id: string;
-  },
+  profile: Partial<{
+    username: string | null;
+    native_language_id: string | null;
+    target_language_id: string | null;
+    target_language_active: boolean | null;
+  }>,
 ) {
   return await db.write(async () => {
     const profiles = await db.get(UserProfile).query().fetch();
     const existing = profiles[0];
+    if (!existing) return null;
     return await existing.update((record) => {
-      record.username = profile.username;
-      record.native_language_id = profile.native_language_id;
-      record.target_language_id = profile.target_language_id;
+      if (profile.username !== undefined) record.username = profile.username;
+      if (profile.native_language_id !== undefined)
+        record.native_language_id = profile.native_language_id;
+      if (profile.target_language_id !== undefined)
+        record.target_language_id = profile.target_language_id;
+      if (profile.target_language_active !== undefined)
+        record.target_language_active = profile.target_language_active;
       record.updated_at = Date.now();
     });
   });

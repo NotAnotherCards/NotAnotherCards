@@ -202,6 +202,29 @@ describe('Settings Tab Component Specs', () => {
       screen.getByRole('switch', { name: 'Show next review interval' }),
     ).toHaveAttribute('data-slot', 'switch');
   });
+  it('lets the user toggle the Use target language for UI switch and saves target_language_active', async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+
+    await user.click(screen.getByRole('button', { name: /^Preferences$/i }));
+    const targetLangSwitch = screen.getByRole('switch', {
+      name: 'Use target language for interface',
+    });
+
+    // Default mockProfile does not define target_language_active, so it defaults to false
+    expect(targetLangSwitch).toHaveAttribute('aria-checked', 'false');
+
+    await user.click(targetLangSwitch);
+
+    // Verify database action updateUserProfile was invoked with target_language_active set to true
+    await waitFor(() => {
+      expect(mockUpdateUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target_language_active: true,
+        }),
+      );
+    });
+  });
 
   it('filters selected native language from target language options', async () => {
     const user = userEvent.setup();
