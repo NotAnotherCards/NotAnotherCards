@@ -90,10 +90,8 @@ describe('App', () => {
       'Privacy Policy',
     );
     expect(privacyDocument.querySelector('#data-deletion')).not.toBeNull();
-    expect(privacyText).toContain('app-scoped Facebook user ID');
     expect(privacyText).toContain('OAuth access token');
     expect(privacyText).toContain('security issue');
-    expect(privacyText).toContain('Facebook Login data, and private decks');
     expect(privacyText).toContain(
       "After account deletion, the author's public decks are no longer listed",
     );

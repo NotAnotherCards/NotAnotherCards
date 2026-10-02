@@ -17,7 +17,7 @@ import {
 // Regression suite for issue #276: a linked OAuth provider must not bypass
 // an enabled second factor. The OAuth round-trip runs against a loopback
 // stub registered via OAUTH_TEST_PROVIDER_BASE_URL (test-only provider in
-// AuthService — never configured outside tests), so no real Google/Facebook
+// AuthService — never configured outside tests), so no real Google
 // traffic is involved.
 //
 // NOTE: /two-factor/* endpoints are rate-limited per IP (3 per 10s, shared
