@@ -24,7 +24,7 @@ hören | to hear, to listen | verb |  | Ich höre gern Musik. | I like listening
 glauben | to believe | verb |  | Ich glaube dir. | I believe you.
 finden | to find | verb |  | Wir finden den Bahnhof schnell. | We find the station quickly.
 müssen | must, to have to | modal verb |  | Ich muss früh aufstehen. | I have to get up early.
-leben | to live | verb | das | Meine Großeltern leben in Berlin. | My grandparents live in Berlin.
+leben | to live | verb |  | Meine Großeltern leben in Berlin. | My grandparents live in Berlin.
 mögen | to like | verb |  | Ich mag diesen Film. | I like this film.
 meinen | to mean, to think | verb |  | Was meinst du damit? | What do you mean by that?
 brauchen | to need | verb |  | Wir brauchen mehr Zeit. | We need more time.
@@ -36,7 +36,7 @@ bleiben | to stay | verb |  | Bleib heute bei uns. | Stay with us today.
 heute | today | adverb |  | Heute ist das Wetter schön. | The weather is nice today.
 stehen | to stand | verb |  | Das Glas steht auf dem Tisch. | The glass is on the table.
 kennen | to know, to be familiar with | verb |  | Ich kenne diese Straße gut. | I know this street well.
-reden | to talk | verb | die | Wir reden später darüber. | We will talk about it later.
+reden | to talk | verb |  | Wir reden später darüber. | We will talk about it later.
 Jahr | year | noun | das | Das Jahr beginnt im Januar. | The year begins in January.
 helfen | to help | verb |  | Kannst du mir helfen? | Can you help me?
 Kind | child | noun | das | Das Kind spielt im Garten. | The child is playing in the garden.
@@ -47,7 +47,7 @@ neu | new | adjective |  | Mein Handy ist neu. | My phone is new.
 passieren | to happen | verb |  | Was ist passiert? | What happened?
 sprechen | to speak | verb |  | Sie spricht gut Deutsch. | She speaks German well.
 gehören | to belong | verb |  | Das Buch gehört meiner Schwester. | The book belongs to my sister.
-fahren | to drive, to travel | verb | das | Wir fahren mit dem Zug. | We are travelling by train.
+fahren | to drive, to travel | verb |  | Wir fahren mit dem Zug. | We are travelling by train.
 fragen | to ask | verb |  | Frag bitte den Lehrer. | Please ask the teacher.
 Geld | money | noun | das | Ich habe kein Geld dabei. | I do not have any money with me.
 versuchen | to try | verb |  | Ich versuche es noch einmal. | I am trying it once more.
@@ -105,7 +105,7 @@ Minute | minute | noun | die | Der Kurs beginnt in einer Minute. | The course st
 allein | alone | adjective |  | Er reist allein. | He travels alone.
 verschwinden | to disappear | verb |  | Der Schlüssel ist verschwunden. | The key has disappeared.
 Hilfe | help | noun | die | Danke für deine Hilfe. | Thank you for your help.
-kriegen | to get | verb | das | Ich kriege morgen Besuch. | I am getting visitors tomorrow.
+kriegen | to get | verb |  | Ich kriege morgen Besuch. | I am getting visitors tomorrow.
 gern | gladly, like to | adverb |  | Ich lese gern Bücher. | I like reading books.
 darüber | about it | adverb |  | Wir sprechen später darüber. | We will talk about it later.
 einzig | only, sole | adjective |  | Das ist die einzige Lösung. | That is the only solution.
@@ -125,7 +125,7 @@ Wort | word | noun | das | Dieses Wort ist neu für mich. | This word is new to 
 ziehen | to pull, to move | verb |  | Zieh bitte die Tür zu. | Please pull the door shut.
 Kopf | head | noun | der | Mein Kopf tut weh. | My head hurts.
 sorgen | to worry | verb |  | Mach dir keine Sorgen. | Do not worry.
-rufen | to call, to shout | verb | der | Ruf mich bitte später an. | Please call me later.
+rufen | to call, to shout | verb |  | Ruf mich bitte später an. | Please call me later.
 spät | late | adverb |  | Der Zug kommt spät. | The train arrives late.
 lernen | to learn | verb |  | Ich lerne jeden Tag Deutsch. | I learn German every day.
 retten | to save, to rescue | verb |  | Die Feuerwehr rettet den Hund. | The fire brigade rescues the dog.
@@ -218,15 +218,15 @@ manchmal | sometimes | adv |  | Manchmal esse ich im Café, manchmal zu Hause. |
 passen | to fit | verb |  | Diese Schuhe passen gut zu deinem neuen Mantel. | These shoes go well with your new coat.
 benutzen | to make use (of) | verb |  | Du kannst mein Handy benutzen, wenn du willst. | You can use my phone if you want.
 eben | flat, smooth, even (of a surface) | adj |  | Der Weg zum Bahnhof ist eben und kurz. | The path to the station is flat and short.
-vertrauen | gerund of vertrauen; trust (confidence in or reliance on some person or quality) | noun |  | Ich vertraue meinem Freund, weil er ehrlich ist. | I trust my friend because he is honest.
+vertrauen | to trust | verb |  | Ich vertraue meinem Freund, weil er ehrlich ist. | I trust my friend because he is honest.
 Gefühl | feeling (either physical sensation or emotion) | noun | das | Ich habe ein gutes Gefühl bei dieser Idee. | I have a good feeling about this idea.
 verkaufen | to sell (something in exchange for money) | verb |  | Sie wollen das alte Auto verkaufen. | They want to sell the old car.
-wiedersehen | reunion; seeing again; instance of seeing someone or each other again | noun |  | Wir freuen uns auf das Wiedersehen morgen. | We are looking forward to seeing each other again tomorrow.
+Wiedersehen | reunion; seeing someone again | noun | das | Wir freuen uns auf das Wiedersehen morgen. | We are looking forward to seeing each other again tomorrow.
 fangen | to catch (grab something flying in the air) | verb |  | Das Kind fängt den Ball mit beiden Händen. | The child catches the ball with both hands.
 schlimm | bad, terrible, serious (seriously bad), dire, horrible, awful | adj |  | Der Fehler ist nicht schlimm, wir können ihn ändern. | The mistake is not bad; we can change it.
 anfangen | to begin; to commence | verb |  | Der Kurs fängt um neun Uhr an. | The course starts at nine o’clock.
 Hund | dog, hound | noun | der | Der Hund wartet vor der Tür auf seinen Freund. | The dog is waiting in front of the door for its friend.
-aufhören | to listen up | verb |  | Der Regen hört am Abend endlich auf. | The rain finally stops in the evening.
+aufhören | to stop | verb |  | Der Regen hört am Abend endlich auf. | The rain finally stops in the evening.
 funktionieren | to work, function | verb |  | Mein Handy funktioniert heute wieder gut. | My phone is working well again today.
 schicken | to send, to dispatch (a person, letter, money etc. to a destination or a person) | verb |  | Kannst du mir die Adresse schicken? | Can you send me the address?
 Typ | type | noun | der | Der Typ im Café kennt meinen Bruder. | The guy in the café knows my brother.
@@ -239,7 +239,7 @@ schießen | to shoot; to fire | verb |  | Der Junge schießt den Ball ins Tor. |
 folgen | to follow (on the same path or in a sequence) | verb |  | Folge bitte diesem Weg zum Bahnhof. | Please follow this path to the station.
 wohnen | to live, reside, dwell (to remain or be settled permanently, or for a considerable time) | verb |  | Meine Schwester wohnt nicht weit vom Park. | My sister lives not far from the park.
 wünschen | to wish for; to make a wish for; to want; to desire | verb |  | Ich wünsche dir einen schönen Tag. | I wish you a nice day.
-ding | thing | noun | das | Das Ding auf dem Tisch gehört meinem Vater. | The thing on the table belongs to my father.
+Ding | thing | noun | das | Das Ding auf dem Tisch gehört meinem Vater. | The thing on the table belongs to my father.
 verdienen | to make money, to earn | verb |  | Sie arbeitet viel und verdient gutes Geld. | She works a lot and earns good money.
 ehrlich | decent, honorable, honest | adj |  | Sei ehrlich: Hast du den Schlüssel gesehen? | Be honest: Have you seen the key?
 Eltern | parents | noun | die | Meine Eltern wohnen in einer kleinen Stadt. | My parents live in a small city.
@@ -249,7 +249,7 @@ beginnen | to begin; to commence; to be started | verb |  | Der Film beginnt gle
 drauf | alternative form of darauf | adv |  | Das Buch liegt drauf auf dem Tisch. | The book is lying on top of the table.
 Papa | dad, daddy | noun | der | Mein Papa fährt heute mit dem Auto zur Arbeit. | My dad is driving to work today.
 irgendwie | somehow (in some unknown or unspecific manner) | adv |  | Irgendwie finden wir einen Weg nach Hause. | Somehow we will find a way home.
-aussehen | look, appearance | noun |  | Du siehst heute sehr glücklich aus. | You look very happy today.
+aussehen | to look; to appear | verb |  | Du siehst heute sehr glücklich aus. | You look very happy today.
 Arsch | arse, posterior, buttocks | noun | der | Er fällt auf seinen Arsch und lacht. | He falls on his backside and laughs.
 fest | firm; compact; hard | adj |  | Halte meine Hand bitte fest. | Please hold my hand tightly.
 kaum | barely, hardly (qualifying verbs or adjectives) | adv |  | Ich habe kaum noch Geld dabei. | I hardly have any money left with me.
@@ -260,7 +260,7 @@ werfen | to throw | verb |  | Wirf den Ball bitte nicht ins Fenster. | Please do
 öffnen | to open (to make something accessible or allow for passage by moving from a shut position) | verb |  | Kannst du das Fenster kurz öffnen? | Can you open the window briefly?
 verstecken | to conceal | verb |  | Das Kind versteckt den Schlüssel im Zimmer. | The child hides the key in the room.
 hübsch | pretty, handsome | adj |  | Deine Schwester hat ein hübsches Kleid. | Your sister has a pretty dress.
-erledigen | to free, to liberate, to release | verb |  | Ich erledige die Arbeit vor dem Abend. | I will finish the work before the evening.
+erledigen | to finish / take care of | verb |  | Ich erledige die Arbeit vor dem Abend. | I will finish the work before the evening.
 entscheiden | to decide, to make a decision | verb |  | Wir entscheiden morgen über den Plan. | We will decide about the plan tomorrow.
 brechen | to break | verb |  | Das Glas fällt und bricht auf dem Boden. | The glass falls and breaks on the floor.
 erfahren | to find out, learn, to come to know | verb |  | Ich erfahre morgen die Antwort. | I will find out the answer tomorrow.
@@ -295,7 +295,7 @@ Hölle | hell | noun | die | Der heiße Raum fühlt sich wie die Hölle an. | Th
 ansehen | to look at, to have a look at (taking in information in doing so) | verb |  | Wir sehen uns den Film heute Abend an. | We are watching the film this evening.
 Kumpel | miner | noun | der | Mein Kumpel hilft mir beim Umzug. | My mate helps me move house.
 tja | well, hmm | intj |  | Tja, jetzt müssen wir warten. | Well, now we have to wait.
-new | obsolete spelling of neu | adj |  | Das Wort new ist eine alte Form von neu. | The word new is an old form of neu.
+wirklich | really; truly | adverb |  | Das ist wirklich eine gute Idee. | That is really a good idea.
 voll | full; filled | adj |  | Das Glas ist schon voll. | The glass is already full.
 fehlen | for there to be a lack [with dative ‘to someone/something’ and an (+ dative) ‘of something’] (idiomatically translated by English lack with the dative object as the subject) | verb |  | Mir fehlt heute die Zeit für Musik. | I am lacking time for music today.
 Idiot | idiot; moron | noun | der | Nenn ihn bitte nicht Idiot. | Please do not call him an idiot.
