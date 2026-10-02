@@ -5,6 +5,7 @@ import type { UserCardRecord, UserDeckRecord } from '@repo/offline-db';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { syncFailure } from '@/lib/sync-outcome';
 import { apiClient } from '@/lib/api-client';
+import { useModerationExplanation } from '@repo/api-client/react';
 import { Button } from './ui/button';
 import { Text } from './ui/text';
 
@@ -36,60 +37,10 @@ export function PublishPanel({
   const [error, setError] = useState<string | null>(null);
   const [flagged, setFlagged] = useState<ModerationWarning[]>([]);
   const [warnings, setWarnings] = useState<ModerationWarning[]>([]);
-  // "Why?" streams an explanation per finding; a
-  // refusal is about the working cards, a takedown or warning about the
+  // "Why?" streams one explanation at a time, as web's deck page does;
+  // a refusal is about the working cards, a takedown or warning about the
   // published snapshot. Leaving the screen cancels the stream.
-  type Explanation = { text: string; pending: boolean; error: string | null };
-  const [explanations, setExplanations] = useState<Record<string, Explanation>>(
-    {},
-  );
-  const explaining = useRef<{
-    key: string;
-    controller: AbortController;
-  } | null>(null);
-  useEffect(() => () => explaining.current?.controller.abort(), []);
-  const patch = (
-    key: string,
-    change: (was: Explanation) => Partial<Explanation>,
-  ) =>
-    setExplanations((all) => {
-      const was = all[key] ?? { text: '', pending: false, error: null };
-      return { ...all, [key]: { ...was, ...change(was) } };
-    });
-  const explain = async (
-    key: string,
-    finding: ModerationWarning,
-    source: 'working' | 'published',
-  ) => {
-    // One stream at a time: the finding asked before gives up its request and
-    // its button comes back.
-    if (explaining.current) {
-      explaining.current.controller.abort();
-      patch(explaining.current.key, () => ({ pending: false }));
-    }
-    const controller = new AbortController();
-    explaining.current = { key, controller };
-    patch(key, () => ({ text: '', pending: true, error: null }));
-    try {
-      const text = await apiClient.publishing.explain(
-        deckId,
-        { cardId: finding.cardId, reason: finding.reason, source },
-        (delta) => {
-          if (!controller.signal.aborted)
-            patch(key, (was) => ({ text: was.text + delta }));
-        },
-        { signal: controller.signal },
-      );
-      if (!controller.signal.aborted)
-        patch(key, () => ({ text, pending: false }));
-    } catch (err) {
-      if (controller.signal.aborted) return;
-      patch(key, () => ({
-        pending: false,
-        error: err instanceof Error ? err.message : 'No explanation.',
-      }));
-    }
-  };
+  const explanation = useModerationExplanation(apiClient, deckId);
   const finding = (
     item: ModerationWarning,
     index: number,
@@ -99,7 +50,7 @@ export function PublishPanel({
   ) => {
     // Which finding, within its list: the lists never share a source.
     const key = `${source}:${index}`;
-    const explanation = explanations[key];
+    const isActive = explanation.activeKey === key;
     return (
       <View key={key} className="gap-1">
         <View className="flex-row items-center justify-between gap-2">
@@ -114,19 +65,19 @@ export function PublishPanel({
             size="sm"
             className="h-12 sm:h-12"
             accessibilityLabel={`Why was ${cardName(item.cardId)} flagged?`}
-            disabled={explanation?.pending}
-            onPress={() => void explain(key, item, source)}
+            disabled={isActive && explanation.isLoading}
+            onPress={() => void explanation.explain(key, item, source)}
           >
             <Text>Why?</Text>
           </Button>
         </View>
-        {explanation?.text ? (
+        {isActive && explanation.text ? (
           <Text className="text-sm">{explanation.text}</Text>
         ) : null}
-        {explanation?.pending && !explanation.text ? (
+        {isActive && explanation.isLoading && !explanation.text ? (
           <Text className="text-sm text-muted-foreground">Asking…</Text>
         ) : null}
-        {explanation?.error ? (
+        {isActive && explanation.error ? (
           <Text className="text-sm text-destructive">{explanation.error}</Text>
         ) : null}
       </View>
