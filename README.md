@@ -102,6 +102,7 @@ In production, the landing port is bound only to `127.0.0.1:5174` on the VPS. It
 - `pnpm test`: run the workspace test suites.
 - `pnpm test:watch`: run tests again when supported files change.
 - `pnpm format`: format Markdown and TypeScript files.
+- Mobile app: see [docs/mobile.md](docs/mobile.md) for the Android emulator setup, the development build and release APKs.
 
 ## Resources
 
@@ -121,7 +122,7 @@ In production, the landing port is bound only to `127.0.0.1:5174` on the VPS. It
 | To be completed | To be completed | @dgomez-a |
 | ChatGPT and Gemini | Code review, technical research and debugging. Output was reviewed and adapted before use. | @samcasti |
 | opencode (free models) | API endpoints, continuous integration, VPS deployment, Prometheus and Grafana monitoring, and the two-factor authentication flow, using the Grafana, Prometheus, and Better Auth documentation as reference. AI output was reviewed and adapted before use. | @tpandya |
-| To be completed | To be completed | @pschneid |
+| Claude Code; opencode with ChatGPT and open models | Coding assistance and code review. Output was reviewed and adapted before use. | @pschneid |
 
 ## Team Information
 
@@ -171,18 +172,18 @@ For the complete table descriptions and relationship diagram, see [Database sche
 | User profile and preferences | Lets users manage their profile, language, theme, and review preferences. | @samcasti; other contributors to be completed by the team. |
 | Theme preferences | Lets users choose and retain a light or dark application theme. | @samcasti; other contributors to be completed by the team. |
 | Deck, note, and card management | Lets a learner create, edit, organise, and delete decks, notes, and cards. | @samcasti; other contributors to be completed by the team. |
-| Starter sample decks | Provides ready-to-use learning decks that help a new learner begin studying. | To be completed by the team. |
+| Starter sample decks | Provides ready-to-use learning decks that help a new learner begin studying. | @pschneid; other contributors to be completed by the team. |
 | Word-note deck views | Displays word notes and their details in deck views, including compact counters, filtering, actions, and responsive layouts. | @amoiseik; @samcasti |
 | Deck review session and answer modes | Lets a learner start a deck-scoped review session, reveal cards, answer with ratings, use keyboard controls, and move through a review batch. | @amoiseik |
-| Offline-first learning data | Keeps each user's learning data locally available on web and mobile, then synchronises accepted changes with the API and PostgreSQL. | @samcasti; other contributors to be completed by the team. |
-| Community deck sharing | Lets owners publish decks, lets learners import personal copies, and preserves ownership of an imported copy. | @samcasti; other contributors to be completed by the team. |
-| AI card generation | Creates card drafts from user input through queued generation jobs and a streamed web playground. | @tpandya; @samcasti; other contributors to be completed by the team. |
-| AI content moderation | Checks published content, refuses unsafe content, supports reports and independent re-checks, and explains moderation decisions to owners. | To be completed by the team. |
+| Offline-first learning data | Keeps each user's learning data locally available on web and mobile, then synchronises accepted changes with the API and PostgreSQL. | @samcasti; @pschneid; other contributors to be completed by the team. |
+| Community deck sharing | Lets owners publish decks, lets learners import personal copies, and preserves ownership of an imported copy. | @samcasti; @pschneid; other contributors to be completed by the team. |
+| AI card generation | Creates card drafts from user input through queued generation jobs and a streamed web playground. | @tpandya; @samcasti; @pschneid; other contributors to be completed by the team. |
+| AI content moderation | Checks published content, refuses unsafe content, supports reports and independent re-checks, and explains moderation decisions to owners. | @pschneid |
 | Import and export | Exports learning data as JSON or CSV and imports validated data as one all-or-nothing operation. | @samcasti |
 | Learning analytics | Shows due cards, dictionary size, review activity, streaks, forecasts, and card maturity, including while offline. | To be completed by the team. |
 | Gamification | Provides badges, global leaderboards, and daily challenges with persistent progress and feedback. |@samcasti; other contributors to be completed by the team. |
 | Multiple languages | Provides a language switcher and translated user-facing text. | @samcasti; other contributors to be completed by the team. |
-| Native mobile application | Provides Android and iOS learning flows with local data, synchronisation, deck/card management, and review. | To be completed by the team. |
+| Native mobile application | Provides Android and iOS learning flows with local data, synchronisation, deck/card management, and review. | @pschneid; other contributors to be completed by the team. |
 | Standalone landing application | Provides a separate public marketing application, packaged with the project services and branded with the project identity. | @amoiseik |
 | Privacy Policy and Terms of Service | Makes the required public legal information available from the landing application. | @amoiseik |
 | Production monitoring and alerts | Collects infrastructure and application metrics, presents Grafana dashboards, and sends operational alerts to Slack. | @tpandya; other contributors to be completed by the team. |
@@ -202,12 +203,12 @@ The project claims the 13 modules below: four Major modules worth 2 points each 
 | Artificial Intelligence: complete LLM system interface | Major, 2 | Card-generation jobs accept user input, stream results in the web playground, record usage, and enforce quotas and rate limits. | @tpandya, @samcasti, team |
 | Data and Analytics: data export and import | Minor, 1 | The application exports JSON and CSV, validates imports with Zod, and applies an import in one all-or-nothing database batch. | @samcasti |
 | Gaming and user experience: gamification | Minor, 1 | The system provides badges, global leaderboards, and daily challenges, with persistent storage, visual feedback, and clear progression rules. | @samcasti |
-| Modules of choice: mobile app | Major, 2 | The native Expo and React Native application extends learning to Android and iOS with per-account offline data, synchronisation, route guards, review, and deck/card management. It addresses mobile offline use and shared-data synchronisation rather than wrapping the web application. | To be completed by the team. |
+| Modules of choice: mobile app | Major, 2 | The native Expo and React Native application extends learning to Android and iOS with per-account offline data, synchronisation, route guards, review, and deck/card management. It addresses mobile offline use and shared-data synchronisation rather than wrapping the web application. | @pschneid, team |
 | DevOps: monitoring with Prometheus and Grafana | Major, 2 | Prometheus collects API, PostgreSQL, VPS, GPU, and AI metrics; Grafana provides dashboards; Alertmanager sends alerts to Slack; Grafana is served through authenticated HTTPS access. | @tpandya, team |
 | User Management: user activity analytics and insights dashboard | Minor, 1 | Offline-capable statistics show due cards, dictionary size, streaks, review activity, forecasts, and card maturity from local learning data. | @samcasti, team |
 | Accessibility and Internationalization: multiple languages | Minor, 1 | The application provides an internationalization system, at least three complete translations, a language switcher, and translatable user-facing text. | @samcasti, team |
 | User Management: 2FA | Minor, 1 | The application provides a complete two-factor authentication flow for users. | @tpandya, team |
-| Artificial Intelligence: content moderation AI | Minor, 1 | Published content is classified before publication. Unsafe content is refused, reports trigger an independent re-check, and owners can inspect classifier verdicts and request an explanation. | To be completed by the team. |
+| Artificial Intelligence: content moderation AI | Minor, 1 | Published content is classified before publication. Unsafe content is refused, reports trigger an independent re-check, and owners can inspect classifier verdicts and request an explanation. | @pschneid |
 
 ## Individual Contributions
 
@@ -235,4 +236,4 @@ A significant technical challenge he addressed was ensuring the reliability of t
 
 ### @pschneid
 
-To be completed.
+Worked on the mobile app, offline sync, the AI gateway, content moderation, the shared packages, and the web deck views.
