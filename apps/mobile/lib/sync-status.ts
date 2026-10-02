@@ -31,6 +31,14 @@ export function isSyncAuthBlocked(state: SyncControllerState): boolean {
 }
 
 export function syncStatusView(state: SyncControllerState): SyncStatusView {
+  if (isSyncAuthBlocked(state)) {
+    return {
+      label: 'Signed out',
+      tone: 'error',
+      retryable: false,
+      details: undefined,
+    };
+  }
   const { count: rejected, details } = rejectedSummary(state);
   return {
     label: rejected
