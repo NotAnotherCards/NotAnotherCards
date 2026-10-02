@@ -948,7 +948,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         {notifications.map((code) => (
           <div
             key={code}
-            className="bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-5"
+            className="bg-sage text-sage-foreground border border-sage-border px-4 py-3 rounded-2xl shadow-card flex items-center gap-2 animate-in slide-in-from-bottom-5"
           >
             <Sparkles className="size-4 shrink-0" />
             <div className="text-sm font-medium">
@@ -968,7 +968,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             <div
               key={badgeId}
               role="status"
-              className="bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-5"
+              className="bg-primary text-primary-foreground border border-primary/20 px-4 py-3 rounded-2xl shadow-card flex items-center gap-3 animate-in slide-in-from-bottom-5"
             >
               <span className="sr-only">Badge unlocked: {badgeDef.name}</span>
               <div

@@ -100,7 +100,7 @@ export function AiResultPreview({
         {cards.map((card, idx) => (
           <div
             key={idx}
-            className="bg-card/40 border border-border/60 rounded-2xl p-4 shadow-sm hover:border-violet-500/30 transition-all duration-200 group flex flex-col md:flex-row gap-4 justify-between items-stretch"
+            className="bg-card/40 border border-border/60 rounded-2xl p-4 shadow-sm hover:border-primary/30 transition-all duration-200 group flex flex-col md:flex-row gap-4 justify-between items-stretch"
           >
             <div className="flex-1 space-y-1">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -126,7 +126,7 @@ export function AiResultPreview({
       </div>
 
       {/* Persistence Section */}
-      <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">
+      <div className="bg-card/30 border border-border/50 rounded-2xl p-6 backdrop-blur-sm space-y-6">
         <div>
           <h3 className="text-lg font-bold tracking-tight">
             {t('playground.preview.save_db', 'Save to Database')}
@@ -185,7 +185,7 @@ export function AiResultPreview({
                 id="deck-select"
                 value={selectedDeckId}
                 onChange={(e) => setSelectedDeckId(e.target.value)}
-                className="w-full rounded-3xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
+                className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
               >
                 <option value="" disabled>
                   {t('playground.preview.choose_deck', '-- Choose a deck --')}
@@ -230,7 +230,7 @@ export function AiResultPreview({
             (deckMode === 'existing' && !selectedDeckId) ||
             (deckMode === 'new' && !newDeckTitle.trim())
           }
-          className="w-full bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-3xl py-5 shadow-lg shadow-emerald-500/10 font-semibold cursor-pointer"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5 shadow-card font-semibold cursor-pointer"
         >
           {isSaving
             ? t('playground.preview.saving_cards', 'Saving to Deck...')
@@ -240,13 +240,13 @@ export function AiResultPreview({
 
       {/* Toast Notification */}
       {savedSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-500/30 transition-all duration-300">
-          <CheckCircle2 className="size-5 shrink-0 text-white" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-sage text-sage-foreground px-4 py-3 rounded-2xl shadow-card border border-sage-border transition-all duration-300">
+          <CheckCircle2 className="size-5 shrink-0 text-sage-foreground" />
           <div>
             <h4 className="font-semibold text-sm">
               {t('playground.preview.deck_saved', 'Deck Saved!')}
             </h4>
-            <p className="text-xs text-emerald-100">
+            <p className="text-xs text-sage-foreground/80">
               {t(
                 'playground.preview.deck_saved_desc',
                 'Cards have been added to your local library.',
