@@ -55,16 +55,18 @@ describe('AiLimitsService', () => {
 
     limitsService = new AiLimitsService(mockDb, mockConfig);
 
-    await expect(
-      limitsService.checkUserCanSubmitJob(mockDb, 'user-1'),
-    ).rejects.toThrow(HttpException);
-
     try {
       await limitsService.checkUserCanSubmitJob(mockDb, 'user-1');
+      throw new Error('Should have thrown');
     } catch (err: unknown) {
       if (err instanceof HttpException) {
         expect(err.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
         expect(err.message).toContain('Active generation cap reached');
+        expect(err.getResponse()).toMatchObject({
+          statusCode: 429,
+          code: 'AI_ACTIVE_JOB_LIMIT',
+          message: err.message,
+        });
       } else {
         throw err;
       }
@@ -96,6 +98,11 @@ describe('AiLimitsService', () => {
       if (err instanceof HttpException) {
         expect(err.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
         expect(err.message).toContain('Daily AI token quota reached');
+        expect(err.getResponse()).toMatchObject({
+          statusCode: 429,
+          code: 'AI_DAILY_QUOTA',
+          message: err.message,
+        });
       } else {
         throw err;
       }
@@ -127,6 +134,11 @@ describe('AiLimitsService', () => {
       if (err instanceof HttpException) {
         expect(err.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
         expect(err.message).toContain('Daily AI request quota reached');
+        expect(err.getResponse()).toMatchObject({
+          statusCode: 429,
+          code: 'AI_DAILY_QUOTA',
+          message: err.message,
+        });
       } else {
         throw err;
       }

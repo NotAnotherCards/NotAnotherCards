@@ -52,3 +52,6 @@ describe('CardEditor', () => {
     expect(writes.update).not.toHaveBeenCalled();
   });
 });
+jest.mock('@/lib/api-client', () => ({
+  apiClient: { ai: { generateWordNote: jest.fn() } },
+}));

@@ -7,3 +7,9 @@ export {
 export { readEventStream } from './read-event-stream.js';
 export { createApiClient, type PublishOutcome } from './client.js';
 export { readPlaygroundStream } from './read-playground-stream.js';
+export {
+  AiJobFailedError,
+  AiJobPollError,
+  type WordNoteGenerationInput,
+  type WordNoteGenerationOptions,
+} from './generate-word-note.js';
