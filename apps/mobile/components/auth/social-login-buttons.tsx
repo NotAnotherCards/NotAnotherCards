@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -24,6 +25,7 @@ const LABELS: Record<SocialProvider, string> = {
 // scheme it stores the session. A relative callbackURL becomes that scheme
 // URL. The screen's session effect then navigates, as it does for email.
 export function SocialLoginButtons() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -60,7 +62,9 @@ export function SocialLoginButtons() {
     <View className="gap-2">
       <View className="my-1 flex-row items-center gap-3">
         <View className="h-px flex-1 bg-border" />
-        <Text className="text-xs text-muted-foreground">Or continue with</Text>
+        <Text className="text-xs text-muted-foreground">
+          {t('auth.login.continue_with')}
+        </Text>
         <View className="h-px flex-1 bg-border" />
       </View>
       {(['google'] as const).map((provider) => (
@@ -70,7 +74,9 @@ export function SocialLoginButtons() {
           loading={busy === provider}
           disabled={busy !== null}
           onPress={() => void signIn(provider)}
-          accessibilityLabel={`Continue with ${LABELS[provider]}`}
+          accessibilityLabel={t('mobile.messages.continue_provider', {
+            provider: LABELS[provider],
+          })}
         >
           <View className="flex-row items-center gap-2">
             {busy !== provider && <GoogleIcon />}

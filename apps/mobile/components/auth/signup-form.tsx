@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +21,7 @@ function getTimezone(): string | undefined {
 }
 
 export function SignupForm() {
+  const { t } = useTranslation();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
@@ -54,15 +56,15 @@ export function SignupForm() {
       <FormField
         control={control}
         name="name"
-        label="Name"
-        placeholder="Jane Doe"
+        label={t('auth.name')}
+        placeholder={t('auth.name')}
         autoCapitalize="words"
       />
       <FormField
         control={control}
         name="email"
-        label="Email"
-        placeholder="you@example.com"
+        label={t('auth.email')}
+        placeholder={t('auth.email_placeholder')}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
@@ -70,16 +72,16 @@ export function SignupForm() {
       <FormField
         control={control}
         name="password"
-        label="Password"
-        placeholder="Create a password"
+        label={t('auth.password')}
+        placeholder={t('auth.password')}
         secureTextEntry
         autoCapitalize="none"
       />
       <FormField
         control={control}
         name="confirmPassword"
-        label="Confirm password"
-        placeholder="Repeat your password"
+        label={t('auth.confirm_password')}
+        placeholder={t('auth.confirm_password')}
         secureTextEntry
         autoCapitalize="none"
       />
@@ -93,7 +95,7 @@ export function SignupForm() {
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
       >
-        <Text>Create account</Text>
+        <Text>{t('auth.register.submit')}</Text>
       </Button>
 
       <SocialLoginButtons />

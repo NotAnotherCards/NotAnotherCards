@@ -50,7 +50,9 @@ export default function CommunityDeckScreen() {
       .then((result) => setDeck(result.deck))
       .catch((err: unknown) =>
         setError(
-          err instanceof Error ? err.message : 'Could not load the deck',
+          err instanceof Error
+            ? err.message
+            : 'mobile.messages.load_deck_failed',
         ),
       );
   }, [id]);
@@ -64,9 +66,7 @@ export default function CommunityDeckScreen() {
     if (!mounted.current) return;
     if (failure) {
       setAwaitingSync(true);
-      setDone(
-        `Imported. It appears in your library after the next sync. ${failure}`,
-      );
+      setDone(t('mobile.messages.import_pending', { reason: failure }));
       return;
     }
     router.dismissTo({
@@ -84,7 +84,11 @@ export default function CommunityDeckScreen() {
     try {
       await work();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The request failed');
+      setError(
+        err instanceof Error
+          ? err.message
+          : t('mobile.messages.request_failed'),
+      );
     } finally {
       setPending(null);
     }
@@ -92,23 +96,29 @@ export default function CommunityDeckScreen() {
 
   return (
     <RequireSession>
-      <Stack.Screen options={{ title: deck?.title ?? 'Community deck' }} />
+      <Stack.Screen
+        options={{ title: deck?.title ?? t('mobile.messages.community_deck') }}
+      />
       <ScrollView
         className="flex-1 bg-background"
         contentContainerClassName="gap-4 p-6"
         keyboardShouldPersistTaps="handled"
       >
         {!deck && !error && (
-          <ActivityIndicator accessibilityLabel="Loading the deck" />
+          <ActivityIndicator
+            accessibilityLabel={t('mobile.messages.loading_deck')}
+          />
         )}
         {error && (
           <View className="items-center gap-2">
-            <Text className="text-center text-destructive">{error}</Text>
+            <Text className="text-center text-destructive">
+              {t(error, { defaultValue: error })}
+            </Text>
             {/* Only a failed load retries here; a failed action keeps
                 its buttons. */}
             {!deck && (
               <Button variant="outline" className="h-12 sm:h-12" onPress={load}>
-                <Text>Retry</Text>
+                <Text>{t('common.retry')}</Text>
               </Button>
             )}
           </View>
@@ -126,7 +136,11 @@ export default function CommunityDeckScreen() {
                   i18n.resolvedLanguage ?? i18n.language,
                   (key, options) => t(`deck.type.${key}`, options),
                 )}{' '}
-                · {deck.cardCount} cards · by @{deck.owner.username}
+                ·{' '}
+                {t('mobile.messages.community_count', {
+                  count: deck.cardCount,
+                  author: deck.owner.username,
+                })}
               </Text>
               {deck.description ? <Text>{deck.description}</Text> : null}
             </View>
@@ -143,18 +157,20 @@ export default function CommunityDeckScreen() {
                     loading={pending === 'import'}
                     onPress={() => run('import', bringHome)}
                   >
-                    <Text>Retry sync</Text>
+                    <Text>{t('mobile.messages.retry_sync')}</Text>
                   </Button>
                 )}
               </View>
             ) : reporting ? (
               <View className="gap-2">
-                <Text className="font-semibold">Report this deck</Text>
+                <Text className="font-semibold">
+                  {t('mobile.messages.report_deck')}
+                </Text>
                 <TextInput
                   className="min-h-12 rounded-md border border-input bg-background px-3 py-2 text-foreground"
-                  placeholder="What is wrong with it?"
+                  placeholder={t('mobile.messages.report_reason')}
                   placeholderTextColor="#888"
-                  accessibilityLabel="Reason"
+                  accessibilityLabel={t('mobile.messages.reason')}
                   value={reason}
                   onChangeText={setReason}
                   multiline
@@ -166,7 +182,7 @@ export default function CommunityDeckScreen() {
                     disabled={pending !== null}
                     onPress={() => setReporting(false)}
                   >
-                    <Text>Cancel</Text>
+                    <Text>{t('common.cancel')}</Text>
                   </Button>
                   <Button
                     variant="destructive"
@@ -177,11 +193,11 @@ export default function CommunityDeckScreen() {
                       run('report', async () => {
                         await apiClient.sharedDecks.report(id, reason.trim());
                         setReporting(false);
-                        setDone('Thanks, the deck is reported.');
+                        setDone(t('mobile.messages.report_sent'));
                       })
                     }
                   >
-                    <Text>Send report</Text>
+                    <Text>{t('mobile.messages.send_report')}</Text>
                   </Button>
                 </View>
               </View>
@@ -193,7 +209,7 @@ export default function CommunityDeckScreen() {
                   disabled={pending !== null}
                   onPress={() => setReporting(true)}
                 >
-                  <Text>Report</Text>
+                  <Text>{t('mobile.messages.report')}</Text>
                 </Button>
                 <Button
                   className="h-12 flex-1 sm:h-12"
@@ -208,7 +224,7 @@ export default function CommunityDeckScreen() {
                     })
                   }
                 >
-                  <Text>Import</Text>
+                  <Text>{t('dashboard.settings.import_export.import')}</Text>
                 </Button>
               </View>
             )}

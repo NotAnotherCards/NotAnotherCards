@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import {
   parseWordFields,
@@ -35,6 +36,7 @@ export function CardEditor({
   onDone: () => void;
   onDeleted?: () => void;
 }) {
+  const { t } = useTranslation();
   const [writeError, setWriteError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -49,7 +51,7 @@ export function CardEditor({
       await write();
       then();
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'The write failed'));
+      setWriteError(writeErrorMessage(err, t('mobile.messages.write_failed')));
       setPending(false);
     }
   };
@@ -65,13 +67,13 @@ export function CardEditor({
       if (!(nativeLanguageId && targetLanguageId)) {
         return (
           <Text className="text-destructive">
-            This word deck does not have a valid language pair.
+            {t('mobile.messages.invalid_language_pair')}
           </Text>
         );
       }
       return (
         <WordNoteForm
-          title="New word"
+          title={t('mobile.messages.new_word')}
           deckId={deck.id}
           nativeLanguageId={nativeLanguageId}
           busy={pending}
@@ -92,7 +94,7 @@ export function CardEditor({
     }
     return (
       <CardForm
-        title="New card"
+        title={t('mobile.messages.new_card')}
         busy={pending}
         error={writeError}
         onSubmit={(values) =>
@@ -104,12 +106,13 @@ export function CardEditor({
   }
 
   const isWord = note?.note_type === WORD_NOTE_TYPE;
-  const noun = isWord ? 'word' : 'card';
   // Header for editing: the trash, or the question in its place.
   const deleteHeader = (name: string) =>
     confirmingDelete
       ? {
-          title: `Delete "${name.length > 24 ? `${name.slice(0, 24)}…` : name}"?`,
+          title: t('mobile.messages.delete_named', {
+            title: name.length > 24 ? `${name.slice(0, 24)}…` : name,
+          }),
           headerAction: (
             <>
               <Button
@@ -118,29 +121,39 @@ export function CardEditor({
                 disabled={pending}
                 onPress={() => setConfirmingDelete(false)}
               >
-                <Text>No</Text>
+                <Text>{t('mobile.messages.no')}</Text>
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 loading={pending}
-                accessibilityHint={`Deletes the ${noun}, its cards and their review history everywhere`}
+                accessibilityHint={t(
+                  isWord
+                    ? 'mobile.messages.delete_word_help'
+                    : 'mobile.messages.delete_card_help',
+                )}
                 onPress={() =>
                   run(() => writes.deleteNote(card.note_id), onDeleted)
                 }
               >
-                <Text>Delete</Text>
+                <Text>{t('deck.card.actions.delete')}</Text>
               </Button>
             </>
           ),
         }
       : {
-          title: `Edit ${noun}`,
+          title: t(
+            isWord ? 'mobile.messages.edit_word' : 'mobile.messages.edit_card',
+          ),
           headerAction: (
             <Button
               variant="ghost"
               size="icon"
-              accessibilityLabel={`Delete ${noun}`}
+              accessibilityLabel={t(
+                isWord
+                  ? 'mobile.messages.delete_word'
+                  : 'mobile.messages.delete_card',
+              )}
               disabled={pending}
               onPress={() => setConfirmingDelete(true)}
             >

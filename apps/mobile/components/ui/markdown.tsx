@@ -17,6 +17,8 @@ import {
   type MarkedStyles,
 } from 'react-native-marked';
 import { isSafeUrl } from '@repo/schemas';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 interface MarkdownProps {
   content: string;
@@ -145,6 +147,7 @@ class SafeRenderer extends Renderer {
   constructor(
     private readonly inline: boolean,
     selectable: boolean,
+    private readonly t: TFunction,
   ) {
     super(selectable ? undefined : { selectable: false });
   }
@@ -228,7 +231,7 @@ class SafeRenderer extends Renderer {
       <NativeText
         key={this.getKey()}
         accessibilityRole="link"
-        accessibilityHint="Opens in a new window"
+        accessibilityHint={this.t('mobile.messages.open_link')}
         accessibilityLabel={title}
         onPress={() => openSafeUrl(href)}
         style={safeStyle}
@@ -250,7 +253,9 @@ class SafeRenderer extends Renderer {
         key={this.getKey()}
         source={{ uri }}
         accessibilityRole="image"
-        accessibilityLabel={alt || title || 'Card image'}
+        accessibilityLabel={
+          alt || title || this.t('mobile.messages.card_image')
+        }
         testID="markdown-image"
         style={[
           {
@@ -282,7 +287,7 @@ class SafeRenderer extends Renderer {
         {this.inline ? (
           <NativeText
             accessibilityRole="link"
-            accessibilityHint="Opens in a new window"
+            accessibilityHint={this.t('mobile.messages.open_link')}
             accessibilityLabel={title ?? alt}
             onPress={() => openSafeUrl(href)}
           >
@@ -291,7 +296,7 @@ class SafeRenderer extends Renderer {
         ) : (
           <Pressable
             accessibilityRole="link"
-            accessibilityHint="Opens in a new window"
+            accessibilityHint={this.t('mobile.messages.open_link')}
             accessibilityLabel={title ?? alt}
             onPress={() => openSafeUrl(href)}
           >
@@ -363,10 +368,11 @@ class SafeRenderer extends Renderer {
 }
 
 export function Markdown({ content, inline = false, variant }: MarkdownProps) {
+  const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const renderer = useMemo(
-    () => new SafeRenderer(inline, !variant),
-    [inline, variant],
+    () => new SafeRenderer(inline, !variant, t),
+    [inline, variant, t],
   );
   const elements = useMarkdown(content, {
     colorScheme,

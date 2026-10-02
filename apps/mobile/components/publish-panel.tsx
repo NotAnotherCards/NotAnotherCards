@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { ModerationWarning, OwnerModerationStatus } from '@repo/schemas';
@@ -21,6 +22,7 @@ export function PublishPanel({
   deck: Pick<UserDeckRecord, 'id' | 'visibility'>;
   cards: readonly Pick<UserCardRecord, 'id' | 'front'>[];
 }) {
+  const { t } = useTranslation();
   const deckId = deck.id;
   const { manager, syncController } = useSessionDatabase();
   const [status, setStatus] = useState<OwnerModerationStatus>({
@@ -65,18 +67,22 @@ export function PublishPanel({
             variant="ghost"
             size="sm"
             className="h-12 sm:h-12"
-            accessibilityLabel={`Why was ${cardName(item.cardId)} flagged?`}
+            accessibilityLabel={t('mobile.messages.flagged_why', {
+              title: cardName(item.cardId),
+            })}
             disabled={isActive && explanation.isLoading}
             onPress={() => void explanation.explain(key, item, source)}
           >
-            <Text>Why?</Text>
+            <Text>{t('mobile.messages.why')}</Text>
           </Button>
         </View>
         {isActive && explanation.text ? (
           <Text className="text-sm">{explanation.text}</Text>
         ) : null}
         {isActive && explanation.isLoading && !explanation.text ? (
-          <Text className="text-sm text-muted-foreground">Asking…</Text>
+          <Text className="text-sm text-muted-foreground">
+            {t('mobile.messages.asking')}
+          </Text>
         ) : null}
         {isActive && explanation.error ? (
           <Text className="text-sm text-destructive">{explanation.error}</Text>
@@ -112,7 +118,8 @@ export function PublishPanel({
     (remoteVisibility ?? deck.visibility) === 'public' &&
     status.status !== 'blocked';
   const cardName = (cardId: string) =>
-    cards.find((card) => card.id === cardId)?.front ?? 'A card';
+    cards.find((card) => card.id === cardId)?.front ??
+    t('mobile.messages.unnamed_card');
 
   // The sync before the call uploads the latest cards, so moderation sees
   // them; if it did not go through, nothing is sent. The sync after it
@@ -131,19 +138,21 @@ export function PublishPanel({
         scope,
       );
       if (notSynced) {
-        setError(`Not sent: ${notSynced}`);
+        setError(t('mobile.messages.not_sent', { reason: notSynced }));
         return;
       }
       if ((await work()) === 'refused') return;
       const behind = await syncFailure(await syncController?.syncNow(), scope);
       if (behind) {
-        setError(
-          `Done on the server; this device catches up at the next sync. ${behind}`,
-        );
+        setError(t('mobile.messages.server_done', { reason: behind }));
       }
       await refreshStatus();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The request failed');
+      setError(
+        err instanceof Error
+          ? err.message
+          : t('mobile.messages.request_failed'),
+      );
     } finally {
       setPending(false);
     }
@@ -161,10 +170,10 @@ export function PublishPanel({
       <View className="flex-row items-center justify-between gap-2">
         <Text className="text-sm text-muted-foreground">
           {status.status === 'blocked'
-            ? 'Taken down by moderation'
+            ? t('mobile.messages.taken_down')
             : isPublic
-              ? 'Published to the community'
-              : 'Private'}
+              ? t('mobile.messages.published_community')
+              : t('deck.form.visibility_private')}
         </Text>
         {isPublic ? (
           <Button
@@ -184,7 +193,7 @@ export function PublishPanel({
               })
             }
           >
-            <Text>Unpublish</Text>
+            <Text>{t('deck.detail.unpublish')}</Text>
           </Button>
         ) : (
           <Button
@@ -205,14 +214,14 @@ export function PublishPanel({
                 setError(
                   outcome.refusal.reason ??
                     (outcome.refusal.flagged.length > 0
-                      ? 'Moderation refused the deck. Review the flagged cards and try again.'
-                      : 'Moderation refused the deck.'),
+                      ? t('mobile.messages.refused_details')
+                      : t('mobile.messages.refused')),
                 );
                 return 'refused';
               })
             }
           >
-            <Text>Publish</Text>
+            <Text>{t('deck.detail.publish')}</Text>
           </Button>
         )}
       </View>
@@ -229,7 +238,13 @@ export function PublishPanel({
           finding(item, index, 'published', 'destructive'),
         )}
       {shownWarnings.map((item, index) =>
-        finding(item, index, 'published', 'muted', 'Warning, '),
+        finding(
+          item,
+          index,
+          'published',
+          'muted',
+          t('mobile.messages.warning'),
+        ),
       )}
     </View>
   );

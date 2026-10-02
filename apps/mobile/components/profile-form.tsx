@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { View } from 'react-native';
@@ -38,6 +39,7 @@ export function ProfileForm({
   profile: UserProfileRecord | null;
   onSave: ReturnType<typeof profileWrites>['update'];
 }) {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const {
@@ -87,7 +89,7 @@ export function ProfileForm({
         const available = await checkUsernameAvailable(values.username);
         if (superseded()) return;
         if (!available) {
-          setError('Username is already taken');
+          setError('dashboard.settings.profile.username_taken');
           return;
         }
       }
@@ -129,16 +131,16 @@ export function ProfileForm({
         <CardHeader className="flex-row items-center gap-3">
           <UserIcon size={20} className="text-foreground" />
           <View className="flex-1">
-            <CardTitle>Profile Details</CardTitle>
-            <CardDescription>Your public screen username</CardDescription>
+            <CardTitle>{t('dashboard.settings.profile.title')}</CardTitle>
+            <CardDescription>{t('mobile.profile_description')}</CardDescription>
           </View>
         </CardHeader>
         <CardContent>
           <FormField
             control={control}
             name="username"
-            label="Username"
-            placeholder="your-username"
+            label={t('dashboard.settings.profile.username')}
+            placeholder={t('dashboard.settings.profile.username_placeholder')}
             autoCapitalize="none"
             autoComplete="username"
             returnKeyType="done"
@@ -153,9 +155,11 @@ export function ProfileForm({
         <CardHeader className="flex-row items-center gap-3">
           <GlobeIcon size={20} className="text-foreground" />
           <View className="flex-1">
-            <CardTitle>Language Preferences</CardTitle>
+            <CardTitle>
+              {t('dashboard.settings.profile.language_title')}
+            </CardTitle>
             <CardDescription>
-              Native language and language of study
+              {t('dashboard.settings.profile.language_description')}
             </CardDescription>
           </View>
         </CardHeader>
@@ -165,7 +169,7 @@ export function ProfileForm({
             name="native_language_id"
             render={({ field, fieldState }) => (
               <LanguageField
-                label="Native language"
+                label={t('dashboard.settings.profile.native_language')}
                 value={field.value}
                 onChange={(value) => saveLanguage('native_language_id', value)}
                 error={fieldState.error?.message}
@@ -177,7 +181,7 @@ export function ProfileForm({
             name="target_language_id"
             render={({ field, fieldState }) => (
               <LanguageField
-                label="Target language"
+                label={t('dashboard.settings.profile.target_language')}
                 value={field.value}
                 onChange={(value) => saveLanguage('target_language_id', value)}
                 error={fieldState.error?.message}
@@ -188,9 +192,15 @@ export function ProfileForm({
         </CardContent>
       </Card>
 
-      {error && <Text className="text-center text-destructive">{error}</Text>}
+      {error && (
+        <Text className="text-center text-destructive">
+          {t(error, { defaultValue: error })}
+        </Text>
+      )}
       {saved && !formState.isDirty && (
-        <Text className="text-center text-muted-foreground">Saved</Text>
+        <Text className="text-center text-muted-foreground">
+          {t('mobile.saved')}
+        </Text>
       )}
     </View>
   );

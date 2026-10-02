@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pressable, View } from 'react-native';
@@ -35,6 +36,7 @@ export function DeckForm({
   onSubmit,
   onCancel,
 }: DeckFormProps) {
+  const { t } = useTranslation();
   const { control, handleSubmit, formState, watch } = useForm<DeckFormValues>({
     resolver: zodResolver(deckFormSchema),
     defaultValues: {
@@ -57,15 +59,15 @@ export function DeckForm({
         <FormField
           control={control}
           name="title"
-          label="Deck title"
-          placeholder="e.g. Spanish vocabulary"
+          label={t('deck.form.title')}
+          placeholder={t('mobile.messages.deck_example')}
           autoFocus
         />
         <FormField
           control={control}
           name="description"
-          label="Description"
-          placeholder="Optional"
+          label={t('deck.form.description')}
+          placeholder={t('mobile.messages.optional')}
           multiline
         />
         {showNoteType && (
@@ -75,14 +77,18 @@ export function DeckForm({
             render={({ field }) => (
               <View className="gap-1">
                 <Text className="text-sm font-medium">
-                  What goes in this deck
+                  {t('deck.form.note_type')}
                 </Text>
                 <View className="flex-row gap-2">
-                  {DECK_NOTE_TYPE_OPTIONS.map(({ value, label }) => (
+                  {DECK_NOTE_TYPE_OPTIONS.map(({ value }) => (
                     <Pressable
                       key={value}
                       accessibilityRole="radio"
-                      accessibilityLabel={label}
+                      accessibilityLabel={t(
+                        value === WORD_NOTE_TYPE
+                          ? 'deck.type.word'
+                          : 'deck.type.basic',
+                      )}
                       accessibilityState={{ selected: field.value === value }}
                       className={`flex-1 rounded-lg border px-3 py-2 ${
                         field.value === value
@@ -91,7 +97,13 @@ export function DeckForm({
                       }`}
                       onPress={() => field.onChange(value)}
                     >
-                      <Text>{label}</Text>
+                      <Text>
+                        {t(
+                          value === WORD_NOTE_TYPE
+                            ? 'deck.type.word'
+                            : 'deck.type.basic',
+                        )}
+                      </Text>
                     </Pressable>
                   ))}
                 </View>
@@ -106,7 +118,7 @@ export function DeckForm({
               name="nativeLanguageId"
               render={({ field, fieldState }) => (
                 <LanguageField
-                  label="Your language"
+                  label={t('deck.form.native_lang')}
                   value={field.value}
                   onChange={field.onChange}
                   error={fieldState.error?.message}
@@ -118,7 +130,7 @@ export function DeckForm({
               name="targetLanguageId"
               render={({ field, fieldState }) => (
                 <LanguageField
-                  label="Language you are learning"
+                  label={t('deck.form.target_lang')}
                   value={field.value}
                   onChange={field.onChange}
                   error={fieldState.error?.message}
@@ -136,7 +148,7 @@ export function DeckForm({
             onPress={onCancel}
             disabled={formState.isSubmitting}
           >
-            <Text>Cancel</Text>
+            <Text>{t('common.cancel')}</Text>
           </Button>
           <Button
             className="flex-1"
@@ -145,7 +157,7 @@ export function DeckForm({
             // keeps the form open with its values
             onPress={handleSubmit((values) => onSubmit(values))}
           >
-            <Text>Save</Text>
+            <Text>{t('common.save')}</Text>
           </Button>
         </View>
       </CardContent>

@@ -1,8 +1,9 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import '@/lib/i18n';
 import { Settings, initials } from '@/components/settings';
 import { loadReviewPreferences } from '@/lib/review-preferences';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 
 const mockUseSession = jest.fn();
 const mockSignOut = jest.fn();
@@ -39,6 +40,19 @@ describe('initials', () => {
 });
 
 describe('Settings', () => {
+  it('translates the section tabs and keeps the selection when the locale changes', async () => {
+    const screen = await renderWithLocale(<Settings />, 'de');
+    expect(screen.getByRole('tab', { name: 'Profil & Sprachen' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Einstellungen' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('tab', { name: 'Sicherheit' }));
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByRole('tab', { name: 'Perfil e Idiomas' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Preferencias' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Seguridad' })).toBeSelected();
+    expect(screen.queryByRole('tab', { name: 'Sicherheit' })).toBeNull();
+  });
   beforeEach(() => {
     mockUseSession.mockReturnValue({
       data: {

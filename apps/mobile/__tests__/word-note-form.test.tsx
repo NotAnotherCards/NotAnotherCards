@@ -38,6 +38,35 @@ beforeEach(() => {
   mockConnected = true;
 });
 
+it.each([
+  'Notes',
+  'Example',
+  'Example translation',
+  'Part of speech',
+  'Pronunciation',
+])(
+  'accepts whitespace-only optional %s without blaming the translation',
+  async (label) => {
+    const onSubmit = jest.fn();
+    const screen = render(
+      <WordNoteForm
+        {...props}
+        onSubmit={onSubmit}
+        initialValues={{ word: 'casa', translation: 'house' }}
+      />,
+    );
+    fireEvent.changeText(screen.getByLabelText(label), '   ');
+    fireEvent.press(screen.getByText('Save'));
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        word: 'casa',
+        translation: 'house',
+      }),
+    );
+    expect(screen.queryByText('Translation is required')).toBeNull();
+  },
+);
+
 it('forgets a paused job when the word changes', async () => {
   mockGenerate
     .mockRejectedValueOnce(new AiJobPollError('j1', new Error('offline')))

@@ -241,7 +241,7 @@ describe('CardList', () => {
 
     fireEvent.press(r.getByText('New word'));
     fireEvent.changeText(
-      r.getByPlaceholderText('The word you are learning'),
+      r.getByPlaceholderText('the word you are learning'),
       'Katze',
     );
     fireEvent.changeText(r.getByPlaceholderText('What it means'), 'cat');
@@ -286,7 +286,7 @@ describe('CardList', () => {
     fireEvent.press(getByLabelText('Remove hola from deck'));
     expect(getByText(/The note stays/)).toBeTruthy();
     expect(mockWrites.removeFromDeck).not.toHaveBeenCalled();
-    fireEvent.press(getByText('Remove from deck'));
+    fireEvent.press(getByText('Remove from Deck'));
     await waitFor(() =>
       expect(mockWrites.removeFromDeck).toHaveBeenCalledWith('n1', 'd1'),
     );

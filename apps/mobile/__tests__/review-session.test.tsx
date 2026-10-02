@@ -375,9 +375,7 @@ describe('ReviewSession', () => {
       return ['n1'];
     });
     const result = render(<ReviewSession deckId="d1" />);
-    expect(
-      await result.findByText('more card from 1 inactive card'),
-    ).toBeTruthy();
+    expect(await result.findByText('1 inactive card available')).toBeTruthy();
     expect(result.getByLabelText('Number of items to activate')).toHaveProp(
       'value',
       '1',
@@ -405,9 +403,7 @@ describe('ReviewSession', () => {
     ];
     saveActivationCount('user-1', 1);
     const result = render(<ReviewSession deckId="d1" />);
-    expect(
-      await result.findByText('more words from 2 inactive words'),
-    ).toBeTruthy();
+    expect(await result.findByText('2 inactive words available')).toBeTruthy();
     const input = result.getByLabelText('Number of items to activate');
     expect(input).toHaveProp('value', '1');
     fireEvent.changeText(input, '9999');

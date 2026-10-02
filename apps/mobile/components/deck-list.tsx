@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { deckKindShort } from '@repo/offline-db';
 import { deckTypeAccessibilityLabel } from '@repo/i18n';
@@ -63,6 +68,7 @@ function ActiveDeckList({
 }) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const { fontScale, width } = useWindowDimensions();
   const { decks, isLoading, error, cardCount, dueCount, profile, writes } =
     useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
@@ -100,7 +106,7 @@ function ActiveDeckList({
       await write();
       open(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'The write failed'));
+      setWriteError(writeErrorMessage(err, t('mobile.messages.write_failed')));
       setPending(false);
     }
   };
@@ -116,7 +122,7 @@ function ActiveDeckList({
   if (error) {
     return (
       <Text className="text-destructive">
-        Failed to load decks: {error.message}
+        {t('mobile.messages.decks_load_failed', { message: error.message })}
       </Text>
     );
   }
@@ -124,7 +130,7 @@ function ActiveDeckList({
   if (action?.kind === 'create') {
     return (
       <DeckForm
-        title="New deck"
+        title={t('mobile.messages.new_deck')}
         showNoteType
         defaultLanguages={{
           nativeLanguageId: profile?.native_language_id ?? null,
@@ -151,7 +157,7 @@ function ActiveDeckList({
     const { deck } = action;
     return (
       <DeckForm
-        title="Edit deck"
+        title={t('mobile.messages.edit_deck')}
         initialValues={{
           title: deck.title,
           description: deck.description ?? '',
@@ -169,7 +175,7 @@ function ActiveDeckList({
     <View className="gap-3">
       {decks.length === 0 && (
         <Text className="text-muted-foreground">
-          No decks yet. Create your first one, or import one from the community.
+          {t('mobile.messages.no_decks')}
         </Text>
       )}
       <View role="list" className="gap-3">
@@ -192,24 +198,30 @@ function ActiveDeckList({
                   <Pressable
                     className="flex-1 flex-row items-center gap-2"
                     accessibilityRole="button"
-                    accessibilityLabel={`Open ${deck.title}`}
+                    accessibilityLabel={t('mobile.messages.open_deck', {
+                      title: deck.title,
+                    })}
                     onPress={() => router.push(`/deck/${deck.id}`)}
                   >
                     <Text
                       accessibilityLabel={kindLabel}
                       className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                     >
-                      {deckKindShort(deck)}
+                      {deck.note_type === 'basic'
+                        ? t('deck.words.col_cards')
+                        : deckKindShort(deck)}
                     </Text>
                     <CardTitle className="flex-1" numberOfLines={1}>
                       {deck.title}
                     </CardTitle>
                     {deck.visibility === 'public' && (
                       <Text
-                        accessibilityLabel="Published to the community"
+                        accessibilityLabel={t(
+                          'mobile.messages.published_community',
+                        )}
                         className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground"
                       >
-                        Published
+                        {t('mobile.messages.published')}
                       </Text>
                     )}
                   </Pressable>
@@ -221,7 +233,9 @@ function ActiveDeckList({
                       size="icon"
                       className="h-12 w-12 sm:h-12 sm:w-12"
                       disabled={pending}
-                      accessibilityLabel={`Edit ${deck.title}`}
+                      accessibilityLabel={t('mobile.messages.edit_item', {
+                        title: deck.title,
+                      })}
                       onPress={() => open({ kind: 'edit', deck })}
                     >
                       <SquarePenIcon
@@ -234,7 +248,10 @@ function ActiveDeckList({
                       size="icon"
                       className="h-12 w-12 sm:h-12 sm:w-12"
                       disabled={pending}
-                      accessibilityLabel={`Delete ${deck.title}`}
+                      accessibilityLabel={t(
+                        'mobile.messages.delete_deck_label',
+                        { title: deck.title },
+                      )}
                       onPress={() => open({ kind: 'delete', deck })}
                     >
                       <TrashIcon size={20} className="text-muted-foreground" />
@@ -259,7 +276,7 @@ function ActiveDeckList({
                   <View className="mt-1 flex-row rounded-2xl border border-border px-3 py-2">
                     <View className="flex-1 items-center">
                       <Text className="text-xs font-medium text-muted-foreground">
-                        Total Cards
+                        {t('deck.card.total_cards')}
                       </Text>
                       <Text className="text-sm font-bold">
                         {cardCount(deck.id)}
@@ -268,7 +285,7 @@ function ActiveDeckList({
                     <View className="w-px bg-border" />
                     <View className="flex-1 items-center">
                       <Text className="text-xs font-medium text-muted-foreground">
-                        Due
+                        {t('deck.card.due_short')}
                       </Text>
                       <Text
                         testID={`deck-due-${deck.id}`}
@@ -288,7 +305,7 @@ function ActiveDeckList({
                 {action?.kind === 'delete' && action.deck.id === deck.id ? (
                   <View className="gap-2">
                     <Text className="text-sm">
-                      Delete this deck? Its cards are kept and stay in review.
+                      {t('mobile.messages.delete_deck_help')}
                     </Text>
                     {writeError && (
                       <Text className="text-destructive">{writeError}</Text>
@@ -300,7 +317,7 @@ function ActiveDeckList({
                         onPress={() => open(null)}
                         disabled={pending}
                       >
-                        <Text>Cancel</Text>
+                        <Text>{t('common.cancel')}</Text>
                       </Button>
                       <Button
                         variant="destructive"
@@ -308,38 +325,52 @@ function ActiveDeckList({
                         loading={pending}
                         onPress={() => run(() => writes.remove(deck.id))}
                       >
-                        <Text>Delete deck</Text>
+                        <Text>{t('deck.form.delete_title')}</Text>
                       </Button>
                     </View>
                   </View>
                 ) : (
-                  <View className="flex-row items-center gap-2">
+                  <View
+                    className={
+                      fontScale > 1.1 || width < 360
+                        ? 'gap-2'
+                        : 'flex-row items-center gap-2'
+                    }
+                  >
                     {/* Web's two row actions, half the row each: Manage Cards
                       with web's folder, then the outline review button with
-                      its icon. At least 48 high; a longer label in
-                      another language wraps instead of being cut off.
+                      its icon. Short labels and compact padding fit a
+                      360dp screen without splitting words.
                       Nothing due, nothing to start. */}
                     <Button
-                      className="h-auto min-h-12 flex-1 gap-1.5 py-2 sm:h-auto"
+                      className="h-auto min-h-12 flex-1 gap-1 px-2 py-2 sm:h-auto"
                       disabled={pending}
-                      accessibilityLabel={`Manage cards of ${deck.title}`}
+                      accessibilityLabel={t('mobile.manage_deck', {
+                        title: deck.title,
+                      })}
                       onPress={() => router.push(`/deck/${deck.id}`)}
                     >
                       <FolderOpenIcon
                         size={16}
                         className="text-primary-foreground"
                       />
-                      <Text className="shrink text-center">Manage cards</Text>
+                      <Text className="shrink text-center" numberOfLines={1}>
+                        {t('deck.card.actions.manage_cards_short')}
+                      </Text>
                     </Button>
                     <Button
                       variant="outline"
-                      className="h-auto min-h-12 flex-1 py-2 sm:h-auto"
+                      className="h-auto min-h-12 flex-1 gap-1 px-2 py-2 sm:h-auto"
                       disabled={pending}
-                      accessibilityLabel={`Start review of ${deck.title}`}
+                      accessibilityLabel={t('mobile.review_deck', {
+                        title: deck.title,
+                      })}
                       onPress={() => router.push(`/review/${deck.id}`)}
                     >
                       <BookOpenIcon size={16} className="text-foreground" />
-                      <Text className="shrink text-center">Start Review</Text>
+                      <Text className="shrink text-center" numberOfLines={1}>
+                        {t('deck.card.actions.start_review_short')}
+                      </Text>
                     </Button>
                   </View>
                 )}

@@ -39,19 +39,9 @@ export function ActivationControls({
         className="w-20 text-center"
       />
       <Text>
-        {itemLabel === 'cards'
-          ? t(
-              inactiveItemCount === 1
-                ? 'review.activation.more_card'
-                : 'review.activation.more_cards',
-              { count: inactiveItemCount },
-            )
-          : t(
-              inactiveItemCount === 1
-                ? 'review.activation.more_word'
-                : 'review.activation.more_words',
-              { count: inactiveItemCount },
-            )}
+        {t(`review.activation.available_${itemLabel}`, {
+          count: inactiveItemCount,
+        })}
       </Text>
       <Button onPress={onActivate} disabled={isActivating}>
         <Text>{t('review.activation.continue', 'Activate and continue')}</Text>

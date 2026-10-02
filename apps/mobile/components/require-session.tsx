@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
@@ -18,6 +19,7 @@ import {
 // one-time backup codes after enabling 2FA, say), and the session is still
 // valid until the server says otherwise.
 export function RequireSession({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { data: session, isPending, error, refetch } = authClient.useSession();
   const challenge = useTwoFactorChallengeState();
   const deepLinkPending = useTwoFactorDeepLinkPending();
@@ -41,7 +43,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
           {apiErrorMessage(error)}
         </Text>
         <Button onPress={() => refetch()}>
-          <Text>Retry</Text>
+          <Text>{t('common.retry')}</Text>
         </Button>
       </View>
     );
@@ -58,7 +60,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
             {apiErrorMessage(error)}
           </Text>
           <Button variant="ghost" size="sm" onPress={() => refetch()}>
-            <Text>Retry</Text>
+            <Text>{t('common.retry')}</Text>
           </Button>
         </View>
       )}

@@ -1,3 +1,4 @@
+import { t } from 'i18next';
 import type { Database, SyncControllerState } from '@remelondb/core';
 import { rejectionsConcernDeck } from '@repo/offline-db';
 
@@ -12,16 +13,17 @@ export async function syncFailure(
   state: SyncControllerState | undefined,
   scope?: { db: Database; deckId: string },
 ): Promise<string | null> {
-  if (!state) return 'Sync is unavailable.';
-  if (state.status === 'offline') return 'You are offline.';
-  if (state.status === 'error') return state.error ?? 'The sync failed.';
+  if (!state) return t('mobile.messages.sync_unavailable');
+  if (state.status === 'offline') return t('mobile.messages.offline');
+  if (state.status === 'error')
+    return state.error ?? t('mobile.messages.sync_failed');
   const result = state.lastResult;
   if (
     (state.status !== 'idle' && state.status !== 'resync-required') ||
     !result ||
     result.lease !== 'acquired'
   ) {
-    return 'The sync could not be confirmed.';
+    return t('mobile.messages.sync_unconfirmed');
   }
   if (result.rejected > 0) {
     const concerns = scope
@@ -31,7 +33,7 @@ export async function syncFailure(
           result.rejectedRecords,
         )
       : true;
-    if (concerns) return 'The server did not accept some of your changes.';
+    if (concerns) return t('mobile.messages.sync_rejected');
   }
   return null;
 }

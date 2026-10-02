@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useReducer } from 'react';
 import type { DatabaseManager } from '@remelondb/core';
 import {
@@ -27,6 +28,7 @@ export function useReviewSession(
   deckId: string,
   userId: string,
 ) {
+  const { t } = useTranslation();
   const {
     deck,
     dueCards,
@@ -89,7 +91,10 @@ export function useReviewSession(
     } catch (cause) {
       dispatch({
         type: 'save-failed',
-        message: writeErrorMessage(cause, 'Could not save your answer'),
+        message: writeErrorMessage(
+          cause,
+          t('mobile.messages.save_answer_failed'),
+        ),
       });
       return false;
     }

@@ -45,8 +45,8 @@ export function Segmented<T extends string>({
           >
             {renderIcon?.(option.value, selected)}
             <Text
-              numberOfLines={1}
-              className={`${stacked ? 'text-xs' : ''} ${
+              numberOfLines={stacked ? 2 : 1}
+              className={`shrink text-center ${stacked ? 'px-1 text-xs' : ''} ${
                 selected
                   ? 'font-semibold text-foreground'
                   : 'text-muted-foreground'

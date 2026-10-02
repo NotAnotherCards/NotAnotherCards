@@ -1,3 +1,4 @@
+import { t } from 'i18next';
 import {
   createContext,
   createElement,
@@ -170,21 +171,21 @@ export function twoFactorChallengeError(error: unknown): string {
   const code = twoFactorChallengeErrorCode(error);
 
   if (code === 'ACCOUNT_TEMPORARILY_LOCKED') {
-    return 'Too many failed attempts. Your account is temporarily locked. Sign in again later.';
+    return t('mobile.messages.locked');
   }
   if (code === 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE') {
-    return 'Too many failed attempts. Sign in again to start a new verification request.';
+    return t('mobile.messages.challenge_exhausted');
   }
   if (code === 'INVALID_BACKUP_CODE') {
-    return 'That backup code is invalid or has already been used.';
+    return t('auth.error.two_factor_invalid_backup');
   }
   if (code === 'INVALID_CODE') {
-    return 'That authentication code is invalid or has expired.';
+    return t('auth.error.two_factor_invalid_code');
   }
   if (code === 'INVALID_TWO_FACTOR_COOKIE') {
-    return 'This verification request has expired. Sign in again.';
+    return t('mobile.messages.challenge_expired');
   }
-  return 'Verification failed. Check the code and try again.';
+  return t('auth.error.two_factor_failed');
 }
 
 export function isTerminalTwoFactorChallengeError(error: unknown): boolean {

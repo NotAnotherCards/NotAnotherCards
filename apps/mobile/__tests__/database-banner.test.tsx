@@ -1,4 +1,6 @@
 import React from 'react';
+import '@/lib/i18n';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import { render, fireEvent } from '@testing-library/react-native';
 import { DatabaseBanner } from '@/components/database-banner';
 
@@ -15,6 +17,18 @@ jest.mock('../lib/database-provider', () => ({
 }));
 
 describe('DatabaseBanner', () => {
+  it('explains the database failure and offers retry in Spanish', async () => {
+    mockUseDatabaseState.mockReturnValue({
+      status: 'error',
+      error: new Error('disk'),
+    });
+    const screen = await renderWithLocale(<DatabaseBanner />, 'es');
+    expect(
+      screen.getByText(/La base de datos sin conexión no está disponible/),
+    ).toBeTruthy();
+    fireEvent.press(screen.getByText('Reintentar'));
+    expect(mockManager.init).toHaveBeenCalledTimes(1);
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     mockActiveManager = mockManager;

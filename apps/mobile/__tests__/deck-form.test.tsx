@@ -52,7 +52,7 @@ describe('DeckForm', () => {
       <DeckForm title="New deck" onSubmit={jest.fn()} onCancel={jest.fn()} />,
     );
 
-    expect(getByLabelText('Deck title')).toHaveProp(
+    expect(getByLabelText('Title')).toHaveProp(
       'placeholder',
       'e.g. Spanish vocabulary',
     );
@@ -77,7 +77,7 @@ describe('DeckForm', () => {
       r.getByPlaceholderText('e.g. Spanish vocabulary'),
       'German',
     );
-    fireEvent.press(r.getByLabelText('Words'));
+    fireEvent.press(r.getByLabelText('Word deck'));
     fireEvent.press(r.getByText('Save'));
 
     await waitFor(() =>

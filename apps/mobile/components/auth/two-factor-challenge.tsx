@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -21,6 +22,7 @@ import { Text } from '../ui/text';
 type ChallengeMode = 'totp' | 'backup';
 
 export function TwoFactorChallenge() {
+  const { t } = useTranslation();
   const router = useRouter();
   usePreventScreenCapture('notanothercards-two-factor-challenge');
   const {
@@ -64,9 +66,7 @@ export function TwoFactorChallenge() {
       return;
     }
     if (!isConfirmingSession && !isSessionPending && !isSessionRefetching) {
-      setSessionError(
-        'Your code was accepted, but the signed-in session could not be confirmed. Retry or return to sign in.',
-      );
+      setSessionError(t('mobile.messages.session_unconfirmed'));
     }
   }, [
     hydrated,
@@ -85,9 +85,7 @@ export function TwoFactorChallenge() {
     try {
       await refetch();
     } catch {
-      setSessionError(
-        'Your code was accepted, but the signed-in session could not be confirmed. Retry or return to sign in.',
-      );
+      setSessionError(t('mobile.messages.session_unconfirmed'));
     } finally {
       setIsConfirmingSession(false);
     }
@@ -115,9 +113,7 @@ export function TwoFactorChallenge() {
         // prevents cached auth from reopening protected screens meanwhile.
         await clearLocalAuthStorage();
       } catch {
-        setError(
-          'Could not safely sign out on this device. Please try again before leaving verification.',
-        );
+        setError(t('mobile.messages.unsafe_signout'));
         setIsSubmitting(false);
         return;
       }
@@ -130,11 +126,11 @@ export function TwoFactorChallenge() {
   const verify = async () => {
     const normalizedCode = code.trim();
     if (mode === 'totp' && !/^\d{6}$/.test(normalizedCode)) {
-      setError('Enter the six-digit code from your authenticator app.');
+      setError(t('auth.error.two_factor_empty_totp'));
       return;
     }
     if (mode === 'backup' && !normalizedCode) {
-      setError('Enter one of your backup codes.');
+      setError(t('auth.error.two_factor_empty_backup'));
       return;
     }
 
@@ -156,7 +152,7 @@ export function TwoFactorChallenge() {
       if (response.error || !response.data) {
         if (isTerminalTwoFactorChallengeError(response.error)) {
           Alert.alert(
-            'Sign-in could not continue',
+            t('mobile.messages.signin_failed'),
             twoFactorChallengeError(response.error),
           );
           await leaveChallenge();
@@ -169,7 +165,7 @@ export function TwoFactorChallenge() {
       markTwoFactorChallengeVerified(response.data.user.id);
       await confirmSession();
     } catch {
-      setError('Verification is temporarily unavailable. Please try again.');
+      setError(t('auth.error.two_factor_unavailable'));
     } finally {
       setIsSubmitting(false);
     }
@@ -185,11 +181,11 @@ export function TwoFactorChallenge() {
 
   return (
     <AuthCard
-      title="Two-factor verification"
+      title={t('auth.two_factor.title')}
       description={
         mode === 'totp'
-          ? 'Enter the current code from your authenticator app.'
-          : 'Use one of the backup codes you saved during setup.'
+          ? t('auth.two_factor.description_totp')
+          : t('auth.two_factor.description_backup')
       }
       footerText=""
       footerLinkText=""
@@ -198,7 +194,7 @@ export function TwoFactorChallenge() {
       <View
         className="mb-2 flex-row rounded-md bg-muted p-1"
         accessibilityRole="tablist"
-        accessibilityLabel="Verification method"
+        accessibilityLabel={t('mobile.messages.verification_method')}
       >
         <Button
           variant={mode === 'totp' ? 'secondary' : 'ghost'}
@@ -207,7 +203,7 @@ export function TwoFactorChallenge() {
           accessibilityRole="tab"
           accessibilityState={{ selected: mode === 'totp' }}
         >
-          <Text>Authenticator</Text>
+          <Text>{t('auth.two_factor.authenticator')}</Text>
         </Button>
         <Button
           variant={mode === 'backup' ? 'secondary' : 'ghost'}
@@ -216,19 +212,23 @@ export function TwoFactorChallenge() {
           accessibilityRole="tab"
           accessibilityState={{ selected: mode === 'backup' }}
         >
-          <Text>Backup code</Text>
+          <Text>{t('auth.two_factor.backup_code')}</Text>
         </Button>
       </View>
 
       <View className="gap-1">
         <Label nativeID="two-factor-code-label" htmlFor="two-factor-code">
-          {mode === 'totp' ? 'Authentication code' : 'Backup code'}
+          {mode === 'totp'
+            ? t('mobile.messages.authentication_code')
+            : t('auth.two_factor.backup_code')}
         </Label>
         <Input
           nativeID="two-factor-code"
           aria-labelledby="two-factor-code-label"
           accessibilityLabel={
-            mode === 'totp' ? 'Authentication code' : 'Backup code'
+            mode === 'totp'
+              ? t('mobile.messages.authentication_code')
+              : t('auth.two_factor.backup_code')
           }
           value={code}
           onChangeText={setCode}
@@ -258,11 +258,11 @@ export function TwoFactorChallenge() {
           }
           onPress={confirmSession}
         >
-          <Text>Retry session</Text>
+          <Text>{t('mobile.messages.retry_session')}</Text>
         </Button>
       ) : (
         <Button loading={isSubmitting} onPress={verify}>
-          <Text>Verify and continue</Text>
+          <Text>{t('auth.two_factor.verify_and_continue')}</Text>
         </Button>
       )}
       <Button
@@ -275,7 +275,7 @@ export function TwoFactorChallenge() {
         }
         onPress={leaveChallenge}
       >
-        <Text>Back to sign in</Text>
+        <Text>{t('auth.two_factor.back_to_sign_in')}</Text>
       </Button>
     </AuthCard>
   );

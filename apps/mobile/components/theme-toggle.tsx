@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Segmented } from './ui/segmented';
 import {
   loadThemePreference,
@@ -6,14 +7,13 @@ import {
   type ThemePreference,
 } from '@/lib/theme';
 
-// Same order as the web's theme switcher (#95): light, dark, system.
-const OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
-];
-
 export function ThemeToggle() {
+  const { t } = useTranslation();
+  const options: { value: ThemePreference; label: string }[] = [
+    { value: 'light', label: t('mobile.theme.light') },
+    { value: 'dark', label: t('mobile.theme.dark') },
+    { value: 'system', label: t('mobile.theme.system') },
+  ];
   const [preference, setPreference] = useState(loadThemePreference);
 
   const select = (value: ThemePreference) => {
@@ -23,9 +23,9 @@ export function ThemeToggle() {
 
   return (
     <Segmented
-      label="Theme"
+      label={t('dashboard.settings.preferences.theme')}
       value={preference}
-      options={OPTIONS}
+      options={options}
       onChange={select}
     />
   );

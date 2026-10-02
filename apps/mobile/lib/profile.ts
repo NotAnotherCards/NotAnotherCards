@@ -1,3 +1,4 @@
+import { t } from 'i18next';
 import type { Database, SyncController } from '@remelondb/core';
 import { updateUserProfile } from '@repo/offline-db';
 import { usernameAvailabilitySchema } from '@repo/schemas';
@@ -24,7 +25,7 @@ export async function checkUsernameAvailable(
     await res.json().catch(() => null),
   );
   if (!res.ok || !body.success) {
-    throw new Error('Could not check the username. Try again.');
+    throw new Error(t('mobile.messages.username_check_failed'));
   }
   return body.data.available;
 }

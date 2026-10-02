@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { SyncControllerState } from '@remelondb/core';
 import { rejectedSummary } from '@repo/offline-db';
+import { t as translate, type TFunction } from 'i18next';
 
 // Web's Overview sync badge (DashboardSyncStatus): same labels, same order
 // of precedence, same rejected summary, so the two clients read alike.
@@ -14,19 +15,42 @@ export interface SyncStatusView {
 }
 
 const LABELS: Record<SyncControllerState['status'], string> = {
-  idle: 'Synced',
-  syncing: 'Syncing…',
-  offline: 'Offline',
-  error: 'Sync failed',
-  'resync-required': 'Reset required',
+  idle: 'dashboard.sync.synced',
+  syncing: 'dashboard.sync.syncing',
+  offline: 'dashboard.sync.offline',
+  error: 'dashboard.sync.failed',
+  'resync-required': 'dashboard.sync.reset_required',
 };
 
-export function syncStatusView(state: SyncControllerState): SyncStatusView {
-  const { count: rejected, details } = rejectedSummary(state);
+export function syncStatusView(
+  state: SyncControllerState,
+  t: TFunction = translate,
+): SyncStatusView {
+  const { count: rejected } = rejectedSummary(state);
+  const tableKeys: Record<string, string> = {
+    user_decks: 'deck',
+    user_notes: 'note',
+    user_cards: 'card',
+    user_note_decks: 'membership',
+    review_events: 'review',
+    user_profiles: 'profile',
+    user_badges: 'badge',
+  } as const;
+  const details = rejected
+    ? Object.entries(state.lastResult?.rejectedRecords ?? {})
+        .filter(([, ids]) => ids.length > 0)
+        .map(([table, ids]) =>
+          t(`mobile.sync_tables.${tableKeys[table] ?? 'change'}`, {
+            count: ids.length,
+          }),
+        )
+        .concat(t('mobile.messages.sync_details'))
+        .join('. ')
+    : undefined;
   return {
     label: rejected
-      ? `Synced, ${rejected} not accepted`
-      : (LABELS[state.status] ?? state.status),
+      ? t('dashboard.sync.rejected', { rejected })
+      : t(LABELS[state.status]),
     tone: rejected
       ? 'warning'
       : state.status === 'idle'

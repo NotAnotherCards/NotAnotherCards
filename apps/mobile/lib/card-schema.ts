@@ -9,19 +9,13 @@ export const cardFormSchema = z.object({
   front: z
     .string()
     .trim()
-    .min(1, 'Front is required')
-    .max(
-      CARD_SIDE_MAX_LENGTH,
-      `Front cannot exceed ${CARD_SIDE_MAX_LENGTH} characters`,
-    ),
+    .min(1, 'mobile.messages.front_required')
+    .max(CARD_SIDE_MAX_LENGTH, 'mobile.messages.front_max'),
   back: z
     .string()
     .trim()
-    .min(1, 'Back is required')
-    .max(
-      CARD_SIDE_MAX_LENGTH,
-      `Back cannot exceed ${CARD_SIDE_MAX_LENGTH} characters`,
-    ),
+    .min(1, 'mobile.messages.back_required')
+    .max(CARD_SIDE_MAX_LENGTH, 'mobile.messages.back_max'),
 });
 
 export type CardFormValues = z.infer<typeof cardFormSchema>;

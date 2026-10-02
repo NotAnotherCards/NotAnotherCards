@@ -1,3 +1,4 @@
+import { t } from 'i18next';
 import { apiURL } from './api-url';
 
 // better-auth reports HTTP errors through its { error } result (status 0 and
@@ -23,12 +24,12 @@ export function apiErrorMessage(err: unknown): string {
       message,
     )
   ) {
-    return `Can't reach the server at ${apiURL} — is the API running?`;
+    return t('mobile.messages.network_error', { url: apiURL });
   }
   if (!message && typeof obj?.status === 'number' && obj.status >= 500) {
-    return `The server hit an error (HTTP ${obj.status}) — check the API logs.`;
+    return t('mobile.messages.server_error', { status: obj.status });
   }
-  return message || 'An unexpected error occurred';
+  return message || t('auth.error.unexpected');
 }
 
 // The shared queries surface low-level failures ("Database not initialized").

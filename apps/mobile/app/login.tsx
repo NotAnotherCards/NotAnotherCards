@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
@@ -10,6 +11,7 @@ import {
 } from '@/lib/two-factor-challenge';
 
 export default function Login() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const challenge = useTwoFactorChallengeState();
@@ -35,10 +37,10 @@ export default function Login() {
 
   return (
     <AuthCard
-      title="Welcome Back"
-      description="Enter your email below to log in to your account"
-      footerText="Don't have an account?"
-      footerLinkText="Sign up"
+      title={t('auth.login.title')}
+      description={t('auth.login.description')}
+      footerText={t('auth.login.no_account')}
+      footerLinkText={t('auth.login.sign_up')}
       footerLinkTo="/register"
     >
       <LoginForm />

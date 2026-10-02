@@ -47,7 +47,7 @@ describe('ProfileForm', () => {
     );
     expect(getByDisplayValue('jane')).toBeTruthy();
     expect(
-      getByLabelText(/Native language: .*German/).props.accessibilityState
+      getByLabelText(/Native Language: .*German/).props.accessibilityState
         .selected,
     ).toBe(true);
   });
@@ -76,7 +76,7 @@ describe('ProfileForm', () => {
 
     // Picking the target language as native empties the target, so the
     // form is incomplete and must not be written either.
-    await tapLanguage(screen, /Native language: .*Spanish/);
+    await tapLanguage(screen, /Native Language: .*Spanish/);
     expect(screen.getByText('Target language is required')).toBeTruthy();
     expect(onSave).not.toHaveBeenCalled();
   });
@@ -111,7 +111,7 @@ describe('ProfileForm', () => {
   it('saves a language on tap without checking the username, and reports a failed save', async () => {
     const onSave = jest.fn().mockRejectedValue(new Error('The write failed'));
     const screen = render(<ProfileForm profile={profile} onSave={onSave} />);
-    await tapLanguage(screen, /Target language: .*Russian/);
+    await tapLanguage(screen, /Target Language: .*Russian/);
 
     expect(mockCheckUsername).not.toHaveBeenCalled();
     expect(onSave).toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe('ProfileForm', () => {
     fireEvent.changeText(screen.getByDisplayValue('jane'), 'jane-doe');
     fireEvent(screen.getByLabelText('Username'), 'endEditing');
     await act(async () => {});
-    fireEvent.press(screen.getByLabelText(/Target language: .*Russian/));
+    fireEvent.press(screen.getByLabelText(/Target Language: .*Russian/));
     await act(async () => {});
 
     releases[1]?.();

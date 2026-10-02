@@ -3,6 +3,7 @@ import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 // The app's root loads the catalogs; these render the forms without it.
 import '@/lib/i18n';
 import Login from '@/app/login';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import {
   beginTwoFactorChallenge,
   finishTwoFactorChallenge,
@@ -65,6 +66,19 @@ beforeEach(() => {
 });
 
 describe('Login screen', () => {
+  it('translates Spanish labels and validation without changing submitted field names', async () => {
+    const screen = await renderWithLocale(<Login />, 'es');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('nombre@ejemplo.com'),
+      'invalid',
+    );
+    fireEvent.press(screen.getByText('Iniciar sesión'));
+    expect(
+      await screen.findByText(
+        'Por favor, introduce un correo electrónico válido',
+      ),
+    ).toBeTruthy();
+  });
   it('offers the language picker only before login', () => {
     const screen = render(<Login />);
     expect(screen.getByLabelText('Language')).toBeTruthy();
@@ -78,11 +92,11 @@ describe('Login screen', () => {
   it('navigates to the dashboard only once the session exists', async () => {
     const { getByText, getByPlaceholderText, rerender } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     await waitFor(() => expect(mockSignIn).toHaveBeenCalled());
     await act(async () => {});
 
@@ -106,17 +120,17 @@ describe('Login screen', () => {
   it('renders the card and both fields', () => {
     const { getByText, getByPlaceholderText } = render(<Login />);
     expect(getByText('Welcome Back')).toBeTruthy();
-    expect(getByPlaceholderText('you@example.com')).toBeTruthy();
-    expect(getByPlaceholderText('Your password')).toBeTruthy();
+    expect(getByPlaceholderText('name@example.com')).toBeTruthy();
+    expect(getByPlaceholderText('Password')).toBeTruthy();
   });
 
   it('shows a validation error for an invalid email on submit', async () => {
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'not-an-email',
     );
-    fireEvent.press(getByText('Log in'));
+    fireEvent.press(getByText('Login'));
     // The shared schema gives a key; the field shows its translation.
     expect(await findByText('Please enter a valid email address')).toBeTruthy();
   });
@@ -129,11 +143,11 @@ describe('Login screen', () => {
     );
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     expect(await findByText(/Can't reach the server/)).toBeTruthy();
   });
 
@@ -144,11 +158,11 @@ describe('Login screen', () => {
     });
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     expect(await findByText('Invalid email or password')).toBeTruthy();
   });
 
@@ -159,11 +173,11 @@ describe('Login screen', () => {
     });
     const { getByText, getByPlaceholderText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
 
     await waitFor(() =>
       expect(mockReplace).toHaveBeenCalledWith('/two-factor'),

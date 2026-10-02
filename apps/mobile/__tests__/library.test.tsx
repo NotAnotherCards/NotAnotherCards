@@ -1,4 +1,5 @@
 import React from 'react';
+import i18n from '@/lib/i18n';
 import { act, fireEvent } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { router, Stack } from 'expo-router';
@@ -18,6 +19,29 @@ jest.mock('../components/community-decks', () => {
 });
 
 describe('Library', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en');
+  });
+  afterEach(async () => {
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
+  });
+  it('translates the library tabs and create button in German', async () => {
+    await i18n.changeLanguage('de');
+    const result = renderRouter(
+      { dashboard: Library },
+      { initialUrl: '/dashboard' },
+    );
+    expect(result.getByRole('tab', { name: 'Meine Stapel' })).toBeTruthy();
+    expect(result.getByLabelText('Stapel erstellen')).toBeTruthy();
+    expect(result.queryByText('Stapel erstellen')).toBeNull();
+    expect(result.getByLabelText('Stapel erstellen').props.className).toContain(
+      'w-12',
+    );
+    fireEvent.press(result.getByRole('tab', { name: 'Gemeinschaft' }));
+    expect(result.getByText('community list')).toBeTruthy();
+  });
   it('opens on my decks and switches to the community decks', () => {
     const result = renderRouter(
       { dashboard: Library },
@@ -28,13 +52,13 @@ describe('Library', () => {
     expect(result.queryByText('community list')).toBeNull();
 
     // The plus asks the list for its create form, and only shows here.
-    fireEvent.press(result.getByLabelText('Create deck'));
+    fireEvent.press(result.getByLabelText('Create Deck'));
     expect(result.getByText('my decks list 1')).toBeTruthy();
 
     fireEvent.press(result.getByRole('tab', { name: 'Community' }));
     expect(result.getByText('community list')).toBeTruthy();
     expect(result.queryByText(/my decks list/)).toBeNull();
-    expect(result.queryByLabelText('Create deck')).toBeNull();
+    expect(result.queryByLabelText('Create Deck')).toBeNull();
 
     // Back on my decks, the earlier request is forgotten.
     fireEvent.press(result.getByRole('tab', { name: 'My decks' }));

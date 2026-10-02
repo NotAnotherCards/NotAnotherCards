@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { Button } from '../ui/button';
 import { PencilIcon, PlusIcon } from '../ui/icon';
@@ -21,17 +22,18 @@ export function ReviewTopRow({
   onEdit?: () => void;
   onAdd?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View className="flex-row items-center justify-between">
       <Text className="text-sm font-semibold text-muted-foreground">
-        {answered + 1} of {total}
+        {t('mobile.messages.progress', { current: answered + 1, total })}
       </Text>
       <View className="flex-row gap-1">
         {onEdit && (
           <Button
             variant="ghost"
             size="icon"
-            accessibilityLabel="Edit this card"
+            accessibilityLabel={t('mobile.messages.edit_card_hint')}
             // Like the answers: locked for a moment, not faded.
             className="opacity-100"
             disabled={locked}

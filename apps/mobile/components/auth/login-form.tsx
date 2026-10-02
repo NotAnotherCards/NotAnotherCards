@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { useForm } from 'react-hook-form';
@@ -16,6 +17,7 @@ import {
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<LoginFormData>({
@@ -49,8 +51,8 @@ export function LoginForm() {
       <FormField
         control={control}
         name="email"
-        label="Email"
-        placeholder="you@example.com"
+        label={t('auth.email')}
+        placeholder={t('auth.email_placeholder')}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
@@ -58,8 +60,8 @@ export function LoginForm() {
       <FormField
         control={control}
         name="password"
-        label="Password"
-        placeholder="Your password"
+        label={t('auth.password')}
+        placeholder={t('auth.password')}
         secureTextEntry
         autoCapitalize="none"
       />
@@ -73,13 +75,15 @@ export function LoginForm() {
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
       >
-        <Text>Log in</Text>
+        <Text>{t('auth.login.submit')}</Text>
       </Button>
       <SocialLoginButtons />
       <Text className="mt-1 text-center text-muted-foreground">
-        Forgot your password?{' '}
+        {t('auth.login.forgot_password')}{' '}
         <Link href="/forgot-password" asChild>
-          <Text className="font-semibold text-foreground">Reset here!</Text>
+          <Text className="font-semibold text-foreground">
+            {t('auth.login.reset_here')}
+          </Text>
         </Link>
       </Text>
     </>
