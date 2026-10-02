@@ -235,7 +235,13 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 cursor-pointer gap-1"
-                  onClick={() => void explanation.explain(finding, source)}
+                  onClick={() =>
+                    void explanation.explain(
+                      `${source}:${key}`,
+                      finding,
+                      source,
+                    )
+                  }
                   disabled={isActive && explanation.isLoading}
                 >
                   {isActive && explanation.isLoading ? (
@@ -313,7 +319,11 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                       size="sm"
                       className="h-7 cursor-pointer gap-1"
                       onClick={() =>
-                        void explanation.explain(finding, 'published')
+                        void explanation.explain(
+                          `published:${key}`,
+                          finding,
+                          'published',
+                        )
                       }
                       disabled={isActive && explanation.isLoading}
                     >
