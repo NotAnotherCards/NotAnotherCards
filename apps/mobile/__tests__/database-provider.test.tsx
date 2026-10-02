@@ -1,6 +1,12 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { act, render, screen } from '@testing-library/react-native';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react-native';
 import {
   SessionDatabaseProvider,
   useSessionDatabase,
@@ -13,13 +19,26 @@ import {
 import { createSyncController } from '@remelondb/core';
 import { SyncTransportError } from '@repo/offline-db';
 import { RequireSession } from '@/components/require-session';
+import { LoginForm } from '@/components/auth/login-form';
+import { SignupForm } from '@/components/auth/signup-form';
 
 jest.mock('expo-router', () => {
   const { Text } = require('react-native');
-  return { Redirect: ({ href }: { href: string }) => <Text>{href}</Text> };
+  return {
+    Redirect: ({ href }: { href: string }) => <Text>{href}</Text>,
+    Link: ({ children }: { children: React.ReactNode }) => children,
+    useRouter: () => ({ replace: jest.fn() }),
+  };
 });
 const mockSignOut = jest.fn(async () => {
   mockSessionState = { data: null, isPending: false };
+});
+const mockSignIn = jest.fn(async () => {
+  mockSessionState = {
+    data: { user: { id: 'fresh-user', onBoardingComplete: true } },
+    isPending: false,
+  };
+  return { data: {}, error: null };
 });
 
 // The lifecycle itself is remelonDB's (useSessionDatabase, tested
@@ -36,6 +55,9 @@ jest.mock('../lib/auth-client', () => ({
   authClient: {
     useSession: () => mockSessionState,
     signOut: () => mockSignOut(),
+    signIn: { email: () => mockSignIn(), social: () => mockSignIn() },
+    signUp: { email: () => mockSignIn() },
+    getCookie: () => '',
   },
 }));
 
@@ -279,7 +301,13 @@ describe('sync session expiry', () => {
   });
 
   it('handles an already blocked controller once across rerenders and repeated failures', async () => {
-    mockSignOut.mockImplementationOnce(() => new Promise(() => {}));
+    let finish!: () => void;
+    mockSignOut.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
     const controller = controllerFor(
       new SyncTransportError('Unauthorized', 401),
     );
@@ -290,9 +318,106 @@ describe('sync session expiry', () => {
       await controller.syncNow();
     });
     expect(mockSignOut).toHaveBeenCalledTimes(1);
+    await act(async () => finish());
     view.unmount();
     controller.dispose();
   });
+
+  it.each([
+    { method: 'email', outcome: 'success' },
+    { method: 'google', outcome: 'success' },
+    { method: 'register', outcome: 'success' },
+    { method: 'email', outcome: 'failure' },
+    { method: 'google', outcome: 'unmount' },
+  ])(
+    'waits for sign-out before a fresh $method session ($outcome)',
+    async ({ method, outcome }) => {
+      let release!: () => void;
+      mockSignOut.mockImplementationOnce(async () => {
+        // Expo clears once on request start and again on its successful reply.
+        mockSessionState = { data: null, isPending: false };
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        if (outcome === 'failure') throw new Error('Network request failed');
+        mockSessionState = { data: null, isPending: false };
+      });
+      const controller = controllerFor(
+        new SyncTransportError('Unauthorized', 401),
+      );
+      const authTree = () => (
+        <SessionDatabaseProvider>
+          <RequireSession>
+            <Text>Dashboard</Text>
+          </RequireSession>
+          {method === 'register' ? <SignupForm /> : <LoginForm />}
+        </SessionDatabaseProvider>
+      );
+      const view = render(authTree());
+      await act(async () => {
+        await controller.syncNow();
+      });
+      expect(mockSignOut).toHaveBeenCalledTimes(1);
+      view.rerender(authTree());
+      expect(screen.getByText('/login')).toBeTruthy();
+      if (method !== 'google') {
+        fireEvent.changeText(
+          screen.getByPlaceholderText('you@example.com'),
+          'jane@example.com',
+        );
+        fireEvent.changeText(
+          screen.getByPlaceholderText(
+            method === 'register' ? 'Create a password' : 'Your password',
+          ),
+          'Password123*',
+        );
+        if (method === 'register') {
+          fireEvent.changeText(
+            screen.getByPlaceholderText('Jane Doe'),
+            'Jane Doe',
+          );
+          fireEvent.changeText(
+            screen.getByPlaceholderText('Repeat your password'),
+            'Password123*',
+          );
+        }
+      }
+      await act(async () => {
+        fireEvent.press(
+          screen.getByText(
+            method === 'google'
+              ? 'Google'
+              : method === 'register'
+                ? 'Create account'
+                : 'Log in',
+          ),
+        );
+      });
+      expect(mockSignIn).not.toHaveBeenCalled();
+      expect(screen.getByText('Signing out…')).toBeTruthy();
+      expect(
+        screen.getByRole('button', {
+          name: method === 'google' ? 'Continue with Google' : 'Signing out…',
+        }).props.accessibilityState.disabled,
+      ).toBe(true);
+      if (outcome === 'unmount') view.unmount();
+      await act(async () => {
+        release();
+      });
+      if (outcome === 'unmount') {
+        expect(mockSignIn).not.toHaveBeenCalled();
+        controller.dispose();
+        return;
+      }
+      await waitFor(() => expect(mockSignIn).toHaveBeenCalledTimes(1));
+      view.rerender(authTree());
+      expect(mockSessionState.data?.user.id).toBe('fresh-user');
+      expect(screen.getByText('Dashboard')).toBeTruthy();
+      expect(mockSignOut).toHaveBeenCalledTimes(1);
+      view.unmount();
+      controller.dispose();
+    },
+  );
 
   it.each([
     new Error('Network request failed'),

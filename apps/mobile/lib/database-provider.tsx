@@ -19,6 +19,7 @@ import { authClient } from './auth-client';
 import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
 import { isSyncAuthBlocked } from './sync-status';
+import { signOutForExpiredSyncSession } from './sync-sign-out';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
 import { useTwoFactorChallengeState } from './two-factor-challenge';
@@ -84,10 +85,9 @@ export function SessionDatabaseProvider({
       )
         return;
       signedOutController.current = syncController;
-      // Expo clears notanothercards_cookie, notanothercards_session_data
-      // and the live session before sending sign-out, even without a cookie.
-      // RequireSession then redirects; a failed HTTP sign-out needs no retry.
-      void authClient.signOut().catch(() => {});
+      // RequireSession redirects after Expo's first clear. Login waits for
+      // the response's second clear before it creates another session.
+      void signOutForExpiredSyncSession();
     };
     const unsubscribe = syncController.subscribe(onState);
     onState(syncController.state);
