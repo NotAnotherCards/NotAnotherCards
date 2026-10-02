@@ -140,9 +140,7 @@ export function AiPlaygroundForm({
         <div className="w-full bg-muted/60 h-2 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ease-out ${
-              isQuotaExceeded
-                ? 'bg-destructive'
-                : 'bg-primary'
+              isQuotaExceeded ? 'bg-destructive' : 'bg-primary'
             }`}
             style={{ width: `${quota ? quotaPercent : 0}%` }}
           />
