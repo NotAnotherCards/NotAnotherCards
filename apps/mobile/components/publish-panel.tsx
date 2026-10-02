@@ -36,7 +36,7 @@ export function PublishPanel({
   const [error, setError] = useState<string | null>(null);
   const [flagged, setFlagged] = useState<ModerationWarning[]>([]);
   const [warnings, setWarnings] = useState<ModerationWarning[]>([]);
-  // "Why?" streams an explanation per card, as web's deck page does; a
+  // "Why?" streams an explanation per finding; a
   // refusal is about the working cards, a takedown or warning about the
   // published snapshot. Leaving the screen cancels the stream.
   type Explanation = { text: string; pending: boolean; error: string | null };
@@ -44,46 +44,47 @@ export function PublishPanel({
     {},
   );
   const explaining = useRef<{
-    cardId: string;
+    key: string;
     controller: AbortController;
   } | null>(null);
   useEffect(() => () => explaining.current?.controller.abort(), []);
   const patch = (
-    cardId: string,
+    key: string,
     change: (was: Explanation) => Partial<Explanation>,
   ) =>
     setExplanations((all) => {
-      const was = all[cardId] ?? { text: '', pending: false, error: null };
-      return { ...all, [cardId]: { ...was, ...change(was) } };
+      const was = all[key] ?? { text: '', pending: false, error: null };
+      return { ...all, [key]: { ...was, ...change(was) } };
     });
   const explain = async (
+    key: string,
     finding: ModerationWarning,
     source: 'working' | 'published',
   ) => {
-    // One stream at a time: the card asked before gives up its request and
+    // One stream at a time: the finding asked before gives up its request and
     // its button comes back.
     if (explaining.current) {
       explaining.current.controller.abort();
-      patch(explaining.current.cardId, () => ({ pending: false }));
+      patch(explaining.current.key, () => ({ pending: false }));
     }
     const controller = new AbortController();
-    explaining.current = { cardId: finding.cardId, controller };
-    patch(finding.cardId, () => ({ text: '', pending: true, error: null }));
+    explaining.current = { key, controller };
+    patch(key, () => ({ text: '', pending: true, error: null }));
     try {
       const text = await apiClient.publishing.explain(
         deckId,
         { cardId: finding.cardId, reason: finding.reason, source },
         (delta) => {
           if (!controller.signal.aborted)
-            patch(finding.cardId, (was) => ({ text: was.text + delta }));
+            patch(key, (was) => ({ text: was.text + delta }));
         },
         { signal: controller.signal },
       );
       if (!controller.signal.aborted)
-        patch(finding.cardId, () => ({ text, pending: false }));
+        patch(key, () => ({ text, pending: false }));
     } catch (err) {
       if (controller.signal.aborted) return;
-      patch(finding.cardId, () => ({
+      patch(key, () => ({
         pending: false,
         error: err instanceof Error ? err.message : 'No explanation.',
       }));
@@ -91,13 +92,16 @@ export function PublishPanel({
   };
   const finding = (
     item: ModerationWarning,
+    index: number,
     source: 'working' | 'published',
     tone: 'destructive' | 'muted',
     prefix = '',
   ) => {
-    const explanation = explanations[item.cardId];
+    // Which finding, within its list: the lists never share a source.
+    const key = `${source}:${index}`;
+    const explanation = explanations[key];
     return (
-      <View key={item.cardId} className="gap-1">
+      <View key={key} className="gap-1">
         <View className="flex-row items-center justify-between gap-2">
           <Text
             className={`shrink text-sm ${tone === 'destructive' ? 'text-destructive' : 'text-muted-foreground'}`}
@@ -111,7 +115,7 @@ export function PublishPanel({
             className="h-12 sm:h-12"
             accessibilityLabel={`Why was ${cardName(item.cardId)} flagged?`}
             disabled={explanation?.pending}
-            onPress={() => void explain(item, source)}
+            onPress={() => void explain(key, item, source)}
           >
             <Text>Why?</Text>
           </Button>
@@ -260,15 +264,19 @@ export function PublishPanel({
         )}
       </View>
       {error && <Text className="text-destructive">{error}</Text>}
-      {flagged.map((item) => finding(item, 'working', 'destructive'))}
+      {flagged.map((item, index) =>
+        finding(item, index, 'working', 'destructive'),
+      )}
       {/* An operator takedown carries only a reason, no flagged cards. */}
       {status.status === 'blocked' && status.reason && (
         <Text className="text-sm text-destructive">{status.reason}</Text>
       )}
       {status.status === 'blocked' &&
-        status.flagged.map((item) => finding(item, 'published', 'destructive'))}
-      {shownWarnings.map((item) =>
-        finding(item, 'published', 'muted', 'Warning, '),
+        status.flagged.map((item, index) =>
+          finding(item, index, 'published', 'destructive'),
+        )}
+      {shownWarnings.map((item, index) =>
+        finding(item, index, 'published', 'muted', 'Warning, '),
       )}
     </View>
   );

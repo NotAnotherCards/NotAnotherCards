@@ -217,6 +217,39 @@ describe('PublishPanel', () => {
     ).toBe(false);
   });
 
+  it('keeps explanations and cancellation separate for two findings on one card', async () => {
+    mockPublish.mockResolvedValue({
+      published: false,
+      refusal: {
+        flagged: [
+          { cardId: 'c1', reason: 'hate speech' },
+          { cardId: 'c1', reason: 'violence' },
+        ],
+      },
+    });
+    let stream!: (delta: string) => void;
+    mockExplain.mockImplementation((_id, _input, onDelta) => {
+      stream = onDelta;
+      return new Promise<string>(() => {});
+    });
+    const result = render(panel('private'));
+    fireEvent.press(result.getByText('Publish'));
+    await result.findByText('gato: violence');
+    fireEvent.press(result.getAllByLabelText('Why was gato flagged?')[0]);
+    await act(async () => stream('About hate speech only'));
+
+    expect(result.getAllByText('About hate speech only')).toHaveLength(1);
+    const buttons = result.getAllByLabelText('Why was gato flagged?');
+    expect(buttons[0].props.accessibilityState.disabled).toBe(true);
+    expect(buttons[1].props.accessibilityState.disabled).toBe(false);
+    fireEvent.press(buttons[1]);
+    expect(mockExplain.mock.calls[0][3].signal.aborted).toBe(true);
+    expect(
+      result.getAllByLabelText('Why was gato flagged?')[0].props
+        .accessibilityState.disabled,
+    ).toBe(false);
+  });
+
   it('publishes: syncs, calls the API, syncs again, and shows warnings', async () => {
     mockPublish.mockResolvedValue({
       published: true,
