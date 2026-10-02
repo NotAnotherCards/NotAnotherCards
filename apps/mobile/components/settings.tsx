@@ -31,6 +31,7 @@ import {
 } from './ui/card';
 import { Segmented } from './ui/segmented';
 import { Text } from './ui/text';
+import { TwoFactorSecurity } from './two-factor-security';
 
 export function initials(name: string | undefined) {
   const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
@@ -49,7 +50,9 @@ export function Settings() {
   const { data: session } = authClient.useSession();
   const { manager } = useSessionDatabase();
   const user = session?.user;
-  const [section, setSection] = useState<'profile' | 'preferences'>('profile');
+  const [section, setSection] = useState<
+    'profile' | 'preferences' | 'security'
+  >('profile');
 
   // SessionDatabaseProvider closes the offline database when the session
   // goes away; nothing to do here beyond signing out.
@@ -112,6 +115,7 @@ export function Settings() {
         value={section}
         options={SECTIONS}
         onChange={setSection}
+        stacked
       />
 
       {section === 'profile' &&
@@ -126,6 +130,7 @@ export function Settings() {
       {section === 'preferences' && user ? (
         <Preferences key={user.id} userId={user.id} />
       ) : null}
+      {section === 'security' ? <TwoFactorSecurity /> : null}
     </View>
   );
 }
@@ -133,6 +138,7 @@ export function Settings() {
 const SECTIONS = [
   { value: 'profile', label: 'Profile & Languages' },
   { value: 'preferences', label: 'Preferences' },
+  { value: 'security', label: 'Security' },
 ] as const;
 
 // The synced profile row and the shared write, once the account database

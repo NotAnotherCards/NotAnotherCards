@@ -8,7 +8,7 @@ function Input({
   return (
     <TextInput
       className={cn(
-        'dark:bg-input/30 border-input bg-background text-foreground flex w-full min-w-0 flex-row items-center rounded-md border px-3 py-1 text-base leading-5 shadow-sm shadow-black/5',
+        'dark:bg-input/30 border-input bg-background text-foreground flex w-full min-w-0 flex-row items-center rounded-3xl border px-3 py-1 text-base leading-5 shadow-sm shadow-black/5',
         props.multiline ? 'min-h-24 py-3' : 'h-10 sm:h-9',
         props.editable === false &&
           cn(

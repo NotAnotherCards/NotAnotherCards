@@ -2,6 +2,11 @@ import React from 'react';
 import { act, render, fireEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+  TwoFactorDeepLinkProvider,
+} from '@/lib/two-factor-challenge';
 import Storage from 'expo-sqlite/kv-store';
 import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
@@ -129,6 +134,7 @@ describe('Dashboard screen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockParams = {};
+    finishTwoFactorChallenge();
     Storage.removeItemSync(lastReviewDeckStorageKey('user-dashboard'));
     mockReviewOverview = {
       target: 'nothing-due',
@@ -209,6 +215,43 @@ describe('Dashboard screen', () => {
 
     await act(async () => settle());
     expect(refresh().props.refreshing).toBe(false);
+  });
+
+  it('redirects a pending challenge before rendering a cached session', () => {
+    beginTwoFactorChallenge();
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
+  });
+
+  it('gates a deep-linked challenge before its persisted state is written', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(
+      <TwoFactorDeepLinkProvider pending>
+        <Dashboard />
+      </TwoFactorDeepLinkProvider>,
+    );
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
   });
 
   it('redirects to login when there is no session', () => {
