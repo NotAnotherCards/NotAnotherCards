@@ -204,7 +204,7 @@ export function Statistics() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-heading text-xl font-bold">
+          <h2 className="font-heading text-lg font-bold">
             {t('dashboard.statistics.title')}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -230,25 +230,30 @@ export function Statistics() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card aria-label="Learning streak">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-rose-500" />
+        <Card
+          aria-label="Learning streak"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+        >
+          <CardHeader className="items-center pb-2 text-center">
+            <div className="bg-rose-500/10 p-3 rounded-2xl text-rose-500 mb-2">
+              <Flame className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-base">
               {t('dashboard.statistics.learning_streak')}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               {t('dashboard.statistics.consecutive_days')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-1">
-            <p className="text-2xl font-bold">
+          <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
+            <p className="text-lg font-bold text-foreground">
               {streak.currentStreak === 1
                 ? t('dashboard.statistics.days_current_one')
                 : t('dashboard.statistics.days_current_other', {
                     count: streak.currentStreak,
                   })}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-1">
               {streak.longestStreak === 1
                 ? t('dashboard.statistics.days_longest_one')
                 : t('dashboard.statistics.days_longest_other', {
@@ -258,18 +263,23 @@ export function Statistics() {
           </CardContent>
         </Card>
 
-        <Card aria-label="Learned notes">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-primary" />
+        <Card
+          aria-label="Learned notes"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+        >
+          <CardHeader className="items-center pb-2 text-center">
+            <div className="bg-primary/10 p-3 rounded-2xl text-primary mb-2">
+              <Brain className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-base">
               {t('dashboard.statistics.learned_notes')}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               {t('dashboard.statistics.learned_description')}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
+          <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
+            <p className="text-lg font-bold text-foreground">
               {t('dashboard.statistics.learned_value', {
                 value: formatNumber(learnedNotes, locale),
               })}
@@ -277,49 +287,67 @@ export function Statistics() {
           </CardContent>
         </Card>
 
-        <Card aria-label="Due forecast">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarClock className="h-5 w-5 text-pine" />
+        <Card
+          aria-label="Due forecast"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+        >
+          <CardHeader className="items-center pb-2 text-center">
+            <div className="bg-pine/10 p-3 rounded-2xl text-pine mb-2">
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-base">
               {t('dashboard.statistics.due_forecast')}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               {t('dashboard.statistics.due_forecast_description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <strong className="block text-xl">{due.today}</strong>
+          <CardContent className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground mt-auto">
+            <div className="bg-muted/40 rounded-xl p-2 flex flex-col justify-center">
+              <strong className="block text-base text-foreground font-bold">
+                {due.today}
+              </strong>
               {t('dashboard.statistics.today')}
             </div>
-            <div>
-              <strong className="block text-xl">{due.tomorrow}</strong>
+            <div className="bg-muted/40 rounded-xl p-2 flex flex-col justify-center">
+              <strong className="block text-base text-foreground font-bold">
+                {due.tomorrow}
+              </strong>
               {t('dashboard.statistics.tomorrow')}
             </div>
-            <div>
-              <strong className="block text-xl">{due.nextSevenDays}</strong>
+            <div className="bg-muted/40 rounded-xl p-2 flex flex-col justify-center">
+              <strong className="block text-base text-foreground font-bold">
+                {due.nextSevenDays}
+              </strong>
               {t('dashboard.statistics.next_7_days')}
             </div>
           </CardContent>
         </Card>
 
-        <Card aria-label="Card maturity">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sprout className="h-5 w-5 text-sage" />
+        <Card
+          aria-label="Card maturity"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+        >
+          <CardHeader className="items-center pb-2 text-center">
+            <div className="bg-sage-border p-3 rounded-2xl text-sage-foreground mb-2">
+              <Sprout className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-base">
               {t('dashboard.statistics.card_maturity')}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               {t('dashboard.statistics.card_maturity_description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+          <CardContent className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-auto">
             {Object.entries(maturity).map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-xl bg-muted/50 p-2 capitalize"
+                className="rounded-xl bg-muted/40 p-2 capitalize flex flex-col items-center justify-center text-center"
               >
-                <strong className="mr-1">{value}</strong>
+                <strong className="block text-base text-foreground font-bold">
+                  {value}
+                </strong>
                 <span>{label}</span>
               </div>
             ))}
