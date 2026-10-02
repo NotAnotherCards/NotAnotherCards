@@ -56,7 +56,7 @@ export function DeckCard({
   );
 
   return (
-    <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
+    <Card className="group hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
       <CardHeader className="min-w-0 pb-3">
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="flex flex-1 items-center gap-2 min-w-0">

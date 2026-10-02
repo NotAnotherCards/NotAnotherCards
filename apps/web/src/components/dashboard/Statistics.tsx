@@ -233,7 +233,7 @@ export function Statistics() {
         <Card aria-label="Learning streak">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-orange-500" />
+              <Flame className="h-5 w-5 text-rose-500" />
               {t('dashboard.statistics.learning_streak')}
             </CardTitle>
             <CardDescription>
@@ -261,7 +261,7 @@ export function Statistics() {
         <Card aria-label="Learned notes">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-blue-500" />
+              <Brain className="h-5 w-5 text-primary" />
               {t('dashboard.statistics.learned_notes')}
             </CardTitle>
             <CardDescription>
@@ -280,7 +280,7 @@ export function Statistics() {
         <Card aria-label="Due forecast">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CalendarClock className="h-5 w-5 text-purple-500" />
+              <CalendarClock className="h-5 w-5 text-pine" />
               {t('dashboard.statistics.due_forecast')}
             </CardTitle>
             <CardDescription>
@@ -306,7 +306,7 @@ export function Statistics() {
         <Card aria-label="Card maturity">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sprout className="h-5 w-5 text-green-500" />
+              <Sprout className="h-5 w-5 text-sage" />
               {t('dashboard.statistics.card_maturity')}
             </CardTitle>
             <CardDescription>
@@ -356,7 +356,7 @@ export function Statistics() {
         <Card aria-label="Notes added per day">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FilePlus className="h-5 w-5 text-chart-2" />
+              <FilePlus className="h-5 w-5 text-sage" />
               {t('dashboard.statistics.series.notesAdded')}
             </CardTitle>
           </CardHeader>

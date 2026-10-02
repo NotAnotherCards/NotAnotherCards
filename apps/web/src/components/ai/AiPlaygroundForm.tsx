@@ -124,7 +124,7 @@ export function AiPlaygroundForm({
       <div className="bg-card/40 border border-border/50 rounded-2xl p-4 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-            <Sparkles className="size-4 text-amber-500 animate-pulse" />
+            <Sparkles className="size-4 text-yellow-400 animate-pulse" />
             {t('playground.form.quota_status', 'Quota Status')}
           </span>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
@@ -142,7 +142,7 @@ export function AiPlaygroundForm({
             className={`h-full rounded-full transition-all duration-500 ease-out ${
               isQuotaExceeded
                 ? 'bg-destructive'
-                : 'bg-linear-to-r from-violet-500 to-indigo-500'
+                : 'bg-primary'
             }`}
             style={{ width: `${quota ? quotaPercent : 0}%` }}
           />
@@ -210,7 +210,7 @@ export function AiPlaygroundForm({
             value={topic}
             onChange={(e) => setTopic(e.target.value.slice(0, 300))}
             maxLength={300}
-            className="w-full border-border/60 focus-visible:ring-violet-500/20"
+            className="w-full border-border/60 focus-visible:ring-primary/20"
           />
           <div className="flex justify-between items-center text-xs text-muted-foreground">
             <span>
@@ -291,7 +291,7 @@ export function AiPlaygroundForm({
                 </div>
               </div>
             ) : (
-              <div className="text-sm text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+              <div className="text-sm text-yellow-600 bg-yellow-400/20 p-3 rounded-xl border border-yellow-400/30">
                 {t(
                   'playground.form.no_word_decks',
                   'No word decks available. Please create one in the Decks tab.',
@@ -328,7 +328,7 @@ export function AiPlaygroundForm({
                 'Toggle Translation Direction',
               )}
             >
-              <ArrowRightLeft className="size-4 text-violet-500" />
+              <ArrowRightLeft className="size-4 text-primary" />
               <span className="w-16 text-center">
                 {direction === 'target'
                   ? t('playground.form.dir_target', 'Target')
@@ -337,7 +337,7 @@ export function AiPlaygroundForm({
             </button>
           </div>
 
-          <div className="bg-violet-500/5 border border-violet-500/10 rounded-xl px-4 py-2.5">
+          <div className="bg-primary/5 border border-primary/10 rounded-xl px-4 py-2.5">
             <p className="text-xs text-muted-foreground leading-relaxed">
               {direction === 'target' ? (
                 <>
@@ -384,7 +384,7 @@ export function AiPlaygroundForm({
                 );
                 if (chosen) setModel(chosen);
               }}
-              className="w-full rounded-3xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
+              className="w-full rounded-2xl border border-border/60 bg-input/50 px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 outline-none appearance-none cursor-pointer"
             >
               {SELECTABLE_AI_MODELS.map((m) => (
                 <option
@@ -421,7 +421,7 @@ export function AiPlaygroundForm({
                 max="20"
                 value={count}
                 onChange={(e) => setCount(parseInt(e.target.value))}
-                className="w-full accent-violet-600 cursor-pointer h-1.5 bg-muted rounded-lg appearance-none"
+                className="w-full accent-primary cursor-pointer h-1.5 bg-muted rounded-lg appearance-none"
               />
             </div>
           </Field>
@@ -433,7 +433,7 @@ export function AiPlaygroundForm({
       <Button
         type="submit"
         disabled={isSubmitting || isQuotaExceeded}
-        className="w-full bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-3xl py-5 shadow-lg shadow-indigo-500/10 font-semibold group relative overflow-hidden"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5 shadow-card font-semibold group relative overflow-hidden"
       >
         <span className="flex items-center justify-center gap-2">
           <Sparkles className="size-4 animate-pulse" />

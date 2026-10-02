@@ -108,14 +108,14 @@ function DashboardSyncStatus() {
 
   const { count: rejected, details: rejectionDetails } = rejectedSummary(state);
   const statusColor = rejected
-    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+    ? 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300'
     : state.status === 'idle'
-      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+      ? 'bg-sage-border text-sage-foreground'
       : state.status === 'syncing'
         ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse'
         : state.status === 'error'
           ? 'bg-destructive/10 text-destructive'
-          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+          : 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300';
 
   return (
     <div className="flex items-center gap-1.5 font-semibold">
@@ -214,7 +214,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       }),
       description: t('dashboard.overview.stats.due_for_review'),
       icon: Clock,
-      color: 'text-emerald-500 bg-emerald-500/10',
+      color: 'text-sage-foreground bg-sage-border',
     },
     {
       title: t('dashboard.overview.stats.personal_dictionary'),
@@ -223,7 +223,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       }),
       description: t('dashboard.overview.stats.added_to_collection'),
       icon: BookMarked,
-      color: 'text-blue-500 bg-blue-500/10',
+      color: 'text-pine bg-pine/10',
     },
     {
       title: t('dashboard.overview.stats.learning_streak'),
@@ -233,14 +233,14 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           : t('dashboard.overview.stats.days_other', { count: streak }),
       description: t('dashboard.overview.stats.daily_streak'),
       icon: Flame,
-      color: 'text-orange-500 bg-orange-500/10',
+      color: 'text-rose-500 bg-rose-500/10',
     },
     {
       title: t('dashboard.overview.stats.words_learned'),
       value: formatNumber(learnedNotes, locale),
       description: t('dashboard.overview.stats.notes_reviewed'),
       icon: GraduationCap,
-      color: 'text-purple-500 bg-purple-500/10',
+      color: 'text-primary bg-primary/10',
     },
   ];
 
@@ -469,7 +469,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       {/* Overview Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
-        <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
+        <Card className="lg:col-span-1 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center gap-4 pb-4">
             <div className="size-14 rounded-full bg-linear-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xl shadow-inner border border-primary/20">
               {user.name
@@ -503,7 +503,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               <span
                 className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
                   isOnline
-                    ? 'bg-emerald-500/10 dark:text-emerald-400'
+                    ? 'bg-sage-border text-sage-foreground'
                     : 'bg-destructive/10 text-destructive animate-pulse'
                 }`}
               >
@@ -540,7 +540,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             return (
               <Card
                 key={i}
-                className="border border-border/60 hover:shadow-md transition-all duration-300"
+                className="hover:shadow-lg transition-all duration-300"
               >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <span className="text-sm font-medium text-muted-foreground">
@@ -567,7 +567,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       {/* Tables and List sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Explore Dictionaries */}
-        <Card className="lg:col-span-2 border border-border/60 hover:shadow-md transition-all duration-300">
+        <Card className="lg:col-span-2 hover:shadow-lg transition-all duration-300">
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <BookOpen className="size-4 text-primary" />
@@ -739,10 +739,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         </Card>
 
         {/* Daily Learning Goals */}
-        <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
+        <Card className="lg:col-span-1 hover:shadow-lg transition-all duration-300">
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Sparkles className="size-4 text-amber-500" />
+              <Sparkles className="size-4 text-yellow-400" />
               {t('dashboard.overview.goals.daily_learning_goals')}
             </CardTitle>
             <CardDescription>
@@ -767,14 +767,14 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                   value={quest.percent}
                   aria-label={`${quest.title} progress`}
                   className="h-1.5 w-full"
-                  indicatorClassName="bg-linear-to-r from-amber-500 to-amber-400"
+                  indicatorClassName="bg-linear-to-r from-yellow-400 to-yellow-300"
                 />
                 <div className="flex justify-end">
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                       quest.percent === 100
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        ? 'bg-sage-border text-sage-foreground'
+                        : 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300'
                     }`}
                   >
                     {quest.reward}
@@ -791,7 +791,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       </div>
 
       {/* Achievements */}
-      <Card className="border border-border/60 hover:shadow-md transition-all duration-300">
+      <Card className="hover:shadow-lg transition-all duration-300">
         <CardHeader className="border-b border-border/40 pb-4">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <Trophy className="size-4 text-primary" />
