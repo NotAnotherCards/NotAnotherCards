@@ -8,6 +8,7 @@ import {
 import userEvent from '@testing-library/user-event';
 import { authClient } from '@/lib/auth-client';
 import { useStore } from '@/hooks/useStore';
+import i18n from '@/lib/i18n';
 import { Settings } from '../components/dashboard/settings/Settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -68,9 +69,10 @@ vi.mock('@remelondb/core/react', () => ({
 describe('Settings Tab Component Specs', () => {
   const mockUpdateUserProfile = vi.fn().mockResolvedValue(undefined);
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
     vi.mocked(useStore).mockReset();
 
     vi.mocked(useStore).mockReturnValue({
@@ -128,6 +130,22 @@ describe('Settings Tab Component Specs', () => {
     // Assert Save button is disabled on load (since form is clean)
     const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     expect(saveBtn).toBeDisabled();
+  });
+
+  it('shows localized language names in the profile pickers', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+    render(<Settings />);
+
+    const selects = screen
+      .getAllByRole('combobox')
+      .filter((element) => element.tagName === 'SELECT');
+    const [nativeSelect, targetSelect] = selects;
+    expect(nativeSelect).toHaveTextContent('🇺🇸 Englisch');
+    expect(nativeSelect).toHaveTextContent('🇩🇪 Deutsch');
+    expect(targetSelect).toHaveTextContent('🇷🇺 Russisch');
+    expect(nativeSelect).not.toHaveTextContent('🇩🇪 German');
   });
 
   it('navigates between sub-tabs', async () => {
@@ -202,7 +220,7 @@ describe('Settings Tab Component Specs', () => {
     );
     expect(englishOption).toBeUndefined();
 
-    // Change Native Language to French (00000000-0000-0000-0000-000000000003)
+    // Change Native Language to German (00000000-0000-0000-0000-000000000003)
     await user.selectOptions(
       nativeSelect,
       '00000000-0000-0000-0000-000000000003',
@@ -214,11 +232,11 @@ describe('Settings Tab Component Specs', () => {
     );
     expect(englishOption).toBeDefined();
 
-    // French should now be filtered out / unavailable in target language select options
-    const frenchOption = Array.from(targetSelect.options).find(
+    // German should now be filtered out / unavailable in target language select options
+    const germanOption = Array.from(targetSelect.options).find(
       (opt) => opt.value === '00000000-0000-0000-0000-000000000003',
     );
-    expect(frenchOption).toBeUndefined();
+    expect(germanOption).toBeUndefined();
   });
 
   it('clears the target when the native language becomes the target, and saves only once one is chosen', async () => {
@@ -294,13 +312,13 @@ describe('Settings Tab Component Specs', () => {
     await user.selectOptions(
       nativeSelect,
       '00000000-0000-0000-0000-000000000003',
-    ); // French
+    ); // German
 
     const targetSelect = screen.getByLabelText(/Target Language/i);
     await user.selectOptions(
       targetSelect,
       '00000000-0000-0000-0000-000000000004',
-    ); // German
+    ); // Russian
 
     const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     await user.click(saveBtn);
@@ -368,7 +386,7 @@ describe('Settings Tab Component Specs', () => {
     await user.selectOptions(
       nativeSelect,
       '00000000-0000-0000-0000-000000000003',
-    ); // French
+    ); // German
 
     const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     await user.click(saveBtn);

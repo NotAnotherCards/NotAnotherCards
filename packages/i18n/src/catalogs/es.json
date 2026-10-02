@@ -9,10 +9,19 @@
     "next": "Siguiente",
     "page": "Página {{page}}"
   },
-  "locales": {
+  "languages": {
     "en": "Inglés",
     "es": "Español",
-    "de": "Alemán"
+    "de": "Alemán",
+    "ru": "Ruso"
+  },
+  "language_forms": {
+    "in": {
+      "en": "inglés",
+      "es": "español",
+      "de": "alemán",
+      "ru": "ruso"
+    }
   },
   "nav": {
     "home": "Inicio",

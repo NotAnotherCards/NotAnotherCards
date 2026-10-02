@@ -28,7 +28,10 @@ export function LanguageField({
             <Pressable
               key={language.value}
               accessibilityRole="radio"
-              accessibilityLabel={`${label}: ${languageLabel(language)}`}
+              accessibilityLabel={`${label}: ${languageLabel(
+                language,
+                t(`languages.${language.locale}`),
+              )}`}
               accessibilityState={{ selected, disabled }}
               disabled={disabled}
               className={`basis-[48%] rounded-lg border px-3 py-2 ${
@@ -37,7 +40,7 @@ export function LanguageField({
               onPress={() => onChange(language.value)}
             >
               <Text className={selected ? 'font-semibold text-primary' : ''}>
-                {languageLabel(language)}
+                {languageLabel(language, t(`languages.${language.locale}`))}
               </Text>
             </Pressable>
           );

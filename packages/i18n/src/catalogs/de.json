@@ -9,10 +9,19 @@
     "next": "Weiter",
     "page": "Seite {{page}}"
   },
-  "locales": {
+  "languages": {
     "en": "Englisch",
     "es": "Spanisch",
-    "de": "Deutsch"
+    "de": "Deutsch",
+    "ru": "Russisch"
+  },
+  "language_forms": {
+    "in": {
+      "en": "Englisch",
+      "es": "Spanisch",
+      "de": "Deutsch",
+      "ru": "Russisch"
+    }
   },
   "nav": {
     "home": "Startseite",
