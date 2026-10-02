@@ -372,6 +372,7 @@
   },
   "dashboard": {
     "settings": {
+      "aria_sections": "Secciones de ajustes",
       "preferences": {
         "title": "Preferencias",
         "description": "Personaliza tus ajustes y apariencia de la aplicación",
@@ -935,6 +936,7 @@
     }
   },
   "review": {
+    "title": "Repaso",
     "session": {
       "completed_title": "¡Sesión completada!",
       "completed_desc": "Has terminado todas las tarjetas para esta sesión.",
@@ -947,10 +949,6 @@
       "activate": "Activar",
       "count_label": "Número de elementos para activar",
       "inactive_label": "Inactiva",
-      "more_word": "una palabra más de {{count}} palabra inactiva",
-      "more_words": "más palabras de {{count}} palabras inactivas",
-      "more_card": "una tarjeta más de {{count}} tarjeta inactiva",
-      "more_cards": "más tarjetas de {{count}} tarjetas inactivas",
       "continue": "Activar y continuar",
       "error": "Error al activar. Inténtalo de nuevo.",
       "complete_title": "Repaso completado",

@@ -372,6 +372,7 @@
   },
   "dashboard": {
     "settings": {
+      "aria_sections": "Einstellungsbereiche",
       "preferences": {
         "title": "Einstellungen",
         "description": "Passe deine Anwendungseinstellungen und das Erscheinungsbild an",
@@ -935,6 +936,7 @@
     }
   },
   "review": {
+    "title": "Wiederholung",
     "session": {
       "completed_title": "Sitzung abgeschlossen!",
       "completed_desc": "Du hast alle fälligen Karten für diese Sitzung beendet.",
@@ -947,10 +949,6 @@
       "activate": "Aktivieren",
       "count_label": "Anzahl zu aktivierender Einträge",
       "inactive_label": "Inaktiv",
-      "more_word": "weiteres Wort aus {{count}} inaktivem Wort",
-      "more_words": "weitere Wörter aus {{count}} inaktiven Wörtern",
-      "more_card": "weitere Karte aus {{count}} inaktiver Karte",
-      "more_cards": "weitere Karten aus {{count}} inaktiven Karten",
       "continue": "Aktivieren und fortfahren",
       "error": "Aktivierungsfehler. Bitte erneut versuchen.",
       "complete_title": "Wiederholung abgeschlossen",

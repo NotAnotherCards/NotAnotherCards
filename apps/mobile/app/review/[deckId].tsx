@@ -11,9 +11,8 @@ export default function ReviewScreen() {
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   return (
     <RequireSession>
-      <Stack.Screen
-        options={{ title: t('deck.card.actions.start_review_short') }}
-      />
+      {/* ReviewSession sets the deck title once it has loaded. */}
+      <Stack.Screen options={{ title: t('review.title') }} />
       <ScrollView
         className="flex-1 bg-background"
         contentContainerClassName="flex-grow justify-center p-6"

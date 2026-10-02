@@ -353,7 +353,7 @@ export function TwoFactorSecurity() {
   const [password, setPassword] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
   const [backupCodesTitle, setBackupCodesTitle] = useState(
-    t('dashboard.settings.two_factor.save_backup_codes'),
+    'dashboard.settings.two_factor.save_backup_codes',
   );
   const [refreshSessionAfterCodes, setRefreshSessionAfterCodes] =
     useState(false);
@@ -444,9 +444,7 @@ export function TwoFactorSecurity() {
           return;
         }
         setBackupCodes([...response.data.backupCodes]);
-        setBackupCodesTitle(
-          t('dashboard.settings.two_factor.new_backup_codes'),
-        );
+        setBackupCodesTitle('dashboard.settings.two_factor.new_backup_codes');
         setRefreshSessionAfterCodes(false);
         setPassword('');
       } else if (action === 'disable') {
@@ -540,7 +538,7 @@ export function TwoFactorSecurity() {
             onVerified={(codes) => {
               setBackupCodes(codes);
               setBackupCodesTitle(
-                t('dashboard.settings.two_factor.save_backup_codes'),
+                'dashboard.settings.two_factor.save_backup_codes',
               );
               setRefreshSessionAfterCodes(true);
               setShowEnrollment(false);
@@ -562,7 +560,7 @@ export function TwoFactorSecurity() {
         {isEnabled && backupCodes ? (
           <BackupCodes
             codes={backupCodes}
-            title={backupCodesTitle}
+            title={t(backupCodesTitle)}
             onDone={acknowledgeBackupCodes}
           />
         ) : null}

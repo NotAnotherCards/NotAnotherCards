@@ -42,6 +42,7 @@ describe('initials', () => {
 describe('Settings', () => {
   it('translates the section tabs and keeps the selection when the locale changes', async () => {
     const screen = await renderWithLocale(<Settings />, 'de');
+    expect(screen.getByLabelText('Einstellungsbereiche')).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Profil & Sprachen' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Einstellungen' })).toBeTruthy();
     fireEvent.press(screen.getByRole('tab', { name: 'Sicherheit' }));
@@ -51,6 +52,7 @@ describe('Settings', () => {
     expect(screen.getByRole('tab', { name: 'Perfil e Idiomas' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Preferencias' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Seguridad' })).toBeSelected();
+    expect(screen.getByLabelText('Secciones de ajustes')).toBeTruthy();
     expect(screen.queryByRole('tab', { name: 'Sicherheit' })).toBeNull();
   });
   beforeEach(() => {

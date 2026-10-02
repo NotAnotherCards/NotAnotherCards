@@ -119,7 +119,7 @@ export function Settings() {
 
       {/* Web's settings sub-tabs, same order: profile first. */}
       <Segmented
-        label={t('dashboard.tabs.settings')}
+        label={t('dashboard.settings.aria_sections')}
         role="tablist"
         value={section}
         options={sections}
