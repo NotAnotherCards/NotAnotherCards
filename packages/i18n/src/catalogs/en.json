@@ -9,10 +9,19 @@
     "next": "Next",
     "page": "Page {{page}}"
   },
-  "locales": {
+  "languages": {
     "en": "English",
-    "es": "Español",
-    "de": "Deutsch"
+    "es": "Spanish",
+    "de": "German",
+    "ru": "Russian"
+  },
+  "language_forms": {
+    "in": {
+      "en": "English",
+      "es": "Spanish",
+      "de": "German",
+      "ru": "Russian"
+    }
   },
   "nav": {
     "home": "Home",
@@ -463,6 +472,11 @@
     }
   },
   "deck": {
+    "type": {
+      "basic": "Card deck",
+      "word": "Word deck",
+      "unknown": "Unknown deck type: {{noteType}}"
+    },
     "list": {
       "my_library": "My Library",
       "add_deck": "Add Deck",

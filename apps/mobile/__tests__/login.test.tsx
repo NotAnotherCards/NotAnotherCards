@@ -204,10 +204,10 @@ describe('Login screen', () => {
       error: { message: 'Provider refused' },
     });
     const { getByText, findByText } = render(<Login />);
-    fireEvent.press(getByText('Facebook'));
+    fireEvent.press(getByText('Google'));
     expect(await findByText('Provider refused')).toBeTruthy();
     expect(mockSocialSignIn).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'facebook' }),
+      expect.objectContaining({ provider: 'google' }),
     );
   });
 });

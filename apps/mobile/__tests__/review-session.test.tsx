@@ -726,6 +726,7 @@ describe('ReviewSession', () => {
       fireEvent.press(result.getByText('Show answer'));
       drag(300, 0);
       await waitFor(() => expect(mockRecord).toHaveBeenCalledWith('c1', 3));
+      await waitFor(() => expect(mockReadDueCards).toHaveBeenCalledTimes(1));
 
       expect(result.getByText('gato')).toBeTruthy();
       expect(result.queryByText('Review complete')).toBeNull();

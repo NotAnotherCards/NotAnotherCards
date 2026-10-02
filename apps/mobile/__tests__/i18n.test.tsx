@@ -3,10 +3,12 @@ import { fireEvent, render } from '@testing-library/react-native';
 import i18n from '@/lib/i18n';
 import Storage from 'expo-sqlite/kv-store';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { LanguageField } from '@/components/language-field';
 
 // Reset the storage mock before testing
-beforeEach(() => {
+beforeEach(async () => {
   Storage.setItemSync('i18nextLng', '');
+  await i18n.changeLanguage('en');
 });
 
 describe('Mobile i18n adapter', () => {
@@ -43,5 +45,20 @@ describe('LanguageSwitcher', () => {
 
     // And storage should be updated
     expect(Storage.getItemSync('i18nextLng')).toBe('de');
+  });
+});
+
+describe('LanguageField', () => {
+  it('uses the interface language for language names and accessibility labels', async () => {
+    await i18n.changeLanguage('de');
+
+    const { getByText, getByLabelText } = render(
+      <LanguageField label="Native language" value="" onChange={jest.fn()} />,
+    );
+
+    expect(getByText('🇺🇸 Englisch')).toBeTruthy();
+    expect(getByText('🇩🇪 Deutsch')).toBeTruthy();
+    expect(getByText('🇷🇺 Russisch')).toBeTruthy();
+    expect(getByLabelText('Native language: 🇩🇪 Deutsch')).toBeTruthy();
   });
 });

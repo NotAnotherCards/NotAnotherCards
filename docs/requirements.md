@@ -103,7 +103,7 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 ### 4.6 User Management: OAuth 2.0 — Minor, 1 — done — 100%
 
-- Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google and Facebook in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
+- Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
 
 ### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — done — 100%
 

@@ -84,9 +84,12 @@ export function languageFor(
   return LANGUAGES.find((language) => language.value === languageId);
 }
 
-/** Flag and name, for a picker. Prompts want `name` on its own. */
-export function languageLabel(language: Language): string {
-  return `${language.flag} ${language.name}`;
+/** Flag and display name, for a picker. Prompts still use `name` on its own. */
+export function languageLabel(
+  language: Language,
+  displayName: string = language.name,
+): string {
+  return `${language.flag} ${displayName}`;
 }
 
 export function gendersFor(

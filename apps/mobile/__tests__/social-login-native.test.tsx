@@ -123,7 +123,7 @@ it('keeps normal OAuth session cookies and waits for session navigation', async 
     url: callback.toString(),
   });
   const view = render(<SocialLoginButtons />);
-  fireEvent.press(view.getByText('Facebook'));
+  fireEvent.press(view.getByText('Google'));
   await waitFor(() =>
     expect(authClient.getCookie()).toContain(
       'better-auth.session_token=session-token',
@@ -131,7 +131,7 @@ it('keeps normal OAuth session cookies and waits for session navigation', async 
   );
   await waitFor(() =>
     expect(
-      view.getByRole('button', { name: 'Continue with Facebook' }).props
+      view.getByRole('button', { name: 'Continue with Google' }).props
         .accessibilityState.disabled,
     ).toBe(false),
   );

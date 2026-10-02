@@ -3,6 +3,7 @@ import { App, router } from '../App';
 import userEvent from '@testing-library/user-event';
 import { authClient } from '@/lib/auth-client';
 import { useStore } from '@/hooks/useStore';
+import i18n from '@/lib/i18n';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockSession = {
@@ -57,6 +58,7 @@ vi.mock('@remelondb/core/react', () => ({
 describe('Onboarding Flow and Guard Specs', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
     vi.mocked(useStore).mockReset();
     mockManager = { state: { status: 'ready', error: null } };
 
@@ -124,6 +126,19 @@ describe('Onboarding Flow and Guard Specs', () => {
       ),
     ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/onboarding');
+  });
+
+  it('shows localized language names in the onboarding pickers', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+    render(<App />);
+
+    const [nativeSelect, targetSelect] = await screen.findAllByRole('combobox');
+    expect(nativeSelect).toHaveTextContent('🇺🇸 Englisch');
+    expect(nativeSelect).toHaveTextContent('🇩🇪 Deutsch');
+    expect(targetSelect).toHaveTextContent('🇷🇺 Russisch');
+    expect(nativeSelect).not.toHaveTextContent('🇩🇪 German');
   });
 
   it('redirects logged-in users to dashboard if onboarding is complete', async () => {
