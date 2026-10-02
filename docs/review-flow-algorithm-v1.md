@@ -91,3 +91,13 @@ it is excluded from the due-card query until its required content is present.
 Reconcile must not change `active` because a card is incomplete. When the
 required content becomes present, reconcile sets that card's `due_at` to now,
 so it is available for review immediately.
+
+## Sync after review writes
+
+On web, `useStore.recordReview` saves the answer locally and calls
+`notifyLocalWrite()` after the write succeeds. The shared sync controller
+schedules the push/pull after a 2-second debounce following local writes,
+and also runs a periodic sync every 60 seconds (the remelonDB 0.3.3 defaults).
+Completing a review session does not trigger a
+separate immediate sync. Server-awarded badges arrive through that normal
+sync path, so the completion screen does not guarantee immediate badge delivery.

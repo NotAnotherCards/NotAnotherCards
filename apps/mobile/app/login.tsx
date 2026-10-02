@@ -20,8 +20,8 @@ export default function Login() {
 
   return (
     <AuthCard
-      title="Welcome back"
-      description="Log in to your account"
+      title="Welcome Back"
+      description="Enter your email below to log in to your account"
       footerText="Don't have an account?"
       footerLinkText="Sign up"
       footerLinkTo="/register"

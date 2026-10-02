@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/card';
 import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
 import {
-  deckKind,
   deckKindShort,
   noteTypeRegistry,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
+import { deckTypeAccessibilityLabel } from '@repo/i18n';
 
 interface DeckCardProps {
   deck: Deck;
@@ -48,7 +48,12 @@ export function DeckCard({
   // stays: a tombstone carries ids only, so there is nothing to lose, and it
   // is the only way to be rid of a deck this client cannot use.
   const isKnownType = deck.note_type in noteTypeRegistry;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const kindLabel = deckTypeAccessibilityLabel(
+    deck,
+    i18n.resolvedLanguage ?? i18n.language,
+    (key, options) => t(`deck.type.${key}`, options),
+  );
 
   return (
     <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
@@ -58,8 +63,8 @@ export function DeckCard({
             <span
               className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
               data-testid="deck-kind"
-              title={deckKind(deck)}
-              aria-label={deckKind(deck)}
+              title={kindLabel}
+              aria-label={kindLabel}
             >
               {deckKindShort(deck)}
             </span>

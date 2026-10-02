@@ -9,10 +9,19 @@
     "next": "Siguiente",
     "page": "Página {{page}}"
   },
-  "locales": {
+  "languages": {
     "en": "Inglés",
     "es": "Español",
-    "de": "Alemán"
+    "de": "Alemán",
+    "ru": "Ruso"
+  },
+  "language_forms": {
+    "in": {
+      "en": "inglés",
+      "es": "español",
+      "de": "alemán",
+      "ru": "ruso"
+    }
   },
   "nav": {
     "home": "Inicio",
@@ -463,6 +472,11 @@
     }
   },
   "deck": {
+    "type": {
+      "basic": "Mazo de tarjetas",
+      "word": "Mazo de palabras",
+      "unknown": "Tipo de mazo desconocido: {{noteType}}"
+    },
     "list": {
       "my_library": "Mi Biblioteca",
       "add_deck": "Añadir Mazo",

@@ -106,8 +106,8 @@ const hasCookieWithMaxAge = (
     );
 
 // The e2e suite proves the full OAuth round-trip over the generic
-// `/oauth2/callback/:providerId` route (loopback provider). Real Google and
-// Facebook providers use the built-in `/callback/:id` route template, which
+// `/oauth2/callback/:providerId` route (loopback provider). Real Google
+// providers use the built-in `/callback/:id` route template, which
 // e2e cannot reach without live provider traffic — these tests pin the
 // identical matcher branch and run the actual middleware against that route
 // shape.
@@ -245,7 +245,6 @@ describe('withTwoFactorFlag', () => {
 describe('isOAuthChallengePath', () => {
   it('matches production built-in provider callbacks (/callback/:id)', () => {
     expect(isOAuthChallengePath('/callback/google')).toBe(true);
-    expect(isOAuthChallengePath('/callback/facebook')).toBe(true);
   });
 
   it('matches the generic OAuth callback route (/oauth2/callback/:providerId)', () => {

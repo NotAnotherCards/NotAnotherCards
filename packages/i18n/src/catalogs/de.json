@@ -9,10 +9,19 @@
     "next": "Weiter",
     "page": "Seite {{page}}"
   },
-  "locales": {
+  "languages": {
     "en": "Englisch",
     "es": "Spanisch",
-    "de": "Deutsch"
+    "de": "Deutsch",
+    "ru": "Russisch"
+  },
+  "language_forms": {
+    "in": {
+      "en": "Englisch",
+      "es": "Spanisch",
+      "de": "Deutsch",
+      "ru": "Russisch"
+    }
   },
   "nav": {
     "home": "Startseite",
@@ -463,6 +472,11 @@
     }
   },
   "deck": {
+    "type": {
+      "basic": "Kartenstapel",
+      "word": "Wortstapel",
+      "unknown": "Unbekannter Stapeltyp: {{noteType}}"
+    },
     "list": {
       "my_library": "Meine Bibliothek",
       "add_deck": "Stapel hinzufügen",

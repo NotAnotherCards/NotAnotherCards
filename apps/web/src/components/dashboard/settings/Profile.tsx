@@ -232,7 +232,7 @@ export function Profile() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {languageLabel(lang)}
+                            {languageLabel(lang, t(`languages.${lang.locale}`))}
                           </option>
                         ))}
                       </select>
@@ -285,7 +285,7 @@ export function Profile() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {languageLabel(lang)}
+                            {languageLabel(lang, t(`languages.${lang.locale}`))}
                           </option>
                         ))}
                       </select>

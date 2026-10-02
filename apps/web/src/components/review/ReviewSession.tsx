@@ -20,7 +20,6 @@ type ReviewSessionProps = {
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
   onRequestNextBatch?: () => Promise<Card[]>;
-  onComplete?: () => void;
   onActivateMore?: (count: number) => Promise<void>;
   activationCount?: number;
   inactiveItemCount?: number;
@@ -39,7 +38,6 @@ export function ReviewSession({
   onRecordReview,
   onDeleteNote,
   onRequestNextBatch,
-  onComplete,
   onActivateMore,
   activationCount,
   inactiveItemCount = 0,
@@ -130,7 +128,7 @@ export function ReviewSession({
     if (exitDirection) return;
 
     setExitDirection(direction);
-    exitTimer.current = window.setTimeout(() => {
+    exitTimer.current = window.setTimeout(async () => {
       cardInteraction.clearDrag();
 
       if (direction === 'delete') {
@@ -138,29 +136,26 @@ export function ReviewSession({
         return;
       }
 
-      const moveOn = (nextBatch: Card[]) => {
-        setIsFlipped(false);
-        if (nextBatch.length > 0) {
-          setSessionCards(nextBatch);
-          setCurrentCardIndex(0);
-        } else {
-          setCurrentCardIndex((index) => index + 1);
-        }
-        setExitDirection(null);
-      };
-
-      // The next batch is read when it is asked for (@repo/study's
-      // nextReviewBatch). The answer is already saved, so a failed read ends
-      // the session instead of offering the card again.
-      // The read is in memory on web and cannot fail today. If it becomes a
-      // database read, show an error with a retry here instead of ending the
-      // session.
+      let nextBatch: Card[] = [];
       const isLastCardInBatch = currentCardIndex === sessionCards.length - 1;
+
       if (isLastCardInBatch && onRequestNextBatch) {
-        void onRequestNextBatch().then(moveOn, () => moveOn([]));
-        return;
+        try {
+          nextBatch = await onRequestNextBatch();
+        } catch {
+          // The answer is already saved: never offer it again after a failed
+          // read. Web reads in memory today; add read-only retry if that changes.
+        }
       }
-      moveOn([]);
+
+      setIsFlipped(false);
+      if (nextBatch.length > 0) {
+        setSessionCards(nextBatch);
+        setCurrentCardIndex(0);
+      } else {
+        setCurrentCardIndex((index) => index + 1);
+      }
+      setExitDirection(null);
     }, REVIEW_CARD_EXIT_DURATION_MS);
   };
 
@@ -179,21 +174,7 @@ export function ReviewSession({
     }
 
     setIsSavingReview(false);
-    const directionByAnswer: Record<
-      Exclude<ReviewAnswer, 'very-easy'>,
-      ReviewCardExitDirection
-    > = {
-      forgot: 'forgot',
-      hard: 'hard',
-      remember: 'remember',
-    };
-
-    if (answer === 'very-easy') {
-      startCardExit('remember');
-      return;
-    }
-
-    startCardExit(directionByAnswer[answer]);
+    startCardExit(answer === 'very-easy' ? 'remember' : answer);
   };
 
   useEffect(() => {
@@ -201,10 +182,6 @@ export function ReviewSession({
       if (exitTimer.current) window.clearTimeout(exitTimer.current);
     };
   }, []);
-
-  useEffect(() => {
-    if (!card) onComplete?.();
-  }, [card, onComplete]);
 
   useEffect(() => {
     if (isFlipped) firstAnswerButtonRef.current?.focus();

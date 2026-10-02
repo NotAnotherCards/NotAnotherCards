@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/lib/i18n';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Onboarding from '@/app/onboarding';
 
