@@ -24,9 +24,7 @@ export function RegisterComponent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const [oauthProvider, setOauthProvider] = useState<
-    'google' | 'facebook' | null
-  >(null);
+  const [oauthProvider, setOauthProvider] = useState<'google' | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,7 +46,7 @@ export function RegisterComponent() {
     };
   }, []);
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+  const handleSocialLogin = async (provider: 'google') => {
     setApiError(null);
     setOauthProvider(provider);
     try {
@@ -216,12 +214,6 @@ export function RegisterComponent() {
               isLoading={oauthProvider === 'google'}
               disabled={oauthProvider !== null || isSubmitting}
               onClick={() => handleSocialLogin('google')}
-            />
-            <SocialLoginButton
-              provider="facebook"
-              isLoading={oauthProvider === 'facebook'}
-              disabled={oauthProvider !== null || isSubmitting}
-              onClick={() => handleSocialLogin('facebook')}
             />
           </FieldGroup>
         </FieldSet>

@@ -147,7 +147,7 @@ impossible path where the state is gone, the hook falls back to
 `/two-factor`. The hook uses only public `better-auth/*` imports except the
 `two_factor` challenge-cookie name, which has no public export;
 `test/two-factor-oauth.e2e-spec.ts` (fake loopback OAuth provider, no real
-Google/Facebook traffic) is the upgrade tripwire for that coupling, and
+Google traffic) is the upgrade tripwire for that coupling, and
 `src/test/two-factor-oauth.hook.spec.ts` pins the `/callback/:id` production
 route matcher that e2e cannot reach without live provider traffic.
 

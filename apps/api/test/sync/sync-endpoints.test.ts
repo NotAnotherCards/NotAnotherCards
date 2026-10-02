@@ -185,8 +185,6 @@ describePostgres('authenticated remelonDB endpoints', () => {
     authUrl: process.env.BETTER_AUTH_URL,
     googleId: process.env.GOOGLE_CLIENT_ID,
     googleSecret: process.env.GOOGLE_CLIENT_SECRET,
-    facebookId: process.env.FACEBOOK_CLIENT_ID,
-    facebookSecret: process.env.FACEBOOK_CLIENT_SECRET,
   };
 
   const signUp = async (label: string): Promise<TestUser> => {
@@ -223,8 +221,6 @@ describePostgres('authenticated remelonDB endpoints', () => {
     process.env.BETTER_AUTH_URL = 'http://localhost:3000';
     process.env.GOOGLE_CLIENT_ID = 'dummy-google-client-id';
     process.env.GOOGLE_CLIENT_SECRET = 'dummy-google-client-secret';
-    process.env.FACEBOOK_CLIENT_ID = 'dummy-facebook-client-id';
-    process.env.FACEBOOK_CLIENT_SECRET = 'dummy-facebook-client-secret';
 
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
@@ -259,8 +255,6 @@ describePostgres('authenticated remelonDB endpoints', () => {
     process.env.BETTER_AUTH_URL = previousEnvironment.authUrl;
     process.env.GOOGLE_CLIENT_SECRET = previousEnvironment.googleSecret;
     process.env.GOOGLE_CLIENT_ID = previousEnvironment.googleId;
-    process.env.FACEBOOK_CLIENT_SECRET = previousEnvironment.facebookSecret;
-    process.env.FACEBOOK_CLIENT_ID = previousEnvironment.facebookId;
   }, 30_000);
 
   it('rejects unauthenticated and malformed requests with transport statuses', async () => {
