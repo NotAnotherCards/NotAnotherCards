@@ -16,6 +16,8 @@ import {
 
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
+let mockParams: { tab?: string } = {};
+let mockSetParams: (params: { tab?: string }) => void;
 const mockManager = { tag: 'manager' };
 let mockSyncController: {
   state: {
@@ -86,9 +88,9 @@ jest.mock('../lib/overview-stats', () => ({
 
 // The deck list and settings have their own tests; keep this one about the
 // session guard and the tab strip. Each tab renders a marker instead.
-jest.mock('../components/deck-list', () => {
+jest.mock('../components/library', () => {
   const { Text } = require('react-native');
-  return { DeckList: () => <Text>deck-list</Text> };
+  return { Library: () => <Text>deck-list</Text> };
 });
 jest.mock('../components/settings', () => {
   const { Text } = require('react-native');
@@ -116,13 +118,22 @@ jest.mock('expo-router', () => {
   return {
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
-    useRouter: () => ({ push: mockPush }),
+    useLocalSearchParams: () => {
+      const [params, setParams] = React.useState(mockParams);
+      mockSetParams = setParams;
+      return params;
+    },
+    useRouter: () => ({
+      push: mockPush,
+      setParams: (params: { tab?: string }) => mockSetParams(params),
+    }),
   };
 });
 
 describe('Dashboard screen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockParams = {};
     finishTwoFactorChallenge();
     Storage.removeItemSync(lastReviewDeckStorageKey('user-dashboard'));
     mockReviewOverview = {
@@ -264,6 +275,17 @@ describe('Dashboard screen', () => {
     const { getByText, queryByText } = render(<Dashboard />);
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(queryByText(/jane@example.com/)).toBeNull();
+  });
+
+  it('opens the library when returning from a community import', () => {
+    mockParams = { tab: 'library' };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+    const result = render(<Dashboard />);
+    expect(result.getByText('deck-list')).toBeTruthy();
+    expect(result.queryByText('Jane Doe')).toBeNull();
   });
 
   it('opens on Overview and switches to the library and settings tabs', () => {

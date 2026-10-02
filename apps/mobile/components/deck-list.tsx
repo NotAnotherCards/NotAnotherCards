@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
@@ -12,7 +12,6 @@ import { Button } from './ui/button';
 import {
   BookOpenIcon,
   FolderOpenIcon,
-  PlusIcon,
   SquarePenIcon,
   TrashIcon,
 } from './ui/icon';
@@ -29,7 +28,12 @@ import { DeckForm } from './deck-form';
 // The manager arrives from an effect after sign-in; until then there is no
 // database to query, so render the readiness state instead of a hook that
 // would throw (see the note on #68).
-export function DeckList() {
+export function DeckList({
+  createRequestKey = 0,
+}: {
+  // The library's plus sits in its section row; each new key opens the form.
+  createRequestKey?: number;
+} = {}) {
   const { manager } = useSessionDatabase();
   if (!manager) {
     return (
@@ -38,7 +42,9 @@ export function DeckList() {
       </View>
     );
   }
-  return <ActiveDeckList manager={manager} />;
+  return (
+    <ActiveDeckList manager={manager} createRequestKey={createRequestKey} />
+  );
 }
 
 // One action at a time. A union rather than three booleans, so a create
@@ -48,7 +54,13 @@ type DeckAction =
   | { kind: 'edit'; deck: Deck }
   | { kind: 'delete'; deck: Deck };
 
-function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
+function ActiveDeckList({
+  manager,
+  createRequestKey,
+}: {
+  manager: DatabaseManager;
+  createRequestKey: number;
+}) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { decks, isLoading, error, cardCount, dueCount, profile, writes } =
@@ -59,14 +71,25 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
 
   // Every open and cancel goes through here, so an error never outlives the
   // action that produced it or leaks into the next one.
-  const open = (next: DeckAction | null) => {
-    // A write in flight owns this state: its completion or failure decides
-    // what shows next, so another deck's action cannot start or cancel it.
-    if (pending) return;
-    setWriteError(null);
-    setPending(false);
-    setAction(next);
-  };
+  const open = useCallback(
+    (next: DeckAction | null) => {
+      // A write in flight owns this state: its completion or failure decides
+      // what shows next, so another deck's action cannot start or cancel it.
+      if (pending) return;
+      setWriteError(null);
+      setPending(false);
+      setAction(next);
+    },
+    [pending],
+  );
+  // The plus in the library's section row asks for the create form, through
+  // the same door as every other action: during a write it is dropped.
+  const handledCreateKey = useRef(0);
+  useEffect(() => {
+    if (createRequestKey === handledCreateKey.current) return;
+    handledCreateKey.current = createRequestKey;
+    if (createRequestKey > 0) open({ kind: 'create' });
+  }, [createRequestKey, open]);
 
   // A form closes only once its write landed, so a failed write is never
   // shown as a success (same rule as web's DeckList).
@@ -144,22 +167,9 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
 
   return (
     <View className="gap-3">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-semibold">My decks</Text>
-        {/* Web's Create Deck: the plus and the label at the default height.
-            The row buttons below are 48 high, Android's touch target size. */}
-        <Button
-          className="gap-1.5"
-          disabled={pending}
-          onPress={() => open({ kind: 'create' })}
-        >
-          <PlusIcon size={16} className="text-primary-foreground" />
-          <Text>Create deck</Text>
-        </Button>
-      </View>
       {decks.length === 0 && (
         <Text className="text-muted-foreground">
-          No decks yet. Create your first one.
+          No decks yet. Create your first one, or import one from the community.
         </Text>
       )}
       <View role="list" className="gap-3">
@@ -194,6 +204,14 @@ function ActiveDeckList({ manager }: { manager: DatabaseManager }) {
                     <CardTitle className="flex-1" numberOfLines={1}>
                       {deck.title}
                     </CardTitle>
+                    {deck.visibility === 'public' && (
+                      <Text
+                        accessibilityLabel="Published to the community"
+                        className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                      >
+                        Published
+                      </Text>
+                    )}
                   </Pressable>
                   {/* The glyphs sit inside 48 boxes; pulled right so the
                       trash lines up with the content's edge, as on web. */}
