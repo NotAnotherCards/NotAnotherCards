@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
-import { deckKind, deckKindShort } from '@repo/offline-db';
+import { deckKindShort } from '@repo/offline-db';
+import { deckTypeAccessibilityLabel } from '@repo/i18n';
+import { useTranslation } from 'react-i18next';
 import type { SharedDeckSummary } from '@repo/schemas';
 import { Button } from './ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -15,6 +17,7 @@ import { apiClient } from '@/lib/api-client';
 // the next one.
 export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [decks, setDecks] = useState<SharedDeckSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -88,7 +91,11 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
                 <CardHeader>
                   <View className="flex-row items-center gap-2">
                     <Text
-                      accessibilityLabel={deckKind(kind)}
+                      accessibilityLabel={deckTypeAccessibilityLabel(
+                        kind,
+                        i18n.resolvedLanguage ?? i18n.language,
+                        (key, options) => t(`deck.type.${key}`, options),
+                      )}
                       className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                     >
                       {deckKindShort(kind)}

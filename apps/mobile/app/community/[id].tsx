@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, ScrollView, TextInput, View } from 'react-native';
-import { deckKind } from '@repo/offline-db';
+import { deckTypeAccessibilityLabel } from '@repo/i18n';
+import { useTranslation } from 'react-i18next';
 import type { SharedDeckPreview } from '@repo/schemas';
 import { RequireSession } from '@/components/require-session';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ type Preview = SharedDeckPreview['deck'];
 export default function CommunityDeckScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { syncController } = useSessionDatabase();
   const [deck, setDeck] = useState<Preview | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,11 +117,15 @@ export default function CommunityDeckScreen() {
           <>
             <View className="gap-1">
               <Text className="text-sm text-muted-foreground">
-                {deckKind({
-                  note_type: deck.noteType,
-                  native_language_id: deck.nativeLanguageId,
-                  target_language_id: deck.targetLanguageId,
-                })}{' '}
+                {deckTypeAccessibilityLabel(
+                  {
+                    note_type: deck.noteType,
+                    native_language_id: deck.nativeLanguageId,
+                    target_language_id: deck.targetLanguageId,
+                  },
+                  i18n.resolvedLanguage ?? i18n.language,
+                  (key, options) => t(`deck.type.${key}`, options),
+                )}{' '}
                 · {deck.cardCount} cards · by @{deck.owner.username}
               </Text>
               {deck.description ? <Text>{deck.description}</Text> : null}
