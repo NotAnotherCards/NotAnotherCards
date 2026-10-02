@@ -250,6 +250,45 @@ describe('PublishPanel', () => {
     ).toBe(false);
   });
 
+  it('drops an explanation when the next publish flags other cards', async () => {
+    // Publish, ask Why? about the first flagged card while it streams, fix
+    // that card and publish again: the next refusal's first finding is a
+    // different card and must not inherit the old explanation or its
+    // disabled button.
+    mockPublish
+      .mockResolvedValueOnce({
+        published: false,
+        refusal: { flagged: [{ cardId: 'c1', reason: 'hate speech' }] },
+      })
+      .mockResolvedValueOnce({
+        published: false,
+        refusal: { flagged: [{ cardId: 'c2', reason: 'violence' }] },
+      });
+    let stream!: (delta: string) => void;
+    mockExplain.mockImplementation((_id, _input, onDelta) => {
+      stream = onDelta;
+      return new Promise<string>(() => {});
+    });
+    const result = render(
+      <PublishPanel
+        deck={{ id: 'd1', visibility: 'private' }}
+        cards={[...cards, { id: 'c2', front: 'perro' }]}
+      />,
+    );
+
+    await result.findByText('Private');
+    fireEvent.press(result.getByText('Publish'));
+    fireEvent.press(await result.findByLabelText('Why was gato flagged?'));
+    await act(async () => stream('About the slur'));
+    expect(result.getByText('About the slur')).toBeTruthy();
+
+    fireEvent.press(result.getByText('Publish'));
+    const whyPerro = await result.findByLabelText('Why was perro flagged?');
+    expect(result.queryByText('About the slur')).toBeNull();
+    expect(whyPerro.props.accessibilityState.disabled).toBe(false);
+    expect(mockExplain.mock.calls[0][3].signal.aborted).toBe(true);
+  });
+
   it('publishes: syncs, calls the API, syncs again, and shows warnings', async () => {
     mockPublish.mockResolvedValue({
       published: true,

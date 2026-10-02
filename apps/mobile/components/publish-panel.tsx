@@ -48,11 +48,12 @@ export function PublishPanel({
     tone: 'destructive' | 'muted',
     prefix = '',
   ) => {
-    // Which finding, within its list: the lists never share a source.
-    const key = `${source}:${index}`;
+    // Which finding: its card and reason, as web keys them. A position would
+    // be reused by a different finding after the next publish attempt.
+    const key = `${source}:${item.cardId}:${item.reason}`;
     const isActive = explanation.activeKey === key;
     return (
-      <View key={key} className="gap-1">
+      <View key={`${key}:${index}`} className="gap-1">
         <View className="flex-row items-center justify-between gap-2">
           <Text
             className={`shrink text-sm ${tone === 'destructive' ? 'text-destructive' : 'text-muted-foreground'}`}
@@ -122,6 +123,7 @@ export function PublishPanel({
   const run = async (work: () => Promise<'changed' | 'refused'>) => {
     setError(null);
     setFlagged([]);
+    explanation.clear();
     setPending(true);
     try {
       const notSynced = await syncFailure(

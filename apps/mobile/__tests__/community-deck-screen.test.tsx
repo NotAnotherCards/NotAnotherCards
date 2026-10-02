@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import CommunityDeckScreen from '@/app/community/[id]';
+import { finishTwoFactorChallenge } from '@/lib/two-factor-challenge';
 
 const mockBack = jest.fn();
 const mockDismissTo = jest.fn();
@@ -72,6 +73,8 @@ const deck = {
 
 describe('CommunityDeckScreen', () => {
   beforeEach(() => {
+    // RequireSession waits for the 2FA challenge state (#384); none is pending.
+    finishTwoFactorChallenge();
     jest.clearAllMocks();
     mockSyncController = { syncNow: mockSyncNow };
     mockSyncNow.mockImplementation(() => Promise.resolve(IDLE));

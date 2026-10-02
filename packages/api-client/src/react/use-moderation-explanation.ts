@@ -24,6 +24,17 @@ export function useModerationExplanation(client: Client, deckId: string) {
 
   useEffect(() => () => request.current?.abort(), []);
 
+  // The findings changed (a new publish, say): whatever was open or still
+  // streaming belonged to the old ones.
+  const clear = () => {
+    request.current?.abort();
+    request.current = null;
+    setActiveKey(null);
+    setText('');
+    setError(null);
+    setIsLoading(false);
+  };
+
   const explain = async (
     key: string,
     finding: ExplainableFinding,
@@ -58,5 +69,5 @@ export function useModerationExplanation(client: Client, deckId: string) {
     }
   };
 
-  return { activeKey, text, error, isLoading, explain };
+  return { activeKey, text, error, isLoading, explain, clear };
 }
