@@ -1,6 +1,16 @@
-import { createContext, useContext, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { View } from 'react-native';
-import type { DatabaseManager, SyncController } from '@remelondb/core';
+import type {
+  DatabaseManager,
+  SyncController,
+  SyncControllerState,
+} from '@remelondb/core';
 import {
   DatabaseProvider,
   useSessionDatabase as useOwnedDatabase,
@@ -8,6 +18,7 @@ import {
 import { authClient } from './auth-client';
 import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
+import { isSyncAuthBlocked } from './sync-status';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
 import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
@@ -47,6 +58,28 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
     sync: { pullChanges, pushChanges, migrationsEnabledAtVersion: 1 },
     controller: { triggers: nativeSyncTriggers },
   });
+
+  const signedOutController = useRef<SyncController | null>(null);
+  useEffect(() => {
+    if (!syncController || !userId) return;
+    // #384: keep userId null while a 2FA challenge is pending, so a
+    // partial session can neither sync nor enter this sign-out path.
+    const onState = (state: SyncControllerState) => {
+      if (
+        !isSyncAuthBlocked(state) ||
+        signedOutController.current === syncController
+      )
+        return;
+      signedOutController.current = syncController;
+      // Expo clears notanothercards_cookie, notanothercards_session_data
+      // and the live session before sending sign-out, even without a cookie.
+      // RequireSession then redirects; a failed HTTP sign-out needs no retry.
+      void authClient.signOut().catch(() => {});
+    };
+    const unsubscribe = syncController.subscribe(onState);
+    onState(syncController.state);
+    return unsubscribe;
+  }, [syncController, userId]);
 
   useEffect(() => {
     if (

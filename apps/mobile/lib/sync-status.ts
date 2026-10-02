@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { SyncControllerState } from '@remelondb/core';
-import { rejectedSummary } from '@repo/offline-db';
+import { rejectedSummary, SyncTransportError } from '@repo/offline-db';
 
 // Web's Overview sync badge (DashboardSyncStatus): same labels, same order
 // of precedence, same rejected summary, so the two clients read alike.
@@ -20,6 +20,15 @@ const LABELS: Record<SyncControllerState['status'], string> = {
   error: 'Sync failed',
   'resync-required': 'Reset required',
 };
+
+// Matches remelonDB's default auth classification; 403 is a permission error.
+export function isSyncAuthBlocked(state: SyncControllerState): boolean {
+  return (
+    state.status === 'error' &&
+    state.cause instanceof SyncTransportError &&
+    state.cause.status === 401
+  );
+}
 
 export function syncStatusView(state: SyncControllerState): SyncStatusView {
   const { count: rejected, details } = rejectedSummary(state);

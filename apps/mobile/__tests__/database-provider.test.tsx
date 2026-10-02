@@ -1,10 +1,22 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import {
   SessionDatabaseProvider,
   useSessionDatabase,
 } from '@/lib/database-provider';
+
+import { createSyncController } from '@remelondb/core';
+import { SyncTransportError } from '@repo/offline-db';
+import { RequireSession } from '@/components/require-session';
+
+jest.mock('expo-router', () => {
+  const { Text } = require('react-native');
+  return { Redirect: ({ href }: { href: string }) => <Text>{href}</Text> };
+});
+const mockSignOut = jest.fn(async () => {
+  mockSessionState = { data: null, isPending: false };
+});
 
 // The lifecycle itself is remelonDB's (useSessionDatabase, tested
 // upstream against real managers). What is app-level here is the wiring:
@@ -17,11 +29,17 @@ type SessionState = {
 
 let mockSessionState: SessionState = { data: null, isPending: true };
 jest.mock('../lib/auth-client', () => ({
-  authClient: { useSession: () => mockSessionState },
+  authClient: {
+    useSession: () => mockSessionState,
+    signOut: () => mockSignOut(),
+  },
 }));
 
 const fakeManager = { tag: 'manager' };
-const fakeController = { tag: 'controller' };
+const fakeController = createSyncController({
+  runSync: jest.fn(),
+  intervalMs: null,
+});
 let hookResult: {
   manager: unknown;
   syncController: unknown;
@@ -178,5 +196,83 @@ describe('SessionDatabaseProvider', () => {
     expect(mockUseSessionDatabase).toHaveBeenCalledWith(
       expect.objectContaining({ userId: null }),
     );
+  });
+});
+
+describe('sync session expiry', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSessionState = {
+      data: { user: { id: 'user-a', onBoardingComplete: true } },
+      isPending: false,
+    };
+  });
+
+  const tree = () => (
+    <SessionDatabaseProvider>
+      <RequireSession>
+        <Text>Dashboard</Text>
+      </RequireSession>
+    </SessionDatabaseProvider>
+  );
+
+  function controllerFor(error: Error) {
+    const controller = createSyncController({
+      runSync: async () => {
+        throw error;
+      },
+      intervalMs: null,
+    });
+    hookResult = {
+      manager: null,
+      syncController: controller,
+      closeError: null,
+    };
+    return controller;
+  }
+
+  it('signs out on a sync 401 and lets RequireSession redirect', async () => {
+    const controller = controllerFor(
+      new SyncTransportError('Unauthorized', 401),
+    );
+    const view = render(tree());
+    await act(async () => {
+      await controller.syncNow();
+    });
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    view.rerender(tree());
+    expect(screen.getByText('/login')).toBeTruthy();
+    controller.dispose();
+  });
+
+  it('handles an already blocked controller once across rerenders and repeated failures', async () => {
+    mockSignOut.mockImplementationOnce(() => new Promise(() => {}));
+    const controller = controllerFor(
+      new SyncTransportError('Unauthorized', 401),
+    );
+    await controller.syncNow();
+    const view = render(tree());
+    view.rerender(tree());
+    await act(async () => {
+      await controller.syncNow();
+    });
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    view.unmount();
+    controller.dispose();
+  });
+
+  it.each([
+    new Error('Network request failed'),
+    new SyncTransportError('Offline'),
+    new SyncTransportError('Forbidden', 403),
+  ])('keeps the session for $message', async (error) => {
+    const controller = controllerFor(error);
+    render(tree());
+    await act(async () => {
+      await controller.syncNow();
+    });
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(screen.getByText('Dashboard')).toBeTruthy();
+    controller.dispose();
   });
 });
