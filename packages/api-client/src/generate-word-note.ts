@@ -19,6 +19,19 @@ export interface WordNoteGenerationOptions {
   signal?: AbortSignal;
   pollMs?: number;
   onStatus?: (status: AiJobStatus) => void;
+  onJob?: (id: string) => void;
+  /** Resume polling this job without submitting or spending quota again. */
+  jobId?: string;
+}
+
+export class AiJobPollError extends Error {
+  constructor(
+    readonly jobId: string,
+    readonly cause: unknown,
+  ) {
+    super('Unable to check generation. Check your connection and try again.');
+    this.name = 'AiJobPollError';
+  }
 }
 
 export class AiJobFailedError extends Error {
@@ -59,12 +72,34 @@ export async function generateWordNote(
     job(id: string, options?: RequestOptions): Promise<{ job: AiJob }>;
   },
   input: WordNoteGenerationInput,
-  { signal, pollMs = 1000, onStatus }: WordNoteGenerationOptions = {},
+  {
+    signal,
+    pollMs = 1000,
+    onStatus,
+    onJob,
+    jobId,
+  }: WordNoteGenerationOptions = {},
 ) {
   const request = createAiJobSchema.parse({ ...input, type: 'word_note' });
   if (signal?.aborted) throw cancelled();
-  let { job } = await ai.generate(request, { signal });
-  const id = job.id;
+  const poll = async (id: string) => {
+    try {
+      return await ai.job(id, { signal });
+    } catch (error) {
+      if (
+        signal?.aborted ||
+        (error instanceof Error && error.name === 'AbortError')
+      )
+        throw error;
+      throw new AiJobPollError(id, error);
+    }
+  };
+  let { job } =
+    jobId === undefined
+      ? await ai.generate(request, { signal })
+      : await poll(jobId);
+  const id = jobId ?? job.id;
+  onJob?.(id);
   for (;;) {
     if (signal?.aborted) throw cancelled();
     if (
@@ -90,6 +125,6 @@ export async function generateWordNote(
       return fields;
     }
     await wait(pollMs, signal);
-    ({ job } = await ai.job(id, { signal }));
+    ({ job } = await poll(id));
   }
 }

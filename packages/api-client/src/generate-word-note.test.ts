@@ -2,6 +2,66 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { createApiClient, AiJobFailedError, ApiError } from './index.js';
 
 afterEach(() => vi.useRealTimers());
+
+it('keeps the job id on a failed poll and resumes without another generation', async () => {
+  vi.useFakeTimers();
+  const { ai, fetch } = setup(job('pending'));
+  fetch.mockRejectedValueOnce(new Error('Network lost'));
+  const onJob = vi.fn();
+  const result = ai
+    .generateWordNote(input, { onJob })
+    .catch((error: unknown) => error);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(await result).toMatchObject({ name: 'AiJobPollError', jobId: 'a/b' });
+  expect(onJob).toHaveBeenCalledWith('a/b');
+  fetch.mockResolvedValueOnce(new Response(JSON.stringify(job('completed'))));
+  await expect(ai.generateWordNote(input, { jobId: 'a/b' })).resolves.toEqual(
+    fields,
+  );
+  expect(
+    fetch.mock.calls.filter(([, init]) => init?.method === 'POST'),
+  ).toHaveLength(1);
+  expect(fetch).toHaveBeenLastCalledWith(
+    '/api/ai/jobs/a%2Fb',
+    expect.anything(),
+  );
+});
+
+it('validates the identity and languages on resume without posting', async () => {
+  for (const response of [
+    job('completed', { id: 'other' }),
+    job('completed'),
+  ]) {
+    const { ai, fetch } = setup(response);
+    await expect(
+      ai.generateWordNote(
+        { ...input, targetLanguageId: 'fr' },
+        { jobId: 'a/b' },
+      ),
+    ).rejects.toThrow();
+    expect(fetch.mock.calls.every(([, init]) => init?.method !== 'POST')).toBe(
+      true,
+    );
+  }
+});
+
+it('distinguishes a failed resumed job and an aborted poll from poll failure', async () => {
+  await expect(
+    setup(job('failed', { error: 'Model unavailable' })).ai.generateWordNote(
+      input,
+      { jobId: 'a/b' },
+    ),
+  ).rejects.toBeInstanceOf(AiJobFailedError);
+  const { ai, fetch } = setup();
+  fetch.mockImplementation(() => new Promise(() => {}));
+  const controller = new AbortController();
+  const result = ai.generateWordNote(input, {
+    jobId: 'a/b',
+    signal: controller.signal,
+  });
+  controller.abort();
+  await expect(result).rejects.toMatchObject({ name: 'AbortError' });
+});
 const input = {
   deckId: 'd',
   word: 'gato',

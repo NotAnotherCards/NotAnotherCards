@@ -13,6 +13,7 @@ import { SparklesIcon } from './ui/icon';
 import { apiClient } from '@/lib/api-client';
 import { useConnected } from '@/lib/connectivity';
 import { aiErrorMessage } from '@/lib/ai-error';
+import { AiJobPollError } from '@repo/api-client';
 
 const editableFields = WordNoteEditableFieldsV1;
 const blank = z.literal('');
@@ -80,14 +81,27 @@ export function WordNoteForm({
   const request = useRef<AbortController | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
   useEffect(() => {
     setGenerating(false);
     setGenerationError(null);
+    setJobId(null);
     return () => {
       request.current?.abort();
       request.current = null;
     };
   }, [deckId, nativeLanguageId, targetLanguageId]);
+
+  useEffect(() => {
+    setJobId(null);
+    setGenerationError(null);
+    if (request.current) {
+      request.current.abort();
+      request.current = null;
+      setGenerating(false);
+      setGenerationError('The word changed. Fill in again for the new word.');
+    }
+  }, [word]);
 
   const fill = async () => {
     if (
@@ -114,9 +128,16 @@ export function WordNoteForm({
           nativeLanguageId,
           targetLanguageId,
         },
-        { signal: controller.signal },
+        {
+          signal: controller.signal,
+          jobId: jobId ?? undefined,
+          onJob: (id) => {
+            if (!controller.signal.aborted) setJobId(id);
+          },
+        },
       );
       if (controller.signal.aborted) return;
+      setJobId(null);
       if (getValues('word').trim() !== word.trim()) {
         setGenerationError('The word changed. Fill in again for the new word.');
         return;
@@ -133,7 +154,10 @@ export function WordNoteForm({
           });
       }
     } catch (error) {
-      if (!controller.signal.aborted) setGenerationError(aiErrorMessage(error));
+      if (!controller.signal.aborted) {
+        setJobId(error instanceof AiJobPollError ? error.jobId : null);
+        setGenerationError(aiErrorMessage(error));
+      }
     } finally {
       if (request.current === controller) {
         request.current = null;
@@ -175,7 +199,11 @@ export function WordNoteForm({
           </View>
           <Button
             className="h-12 sm:h-12"
-            accessibilityLabel="Fill in with AI"
+            accessibilityLabel={
+              jobId && !generating
+                ? 'Check generation again'
+                : 'Fill in with AI'
+            }
             disabled={
               !word.trim() ||
               !connected ||
@@ -189,7 +217,9 @@ export function WordNoteForm({
             onPress={() => void fill()}
           >
             <SparklesIcon size={18} className="text-primary-foreground" />
-            <Text>Fill in</Text>
+            <Text>
+              {jobId && !generating ? 'Check generation again' : 'Fill in'}
+            </Text>
           </Button>
         </View>
         {!connected && (
@@ -199,6 +229,11 @@ export function WordNoteForm({
         )}
         {generating && (
           <Text accessibilityLiveRegion="polite">Generating…</Text>
+        )}
+        {jobId && !generating && (
+          <Text accessibilityLiveRegion="polite">
+            Generation may still be running.
+          </Text>
         )}
         {generationError && (
           <Text accessibilityLiveRegion="polite" className="text-destructive">
@@ -255,7 +290,13 @@ export function WordNoteForm({
           <Button
             variant="secondary"
             className="flex-1"
-            onPress={onCancel}
+            onPress={() => {
+              request.current?.abort();
+              request.current = null;
+              setJobId(null);
+              setGenerating(false);
+              onCancel();
+            }}
             disabled={formState.isSubmitting || busy}
           >
             <Text>Cancel</Text>

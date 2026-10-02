@@ -57,7 +57,11 @@ export class AiLimitsService {
     const activeCount = Number(activeJobsResult[0]?.count ?? 0);
     if (activeCount >= this.maxPendingJobs) {
       throw new HttpException(
-        `Active generation cap reached. You have ${activeCount} pending or running jobs (max allowed: ${this.maxPendingJobs}).`,
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          code: 'AI_ACTIVE_JOB_LIMIT',
+          message: `Active generation cap reached. You have ${activeCount} pending or running jobs (max allowed: ${this.maxPendingJobs}).`,
+        },
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
@@ -79,14 +83,22 @@ export class AiLimitsService {
 
     if (usedTokens >= this.maxDailyTokens) {
       throw new HttpException(
-        `Daily AI token quota reached (${usedTokens}/${this.maxDailyTokens} tokens). Quota resets continuously over a 24-hour window.`,
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          code: 'AI_DAILY_QUOTA',
+          message: `Daily AI token quota reached (${usedTokens}/${this.maxDailyTokens} tokens). Quota resets continuously over a 24-hour window.`,
+        },
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
     if (requestsUsed >= this.maxDailyRequests) {
       throw new HttpException(
-        `Daily AI request quota reached (${requestsUsed}/${this.maxDailyRequests} requests). Quota resets continuously over a 24-hour window.`,
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          code: 'AI_DAILY_QUOTA',
+          message: `Daily AI request quota reached (${requestsUsed}/${this.maxDailyRequests} requests). Quota resets continuously over a 24-hour window.`,
+        },
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
