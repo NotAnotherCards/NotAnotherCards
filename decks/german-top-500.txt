@@ -2,6 +2,11 @@
 # languages: 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000003
 # German high-frequency words for English speakers. One entry per line:
 # word | translation | part of speech | article | example | example translation
+# Source data: Wordhoard (https://github.com/natema/wordhoard), CC BY-SA 4.0.
+# Attribution: Wiktionary contributors via gambolputty/german-nouns; OpenSubtitles
+# frequency lists via hermitdave/FrequencyWords; spaCy for lemma and part-of-speech data.
+# Changes: filtered to 500 learner-appropriate lemmas; translations and example
+# sentences added by NotAnotherCards. This adapted deck is shared under CC BY-SA 4.0.
 
 sein | to be | verb |  | Ich bin heute zu Hause. | I am at home today.
 werden | to become | verb |  | Das Wetter wird besser. | The weather is getting better.
@@ -94,7 +99,7 @@ Mann | man | noun | der | Der Mann wartet draußen. | The man is waiting outside
 setzen | to put, to set | verb |  | Setz dich bitte hin. | Please sit down.
 Bruder | brother | noun | der | Mein Bruder studiert Medizin. | My brother studies medicine.
 Musik | music | noun | die | Diese Musik gefällt mir. | I like this music.
-erinnern | to remember | verb |  | Ich erinnere mich an den Tag. | I remember the day.
+sich erinnern | to remember | verb |  | Ich erinnere mich an den Tag. | I remember the day.
 nennen | to call, to name | verb |  | Nenn mir deinen Namen. | Tell me your name.
 entschuldigen | to excuse, to apologize | verb |  | Entschuldigen Sie bitte die Verspätung. | Please excuse the delay.
 nächster | next | adjective |  | Nächste Woche habe ich Urlaub. | I am on holiday next week.
@@ -124,8 +129,8 @@ Uhr | clock, o'clock | noun | die | Es ist drei Uhr. | It is three o'clock.
 Wort | word | noun | das | Dieses Wort ist neu für mich. | This word is new to me.
 ziehen | to pull, to move | verb |  | Zieh bitte die Tür zu. | Please pull the door shut.
 Kopf | head | noun | der | Mein Kopf tut weh. | My head hurts.
-sorgen | to worry | verb |  | Mach dir keine Sorgen. | Do not worry.
-rufen | to call, to shout | verb |  | Ruf mich bitte später an. | Please call me later.
+sorgen | to worry; to take care of | verb |  | Seine Eltern sorgen für ihn. | His parents take care of him.
+rufen | to call; to shout | verb |  | Sie ruft laut nach ihrem Bruder. | She calls loudly for her brother.
 spät | late | adverb |  | Der Zug kommt spät. | The train arrives late.
 lernen | to learn | verb |  | Ich lerne jeden Tag Deutsch. | I learn German every day.
 retten | to save, to rescue | verb |  | Die Feuerwehr rettet den Hund. | The fire brigade rescues the dog.
@@ -134,7 +139,7 @@ bald | soon | adverb |  | Bis bald! | See you soon!
 tragen | to carry, to wear | verb |  | Sie trägt einen roten Mantel. | She is wearing a red coat.
 bedeuten | to mean | verb |  | Was bedeutet dieses Wort? | What does this word mean?
 Schwester | sister | noun | die | Meine Schwester wohnt in Hamburg. | My sister lives in Hamburg.
-kümmern | to take care | verb |  | Ich kümmere mich um den Hund. | I take care of the dog.
+sich kümmern | to take care of | verb |  | Ich kümmere mich um den Hund. | I take care of the dog.
 Idee | idea | noun | die | Das ist eine gute Idee. | That is a good idea.
 Tod | death | noun | der | Der Tod des Königs verändert alles. | The king's death changes everything.
 Waffe | weapon | noun | die | Die Polizei findet eine Waffe. | The police find a weapon.
@@ -187,7 +192,7 @@ Seite | side, page | noun | die | Lies bitte diese Seite. | Please read this pag
 stecken | to put, to be stuck | verb |  | Der Schlüssel steckt in der Tür. | The key is in the door.
 wagen | to dare | verb |  | Ich wage einen neuen Versuch. | I dare to make a new attempt.
 klingen | to sound | verb |  | Das klingt gut. | That sounds good.
-freuen | to be happy | verb |  | Ich freue mich auf morgen. | I am looking forward to tomorrow.
+sich freuen | to be happy; to look forward to | verb |  | Ich freue mich auf morgen. | I am looking forward to tomorrow.
 oben | upstairs, above | adverb |  | Das Bad ist oben. | The bathroom is upstairs.
 gestern | yesterday | adverb |  | Gestern war ich müde. | Yesterday I was tired.
 etwa | about, roughly | adverb |  | Das kostet etwa zehn Euro. | That costs about ten euros.
@@ -212,95 +217,95 @@ Schuld | fault, blame | noun | die | Es ist nicht meine Schuld, dass der Bus sp�
 möglich | possible | adjective |  | Ist es möglich, die Tür später zu öffnen? | Is it possible to open the door later?
 oft | often | adverb |  | Wir gehen oft nach der Arbeit in den Park. | We often go to the park after work.
 Gesicht | face | noun | das | Sein Gesicht kommt mir bekannt vor. | His face looks familiar to me.
-ernst | serious, severe, grave | adj |  | Das Problem ist ernst, deshalb brauchen wir Hilfe. | The problem is serious, so we need help.
+ernst | serious, severe, grave | adjective |  | Das Problem ist ernst, deshalb brauchen wir Hilfe. | The problem is serious, so we need help.
 schauen | to watch, to view | verb |  | Am Abend schauen wir zusammen einen Film. | In the evening we watch a film together.
-manchmal | sometimes | adv |  | Manchmal esse ich im Café, manchmal zu Hause. | Sometimes I eat in a café, sometimes at home.
+manchmal | sometimes | adverb |  | Manchmal esse ich im Café, manchmal zu Hause. | Sometimes I eat in a café, sometimes at home.
 passen | to fit | verb |  | Diese Schuhe passen gut zu deinem neuen Mantel. | These shoes go well with your new coat.
 benutzen | to make use (of) | verb |  | Du kannst mein Handy benutzen, wenn du willst. | You can use my phone if you want.
-eben | flat, smooth, even (of a surface) | adj |  | Der Weg zum Bahnhof ist eben und kurz. | The path to the station is flat and short.
+eben | flat, smooth, even (of a surface) | adjective |  | Der Weg zum Bahnhof ist eben und kurz. | The path to the station is flat and short.
 vertrauen | to trust | verb |  | Ich vertraue meinem Freund, weil er ehrlich ist. | I trust my friend because he is honest.
 Gefühl | feeling (either physical sensation or emotion) | noun | das | Ich habe ein gutes Gefühl bei dieser Idee. | I have a good feeling about this idea.
 verkaufen | to sell (something in exchange for money) | verb |  | Sie wollen das alte Auto verkaufen. | They want to sell the old car.
 Wiedersehen | reunion; seeing someone again | noun | das | Wir freuen uns auf das Wiedersehen morgen. | We are looking forward to seeing each other again tomorrow.
 fangen | to catch (grab something flying in the air) | verb |  | Das Kind fängt den Ball mit beiden Händen. | The child catches the ball with both hands.
-schlimm | bad, terrible, serious (seriously bad), dire, horrible, awful | adj |  | Der Fehler ist nicht schlimm, wir können ihn ändern. | The mistake is not bad; we can change it.
+schlimm | bad, terrible, serious (seriously bad), dire, horrible, awful | adjective |  | Der Fehler ist nicht schlimm, wir können ihn ändern. | The mistake is not bad; we can change it.
 anfangen | to begin; to commence | verb |  | Der Kurs fängt um neun Uhr an. | The course starts at nine o’clock.
 Hund | dog, hound | noun | der | Der Hund wartet vor der Tür auf seinen Freund. | The dog is waiting in front of the door for its friend.
 aufhören | to stop | verb |  | Der Regen hört am Abend endlich auf. | The rain finally stops in the evening.
 funktionieren | to work, function | verb |  | Mein Handy funktioniert heute wieder gut. | My phone is working well again today.
 schicken | to send, to dispatch (a person, letter, money etc. to a destination or a person) | verb |  | Kannst du mir die Adresse schicken? | Can you send me the address?
-Typ | type | noun | der | Der Typ im Café kennt meinen Bruder. | The guy in the café knows my brother.
-äh | an exclamation of disgust; yuck, ew, ugh | intj |  | Äh, kannst du die Frage noch einmal sagen? | Uh, can you say the question once more?
+Typ | type; guy | noun | der | Der Typ im Café kennt meinen Bruder. | The guy in the café knows my brother.
+äh | uh; um; hesitation sound | interjection |  | Äh, kannst du die Frage noch einmal sagen? | Uh, can you say the question once more?
 fliegen | to fly; to travel by air | verb |  | Wir fliegen im Sommer nach Spanien. | We are flying to Spain in summer.
-frei | free; unenslaved; unimprisoned | adj |  | Am Sonntag habe ich frei und bleibe zu Hause. | On Sunday I am free and stay at home.
+frei | free; unenslaved; unimprisoned | adjective |  | Am Sonntag habe ich frei und bleibe zu Hause. | On Sunday I am free and stay at home.
 geschehen | to occur; to happen | verb |  | Was ist gestern in der Stadt geschehen? | What happened in the city yesterday?
-bloß | mere, sole | adj |  | Ich möchte bloß einen Kaffee trinken. | I only want to drink a coffee.
+bloß | mere, sole | adjective |  | Ich möchte bloß einen Kaffee trinken. | I only want to drink a coffee.
 schießen | to shoot; to fire | verb |  | Der Junge schießt den Ball ins Tor. | The boy kicks the ball into the goal.
 folgen | to follow (on the same path or in a sequence) | verb |  | Folge bitte diesem Weg zum Bahnhof. | Please follow this path to the station.
 wohnen | to live, reside, dwell (to remain or be settled permanently, or for a considerable time) | verb |  | Meine Schwester wohnt nicht weit vom Park. | My sister lives not far from the park.
 wünschen | to wish for; to make a wish for; to want; to desire | verb |  | Ich wünsche dir einen schönen Tag. | I wish you a nice day.
 Ding | thing | noun | das | Das Ding auf dem Tisch gehört meinem Vater. | The thing on the table belongs to my father.
 verdienen | to make money, to earn | verb |  | Sie arbeitet viel und verdient gutes Geld. | She works a lot and earns good money.
-ehrlich | decent, honorable, honest | adj |  | Sei ehrlich: Hast du den Schlüssel gesehen? | Be honest: Have you seen the key?
+ehrlich | decent, honorable, honest | adjective |  | Sei ehrlich: Hast du den Schlüssel gesehen? | Be honest: Have you seen the key?
 Eltern | parents | noun | die | Meine Eltern wohnen in einer kleinen Stadt. | My parents live in a small city.
-Nummer | number; see usage notes below | noun | die | Kannst du mir deine Telefonnummer geben? | Can you give me your phone number?
+Nummer | number | noun | die | Kannst du mir deine Telefonnummer geben? | Can you give me your phone number?
 kämpfen | to fight, to struggle | verb |  | Unser Team kämpft bis zum Ende des Spiels. | Our team fights until the end of the game.
 beginnen | to begin; to commence; to be started | verb |  | Der Film beginnt gleich um acht Uhr. | The film begins at eight o’clock soon.
-drauf | alternative form of darauf | adv |  | Das Buch liegt drauf auf dem Tisch. | The book is lying on top of the table.
+drauf | alternative form of darauf | adverb |  | Das Buch liegt drauf auf dem Tisch. | The book is lying on top of the table.
 Papa | dad, daddy | noun | der | Mein Papa fährt heute mit dem Auto zur Arbeit. | My dad is driving to work today.
-irgendwie | somehow (in some unknown or unspecific manner) | adv |  | Irgendwie finden wir einen Weg nach Hause. | Somehow we will find a way home.
+irgendwie | somehow (in some unknown or unspecific manner) | adverb |  | Irgendwie finden wir einen Weg nach Hause. | Somehow we will find a way home.
 aussehen | to look; to appear | verb |  | Du siehst heute sehr glücklich aus. | You look very happy today.
 Arsch | arse, posterior, buttocks | noun | der | Er fällt auf seinen Arsch und lacht. | He falls on his backside and laughs.
-fest | firm; compact; hard | adj |  | Halte meine Hand bitte fest. | Please hold my hand tightly.
-kaum | barely, hardly (qualifying verbs or adjectives) | adv |  | Ich habe kaum noch Geld dabei. | I hardly have any money left with me.
+fest | firm; compact; hard | adjective |  | Halte meine Hand bitte fest. | Please hold my hand tightly.
+kaum | barely, hardly (qualifying verbs or adjectives) | adverb |  | Ich habe kaum noch Geld dabei. | I hardly have any money left with me.
 singen | to sing | verb |  | Die Kinder singen ein Lied zusammen. | The children sing a song together.
 Telefon | telephone | noun | das | Das Telefon klingelt im Büro. | The telephone rings in the office.
 Junge | boy | noun | der | Der Junge spielt mit seinem Hund. | The boy plays with his dog.
 werfen | to throw | verb |  | Wirf den Ball bitte nicht ins Fenster. | Please do not throw the ball into the window.
 öffnen | to open (to make something accessible or allow for passage by moving from a shut position) | verb |  | Kannst du das Fenster kurz öffnen? | Can you open the window briefly?
 verstecken | to conceal | verb |  | Das Kind versteckt den Schlüssel im Zimmer. | The child hides the key in the room.
-hübsch | pretty, handsome | adj |  | Deine Schwester hat ein hübsches Kleid. | Your sister has a pretty dress.
+hübsch | pretty, handsome | adjective |  | Deine Schwester hat ein hübsches Kleid. | Your sister has a pretty dress.
 erledigen | to finish / take care of | verb |  | Ich erledige die Arbeit vor dem Abend. | I will finish the work before the evening.
 entscheiden | to decide, to make a decision | verb |  | Wir entscheiden morgen über den Plan. | We will decide about the plan tomorrow.
 brechen | to break | verb |  | Das Glas fällt und bricht auf dem Boden. | The glass falls and breaks on the floor.
 erfahren | to find out, learn, to come to know | verb |  | Ich erfahre morgen die Antwort. | I will find out the answer tomorrow.
-zuerst | first, firstly | adv |  | Zuerst trinken wir Kaffee, dann gehen wir. | First we drink coffee, then we go.
-wahrscheinlich | likely, probable, plausible | adj |  | Der Bus kommt wahrscheinlich später. | The bus will probably arrive later.
+zuerst | first, firstly | adverb |  | Zuerst trinken wir Kaffee, dann gehen wir. | First we drink coffee, then we go.
+wahrscheinlich | likely, probable, plausible | adjective |  | Der Bus kommt wahrscheinlich später. | The bus will probably arrive later.
 verletzen | to hurt, to injure (cause bodily harm to someone) | verb |  | Pass auf, damit du dich nicht verletzt. | Be careful so that you do not hurt yourself.
 dauern | to last, to continue, to persist (for a period of time) | verb |  | Der Film dauert zwei Stunden. | The film lasts two hours.
-froh | glad; (momentarily) happy; (momentarily) cheerful | adj |  | Ich bin froh, dass du heute hier bist. | I am glad that you are here today.
+froh | glad; (momentarily) happy; (momentarily) cheerful | adjective |  | Ich bin froh, dass du heute hier bist. | I am glad that you are here today.
 Fehler | fault, error, mistake | noun | der | Jeder macht manchmal einen Fehler. | Everyone sometimes makes a mistake.
 Dame | lady (woman of good breeding and manners) | noun | die | Die Dame am Tisch liest die Zeitung. | The lady at the table is reading the newspaper.
 Dollar | dollar | noun | der | Das kostet zehn Dollar. | That costs ten dollars.
 Straße | street; road (a way wide enough to be passable for vehicles, generally paved, in or outside a settlement) | noun | die | Die Straße zum Bahnhof ist lang. | The street to the station is long.
-willkommen | welcome (received with gladness) | adj |  | Du bist in unserem Haus willkommen. | You are welcome in our house.
-hierher | to here, here (to this place), hither | adv |  | Warum kommst du heute hierher? | Why are you coming here today?
+willkommen | welcome (received with gladness) | adjective |  | Du bist in unserem Haus willkommen. | You are welcome in our house.
+hierher | to here, here (to this place), hither | adverb |  | Warum kommst du heute hierher? | Why are you coming here today?
 schließen | to shut; to close; to shut down | verb |  | Schließ bitte die Tür, es ist kalt. | Please close the door; it is cold.
 Büro | office (room for working) | noun | das | Mein Vater arbeitet heute im Büro. | My father is working in the office today.
 vorstellen | to introduce (someone), to present | verb |  | Darf ich dir meinen Freund vorstellen? | May I introduce my friend to you?
-leicht | light (not heavy) | adj |  | Diese Tasche ist leicht und klein. | This bag is light and small.
-bewegen | to motivate; to persuade; to prompt (someone or something to do something); to make (someone or something to do something); to induce; to get (someone or something to do something) | verb |  | Beweg bitte den Tisch ein wenig. | Please move the table a little.
+leicht | light (not heavy) | adjective |  | Diese Tasche ist leicht und klein. | This bag is light and small.
+bewegen | to move; to motivate; to persuade; to prompt | verb |  | Beweg bitte den Tisch ein wenig. | Please move the table a little.
 hängen | to hang, to be suspended | verb |  | Das Foto hängt an der Wand. | The photo is hanging on the wall.
-langsam | slow (taking a long time to move or travel; not happening in a short time) | adj |  | Bitte sprich langsam, ich lerne noch. | Please speak slowly; I am still learning.
-bereits | already | adv |  | Der Kurs hat bereits begonnen. | The course has already begun.
+langsam | slow (taking a long time to move or travel; not happening in a short time) | adjective |  | Bitte sprich langsam, ich lerne noch. | Please speak slowly; I am still learning.
+bereits | already | adverb |  | Der Kurs hat bereits begonnen. | The course has already begun.
 Stück | one, item, piece, unit(of something countable; often untranslated in English) | noun | das | Möchtest du ein Stück Kuchen? | Would you like a piece of cake?
 behalten | to keep, to retain (money, items, etc. in one's possession) | verb |  | Du kannst das Buch noch behalten. | You can keep the book for longer.
 erkennen | to recognize, perceive | verb |  | Ich erkenne dein Gesicht sofort. | I recognise your face immediately.
 zahlen | to pay | verb |  | Wir zahlen heute mit Karte. | We are paying by card today.
-cool | cool (in its informal senses) | adj |  | Dein neues Fahrrad ist wirklich cool. | Your new bicycle is really cool.
-leider | unfortunately | adv |  | Leider kann ich heute nicht kommen. | Unfortunately I cannot come today.
+cool | cool (in its informal senses) | adjective |  | Dein neues Fahrrad ist wirklich cool. | Your new bicycle is really cool.
+leider | unfortunately | adverb |  | Leider kann ich heute nicht kommen. | Unfortunately I cannot come today.
 Foto | photograph (picture created by projecting an image onto a photosensitive surface) | noun | das | Das Foto von meiner Familie ist alt. | The photo of my family is old.
 Million | million (10⁶) | noun | die | Eine Million Euro ist sehr viel Geld. | One million euros is a lot of money.
 Hölle | hell | noun | die | Der heiße Raum fühlt sich wie die Hölle an. | The hot room feels like hell.
-ansehen | to look at, to have a look at (taking in information in doing so) | verb |  | Wir sehen uns den Film heute Abend an. | We are watching the film this evening.
-Kumpel | miner | noun | der | Mein Kumpel hilft mir beim Umzug. | My mate helps me move house.
-tja | well, hmm | intj |  | Tja, jetzt müssen wir warten. | Well, now we have to wait.
+ansehen | to look at; to watch | verb |  | Ich sehe das Bild lange an. | I look at the picture for a long time.
+Kumpel | mate; buddy; miner | noun | der | Mein Kumpel hilft mir beim Umzug. | My mate helps me move house.
+tja | well, hmm | interjection |  | Tja, jetzt müssen wir warten. | Well, now we have to wait.
 wirklich | really; truly | adverb |  | Das ist wirklich eine gute Idee. | That is really a good idea.
-voll | full; filled | adj |  | Das Glas ist schon voll. | The glass is already full.
+voll | full; filled | adjective |  | Das Glas ist schon voll. | The glass is already full.
 fehlen | for there to be a lack [with dative ‘to someone/something’ and an (+ dative) ‘of something’] (idiomatically translated by English lack with the dative object as the subject) | verb |  | Mir fehlt heute die Zeit für Musik. | I am lacking time for music today.
 Idiot | idiot; moron | noun | der | Nenn ihn bitte nicht Idiot. | Please do not call him an idiot.
-überall | everywhere | adv |  | In der Stadt sind überall Menschen. | There are people everywhere in the city.
-direkt | direct, straight, without deviation or interruption | adj |  | Geh direkt nach Hause. | Go directly home.
+überall | everywhere | adverb |  | In der Stadt sind überall Menschen. | There are people everywhere in the city.
+direkt | direct, straight, without deviation or interruption | adjective |  | Geh direkt nach Hause. | Go directly home.
 zerstören | to destroy, demolish, devastate, eliminate | verb |  | Der Sturm kann alte Häuser zerstören. | The storm can destroy old houses.
 laden | to load | verb |  | Wir laden die Taschen ins Auto, bevor wir losfahren. | We load the bags into the car before we leave.
 danach | after that | adverb |  | Zuerst essen wir, danach gehen wir noch spazieren. | First we eat; after that we go for a walk.
@@ -355,7 +360,7 @@ Entscheidung | decision | noun | die | Die Entscheidung für eine neue Wohnung w
 nachdenken | to think about | verb |  | Ich muss noch über deine Idee nachdenken. | I still need to think about your idea.
 Gefängnis | prison | noun | das | Der Mann kommt nach dem Gericht ins Gefängnis. | The man goes to prison after the court case.
 Herr | Mr, gentleman | noun | der | Guten Morgen, Herr Wagner, haben Sie einen Moment? | Good morning, Mr Wagner, do you have a moment?
-beeilen | to hurry | verb |  | Wir müssen uns beeilen, sonst verpassen wir den Zug. | We have to hurry, otherwise we will miss the train.
+sich beeilen | to hurry | verb |  | Wir müssen uns beeilen, sonst verpassen wir den Zug. | We have to hurry, otherwise we will miss the train.
 melden | to report, to get in touch | verb |  | Bitte melden Sie sich, wenn Sie Hilfe brauchen. | Please get in touch if you need help.
 außerdem | besides, furthermore | adverb |  | Ich habe heute keine Zeit; außerdem bin ich noch krank. | I do not have time today; besides, I am still ill.
 Gedanke | thought | noun | der | Der Gedanke an die Reise macht mich schon glücklich. | The thought of the trip already makes me happy.
@@ -413,7 +418,7 @@ plötzlich | suddenly | adverb |  | Plötzlich begann es stark zu regnen. | Sudd
 bellen | to bark | verb |  | Der Hund bellt jedes Mal, wenn jemand an die Tür kommt. | The dog barks every time someone comes to the door.
 rennen | to run | verb |  | Die Kinder rennen schnell zum Bus, weil sie spät sind. | The children run quickly to the bus because they are late.
 riechen | to smell | verb |  | Riechst du den Kaffee aus der Küche? | Can you smell the coffee from the kitchen?
-verlieben | to fall in love | verb |  | Sie hat sich im Sommer in einen jungen Musiker verliebt. | She fell in love with a young musician in summer.
+sich verlieben | to fall in love | verb |  | Sie hat sich im Sommer in einen jungen Musiker verliebt. | She fell in love with a young musician in summer.
 springen | to jump | verb |  | Das Kind springt über die kleine Pfütze auf der Straße. | The child jumps over the small puddle in the street.
 Fenster | window | noun | das | Mach bitte das Fenster zu, es ist draußen kalt. | Please close the window; it is cold outside.
 überprüfen | to check | verb |  | Überprüf bitte noch einmal die Adresse auf dem Brief. | Please check the address on the letter again.
@@ -466,7 +471,7 @@ feiern | to celebrate | verb |  | Wir feiern heute Abend den Geburtstag meines B
 Schuh | shoe | noun | der | Dieser Schuh ist zu klein für meinen Fuß. | This shoe is too small for my foot.
 hoffentlich | hopefully | adverb |  | Hoffentlich wird das Wetter am Wochenende besser. | Hopefully, the weather will be better at the weekend.
 zuhause | at home | adverb |  | Nach der Arbeit bleibe ich heute lieber zuhause. | After work, I would rather stay at home today.
-beschäftigen | to keep busy, to occupy | verb |  | Die Kinder beschäftigen sich im Garten mit einem Ball. | The children keep themselves busy in the garden with a ball.
+sich beschäftigen | to deal with; to engage with; to occupy oneself with | verb |  | Ich beschäftige mich gerade mit diesem Thema. | I am currently dealing with this topic.
 nutzen | to use | verb |  | Du kannst mein Handy nutzen, wenn deins nicht funktioniert. | You can use my phone if yours is not working.
 aufgeben | to give up | verb |  | Gib nicht auf, auch wenn die Aufgabe schwierig ist. | Do not give up, even if the task is difficult.
 irgendwann | sometime | adverb |  | Irgendwann möchte ich mit meiner Familie am Meer wohnen. | Someday, I would like to live by the sea with my family.
@@ -478,7 +483,7 @@ reich | rich | adjective |  | Er ist nicht reich, aber er hat genug Geld für se
 bisher | so far | adverb |  | Bisher hat noch niemand auf meine Nachricht geantwortet. | So far, nobody has answered my message.
 Ohr | ear | noun | das | Mein linkes Ohr tut weh, deshalb gehe ich zum Arzt. | My left ear hurts, so I am going to the doctor.
 unbedingt | definitely, absolutely | adverb |  | Du musst unbedingt diesen Film sehen. | You definitely have to see this film.
-Kontrolle | check, inspection | noun | die | Vor der Reise kontrolliert die Polizei die Pässe. | Before the trip, the police check the passports.
+Kontrolle | check; inspection | noun | die | Vor der Reise gibt es eine Kontrolle der Pässe. | Before the trip, there is a passport check.
 Kamera | camera | noun | die | Mit ihrer neuen Kamera macht sie viele Fotos im Urlaub. | She takes many photos on holiday with her new camera.
 Beispiel | example | noun | das | Kannst du mir ein Beispiel für dieses Wort geben? | Can you give me an example for this word?
 überzeugen | to convince | verb |  | Seine gute Idee konnte das ganze Team überzeugen. | His good idea was able to convince the whole team.
@@ -493,7 +498,7 @@ landen | to land | verb |  | Das Flugzeug landet wegen des starken Windes späte
 wütend | angry | adjective |  | Mein Vater wird wütend, wenn ich zu spät nach Hause komme. | My father gets angry when I come home too late.
 schreien | to shout, to scream | verb |  | Bitte schrei nicht, das Baby schläft gerade. | Please do not shout; the baby is sleeping right now.
 zwingen | to force | verb |  | Niemand kann dich zwingen, etwas zu tun, das du nicht willst. | Nobody can force you to do something you do not want to do.
-leisten | to afford, to achieve | verb |  | Wir können uns dieses Hotel leider nicht leisten. | Unfortunately, we cannot afford this hotel.
+leisten | to achieve; to accomplish; to perform | verb |  | Sie leistet gute Arbeit. | She does good work.
 gebären | to give birth | verb |  | Im Krankenhaus wird sie bald ihr erstes Kind gebären. | She will soon give birth to her first child in hospital.
 aufpassen | to watch out, to pay attention | verb |  | Pass beim Überqueren der Straße gut auf. | Pay close attention when crossing the street.
 zumindest | at least | adverb |  | Zumindest haben wir heute genug Zeit für einen Kaffee. | At least we have enough time for a coffee today.
