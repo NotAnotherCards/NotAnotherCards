@@ -46,8 +46,9 @@ async function signUpAndOnboard(page: Page, email: string, username: string) {
 
   await signIn(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
-  const settingsButton = page.locator('button', {
-    hasText: 'Profile & Settings',
+  const settingsButton = page.getByRole('tab', {
+    name: 'Profile & Settings',
+    exact: true,
   });
   try {
     await expect(settingsButton).toBeVisible({ timeout: 30_000 });
@@ -69,7 +70,9 @@ async function signUp(page: Page, email: string) {
 }
 
 async function openSecuritySettings(page: Page) {
-  await page.locator('button', { hasText: 'Profile & Settings' }).click();
+  await page
+    .getByRole('tab', { name: 'Profile & Settings', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Security', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Two-factor authentication' }),
@@ -101,6 +104,7 @@ async function firstVisibleBackupCode(page: Page, title: string) {
 
 test('completes the web 2FA lifecycle with real sessions and route guards', async ({
   page,
+  expectHttpError,
 }) => {
   test.slow();
   const { email, username } = uniqueIdentity();
@@ -173,7 +177,9 @@ test('completes the web 2FA lifecycle with real sessions and route guards', asyn
   await page.waitForTimeout(11_000);
   const staleCounter = Math.floor(Date.now() / 30_000) - 5;
   await fillTotp(page, await createOTP(rawSecret).hotp(staleCounter));
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await expectHttpError(page, '/api/auth/two-factor/verify-totp', 401, () =>
+    page.getByRole('button', { name: 'Verify and continue' }).click(),
+  );
   await expect(
     page.getByText('That authentication code is invalid or has expired.'),
   ).toBeVisible();
@@ -221,6 +227,7 @@ test('completes the web 2FA lifecycle with real sessions and route guards', asyn
 
 test('shows the server lockout response after repeated failed challenges', async ({
   page,
+  expectHttpError,
 }) => {
   test.slow();
   // The preceding lifecycle ends with two /two-factor/* requests. Let the
@@ -260,15 +267,9 @@ test('shows the server lockout response after repeated failed challenges', async
 
   const submitInvalidCode = async () => {
     await fillTotp(page, invalidCode);
-    const response = page.waitForResponse((candidate) => {
-      const url = new URL(candidate.url());
-      return (
-        url.pathname === '/api/auth/two-factor/verify-totp' &&
-        candidate.request().method() === 'POST'
-      );
-    });
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
-    await response;
+    await expectHttpError(page, '/api/auth/two-factor/verify-totp', 401, () =>
+      page.getByRole('button', { name: 'Verify and continue' }).click(),
+    );
     await expect(
       page.getByText('That authentication code is invalid or has expired.'),
     ).toBeVisible();
@@ -283,7 +284,9 @@ test('shows the server lockout response after repeated failed challenges', async
   }
 
   await fillTotp(page, await createOTP(rawSecret).totp());
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await expectHttpError(page, '/api/auth/two-factor/verify-totp', 429, () =>
+    page.getByRole('button', { name: 'Verify and continue' }).click(),
+  );
   await expect(
     page.getByText(
       'Too many failed attempts. Your account is temporarily locked. Please try again later.',

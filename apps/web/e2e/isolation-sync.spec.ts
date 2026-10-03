@@ -3,15 +3,15 @@ import { test, expect, expectDashboardReady } from './fixtures.js';
 import { registerAndOnboard, signIn } from './helpers.js';
 
 async function createSyncedDeck(page: Page, title: string) {
-  await page.getByRole('button', { name: 'My Library', exact: true }).click();
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
   await page.getByRole('button', { name: 'Create Deck', exact: true }).click();
-  await page.getByLabel('Deck Title', { exact: true }).fill(title);
+  await page.getByLabel('Title', { exact: true }).fill(title);
   const pushed = page.waitForResponse(
     (response) =>
       new URL(response.url()).pathname === '/sync/push' &&
       (response.request().postData()?.includes(title) ?? false),
   );
-  await page.getByRole('button', { name: 'Save Deck', exact: true }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   expect((await pushed).ok()).toBe(true);
   await expect(page.getByTitle(title, { exact: true })).toBeVisible();
   await expect(page.getByTestId('sync-status')).toHaveText('Synced');
@@ -27,7 +27,7 @@ async function reloadAndPull(page: Page) {
   expect(response.ok()).toBe(true);
   await response.finished();
   await expectDashboardReady(page);
-  await page.getByRole('button', { name: 'My Library', exact: true }).click();
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
 }
 
 test('syncs between separate sessions and isolates accounts, including after switching', async ({
@@ -65,7 +65,7 @@ test('syncs between separate sessions and isolates accounts, including after swi
   await expect(page).toHaveURL('/login');
   await signIn(page, accountB);
   await expectDashboardReady(page);
-  await page.getByRole('button', { name: 'My Library', exact: true }).click();
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
   await expect(page.getByTitle(deckB, { exact: true })).toBeVisible();
   await expect(page.getByTitle(deckA, { exact: true })).toHaveCount(0);
 });

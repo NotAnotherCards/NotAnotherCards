@@ -20,23 +20,7 @@ jobs:
   browser:
     name: Browser tests (Chrome)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
-    services:
-      postgres:
-        image: postgres:18-alpine
-        env:
-          POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ci -d postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v6
@@ -52,13 +36,9 @@ jobs:
         run: pnpm --filter web exec playwright install --with-deps --force chrome
       - name: Log Chrome version
         run: google-chrome --version
-      - name: Build API and web
-        run: pnpm --filter api... build && pnpm --filter web... build
       - name: Check browser test types
         run: pnpm --filter web e2e:typecheck
-      - name: Migrate browser test database
-        run: pnpm --filter api db:migrate
-      - name: Run browser tests
+      - name: Run browser tests against Compose and nginx
         run: pnpm e2e
       - name: Upload browser failure evidence
         if: failure()

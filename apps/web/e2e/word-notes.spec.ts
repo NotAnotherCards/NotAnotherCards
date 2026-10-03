@@ -1,21 +1,21 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures.js';
-import { registerAndOnboard, signIn } from './helpers.js';
+import { registerAndOnboard, signIn, saveDeckAndSync } from './helpers.js';
 
 async function createWordDeck(page: Page) {
-  await page.getByRole('button', { name: 'My Library', exact: true }).click();
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
   await page.getByRole('button', { name: 'Create Deck', exact: true }).click();
-  await page.getByLabel('Deck Title', { exact: true }).fill('Spanish words');
+  await page.getByLabel('Title', { exact: true }).fill('Spanish words');
   await page
     .getByRole('button', {
       name: 'Words A word, its translation, and more',
       exact: true,
     })
     .click();
-  await page.getByRole('button', { name: 'Save Deck', exact: true }).click();
+  await saveDeckAndSync(page);
   await page.getByTitle('Spanish words', { exact: true }).click();
   await page
-    .getByRole('button', { name: 'Add Card', exact: true })
+    .getByRole('button', { name: 'Add Word', exact: true })
     .first()
     .click();
 }
@@ -39,7 +39,6 @@ test('word notes reject blank required fields and ignore whitespace in optional 
   await translation.fill('  hello  ');
   await page.getByRole('button', { name: 'More details', exact: true }).click();
   for (const label of [
-    'Part of speech',
     'Pronunciation',
     'Example',
     'Example translation',
@@ -50,8 +49,11 @@ test('word notes reject blank required fields and ignore whitespace in optional 
   await save.click();
   await expect(save).not.toBeVisible();
   await expect(page.getByRole('row').filter({ hasText: 'hola' })).toHaveCount(
-    2,
+    1,
   );
+  await expect(
+    page.getByRole('cell', { name: '2 cards', exact: true }),
+  ).toBeVisible();
   await expect(page.getByTestId('sync-status')).toHaveText('Synced');
 });
 
@@ -81,7 +83,7 @@ test('clearing a saved word detail persists in a fresh session', async ({
     .getByRole('row')
     .filter({ hasText: 'hola' })
     .first()
-    .getByRole('button', { name: 'Edit Card', exact: true })
+    .getByRole('button', { name: 'Edit Word', exact: true })
     .click();
   await expect(page.getByLabel('Notes', { exact: true })).toHaveValue(
     'Remove this note',
@@ -103,22 +105,22 @@ test('clearing a saved word detail persists in a fresh session', async ({
 
   const fresh = await (await newContext()).newPage();
   await signIn(fresh, account);
-  await fresh.getByRole('button', { name: 'My Library', exact: true }).click();
+  await fresh.getByRole('tab', { name: 'My Library', exact: true }).click();
   await fresh.getByTitle('Spanish words', { exact: true }).click();
   await expect(fresh.getByRole('row').filter({ hasText: 'hola' })).toHaveCount(
-    2,
+    1,
   );
+  await expect(
+    fresh.getByRole('cell', { name: '2 cards', exact: true }),
+  ).toBeVisible();
   await fresh
     .getByRole('row')
     .filter({ hasText: 'hola' })
     .first()
-    .getByRole('button', { name: 'Edit Card', exact: true })
+    .getByRole('button', { name: 'Edit Word', exact: true })
     .click();
   await expect(
     fresh.getByLabel('Word in Spanish', { exact: true }),
   ).toHaveValue('hola');
-  await fresh
-    .getByRole('button', { name: 'More details', exact: true })
-    .click();
   await expect(fresh.getByLabel('Notes', { exact: true })).toHaveValue('');
 });

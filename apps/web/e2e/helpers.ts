@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import type { Page } from '@playwright/test';
-import { expect, expectDashboardReady } from './fixtures.js';
+import {
+  expect,
+  expectDashboardReady,
+  expectFitsViewport,
+  expectNoHorizontalOverflow,
+} from './fixtures.js';
 
 export async function registerAndOnboard(page: Page) {
   const id = randomUUID().replaceAll('-', '');
@@ -11,6 +16,11 @@ export async function registerAndOnboard(page: Page) {
     password: 'Browser-test-252!',
   };
   await page.goto('/register');
+  await expectNoHorizontalOverflow(page);
+  await expectFitsViewport(page.getByLabel('Email', { exact: true }));
+  await expectFitsViewport(
+    page.getByRole('button', { name: 'Sign up', exact: true }),
+  );
   await page.getByLabel('Name', { exact: true }).fill(account.name);
   await page.getByLabel('Email', { exact: true }).fill(account.email);
   await page.getByLabel('Password', { exact: true }).fill(account.password);
@@ -20,6 +30,11 @@ export async function registerAndOnboard(page: Page) {
   await page.getByRole('button', { name: 'Sign up', exact: true }).click();
 
   await expect(page).toHaveURL('/onboarding');
+  await expectNoHorizontalOverflow(page);
+  await expectFitsViewport(page.getByLabel('Target Language', { exact: true }));
+  await expectFitsViewport(
+    page.getByRole('button', { name: 'Complete registration', exact: true }),
+  );
   await page.getByLabel('Username', { exact: true }).fill(account.username);
   await page
     .getByLabel('Native Language', { exact: true })
@@ -43,4 +58,16 @@ export async function signIn(
   await page.getByLabel('Password', { exact: true }).fill(account.password);
   await page.getByRole('button', { name: 'Login', exact: true }).click();
   await expectDashboardReady(page);
+}
+
+export async function saveDeckAndSync(page: Page) {
+  const title = await page.getByLabel('Title', { exact: true }).inputValue();
+  const pushed = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/sync/push' &&
+      (response.request().postData()?.includes(title) ?? false),
+  );
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  expect((await pushed).ok()).toBe(true);
+  await expect(page.getByTestId('sync-status')).toHaveText('Synced');
 }

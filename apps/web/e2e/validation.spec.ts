@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { test, expect, expectDashboardReady } from './fixtures.js';
-import { registerAndOnboard } from './helpers.js';
+import { registerAndOnboard, saveDeckAndSync } from './helpers.js';
 
 test('registration and onboarding explain invalid input and accept corrections', async ({
   page,
@@ -96,22 +96,20 @@ test('deck and card validation recover, and persisted Markdown cannot execute an
   page,
 }) => {
   await registerAndOnboard(page);
-  await page.getByRole('button', { name: 'My Library', exact: true }).click();
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
   await page.getByRole('button', { name: 'Create Deck', exact: true }).click();
-  const saveDeck = page.getByRole('button', { name: 'Save Deck', exact: true });
+  const saveDeck = page.getByRole('button', { name: 'Save', exact: true });
   await saveDeck.click();
   await expect(
     page.getByText('Deck title is required', { exact: true }),
   ).toBeVisible();
-  await page.getByLabel('Deck Title', { exact: true }).fill('   ');
+  await page.getByLabel('Title', { exact: true }).fill('   ');
   await saveDeck.click();
   await expect(
     page.getByText('Deck title is required', { exact: true }),
   ).toBeVisible();
-  await page.getByLabel('Deck Title', { exact: true }).fill('x'.repeat(101));
-  await page
-    .getByLabel('Description (Optional)', { exact: true })
-    .fill('x'.repeat(501));
+  await page.getByLabel('Title', { exact: true }).fill('x'.repeat(101));
+  await page.getByLabel('Description', { exact: true }).fill('x'.repeat(501));
   await saveDeck.click();
   await expect(
     page.getByText('Deck title cannot exceed 100 characters', { exact: true }),
@@ -120,13 +118,11 @@ test('deck and card validation recover, and persisted Markdown cannot execute an
     page.getByText('Description cannot exceed 500 characters', { exact: true }),
   ).toBeVisible();
   await page
-    .getByLabel('Deck Title', { exact: true })
+    .getByLabel('Title', { exact: true })
     .fill('Validated browser cards');
   // Optional whitespace is empty after normalization, even above the limit.
-  await page
-    .getByLabel('Description (Optional)', { exact: true })
-    .fill(' '.repeat(501));
-  await saveDeck.click();
+  await page.getByLabel('Description', { exact: true }).fill(' '.repeat(501));
+  await saveDeckAndSync(page);
   await expect(saveDeck).not.toBeVisible();
   await page.getByRole('button', { name: 'Manage Cards', exact: true }).click();
   await page
@@ -196,7 +192,7 @@ test('deck and card validation recover, and persisted Markdown cannot execute an
 
   await page.reload();
   await expectDashboardReady(page);
-  await page.getByRole('button', { name: 'My Library', exact: true }).click();
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
   await page.getByRole('button', { name: 'Manage Cards', exact: true }).click();
   const row = page.getByRole('row').filter({ hasText: 'Safe card text' });
   await expect(row).toContainText('Safe answer');
