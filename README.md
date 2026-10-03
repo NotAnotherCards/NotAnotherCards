@@ -4,18 +4,7 @@
 
 ## Description
 
-NotAnotherCards is a language-learning application built around smart flashcards, context, nuance, and spaced repetition.
-
-The project provides a web application, a mobile application, and an API. A learner can create and organise decks, study cards, and keep their learning data available offline. When a connection is available, the application synchronises accepted learning data with the server. The project also includes AI-assisted card generation, authentication, and learning statistics.
-
-Key features include:
-
-- user accounts, including Google sign-in;
-- deck, note, card, and review management;
-- offline-first learning data synchronisation between web, mobile, and API;
-- AI-assisted card generation and content moderation;
-- learning statistics and progress insights;
-- a native mobile application for Android and iOS.
+NotAnotherCards is a language-learning application built around smart flashcards and spaced repetition. It provides web and mobile apps with deck and card management, offline synchronisation, AI-assisted card generation, authentication, and learning statistics.
 
 ## Instructions
 
@@ -49,7 +38,7 @@ From a fresh clone, start every required service with one command:
    curl --fail http://127.0.0.1:5174/health
    ```
 
-`--fail` makes `curl` return an error when the endpoint does not return a successful HTTP response. The first run builds the web, landing, and API images and applies database migrations automatically. `--build` rebuilds the images, and `--wait` returns only after health checks succeed.
+The first run builds all images and applies database migrations automatically.
 
 In production, the landing port is bound only to `127.0.0.1:5174` on the VPS. It is for the host Nginx proxy and must not be published directly to the internet.
 
@@ -128,7 +117,7 @@ In production, the landing port is bound only to `127.0.0.1:5174` on the VPS. It
 
 | Member | Role and responsibility |
 | --- | --- |
-| @amoiseik | Project founder; spaced repetition engine (scheduler and review queue); web UI; deck views; landing page. |
+| @amoiseik | Product Owner; spaced repetition engine (scheduler and review queue); web UI; deck views; landing page. |
 | @dgomez-a | Technical lead; database and schema; API and security; code reviews. |
 | @samcasti | Web frontend; artificial intelligence features; gamification. |
 | @tpandya | API foundations and authentication; continuous integration, deployment, infrastructure, and monitoring; two-factor authentication; artificial intelligence features. |
@@ -138,21 +127,21 @@ Each member must review this row and correct it if it does not describe their ac
 
 ## Project Management
 
-The team tracks programming and non-programming work in GitHub Issues and uses GitHub Projects to organise the work. Pull Requests are reviewed before being merged into `main`. The team discusses work in Slack and meets in person at 42 when possible.
+The team uses GitHub Issues and GitHub Projects to organise tasks. Pull Requests are reviewed before merging into main. The team communicates in Slack and meets in person at 42 when possible.
 
 The complete working agreement, including branch and review rules, is in [Team agreements](docs/team_agreements.md). Meeting decisions are recorded in [project-management meeting notes](docs/project-management/meetings/).
 
 ## Technical Stack
 
-| Area | Technology | Why we use it |
-| --- | --- | --- |
-| Web frontend | React, Vite, TypeScript, Tailwind CSS, shadcn/ui | React structures the interface as reusable components; Vite provides a fast development build; TypeScript checks data shapes before runtime; Tailwind and shadcn/ui provide consistent responsive interface building blocks. |
-| Backend | NestJS, TypeScript | NestJS structures the HTTP API into modules and services, while TypeScript keeps contracts consistent with the frontend. |
-| Database | PostgreSQL, Drizzle ORM | PostgreSQL stores persistent server data; Drizzle describes tables and queries in TypeScript while keeping database changes explicit. |
-| Offline data | RemelonDB | Web and mobile keep a local per-user learning database and synchronise accepted changes through the API. |
-| Mobile | Expo, React Native, expo-router, NativeWind | These tools let the project share the React and TypeScript approach while providing a native mobile interface. |
-| Tests | Vitest, React Testing Library, Jest, Supertest | They test web components, backend code, and HTTP API behaviour. |
-| Tooling | pnpm, Turbo, Docker Compose, GitHub Actions | pnpm manages dependencies; Turbo runs monorepo tasks; Docker Compose starts the services together; GitHub Actions runs automated checks. |
+| Area         | Technology                                       | Why we use it                                                                                                           |
+| :----------- | :----------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| Web frontend | React, Vite, TypeScript, Tailwind CSS, shadcn/ui | React provides reusable components, Vite a fast development setup, and Tailwind with shadcn/ui consistent responsive UI. |
+| Backend      | NestJS, TypeScript                               | NestJS provides a modular API structure, while TypeScript keeps contracts consistent with the frontend.                 |
+| Database     | PostgreSQL, Drizzle ORM                          | PostgreSQL provides relational storage, while Drizzle adds typed schemas and queries in TypeScript.                     |
+| Offline data | RemelonDB                                        | Keeps per-user learning data available offline on web and mobile and synchronises it through the API.                   |
+| Mobile       | Expo, React Native, expo-router, NativeWind      | Provides a native mobile app while reusing the project's React and TypeScript stack.                                    |
+| Tests        | Vitest, React Testing Library, Jest, Supertest   | Covers web components, backend code, and API behaviour.                                                                 |
+| Tooling      | pnpm, Turbo, Docker Compose, GitHub Actions      | Supports the monorepo, containerised development, and automated CI checks.                                              |
 
 ## Database Schema
 
@@ -199,7 +188,7 @@ The project claims the 13 modules below: four Major modules worth 2 points each 
 | Web: framework for frontend and backend | Major, 2 | React implements the web client and NestJS implements the API. | @amoiseik, @samcasti, team |
 | Web: ORM for the database | Minor, 1 | Drizzle ORM defines the PostgreSQL schema and provides typed database queries. | @tpandya, @samcasti, team |
 | Web: custom design system | Minor, 1 | The web application has reusable UI components, a shared palette, typography, icons, and responsive layouts. | @amoiseik, @samcasti, team |
-| User Management: OAuth 2.0 | Minor, 1 | Google social sign-in are implemented through Better Auth and tested through the API. | @amoiseik, @samcasti, team |
+| User Management: OAuth 2.0 | Minor, 1 | Google social sign-in is implemented through Better Auth and tested through the API. | @amoiseik, @samcasti, team |
 | Artificial Intelligence: complete LLM system interface | Major, 2 | Card-generation jobs accept user input, stream results in the web playground, record usage, and enforce quotas and rate limits. | @tpandya, @samcasti, team |
 | Data and Analytics: data export and import | Minor, 1 | The application exports JSON and CSV, validates imports with Zod, and applies an import in one all-or-nothing database batch. | @samcasti |
 | Gaming and user experience: gamification | Minor, 1 | The system provides badges, global leaderboards, and daily challenges, with persistent storage, visual feedback, and clear progression rules. | @samcasti |
@@ -216,9 +205,8 @@ The project claims the 13 modules below: four Major modules worth 2 points each 
 
 ### @amoiseik
 
-@amoiseik is the Product Owner and a developer. He established the project concept and early scope. He wrote the first spaced-repetition proposal and helped define the review flow. His implementation work includes the web deck review session and answer modes, word-note deck views, the standalone landing application and its brand assets, public legal pages, and Facebook sign-in configuration.
-
-He started the project without practical experience in the JavaScript/TypeScript web stack or collaborative GitHub workflows. He used ChatGPT and Codex as learning and reference tools to understand the stack, team processes, and the code being changed, then reviewed and adapted the results before using them.
+Product Owner and Developer. Defined the product scope, spaced repetition requirements, and review flow. Worked on the web UI, deck views, and landing page.
+Challenge: Started without practical experience with JavaScript/TypeScript or collaborative GitHub workflows and learned the required stack and workflow while working on the project.
 
 ### @dgomez-a
 
