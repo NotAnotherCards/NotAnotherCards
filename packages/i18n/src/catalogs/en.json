@@ -41,6 +41,27 @@
     "error_default": "Failed to save onboarding data"
   },
   "auth": {
+    "layout": {
+      "title": "Master any subject with ease.",
+      "description": "Not Another Cards uses advanced spaced repetition and AI to help you learn faster and remember longer. Join the community today.",
+      "cards": {
+        "card1": {
+          "title": "to discover",
+          "subtitle": "descubrir",
+          "tag": "Verb"
+        },
+        "card2": {
+          "title": "knowledge",
+          "subtitle": "conocimiento",
+          "tag": "Noun"
+        },
+        "card3": {
+          "title": "effortless",
+          "subtitle": "sin esfuerzo",
+          "tag": "Adjective"
+        }
+      }
+    },
     "error": {
       "social_login_failed_callback": "Social login failed. Please try again or use another provider.",
       "social_login_failed": "Social login failed. Please try again.",
