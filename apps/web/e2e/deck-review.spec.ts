@@ -63,6 +63,39 @@ async function useExtendedReviewMode(page: Page) {
   await expect(extended).toHaveAttribute('aria-pressed', 'true');
 }
 
+async function rateAndSync(page: Page, label: string, rating: number) {
+  // The badge can still read "Synced" during the write debounce. Wait for
+  // this review's response before reloading, which could otherwise interrupt
+  // the acknowledgement and replay an already-stored append-only event.
+  const pushed = page.waitForResponse((response) => {
+    if (
+      new URL(response.url()).pathname !== '/sync/push' ||
+      response.request().method() !== 'POST'
+    )
+      return false;
+    const body = response.request().postDataJSON() as {
+      changes?: { review_events?: { created?: { rating: number }[] } };
+    };
+    return (
+      body.changes?.review_events?.created?.some(
+        (review) => review.rating === rating,
+      ) ?? false
+    );
+  });
+  await page
+    .getByTestId('review-answer-buttons')
+    .getByRole('button', { name: label, exact: true })
+    .click();
+  const response = await pushed;
+  expect(response.ok()).toBe(true);
+  const result = (await response.json()) as {
+    rejected?: Record<string, string[]>;
+  };
+  expect(result.rejected?.review_events ?? []).toEqual([]);
+  await response.finished();
+  await expect(page.getByTestId('sync-status')).toHaveText('Synced');
+}
+
 test('a created card becomes due again at its scheduled time and can be reviewed again', async ({
   page,
 }) => {
@@ -93,9 +126,9 @@ test('a created card becomes due again at its scheduled time and can be reviewed
     page.getByRole('button', { name: 'Show answer', exact: true }),
   );
 
-  for (const { rating, interval } of [
-    { rating: 'Again', interval: 5 * 60_000 },
-    { rating: 'Good', interval: 3 * 24 * 60 * 60_000 },
+  for (const { label, rating, interval } of [
+    { label: 'Again', rating: 1, interval: 5 * 60_000 },
+    { label: 'Good', rating: 3, interval: 3 * 24 * 60 * 60_000 },
   ]) {
     now = await page.evaluate(() => Date.now());
     await expect(page.getByTestId('review-card-front-content')).toHaveText(
@@ -112,10 +145,7 @@ test('a created card becomes due again at its scheduled time and can be reviewed
       .getByRole('button');
     await expect(answers).toHaveCount(2);
     for (const answer of await answers.all()) await expectFitsViewport(answer);
-    await page
-      .getByTestId('review-answer-buttons')
-      .getByRole('button', { name: rating, exact: true })
-      .click();
+    await rateAndSync(page, label, rating);
     await expect(
       page.getByRole('heading', { name: 'Review complete', exact: true }),
     ).toBeVisible();
@@ -262,7 +292,7 @@ test('reveal and rate every card, then retain the completed schedule after reloa
   await expect(page).toHaveURL(/\/deck-review\?deckId=/);
 
   const reviewed = new Set<string>();
-  for (const rating of ['Again', 'Hard', 'Good', 'Easy']) {
+  for (const [index, rating] of ['Again', 'Hard', 'Good', 'Easy'].entries()) {
     const reveal = page.getByRole('button', {
       name: 'Show answer',
       exact: true,
@@ -287,10 +317,7 @@ test('reveal and rate every card, then retain the completed schedule after reloa
       .getByRole('button');
     await expect(answers).toHaveCount(4);
     for (const answer of await answers.all()) await expectFitsViewport(answer);
-    await page
-      .getByTestId('review-answer-buttons')
-      .getByRole('button', { name: rating, exact: true })
-      .click();
+    await rateAndSync(page, rating, index + 1);
     reviewed.add(front);
     if (reviewed.size < cards.size) {
       await expect(
