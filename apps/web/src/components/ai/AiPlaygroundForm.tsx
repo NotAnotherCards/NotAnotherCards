@@ -431,7 +431,7 @@ export function AiPlaygroundForm({
       <Button
         type="submit"
         disabled={isSubmitting || isQuotaExceeded}
-        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5 shadow-card font-semibold group relative overflow-hidden"
+        className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-2xl py-5 shadow-card font-semibold group relative overflow-hidden"
       >
         <span className="flex items-center justify-center gap-2">
           <Sparkles className="size-4 animate-pulse" />

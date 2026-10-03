@@ -230,7 +230,7 @@ export function AiResultPreview({
             (deckMode === 'existing' && !selectedDeckId) ||
             (deckMode === 'new' && !newDeckTitle.trim())
           }
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5 shadow-card font-semibold cursor-pointer"
+          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-2xl py-5 shadow-card font-semibold cursor-pointer"
         >
           {isSaving
             ? t('playground.preview.saving_cards', 'Saving to Deck...')

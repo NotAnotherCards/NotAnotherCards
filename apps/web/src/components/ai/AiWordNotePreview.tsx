@@ -162,7 +162,7 @@ export function AiWordNotePreview({
         <Button
           onClick={handleSave}
           disabled={isSaving}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl py-5 shadow-card font-semibold cursor-pointer"
+          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-2xl py-5 shadow-card font-semibold cursor-pointer"
         >
           {isSaving
             ? t('playground.preview.saving_note', 'Saving to Deck...')

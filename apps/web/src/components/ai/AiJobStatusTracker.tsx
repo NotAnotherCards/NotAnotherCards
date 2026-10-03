@@ -90,7 +90,7 @@ export function AiJobStatusTracker({
             <div key={step.key} className="flex gap-4 relative group">
               <div className="flex items-center justify-center z-10">
                 {state === 'finished' && (
-                  <div className="size-8 rounded-full bg-sage/20 border-2 border-sage flex items-center justify-center text-sage-foreground font-bold text-xs">
+                  <div className="size-8 rounded-full bg-sage border-2 border-sage flex items-center justify-center text-sage-foreground font-bold text-xs">
                     ✓
                   </div>
                 )}

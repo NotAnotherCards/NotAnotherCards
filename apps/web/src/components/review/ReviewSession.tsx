@@ -231,7 +231,7 @@ export function ReviewSession({
             variant="outline"
             size="icon"
             onClick={onExit}
-            className="size-10 rounded-full border-sage-border bg-surface text-pine/70 shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage/70"
+            className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
             aria-label="Back to dashboard"
           >
             <ArrowLeft className="size-5" />
@@ -246,7 +246,7 @@ export function ReviewSession({
             variant="outline"
             size="icon"
             onClick={openCreateCardForm}
-            className="size-10 rounded-full border-sage-border bg-surface text-pine/70 shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage/70"
+            className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
             aria-label="Add a new card"
           >
             <Plus className="size-5" />
