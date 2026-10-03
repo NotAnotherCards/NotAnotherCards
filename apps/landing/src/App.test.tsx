@@ -68,6 +68,45 @@ describe('App', () => {
     ).toHaveAttribute('href', '/terms');
   });
 
+  it('uses the mark-only logo at 375px while preserving its accessible name', () => {
+    render(<App />);
+
+    const logo = screen.getByRole('img', { name: 'NotAnotherCards' });
+    const sources = logo.parentElement?.querySelectorAll('source');
+
+    expect(sources?.[0]).toHaveAttribute('media', '(max-width: 375px)');
+    expect(sources?.[0]).toHaveAttribute(
+      'srcset',
+      '/brand/notanothercards-mark.svg',
+    );
+    expect(sources?.[1]).toHaveAttribute(
+      'media',
+      '(prefers-color-scheme: dark)',
+    );
+    expect(sources?.[1]).toHaveAttribute(
+      'srcset',
+      '/brand/notanothercards-logo-dark.svg',
+    );
+  });
+
+  it('renders the requested landing copy and links to the open-source repository', () => {
+    render(<App />);
+
+    expect(screen.getByText('Learn words you will use')).toBeInTheDocument();
+    expect(screen.getByText('Useful word details')).toBeInTheDocument();
+    expect(screen.getByText('Study offline. Sync later.')).toBeInTheDocument();
+    expect(screen.getByText(/high-frequency vocabulary/i)).toBeInTheDocument();
+    expect(screen.queryByText('Etymology')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'Free and open source',
+      }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/NotAnotherCards/NotAnotherCards',
+    );
+  });
+
   it('ships a static privacy policy for Meta crawlers', () => {
     const privacyDocument = new DOMParser().parseFromString(
       privacyHtml,
@@ -162,14 +201,14 @@ describe('App', () => {
     );
 
     expect(metadataDocument.title).toBe(
-      'NotAnotherCards — Learn the words that matter most',
+      'NotAnotherCards — Learn what matters to you',
     );
     expect(
       metadataDocument
         .querySelector('meta[name="description"]')
         ?.getAttribute('content'),
     ).toBe(
-      'Build useful vocabulary with smart flashcards, AI-powered context, offline learning, and sync across devices.',
+      'Create flashcards for any subject, review them over time, and sync your learning on web and mobile.',
     );
     expect(
       metadataDocument
@@ -200,7 +239,7 @@ describe('App', () => {
       metadataDocument
         .querySelector('meta[property="og:image:alt"]')
         ?.getAttribute('content'),
-    ).toBe('NotAnotherCards flashcards for learning useful vocabulary');
+    ).toBe('NotAnotherCards flashcards for any subject');
     expect(
       existsSync(resolve(process.cwd(), 'public/brand/og-image.png')),
     ).toBe(true);
