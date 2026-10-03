@@ -110,7 +110,7 @@ function DashboardSyncStatus() {
   const statusColor = rejected
     ? 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300'
     : state.status === 'idle'
-      ? 'bg-sage-border text-sage-foreground'
+      ? 'bg-sage text-sage-foreground'
       : state.status === 'syncing'
         ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse'
         : state.status === 'error'
@@ -214,7 +214,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       }),
       description: t('dashboard.overview.stats.due_for_review'),
       icon: Clock,
-      color: 'text-sage-foreground bg-sage-border',
+      color: 'text-sage-foreground bg-sage',
     },
     {
       title: t('dashboard.overview.stats.personal_dictionary'),
@@ -503,7 +503,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               <span
                 className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
                   isOnline
-                    ? 'bg-sage-border text-sage-foreground'
+                    ? 'bg-sage text-sage-foreground'
                     : 'bg-destructive/10 text-destructive animate-pulse'
                 }`}
               >
@@ -773,7 +773,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                       quest.percent === 100
-                        ? 'bg-sage-border text-sage-foreground'
+                        ? 'bg-sage text-sage-foreground'
                         : 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300'
                     }`}
                   >

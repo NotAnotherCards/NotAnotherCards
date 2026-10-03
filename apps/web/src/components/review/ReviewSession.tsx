@@ -237,7 +237,7 @@ export function ReviewSession({
             <ArrowLeft className="size-5" />
           </Button>
 
-          <h1 className="text-center text-sm font-semibold text-pine/80 dark:text-sage/80">
+          <h1 className="text-center text-sm font-semibold text-pine dark:text-sage">
             {deckTitle}
           </h1>
 

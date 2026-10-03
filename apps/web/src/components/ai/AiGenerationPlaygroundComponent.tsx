@@ -357,7 +357,7 @@ export function AiGenerationPlaygroundComponent() {
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                         job.status === 'completed'
-                          ? 'bg-sage-border text-sage-foreground'
+                          ? 'bg-sage text-sage-foreground'
                           : job.status === 'failed'
                             ? 'bg-destructive/10 text-destructive'
                             : 'bg-yellow-400/20 text-yellow-600'

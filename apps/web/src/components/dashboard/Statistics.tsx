@@ -329,7 +329,7 @@ export function Statistics() {
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
           <CardHeader className="items-center pb-2 text-center">
-            <div className="bg-sage-border p-3 rounded-2xl text-sage-foreground mb-2">
+            <div className="bg-sage p-3 rounded-2xl text-sage-foreground mb-2">
               <Sprout className="h-5 w-5" />
             </div>
             <CardTitle className="text-base">

@@ -69,7 +69,7 @@ export function DeckCard({
               {deckKindShort(deck)}
             </span>
             <CardTitle
-              className="text-base font-bold group-hover:text-sage transition-colors cursor-pointer truncate"
+              className="text-base font-bold group-hover:text-pine transition-colors cursor-pointer truncate"
               onClick={() => onSelectDeck(deck.id)}
               title={deck.title}
             >
