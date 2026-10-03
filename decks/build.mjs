@@ -11,6 +11,8 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { ipaPhrase } from './ipa-es.mjs';
 
+const SPANISH_LANGUAGE_ID = '00000000-0000-0000-0000-000000000002';
+
 const source = process.argv[2];
 if (!source) {
   console.error('usage: node decks/build.mjs <source.txt>');
@@ -70,7 +72,9 @@ lines.forEach((raw, i) => {
       part_of_speech: partOfSpeech,
       example,
       example_translation: exampleTranslation,
-      pronunciation: ipaPhrase(word),
+      ...(target === SPANISH_LANGUAGE_ID
+        ? { pronunciation: ipaPhrase(word) }
+        : {}),
       ...(article ? { gender: article } : {}),
     },
     additional_content: null,
