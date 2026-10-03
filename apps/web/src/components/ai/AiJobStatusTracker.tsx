@@ -60,7 +60,7 @@ export function AiJobStatusTracker({
 
   return (
     <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-md max-w-md mx-auto space-y-6 shadow-xl relative overflow-hidden">
-      <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-violet-500 via-indigo-500 to-amber-500 animate-pulse" />
+      <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-pine via-primary to-sage animate-pulse" />
 
       <div className="text-center space-y-2">
         <h3 className="text-lg font-semibold tracking-tight">
@@ -74,9 +74,9 @@ export function AiJobStatusTracker({
         {status === 'failed' ? (
           <XCircle className="size-16 text-destructive animate-bounce" />
         ) : status === 'completed' ? (
-          <CheckCircle2 className="size-16 text-emerald-500 animate-pulse" />
+          <CheckCircle2 className="size-16 text-sage animate-pulse" />
         ) : (
-          <Loader2 className="size-16 text-violet-500 animate-spin" />
+          <Loader2 className="size-16 text-primary animate-spin" />
         )}
       </div>
 
@@ -90,12 +90,12 @@ export function AiJobStatusTracker({
             <div key={step.key} className="flex gap-4 relative group">
               <div className="flex items-center justify-center z-10">
                 {state === 'finished' && (
-                  <div className="size-8 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-500 font-bold text-xs">
+                  <div className="size-8 rounded-full bg-sage border-2 border-sage flex items-center justify-center text-sage-foreground font-bold text-xs">
                     ✓
                   </div>
                 )}
                 {state === 'active' && (
-                  <div className="size-8 rounded-full bg-violet-500/10 border-2 border-violet-500 flex items-center justify-center text-violet-500 font-bold text-xs animate-pulse">
+                  <div className="size-8 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center text-primary font-bold text-xs animate-pulse">
                     ●
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ActivateMoreWords } from '@/components/review/ReviewDialogs';
 
@@ -25,10 +25,14 @@ describe('ActivateMoreWords', () => {
       screen.getByRole('button', { name: 'Activate and continue' }),
     );
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(onActivate).toHaveBeenCalledWith(1);
   });
 
-  it('allows clearing the count before entering a replacement value', () => {
+  it('allows clearing the count before entering a replacement value', async () => {
     const onActivate = vi.fn().mockResolvedValue(undefined);
 
     render(
@@ -49,6 +53,10 @@ describe('ActivateMoreWords', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Activate and continue' }),
     );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(onActivate).toHaveBeenCalledWith(3);
   });

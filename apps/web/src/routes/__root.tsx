@@ -14,7 +14,7 @@ function RootComponent() {
   return (
     <ThemeProvider attribute="class">
       <SessionDatabaseProvider>
-        <main>
+        <main className="flex min-h-dvh flex-col">
           <Outlet />
         </main>
       </SessionDatabaseProvider>

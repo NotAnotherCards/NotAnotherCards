@@ -101,7 +101,9 @@ describe('DeckCard Component', () => {
   });
 
   it('localizes the word deck accessibility label without changing its flags', async () => {
-    await i18n.changeLanguage('de');
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
     const { rerender } = render(
       <DeckCard
         deck={{
@@ -123,7 +125,9 @@ describe('DeckCard Component', () => {
       '🇩🇪→🇷🇺',
     );
 
-    await i18n.changeLanguage('ru');
+    await act(async () => {
+      await i18n.changeLanguage('ru');
+    });
     rerender(
       <DeckCard
         deck={{
@@ -145,7 +149,9 @@ describe('DeckCard Component', () => {
       screen.getByLabelText('🇩🇪 Немецкий → 🇷🇺 Русский'),
     ).toBeInTheDocument();
 
-    await i18n.changeLanguage('en');
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
   });
 
   // A push sends the client's whole view of a row, so an old client

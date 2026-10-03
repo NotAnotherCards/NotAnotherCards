@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { PageContainer } from '@/components/PageContainer';
 import { CardForm } from '@/components/deck/CardForm';
 import { Card } from '@/hooks/useStore';
 import { writeErrorMessage } from '@/lib/write-error';
@@ -224,11 +223,35 @@ export function ReviewSession({
   }
 
   return (
-    <PageContainer className="max-w-3xl py-4 sm:py-6">
-      <div className="flex flex-col items-stretch">
-        <h1 className="mb-3 text-center text-sm font-semibold text-muted-foreground sm:mx-auto sm:w-full sm:max-w-xl">
-          {deckTitle}
-        </h1>
+    <main className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl mx-auto px-4 py-4 sm:py-6">
+      <div className="flex w-full flex-col items-center justify-center mx-auto sm:max-w-xl">
+        <header className="mb-6 flex w-full items-center justify-between px-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onExit}
+            className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
+            aria-label="Back to dashboard"
+          >
+            <ArrowLeft className="size-5" />
+          </Button>
+
+          <h1 className="text-center text-sm font-semibold text-pine dark:text-sage">
+            {deckTitle}
+          </h1>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={openCreateCardForm}
+            className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
+            aria-label="Add a new card"
+          >
+            <Plus className="size-5" />
+          </Button>
+        </header>
         <ReviewCard
           card={card}
           nextCard={nextCard}
@@ -250,7 +273,7 @@ export function ReviewSession({
         />
 
         <div
-          className="relative z-0 mt-6 min-h-[104px] sm:mx-auto sm:w-full sm:max-w-xl"
+          className="relative z-0 mt-6 min-h-26 w-full sm:mx-auto sm:max-w-xl"
           data-testid="review-answer-area"
         >
           <ReviewAnswerButtons
@@ -272,37 +295,6 @@ export function ReviewSession({
             </p>
           )}
         </div>
-
-        <div
-          className="mt-6 grid grid-cols-3 gap-2 sm:mx-auto sm:w-full sm:max-w-xl"
-          data-testid="review-footer-actions"
-        >
-          <div className="col-start-1 flex justify-start">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onExit}
-              className="size-12 justify-start rounded-none bg-transparent p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-              aria-label="Back to dashboard"
-            >
-              <ArrowLeft className="size-7" />
-            </Button>
-          </div>
-          <div className="col-start-2" />
-          <div className="col-start-3 flex justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={openCreateCardForm}
-              className="size-12 justify-end rounded-none bg-transparent p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-              aria-label="Add a new card"
-            >
-              <Plus className="size-7" />
-            </Button>
-          </div>
-        </div>
       </div>
 
       {isCreateCardOpen && (
@@ -322,6 +314,6 @@ export function ReviewSession({
           isDeleting={isDeletingNote}
         />
       )}
-    </PageContainer>
+    </main>
   );
 }
