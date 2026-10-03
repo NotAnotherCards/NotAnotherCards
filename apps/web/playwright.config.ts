@@ -1,44 +1,26 @@
-import path from 'node:path';
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 
-const repositoryRoot = path.resolve(import.meta.dirname, '../..');
+const baseURL = 'http://localhost:4173';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false,
+  testIgnore: '**/live/**',
+  forbidOnly: !!process.env.CI,
   workers: 1,
-  timeout: 120_000,
-  expect: { timeout: 15_000 },
-  reporter: [['line']],
-  outputDir: 'test-results',
+  timeout: 30_000,
+  expect: { timeout: 10_000 },
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:5173',
-    actionTimeout: 15_000,
-    navigationTimeout: 30_000,
-    screenshot: 'off',
-    trace: 'off',
-    video: 'off',
+    baseURL,
+    channel: 'chrome',
+    launchOptions: { executablePath: process.env.E2E_CHROME_EXECUTABLE },
+    locale: 'en-US',
+    timezoneId: 'Europe/Berlin',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
-  webServer: [
-    {
-      command: 'pnpm --filter api dev',
-      cwd: repositoryRoot,
-      url: 'http://localhost:3000/health',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-    },
-    {
-      command: 'pnpm --filter web dev --host localhost',
-      cwd: repositoryRoot,
-      url: 'http://localhost:5173/login',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-    },
+    { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
+    { name: 'phone', use: { viewport: { width: 390, height: 844 } } },
   ],
 });

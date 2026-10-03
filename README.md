@@ -87,5 +87,72 @@ internet.
 - `pnpm build`: build all packages and apps
 - `pnpm lint`: lint the workspace
 - `pnpm test`: run the workspace test suites
+- `pnpm e2e`: run isolated browser tests (setup below)
 - `pnpm test:watch`: run tests in watch mode where supported
 - `pnpm format`: format Markdown and TypeScript files
+
+## Browser tests
+
+The #252 suite covers registration/onboarding, dashboard reload, deck and card
+edits, review ratings and due-time boundaries, isolation and sync across three
+browser contexts, account switching, word-note validation and optional-field
+removal, persisted Markdown XSS input, and the two-factor lifecycle. Playwright
+runs the production web bundle in stable Google Chrome at desktop and phone
+widths. Warnings, console errors, uncaught browser exceptions, and a page that
+scrolls sideways fail the test. Negative two-factor scenarios assert the exact
+401/429 response and exempt only its browser-generated HTTP resource error;
+JavaScript warnings, `console.error`, and uncaught exceptions still fail.
+Registration, onboarding, deck/card forms, and review controls also check viewport bounds and clipping by their containers.
+Vertical scrolling is allowed to reach controls.
+
+The scheduling scenario creates a card and reviews it, then uses Playwright's
+browser clock to cross the five-minute and three-day due boundaries. It checks
+the persisted schedule just before each boundary and automatic refresh at the
+boundary, without waiting days or modifying stored due dates. This controls the
+client clock, where review scheduling runs; server and authentication time stay
+unchanged. The clock starts a minute in the past so the second review at five
+minutes stays within the server's allowed clock skew. The three-day boundary
+asserts that the card reappears, without submitting a future-dated review.
+
+Run with Docker Compose v2 and stable Chrome installed:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter web exec playwright install --with-deps chrome
+pnpm e2e
+```
+
+`pnpm e2e` builds and starts an isolated Compose project using the normal API
+and nginx images plus `docker-compose.browser.yml`. The API applies migrations
+against a fresh PostgreSQL volume. All browser requests use nginx on port 4173,
+including authentication (`/api`) and synchronization (`/sync`). Only port 4173
+must be free; the API and database are not exposed to the host.
+
+The harness pins disposable credentials from `infra/browser.env`, collects
+Compose build/runtime logs, and removes its containers, images, and database
+volume after passing or failing tests, or interruption. Cleanup waits for
+completion even if SIGINT or SIGTERM arrives again during teardown. It does not
+read the developer's `.env` or reuse a running stack. If Chrome is installed
+outside its standard location, set
+`E2E_CHROME_EXECUTABLE` to its executable path.
+
+Use `pnpm e2e --project=phone` for one viewport or `pnpm e2e --headed` to watch.
+Tests live in `apps/web/e2e`, outside Vitest's `src` discovery. Import `test`
+from `e2e/fixtures.ts`; use its `newContext` fixture for extra accounts so their
+pages also participate in the console gate. Type-check with
+`pnpm --filter web e2e:typecheck`.
+
+Local contexts send distinct test client IP headers to avoid sharing Better
+Auth's rate-limit bucket through nginx. The disposable stack explicitly trusts
+Docker's private proxy ranges via `BETTER_AUTH_TRUSTED_PROXIES`; the normal
+stack leaves that setting empty. Rate limiting stays enabled;
+the two-factor scenario also verifies its account lockout response.
+
+On failure, inspect `apps/web/playwright-logs` and run
+`pnpm --filter web exec playwright show-report`. CI uploads the HTML report,
+traces, screenshots, browser errors, and server logs as `browser-failure-evidence`.
+
+The `Browser tests` workflow runs independently of the unit/API suites, using
+its own disposable Compose stack. It runs for pull requests and pushes to
+`main`, from the Actions **Run workflow** button, and every day at 04:00
+Europe/Berlin. Both local and CI runs exercise Compose/nginx.

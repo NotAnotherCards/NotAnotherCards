@@ -1,0 +1,340 @@
+import type { Page } from '@playwright/test';
+import {
+  test,
+  expect,
+  expectDashboardReady,
+  expectFitsViewport,
+  expectNoHorizontalOverflow,
+} from './fixtures.js';
+import { registerAndOnboard, saveDeckAndSync } from './helpers.js';
+
+async function createDeck(page: Page, title: string) {
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
+  await page.getByRole('button', { name: 'Create Deck', exact: true }).click();
+  await page.getByLabel('Title', { exact: true }).fill(title);
+  await expectNoHorizontalOverflow(page);
+  await expectFitsViewport(page.getByLabel('Title', { exact: true }));
+  await expectFitsViewport(
+    page.getByRole('button', { name: 'Save', exact: true }),
+  );
+  await saveDeckAndSync(page);
+  await page.getByTitle(title, { exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: title, exact: true }),
+  ).toBeVisible();
+}
+
+async function addCard(page: Page, front: string, back: string) {
+  // The empty catalog also offers an Add Card button; use the header action.
+  await page
+    .getByRole('button', { name: 'Add Card', exact: true })
+    .first()
+    .click();
+  await page
+    .getByLabel('Front (Question, term, or prompt)', { exact: true })
+    .fill(front);
+  await page
+    .getByLabel('Back (Answer, definition, or translation)', { exact: true })
+    .fill(back);
+  await expectNoHorizontalOverflow(page);
+  await expectFitsViewport(
+    page.getByLabel('Back (Answer, definition, or translation)', {
+      exact: true,
+    }),
+  );
+  await expectFitsViewport(
+    page.getByRole('button', { name: 'Save Card', exact: true }),
+  );
+  await page.getByRole('button', { name: 'Save Card', exact: true }).click();
+  await expect(page.getByRole('row').filter({ hasText: front })).toContainText(
+    back,
+  );
+}
+
+async function useExtendedReviewMode(page: Page) {
+  await page
+    .getByRole('tab', { name: 'Profile & Settings', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Preferences', exact: true }).click();
+  const extended = page
+    .getByRole('group', { name: 'Review mode' })
+    .getByRole('button', { name: 'Extended', exact: true });
+  await extended.click();
+  await expect(extended).toHaveAttribute('aria-pressed', 'true');
+}
+
+async function rateAndSync(page: Page, label: string, rating: number) {
+  // The badge can still read "Synced" during the write debounce. Wait for
+  // this review's response before reloading, which could otherwise interrupt
+  // the acknowledgement and replay an already-stored append-only event.
+  const pushed = page.waitForResponse((response) => {
+    if (
+      new URL(response.url()).pathname !== '/sync/push' ||
+      response.request().method() !== 'POST'
+    )
+      return false;
+    const body = response.request().postDataJSON() as {
+      changes?: { review_events?: { created?: { rating: number }[] } };
+    };
+    return (
+      body.changes?.review_events?.created?.some(
+        (review) => review.rating === rating,
+      ) ?? false
+    );
+  });
+  await page
+    .getByTestId('review-answer-buttons')
+    .getByRole('button', { name: label, exact: true })
+    .click();
+  const response = await pushed;
+  expect(response.ok()).toBe(true);
+  const result = (await response.json()) as {
+    rejected?: Record<string, string[]>;
+  };
+  expect(result.rejected?.review_events ?? []).toEqual([]);
+  await response.finished();
+  await expect(page.getByTestId('sync-status')).toHaveText('Synced');
+}
+
+test('a created card becomes due again at its scheduled time and can be reviewed again', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  // Keep Date deterministic while UI and network timers continue running.
+  // Scheduling and due selection both run in this browser, not the API.
+  // Begin a minute in the past: the second review at +5 minutes remains
+  // within the server's five-minute activity skew allowance.
+  let now = Math.floor(Date.now() / 10_000) * 10_000 - 60_000;
+  await page.clock.install({ time: now });
+  await page.clock.setFixedTime(now);
+  await registerAndOnboard(page);
+  await createDeck(page, 'Scheduled review');
+  await addCard(page, 'Hasta mañana', 'See you tomorrow');
+  await page
+    .getByRole('button', { name: 'Back to Decks', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Start Review', exact: true }).click();
+  await page
+    .getByRole('spinbutton', { name: 'Activate', exact: true })
+    .fill('1');
+  await page
+    .getByRole('button', { name: 'Activate and continue', exact: true })
+    .click();
+  await expectNoHorizontalOverflow(page);
+  await expectFitsViewport(page.getByTestId('review-card-flip'));
+  await expectFitsViewport(
+    page.getByRole('button', { name: 'Show answer', exact: true }),
+  );
+
+  for (const { label, rating, interval } of [
+    { label: 'Again', rating: 1, interval: 5 * 60_000 },
+    { label: 'Good', rating: 3, interval: 3 * 24 * 60 * 60_000 },
+  ]) {
+    now = await page.evaluate(() => Date.now());
+    await expect(page.getByTestId('review-card-front-content')).toHaveText(
+      'Hasta mañana',
+    );
+    await page
+      .getByRole('button', { name: 'Show answer', exact: true })
+      .click();
+    await expect(page.getByTestId('review-card-back-content')).toHaveText(
+      'See you tomorrow',
+    );
+    const answers = page
+      .getByTestId('review-answer-buttons')
+      .getByRole('button');
+    await expect(answers).toHaveCount(2);
+    for (const answer of await answers.all()) await expectFitsViewport(answer);
+    await rateAndSync(page, label, rating);
+    await expect(
+      page.getByRole('heading', { name: 'Review complete', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByTestId('sync-status')).toHaveText('Synced');
+    await page.reload();
+    await expect(
+      page.getByRole('heading', {
+        name: 'No cards are due in Scheduled review right now.',
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    now += interval;
+    // A reload checks the persisted schedule immediately before the boundary.
+    await page.clock.setFixedTime(now - 1);
+    await page.reload();
+    await expect(
+      page.getByRole('heading', {
+        name: 'No cards are due in Scheduled review right now.',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByTestId('review-card')).toHaveCount(0);
+
+    // Crossing the boundary should refresh the open page without a reload.
+    await page.clock.setFixedTime(now);
+    await page.clock.fastForward(10_000);
+    await expect(page.getByTestId('review-card-front-content')).toHaveText(
+      'Hasta mañana',
+    );
+    await expect(page.getByTestId('review-card-flip')).toHaveAttribute(
+      'data-flipped',
+      'false',
+    );
+  }
+
+  // The card is due at +3 days. Recording a future-dated review would
+  // correctly be rejected by server validation, so stop at the due assertion.
+});
+
+test('create and edit a deck and card with persistence after reload', async ({
+  page,
+}) => {
+  await registerAndOnboard(page);
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
+  await page.getByRole('button', { name: 'Create Deck', exact: true }).click();
+  await page.getByLabel('Title', { exact: true }).fill('Travel vocabulary');
+  await page
+    .getByLabel('Description', { exact: true })
+    .fill('Useful travel phrases');
+  await saveDeckAndSync(page);
+
+  await page.getByTitle('Travel vocabulary', { exact: true }).hover();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await expect(page.getByLabel('Title', { exact: true })).toHaveValue(
+    'Travel vocabulary',
+  );
+  await page.getByLabel('Title', { exact: true }).fill('Spanish travel');
+  await page
+    .getByLabel('Description', { exact: true })
+    .fill('Phrases for my next trip');
+  await saveDeckAndSync(page);
+  await page.getByTitle('Spanish travel', { exact: true }).click();
+
+  await page
+    .getByRole('button', { name: 'Add Card', exact: true })
+    .first()
+    .click();
+  await page
+    .getByLabel('Front (Question, term, or prompt)', { exact: true })
+    .fill('Hola');
+  await page
+    .getByLabel('Back (Answer, definition, or translation)', { exact: true })
+    .fill('Hello');
+  await page.getByRole('button', { name: 'Save Card', exact: true }).click();
+
+  const row = page.getByRole('row').filter({ hasText: 'Hola' });
+  await expect(row).toContainText('Hello');
+  await row.getByRole('button', { name: 'Edit Card', exact: true }).click();
+  await expect(
+    page.getByLabel('Front (Question, term, or prompt)', { exact: true }),
+  ).toHaveValue('Hola');
+  await expect(
+    page.getByLabel('Back (Answer, definition, or translation)', {
+      exact: true,
+    }),
+  ).toHaveValue('Hello');
+  await page
+    .getByLabel('Front (Question, term, or prompt)', { exact: true })
+    .fill('Buenos días');
+  await page
+    .getByLabel('Back (Answer, definition, or translation)', { exact: true })
+    .fill('Good morning');
+  await page.getByRole('button', { name: 'Save Card', exact: true }).click();
+  await expect(
+    page.getByRole('row').filter({ hasText: 'Buenos días' }),
+  ).toContainText('Good morning');
+  await expect(row).toHaveCount(0);
+  await expect(page.getByTestId('sync-status')).toHaveText('Synced');
+
+  await page.reload();
+  await expectDashboardReady(page);
+  await page.getByRole('tab', { name: 'My Library', exact: true }).click();
+  await expect(
+    page.getByTitle('Travel vocabulary', { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('Phrases for my next trip', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId('total-cards-badge')).toHaveText('1');
+  await page.getByTitle('Spanish travel', { exact: true }).click();
+  await expect(
+    page.getByRole('row').filter({ hasText: 'Buenos días' }),
+  ).toContainText('Good morning');
+  await expect(page.getByRole('row').filter({ hasText: 'Hola' })).toHaveCount(
+    0,
+  );
+});
+
+test('reveal and rate every card, then retain the completed schedule after reload', async ({
+  page,
+}) => {
+  await registerAndOnboard(page);
+  await useExtendedReviewMode(page);
+  await createDeck(page, 'Review practice');
+  const cards = new Map([
+    ['Uno', 'One'],
+    ['Dos', 'Two'],
+    ['Tres', 'Three'],
+    ['Cuatro', 'Four'],
+  ]);
+  for (const [front, back] of cards) await addCard(page, front, back);
+  await page
+    .getByRole('button', { name: 'Back to Decks', exact: true })
+    .click();
+  await expect(page.getByTestId('total-cards-badge')).toHaveText('4');
+  await page.getByRole('button', { name: 'Start Review', exact: true }).click();
+  await page
+    .getByRole('spinbutton', { name: 'Activate', exact: true })
+    .fill('4');
+  await page
+    .getByRole('button', { name: 'Activate and continue', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/deck-review\?deckId=/);
+
+  const reviewed = new Set<string>();
+  for (const [index, rating] of ['Again', 'Hard', 'Good', 'Easy'].entries()) {
+    const reveal = page.getByRole('button', {
+      name: 'Show answer',
+      exact: true,
+    });
+    const flip = page.getByTestId('review-card-flip');
+    await expect(flip).toHaveAttribute('data-flipped', 'false');
+    const front = (
+      await page.getByTestId('review-card-front-content').innerText()
+    ).trim();
+    expect(cards.has(front)).toBe(true);
+    expect(reviewed.has(front), 'Each due card should be reviewed once').toBe(
+      false,
+    );
+    await reveal.click();
+    await expect(flip).toHaveAttribute('data-flipped', 'true');
+    await expect(page.getByTestId('review-card-back-content')).toHaveText(
+      cards.get(front)!,
+    );
+    await expectNoHorizontalOverflow(page);
+    const answers = page
+      .getByTestId('review-answer-buttons')
+      .getByRole('button');
+    await expect(answers).toHaveCount(4);
+    for (const answer of await answers.all()) await expectFitsViewport(answer);
+    await rateAndSync(page, rating, index + 1);
+    reviewed.add(front);
+    if (reviewed.size < cards.size) {
+      await expect(
+        page.getByTestId('review-card-front-content'),
+      ).not.toHaveText(front);
+    }
+  }
+  await expect(
+    page.getByRole('heading', { name: 'Review complete', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId('sync-status')).toHaveText('Synced');
+  await page.reload();
+  await expect(
+    page.getByRole('heading', {
+      name: 'No cards are due in Review practice right now.',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByTestId('review-card')).toHaveCount(0);
+});
