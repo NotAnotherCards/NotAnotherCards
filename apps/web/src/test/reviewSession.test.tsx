@@ -187,7 +187,7 @@ describe('ReviewSession', () => {
     revealCard();
 
     expect(flip).toHaveAttribute('data-flipped', 'true');
-    expect(flip).toHaveClass('[transform:rotateY(180deg)]');
+    expect(flip).toHaveClass('transform-[rotateY(180deg)]');
   });
 
   it('keeps a tap target for the card while both faces are present', () => {
@@ -275,7 +275,7 @@ describe('ReviewSession', () => {
     },
   );
 
-  it('keeps the review answer area stable and aligns footer actions with its outer columns', () => {
+  it('keeps the review answer area stable and places navigation actions in the header', () => {
     renderSession();
 
     expect(screen.getByTestId('review-front-answer-buttons')).toHaveTextContent(
@@ -284,24 +284,18 @@ describe('ReviewSession', () => {
     expect(screen.getByTestId('review-card-flip')).toHaveClass('h-full');
     expect(screen.getByTestId('review-answer-area')).toHaveClass(
       'mt-6',
-      'min-h-[104px]',
+      'min-h-26',
     );
-    const footerActions = screen.getByTestId('review-footer-actions');
-    expect(footerActions).toHaveClass('grid-cols-3', 'mt-6');
-    expect(
-      screen.getByRole('button', { name: 'Back to dashboard' }).parentElement,
-    ).toHaveClass('col-start-1', 'justify-start');
+
     expect(
       screen.getByRole('button', { name: 'Back to dashboard' }),
-    ).toHaveClass('size-12');
-    expect(
-      screen.getByRole('button', { name: 'Add a new card' }).parentElement,
-    ).toHaveClass('col-start-3', 'justify-end');
+    ).toHaveClass('size-10', 'rounded-full');
+
     expect(screen.getByRole('button', { name: 'Add a new card' })).toHaveClass(
-      'rounded-none',
-      'size-12',
-      'text-muted-foreground',
-      'hover:text-foreground',
+      'size-10',
+      'rounded-full',
+      'border-sage-border',
+      'bg-surface',
     );
   });
 
@@ -328,7 +322,7 @@ describe('ReviewSession', () => {
     const showAnswerButton = screen.getByRole('button', {
       name: 'Show answer',
     });
-    expect(showAnswerButton).toHaveClass('bg-muted/40', 'shadow-none');
+    expect(showAnswerButton).toHaveClass('bg-primary/5', 'shadow-sm');
 
     fireEvent.click(showAnswerButton);
 
@@ -954,7 +948,7 @@ describe('ReviewSession', () => {
     expect(confirmButton).toHaveFocus();
   });
 
-  it('cancels delete confirmation with Escape and restores card focus', () => {
+  it('cancels delete confirmation with Escape and restores card focus', async () => {
     const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
     renderSession([card], undefined, onRecordReview);
     revealCard();
@@ -972,6 +966,11 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(screen.getByTestId('review-card'), {
       key: 'ArrowRight',
     });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(onRecordReview).toHaveBeenCalledWith('card-1', 3);
   });
 

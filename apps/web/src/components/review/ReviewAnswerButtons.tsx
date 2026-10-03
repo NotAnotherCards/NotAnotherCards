@@ -56,7 +56,7 @@ export function ReviewAnswerButtons({
           variant="outline"
           onClick={onReveal}
           disabled={disabled}
-          className="min-h-12 w-full cursor-pointer border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
+          className="min-h-12 w-full cursor-pointer border-primary/20 bg-primary/5 text-primary shadow-sm hover:bg-primary/10 hover:text-primary dark:border-primary/30 dark:bg-primary/10 dark:hover:bg-primary/20"
         >
           {t('review.card.show_answer', 'Show answer')}
         </Button>
