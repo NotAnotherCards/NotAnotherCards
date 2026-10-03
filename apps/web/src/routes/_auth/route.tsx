@@ -60,7 +60,7 @@ function AuthLayout() {
               <h1 className="text-4xl lg:text-5xl font-bold font-heading text-pine dark:text-white/80 leading-tight">
                 {t('auth.layout.title')}
               </h1>
-              <p className="text-md text-muted-foreground dark:text-sage/60 leading-relaxed">
+              <p className="text-base text-muted-foreground dark:text-sage/60 leading-relaxed">
                 {t('auth.layout.description')}
               </p>
             </div>
