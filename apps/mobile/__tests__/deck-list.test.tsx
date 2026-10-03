@@ -2,6 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { DeckList } from '@/components/deck-list';
 import i18n from '@/lib/i18n';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -69,6 +70,50 @@ beforeEach(() => {
 });
 
 describe('DeckList', () => {
+  it('separates a load error prefix from its message', () => {
+    mockDecksState.error = new Error('Database unavailable');
+    const screen = render(<DeckList />);
+    expect(
+      screen.getByText('Failed to load decks: Database unavailable'),
+    ).toBeTruthy();
+  });
+  it.each([
+    ['en', 'Cards', 'Review'],
+    ['de', 'Karten', 'Wiederholen'],
+    ['es', 'Tarjetas', 'Repasar'],
+    ['ru', 'Карточки', 'Повторить'],
+  ] as const)(
+    'uses compact library actions in %s',
+    async (locale, edit, review) => {
+      const screen = await renderWithLocale(<DeckList />, locale);
+      expect(screen.getAllByText(edit)).toHaveLength(3);
+      expect(screen.getAllByText(review)).toHaveLength(2);
+      const editLabel = screen.i18n.t('mobile.manage_deck', {
+        title: 'Spanish',
+      });
+      const reviewLabel = screen.i18n.t('mobile.review_deck', {
+        title: 'Spanish',
+      });
+      expect(editLabel).toContain(edit);
+      expect(reviewLabel).toContain(review);
+      fireEvent.press(screen.getByLabelText(editLabel));
+      expect(mockPush).toHaveBeenLastCalledWith('/deck/d1');
+      fireEvent.press(screen.getByLabelText(reviewLabel));
+      expect(mockPush).toHaveBeenLastCalledWith('/review/d1');
+    },
+  );
+  it('uses short German actions with descriptive screen-reader labels', async () => {
+    const screen = await renderWithLocale(<DeckList />, 'de');
+    expect(screen.getAllByText('Karten').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Wiederholen').length).toBeGreaterThan(0);
+    for (const label of screen.getAllByText('Wiederholen')) {
+      expect(label.props.numberOfLines).toBe(1);
+    }
+    expect(screen.getAllByText('Alle Karten')).toHaveLength(2);
+    expect(screen.getAllByText('Fällig')).toHaveLength(2);
+    fireEvent.press(screen.getByLabelText('Karten in Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/deck/d1');
+  });
   it('marks a published deck', () => {
     mockDecksState.decks = [
       { ...mockDecksState.decks[0]!, visibility: 'public' },
@@ -81,7 +126,7 @@ describe('DeckList', () => {
 
   it('opens the deck from Manage cards', async () => {
     const { findByLabelText } = render(<DeckList />);
-    fireEvent.press(await findByLabelText('Manage cards of Spanish'));
+    fireEvent.press(await findByLabelText('Cards in Spanish'));
     expect(mockPush).toHaveBeenCalledWith('/deck/d1');
   });
 
@@ -137,10 +182,10 @@ describe('DeckList', () => {
     // nothing due: the review screen offers to activate more
     const { getByLabelText } = render(<DeckList />);
 
-    fireEvent.press(getByLabelText('Start review of Yoga'));
+    fireEvent.press(getByLabelText('Review Yoga'));
     expect(mockPush).toHaveBeenCalledWith('/review/d2');
 
-    fireEvent.press(getByLabelText('Start review of Spanish'));
+    fireEvent.press(getByLabelText('Review Spanish'));
     expect(mockPush).toHaveBeenCalledWith('/review/d1');
   });
 
@@ -212,7 +257,7 @@ describe('DeckList', () => {
     const { getByLabelText, getByText } = render(<DeckList />);
     fireEvent.press(getByLabelText('Delete Yoga'));
     expect(mockWrites.remove).not.toHaveBeenCalled();
-    fireEvent.press(getByText('Delete deck'));
+    fireEvent.press(getByText('Delete Deck'));
     await waitFor(() => expect(mockWrites.remove).toHaveBeenCalledWith('d2'));
   });
 });
@@ -242,7 +287,7 @@ describe('DeckList action state', () => {
     const { getByLabelText, getByText, queryByText, queryByPlaceholderText } =
       render(<DeckList />);
     fireEvent.press(getByLabelText('Delete Yoga'));
-    fireEvent.press(getByText('Delete deck'));
+    fireEvent.press(getByText('Delete Deck'));
     // Yoga's delete is in flight; Spanish must not be able to take the state
     fireEvent.press(getByLabelText('Edit Spanish'));
     expect(queryByPlaceholderText('e.g. Spanish vocabulary')).toBeNull();
@@ -262,7 +307,7 @@ describe('DeckList action state', () => {
     );
     const r = render(<DeckList createRequestKey={0} />);
     fireEvent.press(r.getByLabelText('Delete Yoga'));
-    fireEvent.press(r.getByText('Delete deck'));
+    fireEvent.press(r.getByText('Delete Deck'));
     // the library's plus during the delete: the form must not replace the
     // pending action and inherit its outcome
     r.rerender(<DeckList createRequestKey={1} />);
@@ -282,8 +327,8 @@ describe('DeckList action state', () => {
     );
     const { getByLabelText, getByText } = render(<DeckList />);
     fireEvent.press(getByLabelText('Delete Yoga'));
-    fireEvent.press(getByText('Delete deck'));
-    fireEvent.press(getByText('Delete deck'));
+    fireEvent.press(getByText('Delete Deck'));
+    fireEvent.press(getByText('Delete Deck'));
     expect(mockWrites.remove).toHaveBeenCalledTimes(1);
 
     // Cancel is held too, so the confirmation stays until the write settles.
@@ -297,7 +342,7 @@ describe('DeckList action state', () => {
     mockWrites.remove.mockRejectedValueOnce(new Error('Deck is locked'));
     const { getByLabelText, getByText } = render(<DeckList />);
     fireEvent.press(getByLabelText('Delete Yoga'));
-    fireEvent.press(getByText('Delete deck'));
+    fireEvent.press(getByText('Delete Deck'));
     await waitFor(() => getByText('Deck is locked'));
     expect(getByText(/Delete this deck\?/)).toBeTruthy();
   });

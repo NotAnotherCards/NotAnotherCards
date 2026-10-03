@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { ModerationWarning, OwnerModerationStatus } from '@repo/schemas';
 import type { UserCardRecord, UserDeckRecord } from '@repo/offline-db';
 import { useSessionDatabase } from '@/lib/database-provider';
+import { UiError, toUiError, uiErrorText } from '@/lib/errors';
 import { syncFailure } from '@/lib/sync-outcome';
 import { apiClient } from '@/lib/api-client';
 import { useModerationExplanation } from '@repo/api-client/react';
@@ -21,6 +23,7 @@ export function PublishPanel({
   deck: Pick<UserDeckRecord, 'id' | 'visibility'>;
   cards: readonly Pick<UserCardRecord, 'id' | 'front'>[];
 }) {
+  const { t } = useTranslation();
   const deckId = deck.id;
   const { manager, syncController } = useSessionDatabase();
   const [status, setStatus] = useState<OwnerModerationStatus>({
@@ -34,7 +37,7 @@ export function PublishPanel({
   >(null);
   useEffect(() => setRemoteVisibility(null), [deck.visibility]);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [flagged, setFlagged] = useState<ModerationWarning[]>([]);
   const [warnings, setWarnings] = useState<ModerationWarning[]>([]);
   // "Why?" streams one explanation at a time, as web's deck page does;
@@ -65,21 +68,27 @@ export function PublishPanel({
             variant="ghost"
             size="sm"
             className="h-12 sm:h-12"
-            accessibilityLabel={`Why was ${cardName(item.cardId)} flagged?`}
+            accessibilityLabel={t('mobile.messages.flagged_why', {
+              title: cardName(item.cardId),
+            })}
             disabled={isActive && explanation.isLoading}
             onPress={() => void explanation.explain(key, item, source)}
           >
-            <Text>Why?</Text>
+            <Text>{t('mobile.messages.why')}</Text>
           </Button>
         </View>
         {isActive && explanation.text ? (
           <Text className="text-sm">{explanation.text}</Text>
         ) : null}
         {isActive && explanation.isLoading && !explanation.text ? (
-          <Text className="text-sm text-muted-foreground">Asking…</Text>
+          <Text className="text-sm text-muted-foreground">
+            {t('mobile.messages.asking')}
+          </Text>
         ) : null}
         {isActive && explanation.error ? (
-          <Text className="text-sm text-destructive">{explanation.error}</Text>
+          <Text className="text-sm text-destructive">
+            {uiErrorText(toUiError(explanation.error), t)}
+          </Text>
         ) : null}
       </View>
     );
@@ -112,7 +121,8 @@ export function PublishPanel({
     (remoteVisibility ?? deck.visibility) === 'public' &&
     status.status !== 'blocked';
   const cardName = (cardId: string) =>
-    cards.find((card) => card.id === cardId)?.front ?? 'A card';
+    cards.find((card) => card.id === cardId)?.front ??
+    t('mobile.messages.unnamed_card');
 
   // The sync before the call uploads the latest cards, so moderation sees
   // them; if it did not go through, nothing is sent. The sync after it
@@ -131,19 +141,21 @@ export function PublishPanel({
         scope,
       );
       if (notSynced) {
-        setError(`Not sent: ${notSynced}`);
+        setError(
+          new UiError('mobile.messages.not_sent', { reason: notSynced }),
+        );
         return;
       }
       if ((await work()) === 'refused') return;
       const behind = await syncFailure(await syncController?.syncNow(), scope);
       if (behind) {
         setError(
-          `Done on the server; this device catches up at the next sync. ${behind}`,
+          new UiError('mobile.messages.server_done', { reason: behind }),
         );
       }
       await refreshStatus();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The request failed');
+      setError(toUiError(err));
     } finally {
       setPending(false);
     }
@@ -161,10 +173,10 @@ export function PublishPanel({
       <View className="flex-row items-center justify-between gap-2">
         <Text className="text-sm text-muted-foreground">
           {status.status === 'blocked'
-            ? 'Taken down by moderation'
+            ? t('mobile.messages.taken_down')
             : isPublic
-              ? 'Published to the community'
-              : 'Private'}
+              ? t('mobile.messages.published_community')
+              : t('deck.form.visibility_private')}
         </Text>
         {isPublic ? (
           <Button
@@ -184,7 +196,7 @@ export function PublishPanel({
               })
             }
           >
-            <Text>Unpublish</Text>
+            <Text>{t('deck.detail.unpublish')}</Text>
           </Button>
         ) : (
           <Button
@@ -203,20 +215,23 @@ export function PublishPanel({
                 }
                 setFlagged(outcome.refusal.flagged);
                 setError(
-                  outcome.refusal.reason ??
-                    (outcome.refusal.flagged.length > 0
-                      ? 'Moderation refused the deck. Review the flagged cards and try again.'
-                      : 'Moderation refused the deck.'),
+                  new UiError(
+                    outcome.refusal.flagged.length > 0
+                      ? 'mobile.messages.refused_details'
+                      : 'mobile.messages.refused',
+                  ),
                 );
                 return 'refused';
               })
             }
           >
-            <Text>Publish</Text>
+            <Text>{t('deck.detail.publish')}</Text>
           </Button>
         )}
       </View>
-      {error && <Text className="text-destructive">{error}</Text>}
+      {error && (
+        <Text className="text-destructive">{uiErrorText(error, t)}</Text>
+      )}
       {flagged.map((item, index) =>
         finding(item, index, 'working', 'destructive'),
       )}
@@ -229,7 +244,13 @@ export function PublishPanel({
           finding(item, index, 'published', 'destructive'),
         )}
       {shownWarnings.map((item, index) =>
-        finding(item, index, 'published', 'muted', 'Warning, '),
+        finding(
+          item,
+          index,
+          'published',
+          'muted',
+          t('mobile.messages.warning'),
+        ),
       )}
     </View>
   );

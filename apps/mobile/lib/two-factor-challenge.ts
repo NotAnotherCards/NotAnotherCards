@@ -1,3 +1,4 @@
+import { UiError } from './errors';
 import {
   createContext,
   createElement,
@@ -166,25 +167,25 @@ export function useTwoFactorDeepLinkPending(): boolean {
   return useContext(TwoFactorDeepLinkContext);
 }
 
-export function twoFactorChallengeError(error: unknown): string {
+export function twoFactorChallengeError(error: unknown): UiError {
   const code = twoFactorChallengeErrorCode(error);
 
   if (code === 'ACCOUNT_TEMPORARILY_LOCKED') {
-    return 'Too many failed attempts. Your account is temporarily locked. Sign in again later.';
+    return new UiError('mobile.messages.locked');
   }
   if (code === 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE') {
-    return 'Too many failed attempts. Sign in again to start a new verification request.';
+    return new UiError('mobile.messages.challenge_exhausted');
   }
   if (code === 'INVALID_BACKUP_CODE') {
-    return 'That backup code is invalid or has already been used.';
+    return new UiError('auth.error.two_factor_invalid_backup');
   }
   if (code === 'INVALID_CODE') {
-    return 'That authentication code is invalid or has expired.';
+    return new UiError('auth.error.two_factor_invalid_code');
   }
   if (code === 'INVALID_TWO_FACTOR_COOKIE') {
-    return 'This verification request has expired. Sign in again.';
+    return new UiError('mobile.messages.challenge_expired');
   }
-  return 'Verification failed. Check the code and try again.';
+  return new UiError('auth.error.two_factor_failed');
 }
 
 export function isTerminalTwoFactorChallengeError(error: unknown): boolean {

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { formatDate, formatNumber } from '@repo/i18n';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
@@ -51,13 +53,21 @@ import { useAchievements, type Achievement } from '@/lib/achievements';
 // strip is the screen's top bar; the native header is hidden in _layout.
 type Tab = 'overview' | 'library' | 'settings';
 
-const TABS: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
-  { value: 'overview', label: 'Overview', icon: BookOpenIcon },
-  { value: 'library', label: 'My Library', icon: LibraryIcon },
-  { value: 'settings', label: 'Profile & Settings', icon: SettingsIcon },
-];
-
 export default function Dashboard() {
+  const { t } = useTranslation();
+  const tabs: readonly { value: Tab; label: string; icon: LucideIcon }[] = [
+    {
+      value: 'overview',
+      label: t('dashboard.tabs.overview'),
+      icon: BookOpenIcon,
+    },
+    { value: 'library', label: t('dashboard.tabs.library'), icon: LibraryIcon },
+    {
+      value: 'settings',
+      label: t('dashboard.tabs.settings'),
+      icon: SettingsIcon,
+    },
+  ];
   const { data: session } = authClient.useSession();
   const { manager, syncController } = useSessionDatabase();
   const pullToSync = usePullToSync(syncController);
@@ -78,14 +88,14 @@ export default function Dashboard() {
           style={{ paddingTop: insets.top + 8 }}
         >
           <Segmented
-            label="Dashboard sections"
+            label={t('dashboard.aria_sections')}
             role="tablist"
             value={tab}
-            options={TABS}
+            options={tabs}
             onChange={setTab}
             stacked
             renderIcon={(value, selected) => {
-              const Icon = TABS.find((item) => item.value === value)!.icon;
+              const Icon = tabs.find((item) => item.value === value)!.icon;
               return (
                 <Icon
                   size={18}
@@ -120,15 +130,21 @@ export default function Dashboard() {
                 {/* The email stays in the Settings account header; the first
                     screen is the one others see over your shoulder. */}
                 <Text className="flex-1 text-base" numberOfLines={1}>
-                  Welcome,{' '}
-                  <Text className="font-semibold">{session?.user.name}</Text>!
+                  <Trans
+                    t={t}
+                    i18nKey="mobile.welcome"
+                    values={{ name: session?.user.name ?? '' }}
+                    components={{ name: <Text className="font-semibold" /> }}
+                  />
                 </Text>
                 <SyncStatus />
               </View>
               {manager ? (
                 <OverviewStatTiles manager={manager} />
               ) : (
-                <ActivityIndicator accessibilityLabel="Loading review overview" />
+                <ActivityIndicator
+                  accessibilityLabel={t('mobile.loading_overview')}
+                />
               )}
             </View>
           )}
@@ -163,6 +179,8 @@ function StartReviewBar({
   userId: string | undefined;
   onChooseDeck: () => void;
 }) {
+  const { t } = useTranslation();
+  const [wrapLabel, setWrapLabel] = useState(false);
   const router = useRouter();
   const { target, dueCount, isLoading, error } = useReviewOverview(
     manager,
@@ -175,31 +193,47 @@ function StartReviewBar({
     if (target === 'library' || target === 'nothing-due') onChooseDeck();
     else router.push(`/review/${target}`);
   };
+  const label =
+    isLoading || error
+      ? t('dashboard.overview.profile.start_review')
+      : t('mobile.start_review_due', { count: dueCount });
 
   return (
     <View className="gap-2">
       {error && (
         <Text className="text-sm text-destructive">
-          Could not load cards due: {error.message}
+          {t('mobile.due_error', { message: error.message })}
         </Text>
       )}
-      {/* The same button as each library row, so the two read as one
-          action; the due count rides along instead of a line of its own. */}
+      {/* Keep the due count together when the full label needs two lines. */}
       <Button
         variant="outline"
         size="lg"
         // 48 high, Android's touch target size.
-        className="h-12 sm:h-12"
+        className="h-auto min-h-12 py-3 sm:h-auto"
         loading={isLoading}
         disabled={!!error}
         onPress={startReview}
       >
         <BookOpenIcon size={18} className="text-foreground" />
-        <Text>
-          {isLoading || error
-            ? 'Start Review'
-            : `Start Review · ${dueCount} due`}
-        </Text>
+        <View className="flex-1">
+          {/* Measure the unsplit label so resizing can restore one line. */}
+          <Text
+            testID="review-label-measure"
+            className="absolute w-full text-center opacity-0"
+            accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            onTextLayout={({ nativeEvent }) =>
+              setWrapLabel(nativeEvent.lines.length > 1)
+            }
+          >
+            {label}
+          </Text>
+          <Text className="text-center">
+            {wrapLabel ? label.replace(' · ', '\n') : label}
+          </Text>
+        </View>
       </Button>
     </View>
   );
@@ -210,17 +244,20 @@ function StartReviewBar({
 // out; both clients move to semantic tokens together (#396). Full class
 // names, not concatenated: nativewind only sees classes written out whole.
 function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
+  const { t, i18n } = useTranslation();
   const { stats, isLoading, error } = useOverviewStats(manager);
 
   if (error) {
     return (
       <Text className="text-destructive">
-        Could not load your statistics: {error.message}
+        {t('mobile.statistics_error', { message: error.message })}
       </Text>
     );
   }
   if (isLoading || !stats) {
-    return <ActivityIndicator accessibilityLabel="Loading statistics" />;
+    return (
+      <ActivityIndicator accessibilityLabel={t('mobile.loading_statistics')} />
+    );
   }
 
   const tiles: readonly {
@@ -232,25 +269,27 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
     iconBoxClass: string;
   }[] = [
     {
-      title: 'Personal Dictionary',
-      value: `${stats.dictionarySize} ${stats.dictionarySize === 1 ? 'word' : 'words'}`,
-      description: 'Added to your collection',
+      title: t('dashboard.overview.stats.personal_dictionary'),
+      value: t('dashboard.overview.stats.words', {
+        count: stats.dictionarySize,
+      }),
+      description: t('dashboard.overview.stats.added_to_collection'),
       icon: BookMarkedIcon,
       iconClass: 'text-blue-500',
       iconBoxClass: 'bg-blue-500/10',
     },
     {
-      title: 'Learning Streak',
-      value: `${stats.streak} ${stats.streak === 1 ? 'Day' : 'Days'}`,
-      description: 'Daily learning-day streak',
+      title: t('dashboard.overview.stats.learning_streak'),
+      value: t('dashboard.overview.stats.days', { count: stats.streak }),
+      description: t('dashboard.overview.stats.daily_streak'),
       icon: FlameIcon,
       iconClass: 'text-orange-500',
       iconBoxClass: 'bg-orange-500/10',
     },
     {
-      title: 'Words Learned',
-      value: stats.wordsLearned.toLocaleString(),
-      description: 'Notes reviewed successfully',
+      title: t('dashboard.overview.stats.words_learned'),
+      value: formatNumber(stats.wordsLearned, i18n.resolvedLanguage),
+      description: t('dashboard.overview.stats.notes_reviewed'),
       icon: GraduationCapIcon,
       iconClass: 'text-purple-500',
       iconBoxClass: 'bg-purple-500/10',
@@ -291,7 +330,18 @@ function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
               >
                 {value}
               </CardTitle>
-              <CardDescription className="text-xs">{title}</CardDescription>
+              <View>
+                {title.split(/\s+/).map((word, index) => (
+                  <CardDescription
+                    key={`${index}-${word}`}
+                    className="text-xs"
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {word}
+                  </CardDescription>
+                ))}
+              </View>
             </Card>
           ),
         )}
@@ -310,7 +360,8 @@ function DailyGoalsCard({
   challenges: Parameters<typeof dailyGoals>[0];
 }) {
   const [showRules, setShowRules] = useState(false);
-  const goals = dailyGoals(challenges);
+  const { t } = useTranslation();
+  const goals = dailyGoals(challenges, t);
 
   return (
     <Card className="gap-3 py-4">
@@ -318,11 +369,11 @@ function DailyGoalsCard({
         <View className="flex-row items-center gap-2">
           <SparklesIcon size={16} className="text-amber-500" />
           <CardTitle className="flex-1 text-base">
-            Daily Learning Goals
+            {t('dashboard.overview.goals.daily_learning_goals')}
           </CardTitle>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="How daily goals count"
+            accessibilityLabel={t('mobile.goal_rules')}
             onPress={() => setShowRules(true)}
             hitSlop={12}
           >
@@ -342,7 +393,9 @@ function DailyGoalsCard({
                     : 'text-muted-foreground'
                 }`}
               >
-                {goal.completed ? 'Completed' : goal.progress}
+                {goal.completed
+                  ? t('dashboard.overview.goals.completed')
+                  : goal.progress}
               </Text>
             </View>
             <Text className="text-xs text-muted-foreground">
@@ -352,7 +405,9 @@ function DailyGoalsCard({
                 tone already (docs/design.md), so web's track would not show. */}
             <Progress
               value={goal.percent}
-              accessibilityLabel={`${goal.title} progress`}
+              accessibilityLabel={t('mobile.goal_progress', {
+                goal: goal.title,
+              })}
               className="h-1.5 bg-background"
               indicatorClassName="bg-amber-500"
             />
@@ -361,14 +416,14 @@ function DailyGoalsCard({
       </CardContent>
       {showRules && (
         <InfoPanel
-          title="How daily goals count"
+          title={t('mobile.goal_rules')}
           onClose={() => setShowRules(false)}
         >
           <Text className="text-sm text-muted-foreground">
-            One review earns one point regardless of rating.
+            {t('dashboard.overview.goals.footer_points')}
           </Text>
           <Text className="text-sm text-muted-foreground">
-            Daily challenges and streaks reset at 00:00 UTC.
+            {t('dashboard.overview.goals.footer_reset')}
           </Text>
         </InfoPanel>
       )}
@@ -387,24 +442,28 @@ const BADGE_ICONS: Record<Achievement['code'], LucideIcon> = {
 // tokens, #396), locked ones faded (web greys them with a CSS filter,
 // which React Native lacks). A tap opens the rule, story and date.
 function AchievementsCard({ manager }: { manager: DatabaseManager }) {
+  const { t, i18n } = useTranslation();
   const { achievements, isLoading, error } = useAchievements(manager);
-  const [open, setOpen] = useState<Achievement | null>(null);
+  const [openCode, setOpen] = useState<Achievement['code'] | null>(null);
+  const open = achievements.find((badge) => badge.code === openCode);
 
   return (
     <Card className="gap-3 py-4">
       <CardHeader className="px-4">
         <View className="flex-row items-center gap-2">
           <TrophyIcon size={16} className="text-primary" />
-          <CardTitle className="text-base">Achievements</CardTitle>
+          <CardTitle className="text-base">
+            {t('dashboard.overview.achievements.title')}
+          </CardTitle>
         </View>
       </CardHeader>
       <CardContent className="px-4">
         {error ? (
           <Text className="text-sm text-destructive">
-            Could not load your badges: {error.message}
+            {t('mobile.badges_error', { message: error.message })}
           </Text>
         ) : isLoading ? (
-          <ActivityIndicator accessibilityLabel="Loading badges" />
+          <ActivityIndicator accessibilityLabel={t('mobile.loading_badges')} />
         ) : (
           <View className="flex-row gap-3">
             {achievements.map((badge) => {
@@ -414,10 +473,11 @@ function AchievementsCard({ manager }: { manager: DatabaseManager }) {
                 <Pressable
                   key={badge.code}
                   accessibilityRole="button"
-                  accessibilityLabel={`${badge.name}, ${
-                    unlocked ? 'unlocked' : 'locked'
-                  }`}
-                  onPress={() => setOpen(badge)}
+                  accessibilityLabel={t(
+                    unlocked ? 'mobile.badge_unlocked' : 'mobile.badge_locked',
+                    { name: badge.name },
+                  )}
+                  onPress={() => setOpen(badge.code)}
                   className={`flex-1 items-center gap-1.5 rounded-xl border px-1 py-3 ${
                     unlocked
                       ? 'border-primary/20 bg-primary/5'
@@ -459,8 +519,10 @@ function AchievementsCard({ manager }: { manager: DatabaseManager }) {
             }`}
           >
             {open.unlockedAt !== null
-              ? `Unlocked: ${new Date(open.unlockedAt).toLocaleDateString()}`
-              : 'Locked'}
+              ? t('dashboard.overview.achievements.unlocked', {
+                  date: formatDate(open.unlockedAt, i18n.resolvedLanguage),
+                })
+              : t('dashboard.overview.achievements.locked')}
           </Text>
         </InfoPanel>
       )}

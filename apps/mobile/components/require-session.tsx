@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { authClient } from '@/lib/auth-client';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, uiErrorText } from '@/lib/errors';
 import { Button } from './ui/button';
 import { Text } from './ui/text';
 import {
@@ -18,6 +19,7 @@ import {
 // one-time backup codes after enabling 2FA, say), and the session is still
 // valid until the server says otherwise.
 export function RequireSession({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { data: session, isPending, error, refetch } = authClient.useSession();
   const challenge = useTwoFactorChallengeState();
   const deepLinkPending = useTwoFactorDeepLinkPending();
@@ -38,10 +40,10 @@ export function RequireSession({ children }: { children: ReactNode }) {
     return (
       <View className="flex-1 items-center justify-center gap-4 p-6">
         <Text className="text-center text-destructive">
-          {apiErrorMessage(error)}
+          {uiErrorText(toUiError(error), t)}
         </Text>
         <Button onPress={() => refetch()}>
-          <Text>Retry</Text>
+          <Text>{t('common.retry')}</Text>
         </Button>
       </View>
     );
@@ -55,10 +57,10 @@ export function RequireSession({ children }: { children: ReactNode }) {
       {error && (
         <View className="flex-row items-center justify-between gap-2 px-6 py-2">
           <Text className="shrink text-sm text-destructive">
-            {apiErrorMessage(error)}
+            {uiErrorText(toUiError(error), t)}
           </Text>
           <Button variant="ghost" size="sm" onPress={() => refetch()}>
-            <Text>Retry</Text>
+            <Text>{t('common.retry')}</Text>
           </Button>
         </View>
       )}

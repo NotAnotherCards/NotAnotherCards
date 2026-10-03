@@ -15,7 +15,9 @@ jest.mock('expo-router', () => {
 });
 
 const mockRequestReset = jest.fn(
-  async (_input: unknown): Promise<{ error: { message?: string } | null }> => ({
+  async (
+    _input: unknown,
+  ): Promise<{ error: { message?: string; status?: number } | null }> => ({
     error: null,
   }),
 );
@@ -48,7 +50,7 @@ describe('Forgot password screen', () => {
 
   it('shows the message when the request fails', async () => {
     mockRequestReset.mockResolvedValueOnce({
-      error: { message: 'Too many requests' },
+      error: { message: 'Too many requests', status: 429 },
     });
     const { getByPlaceholderText, getByText, findByText, queryByText } = render(
       <ForgotPassword />,
@@ -59,7 +61,9 @@ describe('Forgot password screen', () => {
     );
     fireEvent.press(getByText('Send Reset Link'));
 
-    expect(await findByText('Too many requests')).toBeTruthy();
+    expect(
+      await findByText('Too many requests. Please try again later.'),
+    ).toBeTruthy();
     expect(queryByText('Check your email')).toBeNull();
   });
 

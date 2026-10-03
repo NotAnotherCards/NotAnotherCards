@@ -1,16 +1,15 @@
 import { ApiError } from '@repo/api-client';
+import { UiError, toUiError } from './errors';
 
-export function aiErrorMessage(error: unknown): string {
+export function aiErrorMessage(error: unknown): UiError {
   if (error instanceof ApiError && error.status === 429) {
     const body = error.body;
     if (body && typeof body === 'object' && 'code' in body) {
       if (body.code === 'AI_ACTIVE_JOB_LIMIT')
-        return 'Too many generations are running. Try again in a moment.';
+        return new UiError('mobile.messages.ai_busy');
       if (body.code === 'AI_DAILY_QUOTA')
-        return 'Your AI quota is used up for today.';
+        return new UiError('mobile.messages.ai_quota');
     }
   }
-  return error instanceof Error
-    ? error.message
-    : 'Generation failed. Try again.';
+  return toUiError(error);
 }

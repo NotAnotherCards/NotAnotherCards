@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,6 +32,7 @@ export function CardForm({
   headerAction,
   busy = false,
 }: CardFormProps) {
+  const { t } = useTranslation();
   const { control, handleSubmit, formState } = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
     defaultValues: initialValues ?? { front: '', back: '' },
@@ -46,16 +48,16 @@ export function CardForm({
         <FormField
           control={control}
           name="front"
-          label="Front"
-          placeholder="The question or prompt"
+          label={t('review.card.front')}
+          placeholder={t('mobile.messages.front_placeholder')}
           multiline
           autoFocus
         />
         <FormField
           control={control}
           name="back"
-          label="Back"
-          placeholder="The answer"
+          label={t('review.card.back')}
+          placeholder={t('mobile.messages.back_placeholder')}
           multiline
         />
         {error && <Text className="text-destructive">{error}</Text>}
@@ -66,7 +68,7 @@ export function CardForm({
             onPress={onCancel}
             disabled={formState.isSubmitting || busy}
           >
-            <Text>Cancel</Text>
+            <Text>{t('common.cancel')}</Text>
           </Button>
           <Button
             className="flex-1"
@@ -76,7 +78,7 @@ export function CardForm({
             // keeps the form open with its values
             onPress={handleSubmit((values) => onSubmit(values))}
           >
-            <Text>Save</Text>
+            <Text>{t('common.save')}</Text>
           </Button>
         </View>
       </CardContent>

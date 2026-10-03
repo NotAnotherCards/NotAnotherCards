@@ -1,9 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
 import { useSignOutBarrier } from '@/lib/sync-sign-out';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { GoogleIcon } from '@/components/ui/google-icon';
@@ -25,10 +26,11 @@ const LABELS: Record<SocialProvider, string> = {
 // scheme it stores the session. A relative callbackURL becomes that scheme
 // URL. The screen's session effect then navigates, as it does for email.
 export function SocialLoginButtons() {
+  const { t } = useTranslation();
   const { signingOut, waitForSignOut } = useSignOutBarrier();
   const router = useRouter();
   const [busy, setBusy] = useState<SocialProvider | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<UiError | null>(null);
 
   const signIn = async (provider: SocialProvider) => {
     setApiError(null);
@@ -41,7 +43,7 @@ export function SocialLoginButtons() {
         errorCallbackURL: '/login',
       });
       if (error) {
-        setApiError(apiErrorMessage(error));
+        setApiError(toUiError(error));
       } else if (
         isTwoFactorRedirect(data) ||
         hasTwoFactorChallengeCookie(authClient.getCookie())
@@ -53,7 +55,7 @@ export function SocialLoginButtons() {
         router.replace('/two-factor');
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err));
+      setApiError(toUiError(err));
     } finally {
       setBusy(null);
     }
@@ -63,7 +65,9 @@ export function SocialLoginButtons() {
     <View className="gap-2">
       <View className="my-1 flex-row items-center gap-3">
         <View className="h-px flex-1 bg-border" />
-        <Text className="text-xs text-muted-foreground">Or continue with</Text>
+        <Text className="text-xs text-muted-foreground">
+          {t('auth.login.continue_with')}
+        </Text>
         <View className="h-px flex-1 bg-border" />
       </View>
       {(['google'] as const).map((provider) => (
@@ -73,16 +77,20 @@ export function SocialLoginButtons() {
           loading={busy === provider}
           disabled={busy !== null}
           onPress={() => void signIn(provider)}
-          accessibilityLabel={`Continue with ${LABELS[provider]}`}
+          accessibilityLabel={t('mobile.messages.continue_provider', {
+            provider: LABELS[provider],
+          })}
         >
           <View className="flex-row items-center gap-2">
             {busy !== provider && <GoogleIcon />}
-            <Text>{signingOut ? 'Signing out…' : LABELS[provider]}</Text>
+            <Text>{signingOut ? t('auth.signing_out') : LABELS[provider]}</Text>
           </View>
         </Button>
       ))}
       {apiError && (
-        <Text className="text-center text-destructive">{apiError}</Text>
+        <Text className="text-center text-destructive">
+          {uiErrorText(apiError, t)}
+        </Text>
       )}
     </View>
   );

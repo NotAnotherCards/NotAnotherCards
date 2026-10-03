@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   createContext,
   useContext,
@@ -147,14 +148,14 @@ export function SessionDatabaseProvider({
  * dependency for a path this rare.
  */
 function DatabaseUnrecoverable({ error }: { error: Error }) {
+  const { t } = useTranslation();
   return (
     <View className="flex-1 items-center justify-center gap-3 bg-background p-6">
       <Text className="text-center text-lg font-semibold text-foreground">
-        Restart the app
+        {t('mobile.messages.restart_app')}
       </Text>
       <Text className="text-center text-sm text-muted-foreground">
-        The offline database could not be closed, so it is not safe to open it
-        again in this session.
+        {t('mobile.messages.database_close_failed')}
       </Text>
       <Text className="text-center text-xs text-muted-foreground">
         {error.message}

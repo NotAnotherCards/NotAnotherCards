@@ -7,6 +7,8 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react-native';
+// The app's root loads the catalogs; these render the forms without it.
+import '@/lib/i18n';
 import {
   SessionDatabaseProvider,
   useSessionDatabase,
@@ -362,22 +364,17 @@ describe('sync session expiry', () => {
       expect(screen.getByText('/login')).toBeTruthy();
       if (method !== 'google') {
         fireEvent.changeText(
-          screen.getByPlaceholderText('you@example.com'),
+          screen.getByPlaceholderText('name@example.com'),
           'jane@example.com',
         );
         fireEvent.changeText(
-          screen.getByPlaceholderText(
-            method === 'register' ? 'Create a password' : 'Your password',
-          ),
+          screen.getByPlaceholderText('Password'),
           'Password123*',
         );
         if (method === 'register') {
+          fireEvent.changeText(screen.getByPlaceholderText('Name'), 'Jane Doe');
           fireEvent.changeText(
-            screen.getByPlaceholderText('Jane Doe'),
-            'Jane Doe',
-          );
-          fireEvent.changeText(
-            screen.getByPlaceholderText('Repeat your password'),
+            screen.getByPlaceholderText('Confirm Password'),
             'Password123*',
           );
         }
@@ -388,8 +385,8 @@ describe('sync session expiry', () => {
             method === 'google'
               ? 'Google'
               : method === 'register'
-                ? 'Create account'
-                : 'Log in',
+                ? 'Sign up'
+                : 'Login',
           ),
         );
       });

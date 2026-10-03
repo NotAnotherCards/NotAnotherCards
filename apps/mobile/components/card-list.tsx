@@ -5,7 +5,7 @@ import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useCards, type Card as CardRecord } from '@/lib/cards';
-import { writeErrorMessage } from '@/lib/errors';
+import { toWriteError, writeErrorText, type WriteError } from '@/lib/errors';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
@@ -53,7 +53,7 @@ function ActiveCardList({
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
     useCards(manager, deckId);
   const [action, setAction] = useState<CardAction | null>(null);
-  const [writeError, setWriteError] = useState<string | null>(null);
+  const [writeError, setWriteError] = useState<WriteError | null>(null);
   const [pending, setPending] = useState(false);
 
   const open = (next: CardAction | null) => {
@@ -72,7 +72,7 @@ function ActiveCardList({
       await write();
       open(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'The write failed'));
+      setWriteError(toWriteError(err, 'mobile.messages.write_failed'));
       setPending(false);
     }
   };
@@ -91,7 +91,7 @@ function ActiveCardList({
     return (
       <View className="gap-4 p-6">
         <Text className="text-destructive">
-          Failed to load cards: {error.message}
+          {t('mobile.messages.cards_load_failed', { message: error.message })}
         </Text>
       </View>
     );
@@ -101,7 +101,7 @@ function ActiveCardList({
     return (
       <View className="gap-4 p-6">
         <Text className="text-muted-foreground">
-          This deck is not on this device.
+          {t('mobile.messages.deck_not_local')}
         </Text>
       </View>
     );
@@ -154,19 +154,25 @@ function ActiveCardList({
             <PublishPanel deck={deck} cards={cards} />
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
-                <Text className="text-lg font-semibold">Cards</Text>
+                <Text className="text-lg font-semibold">
+                  {t('deck.words.col_cards')}
+                </Text>
                 {isKnownDeck && (
                   <Button
                     disabled={pending}
                     onPress={() => open({ kind: 'create' })}
                   >
-                    <Text>{isWordDeck ? 'New word' : 'New card'}</Text>
+                    <Text>
+                      {isWordDeck
+                        ? t('mobile.messages.new_word')
+                        : t('mobile.messages.new_card')}
+                    </Text>
                   </Button>
                 )}
               </View>
               {!isKnownDeck && (
                 <Text className="text-muted-foreground">
-                  This deck uses a note type this app cannot edit yet.
+                  {t('deck.detail.unknown_note_type')}
                 </Text>
               )}
             </View>
@@ -174,7 +180,7 @@ function ActiveCardList({
         }
         ListEmptyComponent={
           <Text className="text-muted-foreground">
-            No cards yet. Add your first one.
+            {t('mobile.messages.no_cards')}
           </Text>
         }
         renderItem={({ item: card }) => {
@@ -190,7 +196,7 @@ function ActiveCardList({
                 </Text>
                 {!card.active && (
                   <Text className="text-xs text-muted-foreground">
-                    {t('review.activation.inactive_label', 'Inactive')}
+                    {t('review.activation.inactive_label')}
                   </Text>
                 )}
               </CardHeader>
@@ -199,11 +205,13 @@ function ActiveCardList({
                   <View className="gap-2">
                     <Text className="text-sm">
                       {confirm === 'remove'
-                        ? 'Remove this card from the deck? The note stays, and so does any other deck it is in.'
-                        : 'Delete this note? Its cards, deck memberships and review history go with it.'}
+                        ? t('mobile.messages.remove_card_help')
+                        : t('mobile.messages.delete_note_help')}
                     </Text>
                     {writeError && (
-                      <Text className="text-destructive">{writeError}</Text>
+                      <Text className="text-destructive">
+                        {writeErrorText(writeError, t)}
+                      </Text>
                     )}
                     <View className="flex-row gap-2">
                       <Button
@@ -212,7 +220,7 @@ function ActiveCardList({
                         onPress={() => open(null)}
                         disabled={pending}
                       >
-                        <Text>Cancel</Text>
+                        <Text>{t('common.cancel')}</Text>
                       </Button>
                       <Button
                         variant="destructive"
@@ -228,23 +236,27 @@ function ActiveCardList({
                       >
                         <Text>
                           {confirm === 'remove'
-                            ? 'Remove from deck'
-                            : 'Delete note'}
+                            ? t('deck.detail.remove_btn')
+                            : t('mobile.messages.delete_note')}
                         </Text>
                       </Button>
                     </View>
                   </View>
                 ) : (
-                  <View className="flex-row gap-2">
+                  <View className="flex-row flex-wrap gap-2">
                     {isKnownDeck && canEdit(card) && (
                       <Button
                         variant="ghost"
                         size="sm"
                         disabled={pending}
-                        accessibilityLabel={`Edit ${short(card.front)}`}
+                        accessibilityLabel={t('mobile.messages.edit_item', {
+                          title: short(card.front),
+                        })}
                         onPress={() => open({ kind: 'edit', card })}
                       >
-                        <Text className="text-primary">Edit</Text>
+                        <Text className="text-primary">
+                          {t('deck.card.actions.edit')}
+                        </Text>
                       </Button>
                     )}
                     {isKnownDeck && (
@@ -253,20 +265,27 @@ function ActiveCardList({
                           variant="ghost"
                           size="sm"
                           disabled={pending}
-                          accessibilityLabel={`Remove ${short(card.front)} from deck`}
+                          accessibilityLabel={t('mobile.messages.remove_item', {
+                            title: short(card.front),
+                          })}
                           onPress={() => open({ kind: 'remove', card })}
                         >
-                          <Text>Remove</Text>
+                          <Text>{t('mobile.messages.remove')}</Text>
                         </Button>
                         {canEdit(card) && (
                           <Button
                             variant="ghost"
                             size="sm"
                             disabled={pending}
-                            accessibilityLabel={`Delete note ${short(card.front)}`}
+                            accessibilityLabel={t(
+                              'mobile.messages.delete_item',
+                              { title: short(card.front) },
+                            )}
                             onPress={() => open({ kind: 'delete', card })}
                           >
-                            <Text className="text-destructive">Delete</Text>
+                            <Text className="text-destructive">
+                              {t('deck.card.actions.delete')}
+                            </Text>
                           </Button>
                         )}
                       </>

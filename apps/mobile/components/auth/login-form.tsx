@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { useForm } from 'react-hook-form';
@@ -5,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
 import { useSignOutBarrier } from '@/lib/sync-sign-out';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
@@ -17,9 +18,10 @@ import {
 import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const { signingOut, waitForSignOut } = useSignOutBarrier();
   const router = useRouter();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<UiError | null>(null);
   const { control, handleSubmit, formState } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
@@ -37,13 +39,13 @@ export function LoginForm() {
         password: data.password,
       });
       if (error) {
-        setApiError(apiErrorMessage(error));
+        setApiError(toUiError(error));
       } else if (isTwoFactorRedirect(response)) {
         await beginTwoFactorChallenge();
         router.replace('/two-factor');
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err));
+      setApiError(toUiError(err));
     }
   };
 
@@ -52,8 +54,8 @@ export function LoginForm() {
       <FormField
         control={control}
         name="email"
-        label="Email"
-        placeholder="you@example.com"
+        label={t('auth.email')}
+        placeholder={t('auth.email_placeholder')}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
@@ -61,14 +63,16 @@ export function LoginForm() {
       <FormField
         control={control}
         name="password"
-        label="Password"
-        placeholder="Your password"
+        label={t('auth.password')}
+        placeholder={t('auth.password')}
         secureTextEntry
         autoCapitalize="none"
       />
 
       {apiError && (
-        <Text className="text-center text-destructive">{apiError}</Text>
+        <Text className="text-center text-destructive">
+          {uiErrorText(apiError, t)}
+        </Text>
       )}
 
       <Button
@@ -76,13 +80,17 @@ export function LoginForm() {
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
       >
-        <Text>{signingOut ? 'Signing out…' : 'Log in'}</Text>
+        <Text>
+          {signingOut ? t('auth.signing_out') : t('auth.login.submit')}
+        </Text>
       </Button>
       <SocialLoginButtons />
       <Text className="mt-1 text-center text-muted-foreground">
-        Forgot your password?{' '}
+        {t('auth.login.forgot_password')}{' '}
         <Link href="/forgot-password" asChild>
-          <Text className="font-semibold text-foreground">Reset here!</Text>
+          <Text className="font-semibold text-foreground">
+            {t('auth.login.reset_here')}
+          </Text>
         </Link>
       </Text>
     </>

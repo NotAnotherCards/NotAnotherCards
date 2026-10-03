@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Switch, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogOutIcon, SettingsIcon } from './ui/icon';
@@ -20,7 +21,7 @@ import { profileWrites } from '@/lib/profile';
 import { switchColors } from '@/lib/theme';
 import { ProfileForm } from './profile-form';
 import { ThemeToggle } from './theme-toggle';
-import { LanguageSwitcher } from './language-switcher';
+import { InterfaceLanguagePreference } from './interface-language-preference';
 import { Button } from './ui/button';
 import {
   Card,
@@ -46,6 +47,12 @@ export function initials(name: string | undefined) {
 // first one; Profile & Languages follows in a later slice (#290).
 // Log out lives here, under the account it ends, as in web's account menu.
 export function Settings() {
+  const { t } = useTranslation();
+  const sections = [
+    { value: 'profile', label: t('dashboard.settings.tabs.profile_languages') },
+    { value: 'preferences', label: t('dashboard.settings.tabs.preferences') },
+    { value: 'security', label: t('dashboard.settings.tabs.security') },
+  ] as const;
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const { manager } = useSessionDatabase();
@@ -72,8 +79,8 @@ export function Settings() {
     }
     if (failed) {
       Alert.alert(
-        'Signed out on this device only',
-        'The server could not be reached, so your session elsewhere may stay active until it expires.',
+        t('mobile.messages.local_signout'),
+        t('mobile.messages.local_signout_help'),
       );
     }
     router.replace('/login');
@@ -89,7 +96,7 @@ export function Settings() {
         </View>
         <View className="flex-1">
           <Text className="text-lg font-semibold" numberOfLines={1}>
-            {user?.name || 'Learner'}
+            {user?.name || t('mobile.learner')}
           </Text>
           {manager ? <Username manager={manager} /> : null}
           <Text className="text-sm text-muted-foreground" numberOfLines={1}>
@@ -104,16 +111,18 @@ export function Settings() {
           className="flex-row gap-1.5"
         >
           <LogOutIcon size={16} className="text-destructive" />
-          <Text className="text-destructive">Log out</Text>
+          <Text className="text-destructive">
+            {t('mobile.messages.logout')}
+          </Text>
         </Button>
       </View>
 
       {/* Web's settings sub-tabs, same order: profile first. */}
       <Segmented
-        label="Settings sections"
+        label={t('dashboard.settings.aria_sections')}
         role="tablist"
         value={section}
-        options={SECTIONS}
+        options={sections}
         onChange={setSection}
         stacked
       />
@@ -134,12 +143,6 @@ export function Settings() {
     </View>
   );
 }
-
-const SECTIONS = [
-  { value: 'profile', label: 'Profile & Languages' },
-  { value: 'preferences', label: 'Preferences' },
-  { value: 'security', label: 'Security' },
-] as const;
 
 // The synced profile row and the shared write, once the account database
 // is open. The form itself is pure and tested on its own.
@@ -175,11 +178,13 @@ function Username({ manager }: { manager: DatabaseManager }) {
 }
 
 const MODE_OPTIONS = [
-  { value: 'basic', label: 'Basic' },
-  { value: 'extended', label: 'Extended' },
+  { value: 'basic', label: 'dashboard.settings.preferences.basic' },
+  { value: 'extended', label: 'dashboard.settings.preferences.extended' },
 ] as const;
 
 function Preferences({ userId }: { userId: string }) {
+  const { t } = useTranslation();
+  const { manager } = useSessionDatabase();
   const { colorScheme } = useColorScheme();
   const colors = switchColors[colorScheme === 'dark' ? 'dark' : 'light'];
   const [preferences, setPreferences] = useState(() =>
@@ -196,46 +201,51 @@ function Preferences({ userId }: { userId: string }) {
       <CardHeader className="flex-row items-center gap-3">
         <SettingsIcon size={20} className="text-foreground" />
         <View className="flex-1">
-          <CardTitle>Preferences</CardTitle>
+          <CardTitle>{t('preferences.title')}</CardTitle>
           <CardDescription>
-            How the app looks and how you review
+            {t('dashboard.settings.preferences.description')}
           </CardDescription>
         </View>
       </CardHeader>
       <CardContent className="gap-5">
         <View className="gap-2">
-          <Text className="font-medium">Theme</Text>
+          <Text className="font-medium">
+            {t('dashboard.settings.preferences.theme')}
+          </Text>
           <ThemeToggle />
         </View>
+        {manager ? <InterfaceLanguagePreference manager={manager} /> : null}
         <View className="gap-2">
-          <Text className="font-medium">Language</Text>
-          <Text className="text-sm text-muted-foreground">
-            Select your preferred language
+          <Text className="font-medium">
+            {t('dashboard.settings.preferences.review_mode')}
           </Text>
-          <LanguageSwitcher />
-        </View>
-        <View className="gap-2">
-          <Text className="font-medium">Review mode</Text>
           <Text className="text-sm text-muted-foreground">
-            How many answer options you see after revealing a card
+            {t('dashboard.settings.preferences.review_mode_description')}
           </Text>
           <Segmented
-            label="Review mode"
+            label={t('dashboard.settings.preferences.review_mode')}
             value={preferences.reviewMode}
-            options={MODE_OPTIONS}
+            options={MODE_OPTIONS.map(({ value, label }) => ({
+              value,
+              label: t(label),
+            }))}
             onChange={(reviewMode) => update({ ...preferences, reviewMode })}
           />
         </View>
         {/* Web's row: the label and its description left, the toggle right. */}
         <View className="flex-row items-center justify-between gap-4">
           <View className="flex-1 gap-1">
-            <Text className="font-medium">Next review interval</Text>
+            <Text className="font-medium">
+              {t('dashboard.settings.preferences.show_next_review')}
+            </Text>
             <Text className="text-sm text-muted-foreground">
-              Show what each answer schedules
+              {t('dashboard.settings.preferences.show_next_review_description')}
             </Text>
           </View>
           <Switch
-            accessibilityLabel="Show next review interval"
+            accessibilityLabel={t(
+              'dashboard.settings.preferences.show_next_review',
+            )}
             trackColor={{ false: colors.trackOff, true: colors.trackOn }}
             thumbColor={
               preferences.showNextReviewInterval

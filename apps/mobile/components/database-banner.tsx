@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { DatabaseManager } from '@remelondb/core';
 import { useDatabaseState } from '@remelondb/core/react';
 import { useSessionDatabase } from '@/lib/database-provider';
@@ -15,6 +16,7 @@ export function DatabaseBanner() {
 }
 
 function ActiveDatabaseBanner({ manager }: { manager: DatabaseManager }) {
+  const { t } = useTranslation();
   const { status } = useDatabaseState(manager);
 
   if (status !== 'error') return null;
@@ -22,7 +24,7 @@ function ActiveDatabaseBanner({ manager }: { manager: DatabaseManager }) {
   return (
     <View className="flex-row items-center justify-between gap-3 bg-destructive px-4 py-3">
       <Text className="flex-1 text-sm text-destructive-foreground">
-        Offline database unavailable. Your cards are not saved on this device.
+        {t('mobile.database_unavailable')}
       </Text>
       <Button
         size="sm"
@@ -30,7 +32,7 @@ function ActiveDatabaseBanner({ manager }: { manager: DatabaseManager }) {
           manager.init().catch(() => {});
         }}
       >
-        <Text>Retry</Text>
+        <Text>{t('common.retry')}</Text>
       </Button>
     </View>
   );

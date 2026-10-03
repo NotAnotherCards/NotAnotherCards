@@ -9,12 +9,9 @@ export const deckFormSchema = z
     title: z
       .string()
       .trim()
-      .min(1, 'Deck title is required')
-      .max(100, 'Deck title cannot exceed 100 characters'),
-    description: z
-      .string()
-      .trim()
-      .max(500, 'Description cannot exceed 500 characters'),
+      .min(1, 'mobile.messages.title_required')
+      .max(100, 'mobile.messages.title_max'),
+    description: z.string().trim().max(500, 'mobile.messages.description_max'),
     noteType: z.enum(DECK_NOTE_TYPES),
     nativeLanguageId: z.string(),
     targetLanguageId: z.string(),
@@ -26,7 +23,7 @@ export const deckFormSchema = z
         ctx.addIssue({
           code: 'custom',
           path: [field],
-          message: 'A word deck needs both languages',
+          message: 'mobile.messages.both_languages',
         });
       }
     }
@@ -37,7 +34,7 @@ export const deckFormSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['targetLanguageId'],
-        message: 'Choose a different target language',
+        message: 'mobile.messages.different_language',
       });
     }
   });

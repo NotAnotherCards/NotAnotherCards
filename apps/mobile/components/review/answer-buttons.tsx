@@ -1,13 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import {
   calculateReviewIntervalMinutes,
-  extendedReviewAnswerLabels,
-  formatReviewInterval,
-  reviewAnswerLabels,
   reviewRatingByAnswer,
   type ReviewAnswer,
 } from '@repo/offline-db';
 import type { ReviewLayout } from '@/lib/use-review-layout';
+import { reviewAnswerLabel, reviewIntervalLabel } from '@/lib/review-labels';
 import { Button } from '../ui/button';
 import { Text } from '../ui/text';
 import { answerColours } from './answer-colours';
@@ -30,6 +29,7 @@ export function AnswerButtons({
   onReveal: () => void;
   onAnswer: (answer: ReviewAnswer) => void;
 }) {
+  const { t } = useTranslation();
   if (!revealed) {
     return (
       // 48 high, Android's touch target size, like the answers after it.
@@ -40,7 +40,7 @@ export function AnswerButtons({
         disabled={locked}
         onPress={onReveal}
       >
-        <Text>Show answer</Text>
+        <Text>{t('review.card.show_answer')}</Text>
       </Button>
     );
   }
@@ -55,7 +55,7 @@ export function AnswerButtons({
           // label and h-auto lets the button grow for it. Locked only while
           // an answer is on its way, a moment too short to show: fading
           // them made the change flicker.
-          className={`h-auto min-h-12 flex-1 flex-col gap-0.5 px-1 py-2 opacity-100 ${answerColours[answer].button}`}
+          className={`h-auto min-h-12 flex-1 flex-col gap-0.5 rounded-xl px-1 py-2 opacity-100 ${answerColours[answer].button}`}
           disabled={locked}
           onPress={() => onAnswer(answer)}
           // Held a little longer than the default, so a slow answer is not
@@ -65,7 +65,9 @@ export function AnswerButtons({
           accessibilityActions={[
             {
               name: 'layout',
-              label: `Switch to ${layout.nextName.toLowerCase()}`,
+              label: t('mobile.messages.switch_answers', {
+                layout: layout.nextName,
+              }),
             },
           ]}
           onAccessibilityAction={(event) => {
@@ -73,18 +75,21 @@ export function AnswerButtons({
               layout.switchLayout();
           }}
         >
-          <Text className={answerColours[answer].text}>
-            {layout.extended
-              ? extendedReviewAnswerLabels[answer]
-              : reviewAnswerLabels[answer]}
+          <Text
+            className={`w-full text-center ${answerColours[answer].text}`}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {reviewAnswerLabel(t, answer, layout.extended)}
           </Text>
           {layout.showIntervals && (
             <Text className="text-xs text-muted-foreground">
-              {formatReviewInterval(
+              {reviewIntervalLabel(
                 calculateReviewIntervalMinutes(
                   intervalMinutes,
                   reviewRatingByAnswer[answer],
                 ),
+                t,
               )}
             </Text>
           )}

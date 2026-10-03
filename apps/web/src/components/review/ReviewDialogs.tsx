@@ -138,23 +138,10 @@ export function ActivateMoreWords({
           className="w-14 rounded-md border bg-background px-2 py-2 text-center"
         />
         <span>
-          {itemLabel === 'cards'
-            ? t(
-                inactiveItemCount === 1
-                  ? 'review.activation.more_card'
-                  : 'review.activation.more_cards',
-                {
-                  count: inactiveItemCount,
-                },
-              )
-            : t(
-                inactiveItemCount === 1
-                  ? 'review.activation.more_word'
-                  : 'review.activation.more_words',
-                {
-                  count: inactiveItemCount,
-                },
-              )}
+          {t(
+            `review.activation.available_${itemLabel === 'cards' ? 'cards' : 'words'}`,
+            { count: inactiveItemCount ?? 0 },
+          )}
         </span>
       </div>
       <Button

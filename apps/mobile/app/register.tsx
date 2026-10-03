@@ -1,10 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { AuthCard } from '@/components/auth/auth-card';
 import { SignupForm } from '@/components/auth/signup-form';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 export default function Register() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const isFocused = useIsFocused();
@@ -22,13 +25,14 @@ export default function Register() {
 
   return (
     <AuthCard
-      title="Create Account"
-      description="Enter your details to create a new profile"
-      footerText="Already have an account?"
-      footerLinkText="Log in"
+      title={t('auth.register.title')}
+      description={t('auth.register.description')}
+      footerText={t('auth.register.footerText')}
+      footerLinkText={t('auth.login.submit')}
       footerLinkTo="/login"
     >
       <SignupForm />
+      {!session ? <LanguageSwitcher /> : null}
     </AuthCard>
   );
 }

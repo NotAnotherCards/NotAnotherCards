@@ -1,4 +1,8 @@
-import { achievements } from '@/lib/achievements';
+import { achievements as selectAchievements } from '@/lib/achievements';
+import i18n from '@/lib/i18n';
+
+const achievements = (badges: Parameters<typeof selectAchievements>[0]) =>
+  selectAchievements(badges, i18n.t);
 
 describe('achievements', () => {
   it("lists every badge in web's order, all locked for a new account", () => {

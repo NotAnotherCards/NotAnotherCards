@@ -1,14 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import {
-  extendedReviewAnswerLabels,
-  reviewAnswerLabels,
   WORD_TO_TRANSLATION_TEMPLATE_KEY,
   type UserCardRecord,
 } from '@repo/offline-db';
 import type { useReviewSwipe } from '@/lib/use-review-swipe';
+import { reviewAnswerLabel } from '@/lib/review-labels';
 import { Card } from '../ui/card';
 import { Markdown } from '../ui/markdown';
 import { Text } from '../ui/text';
@@ -43,6 +43,7 @@ export function ReviewCards({
   onReveal: () => void;
   onEdit?: () => void;
 }) {
+  const { t } = useTranslation();
   // The space between the top row and the buttons, measured once it lays
   // out; each card takes a 3:2 index-card shape, or half the space if that
   // is smaller. Until it is measured the two cards simply share it.
@@ -61,9 +62,7 @@ export function ReviewCards({
     direction === 'delete'
       ? deleteLabel
       : direction
-        ? extended
-          ? extendedReviewAnswerLabels[direction]
-          : reviewAnswerLabels[direction]
+        ? reviewAnswerLabel(t, direction, extended)
         : null;
   const swipeLabelColour =
     direction === 'delete'
@@ -88,9 +87,15 @@ export function ReviewCards({
       <Pressable
         style={cardSize}
         accessibilityRole="button"
-        accessibilityLabel={revealed ? 'Question' : 'Show the answer'}
+        accessibilityLabel={t(
+          revealed
+            ? 'mobile.messages.question'
+            : 'mobile.messages.show_answer_hint',
+        )}
         accessibilityActions={
-          onEdit ? [{ name: 'edit', label: 'Edit this card' }] : []
+          onEdit
+            ? [{ name: 'edit', label: t('mobile.messages.edit_card_hint') }]
+            : []
         }
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === 'edit') onEdit?.();
@@ -136,7 +141,7 @@ export function ReviewCards({
         <Pressable
           style={cardSize}
           accessibilityRole="button"
-          accessibilityLabel="Answer, tap to show"
+          accessibilityLabel={t('mobile.messages.answer_tap')}
           disabled={locked}
           onPress={onReveal}
         />
@@ -153,7 +158,7 @@ export function ReviewCards({
         <GestureDetector gesture={swipe.gesture}>
           <Animated.View style={[swipe.cardStyle, cardSize]}>
             <Card
-              accessibilityLabel="Answer"
+              accessibilityLabel={t('mobile.messages.answer')}
               className="flex-1 items-center justify-center overflow-hidden px-6 py-6"
             >
               {swipeLabel && (

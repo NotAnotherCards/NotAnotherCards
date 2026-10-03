@@ -173,7 +173,7 @@ it('surfaces a provider error without starting a challenge', async () => {
   );
   const view = render(<SocialLoginButtons />);
   fireEvent.press(view.getByText('Google'));
-  expect(await view.findByText('Provider refused')).toBeTruthy();
+  expect(await view.findByText('An unexpected error occurred')).toBeTruthy();
   expect(mockOpenAuthSession).not.toHaveBeenCalled();
   expect(getTwoFactorChallengeState().pending).toBe(false);
   expect(mockReplace).not.toHaveBeenCalled();

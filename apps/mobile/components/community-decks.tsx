@@ -8,6 +8,7 @@ import type { SharedDeckSummary } from '@repo/schemas';
 import { Button } from './ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
+import { UiError, toUiError, uiErrorText } from '@/lib/errors';
 import { apiClient } from '@/lib/api-client';
 
 // The community decks, as web's overview lists them: kind, title,
@@ -19,7 +20,7 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [decks, setDecks] = useState<SharedDeckSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
 
@@ -36,9 +37,7 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
         );
         setHasMore(page.length === pageSize);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Could not load the decks',
-        );
+        setError(toUiError(err));
       } finally {
         setLoading(false);
       }
@@ -52,23 +51,27 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
   return (
     <View className="gap-3">
       {decks === null && !error && (
-        <ActivityIndicator accessibilityLabel="Loading community decks" />
+        <ActivityIndicator
+          accessibilityLabel={t('mobile.messages.loading_community')}
+        />
       )}
       {error && (
         <View className="items-center gap-2">
-          <Text className="text-center text-destructive">{error}</Text>
+          <Text className="text-center text-destructive">
+            {uiErrorText(error, t)}
+          </Text>
           <Button
             variant="outline"
             className="h-12 sm:h-12"
             onPress={() => void load(decks?.length ?? 0)}
           >
-            <Text>Retry</Text>
+            <Text>{t('common.retry')}</Text>
           </Button>
         </View>
       )}
       {decks?.length === 0 && (
         <Text className="text-center text-muted-foreground">
-          No community decks yet.
+          {t('mobile.messages.no_community')}
         </Text>
       )}
       <View role="list" className="gap-3">
@@ -84,7 +87,9 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
               key={deck.id}
               role="listitem"
               accessibilityRole="button"
-              accessibilityLabel={`Open ${deck.title}`}
+              accessibilityLabel={t('mobile.messages.open_deck', {
+                title: deck.title,
+              })}
               onPress={() => router.push(`/community/${deck.id}`)}
             >
               <Card>
@@ -98,7 +103,9 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
                       )}
                       className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                     >
-                      {deckKindShort(kind)}
+                      {kind.note_type === 'basic'
+                        ? t('deck.words.col_cards')
+                        : deckKindShort(kind)}
                     </Text>
                     <CardTitle className="flex-1" numberOfLines={1}>
                       {deck.title}
@@ -106,7 +113,10 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
                   </View>
                   <CardDescription numberOfLines={2}>
                     {deck.description ? `${deck.description} · ` : ''}
-                    {deck.cardCount} cards · by @{deck.owner.username}
+                    {t('mobile.messages.community_count', {
+                      count: deck.cardCount,
+                      author: deck.owner.username,
+                    })}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -121,7 +131,7 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
           loading={loading}
           onPress={() => void load(decks?.length ?? 0)}
         >
-          <Text>Load more</Text>
+          <Text>{t('mobile.messages.load_more')}</Text>
         </Button>
       )}
     </View>

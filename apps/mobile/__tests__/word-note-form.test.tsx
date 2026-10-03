@@ -38,6 +38,35 @@ beforeEach(() => {
   mockConnected = true;
 });
 
+it.each([
+  'Notes',
+  'Example',
+  'Example translation',
+  'Part of speech',
+  'Pronunciation',
+])(
+  'accepts whitespace-only optional %s without blaming the translation',
+  async (label) => {
+    const onSubmit = jest.fn();
+    const screen = render(
+      <WordNoteForm
+        {...props}
+        onSubmit={onSubmit}
+        initialValues={{ word: 'casa', translation: 'house' }}
+      />,
+    );
+    fireEvent.changeText(screen.getByLabelText(label), '   ');
+    fireEvent.press(screen.getByText('Save'));
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        word: 'casa',
+        translation: 'house',
+      }),
+    );
+    expect(screen.queryByText('Translation is required')).toBeNull();
+  },
+);
+
 it('forgets a paused job when the word changes', async () => {
   mockGenerate
     .mockRejectedValueOnce(new AiJobPollError('j1', new Error('offline')))
@@ -68,7 +97,9 @@ it('forgets a resumed job once the server reports it failed', async () => {
     expect(ui.getByLabelText('Check generation again')).toBeTruthy(),
   );
   fireEvent.press(ui.getByLabelText('Check generation again'));
-  await waitFor(() => expect(ui.getByText('Model unavailable')).toBeTruthy());
+  await waitFor(() =>
+    expect(ui.getByText('An unexpected error occurred')).toBeTruthy(),
+  );
   expect(ui.getByLabelText('Fill in with AI')).toBeTruthy();
   expect(ui.queryByText('Generation may still be running.')).toBeNull();
 });
@@ -171,7 +202,7 @@ it.each([
       ui.getByText(
         error instanceof ApiError
           ? 'Your AI quota is used up for today.'
-          : error.message,
+          : 'An unexpected error occurred',
       ),
     ).toBeTruthy(),
   );

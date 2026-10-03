@@ -1,5 +1,11 @@
 import type { Database, SyncControllerState } from '@remelondb/core';
-import { syncFailure } from '@/lib/sync-outcome';
+import { syncFailure as syncError } from '@/lib/sync-outcome';
+import { uiErrorText } from '@/lib/errors';
+import { t } from 'i18next';
+const syncFailure = async (...args: Parameters<typeof syncError>) => {
+  const error = await syncError(...args);
+  return error ? uiErrorText(error, t) : null;
+};
 
 const mockConcerns = jest.fn<Promise<boolean>, [unknown, string, unknown]>(() =>
   Promise.resolve(true),
@@ -45,7 +51,7 @@ describe('syncFailure', () => {
     );
     expect(
       await syncFailure(state({ status: 'error', error: 'Unauthorized' })),
-    ).toBe('Unauthorized');
+    ).toBe('Your session has expired. Sign in again.');
     expect(await syncFailure(rejected)).toBe(
       'The server did not accept some of your changes.',
     );

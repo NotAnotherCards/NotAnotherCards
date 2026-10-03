@@ -52,7 +52,7 @@ describe('CommunityDecks', () => {
       .mockResolvedValueOnce([{ ...deck, id: 'd3', title: 'German' }]);
     const result = render(<CommunityDecks pageSize={2} />);
 
-    expect(await result.findByText('Network request failed')).toBeTruthy();
+    expect(await result.findByText(/Can't reach the server/)).toBeTruthy();
     fireEvent.press(result.getByText('Retry'));
     expect(await result.findByText('French')).toBeTruthy();
 
@@ -72,6 +72,6 @@ describe('CommunityDecks', () => {
 
     mockList.mockRejectedValue(new Error('Network request failed'));
     const failed = render(<CommunityDecks pageSize={2} />);
-    expect(await failed.findByText('Network request failed')).toBeTruthy();
+    expect(await failed.findByText(/Can't reach the server/)).toBeTruthy();
   });
 });

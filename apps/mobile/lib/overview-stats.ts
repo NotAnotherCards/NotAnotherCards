@@ -1,4 +1,5 @@
 import type { DatabaseManager } from '@remelondb/core';
+import type { TFunction } from 'i18next';
 import { useDatabase, useQuery } from '@remelondb/core/react';
 import { useNow } from './use-now';
 import {
@@ -45,15 +46,20 @@ export interface DailyGoal {
 
 export function dailyGoals(
   challenges: readonly DailyChallengeProgress[],
+  t: TFunction,
 ): DailyGoal[] {
   return challenges.map((challenge) => {
     const isReview = challenge.code === 'daily-review';
     return {
       code: challenge.code,
-      title: isReview ? 'Daily Review' : 'New Vocabulary',
+      title: t(
+        isReview
+          ? 'dashboard.overview.goals.daily_review'
+          : 'dashboard.overview.goals.new_vocabulary',
+      ),
       description: isReview
-        ? `Review at least ${challenge.target} words due today`
-        : `Add ${challenge.target} new words to your personal dictionary`,
+        ? t('mobile.review_goal', { count: challenge.target })
+        : t('mobile.vocabulary_goal', { count: challenge.target }),
       progress: `${challenge.current} / ${challenge.target}`,
       percent: Math.min(
         100,
@@ -61,8 +67,10 @@ export function dailyGoals(
       ),
       completed: challenge.completed,
       reward: challenge.completed
-        ? 'Completed'
-        : `${Math.max(0, challenge.target - challenge.current)} remaining`,
+        ? t('dashboard.overview.goals.completed')
+        : t('dashboard.overview.goals.remaining', {
+            value: Math.max(0, challenge.target - challenge.current),
+          }),
     };
   });
 }

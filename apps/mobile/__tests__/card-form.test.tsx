@@ -1,8 +1,26 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { CardForm } from '@/components/card-form';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 
 describe('CardForm', () => {
+  it('updates German labels and existing validation when switching to Spanish', async () => {
+    const screen = await renderWithLocale(
+      <CardForm title="Test" onSubmit={jest.fn()} onCancel={jest.fn()} />,
+      'de',
+    );
+    fireEvent.press(screen.getByText('Speichern'));
+    expect(
+      await screen.findByText('Die Vorderseite ist erforderlich.'),
+    ).toBeTruthy();
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByText('El anverso es obligatorio.')).toBeTruthy();
+    expect(
+      screen.getByPlaceholderText('La pregunta o el enunciado'),
+    ).toBeTruthy();
+  });
   it('requires both sides and does not submit without them', async () => {
     const onSubmit = jest.fn();
     const { getByText, getByPlaceholderText } = render(
