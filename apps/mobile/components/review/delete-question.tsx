@@ -8,7 +8,7 @@ import {
 } from '@repo/offline-db';
 import type { Card as CardRecord } from '@/lib/cards';
 import type { cardWrites } from '@/lib/card-writes';
-import { writeErrorMessage } from '@/lib/errors';
+import { toWriteError, writeErrorText, type WriteError } from '@/lib/errors';
 import { Button } from '../ui/button';
 import { Text } from '../ui/text';
 
@@ -30,7 +30,7 @@ export function DeleteQuestion({
   onDeleted: () => void;
 }) {
   const { t } = useTranslation();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<WriteError | null>(null);
   const [pending, setPending] = useState(false);
   const isWord = note?.note_type === WORD_NOTE_TYPE;
   const name = (isWord && parseWordFields(note)?.word) || card.front;
@@ -44,7 +44,7 @@ export function DeleteQuestion({
       await writes.deleteNote(card.note_id);
       onDeleted();
     } catch (err) {
-      setError(writeErrorMessage(err, t('mobile.messages.delete_failed')));
+      setError(toWriteError(err, 'mobile.messages.delete_failed'));
       setPending(false);
     }
   };
@@ -60,7 +60,9 @@ export function DeleteQuestion({
           : t('mobile.messages.delete_card_help')}
       </Text>
       {error ? (
-        <Text className="text-center text-destructive">{error}</Text>
+        <Text className="text-center text-destructive">
+          {writeErrorText(error, t)}
+        </Text>
       ) : null}
       <View className="flex-row gap-4">
         <Button variant="outline" disabled={pending} onPress={onCancel}>

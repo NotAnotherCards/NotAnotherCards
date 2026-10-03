@@ -12,7 +12,7 @@ import { deckTypeAccessibilityLabel } from '@repo/i18n';
 import { useTranslation } from 'react-i18next';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useDecks, type Deck } from '@/lib/decks';
-import { writeErrorMessage } from '@/lib/errors';
+import { toWriteError, writeErrorText, type WriteError } from '@/lib/errors';
 import { Button } from './ui/button';
 import {
   BookOpenIcon,
@@ -72,7 +72,7 @@ function ActiveDeckList({
   const { decks, isLoading, error, cardCount, dueCount, profile, writes } =
     useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
-  const [writeError, setWriteError] = useState<string | null>(null);
+  const [writeError, setWriteError] = useState<WriteError | null>(null);
   const [pending, setPending] = useState(false);
 
   // Every open and cancel goes through here, so an error never outlives the
@@ -106,7 +106,7 @@ function ActiveDeckList({
       await write();
       open(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, t('mobile.messages.write_failed')));
+      setWriteError(toWriteError(err, 'mobile.messages.write_failed'));
       setPending(false);
     }
   };
@@ -136,7 +136,7 @@ function ActiveDeckList({
           nativeLanguageId: profile?.native_language_id ?? null,
           targetLanguageId: profile?.target_language_id ?? null,
         }}
-        error={writeError}
+        error={writeError ? writeErrorText(writeError, t) : null}
         onSubmit={(values) =>
           run(() =>
             writes.create(values.title, values.description, {
@@ -162,7 +162,7 @@ function ActiveDeckList({
           title: deck.title,
           description: deck.description ?? '',
         }}
-        error={writeError}
+        error={writeError ? writeErrorText(writeError, t) : null}
         onSubmit={(values) =>
           run(() => writes.update(deck.id, values.title, values.description))
         }
@@ -308,7 +308,9 @@ function ActiveDeckList({
                       {t('mobile.messages.delete_deck_help')}
                     </Text>
                     {writeError && (
-                      <Text className="text-destructive">{writeError}</Text>
+                      <Text className="text-destructive">
+                        {writeErrorText(writeError, t)}
+                      </Text>
                     )}
                     <View className="flex-row gap-2">
                       <Button

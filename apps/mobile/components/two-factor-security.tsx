@@ -136,7 +136,7 @@ function Enrollment({
   const [password, setPassword] = useState('');
   const [material, setMaterial] = useState<EnrollmentMaterial | null>(null);
   const [code, setCode] = useState('');
-  const [copyStatus, setCopyStatus] = useState('');
+  const [copyStatus, setCopyStatus] = useState<UiError | null>(null);
   const [error, setError] = useState<UiError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const secret = useMemo(
@@ -286,11 +286,15 @@ function Enrollment({
                   await Clipboard.setStringAsync(secret);
                   copiedKey.current = secret;
                   setCopyStatus(
-                    t('dashboard.settings.two_factor.manual_key_copied'),
+                    new UiError(
+                      'dashboard.settings.two_factor.manual_key_copied',
+                    ),
                   );
                 } catch {
                   setCopyStatus(
-                    t('dashboard.settings.two_factor.manual_key_copy_fail'),
+                    new UiError(
+                      'dashboard.settings.two_factor.manual_key_copy_fail',
+                    ),
                   );
                 }
               }}
@@ -302,7 +306,7 @@ function Enrollment({
                 accessibilityLiveRegion="polite"
                 className="text-sm text-muted-foreground"
               >
-                {copyStatus}
+                {uiErrorText(copyStatus, t)}
               </Text>
             ) : null}
           </View>

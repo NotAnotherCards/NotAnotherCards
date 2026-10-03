@@ -7,6 +7,7 @@ import {
   getByGestureTestId,
 } from 'react-native-gesture-handler/jest-utils';
 import { ReviewSession } from '@/components/review-session';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import Storage from 'expo-sqlite/kv-store';
 import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
@@ -459,6 +460,24 @@ describe('ReviewSession', () => {
     fireEvent.press(result.getByText('Activate and continue'));
     await waitFor(() => expect(mockActivate).toHaveBeenCalledTimes(2));
     await result.findByText('Review complete');
+  });
+
+  it('retranslates a visible activation error from Spanish to German', async () => {
+    mockReviewState.dueCards = [];
+    mockReviewState.cards = [{ id: 'c1', note_id: 'n1', active: false }];
+    mockActivate.mockRejectedValueOnce(new Error('disk full'));
+    const screen = await renderWithLocale(<ReviewSession deckId="d1" />, 'es');
+    fireEvent.press(await screen.findByText('Activar y continuar'));
+    const spanish = screen.i18n.t('review.activation.error');
+    expect(await screen.findByText(spanish)).toBeTruthy();
+    await act(async () => {
+      await screen.i18n.changeLanguage('de');
+    });
+    expect(
+      screen.getByText(screen.i18n.t('review.activation.error')),
+    ).toBeTruthy();
+    expect(screen.queryByText(spanish)).toBeNull();
+    expect(mockActivate).toHaveBeenCalledTimes(1);
   });
 
   it('retries only the read when loading activated cards fails', async () => {

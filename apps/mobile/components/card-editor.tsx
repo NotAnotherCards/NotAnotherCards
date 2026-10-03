@@ -8,7 +8,7 @@ import {
 } from '@repo/offline-db';
 import type { Card as CardRecord } from '@/lib/cards';
 import type { cardWrites } from '@/lib/card-writes';
-import { writeErrorMessage } from '@/lib/errors';
+import { toWriteError, writeErrorText, type WriteError } from '@/lib/errors';
 import { CardForm } from './card-form';
 import { WordNoteForm, type WordFormValues } from './word-note-form';
 import { Button } from './ui/button';
@@ -37,7 +37,7 @@ export function CardEditor({
   onDeleted?: () => void;
 }) {
   const { t } = useTranslation();
-  const [writeError, setWriteError] = useState<string | null>(null);
+  const [writeError, setWriteError] = useState<WriteError | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -51,7 +51,7 @@ export function CardEditor({
       await write();
       then();
     } catch (err) {
-      setWriteError(writeErrorMessage(err, t('mobile.messages.write_failed')));
+      setWriteError(toWriteError(err, 'mobile.messages.write_failed'));
       setPending(false);
     }
   };
@@ -78,7 +78,7 @@ export function CardEditor({
           nativeLanguageId={nativeLanguageId}
           busy={pending}
           targetLanguageId={targetLanguageId}
-          error={writeError}
+          error={writeError ? writeErrorText(writeError, t) : null}
           onSubmit={(values) =>
             run(() =>
               writes.createWord(deck.id, {
@@ -96,7 +96,7 @@ export function CardEditor({
       <CardForm
         title={t('mobile.messages.new_card')}
         busy={pending}
-        error={writeError}
+        error={writeError ? writeErrorText(writeError, t) : null}
         onSubmit={(values) =>
           run(() => writes.create(deck.id, values.front, values.back))
         }
@@ -184,7 +184,7 @@ export function CardEditor({
         deckId={deck.id}
         nativeLanguageId={fields.native_language_id}
         targetLanguageId={fields.target_language_id}
-        error={writeError}
+        error={writeError ? writeErrorText(writeError, t) : null}
         onSubmit={updateWord}
         onCancel={cancel}
       />
@@ -195,7 +195,7 @@ export function CardEditor({
       {...deleteHeader(card.front)}
       busy={pending}
       initialValues={{ front: card.front, back: card.back }}
-      error={writeError}
+      error={writeError ? writeErrorText(writeError, t) : null}
       onSubmit={(values) =>
         run(() => writes.update(card.id, values.front, values.back))
       }

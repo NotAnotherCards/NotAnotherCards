@@ -1,3 +1,4 @@
+import type { WriteError } from './errors';
 import type { UserCardRecord } from '@repo/offline-db';
 import { selectReviewBatch } from '@repo/study';
 
@@ -31,7 +32,7 @@ export type ReviewSessionState = {
   index: number;
   revealed: boolean;
   phase: ReviewPhase;
-  error: string | null;
+  error: WriteError | null;
   // Answers given so far, for progress across batches.
   answered: number;
   // What asked for the next batch, so a failed read can say what is safe.
@@ -49,7 +50,7 @@ export type ReviewSessionAction =
   | { type: 'revealed' }
   | { type: 'saving' }
   | { type: 'saved' }
-  | { type: 'save-failed'; message: string }
+  | { type: 'save-failed'; message: WriteError }
   | { type: 'next-batch'; cards: Card[] }
   | { type: 'next-batch-failed' }
   | { type: 'next-batch-retry' }

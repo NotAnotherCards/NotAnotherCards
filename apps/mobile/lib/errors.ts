@@ -99,5 +99,14 @@ export function toUiError(err: unknown): UiError {
 // Keep that message, since it is the only clue the user gets, but fall back to
 // something readable when the rejection carries none. Web has the same five
 // lines in its own lib; how a form phrases a failure is each client's call.
-export const writeErrorMessage = (err: unknown, fallback: string) =>
-  err instanceof Error && err.message ? err.message : fallback;
+// The database's own message is language-neutral detail and stays text; the
+// fallback stays a key so it follows a language switch.
+export type WriteError = string | UiError;
+export const toWriteError = (err: unknown, fallbackKey: string): WriteError =>
+  err instanceof UiError
+    ? err
+    : err instanceof Error && err.message
+      ? err.message
+      : new UiError(fallbackKey);
+export const writeErrorText = (error: WriteError, t: TFunction) =>
+  typeof error === 'string' ? error : uiErrorText(error, t);

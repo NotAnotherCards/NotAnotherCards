@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { useEffect, useReducer } from 'react';
 import type { DatabaseManager } from '@remelondb/core';
 import {
@@ -8,7 +7,7 @@ import {
   reviewRatingByAnswer,
   type ReviewAnswer,
 } from '@repo/offline-db';
-import { writeErrorMessage } from './errors';
+import { toWriteError } from './errors';
 import { useReviewDeck } from './review';
 import { saveLastReviewDeckId } from './review-preferences';
 import {
@@ -28,7 +27,6 @@ export function useReviewSession(
   deckId: string,
   userId: string,
 ) {
-  const { t } = useTranslation();
   const {
     deck,
     dueCards,
@@ -91,10 +89,7 @@ export function useReviewSession(
     } catch (cause) {
       dispatch({
         type: 'save-failed',
-        message: writeErrorMessage(
-          cause,
-          t('mobile.messages.save_answer_failed'),
-        ),
+        message: toWriteError(cause, 'mobile.messages.save_answer_failed'),
       });
       return false;
     }

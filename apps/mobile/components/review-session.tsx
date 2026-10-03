@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { UiError, uiErrorText, writeErrorText } from '@/lib/errors';
 import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
@@ -59,7 +60,7 @@ function ActiveReviewSession({
   const { t } = useTranslation();
   const [activationCount, setActivationCount] = useState('5');
   const [isActivating, setIsActivating] = useState(false);
-  const [activationError, setActivationError] = useState<string | null>(null);
+  const [activationError, setActivationError] = useState<UiError | null>(null);
   useEffect(() => {
     setActivationCount(String(loadActivationCount(userId)));
   }, [userId]);
@@ -151,7 +152,7 @@ function ActiveReviewSession({
         await session.activate(count);
         saveActivationCount(userId, count);
       } catch {
-        setActivationError(t('review.activation.error'));
+        setActivationError(new UiError('review.activation.error'));
       } finally {
         setIsActivating(false);
       }
@@ -175,7 +176,7 @@ function ActiveReviewSession({
             onChangeCount={setActivationCount}
             onActivate={() => void activateMore()}
             isActivating={isActivating}
-            error={activationError}
+            error={activationError ? uiErrorText(activationError, t) : null}
             inactiveItemCount={session.inactiveCount}
             itemLabel={session.itemLabel}
           />
@@ -267,7 +268,7 @@ function ActiveReviewSession({
 
       {session.saveError ? (
         <Text className="text-center text-destructive">
-          {session.saveError}
+          {writeErrorText(session.saveError, t)}
         </Text>
       ) : null}
 

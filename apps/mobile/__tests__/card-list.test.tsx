@@ -1,5 +1,5 @@
 import React from 'react';
-import '@/lib/i18n';
+import i18n from '@/lib/i18n';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { CardList } from '@/components/card-list';
 import { Markdown } from '@/components/ui/markdown';
@@ -364,6 +364,29 @@ describe('CardList', () => {
     expect(r.queryByText('Database not initialized')).toBeNull();
     fireEvent.press(r.getByLabelText('Edit hola'));
     expect(r.queryByText('Database not initialized')).toBeNull();
+  });
+
+  it('translates a failed write again when the language changes', async () => {
+    mockWrites.create.mockRejectedValueOnce(new Error(''));
+    const r = render(<CardList deckId="d1" />);
+    fireEvent.press(r.getByText('New card'));
+    fireEvent.changeText(
+      r.getByPlaceholderText('The question or prompt'),
+      'gato',
+    );
+    fireEvent.changeText(r.getByPlaceholderText('The answer'), 'cat');
+    fireEvent.press(r.getByText('Save'));
+    await waitFor(() => r.getByText('The write failed'));
+    try {
+      await act(async () => {
+        await i18n.changeLanguage('de');
+      });
+      expect(r.getByText('Speichern fehlgeschlagen')).toBeTruthy();
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('en');
+      });
+    }
   });
 });
 jest.mock('@/lib/api-client', () => ({

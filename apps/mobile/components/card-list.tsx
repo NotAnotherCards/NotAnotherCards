@@ -5,7 +5,7 @@ import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useCards, type Card as CardRecord } from '@/lib/cards';
-import { writeErrorMessage } from '@/lib/errors';
+import { toWriteError, writeErrorText, type WriteError } from '@/lib/errors';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
@@ -53,7 +53,7 @@ function ActiveCardList({
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
     useCards(manager, deckId);
   const [action, setAction] = useState<CardAction | null>(null);
-  const [writeError, setWriteError] = useState<string | null>(null);
+  const [writeError, setWriteError] = useState<WriteError | null>(null);
   const [pending, setPending] = useState(false);
 
   const open = (next: CardAction | null) => {
@@ -72,7 +72,7 @@ function ActiveCardList({
       await write();
       open(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, t('mobile.messages.write_failed')));
+      setWriteError(toWriteError(err, 'mobile.messages.write_failed'));
       setPending(false);
     }
   };
@@ -209,7 +209,9 @@ function ActiveCardList({
                         : t('mobile.messages.delete_note_help')}
                     </Text>
                     {writeError && (
-                      <Text className="text-destructive">{writeError}</Text>
+                      <Text className="text-destructive">
+                        {writeErrorText(writeError, t)}
+                      </Text>
                     )}
                     <View className="flex-row gap-2">
                       <Button
