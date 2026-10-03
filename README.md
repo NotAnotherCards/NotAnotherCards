@@ -130,7 +130,7 @@ The team used AI to assist with the tasks listed below. Each member reviewed and
 | Codex CLI and Claude Code through T3 Code          | Implementation of offline synchronisation, web and mobile 2FA, gamification, and content moderation; assistance with tests, code review, and project documentation.                                          | @dgomez-a |
 | ChatGPT and Gemini                                 | Code review, technical research and debugging.                                                                                                                                                               | @samcasti |
 | opencode (free models)                             | API endpoints, continuous integration, VPS deployment, Prometheus and Grafana monitoring, and the two-factor authentication flow, using the Grafana, Prometheus, and Better Auth documentation as reference. | @tpandya  |
-| Claude Code; opencode with ChatGPT and open models | Coding assistance and code review.                                                                                                                                                                           | @pschneid |
+| Claude Code; opencode with ChatGPT and open models | Implementation help, tests, and code review for the mobile app, offline sync, content moderation, and the shared packages. Output was reviewed and adapted before use.                                       | @pschneid |
 
 ## Team Information
 
@@ -316,3 +316,5 @@ A significant technical challenge he addressed was ensuring the reliability of t
 ### @pschneid
 
 Worked on the mobile app, offline sync, the AI gateway, content moderation, the shared packages, and the web deck views.
+
+Challenge: learning had to work without internet on both the phone and the web, and both apps had to behave the same. Each app keeps the user's cards on the device, saves reviews there first, and syncs when the connection is back. If the same card was changed on two devices, the server decides which change is kept. The review rules and checks live in shared packages that both apps use, so they are written once.
