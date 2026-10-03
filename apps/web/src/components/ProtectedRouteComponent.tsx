@@ -1,5 +1,5 @@
 import { authClient } from '@/lib/auth-client';
-import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
+import { Outlet, useLocation, useNavigate, Link } from '@tanstack/react-router';
 import { DatabaseBanner } from '@/components/DatabaseBanner';
 import { useDatabaseState } from '@remelondb/core/react';
 import { SyncProvider } from '@/offline/syncProvider';
@@ -100,7 +100,24 @@ export function ProtectedLayoutComponent() {
   return (
     <SyncProvider controller={syncController}>
       <div className="flex-1 flex flex-col bg-background">
-        <header className="sticky top-0 z-30 flex items-center justify-end px-4 py-2 border-b border-border/40 bg-background/80 backdrop-blur-xs">
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 border-b border-border/40 bg-background/80 backdrop-blur-xs">
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-2 hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            aria-label="Dashboard"
+          >
+            <img
+              src="/brand/notanothercards-logo.svg"
+              alt="NotAnotherCards Logo"
+              className="h-6 sm:h-8 dark:hidden"
+            />
+            <img
+              src="/brand/notanothercards-logo-dark.svg"
+              alt="NotAnotherCards Logo"
+              className="h-5 sm:h-7 hidden dark:block"
+            />
+          </Link>
+
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="Account menu"
