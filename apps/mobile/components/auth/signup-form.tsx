@@ -3,10 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type SignupFormData } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
+import { useSignOutBarrier } from '@/lib/sync-sign-out';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
+import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 // Hermes' Intl support is partial; if timezone detection fails the field
 // stays unset and the server defaults to UTC.
@@ -19,6 +21,7 @@ function getTimezone(): string | undefined {
 }
 
 export function SignupForm() {
+  const { signingOut, waitForSignOut } = useSignOutBarrier();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
@@ -33,6 +36,7 @@ export function SignupForm() {
 
   const onSubmit = async (data: SignupFormData) => {
     setApiError(null);
+    if (!(await waitForSignOut())) return;
     try {
       const { error } = await authClient.signUp.email({
         name: data.name,
@@ -92,8 +96,10 @@ export function SignupForm() {
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
       >
-        <Text>Create account</Text>
+        <Text>{signingOut ? 'Signing out…' : 'Create account'}</Text>
       </Button>
+
+      <SocialLoginButtons />
     </>
   );
 }

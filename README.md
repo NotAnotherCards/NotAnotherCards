@@ -15,7 +15,7 @@ later takedown.
 - `apps/api`: NestJS, Drizzle ORM, PostgreSQL, Jest, and Supertest
 - `apps/mobile`: Expo (React Native), expo-router, NativeWind, and jest-expo — see [docs/mobile.md](docs/mobile.md) for setup and running on Android/iOS
 - `packages/*`: shared ESLint and TypeScript config packages
-- `docker-compose.yml`: complete web, API, and PostgreSQL deployment
+- `docker-compose.yml`: complete web, landing, API, and PostgreSQL deployment
 
 ## Run the complete app with Docker
 
@@ -29,15 +29,31 @@ From a fresh clone, start every required service with one command:
   cp .env.example .env
 ```
 
-2. Start all services with one command
+2. Build and start all services, then wait until their health checks pass
 
 ```bash
-docker compose up
+docker compose up --build --wait
 ```
 
-3. Open http://localhost:5173
+3. Open the application at http://localhost:5173 and the public landing page
+   at http://localhost:5174.
 
-The first run builds the web and API images and applies database migrations automatically.
+4. Check that the landing container is healthy:
+
+```bash
+curl --fail http://127.0.0.1:5174/health
+```
+
+`--fail` makes `curl` return an error when the endpoint does not return a
+successful HTTP response.
+
+The first run builds the web, landing, and API images and applies database
+migrations automatically. `--build` rebuilds the images, and `--wait` returns
+only after health checks succeed.
+
+In production, the landing port is bound only to `127.0.0.1:5174` on the VPS.
+It is for the host Nginx proxy and must not be published directly to the
+internet.
 
 > The AI gateway is optional, so leaving `AI_API_BASE` empty does not prevent the app from starting.
 
@@ -62,7 +78,7 @@ The first run builds the web and API images and applies database migrations auto
 3. Replace the default values with your db credentials, and desired port for the backend
 4. Start only the local database with `docker compose up -d postgres`.
 5. Apply the database migrations with `pnpm --filter api db:migrate` (see [docs/database.md](docs/database.md)). Without this the database is empty and every auth request fails with a 500.
-6. (Optional) Set up social login credentials for Google and Facebook by following the [OAuth Setup Guide](docs/oauth-setup.md).
+6. (Optional) Set up social login credentials for Google by following the [OAuth Setup Guide](docs/oauth-setup.md).
 7. Start the monorepo with `pnpm dev`.
 
 ## Common Commands

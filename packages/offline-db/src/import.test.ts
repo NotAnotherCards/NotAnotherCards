@@ -27,6 +27,32 @@ const openDb = async () => {
 };
 
 describe('validateAndImportCsv', () => {
+  it('keeps an explicit active value and defaults a missing one to inactive', async () => {
+    await openDb();
+
+    const csvContent = `front,back,deck,active
+active front,active back,Imported,true
+inactive front,inactive back,Imported,false
+default front,default back,Imported,
+`;
+
+    const report = await validateAndImportData(db, csvContent, {
+      format: 'csv',
+      dryRun: false,
+    });
+
+    expect(report.success).toBe(true);
+    expect(
+      (await db.get(UserCard).query().fetch())
+        .sort((first, second) => first.front.localeCompare(second.front))
+        .map((card) => ({ front: card.front, active: card.active })),
+    ).toEqual([
+      { front: 'active front', active: true },
+      { front: 'default front', active: false },
+      { front: 'inactive front', active: false },
+    ]);
+  });
+
   it('rejects CSV targeting an existing non-basic deck by title', async () => {
     await openDb();
 
@@ -89,5 +115,83 @@ adios,goodbye,Spanish
 
     // Verify rows were written
     expect(await db.get(UserNote).query().fetch()).toHaveLength(1);
+  });
+});
+
+describe('validateAndImportJson', () => {
+  it('keeps an explicit active value and defaults a missing one to inactive', async () => {
+    await openDb();
+
+    const content = JSON.stringify({
+      format: 1,
+      exported_at: new Date().toISOString(),
+      decks: [
+        {
+          source_id: 'deck-1',
+          title: 'Imported',
+          description: null,
+          note_type: 'basic',
+          native_language: null,
+          target_language: null,
+        },
+      ],
+      notes: [
+        {
+          source_id: 'note-active',
+          note_type: 'basic',
+          fields_version: 1,
+          fields: { front: 'active front', back: 'active back' },
+          additional_content: null,
+          decks: ['deck-1'],
+          cards: [
+            {
+              source_id: 'card-active',
+              template_key: 'front-back',
+              active: true,
+              due_at: 1,
+              scheduled_interval_minutes: 5,
+            },
+          ],
+        },
+        {
+          source_id: 'note-default',
+          note_type: 'basic',
+          fields_version: 1,
+          fields: { front: 'default front', back: 'default back' },
+          additional_content: null,
+          decks: ['deck-1'],
+          cards: [
+            {
+              source_id: 'card-default',
+              template_key: 'front-back',
+              due_at: 2,
+              scheduled_interval_minutes: 10,
+            },
+          ],
+        },
+      ],
+      review_events: [],
+      media: [],
+    });
+
+    const report = await validateAndImportData(db, content, {
+      format: 'json',
+      dryRun: false,
+    });
+
+    expect(report.success).toBe(true);
+    expect(
+      (await db.get(UserCard).query().fetch())
+        .sort((first, second) => first.front.localeCompare(second.front))
+        .map((card) => ({
+          front: card.front,
+          active: card.active,
+          dueAt: card.due_at,
+          interval: card.scheduled_interval_minutes,
+        })),
+    ).toEqual([
+      { front: 'active front', active: true, dueAt: 1, interval: 5 },
+      { front: 'default front', active: false, dueAt: 2, interval: 10 },
+    ]);
   });
 });

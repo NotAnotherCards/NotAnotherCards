@@ -22,6 +22,11 @@ import {
 } from './postgres-fixture';
 import { badgeAwards } from '../../src/gamification/schema';
 import { sql } from 'drizzle-orm';
+import type { SyncChanges } from '@remelondb/core';
+
+// A pull or push answer's changes, as the endpoints send them.
+const changesOf = (response: { body: unknown }) =>
+  (response.body as { changes: SyncChanges | null }).changes;
 
 interface TestUser {
   readonly id: string;
@@ -180,8 +185,6 @@ describePostgres('authenticated remelonDB endpoints', () => {
     authUrl: process.env.BETTER_AUTH_URL,
     googleId: process.env.GOOGLE_CLIENT_ID,
     googleSecret: process.env.GOOGLE_CLIENT_SECRET,
-    facebookId: process.env.FACEBOOK_CLIENT_ID,
-    facebookSecret: process.env.FACEBOOK_CLIENT_SECRET,
   };
 
   const signUp = async (label: string): Promise<TestUser> => {
@@ -218,8 +221,6 @@ describePostgres('authenticated remelonDB endpoints', () => {
     process.env.BETTER_AUTH_URL = 'http://localhost:3000';
     process.env.GOOGLE_CLIENT_ID = 'dummy-google-client-id';
     process.env.GOOGLE_CLIENT_SECRET = 'dummy-google-client-secret';
-    process.env.FACEBOOK_CLIENT_ID = 'dummy-facebook-client-id';
-    process.env.FACEBOOK_CLIENT_SECRET = 'dummy-facebook-client-secret';
 
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
@@ -254,8 +255,6 @@ describePostgres('authenticated remelonDB endpoints', () => {
     process.env.BETTER_AUTH_URL = previousEnvironment.authUrl;
     process.env.GOOGLE_CLIENT_SECRET = previousEnvironment.googleSecret;
     process.env.GOOGLE_CLIENT_ID = previousEnvironment.googleId;
-    process.env.FACEBOOK_CLIENT_SECRET = previousEnvironment.facebookSecret;
-    process.env.FACEBOOK_CLIENT_ID = previousEnvironment.facebookId;
   }, 30_000);
 
   it('rejects unauthenticated and malformed requests with transport statuses', async () => {
@@ -679,9 +678,7 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody(null))
       .expect(200);
 
-    expect((pullV2.body as Record<string, any>).changes).toHaveProperty(
-      'user_badges',
-    );
+    expect(changesOf(pullV2)).toHaveProperty('user_badges');
 
     const pullLegacy = await request(app.getHttpServer())
       .post('/sync/pull')
@@ -689,9 +686,7 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody(null))
       .expect(200);
 
-    expect((pullLegacy.body as Record<string, any>).changes).not.toHaveProperty(
-      'user_badges',
-    );
+    expect(changesOf(pullLegacy)).not.toHaveProperty('user_badges');
 
     const pushLegacy = await request(app.getHttpServer())
       .post('/sync/push')
@@ -699,9 +694,7 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send({ cursor: '0', changes: {} })
       .expect(200);
 
-    expect((pushLegacy.body as Record<string, any>).changes).not.toHaveProperty(
-      'user_badges',
-    );
+    expect(changesOf(pushLegacy)).not.toHaveProperty('user_badges');
   });
 
   it('delivers first-review badge directly in the push response', async () => {
@@ -723,9 +716,7 @@ describePostgres('authenticated remelonDB endpoints', () => {
       })
       .expect(200);
 
-    const changes = (pushResponse.body as Record<string, any>)
-      .changes as Record<string, any>;
-    const badges = changes.user_badges as Record<string, unknown[]> | undefined;
+    const badges = changesOf(pushResponse)?.user_badges;
     const deliveredBadges = [
       ...(badges?.created || []),
       ...(badges?.updated || []),
@@ -764,11 +755,7 @@ describePostgres('authenticated remelonDB endpoints', () => {
       .send(pullBody(null))
       .expect(200);
 
-    const changes = (initial.body as Record<string, any>).changes as Record<
-      string,
-      any
-    >;
-    const badges = changes.user_badges as Record<string, unknown[]> | undefined;
+    const badges = changesOf(initial)?.user_badges;
     const deliveredBadges = [
       ...(badges?.created || []),
 

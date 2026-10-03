@@ -13,15 +13,16 @@ import {
   UserProfile,
   PRIVATE_DECK,
 } from './user-dictionary.js';
-import { BASIC_FRONT_BACK_TEMPLATE_KEY, cardId, noteDeckId } from './ids.js';
+import { BASIC_FRONT_BACK_TEMPLATE_KEY } from '@repo/study';
+import { cardId } from './ids.js';
 import {
   BASIC_NOTE_FIELDS_VERSION,
   BASIC_NOTE_TYPE,
   DECK_NOTE_TYPES,
   type DeckNoteType,
   WORD_NOTE_TYPE,
-} from './note-constants.js';
-import { calculateReviewSchedule } from './review-scheduler.js';
+} from '@repo/study';
+import { calculateReviewSchedule } from '@repo/study';
 
 // ==========================================
 // QUERIES
@@ -34,21 +35,20 @@ export function getDecksQuery(db: Database) {
 export function getPersonalDictionaryQuery(db: Database) {
   return db
     .get(UserCard)
-    .query(Q.where('active', true), Q.sortBy('created_at', Q.desc));
+    .query(
+      Q.where('active', true),
+      Q.where('front', Q.notEq('')),
+      Q.where('back', Q.notEq('')),
+      Q.sortBy('created_at', Q.desc),
+    );
+}
+
+export function getAllCardsQuery(db: Database) {
+  return db.get(UserCard).query(Q.sortBy('created_at', Q.desc));
 }
 
 export function getNotesQuery(db: Database) {
   return db.get(UserNote).query(Q.sortBy('created_at', Q.desc));
-}
-
-export function getDueCardsQuery(db: Database, now: number = Date.now()) {
-  return db
-    .get(UserCard)
-    .query(
-      Q.where('active', true),
-      Q.where('due_at', Q.lte(now)),
-      Q.sortBy('due_at', Q.asc),
-    );
 }
 
 export function getCardDetailQuery(db: Database, cardId: string) {
@@ -73,6 +73,48 @@ export function getUserProfileQuery(db: Database) {
 
 export function getNoteDecksQuery(db: Database) {
   return db.get(UserNoteDeck).query(Q.where('active', true));
+}
+
+export async function deckDeletionSummary(db: Database, deckId: string) {
+  const memberships = await db
+    .get(UserNoteDeck)
+    .query(Q.where('deck_id', deckId), Q.where('active', true))
+    .fetch();
+  const noteIds = [
+    ...new Set(memberships.map((membership) => membership.note_id)),
+  ];
+  if (noteIds.length === 0) {
+    return {
+      orphanedNoteIds: [],
+      sharedNoteCount: 0,
+      orphanedCardCount: 0,
+      sharedCardCount: 0,
+    };
+  }
+  const otherMemberships = await db
+    .get(UserNoteDeck)
+    .query(
+      Q.where('note_id', Q.oneOf(noteIds)),
+      Q.where('deck_id', Q.notEq(deckId)),
+      Q.where('active', true),
+    )
+    .fetch();
+  const sharedNoteIds = new Set(
+    otherMemberships.map((membership) => membership.note_id),
+  );
+  const cards = await db
+    .get(UserCard)
+    .query(Q.where('note_id', Q.oneOf(noteIds)))
+    .fetch();
+  const sharedCardCount = cards.filter((card) =>
+    sharedNoteIds.has(card.note_id),
+  ).length;
+  return {
+    orphanedNoteIds: noteIds.filter((noteId) => !sharedNoteIds.has(noteId)),
+    sharedNoteCount: sharedNoteIds.size,
+    orphanedCardCount: cards.length - sharedCardCount,
+    sharedCardCount,
+  };
 }
 
 // ==========================================
@@ -154,6 +196,31 @@ export async function deleteDeck(db: Database, deckId: string) {
   });
 }
 
+export async function deleteDeckWithNotes(db: Database, deckId: string) {
+  return await db.write(async () => {
+    const deck = await db.get(UserDeck).find(deckId);
+    const { orphanedNoteIds } = await deckDeletionSummary(db, deckId);
+    const orphanedIds = new Set(orphanedNoteIds);
+    const noteDecks = await db
+      .get(UserNoteDeck)
+      .query(Q.where('deck_id', deckId))
+      .fetch();
+    const noteDeletions = await Promise.all(
+      orphanedNoteIds.map(async (noteId) => {
+        const note = await db.get(UserNote).find(noteId);
+        return await prepareDeleteNote(db, note);
+      }),
+    );
+    await db.batch([
+      ...noteDeletions.flat(),
+      ...noteDecks
+        .filter((noteDeck) => !orphanedIds.has(noteDeck.note_id))
+        .map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
+      deck.prepareMarkAsDeleted(),
+    ]);
+  });
+}
+
 export async function createCard(
   db: Database,
   deckId: string,
@@ -222,30 +289,84 @@ export async function disableCard(db: Database, cardId: string) {
   });
 }
 
+/** Activate the oldest words with no active sibling in one deck. */
+export async function activateWordsInDeck(
+  db: Database,
+  deckId: string,
+  count: number,
+) {
+  if (!Number.isInteger(count) || count < 1) return [];
+
+  return await db.write(async () => {
+    const [memberships, cards] = await Promise.all([
+      db
+        .get(UserNoteDeck)
+        .query(Q.where('deck_id', deckId), Q.where('active', true))
+        .fetch(),
+      db.get(UserCard).query().fetch(),
+    ]);
+    const cardsByNote = new Map<string, typeof cards>();
+    for (const card of cards) {
+      const siblings = cardsByNote.get(card.note_id) ?? [];
+      siblings.push(card);
+      cardsByNote.set(card.note_id, siblings);
+    }
+    const selected = memberships
+      .filter((membership) => {
+        const siblings = cardsByNote.get(membership.note_id) ?? [];
+        return siblings.length > 0 && siblings.every((card) => !card.active);
+      })
+      .sort(
+        (first, second) =>
+          first.created_at - second.created_at ||
+          first.note_id.localeCompare(second.note_id),
+      )
+      .slice(0, count);
+    const now = Date.now();
+    await db.batch(
+      selected.flatMap((membership) =>
+        (cardsByNote.get(membership.note_id) ?? []).map((card) =>
+          card.prepareUpdate((record) => {
+            const wasInactive = !record.active;
+            record.active = true;
+            if (wasInactive) record.due_at = now;
+            record.updated_at = now;
+          }),
+        ),
+      ),
+    );
+    return selected.map((membership) => membership.note_id);
+  });
+}
+
+export async function prepareDeleteNote(db: Database, note: UserNote) {
+  const cards = await db
+    .get(UserCard)
+    .query(Q.where('note_id', note.id))
+    .fetch();
+  const cardIds = cards.map((sibling) => sibling.id);
+  const noteDecks = await db
+    .get(UserNoteDeck)
+    .query(Q.where('note_id', note.id))
+    .fetch();
+  const reviews = cardIds.length
+    ? await db
+        .get(ReviewEvent)
+        .query(Q.where('user_card_id', Q.oneOf(cardIds)))
+        .fetch()
+    : [];
+  return [
+    ...reviews.map((review) => review.prepareMarkAsDeleted()),
+    ...cards.map((sibling) => sibling.prepareMarkAsDeleted()),
+    ...noteDecks.map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
+    note.prepareMarkAsDeleted(),
+  ];
+}
+
 export async function deleteNote(db: Database, noteId: string) {
   return await db.write(async () => {
     const note = await db.get(UserNote).find(noteId);
-    const cards = await db
-      .get(UserCard)
-      .query(Q.where('note_id', noteId))
-      .fetch();
-    const cardIds = cards.map((sibling) => sibling.id);
-    const noteDecks = await db
-      .get(UserNoteDeck)
-      .query(Q.where('note_id', noteId))
-      .fetch();
-    const reviews = cardIds.length
-      ? await db
-          .get(ReviewEvent)
-          .query(Q.where('user_card_id', Q.oneOf(cardIds)))
-          .fetch()
-      : [];
-    await db.batch([
-      ...reviews.map((review) => review.prepareMarkAsDeleted()),
-      ...cards.map((sibling) => sibling.prepareMarkAsDeleted()),
-      ...noteDecks.map((noteDeck) => noteDeck.prepareMarkAsDeleted()),
-      note.prepareMarkAsDeleted(),
-    ]);
+    await db.batch(await prepareDeleteNote(db, note));
   });
 }
 
@@ -314,19 +435,25 @@ export async function createUserProfile(
 
 export async function updateUserProfile(
   db: Database,
-  profile: {
-    username: string;
-    native_language_id: string;
-    target_language_id: string;
-  },
+  profile: Partial<{
+    username: string | null;
+    native_language_id: string | null;
+    target_language_id: string | null;
+    target_language_active: boolean | null;
+  }>,
 ) {
   return await db.write(async () => {
     const profiles = await db.get(UserProfile).query().fetch();
     const existing = profiles[0];
+    if (!existing) return null;
     return await existing.update((record) => {
-      record.username = profile.username;
-      record.native_language_id = profile.native_language_id;
-      record.target_language_id = profile.target_language_id;
+      if (profile.username !== undefined) record.username = profile.username;
+      if (profile.native_language_id !== undefined)
+        record.native_language_id = profile.native_language_id;
+      if (profile.target_language_id !== undefined)
+        record.target_language_id = profile.target_language_id;
+      if (profile.target_language_active !== undefined)
+        record.target_language_active = profile.target_language_active;
       record.updated_at = Date.now();
     });
   });

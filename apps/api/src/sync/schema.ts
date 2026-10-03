@@ -224,6 +224,7 @@ export const userProfiles = pgTable(
     avatarFileId: uuid('avatar_file_id'),
     nativeLanguageId: uuid('native_language_id'),
     targetLanguageId: uuid('target_language_id'),
+    targetLanguageActive: boolean('target_language_active').default(false),
     createdAt: doublePrecision('created_at').notNull(),
     updatedAt: doublePrecision('updated_at').notNull(),
   },

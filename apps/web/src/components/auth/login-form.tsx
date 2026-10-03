@@ -16,6 +16,7 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { authClient } from '@/lib/auth-client';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { SocialLoginButton } from '@/components/auth/social-login-button';
 import {
@@ -25,22 +26,19 @@ import {
 } from '@/lib/two-factor-challenge';
 
 export function LoginComponent() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const search = useSearch({ from: '/_auth/login' });
   const returnTo = safeReturnTo(search.redirect);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [oauthProvider, setOauthProvider] = useState<
-    'google' | 'facebook' | null
-  >(null);
+  const [oauthProvider, setOauthProvider] = useState<'google' | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
     if (errorParam) {
       if (errorParam === 'OAuthCallbackError') {
-        setApiError(
-          'Social login failed. Please try again or use another provider.',
-        );
+        setApiError(t('auth.error.social_login_failed_callback'));
       } else {
         setApiError(errorParam.replace(/_/g, ' '));
       }
@@ -55,7 +53,7 @@ export function LoginComponent() {
     };
   }, []);
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+  const handleSocialLogin = async (provider: 'google') => {
     setApiError(null);
     setOauthProvider(provider);
     try {
@@ -66,12 +64,12 @@ export function LoginComponent() {
       });
 
       if (error) {
-        setApiError(error.message || 'Social login failed. Please try again.');
+        setApiError(error.message || t('auth.error.social_login_failed'));
         setOauthProvider(null);
       }
     } catch {
       setOauthProvider(null);
-      setApiError('Social login failed. Please try again.');
+      setApiError(t('auth.error.social_login_failed'));
     }
   };
 
@@ -93,7 +91,7 @@ export function LoginComponent() {
     });
 
     if (error) {
-      setApiError(error.message || 'An unexpected error occurred');
+      setApiError(error.message || t('auth.error.unexpected'));
     } else if (isTwoFactorRedirect(response)) {
       rememberPendingChallenge(returnTo);
       void navigate({
@@ -107,8 +105,8 @@ export function LoginComponent() {
 
   return (
     <AuthCard
-      title="Welcome Back"
-      description="Enter your email below to log in to your account"
+      title={t('auth.login.title')}
+      description={t('auth.login.description')}
       footerText=""
       footerLinkText=""
       footerLinkTo=""
@@ -121,7 +119,9 @@ export function LoginComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.email')}
+                  </FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
@@ -140,7 +140,9 @@ export function LoginComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.password')}
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}
@@ -162,10 +164,10 @@ export function LoginComponent() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
-                  Logging in...
+                  {t('auth.login.logging_in')}
                 </span>
               ) : (
-                'Login'
+                t('auth.login.submit')
               )}
             </Button>
             <div className="relative my-2">
@@ -174,7 +176,7 @@ export function LoginComponent() {
               </div>
               <div className="relative flex justify-center text-xs">
                 <span className="px-2 text-muted-foreground">
-                  Or continue with
+                  {t('auth.login.continue_with')}
                 </span>
               </div>
             </div>
@@ -184,32 +186,26 @@ export function LoginComponent() {
               disabled={oauthProvider !== null || isSubmitting}
               onClick={() => handleSocialLogin('google')}
             />
-            <SocialLoginButton
-              provider="facebook"
-              isLoading={oauthProvider === 'facebook'}
-              disabled={oauthProvider !== null || isSubmitting}
-              onClick={() => handleSocialLogin('facebook')}
-            />
           </FieldGroup>
         </FieldSet>
       </form>
       <div className="flex flex-col items-center justify-center gap-2 border-t border-border/10 pt-3.5 pb-2 text-center">
         <p className="text-xs text-muted-foreground">
-          Forgot your password?{' '}
+          {t('auth.login.forgot_password')}{' '}
           <Link
             to="/forgot-password"
             className="text-primary font-medium hover:underline transition-colors"
           >
-            Reset here!
+            {t('auth.login.reset_here')}
           </Link>
         </p>
         <p className="text-xs text-muted-foreground">
-          Don't have an account?{' '}
+          {t('auth.login.no_account')}{' '}
           <Link
             to="/register"
             className="text-primary font-medium hover:underline transition-colors"
           >
-            Sign up
+            {t('auth.login.sign_up')}
           </Link>
         </p>
       </div>

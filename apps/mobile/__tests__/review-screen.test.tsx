@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import ReviewScreen from '@/app/review/[deckId]';
+import { finishTwoFactorChallenge } from '@/lib/two-factor-challenge';
 
 const mockUseSession = jest.fn();
 const mockReviewSession = jest.fn((_props: { deckId: string }) => null);
@@ -23,7 +24,10 @@ jest.mock('expo-router', () => {
 });
 
 describe('Review screen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    finishTwoFactorChallenge();
+  });
 
   it('passes the route deck id to the review session', () => {
     mockUseSession.mockReturnValue({

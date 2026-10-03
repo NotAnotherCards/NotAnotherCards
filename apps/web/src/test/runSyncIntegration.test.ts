@@ -53,6 +53,7 @@ describe('createRunSync against the real synchronize', () => {
     );
 
     expect(await createRunSync(db)()).toEqual({
+      lease: 'acquired',
       resynced: false,
       rejected: 0,
       rejectedRecords: {},
@@ -80,6 +81,7 @@ describe('createRunSync against the real synchronize', () => {
     );
 
     expect(await createRunSync(db)()).toEqual({
+      lease: 'acquired',
       resynced: true,
       rejected: 0,
       rejectedRecords: {},

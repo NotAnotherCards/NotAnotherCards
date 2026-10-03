@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  aiJobResponseSchema,
-  aiJobsResponseSchema,
-  aiQuotaResponseSchema,
-  apiErrorBodySchema,
   CreateAiJobInput,
   QuotaStatus,
   type AiJob,
@@ -12,7 +9,8 @@ import {
 } from '@repo/schemas';
 import { AiPlaygroundForm } from './AiPlaygroundForm';
 import { AiJobStatusTracker } from './AiJobStatusTracker';
-import { readPlaygroundStream } from './readPlaygroundStream';
+import { ApiError } from '@repo/api-client';
+import { apiClient } from '@/lib/api-client';
 import { AiResultPreview } from './AiResultPreview';
 import { AiWordNotePreview } from './AiWordNotePreview';
 import { Calendar, Zap, AlertCircle } from 'lucide-react';
@@ -21,6 +19,7 @@ import { useStore } from '@/hooks/useStore';
 type Job = AiJob;
 
 export function AiGenerationPlaygroundComponent() {
+  const { t } = useTranslation();
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [currentJob, setCurrentJob] = useState<Job | null>(null);
@@ -73,25 +72,9 @@ export function AiGenerationPlaygroundComponent() {
       let terminalStateReached = false;
 
       try {
-        const res = await fetch(`/api/ai/jobs/${currentJob.id}`, {
+        const { job: updatedJob } = await apiClient.ai.job(currentJob.id, {
           signal: controller.signal,
         });
-        if (disposed) return;
-        if (!res.ok) {
-          const { message } = apiErrorBodySchema.parse(
-            await res.json().catch(() => null),
-          );
-          if (disposed) return;
-          setErrorMessage(message || 'Failed to poll job status');
-          setCurrentJob((prev) =>
-            prev ? { ...prev, status: 'failed' } : null,
-          );
-          setLoading(false);
-          terminalStateReached = true;
-          return;
-        }
-
-        const { job: updatedJob } = aiJobResponseSchema.parse(await res.json());
         if (disposed) return;
         setCurrentJob(updatedJob);
 
@@ -101,7 +84,10 @@ export function AiGenerationPlaygroundComponent() {
         ) {
           if (updatedJob.status === 'failed') {
             setErrorMessage(
-              'Creation could not be completed. Please try again with a different input.',
+              t(
+                'playground.creation_error',
+                'Creation could not be completed. Please try again with a different input.',
+              ),
             );
           }
           setLoading(false);
@@ -109,10 +95,15 @@ export function AiGenerationPlaygroundComponent() {
           void fetchJobs(controller.signal);
           void fetchQuota(controller.signal);
         }
-      } catch {
+      } catch (error) {
         if (disposed) return;
         setErrorMessage(
-          'Unable to update job status. Please check your connection.',
+          error instanceof ApiError && error.status !== undefined
+            ? (t(error.message, error.message) as string)
+            : t(
+                'playground.poll_network_error',
+                'Unable to update job status. Please check your connection.',
+              ),
         );
         setCurrentJob((prev) => (prev ? { ...prev, status: 'failed' } : null));
         setLoading(false);
@@ -135,11 +126,8 @@ export function AiGenerationPlaygroundComponent() {
 
   const fetchQuota = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch('/api/ai/quota', { signal });
-      if (res.ok) {
-        const { quota } = aiQuotaResponseSchema.parse(await res.json());
-        if (!signal?.aborted) setQuota(quota);
-      }
+      const { quota } = await apiClient.ai.quota({ signal });
+      if (!signal?.aborted) setQuota(quota);
     } catch {
       // Background quota fetch failure handled gracefully
     }
@@ -147,11 +135,8 @@ export function AiGenerationPlaygroundComponent() {
 
   const fetchJobs = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch('/api/ai/jobs', { signal });
-      if (res.ok) {
-        const { jobs } = aiJobsResponseSchema.parse(await res.json());
-        if (!signal?.aborted) setJobs(jobs);
-      }
+      const { jobs } = await apiClient.ai.jobs({ signal });
+      if (!signal?.aborted) setJobs(jobs);
     } catch {
       // Background jobs list fetch failure handled gracefully
     }
@@ -175,41 +160,19 @@ export function AiGenerationPlaygroundComponent() {
     setErrorMessage(null);
     try {
       if (input.type === 'topic_deck') {
-        const res = await fetch('/api/ai/playground/stream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
-          signal: request.signal,
-        });
-        if (!res.ok) {
-          const { message } = apiErrorBodySchema.parse(
-            await res.json().catch(() => null),
-          );
-          throw new Error(
-            message || 'Unable to start card creation. Please try again.',
-          );
-        }
-        if (!res.body) throw new Error('Creation response has no stream.');
-        const result = await readPlaygroundStream(res.body, (delta) => {
-          if (!request.signal.aborted) setStreamText((text) => text + delta);
-        });
+        const result = await apiClient.ai.playgroundStream(
+          input,
+          (event) => {
+            if (event.type === 'delta' && !request.signal.aborted)
+              setStreamText((text) => text + event.delta);
+          },
+          { signal: request.signal },
+        );
         if (!request.signal.aborted) setStreamResult(result);
       } else {
-        const res = await fetch('/api/ai/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
+        const data = await apiClient.ai.generate(input, {
           signal: request.signal,
         });
-        if (!res.ok) {
-          const { message } = apiErrorBodySchema.parse(
-            await res.json().catch(() => null),
-          );
-          throw new Error(
-            message || 'Unable to start creation. Please try again.',
-          );
-        }
-        const data = aiJobResponseSchema.parse(await res.json());
         if (!request.signal.aborted) setCurrentJob(data.job);
         // Polling will take over from here
         return;
@@ -218,7 +181,9 @@ export function AiGenerationPlaygroundComponent() {
       setLoading(false);
       if (!request.signal.aborted) {
         setErrorMessage(
-          error instanceof Error ? error.message : 'Unable to create.',
+          error instanceof Error
+            ? (t(error.message, error.message) as string)
+            : t('playground.create_failed', 'Unable to create.'),
         );
       }
     } finally {
@@ -241,14 +206,17 @@ export function AiGenerationPlaygroundComponent() {
       await createCardsBatch({
         deckIdOrTitle,
         isNew,
-        description: 'Created Cards',
+        description: t('playground.created_cards', 'Created Cards'),
         cards: cards.map((card) => ({
           front: card.front,
           back: card.back,
         })),
       });
     } catch {
-      const msg = 'Unable to save cards to deck. Please try again.';
+      const msg = t(
+        'playground.save_cards_error',
+        'Unable to save cards to deck. Please try again.',
+      );
       setErrorMessage(msg);
       throw new Error(msg);
     } finally {
@@ -269,7 +237,10 @@ export function AiGenerationPlaygroundComponent() {
         wordNoteCandidate.fields,
       );
     } catch {
-      const msg = 'Unable to save word note to deck. Please try again.';
+      const msg = t(
+        'playground.save_word_error',
+        'Unable to save word note to deck. Please try again.',
+      );
       setErrorMessage(msg);
       throw new Error(msg);
     } finally {
@@ -285,7 +256,10 @@ export function AiGenerationPlaygroundComponent() {
     setCurrentJob(job);
     if (job.status === 'failed') {
       setErrorMessage(
-        'Creation could not be completed. Please try again with a different input.',
+        t(
+          'playground.creation_error',
+          'Creation could not be completed. Please try again with a different input.',
+        ),
       );
     } else {
       setErrorMessage(null);
@@ -298,7 +272,10 @@ export function AiGenerationPlaygroundComponent() {
   };
 
   const getTargetDeckName = (deckId: string) => {
-    return decks.find((d) => d.id === deckId)?.title || 'Selected Deck';
+    return (
+      decks.find((d) => d.id === deckId)?.title ||
+      t('playground.selected_deck', 'Selected Deck')
+    );
   };
 
   return (
@@ -333,17 +310,19 @@ export function AiGenerationPlaygroundComponent() {
           <div className="flex justify-between items-center">
             <h3 className="text-base font-bold tracking-tight flex items-center gap-1.5">
               <Calendar className="size-4.5 text-muted-foreground" />
-              Previous Jobs History
+              {t('playground.history_title', 'Previous Jobs History')}
             </h3>
             <span className="text-xs font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-              {jobs.length} total
+              {t('playground.total_jobs', '{{count}} total', {
+                count: jobs.length,
+              })}
             </span>
           </div>
 
           <div className="space-y-2.5 max-h-62.5 overflow-y-auto pr-1">
             {jobs.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">
-                No previous jobs found.
+                {t('playground.no_jobs', 'No previous jobs found.')}
               </p>
             ) : (
               jobs.map((job) => (
@@ -360,10 +339,10 @@ export function AiGenerationPlaygroundComponent() {
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         {job.type === 'topic_deck'
-                          ? 'Topic'
+                          ? t('playground.type_topic', 'Topic')
                           : job.type === 'text_cards'
-                            ? 'Source Paragraph'
-                            : 'Word'}
+                            ? t('playground.type_source', 'Source Paragraph')
+                            : t('playground.type_word', 'Word')}
                       </span>
                     </div>
                     <p className="text-sm font-semibold truncate text-foreground/90">
@@ -402,13 +381,19 @@ export function AiGenerationPlaygroundComponent() {
         !cards &&
         !wordNoteCandidate ? (
           <div className="bg-card border border-border/60 rounded-3xl p-6 shadow-md space-y-3">
-            <h3 className="text-base font-bold tracking-tight">Live Output</h3>
+            <h3 className="text-base font-bold tracking-tight">
+              {t('playground.live_output', 'Live Output')}
+            </h3>
             <pre
               ref={liveOutput}
-              aria-label="Live creation output"
+              aria-label={t(
+                'playground.live_output_aria',
+                'Live creation output',
+              )}
               className="max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground"
             >
-              {streamText || 'Waiting for the first text…'}
+              {streamText ||
+                t('playground.waiting', 'Waiting for the first text…')}
             </pre>
           </div>
         ) : cards ? (
@@ -436,12 +421,19 @@ export function AiGenerationPlaygroundComponent() {
             </div>
             <div className="space-y-1.5 max-w-md">
               <h3 className="text-xl font-bold mb-2">
-                {currentJob ? 'Creation Job Failed' : 'Creation Failed'}
+                {currentJob
+                  ? t('playground.job_failed', 'Creation Job Failed')
+                  : t('playground.creation_failed', 'Creation Failed')}
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {errorMessage ||
-                  currentJob?.error ||
-                  'Creation could not be completed. Please try again with a different input.'}
+                  (currentJob?.error
+                    ? (t(currentJob.error, currentJob.error) as string)
+                    : null) ||
+                  t(
+                    'playground.creation_error',
+                    'Creation could not be completed. Please try again with a different input.',
+                  )}
               </p>
             </div>
           </div>
@@ -452,11 +444,13 @@ export function AiGenerationPlaygroundComponent() {
             </div>
             <div>
               <h3 className="font-semibold text-foreground text-sm">
-                No Results Preview
+                {t('playground.no_results_title', 'No Results Preview')}
               </h3>
               <p className="text-sm text-muted-foreground/80 max-w-sm mx-auto leading-relaxed">
-                Trigger a creation task or select a completed past job from the
-                history panel to view results.
+                {t(
+                  'playground.no_results_desc',
+                  'Trigger a creation task or select a completed past job from the history panel to view results.',
+                )}
               </p>
             </div>
           </div>

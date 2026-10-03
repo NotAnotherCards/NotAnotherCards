@@ -32,10 +32,8 @@ import { useReportDeck } from '@/hooks/useReportDeck';
 import { useStore } from '@/hooks/useStore';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
 import { useNavigate } from '@tanstack/react-router';
-import {
-  clearLastReviewDeckId,
-  getLastReviewDeckId,
-} from '@/lib/review-preferences';
+import { useTranslation } from 'react-i18next';
+import { getLastReviewDeckId } from '@/lib/review-preferences';
 import { gamificationMeSchema, type SharedDeckSummary } from '@repo/schemas';
 import {
   selectTodayChallengeActivity,
@@ -50,7 +48,9 @@ import {
   UserBadge,
   type UserBadgeRecord,
   rejectedSummary,
+  reviewTarget,
 } from '@repo/offline-db';
+import { formatNumber, formatDate } from '@repo/i18n';
 
 type OverviewProps = {
   onChooseDeck: () => void;
@@ -59,45 +59,51 @@ type OverviewProps = {
 const NOTIFIED_STORAGE_KEY = 'gamification_notified_today';
 const BADGE_NOTIFIED_STORAGE_KEY = 'gamification_badges_notified';
 
-const BADGES = [
-  {
-    id: 'first-review',
-    name: 'First Step',
-    rule: 'Complete your first review',
-    description: 'The journey of a thousand miles begins with a single step.',
-    icon: Medal,
-  },
-  {
-    id: 'seven-day-streak',
-    name: 'Week Warrior',
-    rule: '7-day streak',
-    description: 'You reviewed 7 days in a row! Consistency is key.',
-    icon: Flame,
-  },
-  {
-    id: 'hundred-reviews',
-    name: 'Century Mark',
-    rule: '100 distinct reviews',
-    description:
-      'You have completed 100 distinct reviews. Incredible dedication!',
-    icon: Trophy,
-  },
-];
+function getBadges(t: (key: string) => string) {
+  return [
+    {
+      id: 'first-review',
+      name: t('dashboard.overview.badges.first_review.name'),
+      rule: t('dashboard.overview.badges.first_review.rule'),
+      description: t('dashboard.overview.badges.first_review.description'),
+      icon: Medal,
+    },
+    {
+      id: 'seven-day-streak',
+      name: t('dashboard.overview.badges.seven_day.name'),
+      rule: t('dashboard.overview.badges.seven_day.rule'),
+      description: t('dashboard.overview.badges.seven_day.description'),
+      icon: Flame,
+    },
+    {
+      id: 'hundred-reviews',
+      name: t('dashboard.overview.badges.hundred_reviews.name'),
+      rule: t('dashboard.overview.badges.hundred_reviews.rule'),
+      description: t('dashboard.overview.badges.hundred_reviews.description'),
+      icon: Trophy,
+    },
+  ];
+}
 
 function DashboardSyncStatus() {
+  const { t } = useTranslation();
   const controller = useSyncController();
   const state = useSyncState();
 
   if (!controller) {
-    return <span className="text-muted-foreground font-semibold">Offline</span>;
+    return (
+      <span className="text-muted-foreground font-semibold">
+        {t('dashboard.sync.offline')}
+      </span>
+    );
   }
 
   const LABELS: Record<string, string> = {
-    idle: 'Synced',
-    syncing: 'Syncing…',
-    offline: 'Offline',
-    error: 'Sync failed',
-    'resync-required': 'Reset required',
+    idle: t('dashboard.sync.synced'),
+    syncing: t('dashboard.sync.syncing'),
+    offline: t('dashboard.sync.offline'),
+    error: t('dashboard.sync.failed'),
+    'resync-required': t('dashboard.sync.reset_required'),
   };
 
   const { count: rejected, details: rejectionDetails } = rejectedSummary(state);
@@ -118,7 +124,7 @@ function DashboardSyncStatus() {
         title={rejectionDetails}
       >
         {rejected
-          ? `Synced, ${rejected} not accepted`
+          ? t('dashboard.sync.rejected', { rejected })
           : (LABELS[state.status] ?? state.status)}
       </span>
       {(state.status === 'error' || state.status === 'offline') && (
@@ -128,7 +134,7 @@ function DashboardSyncStatus() {
           className="flex items-center gap-1 underline text-[10px] text-muted-foreground hover:text-foreground cursor-pointer font-normal"
         >
           <RefreshCw className="size-3" />
-          Retry
+          {t('common.retry')}
         </button>
       )}
     </div>
@@ -136,6 +142,7 @@ function DashboardSyncStatus() {
 }
 
 export function Overview({ onChooseDeck }: OverviewProps) {
+  const { t } = useTranslation();
   const store = useStore();
   const { data: reviewEvents } = useQuery<ReviewEventRecord>(
     store.db && getReviewHistoryQuery(store.db),
@@ -153,6 +160,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     error: sharedDecksError,
   } = useSharedDecks();
   const { importDeck, importingIds, error: importError } = useImportDeck();
+  const [importedDecks, setImportedDecks] = useState<
+    Record<
+      string,
+      {
+        deckId: string;
+        status: 'syncing' | 'pending' | 'ready';
+      }
+    >
+  >({});
   const {
     reportDeck,
     reportingIds,
@@ -170,60 +186,59 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     store.cards,
     store.notes,
   );
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage || 'en';
 
   const user = session?.user || {
     name: 'Legendary Learner',
     email: 'learner@notanothercards.com',
   };
 
+  const target = reviewTarget({
+    lastDeckId: session?.user.id ? getLastReviewDeckId(session.user.id) : null,
+    memberships: store.noteDecks,
+    cards: store.cards,
+    now: Date.now(),
+  });
   const handleStartReview = () => {
-    const userId = session?.user.id;
-    if (!userId) {
-      onChooseDeck();
-      return;
-    }
-
-    const lastDeckId = getLastReviewDeckId(userId);
-    const lastDeckStillExists = (store.decks || []).some(
-      (deck) => deck.id === lastDeckId,
-    );
-
-    if (lastDeckId && lastDeckStillExists) {
-      void navigate({ to: '/deck-review', search: { deckId: lastDeckId } });
-      return;
-    }
-
-    if (lastDeckId) clearLastReviewDeckId(userId);
-    onChooseDeck();
+    if (target === 'library' || target === 'nothing-due') onChooseDeck();
+    else void navigate({ to: '/deck-review', search: { deckId: target } });
   };
 
   // Dynamic statistics from local remelonDB store
   const stats = [
     {
-      title: "Today's Reviews",
-      value: `${store.dueCards?.length ?? 0} cards`,
-      description: 'Due for review',
+      title: t('dashboard.overview.stats.today_reviews'),
+      value: t('dashboard.overview.stats.cards', {
+        count: store.dueCards?.length ?? 0,
+      }),
+      description: t('dashboard.overview.stats.due_for_review'),
       icon: Clock,
       color: 'text-emerald-500 bg-emerald-500/10',
     },
     {
-      title: 'Personal Dictionary',
-      value: `${new Set((store.noteDecks || []).map((nd) => nd.note_id)).size} words`,
-      description: 'Added to your collection',
+      title: t('dashboard.overview.stats.personal_dictionary'),
+      value: t('dashboard.overview.stats.words', {
+        count: new Set((store.noteDecks || []).map((nd) => nd.note_id)).size,
+      }),
+      description: t('dashboard.overview.stats.added_to_collection'),
       icon: BookMarked,
       color: 'text-blue-500 bg-blue-500/10',
     },
     {
-      title: 'Learning Streak',
-      value: `${streak} ${streak === 1 ? 'Day' : 'Days'}`,
-      description: 'Daily learning-day streak',
+      title: t('dashboard.overview.stats.learning_streak'),
+      value:
+        streak === 1
+          ? t('dashboard.overview.stats.days_one')
+          : t('dashboard.overview.stats.days_other', { count: streak }),
+      description: t('dashboard.overview.stats.daily_streak'),
       icon: Flame,
       color: 'text-orange-500 bg-orange-500/10',
     },
     {
-      title: 'Words Learned',
-      value: learnedNotes.toLocaleString(),
-      description: 'Notes reviewed successfully',
+      title: t('dashboard.overview.stats.words_learned'),
+      value: formatNumber(learnedNotes, locale),
+      description: t('dashboard.overview.stats.notes_reviewed'),
       icon: GraduationCap,
       color: 'text-purple-500 bg-purple-500/10',
     },
@@ -431,18 +446,22 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     const isReview = challenge.code === 'daily-review';
     return {
       id: index + 1,
-      title: isReview ? 'Daily Review' : 'New Vocabulary',
+      title: isReview
+        ? t('dashboard.overview.goals.daily_review')
+        : t('dashboard.overview.goals.new_vocabulary'),
       description: isReview
-        ? 'Review at least 20 words due today'
-        : 'Add 5 new words to your personal dictionary',
+        ? t('dashboard.overview.goals.review_20_words')
+        : t('dashboard.overview.goals.add_5_words'),
       progress: `${challenge.current} / ${challenge.target}`,
       percent: Math.min(
         100,
         Math.round((challenge.current / challenge.target) * 100),
       ),
       reward: challenge.completed
-        ? 'Completed'
-        : `${Math.max(0, challenge.target - challenge.current)} remaining`,
+        ? t('dashboard.overview.goals.completed')
+        : t('dashboard.overview.goals.remaining', {
+            value: Math.max(0, challenge.target - challenge.current),
+          }),
     };
   });
   return (
@@ -478,7 +497,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
             <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
-              <span className="text-muted-foreground">Status</span>
+              <span className="text-muted-foreground">
+                {t('dashboard.overview.profile.status')}
+              </span>
               <span
                 className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
                   isOnline
@@ -486,12 +507,16 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                     : 'bg-destructive/10 text-destructive animate-pulse'
                 }`}
               >
-                {isOnline ? 'Online' : 'Offline'}
+                {isOnline
+                  ? t('dashboard.overview.profile.online')
+                  : t('dashboard.overview.profile.offline')}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border/30 text-xs">
-              <span className="text-muted-foreground">Sync</span>
+              <span className="text-muted-foreground">
+                {t('dashboard.overview.profile.sync')}
+              </span>
               <DashboardSyncStatus />
             </div>
 
@@ -502,7 +527,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 onClick={handleStartReview}
               >
                 <Library className="size-3.5" />
-                Start Review
+                {t('dashboard.overview.profile.start_review')}
               </Button>
             </div>
           </CardContent>
@@ -546,14 +571,31 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <BookOpen className="size-4 text-primary" />
-              Community Decks
+              {t('dashboard.overview.community.title')}
             </CardTitle>
             <CardDescription>
-              Browse and study ready-made vocabulary sets shared by the
-              community.
+              {t('dashboard.overview.community.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
+            {sharedDecks
+              .filter(
+                (deck) =>
+                  importedDecks[deck.id]?.status === 'pending' &&
+                  !store.decks.some(
+                    (local) => local.id === importedDecks[deck.id].deckId,
+                  ),
+              )
+              .map((deck) => (
+                <p
+                  key={deck.id}
+                  role="status"
+                  className="mx-6 mt-4 text-sm text-muted-foreground"
+                >
+                  {deck.title}: imported. It will appear after the next
+                  successful sync.
+                </p>
+              ))}
             {(importError || (reportError && !reportingDeck)) && (
               <div className="mx-6 mt-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20 flex items-center gap-2">
                 <AlertCircle className="size-4" />
@@ -567,20 +609,28 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 </div>
               ) : sharedDecksError ? (
                 <div className="p-8 text-center text-muted-foreground text-sm">
-                  Failed to load community decks. Please try again later.
+                  {t('dashboard.overview.community.load_failed')}
                 </div>
               ) : sharedDecks.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground text-sm">
-                  No community decks available yet.
+                  {t('dashboard.overview.community.empty')}
                 </div>
               ) : (
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr className="border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground">
-                      <th className="px-6 py-3">Deck Name</th>
-                      <th className="px-6 py-3">Description</th>
-                      <th className="px-6 py-3">Cards</th>
-                      <th className="px-6 py-3 text-right">Action</th>
+                      <th className="px-6 py-3">
+                        {t('dashboard.overview.community.deck_name')}
+                      </th>
+                      <th className="px-6 py-3">
+                        {t('dashboard.overview.community.deck_description')}
+                      </th>
+                      <th className="px-6 py-3">
+                        {t('dashboard.overview.community.cards')}
+                      </th>
+                      <th className="px-6 py-3 text-right">
+                        {t('dashboard.overview.community.action')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/30">
@@ -595,10 +645,13 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                           </div>
                           <div className="flex flex-col min-w-0">
                             <span className="truncate">
-                              {deck.title || 'Untitled'}
+                              {deck.title ||
+                                t('dashboard.overview.community.untitled')}
                             </span>
                             <span className="text-[10px] text-muted-foreground font-normal truncate">
-                              by @{deck.owner.username}
+                              {t('dashboard.overview.community.by_user', {
+                                username: deck.owner.username,
+                              })}
                             </span>
                           </div>
                         </td>
@@ -631,18 +684,47 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                               variant="outline"
                               size="sm"
                               className="cursor-pointer min-w-17.5"
-                              disabled={importingIds.has(deck.id)}
+                              disabled={
+                                importingIds.has(deck.id) ||
+                                !!importedDecks[deck.id]
+                              }
                               onClick={async () => {
                                 const result = await importDeck(deck.id);
                                 if (result) {
-                                  controller?.syncNow();
+                                  setImportedDecks((prev) => ({
+                                    ...prev,
+                                    [deck.id]: {
+                                      deckId: result.deckId,
+                                      status: 'syncing',
+                                    },
+                                  }));
+                                  const state = await controller?.syncNow();
+                                  const synced =
+                                    state &&
+                                    (state.status === 'idle' ||
+                                      state.status === 'resync-required') &&
+                                    state.lastResult &&
+                                    // a run another tab locked out
+                                    // transferred nothing
+                                    state.lastResult.lease === 'acquired' &&
+                                    state.lastResult.rejected === 0;
+                                  setImportedDecks((prev) => ({
+                                    ...prev,
+                                    [deck.id]: {
+                                      deckId: result.deckId,
+                                      status: synced ? 'ready' : 'pending',
+                                    },
+                                  }));
                                 }
                               }}
                             >
-                              {importingIds.has(deck.id) ? (
+                              {importingIds.has(deck.id) ||
+                              importedDecks[deck.id]?.status === 'syncing' ? (
                                 <Loader2 className="size-4 animate-spin" />
+                              ) : importedDecks[deck.id] ? (
+                                'Imported'
                               ) : (
-                                'Import'
+                                t('dashboard.overview.community.import')
                               )}
                             </Button>
                           </div>
@@ -661,11 +743,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <Sparkles className="size-4 text-amber-500" />
-              Daily Learning Goals
+              {t('dashboard.overview.goals.daily_learning_goals')}
             </CardTitle>
             <CardDescription>
-              Complete daily tasks to unlock achievements and progress your
-              fluency.
+              {t('dashboard.overview.goals.daily_learning_goals_desc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-4">
@@ -702,8 +783,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               </div>
             ))}
             <div className="mt-4 pt-4 border-t border-border/40 text-[10px] text-muted-foreground leading-relaxed">
-              <p>One review earns one point regardless of rating.</p>
-              <p>Daily challenges and streaks reset at 00:00 UTC.</p>
+              <p>{t('dashboard.overview.goals.footer_points')}</p>
+              <p>{t('dashboard.overview.goals.footer_reset')}</p>
             </div>
           </CardContent>
         </Card>
@@ -714,15 +795,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         <CardHeader className="border-b border-border/40 pb-4">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <Trophy className="size-4 text-primary" />
-            Achievements
+            {t('dashboard.overview.achievements.title')}
           </CardTitle>
           <CardDescription>
-            Badges you've earned along your language learning journey.
+            {t('dashboard.overview.achievements.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {BADGES.map((badgeDef) => {
+            {getBadges(t).map((badgeDef) => {
               const earned = userBadges?.find(
                 (b) => b.badge_id === badgeDef.id,
               );
@@ -750,7 +831,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                       {badgeDef.name}
                       {!earned && (
                         <span className="text-[10px] font-normal px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                          Locked
+                          {t('dashboard.overview.achievements.locked')}
                         </span>
                       )}
                     </h4>
@@ -762,8 +843,12 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                     </p>
                     {earned && (
                       <p className="text-[10px] text-primary/80 pt-1">
-                        Unlocked:{' '}
-                        {new Date(earned.unlocked_at).toLocaleDateString()}
+                        {t('dashboard.overview.achievements.unlocked', {
+                          date: formatDate(
+                            new Date(earned.unlocked_at),
+                            locale,
+                          ),
+                        })}
                       </p>
                     )}
                   </div>
@@ -792,17 +877,19 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 className="flex items-center gap-2"
               >
                 <Flag className="size-5 text-destructive" />
-                Report {reportingDeck.title || 'deck'}
+                {t('dashboard.overview.community.report_deck', {
+                  deck: reportingDeck.title || 'deck',
+                })}
               </CardTitle>
               <CardDescription>
-                Tell the moderation team what is wrong. A report may queue a
-                thorough automatic re-check, but the report alone never hides
-                the deck.
+                {t('dashboard.overview.community.report_description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {reportSubmitted ? (
-                <p className="text-sm">Thank you. Your report was recorded.</p>
+                <p className="text-sm">
+                  {t('dashboard.overview.community.report_recorded')}
+                </p>
               ) : (
                 <textarea
                   aria-label="Reason for report"
@@ -810,7 +897,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                   maxLength={2000}
                   onChange={(event) => setReportReason(event.target.value)}
                   className="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  placeholder="Describe the problem with this deck"
+                  placeholder={t(
+                    'dashboard.overview.community.report_placeholder',
+                  )}
                 />
               )}
               {reportError && (
@@ -823,7 +912,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                   variant="outline"
                   onClick={() => setReportingDeck(null)}
                 >
-                  {reportSubmitted ? 'Close' : 'Cancel'}
+                  {reportSubmitted ? t('common.close') : t('common.cancel')}
                 </Button>
                 {!reportSubmitted && (
                   <Button
@@ -841,7 +930,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                     {reportingIds.has(reportingDeck.id) ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      'Submit report'
+                      t('dashboard.overview.community.submit_report')
                     )}
                   </Button>
                 )}
@@ -863,14 +952,16 @@ export function Overview({ onChooseDeck }: OverviewProps) {
           >
             <Sparkles className="size-4 shrink-0" />
             <div className="text-sm font-medium">
-              Challenge Completed:{' '}
-              {code === 'daily-review' ? 'Daily Review' : 'New Vocabulary'}
+              {t('dashboard.overview.toasts.challenge_completed')}
+              {code === 'daily-review'
+                ? t('dashboard.overview.goals.daily_review')
+                : t('dashboard.overview.goals.new_vocabulary')}
             </div>
           </div>
         ))}
 
         {badgeNotifications.map((badgeId) => {
-          const badgeDef = BADGES.find((b) => b.id === badgeId);
+          const badgeDef = getBadges(t).find((b) => b.id === badgeId);
           if (!badgeDef) return null;
           const Icon = badgeDef.icon;
           return (
@@ -889,7 +980,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               <div aria-hidden="true">
                 <div className="text-sm font-bold flex items-center gap-1.5">
                   <Trophy className="size-3.5 text-yellow-300" />
-                  New Badge Unlocked!
+                  {t('dashboard.overview.toasts.new_badge')}
                 </div>
                 <div className="text-xs text-primary-foreground/90 mt-0.5 font-medium">
                   {badgeDef.name}

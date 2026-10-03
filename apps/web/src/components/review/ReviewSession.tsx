@@ -19,8 +19,11 @@ type ReviewSessionProps = {
   onCreateCard: (data: { front: string; back: string }) => Promise<void>;
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
-  onRequestNextBatch?: () => Card[];
-  onComplete?: () => void;
+  onRequestNextBatch?: () => Promise<Card[]>;
+  onActivateMore?: (count: number) => Promise<void>;
+  activationCount?: number;
+  inactiveItemCount?: number;
+  activationItemLabel?: 'words' | 'cards';
   reviewMode?: 'basic' | 'extended';
   showNextReviewInterval?: boolean;
 };
@@ -35,7 +38,10 @@ export function ReviewSession({
   onRecordReview,
   onDeleteNote,
   onRequestNextBatch,
-  onComplete,
+  onActivateMore,
+  activationCount,
+  inactiveItemCount = 0,
+  activationItemLabel = 'words',
   reviewMode = 'basic',
   showNextReviewInterval = false,
 }: ReviewSessionProps) {
@@ -122,7 +128,7 @@ export function ReviewSession({
     if (exitDirection) return;
 
     setExitDirection(direction);
-    exitTimer.current = window.setTimeout(() => {
+    exitTimer.current = window.setTimeout(async () => {
       cardInteraction.clearDrag();
 
       if (direction === 'delete') {
@@ -130,11 +136,20 @@ export function ReviewSession({
         return;
       }
 
+      let nextBatch: Card[] = [];
       const isLastCardInBatch = currentCardIndex === sessionCards.length - 1;
-      const nextBatch = isLastCardInBatch ? onRequestNextBatch?.() : [];
+
+      if (isLastCardInBatch && onRequestNextBatch) {
+        try {
+          nextBatch = await onRequestNextBatch();
+        } catch {
+          // The answer is already saved: never offer it again after a failed
+          // read. Web reads in memory today; add read-only retry if that changes.
+        }
+      }
 
       setIsFlipped(false);
-      if (nextBatch && nextBatch.length > 0) {
+      if (nextBatch.length > 0) {
         setSessionCards(nextBatch);
         setCurrentCardIndex(0);
       } else {
@@ -159,21 +174,7 @@ export function ReviewSession({
     }
 
     setIsSavingReview(false);
-    const directionByAnswer: Record<
-      Exclude<ReviewAnswer, 'very-easy'>,
-      ReviewCardExitDirection
-    > = {
-      forgot: 'forgot',
-      hard: 'hard',
-      remember: 'remember',
-    };
-
-    if (answer === 'very-easy') {
-      startCardExit('remember');
-      return;
-    }
-
-    startCardExit(directionByAnswer[answer]);
+    startCardExit(answer === 'very-easy' ? 'remember' : answer);
   };
 
   useEffect(() => {
@@ -181,10 +182,6 @@ export function ReviewSession({
       if (exitTimer.current) window.clearTimeout(exitTimer.current);
     };
   }, []);
-
-  useEffect(() => {
-    if (!card) onComplete?.();
-  }, [card, onComplete]);
 
   useEffect(() => {
     if (isFlipped) firstAnswerButtonRef.current?.focus();
@@ -215,7 +212,15 @@ export function ReviewSession({
   });
 
   if (!card) {
-    return <ReviewComplete onExit={onExit} />;
+    return (
+      <ReviewComplete
+        onExit={onExit}
+        onActivate={onActivateMore}
+        activationCount={activationCount}
+        inactiveItemCount={inactiveItemCount}
+        itemLabel={activationItemLabel}
+      />
+    );
   }
 
   return (

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DeckDetail } from '@/components/deck/DeckDetail';
+import type { UserNoteRecord } from '@repo/offline-db';
+import { GERMAN, RUSSIAN } from '@repo/schemas';
+import i18n from '@/lib/i18n';
 
 const store = vi.hoisted(() => {
   const card = {
@@ -34,6 +37,7 @@ const store = vi.hoisted(() => {
       },
     ],
     getCardsForDeck: vi.fn(() => [card]),
+    getNotesForDeck: vi.fn<() => UserNoteRecord[]>(() => []),
     isBasicCard: vi.fn(() => true),
     isWordCard: vi.fn(() => false),
     noteForCard: vi.fn(),
@@ -58,6 +62,7 @@ describe('deck note actions', () => {
     store.decks[0].target_language_id = null;
     store.isBasicCard.mockReturnValue(true);
     store.isWordCard.mockReturnValue(false);
+    store.getNotesForDeck.mockReturnValue([]);
     store.removeNoteFromDeck.mockResolvedValue(undefined);
     store.updateNoteFields.mockResolvedValue(undefined);
   });
@@ -91,6 +96,21 @@ describe('deck note actions', () => {
     expect(screen.getByTitle('Remove from Deck')).toBeInTheDocument();
   });
 
+  it('localizes the word deck accessibility label in the detail header', async () => {
+    store.decks[0].note_type = 'word';
+    store.decks[0].native_language_id = GERMAN;
+    store.decks[0].target_language_id = RUSSIAN;
+    await i18n.changeLanguage('ru');
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+
+    expect(screen.getByLabelText('🇩🇪 Немецкий → 🇷🇺 Русский')).toHaveTextContent(
+      '🇩🇪→🇷🇺',
+    );
+
+    await i18n.changeLanguage('en');
+  });
+
   it('edits a word note and preserves its canonical languages and media', async () => {
     store.decks[0].note_type = 'word';
     store.decks[0].native_language_id = 'deck-native';
@@ -109,9 +129,27 @@ describe('deck note actions', () => {
         word_audio: 'audio-1',
       }),
     });
+    store.getNotesForDeck.mockReturnValue([
+      {
+        id: 'note-1',
+        note_type: 'word',
+        fields_version: 1,
+        fields_json: JSON.stringify({
+          word: 'Hund',
+          translation: 'dog',
+          native_language_id: 'note-native',
+          target_language_id: 'note-target',
+          image: 'image-1',
+          word_audio: 'audio-1',
+        }),
+        additional_content: null,
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
 
     render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
-    fireEvent.click(screen.getByTitle('Edit Card'));
+    fireEvent.click(screen.getByTitle('Edit Word'));
     fireEvent.change(screen.getByLabelText(/^word$/i), {
       target: { value: 'Hunde' },
     });
@@ -126,6 +164,33 @@ describe('deck note actions', () => {
         image: 'image-1',
         word_audio: 'audio-1',
       }),
+    );
+  });
+
+  it('removes an invalid word through its fallback row', async () => {
+    store.decks[0].note_type = 'word';
+    store.decks[0].native_language_id = 'deck-native';
+    store.decks[0].target_language_id = 'deck-target';
+    store.getNotesForDeck.mockReturnValue([
+      {
+        id: 'note-1',
+        note_type: 'word',
+        fields_version: 1,
+        fields_json: '{not valid json',
+        additional_content: null,
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+    expect(screen.getByText("This word can't be shown")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove word' }));
+
+    expect(screen.getByText('Remove Word from Deck?')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove from Deck' }));
+    await waitFor(() =>
+      expect(store.removeNoteFromDeck).toHaveBeenCalledWith('note-1', 'deck-1'),
     );
   });
 

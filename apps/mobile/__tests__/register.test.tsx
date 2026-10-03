@@ -1,6 +1,8 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Register from '@/app/register';
+// The app's root loads the catalogs; these render the forms without it.
+import '@/lib/i18n';
 
 const mockReplace = jest.fn();
 
@@ -9,6 +11,7 @@ jest.mock('expo-router', () => {
   const { Text } = require('react-native');
   return {
     useRouter: () => ({ replace: mockReplace }),
+    useIsFocused: () => true,
     Link: ({ children }: { children: React.ReactNode }) =>
       React.createElement(Text, null, children),
   };

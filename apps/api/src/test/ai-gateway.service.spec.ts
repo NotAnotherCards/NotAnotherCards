@@ -21,6 +21,22 @@ describe('AiGatewayService', () => {
     service = new AiGatewayService(mockConfig);
   });
 
+  function gatewayReturning(content: string): AiGatewayService {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          choices: [{ message: { content } }],
+          usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 },
+        }),
+    });
+    return new AiGatewayService({
+      get: jest.fn((key: string) =>
+        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : undefined,
+      ),
+    } as unknown as ConfigService);
+  }
+
   it('generates mock cards when AI_MOCK=1 is active', async () => {
     const result = await service.generateCards(
       'System prompt',
@@ -170,60 +186,62 @@ describe('AiGatewayService', () => {
     const rawContent =
       '<think>Let me reason about 1 card.\nFront: Question, Back: Answer.</think>\n' +
       '[{"front": "Question 1", "back": "Answer 1"}]';
-
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          choices: [{ message: { content: rawContent } }],
-          usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
-        }),
-    });
-    global.fetch = mockFetch;
-
-    const config = {
-      get: jest.fn((key: string) => {
-        if (key === 'AI_API_BASE') return 'https://mock-ai.test/v1';
-        return undefined;
-      }),
-    } as unknown as ConfigService;
-
-    const gateway = new AiGatewayService(config);
-    const result = await gateway.generateCards('sys', 'user');
-
-    expect(result.cards).toEqual([{ front: 'Question 1', back: 'Answer 1' }]);
-  });
-
-  it('extracts one JSON object from thinking and prose', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          choices: [
-            {
-              message: {
-                content:
-                  '<think>work it out</think>Here is the note:\n' +
-                  '{"word":"Hund","translation":"dog"}\nDone.',
-              },
-            },
-          ],
-          usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 },
-        }),
-    });
-    const config = {
-      get: jest.fn((key: string) =>
-        key === 'AI_API_BASE' ? 'https://mock-ai.test/v1' : undefined,
-      ),
-    } as unknown as ConfigService;
-
-    const result = await new AiGatewayService(config).generateObject(
+    const result = await gatewayReturning(rawContent).generateCards(
       'sys',
       'user',
     );
 
-    expect(result.value).toEqual({ word: 'Hund', translation: 'dog' });
+    expect(result.cards).toEqual([{ front: 'Question 1', back: 'Answer 1' }]);
+  });
+
+  it('rejects a card draft in an unterminated thinking block', async () => {
+    await expect(
+      gatewayReturning(
+        '<think>Draft: [{"front":"Hund","back":"cat"}]',
+      ).generateCards('sys', 'Hund'),
+    ).rejects.toThrow(AiParseError);
+  });
+
+  it('preserves thinking tags inside card text', async () => {
+    const result = await gatewayReturning(
+      JSON.stringify([
+        { front: '<think>draft</think>', back: 'reasoning markup' },
+      ]),
+    ).generateCards('sys', 'user');
+
+    expect(result.cards).toEqual([
+      { front: '<think>draft</think>', back: 'reasoning markup' },
+    ]);
+  });
+
+  it('extracts card JSON before trailing bracket prose', async () => {
+    const cards = [{ front: 'What does ] mean?', back: 'a closing bracket' }];
+    const result = await gatewayReturning(
+      `${JSON.stringify(cards)}\nDone ].`,
+    ).generateCards('sys', 'user');
+
+    expect(result.cards).toEqual(cards);
+  });
+
+  it('extracts one JSON object from thinking and prose', async () => {
+    const result = await gatewayReturning(
+      '<Thinking>work it out< /Thinking >Here is the note:\n' +
+        '{"word":"Hund","translation":"dog } \\"friend\\""}\nDone }.',
+    ).generateObject('sys', 'user');
+
+    expect(result.value).toEqual({
+      word: 'Hund',
+      translation: 'dog } "friend"',
+    });
     expect(result.usage.totalTokens).toBe(7);
+  });
+
+  it('rejects a word-note draft in an unterminated thinking block', async () => {
+    await expect(
+      gatewayReturning(
+        '<thinking>Draft: {"word":"Hund","translation":"cat"}',
+      ).generateObject('sys', 'Hund'),
+    ).rejects.toThrow(AiParseError);
   });
 
   it('throws AiParseError with usage when JSON parsing fails on valid HTTP response', async () => {

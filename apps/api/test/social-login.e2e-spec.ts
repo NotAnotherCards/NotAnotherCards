@@ -11,8 +11,6 @@ describe('Redirects and Session Creation (e2e)', () => {
   const previousNodeEnv = process.env.NODE_ENV;
   const previousGoogleId = process.env.GOOGLE_CLIENT_ID;
   const previousGoogleSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const previousFacebookId = process.env.FACEBOOK_CLIENT_ID;
-  const previousFacebookSecret = process.env.FACEBOOK_CLIENT_SECRET;
 
   const testUser = {
     email: `redirect-tester-${Date.now()}@random.com`,
@@ -24,8 +22,6 @@ describe('Redirects and Session Creation (e2e)', () => {
     process.env.NODE_ENV = 'production';
     process.env.GOOGLE_CLIENT_ID = 'dummy-google-client-id';
     process.env.GOOGLE_CLIENT_SECRET = 'dummy-google-client-secret';
-    process.env.FACEBOOK_CLIENT_ID = 'dummy-facebook-client-id';
-    process.env.FACEBOOK_CLIENT_SECRET = 'dummy-facebook-client-secret';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -47,8 +43,6 @@ describe('Redirects and Session Creation (e2e)', () => {
     restoreEnv('NODE_ENV', previousNodeEnv);
     restoreEnv('GOOGLE_CLIENT_ID', previousGoogleId);
     restoreEnv('GOOGLE_CLIENT_SECRET', previousGoogleSecret);
-    restoreEnv('FACEBOOK_CLIENT_ID', previousFacebookId);
-    restoreEnv('FACEBOOK_CLIENT_SECRET', previousFacebookSecret);
 
     await app.close();
   });
@@ -76,28 +70,6 @@ describe('Redirects and Session Creation (e2e)', () => {
         expect(response.body).toBeDefined();
         const body = response.body as { url: string };
         expect(body.url).toContain('accounts.google.com');
-      }
-    });
-
-    it('should initiate Facebook OAuth flow and return the redirect URL', async () => {
-      const callbackURL = `${frontendOrigin}/dashboard`;
-      const response = await request(app.getHttpServer())
-        .post('/api/auth/sign-in/social')
-        .set('Origin', frontendOrigin)
-        .send({
-          provider: 'facebook',
-          callbackURL,
-        });
-
-      if (response.status === 302) {
-        const location = response.headers.location;
-        expect(location).toBeDefined();
-        expect(location).toContain('facebook.com');
-      } else {
-        expect(response.status).toBe(200);
-        expect(response.body).toBeDefined();
-        const body = response.body as { url: string };
-        expect(body.url).toContain('facebook.com');
       }
     });
   });

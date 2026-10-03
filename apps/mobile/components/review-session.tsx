@@ -1,53 +1,27 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Stack, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
-import {
-  calculateReviewIntervalMinutes,
-  extendedReviewAnswerLabels,
-  formatReviewInterval,
-  reviewAnswerLabels,
-  reviewRatingByAnswer,
-  selectReviewBatch,
-  type ReviewAnswer,
-  type ReviewPreferences,
-  type UserCardRecord,
-} from '@repo/offline-db';
+import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/offline-db';
 import { authClient } from '@/lib/auth-client';
 import { useSessionDatabase } from '@/lib/database-provider';
-import { writeErrorMessage } from '@/lib/errors';
-import { loadReviewPreferences } from '@/lib/review-preferences';
-import { useReviewDeck } from '@/lib/review';
+import { useCards } from '@/lib/cards';
+import { useReviewLayout } from '@/lib/use-review-layout';
+import { useReviewSession } from '@/lib/use-review-session';
+import { useReviewSwipe } from '@/lib/use-review-swipe';
+import {
+  loadActivationCount,
+  saveActivationCount,
+} from '@/lib/review-preferences';
+import { CardEditor } from './card-editor';
+import { ActivationControls } from './review/activation-controls';
+import { AnswerButtons } from './review/answer-buttons';
+import { DeleteQuestion } from './review/delete-question';
+import { ReviewCards } from './review/review-cards';
+import { ReviewTopRow } from './review/review-top-row';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Markdown } from './ui/markdown';
 import { Text } from './ui/text';
-
-type ReviewBatch = {
-  deckId: string;
-  cards: UserCardRecord[];
-  remaining: UserCardRecord[];
-};
-
-// Web's two modes, same labels: basic asks whether you knew it, extended
-// keeps the four scheduler ratings apart. Settings stores the choice.
-const BASIC_ANSWERS: ReviewAnswer[] = ['forgot', 'remember'];
-const EXTENDED_ANSWERS: ReviewAnswer[] = [
-  'forgot',
-  'hard',
-  'remember',
-  'very-easy',
-];
-
-function makeBatch(deckId: string, cards: UserCardRecord[]): ReviewBatch {
-  const batch = selectReviewBatch(cards);
-  const selectedIds = new Set(batch.map((card) => card.id));
-  return {
-    deckId,
-    cards: batch,
-    remaining: cards.filter((card) => !selectedIds.has(card.id)),
-  };
-}
 
 export function ReviewSession({ deckId }: { deckId: string }) {
   const { manager } = useSessionDatabase();
@@ -63,45 +37,50 @@ export function ReviewSession({ deckId }: { deckId: string }) {
     <ActiveReviewSession
       manager={manager}
       deckId={deckId}
-      preferences={loadReviewPreferences(authSession?.user.id ?? '')}
+      userId={authSession?.user.id ?? ''}
     />
   );
 }
 
+// The review of one deck. What happens lives in three hooks: the session
+// (which card, revealed, saved, the editor), the swipe and the answer
+// layout. This component picks the screen for the session's status and
+// hands the hooks to the views in ./review.
 function ActiveReviewSession({
   manager,
   deckId,
-  preferences,
+  userId,
 }: {
   manager: DatabaseManager;
   deckId: string;
-  preferences: ReviewPreferences;
+  userId: string;
 }) {
-  const answers =
-    preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS;
   const router = useRouter();
-  const { deck, dueCards, isLoading, error, writes } = useReviewDeck(
-    manager,
-    deckId,
-  );
-  const [session, setSession] = useState<ReviewBatch | null>(null);
-  const [cardIndex, setCardIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
-
+  const { t } = useTranslation();
+  const [activationCount, setActivationCount] = useState('5');
+  const [isActivating, setIsActivating] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
   useEffect(() => {
-    if (!isLoading && deck && session?.deckId !== deckId) {
-      setSession(makeBatch(deckId, dueCards));
-      setCardIndex(0);
-      setIsFlipped(false);
-      setSaveError(null);
-      setIsComplete(false);
-    }
-  }, [deck, deckId, dueCards, isLoading, session?.deckId]);
+    setActivationCount(String(loadActivationCount(userId)));
+  }, [userId]);
+  const layout = useReviewLayout(userId);
+  const session = useReviewSession(manager, deckId, userId);
+  const editor = useCards(manager, deckId);
+  // Hooks run before the status is known, so without a card the swipe is
+  // simply off.
+  const card = session.status === 'active' ? session.card : null;
+  const canEdit = !!card && editor.canEdit(card);
+  const swipe = useReviewSwipe({
+    position: session.position,
+    hasNext: !!session.nextFront,
+    mode: layout.extended ? 'four' : 'two',
+    enabled: !!card && session.revealed && !session.busy,
+    canDelete: canEdit,
+    onAnswer: session.answer,
+    onDelete: session.confirmDelete,
+  });
 
-  if (isLoading || !writes) {
+  if (session.status === 'loading') {
     return (
       <View className="items-center py-12">
         <ActivityIndicator />
@@ -109,170 +88,200 @@ function ActiveReviewSession({
     );
   }
 
-  if (error) {
+  if (session.status === 'error') {
     return (
       <View className="gap-4 py-8">
         <Text className="text-center text-destructive">
-          Failed to load this review: {error.message}
+          {t('review.recovery.load_error', { message: session.error.message })}
         </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );
   }
 
-  if (!deck) {
+  if (session.status === 'missing') {
     return (
       <View className="gap-4 py-8">
-        <Text className="text-center font-semibold">Deck not found</Text>
+        <Text className="text-center font-semibold">
+          {t('review.recovery.deck_not_found_title', 'Deck not found')}
+        </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>Back</Text>
+          <Text>{t('review.recovery.back', 'Back')}</Text>
         </Button>
       </View>
     );
   }
 
-  if (session?.deckId !== deckId) {
-    return (
-      <View className="items-center py-12">
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
-  const card = session.cards[cardIndex];
-  const advance = () => {
-    if (cardIndex < session.cards.length - 1) {
-      setCardIndex((index) => index + 1);
-      return;
-    }
-
-    const next = makeBatch(deckId, session.remaining);
-    if (next.cards.length > 0) {
-      setSession(next);
-      setCardIndex(0);
-      return;
-    }
-    setIsComplete(true);
-  };
-
-  const record = async (answer: ReviewAnswer) => {
-    if (!card || !isFlipped || isSaving) return;
-    setSaveError(null);
-    setIsSaving(true);
-    try {
-      await writes.record(card.id, reviewRatingByAnswer[answer]);
-      setIsFlipped(false);
-      advance();
-    } catch (cause) {
-      setSaveError(writeErrorMessage(cause, 'Could not save your answer'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+  const { deck } = session;
   const leave = () => router.replace(`/deck/${deckId}`);
 
-  if (isComplete) {
+  if (session.status === 'next-batch-failed') {
     return (
       <View className="items-center gap-4 py-12">
         <Stack.Screen options={{ title: deck.title }} />
-        <Text className="text-2xl font-semibold">Review complete</Text>
-        <Text className="text-center text-muted-foreground">
-          All due cards in this deck are done for now.
+        <Text className="text-center text-destructive">
+          {session.lastStep === 'delete'
+            ? 'The card is deleted, but the next cards could not be loaded.'
+            : session.lastStep === 'activation'
+              ? 'The items are activated, but the next cards could not be loaded.'
+              : 'Your answer is saved, but the next cards could not be loaded.'}
         </Text>
-        <Button onPress={leave}>
-          <Text>Back to deck</Text>
+        <Button onPress={session.retryNextBatch}>
+          <Text>Retry</Text>
+        </Button>
+        <Button variant="outline" onPress={leave}>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );
   }
 
-  if (!card) {
+  if (session.status === 'complete' || session.status === 'empty') {
+    const activateMore = async () => {
+      if (isActivating) return;
+      const count = Math.min(
+        session.inactiveCount,
+        Math.max(1, Math.floor(Number(activationCount) || 5)),
+      );
+      setIsActivating(true);
+      setActivationError(null);
+      try {
+        await session.activate(count);
+        saveActivationCount(userId, count);
+      } catch {
+        setActivationError(
+          t('review.activation.error', 'Activation error. Try again.'),
+        );
+      } finally {
+        setIsActivating(false);
+      }
+    };
     return (
       <View className="items-center gap-4 py-12">
         <Stack.Screen options={{ title: deck.title }} />
-        <Text className="text-2xl font-semibold">No cards due</Text>
-        <Text className="text-center text-muted-foreground">
-          There are no cards due in {deck.title} right now.
+        <Text className="text-2xl font-semibold">
+          {session.status === 'complete'
+            ? t('review.activation.complete_title', 'Review complete')
+            : t('review.recovery.no_cards_due_title', 'No cards due')}
         </Text>
+        <Text className="text-center text-muted-foreground">
+          {session.status === 'complete'
+            ? t(
+                'review.activation.complete_description',
+                'All due cards in this deck are done for now.',
+              )
+            : t('review.recovery.no_cards_due', { title: deck.title })}
+        </Text>
+        {session.inactiveCount > 0 && (
+          <ActivationControls
+            count={activationCount}
+            onChangeCount={setActivationCount}
+            onActivate={() => void activateMore()}
+            isActivating={isActivating}
+            error={activationError}
+            inactiveItemCount={session.inactiveCount}
+            itemLabel={session.itemLabel}
+          />
+        )}
         <Button onPress={leave}>
-          <Text>Back to deck</Text>
+          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
         </Button>
       </View>
     );
   }
+
+  const { card: current, editing, revealed, busy } = session;
+
+  // Deleting removes the whole note, so its other cards leave the rest of
+  // the session too; then it moves on as after an answer, without counting
+  // one.
+  if (editing?.kind === 'delete' && editor.writes) {
+    return (
+      <View className="gap-4">
+        <Stack.Screen options={{ title: deck.title }} />
+        <DeleteQuestion
+          card={editing.card}
+          note={editor.noteForCard(editing.card)}
+          writes={editor.writes}
+          onCancel={session.closeEditor}
+          onDeleted={() => session.noteDeleted(editing.card.note_id)}
+        />
+      </View>
+    );
+  }
+
+  // The editor replaces the card until it is saved or cancelled; the
+  // session keeps its place, and an edit shows on the same card.
+  if (editing && editor.deck && editor.writes) {
+    const editCard = editing.kind === 'edit' ? editing.card : undefined;
+    return (
+      <View className="gap-4">
+        <Stack.Screen options={{ title: deck.title }} />
+        <CardEditor
+          deck={editor.deck}
+          card={editCard}
+          note={editCard ? editor.noteForCard(editCard) : null}
+          writes={editor.writes}
+          onDone={session.closeEditor}
+          onDeleted={() => {
+            if (editCard) session.noteDeleted(editCard.note_id);
+            else session.closeEditor();
+          }}
+        />
+      </View>
+    );
+  }
+
+  const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
+  const canAdd = isWordDeck || deck.note_type === BASIC_NOTE_TYPE;
+  const edit = canEdit ? () => session.edit() : undefined;
+  const locked = busy || swipe.isLeaving;
 
   return (
-    <View className="gap-4">
+    <View className="flex-1 gap-4">
       <Stack.Screen options={{ title: deck.title }} />
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-semibold text-muted-foreground">
-          Card {cardIndex + 1} of {session.cards.length}
+      <ReviewTopRow
+        answered={session.progress.answered}
+        total={session.progress.total}
+        locked={locked}
+        addLabel={isWordDeck ? 'Add a word' : 'Add a card'}
+        onEdit={edit}
+        onAdd={canAdd ? session.add : undefined}
+      />
+      <ReviewCards
+        card={current}
+        nextFront={session.nextFront}
+        revealed={revealed}
+        busy={busy}
+        swipe={swipe}
+        extended={layout.extended}
+        deleteLabel={isWordDeck ? 'Delete word' : 'Delete card'}
+        onReveal={session.reveal}
+        onEdit={edit}
+      />
+
+      {session.saveError ? (
+        <Text className="text-center text-destructive">
+          {session.saveError}
         </Text>
-        <Button variant="ghost" size="sm" onPress={leave} disabled={isSaving}>
-          <Text>Exit review</Text>
-        </Button>
-      </View>
-
-      {/* Tapping the card toggles: read the answer, tap again for the
-          question. "Show answer" only reveals. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={isFlipped ? 'Show the question' : 'Show the answer'}
-        disabled={isSaving}
-        onPress={() => setIsFlipped((flipped) => !flipped)}
-      >
-        <Card className="min-h-80 justify-center">
-          <CardHeader>
-            <Text className="text-center text-xs font-semibold uppercase text-muted-foreground">
-              {isFlipped ? 'Answer' : 'Question'}
-            </Text>
-          </CardHeader>
-          <CardContent>
-            <Markdown content={isFlipped ? card.back : card.front} />
-          </CardContent>
-        </Card>
-      </Pressable>
-
-      {saveError ? (
-        <Text className="text-center text-destructive">{saveError}</Text>
       ) : null}
 
-      {!isFlipped ? (
-        <Button variant="outline" onPress={() => setIsFlipped(true)}>
-          <Text>Show answer</Text>
-        </Button>
-      ) : (
-        <View className="flex-row flex-wrap gap-2">
-          {answers.map((answer) => (
-            <Button
-              key={answer}
-              variant="outline"
-              className="min-w-[45%] flex-1 flex-col gap-0"
-              disabled={isSaving}
-              onPress={() => void record(answer)}
-            >
-              <Text>
-                {preferences.reviewMode === 'extended'
-                  ? extendedReviewAnswerLabels[answer]
-                  : reviewAnswerLabels[answer]}
-              </Text>
-              {preferences.showNextReviewInterval && (
-                <Text className="text-xs text-muted-foreground">
-                  {formatReviewInterval(
-                    calculateReviewIntervalMinutes(
-                      card.scheduled_interval_minutes,
-                      reviewRatingByAnswer[answer],
-                    ),
-                  )}
-                </Text>
-              )}
-            </Button>
-          ))}
-        </View>
+      {layout.hint && (
+        <Text className="text-center text-sm text-muted-foreground">
+          {layout.hint}
+        </Text>
       )}
+
+      <AnswerButtons
+        revealed={revealed}
+        locked={locked}
+        layout={layout}
+        intervalMinutes={current.scheduled_interval_minutes}
+        onReveal={session.reveal}
+        onAnswer={(answer) => void session.answer(answer)}
+      />
     </View>
   );
 }

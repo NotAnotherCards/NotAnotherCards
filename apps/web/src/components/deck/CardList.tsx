@@ -10,15 +10,9 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, useStore } from '@/hooks/useStore';
 import { Input } from '@/components/ui/input';
-import {
-  Card as UICard,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from '@/components/ui/card';
+import { Card as UICard, CardHeader, CardContent } from '@/components/ui/card';
 import {
   Search,
-  Library,
   HelpCircle,
   AlertCircle,
   Loader2,
@@ -26,11 +20,15 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { CardItem } from './CardItem';
+import { DeckStat } from './DeckStat';
 import { FlashcardModal } from './FlashcardModal';
 import { Button } from '../ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface CardListProps {
   cards: Card[];
+  activeCardCount?: number;
+  dueCardCount?: number;
   onEditCard: (card: Card) => void;
   onRemoveFromDeck: (card: Card) => void;
   canEditCard: (card: Card) => boolean;
@@ -38,7 +36,6 @@ interface CardListProps {
   canRemoveCard?: boolean;
   onAddCard: () => void;
   isLoading?: boolean;
-  error?: string | null;
   initialScrollOffset?: number;
 }
 
@@ -51,6 +48,8 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
   (
     {
       cards,
+      activeCardCount,
+      dueCardCount,
       onEditCard,
       onRemoveFromDeck,
       canEditCard,
@@ -58,11 +57,11 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
       canRemoveCard = true,
       onAddCard,
       isLoading,
-      error,
       initialScrollOffset,
     },
     ref,
   ) => {
+    const { t } = useTranslation();
     const store = useStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [viewingCard, setViewingCard] = useState<Card | null>(null);
@@ -121,12 +120,13 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           </div>
           <div>
             <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
-              Database Inactive (Taken Over)
+              {t('deck.cards.db_inactive', 'Database Inactive (Taken Over)')}
             </h3>
             <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-              This tab is currently inactive because the offline database is
-              open in another tab. Click below to use the database in this
-              window.
+              {t(
+                'deck.cards.db_inactive_desc',
+                'This tab is currently inactive because the offline database is open in another tab. Click below to use the database in this window.',
+              )}
             </p>
           </div>
           <Button
@@ -134,7 +134,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
             className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium border-none shadow-sm"
           >
             <RefreshCw className="size-4" />
-            Use here instead
+            {t('deck.cards.use_here', 'Use here instead')}
           </Button>
         </UICard>
       );
@@ -146,53 +146,39 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           <CardContent className="flex flex-col items-center justify-center min-h-60 space-y-4 animate-in fade-in duration-300">
             <Loader2 className="animate-spin size-8 text-primary" />
             <p className="text-sm text-muted-foreground animate-pulse">
-              Loading cards...
+              {t('deck.cards.loading', 'Loading cards...')}
             </p>
           </CardContent>
         </UICard>
       );
     }
 
-    if (error) {
-      return (
-        <UICard className="border border-border/60 p-6 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-200">
-          <div className="p-3 rounded-2xl bg-destructive/10 text-destructive">
-            <AlertCircle className="size-8" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-destructive">
-              Failed to Load Cards
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              {error || 'An error occurred while loading deck contents.'}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            className="cursor-pointer gap-1.5"
-            onClick={() => window.location.reload()}
-          >
-            <RefreshCw className="size-4" />
-            Retry
-          </Button>
-        </UICard>
-      );
-    }
-
     return (
       <UICard className="border border-border/60">
-        <CardHeader className="border-b border-border/40 pb-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-          <div>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Library className="size-4 text-primary" />
-              Card Catalog ({filteredCards.length})
-            </CardTitle>
-          </div>
-          {/* Search bar */}
-          <div className="relative w-full md:max-w-xs">
+        <CardHeader className="@container border-b border-border/40 pb-4">
+          {activeCardCount !== undefined && dueCardCount !== undefined && (
+            <div className="grid grid-cols-2 gap-2 @[720px]:grid-cols-3">
+              <DeckStat
+                label={t('deck.stats.cards_total', 'Cards Total')}
+                value={cards.length}
+              />
+              <DeckStat
+                label={t('deck.stats.active', 'Active')}
+                value={activeCardCount}
+              />
+              <DeckStat
+                label={t('deck.stats.due', 'Due')}
+                value={dueCardCount}
+              />
+            </div>
+          )}
+          <div className="relative mt-4 w-full md:max-w-xs">
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search front, back..."
+              placeholder={t(
+                'deck.cards.search_placeholder',
+                'Search front, back...',
+              )}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 h-9 text-xs"
@@ -203,11 +189,19 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
           {filteredCards.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground min-h-50 gap-4">
               <HelpCircle className="size-10 mb-2 stroke-1 opacity-60" />
-              <p className="text-sm font-semibold">No Cards Found</p>
+              <p className="text-sm font-semibold">
+                {t('deck.cards.no_found', 'No Cards Found')}
+              </p>
               <p className="text-xs max-w-xs mt-1">
                 {searchTerm
-                  ? 'Try refining your search term to find cards in this deck.'
-                  : "This deck is empty. Click 'Add Card' above to start building your collection."}
+                  ? t(
+                      'deck.cards.refine_search',
+                      'Try refining your search term to find cards in this deck.',
+                    )
+                  : t(
+                      'deck.cards.empty_deck',
+                      "This deck is empty. Click 'Add Card' above to start building your collection.",
+                    )}
               </p>
               {!searchTerm && cards.length === 0 && canAddCard ? (
                 <Button
@@ -215,7 +209,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
                   className="cursor-pointer gap-1.5 self-start sm:self-center"
                 >
                   <Plus className="size-4" />
-                  Add Card
+                  {t('deck.detail.add_card', 'Add Card')}
                 </Button>
               ) : null}
             </div>
@@ -230,12 +224,16 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
               <div role="rowgroup">
                 <div
                   role="row"
-                  className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_auto] gap-4 px-6 py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
+                  className="sr-only md:not-sr-only md:grid md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)_128px] gap-4 md:!px-6 md:!py-3 border-b border-border/40 bg-muted/20 text-xs font-semibold text-muted-foreground"
                 >
-                  <div role="columnheader">Front / Question</div>
-                  <div role="columnheader">Back / Answer</div>
-                  <div role="columnheader" className="text-right">
-                    Actions
+                  <div role="columnheader">
+                    {t('deck.cards.col_front', 'Front / Question')}
+                  </div>
+                  <div role="columnheader">
+                    {t('deck.cards.col_back', 'Back / Answer')}
+                  </div>
+                  <div role="columnheader" className="text-center">
+                    {t('deck.cards.col_actions', 'Actions')}
                   </div>
                 </div>
               </div>

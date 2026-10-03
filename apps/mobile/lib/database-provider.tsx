@@ -1,6 +1,16 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { View } from 'react-native';
-import type { DatabaseManager, SyncController } from '@remelondb/core';
+import type {
+  DatabaseManager,
+  SyncController,
+  SyncControllerState,
+} from '@remelondb/core';
 import {
   DatabaseProvider,
   useSessionDatabase as useOwnedDatabase,
@@ -8,8 +18,14 @@ import {
 import { authClient } from './auth-client';
 import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
+import { isSyncAuthBlocked } from './sync-status';
+import { signOutForExpiredSyncSession } from './sync-sign-out';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
+import { useTwoFactorChallengeState } from './two-factor-challenge';
+import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
+import { legacyCardContentCleanupState } from './legacy-card-content-cleanup';
+import LanguageEnforcer from './language-enforcer';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -28,14 +44,25 @@ const SessionDatabaseContext = createContext<SessionDatabase | null>(null);
  * so mounting it inside a screen would lose that queue on every
  * navigation.
  */
-export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
+export function SessionDatabaseProvider({
+  children,
+  blockAccountAccess = false,
+}: {
+  children: ReactNode;
+  blockAccountAccess?: boolean;
+}) {
   const { data: session, isPending } = authClient.useSession();
+  const challenge = useTwoFactorChallengeState();
   // Null while the session check runs: useSession keeps the previous
   // user visible while it refetches, and that user's database is the
   // wrong one to open. Also null until onboarding completed: the profile
   // row the first pull expects is created by the /onboard transaction.
   const userId =
-    isPending || !session?.user.onBoardingComplete
+    isPending ||
+    !challenge.hydrated ||
+    challenge.pending ||
+    blockAccountAccess ||
+    !session?.user.onBoardingComplete
       ? null
       : (session.user.id ?? null);
 
@@ -46,6 +73,44 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
     controller: { triggers: nativeSyncTriggers },
   });
 
+  const signedOutController = useRef<SyncController | null>(null);
+  useEffect(() => {
+    if (!syncController || !userId) return;
+    // #384: keep userId null while a 2FA challenge is pending, so a
+    // partial session can neither sync nor enter this sign-out path.
+    const onState = (state: SyncControllerState) => {
+      if (
+        !isSyncAuthBlocked(state) ||
+        signedOutController.current === syncController
+      )
+        return;
+      signedOutController.current = syncController;
+      // RequireSession redirects after Expo's first clear. Login waits for
+      // the response's second clear before it creates another session.
+      void signOutForExpiredSyncSession();
+    };
+    const unsubscribe = syncController.subscribe(onState);
+    onState(syncController.state);
+    return unsubscribe;
+  }, [syncController, userId]);
+
+  useEffect(() => {
+    if (
+      !manager ||
+      !syncController ||
+      !userId ||
+      manager.state?.status !== 'ready'
+    ) {
+      return;
+    }
+
+    return normalizeLegacyCardContentAfterSync(
+      manager.database,
+      syncController,
+      legacyCardContentCleanupState(userId),
+    );
+  }, [manager, syncController, userId]);
+
   if (closeError) {
     return <DatabaseUnrecoverable error={closeError} />;
   }
@@ -55,7 +120,10 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
   // unmount the navigator, including the signed-out screens. Consumers
   // reach the manager through useSessionDatabase, which is null-safe.
   const content = manager ? (
-    <DatabaseProvider manager={manager}>{children}</DatabaseProvider>
+    <DatabaseProvider manager={manager}>
+      <LanguageEnforcer manager={manager} />
+      {children}
+    </DatabaseProvider>
   ) : (
     children
   );

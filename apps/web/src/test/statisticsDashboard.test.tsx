@@ -49,18 +49,27 @@ describe('Statistics dashboard', () => {
         {
           id: 'card-1',
           note_id: 'note-1',
+          active: true,
+          front: 'front',
+          back: 'back',
           due_at: at('2026-09-16T08:00:00.000Z'),
           scheduled_interval_minutes: 0,
         },
         {
           id: 'card-2',
           note_id: 'note-2',
+          active: true,
+          front: 'front',
+          back: 'back',
           due_at: at('2026-09-17T08:00:00.000Z'),
           scheduled_interval_minutes: 1_440,
         },
         {
           id: 'card-3',
           note_id: 'note-3',
+          active: true,
+          front: 'front',
+          back: 'back',
           due_at: at('2026-09-18T08:00:00.000Z'),
           scheduled_interval_minutes: 21 * 1_440,
         },
@@ -96,7 +105,7 @@ describe('Statistics dashboard', () => {
     expect(screen.getByTitle('Sep 16: 50%')).toBeInTheDocument();
     // Annotations: a described series and the range ending today.
     expect(
-      screen.getByRole('img', { name: /reviews, .* highest 2/ }),
+      screen.getByRole('img', { name: /Reviews per day, .* highest 2/ }),
     ).toBeInTheDocument();
     expect(
       within(screen.getByLabelText('Reviews per day')).getByText('Sep 16'),

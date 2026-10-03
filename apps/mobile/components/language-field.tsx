@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LANGUAGES, languageLabel } from '@repo/schemas';
 import { Text } from './ui/text';
 
@@ -15,6 +16,7 @@ export function LanguageField({
   error?: string;
   exclude?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <View className="gap-1">
       <Text className="text-sm font-medium">{label}</Text>
@@ -26,7 +28,10 @@ export function LanguageField({
             <Pressable
               key={language.value}
               accessibilityRole="radio"
-              accessibilityLabel={`${label}: ${languageLabel(language)}`}
+              accessibilityLabel={`${label}: ${languageLabel(
+                language,
+                t(`languages.${language.locale}`),
+              )}`}
               accessibilityState={{ selected, disabled }}
               disabled={disabled}
               className={`basis-[48%] rounded-lg border px-3 py-2 ${
@@ -35,13 +40,17 @@ export function LanguageField({
               onPress={() => onChange(language.value)}
             >
               <Text className={selected ? 'font-semibold text-primary' : ''}>
-                {languageLabel(language)}
+                {languageLabel(language, t(`languages.${language.locale}`))}
               </Text>
             </Pressable>
           );
         })}
       </View>
-      {error && <Text className="text-sm text-destructive">{error}</Text>}
+      {error && (
+        <Text className="text-sm text-destructive">
+          {t(error, { defaultValue: error })}
+        </Text>
+      )}
     </View>
   );
 }

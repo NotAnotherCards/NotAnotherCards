@@ -10,7 +10,7 @@ export interface BackupDeck {
 export interface BackupCard {
   source_id: string;
   template_key: string;
-  active: boolean;
+  active?: boolean;
   due_at: number;
   scheduled_interval_minutes: number;
 }

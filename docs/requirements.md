@@ -22,8 +22,9 @@ at very low priority and not counted in the 17, advanced search open and not
 counted; see section 6). By module: done 4
 (6 pts), in review 1 (1 pt), in progress 4 (6 pts), not started 4 (4 pts).
 Weighted by points and module progress, about **57%** of the claimed 17 points
-is done. Two mandatory gaps remain (Privacy and Terms pages, README first line),
-along with the README sections, which are at about 15%.
+is done. The Privacy Policy and Terms of Service pages are in review. One
+mandatory gap remains: the required first line of the README, along with the
+README sections, which are at about 15%.
 
 How the percentages are made: a module's figure is the share of its subject
 bullets that are met; a partly met bullet gets partial credit, stated in its
@@ -34,15 +35,15 @@ are estimates, not measurements; the evidence column is what to check.
 
 The subject says the project is rejected if one of these is not met.
 
-| Requirement                                                                                                                                                                                                                                                                                                       | Status            |   % | Evidence                                                                               |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --: | -------------------------------------------------------------------------------------- |
-| The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done              | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                             |
-| The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done              | 100 | 10 authors on `main` (`git shortlog -sn`)                                              |
-| Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done              | 100 | `docker compose up`, `README.md`                                                       |
-| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | in review         |  90 | #252 browser suite: `pnpm e2e` on stable Chrome                                        |
-| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | in review         |  70 | #252 browser suite: warnings and errors fail a test                                    |
-| The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | **gap**           |   0 | no such page in `apps/web/src`                                                         |
-| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | per-user databases and sync (#151, #177); updates arrive on sync triggers, not by push |
+| Requirement                                                                                                                                                                                                                                                                                                       | Status            |   % | Evidence                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --: | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done              | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                                                                                  |
+| The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done              | 100 | 10 authors on `main` (`git shortlog -sn`)                                                                                                   |
+| Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done              | 100 | `docker compose up`, `README.md`                                                                                                            |
+| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | in review         |  90 | #252: stable Chrome against Compose/nginx                                                                                                                        |
+| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | not verified      |  70 | A21 in the plan                                                                                                                             |
+| The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | in review         |  90 | public `/privacy` and `/terms` in `apps/landing`, linked from its footer and covered by `apps/landing/src/App.test.tsx` (PRs #374 and #379) |
+| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | per-user databases and sync (#151, #177); updates arrive on sync triggers, not by push                                                      |
 
 ## 2. Technical requirements (subject III.3)
 
@@ -102,7 +103,7 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 ### 4.6 User Management: OAuth 2.0 — Minor, 1 — done — 100%
 
-- Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google and Facebook in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
+- Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
 
 ### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — done — 100%
 
@@ -281,8 +282,8 @@ languages, 2FA — 3 modules). To reach 14, at most 3 of
 the remaining 11 points may be missing at evaluation; advanced search (1) is
 an additional reserve outside the 17.
 
-Before any of this: the Privacy Policy and Terms of Service pages, and the
-README. They give 0 points and their absence rejects the project.
+Before any of this: the required first line of the README. It gives 0 points
+and its absence rejects the project.
 
 ## 7. Evaluation dry run
 

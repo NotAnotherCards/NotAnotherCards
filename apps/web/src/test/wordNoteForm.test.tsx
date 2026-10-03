@@ -1,7 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { WordNoteForm } from '../components/deck/WordNoteForm';
 import { ENGLISH, GERMAN, RUSSIAN, SPANISH } from '@repo/schemas';
+import i18n from '@/lib/i18n';
 
 // The form owns the fields a person types. Languages are the deck's and the
 // two media ids are file references, so neither appears here — see
@@ -13,7 +20,10 @@ const onCancel = vi.fn();
 const fill = (label: RegExp, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-beforeEach(() => {
+beforeEach(async () => {
+  await act(async () => {
+    await i18n.changeLanguage('en');
+  });
   onSubmit.mockReset();
   onSubmit.mockResolvedValue(undefined);
   onCancel.mockReset();
@@ -30,6 +40,24 @@ const renderForm = (initialData?: Record<string, string>) =>
   );
 
 describe('WordNoteForm', () => {
+  it('uses a grammatically correct localized language form in Russian', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('ru');
+    });
+    render(
+      <WordNoteForm
+        title="Добавить слово"
+        targetLanguageId={GERMAN}
+        nativeLanguageId={RUSSIAN}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+
+    expect(screen.getByLabelText('Слово на немецком')).toBeTruthy();
+    expect(screen.getByLabelText('Перевод на русском')).toBeTruthy();
+  });
+
   it('asks for the word and its translation, and nothing else up front', () => {
     renderForm();
     expect(screen.getByLabelText(/^word( in \w+)?$/i)).toBeTruthy();
@@ -38,6 +66,17 @@ describe('WordNoteForm', () => {
     expect(screen.queryByLabelText(/part of speech/i)).toBeNull();
     // languages belong to the deck, never to this form
     expect(screen.queryByLabelText(/language/i)).toBeNull();
+  });
+
+  it('keeps word, translation, and pronunciation single-line while examples stay multiline', () => {
+    renderForm();
+
+    expect(screen.getByLabelText(/^word( in \w+)?$/i).tagName).toBe('INPUT');
+    expect(screen.getByLabelText(/translation/i).tagName).toBe('INPUT');
+
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+    expect(screen.getByLabelText(/pronunciation/i).tagName).toBe('INPUT');
+    expect(screen.getByLabelText(/^example$/i).tagName).toBe('TEXTAREA');
   });
 
   it('will not submit without a word or a translation', async () => {
@@ -77,6 +116,30 @@ describe('WordNoteForm', () => {
       part_of_speech: 'verb',
       pronunciation: 'ˈlaʊ̯fn̩',
     });
+  });
+
+  it('offers one part of speech from a fixed list', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: /more details/i }));
+
+    const select = screen.getByLabelText(/part of speech/i);
+    expect(select.tagName).toBe('SELECT');
+    expect(
+      Array.from((select as HTMLSelectElement).options).map(
+        (option) => option.text,
+      ),
+    ).toEqual([
+      'Not set',
+      'Noun',
+      'Verb',
+      'Adjective',
+      'Adverb',
+      'Pronoun',
+      'Preposition',
+      'Conjunction',
+      'Interjection',
+      'Other',
+    ]);
   });
 
   it('opens the details already expanded when the note uses any of them', () => {
@@ -184,5 +247,26 @@ describe('WordNoteForm gender', () => {
       translation: 'dog',
       gender: 'der',
     });
+  });
+
+  it('places gender before part of speech', () => {
+    render(
+      <WordNoteForm
+        title="Add New Word"
+        targetLanguageId={GERMAN}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+    openDetails();
+
+    const gender = screen.getByLabelText(/gender/i);
+    const partOfSpeech = screen.getByLabelText(/part of speech/i);
+    expect(
+      Boolean(
+        gender.compareDocumentPosition(partOfSpeech) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
   });
 });

@@ -16,24 +16,22 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { SocialLoginButton } from '@/components/auth/social-login-button';
 
 export function RegisterComponent() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
-  const [oauthProvider, setOauthProvider] = useState<
-    'google' | 'facebook' | null
-  >(null);
+  const [oauthProvider, setOauthProvider] = useState<'google' | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
     if (errorParam) {
       if (errorParam === 'OAuthCallbackError') {
-        setApiError(
-          'Social signup failed. Please try again or use another provider.',
-        );
+        setApiError(t('auth.error.social_signup_failed_callback'));
       } else {
         setApiError(errorParam.replace(/_/g, ' '));
       }
@@ -48,7 +46,7 @@ export function RegisterComponent() {
     };
   }, []);
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+  const handleSocialLogin = async (provider: 'google') => {
     setApiError(null);
     setOauthProvider(provider);
     try {
@@ -58,12 +56,12 @@ export function RegisterComponent() {
         errorCallbackURL: `${window.location.origin}/register`,
       });
       if (error) {
-        setApiError(error.message || 'Social login failed. Please try again.');
+        setApiError(error.message || t('auth.error.social_signup_failed'));
         setOauthProvider(null);
       }
     } catch {
       setOauthProvider(null);
-      setApiError('Social login failed. Please try again.');
+      setApiError(t('auth.error.social_signup_failed'));
     }
   };
   const form = useForm<SignupFormData>({
@@ -87,7 +85,7 @@ export function RegisterComponent() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     if (error) {
-      setApiError(error.message || 'An unexpected error occurred');
+      setApiError(error.message || t('auth.error.unexpected'));
     } else {
       void navigate({ to: '/onboarding' });
     }
@@ -95,10 +93,10 @@ export function RegisterComponent() {
 
   return (
     <AuthCard
-      title="Create Account"
-      description="Enter your details to create a new profile"
-      footerText="Already have an account?"
-      footerLinkText="Sign in"
+      title={t('auth.register.title')}
+      description={t('auth.register.description')}
+      footerText={t('auth.register.footerText')}
+      footerLinkText={t('auth.register.footerLinkText')}
       footerLinkTo="/login"
     >
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -109,7 +107,7 @@ export function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>{t('auth.name')}</FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
@@ -127,7 +125,9 @@ export function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.email')}
+                  </FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
@@ -146,7 +146,9 @@ export function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.password')}
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}
@@ -164,7 +166,9 @@ export function RegisterComponent() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid} className="gap-1.5">
-                  <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t('auth.confirm_password')}
+                  </FieldLabel>
                   <PasswordInput
                     {...field}
                     id={field.name}
@@ -189,10 +193,10 @@ export function RegisterComponent() {
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner />
-                  Creating account...
+                  {t('auth.register.creating_account')}
                 </span>
               ) : (
-                'Sign up'
+                t('auth.register.submit')
               )}
             </Button>
             <div className="relative my-2">
@@ -201,7 +205,7 @@ export function RegisterComponent() {
               </div>
               <div className="relative flex justify-center text-xs">
                 <span className="px-2 text-muted-foreground">
-                  Or continue with
+                  {t('auth.login.continue_with')}
                 </span>
               </div>
             </div>
@@ -210,12 +214,6 @@ export function RegisterComponent() {
               isLoading={oauthProvider === 'google'}
               disabled={oauthProvider !== null || isSubmitting}
               onClick={() => handleSocialLogin('google')}
-            />
-            <SocialLoginButton
-              provider="facebook"
-              isLoading={oauthProvider === 'facebook'}
-              disabled={oauthProvider !== null || isSubmitting}
-              onClick={() => handleSocialLogin('facebook')}
             />
           </FieldGroup>
         </FieldSet>

@@ -9,7 +9,7 @@ import {
   UserNoteRow,
   UserProfileRow,
 } from './user-dictionary.js';
-import { refineNoteFields } from './note-registry.js';
+import { refineNoteFields } from '@repo/study';
 
 const baseSyncWireSchemas = syncSchemas({
   user_decks: UserDeckRow,

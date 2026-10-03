@@ -5,17 +5,18 @@ import {
   getDecksQuery,
   getNoteDecksQuery,
   getNotesQuery,
-  getPersonalDictionaryQuery,
+  getAllCardsQuery,
   type UserCardRecord,
   type UserDeckRecord,
   type UserNoteDeckRecord,
   type UserNoteRecord,
-  WordNoteFieldsV1,
+  parseWordFields,
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
+  cardsForDeck,
+  isBasicCard,
 } from '@repo/offline-db';
 import { cardWrites } from './card-writes';
-import { cardsForDeck, isBasicCard } from './cards-in-deck';
 import { useSessionDatabase } from './database-provider';
 
 export type Card = UserCardRecord;
@@ -27,7 +28,7 @@ export function useCards(manager: DatabaseManager, deckId: string) {
   const db = useDatabase(manager);
   const decks = useQuery<UserDeckRecord>(db && getDecksQuery(db));
   const memberships = useQuery<UserNoteDeckRecord>(db && getNoteDecksQuery(db));
-  const cards = useQuery<UserCardRecord>(db && getPersonalDictionaryQuery(db));
+  const cards = useQuery<UserCardRecord>(db && getAllCardsQuery(db));
   const notes = useQuery<UserNoteRecord>(db && getNotesQuery(db));
 
   const deck = useMemo(
@@ -46,18 +47,14 @@ export function useCards(manager: DatabaseManager, deckId: string) {
     notesById.get(card.note_id) ?? null;
   const canEdit = (card: UserCardRecord) => {
     const note = noteForCard(card);
-    if (isBasicCard(card, notesById)) return true;
+    if (isBasicCard(card, note)) return true;
     if (
       note?.note_type !== WORD_NOTE_TYPE ||
       note.fields_version !== WORD_NOTE_FIELDS_VERSION
     ) {
       return false;
     }
-    try {
-      return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
-    } catch {
-      return false;
-    }
+    return parseWordFields(note) !== null;
   };
 
   return {

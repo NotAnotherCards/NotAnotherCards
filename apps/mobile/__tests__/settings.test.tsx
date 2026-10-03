@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import '@/lib/i18n';
 import { Settings, initials } from '@/components/settings';
 import { loadReviewPreferences } from '@/lib/review-preferences';
 
@@ -19,6 +20,9 @@ jest.mock('expo-router', () => ({
 // and the preferences only need the session's user id.
 jest.mock('../lib/database-provider', () => ({
   useSessionDatabase: () => ({ manager: null, syncController: null }),
+}));
+jest.mock('../components/two-factor-security', () => ({
+  TwoFactorSecurity: () => null,
 }));
 jest.mock('../components/ui/icon', () => ({
   LogOutIcon: () => null,

@@ -3,6 +3,7 @@ import { App, router } from '../App';
 import userEvent from '@testing-library/user-event';
 import { authClient } from '@/lib/auth-client';
 import { useStore } from '@/hooks/useStore';
+import i18n from '@/lib/i18n';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockSession = {
@@ -57,6 +58,7 @@ vi.mock('@remelondb/core/react', () => ({
 describe('Onboarding Flow and Guard Specs', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
     vi.mocked(useStore).mockReset();
     mockManager = { state: { status: 'ready', error: null } };
 
@@ -68,6 +70,7 @@ describe('Onboarding Flow and Guard Specs', () => {
       decks: [],
       cards: [],
       notes: [],
+      noteDecks: [],
       dueCards: [],
       db: null,
       getCardsCount: () => 0,
@@ -125,6 +128,19 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(window.location.pathname).toBe('/onboarding');
   });
 
+  it('shows localized language names in the onboarding pickers', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+    render(<App />);
+
+    const [nativeSelect, targetSelect] = await screen.findAllByRole('combobox');
+    expect(nativeSelect).toHaveTextContent('🇺🇸 Englisch');
+    expect(nativeSelect).toHaveTextContent('🇩🇪 Deutsch');
+    expect(targetSelect).toHaveTextContent('🇷🇺 Russisch');
+    expect(nativeSelect).not.toHaveTextContent('🇩🇪 German');
+  });
+
   it('redirects logged-in users to dashboard if onboarding is complete', async () => {
     vi.mocked(authClient.getSession).mockResolvedValue({
       data: mockSessionOnboarded,
@@ -145,7 +161,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByRole(
         'heading',
-        { name: /DASHBOARD PAGE/i },
+        { name: /Dashboard/i },
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
@@ -159,7 +175,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByRole(
         'heading',
-        { name: /DASHBOARD PAGE/i },
+        { name: /Dashboard/i },
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();
@@ -192,6 +208,38 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByText('Target language is required'),
     ).toBeInTheDocument();
+  });
+
+  it('clears the target when the same language is then picked as native', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const targetSelect = (await screen.findByLabelText(
+      /Target Language/i,
+      {},
+      { timeout: 5000 },
+    )) as HTMLSelectElement;
+    await user.selectOptions(
+      targetSelect,
+      '00000000-0000-0000-0000-000000000002',
+    ); // Spanish
+    await user.selectOptions(
+      screen.getByLabelText(/Native Language/i),
+      '00000000-0000-0000-0000-000000000002',
+    ); // Spanish again
+    await waitFor(() => expect(targetSelect.value).toBe(''));
+
+    await user.type(screen.getByLabelText(/Username/i), 'alex_test');
+    await user.click(
+      screen.getByRole('button', { name: /Complete Registration/i }),
+    );
+    expect(
+      await screen.findByText('Target language is required'),
+    ).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      '/api/auth/onboard',
+      expect.anything(),
+    );
   });
 
   it('submits the form successfully and calls the onboarding API endpoint', async () => {
@@ -272,7 +320,7 @@ describe('Onboarding Flow and Guard Specs', () => {
     expect(
       await screen.findByRole(
         'heading',
-        { name: /DASHBOARD PAGE/i },
+        { name: /Dashboard/i },
         { timeout: 5000 },
       ),
     ).toBeInTheDocument();

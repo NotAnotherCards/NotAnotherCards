@@ -369,6 +369,7 @@ TABLE "public"."user_profiles" RLS DISABLED
 "deleted_at" timestamp with time zone NULL
 "native_language_id" uuid NULL
 "rev" bigint NOT NULL
+"target_language_active" boolean NULL DEFAULT false
 "target_language_id" uuid NULL
 "updated_at" double precision NOT NULL
 "user_id" text NOT NULL PRIMARY KEY
@@ -596,7 +597,7 @@ CHECK "deck_takedowns_source_check": "deck_takedowns"."source" in ('automatic', 
 Persistent gamification awards (#271, #359). Projected on the server from
 durable review and note rows after a successful sync, so a client cannot
 claim a badge directly. The rules that decide eligibility are shared code in
-[`packages/offline-db/src/activity.ts`](../packages/offline-db/src/activity.ts)
+[`packages/study/src/activity.ts`](../packages/study/src/activity.ts)
 (#339). Exposed through `/api/gamification/me`; nothing cross-user enters a
 sync scope.
 
@@ -742,7 +743,7 @@ top.
 <!-- schema:local-schema -->
 
 ```text
-LOCAL SCHEMA VERSION 6
+LOCAL SCHEMA VERSION 7
 
 TABLE review_events SYNCED
 rating number NOT NULL
@@ -796,6 +797,7 @@ avatar_file_id string NULL
 bio string NULL
 created_at number NOT NULL
 native_language_id string NULL
+target_language_active boolean NULL
 target_language_id string NULL
 updated_at number NOT NULL INDEXED
 username string NULL
