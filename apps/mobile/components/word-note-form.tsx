@@ -14,6 +14,7 @@ import { SparklesIcon } from './ui/icon';
 import { apiClient } from '@/lib/api-client';
 import { useConnected } from '@/lib/connectivity';
 import { aiErrorMessage } from '@/lib/ai-error';
+import { uiErrorText } from '@/lib/errors';
 import { useWordNoteGeneration } from '@repo/api-client/react';
 
 const editableFields = WordNoteEditableFieldsV1;
@@ -92,8 +93,11 @@ export function WordNoteForm({
   const generating = generation.status === 'generating';
   const paused = generation.status === 'paused';
   const [inputError, setInputError] = useState<string | null>(null);
-  const generationError =
-    inputError || (generation.error ? aiErrorMessage(generation.error) : null);
+  const generationError = inputError
+    ? t(inputError)
+    : generation.error
+      ? uiErrorText(aiErrorMessage(generation.error), t)
+      : null;
 
   useEffect(() => {
     cancel();
@@ -126,7 +130,7 @@ export function WordNoteForm({
         });
     if (!fields) return;
     if (getValues('word').trim() !== word.trim()) {
-      setInputError(t('mobile.messages.word_changed'));
+      setInputError('mobile.messages.word_changed');
       return;
     }
     for (const name of [
@@ -217,7 +221,7 @@ export function WordNoteForm({
         )}
         {generationError && (
           <Text accessibilityLiveRegion="polite" className="text-destructive">
-            {t(generationError, { defaultValue: generationError })}
+            {generationError}
           </Text>
         )}
         <FormField

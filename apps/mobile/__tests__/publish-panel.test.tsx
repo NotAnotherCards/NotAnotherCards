@@ -1,6 +1,8 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { PublishPanel } from '@/components/publish-panel';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
+import { SyncTransportError } from '@repo/offline-db';
 
 const IDLE = {
   status: 'idle',
@@ -57,6 +59,23 @@ jest.mock('../lib/api-client', () => ({
 }));
 
 describe('PublishPanel', () => {
+  it('translates Unauthorized from a failed sync and follows a language switch', async () => {
+    mockSyncNow.mockResolvedValueOnce({
+      ...IDLE,
+      status: 'error',
+      error: 'Unauthorized',
+      cause: new SyncTransportError('Unauthorized', 401),
+    });
+    const screen = await renderWithLocale(panel('private'), 'es');
+    fireEvent.press(screen.getByText('Publicar'));
+    expect(await screen.findByText(/Tu sesión ha caducado/)).toBeTruthy();
+    expect(screen.queryByText(/Unauthorized/)).toBeNull();
+    await act(async () => {
+      await screen.i18n.changeLanguage('de');
+    });
+    expect(screen.getByText(/Deine Sitzung ist abgelaufen/)).toBeTruthy();
+    expect(mockPublish).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     mockSyncController = { syncNow: mockSyncNow };
@@ -410,7 +429,7 @@ describe('PublishPanel', () => {
 
     fireEvent.press(await result.findByLabelText('Why was gato flagged?'));
     expect(
-      await result.findByText('The explanation is too large.'),
+      await result.findByText('An unexpected error occurred'),
     ).toBeTruthy();
     expect(mockExplain.mock.calls[0]?.[1]).toMatchObject({
       source: 'published',

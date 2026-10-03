@@ -1,4 +1,4 @@
-import { t } from 'i18next';
+import { UiError } from './errors';
 import {
   createContext,
   createElement,
@@ -167,25 +167,25 @@ export function useTwoFactorDeepLinkPending(): boolean {
   return useContext(TwoFactorDeepLinkContext);
 }
 
-export function twoFactorChallengeError(error: unknown): string {
+export function twoFactorChallengeError(error: unknown): UiError {
   const code = twoFactorChallengeErrorCode(error);
 
   if (code === 'ACCOUNT_TEMPORARILY_LOCKED') {
-    return t('mobile.messages.locked');
+    return new UiError('mobile.messages.locked');
   }
   if (code === 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE') {
-    return t('mobile.messages.challenge_exhausted');
+    return new UiError('mobile.messages.challenge_exhausted');
   }
   if (code === 'INVALID_BACKUP_CODE') {
-    return t('auth.error.two_factor_invalid_backup');
+    return new UiError('auth.error.two_factor_invalid_backup');
   }
   if (code === 'INVALID_CODE') {
-    return t('auth.error.two_factor_invalid_code');
+    return new UiError('auth.error.two_factor_invalid_code');
   }
   if (code === 'INVALID_TWO_FACTOR_COOKIE') {
-    return t('mobile.messages.challenge_expired');
+    return new UiError('mobile.messages.challenge_expired');
   }
-  return t('auth.error.two_factor_failed');
+  return new UiError('auth.error.two_factor_failed');
 }
 
 export function isTerminalTwoFactorChallengeError(error: unknown): boolean {

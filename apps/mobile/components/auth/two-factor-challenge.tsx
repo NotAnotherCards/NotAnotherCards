@@ -1,3 +1,4 @@
+import { UiError, uiErrorText } from '@/lib/errors';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
@@ -33,10 +34,10 @@ export function TwoFactorChallenge() {
   } = authClient.useSession();
   const [mode, setMode] = useState<ChallengeMode>('totp');
   const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmingSession, setIsConfirmingSession] = useState(false);
-  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<UiError | null>(null);
   const { hydrated, pending, verifiedUserId } = useTwoFactorChallengeState();
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export function TwoFactorChallenge() {
       return;
     }
     if (!isConfirmingSession && !isSessionPending && !isSessionRefetching) {
-      setSessionError(t('mobile.messages.session_unconfirmed'));
+      setSessionError(new UiError('mobile.messages.session_unconfirmed'));
     }
   }, [
     hydrated,
@@ -85,7 +86,7 @@ export function TwoFactorChallenge() {
     try {
       await refetch();
     } catch {
-      setSessionError(t('mobile.messages.session_unconfirmed'));
+      setSessionError(new UiError('mobile.messages.session_unconfirmed'));
     } finally {
       setIsConfirmingSession(false);
     }
@@ -113,7 +114,7 @@ export function TwoFactorChallenge() {
         // prevents cached auth from reopening protected screens meanwhile.
         await clearLocalAuthStorage();
       } catch {
-        setError(t('mobile.messages.unsafe_signout'));
+        setError(new UiError('mobile.messages.unsafe_signout'));
         setIsSubmitting(false);
         return;
       }
@@ -126,11 +127,11 @@ export function TwoFactorChallenge() {
   const verify = async () => {
     const normalizedCode = code.trim();
     if (mode === 'totp' && !/^\d{6}$/.test(normalizedCode)) {
-      setError(t('auth.error.two_factor_empty_totp'));
+      setError(new UiError('auth.error.two_factor_empty_totp'));
       return;
     }
     if (mode === 'backup' && !normalizedCode) {
-      setError(t('auth.error.two_factor_empty_backup'));
+      setError(new UiError('auth.error.two_factor_empty_backup'));
       return;
     }
 
@@ -153,7 +154,7 @@ export function TwoFactorChallenge() {
         if (isTerminalTwoFactorChallengeError(response.error)) {
           Alert.alert(
             t('mobile.messages.signin_failed'),
-            twoFactorChallengeError(response.error),
+            uiErrorText(twoFactorChallengeError(response.error), t),
           );
           await leaveChallenge();
           return;
@@ -165,7 +166,7 @@ export function TwoFactorChallenge() {
       markTwoFactorChallengeVerified(response.data.user.id);
       await confirmSession();
     } catch {
-      setError(t('auth.error.two_factor_unavailable'));
+      setError(new UiError('auth.error.two_factor_unavailable'));
     } finally {
       setIsSubmitting(false);
     }
@@ -247,7 +248,7 @@ export function TwoFactorChallenge() {
           accessibilityRole="alert"
           className="text-center text-destructive"
         >
-          {error ?? sessionError}
+          {uiErrorText((error ?? sessionError)!, t)}
         </Text>
       ) : null}
 

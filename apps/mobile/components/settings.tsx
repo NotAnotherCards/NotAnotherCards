@@ -96,7 +96,7 @@ export function Settings() {
         </View>
         <View className="flex-1">
           <Text className="text-lg font-semibold" numberOfLines={1}>
-            {user?.name || 'Learner'}
+            {user?.name || t('mobile.learner')}
           </Text>
           {manager ? <Username manager={manager} /> : null}
           <Text className="text-sm text-muted-foreground" numberOfLines={1}>

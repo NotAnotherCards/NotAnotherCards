@@ -1,4 +1,4 @@
-import { t } from 'i18next';
+import { toUiError, UiError } from './errors';
 import type { Database, SyncControllerState } from '@remelondb/core';
 import { rejectionsConcernDeck } from '@repo/offline-db';
 
@@ -12,18 +12,20 @@ import { rejectionsConcernDeck } from '@repo/offline-db';
 export async function syncFailure(
   state: SyncControllerState | undefined,
   scope?: { db: Database; deckId: string },
-): Promise<string | null> {
-  if (!state) return t('mobile.messages.sync_unavailable');
-  if (state.status === 'offline') return t('mobile.messages.offline');
+): Promise<UiError | null> {
+  if (!state) return new UiError('mobile.messages.sync_unavailable');
+  if (state.status === 'offline') return new UiError('mobile.messages.offline');
   if (state.status === 'error')
-    return state.error ?? t('mobile.messages.sync_failed');
+    return state.cause || state.error
+      ? toUiError(state.cause ?? state.error)
+      : new UiError('mobile.messages.sync_failed');
   const result = state.lastResult;
   if (
     (state.status !== 'idle' && state.status !== 'resync-required') ||
     !result ||
     result.lease !== 'acquired'
   ) {
-    return t('mobile.messages.sync_unconfirmed');
+    return new UiError('mobile.messages.sync_unconfirmed');
   }
   if (result.rejected > 0) {
     const concerns = scope
@@ -33,7 +35,7 @@ export async function syncFailure(
           result.rejectedRecords,
         )
       : true;
-    if (concerns) return t('mobile.messages.sync_rejected');
+    if (concerns) return new UiError('mobile.messages.sync_rejected');
   }
   return null;
 }

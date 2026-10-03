@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
 import { useSignOutBarrier } from '@/lib/sync-sign-out';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
@@ -21,7 +21,7 @@ export function LoginForm() {
   const { t } = useTranslation();
   const { signingOut, waitForSignOut } = useSignOutBarrier();
   const router = useRouter();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<UiError | null>(null);
   const { control, handleSubmit, formState } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
@@ -39,13 +39,13 @@ export function LoginForm() {
         password: data.password,
       });
       if (error) {
-        setApiError(apiErrorMessage(error));
+        setApiError(toUiError(error));
       } else if (isTwoFactorRedirect(response)) {
         await beginTwoFactorChallenge();
         router.replace('/two-factor');
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err));
+      setApiError(toUiError(err));
     }
   };
 
@@ -70,7 +70,9 @@ export function LoginForm() {
       />
 
       {apiError && (
-        <Text className="text-center text-destructive">{apiError}</Text>
+        <Text className="text-center text-destructive">
+          {uiErrorText(apiError, t)}
+        </Text>
       )}
 
       <Button

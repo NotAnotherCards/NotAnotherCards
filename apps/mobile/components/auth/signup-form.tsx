@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type SignupFormData } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
 import { useSignOutBarrier } from '@/lib/sync-sign-out';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
@@ -24,7 +24,7 @@ function getTimezone(): string | undefined {
 export function SignupForm() {
   const { t } = useTranslation();
   const { signingOut, waitForSignOut } = useSignOutBarrier();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<UiError | null>(null);
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -47,10 +47,10 @@ export function SignupForm() {
         timezone: getTimezone(),
       });
       if (error) {
-        setApiError(apiErrorMessage(error));
+        setApiError(toUiError(error));
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err));
+      setApiError(toUiError(err));
     }
   };
 
@@ -90,7 +90,9 @@ export function SignupForm() {
       />
 
       {apiError && (
-        <Text className="text-center text-destructive">{apiError}</Text>
+        <Text className="text-center text-destructive">
+          {uiErrorText(apiError, t)}
+        </Text>
       )}
 
       <Button

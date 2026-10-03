@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Markdown } from '@/components/ui/markdown';
 import { Text } from '@/components/ui/text';
 import { useSessionDatabase } from '@/lib/database-provider';
+import { UiError, toUiError, uiErrorText } from '@/lib/errors';
 import { syncFailure } from '@/lib/sync-outcome';
 import { apiClient } from '@/lib/api-client';
 
@@ -25,11 +26,11 @@ export default function CommunityDeckScreen() {
   const { t, i18n } = useTranslation();
   const { syncController } = useSessionDatabase();
   const [deck, setDeck] = useState<Preview | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [pending, setPending] = useState<'import' | 'report' | null>(null);
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState('');
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<UiError | null>(null);
   // Imported on the server but not yet on this device: the next step is a
   // sync, never a second import.
   const [awaitingSync, setAwaitingSync] = useState(false);
@@ -48,13 +49,7 @@ export default function CommunityDeckScreen() {
     apiClient.sharedDecks
       .preview(id)
       .then((result) => setDeck(result.deck))
-      .catch((err: unknown) =>
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'mobile.messages.load_deck_failed',
-        ),
-      );
+      .catch((err: unknown) => setError(toUiError(err)));
   }, [id]);
   useEffect(load, [load]);
 
@@ -66,7 +61,9 @@ export default function CommunityDeckScreen() {
     if (!mounted.current) return;
     if (failure) {
       setAwaitingSync(true);
-      setDone(t('mobile.messages.import_pending', { reason: failure }));
+      setDone(
+        new UiError('mobile.messages.import_pending', { reason: failure }),
+      );
       return;
     }
     router.dismissTo({
@@ -84,11 +81,7 @@ export default function CommunityDeckScreen() {
     try {
       await work();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : t('mobile.messages.request_failed'),
-      );
+      setError(toUiError(err));
     } finally {
       setPending(null);
     }
@@ -112,7 +105,7 @@ export default function CommunityDeckScreen() {
         {error && (
           <View className="items-center gap-2">
             <Text className="text-center text-destructive">
-              {t(error, { defaultValue: error })}
+              {uiErrorText(error, t)}
             </Text>
             {/* Only a failed load retries here; a failed action keeps
                 its buttons. */}
@@ -148,7 +141,7 @@ export default function CommunityDeckScreen() {
             {done ? (
               <View className="items-center gap-2">
                 <Text className="text-center text-muted-foreground">
-                  {done}
+                  {uiErrorText(done, t)}
                 </Text>
                 {awaitingSync && (
                   <Button
@@ -193,7 +186,7 @@ export default function CommunityDeckScreen() {
                       run('report', async () => {
                         await apiClient.sharedDecks.report(id, reason.trim());
                         setReporting(false);
-                        setDone(t('mobile.messages.report_sent'));
+                        setDone(new UiError('mobile.messages.report_sent'));
                       })
                     }
                   >

@@ -26,7 +26,7 @@ jest.mock('expo-router', () => {
 // The real auth client pulls in native modules; mock it like web does in setup.ts.
 type MockSignInResult = {
   data: { twoFactorRedirect?: boolean } | null;
-  error: { message?: string } | null;
+  error: { message?: string; code?: string; status?: number } | null;
 };
 const mockSignIn = jest.fn(
   async (_input?: unknown): Promise<MockSignInResult> => ({
@@ -66,6 +66,55 @@ beforeEach(() => {
 });
 
 describe('Login screen', () => {
+  it.each([
+    [
+      {
+        code: 'INVALID_EMAIL_OR_PASSWORD',
+        message: 'Invalid email or password',
+        status: 401,
+      },
+      'El correo electrónico o la contraseña no son correctos.',
+    ],
+    [
+      { message: 'Private server diagnostic' },
+      'Ha ocurrido un error inesperado',
+    ],
+  ])(
+    'translates API errors without exposing server text: %j',
+    async (error, expected) => {
+      mockSignIn.mockResolvedValueOnce({ data: null, error });
+      const screen = await renderWithLocale(<Login />, 'es');
+      fireEvent.changeText(
+        screen.getByPlaceholderText('nombre@ejemplo.com'),
+        'jane@example.com',
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('Contraseña'),
+        'Password123*',
+      );
+      fireEvent.press(screen.getByText('Iniciar sesión'));
+      expect(await screen.findByText(expected)).toBeTruthy();
+      expect(screen.queryByText(error.message)).toBeNull();
+    },
+  );
+  it('retranslates an already visible network error after switching languages', async () => {
+    mockSignIn.mockRejectedValueOnce(new Error('Network request failed'));
+    const screen = await renderWithLocale(<Login />, 'es');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('nombre@ejemplo.com'),
+      'jane@example.com',
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText('Contraseña'),
+      'Password123*',
+    );
+    fireEvent.press(screen.getByText('Iniciar sesión'));
+    await screen.findByText(/No se puede conectar/);
+    await act(async () => {
+      await screen.i18n.changeLanguage('de');
+    });
+    expect(screen.getByText(/Server.*nicht erreichbar/)).toBeTruthy();
+  });
   it('translates Spanish labels and validation without changing submitted field names', async () => {
     const screen = await renderWithLocale(<Login />, 'es');
     fireEvent.changeText(
@@ -151,7 +200,7 @@ describe('Login screen', () => {
     expect(await findByText(/Can't reach the server/)).toBeTruthy();
   });
 
-  it('shows the server message on an API error', async () => {
+  it('recognizes invalid credentials in a legacy API error', async () => {
     mockSignIn.mockResolvedValueOnce({
       data: null,
       error: { message: 'Invalid email or password' },
@@ -229,7 +278,7 @@ describe('Login screen', () => {
     });
     const { getByText, findByText } = render(<Login />);
     fireEvent.press(getByText('Google'));
-    expect(await findByText('Provider refused')).toBeTruthy();
+    expect(await findByText('An unexpected error occurred')).toBeTruthy();
     expect(mockSocialSignIn).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'google' }),
     );

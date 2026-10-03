@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
 import { useSignOutBarrier } from '@/lib/sync-sign-out';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { GoogleIcon } from '@/components/ui/google-icon';
@@ -30,7 +30,7 @@ export function SocialLoginButtons() {
   const { signingOut, waitForSignOut } = useSignOutBarrier();
   const router = useRouter();
   const [busy, setBusy] = useState<SocialProvider | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<UiError | null>(null);
 
   const signIn = async (provider: SocialProvider) => {
     setApiError(null);
@@ -43,7 +43,7 @@ export function SocialLoginButtons() {
         errorCallbackURL: '/login',
       });
       if (error) {
-        setApiError(apiErrorMessage(error));
+        setApiError(toUiError(error));
       } else if (
         isTwoFactorRedirect(data) ||
         hasTwoFactorChallengeCookie(authClient.getCookie())
@@ -55,7 +55,7 @@ export function SocialLoginButtons() {
         router.replace('/two-factor');
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err));
+      setApiError(toUiError(err));
     } finally {
       setBusy(null);
     }
@@ -88,7 +88,9 @@ export function SocialLoginButtons() {
         </Button>
       ))}
       {apiError && (
-        <Text className="text-center text-destructive">{apiError}</Text>
+        <Text className="text-center text-destructive">
+          {uiErrorText(apiError, t)}
+        </Text>
       )}
     </View>
   );

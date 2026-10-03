@@ -115,7 +115,7 @@ describe('ProfileForm', () => {
 
     expect(mockCheckUsername).not.toHaveBeenCalled();
     expect(onSave).toHaveBeenCalled();
-    expect(screen.getByText('The write failed')).toBeTruthy();
+    expect(screen.getByText('An unexpected error occurred')).toBeTruthy();
   });
 
   it('lets the newest save win when an older one is still in flight', async () => {

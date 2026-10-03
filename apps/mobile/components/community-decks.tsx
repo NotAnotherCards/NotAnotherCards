@@ -8,6 +8,7 @@ import type { SharedDeckSummary } from '@repo/schemas';
 import { Button } from './ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
+import { UiError, toUiError, uiErrorText } from '@/lib/errors';
 import { apiClient } from '@/lib/api-client';
 
 // The community decks, as web's overview lists them: kind, title,
@@ -19,7 +20,7 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [decks, setDecks] = useState<SharedDeckSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
 
@@ -36,11 +37,7 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
         );
         setHasMore(page.length === pageSize);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'mobile.messages.load_decks_failed',
-        );
+        setError(toUiError(err));
       } finally {
         setLoading(false);
       }
@@ -61,7 +58,7 @@ export function CommunityDecks({ pageSize = 50 }: { pageSize?: number } = {}) {
       {error && (
         <View className="items-center gap-2">
           <Text className="text-center text-destructive">
-            {t(error, { defaultValue: error })}
+            {uiErrorText(error, t)}
           </Text>
           <Button
             variant="outline"

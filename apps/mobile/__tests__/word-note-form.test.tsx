@@ -97,7 +97,9 @@ it('forgets a resumed job once the server reports it failed', async () => {
     expect(ui.getByLabelText('Check generation again')).toBeTruthy(),
   );
   fireEvent.press(ui.getByLabelText('Check generation again'));
-  await waitFor(() => expect(ui.getByText('Model unavailable')).toBeTruthy());
+  await waitFor(() =>
+    expect(ui.getByText('An unexpected error occurred')).toBeTruthy(),
+  );
   expect(ui.getByLabelText('Fill in with AI')).toBeTruthy();
   expect(ui.queryByText('Generation may still be running.')).toBeNull();
 });
@@ -200,7 +202,7 @@ it.each([
       ui.getByText(
         error instanceof ApiError
           ? 'Your AI quota is used up for today.'
-          : error.message,
+          : 'An unexpected error occurred',
       ),
     ).toBeTruthy(),
   );

@@ -1,5 +1,6 @@
 {
   "mobile": {
+    "learner": "Lernende Person",
     "sync_tables": {
       "deck_one": "{{count}} Stapel",
       "deck_few": "{{count}} Stapel",
@@ -254,6 +255,14 @@
   },
   "auth": {
     "error": {
+      "invalid_credentials": "E-Mail-Adresse oder Passwort ist falsch.",
+      "user_exists": "Für diese E-Mail-Adresse gibt es bereits ein Konto.",
+      "invalid_token": "Dieser Link ist ungültig oder abgelaufen. Fordere einen neuen an.",
+      "session_expired": "Deine Sitzung ist abgelaufen. Melde dich erneut an.",
+      "email_not_verified": "Bestätige deine E-Mail-Adresse, bevor du dich anmeldest.",
+      "too_many_requests": "Zu viele Anfragen. Bitte versuche es später erneut.",
+      "forbidden": "Du hast keine Berechtigung für diese Aktion.",
+      "not_found": "Der angeforderte Eintrag wurde nicht gefunden.",
       "social_login_failed_callback": "Social-Login fehlgeschlagen. Bitte versuche es erneut oder nutze einen anderen Anbieter.",
       "social_login_failed": "Social-Login fehlgeschlagen. Bitte versuche es erneut.",
       "unexpected": "Ein unerwarteter Fehler ist aufgetreten",

@@ -1,5 +1,6 @@
 {
   "mobile": {
+    "learner": "Learner",
     "sync_tables": {
       "deck_one": "{{count}} deck",
       "deck_few": "{{count}} decks",
@@ -254,6 +255,14 @@
   },
   "auth": {
     "error": {
+      "invalid_credentials": "Invalid email or password",
+      "user_exists": "An account with this email already exists.",
+      "invalid_token": "This link is invalid or has expired. Request a new one.",
+      "session_expired": "Your session has expired. Sign in again.",
+      "email_not_verified": "Verify your email before signing in.",
+      "too_many_requests": "Too many requests. Please try again later.",
+      "forbidden": "You do not have permission to do this.",
+      "not_found": "The requested item was not found.",
       "social_login_failed_callback": "Social login failed. Please try again or use another provider.",
       "social_login_failed": "Social login failed. Please try again.",
       "unexpected": "An unexpected error occurred",

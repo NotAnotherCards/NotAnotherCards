@@ -40,6 +40,17 @@ describe('initials', () => {
 });
 
 describe('Settings', () => {
+  it('translates the missing-name fallback', async () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: { id: 'user-settings', name: '', email: 'test@example.com' },
+      },
+      isPending: false,
+    });
+    const screen = await renderWithLocale(<Settings />, 'de');
+    expect(screen.getByText('Lernende Person')).toBeTruthy();
+    expect(screen.queryByText('Learner')).toBeNull();
+  });
   it('translates the section tabs and keeps the selection when the locale changes', async () => {
     const screen = await renderWithLocale(<Settings />, 'de');
     expect(screen.getByLabelText('Einstellungsbereiche')).toBeTruthy();

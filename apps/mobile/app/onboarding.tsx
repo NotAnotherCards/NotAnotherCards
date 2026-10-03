@@ -6,7 +6,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { type ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { completeOnboarding } from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -23,7 +23,7 @@ export default function Onboarding() {
   const { data: session, isPending, error, refetch } = authClient.useSession();
   const challenge = useTwoFactorChallengeState();
   const deepLinkPending = useTwoFactorDeepLinkPending();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<UiError | null>(null);
   const { control, handleSubmit, formState, watch, setValue } =
     useForm<ProfileFormValues>({
       resolver: zodResolver(userProfileFormSchema),
@@ -59,7 +59,7 @@ export default function Onboarding() {
       await completeOnboarding(values);
       await refetch();
     } catch (error) {
-      setApiError(apiErrorMessage(error));
+      setApiError(toUiError(error));
     }
   };
 
@@ -83,7 +83,7 @@ export default function Onboarding() {
     return (
       <View className="flex-1 items-center justify-center gap-4 p-6">
         <Text className="text-center text-destructive">
-          {apiErrorMessage(error)}
+          {uiErrorText(toUiError(error), t)}
         </Text>
         <Button onPress={() => refetch()}>
           <Text>{t('common.retry')}</Text>
@@ -148,7 +148,9 @@ export default function Onboarding() {
         />
 
         {apiError && (
-          <Text className="text-center text-destructive">{apiError}</Text>
+          <Text className="text-center text-destructive">
+            {uiErrorText(apiError, t)}
+          </Text>
         )}
 
         <Button

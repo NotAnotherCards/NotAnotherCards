@@ -1,4 +1,4 @@
-import { t } from 'i18next';
+import { UiError, uiErrorText, toUiError } from '@/lib/errors';
 import { useTranslation } from 'react-i18next';
 import {
   useCallback,
@@ -41,15 +41,15 @@ export function secretFromTotpUri(uri: string): string {
   }
 }
 
-function managementError(error: unknown, fallback: string): string {
+function managementError(error: unknown, fallback: UiError): UiError {
   const code =
     typeof error === 'object' && error !== null && 'code' in error
       ? String(error.code)
       : '';
   if (code === 'INVALID_PASSWORD')
-    return t('dashboard.settings.two_factor.incorrect_password');
+    return new UiError('dashboard.settings.two_factor.incorrect_password');
   if (code === 'TWO_FACTOR_ALREADY_ENABLED') {
-    return t('dashboard.settings.two_factor.already_enabled');
+    return new UiError('dashboard.settings.two_factor.already_enabled');
   }
   return fallback;
 }
@@ -137,7 +137,7 @@ function Enrollment({
   const [material, setMaterial] = useState<EnrollmentMaterial | null>(null);
   const [code, setCode] = useState('');
   const [copyStatus, setCopyStatus] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const secret = useMemo(
     () => (material ? secretFromTotpUri(material.totpURI) : ''),
@@ -163,7 +163,7 @@ function Enrollment({
 
   const enable = async () => {
     if (!password) {
-      setError(t('dashboard.settings.two_factor.enter_password'));
+      setError(new UiError('dashboard.settings.two_factor.enter_password'));
       return;
     }
     setError(null);
@@ -183,7 +183,7 @@ function Enrollment({
         setError(
           managementError(
             response.error,
-            t('dashboard.settings.two_factor.start_setup_fail'),
+            new UiError('dashboard.settings.two_factor.start_setup_fail'),
           ),
         );
         return;
@@ -194,7 +194,7 @@ function Enrollment({
       });
       setPassword('');
     } catch {
-      setError(t('dashboard.settings.two_factor.start_setup_fail'));
+      setError(new UiError('dashboard.settings.two_factor.start_setup_fail'));
     } finally {
       setIsSubmitting(false);
     }
@@ -204,7 +204,7 @@ function Enrollment({
     if (!material) return;
     const normalizedCode = code.trim();
     if (!/^\d{6}$/.test(normalizedCode)) {
-      setError(t('auth.error.two_factor_empty_totp'));
+      setError(new UiError('auth.error.two_factor_empty_totp'));
       return;
     }
     setError(null);
@@ -218,7 +218,7 @@ function Enrollment({
         { disableSignal: true },
       );
       if (response.error) {
-        setError(t('dashboard.settings.two_factor.invalid_code'));
+        setError(new UiError('dashboard.settings.two_factor.invalid_code'));
         return;
       }
       const backupCodes = [...material.backupCodes];
@@ -226,7 +226,7 @@ function Enrollment({
       setCode('');
       await onVerified(backupCodes);
     } catch {
-      setError(t('dashboard.settings.two_factor.verify_fail'));
+      setError(new UiError('dashboard.settings.two_factor.verify_fail'));
     } finally {
       setIsSubmitting(false);
     }
@@ -242,7 +242,7 @@ function Enrollment({
         />
         {error ? (
           <Text accessibilityRole="alert" className="text-destructive">
-            {error}
+            {uiErrorText(error, t)}
           </Text>
         ) : null}
         <View className="flex-row gap-2">
@@ -326,7 +326,7 @@ function Enrollment({
         </View>
         {error ? (
           <Text accessibilityRole="alert" className="text-destructive">
-            {error}
+            {uiErrorText(error, t)}
           </Text>
         ) : null}
         <Button loading={isSubmitting} onPress={verify}>
@@ -347,7 +347,7 @@ export function TwoFactorSecurity() {
   const [enabledOverride, setEnabledOverride] = useState<boolean | null>(null);
   const [hasCredential, setHasCredential] = useState<boolean | null>(null);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
-  const [accountError, setAccountError] = useState<string | null>(null);
+  const [accountError, setAccountError] = useState<UiError | null>(null);
   const [showEnrollment, setShowEnrollment] = useState(false);
   const [action, setAction] = useState<ManagementAction | null>(null);
   const [password, setPassword] = useState('');
@@ -357,10 +357,10 @@ export function TwoFactorSecurity() {
   );
   const [refreshSessionAfterCodes, setRefreshSessionAfterCodes] =
     useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingCredential, setIsCreatingCredential] = useState(false);
-  const [credentialError, setCredentialError] = useState<string | null>(null);
+  const [credentialError, setCredentialError] = useState<UiError | null>(null);
   const isEnabled = enabledOverride ?? Boolean(session?.user.twoFactorEnabled);
 
   const loadAccounts = useCallback(async () => {
@@ -374,7 +374,7 @@ export function TwoFactorSecurity() {
       );
     } catch {
       setHasCredential(null);
-      setAccountError(t('mobile.messages.signin_methods_failed'));
+      setAccountError(new UiError('mobile.messages.signin_methods_failed'));
     } finally {
       setIsLoadingAccounts(false);
     }
@@ -404,10 +404,7 @@ export function TwoFactorSecurity() {
     try {
       const response = await authClient.signOut();
       if (response.error) {
-        setCredentialError(
-          response.error.message ||
-            t('dashboard.settings.two_factor.sign_out_fail'),
-        );
+        setCredentialError(toUiError(response.error));
         return;
       }
       router.replace({
@@ -415,7 +412,9 @@ export function TwoFactorSecurity() {
         params: { email: session?.user.email ?? '' },
       });
     } catch {
-      setCredentialError(t('dashboard.settings.two_factor.sign_out_fail'));
+      setCredentialError(
+        new UiError('dashboard.settings.two_factor.sign_out_fail'),
+      );
     } finally {
       setIsCreatingCredential(false);
     }
@@ -423,7 +422,7 @@ export function TwoFactorSecurity() {
 
   const manage = async () => {
     if (!password) {
-      setError(t('dashboard.settings.two_factor.enter_password'));
+      setError(new UiError('dashboard.settings.two_factor.enter_password'));
       return;
     }
     setError(null);
@@ -438,7 +437,7 @@ export function TwoFactorSecurity() {
           setError(
             managementError(
               response.error,
-              t('dashboard.settings.two_factor.regenerate_fail'),
+              new UiError('dashboard.settings.two_factor.regenerate_fail'),
             ),
           );
           return;
@@ -457,7 +456,7 @@ export function TwoFactorSecurity() {
           setError(
             managementError(
               response.error,
-              t('dashboard.settings.two_factor.disable_fail'),
+              new UiError('dashboard.settings.two_factor.disable_fail'),
             ),
           );
           return;
@@ -467,7 +466,7 @@ export function TwoFactorSecurity() {
         await refetch();
       }
     } catch {
-      setError(t('mobile.messages.security_failed'));
+      setError(new UiError('mobile.messages.security_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -498,7 +497,7 @@ export function TwoFactorSecurity() {
         {!isEnabled && accountError ? (
           <View className="gap-2 rounded-xl border border-destructive p-4">
             <Text accessibilityRole="alert" className="text-destructive">
-              {accountError}
+              {uiErrorText(accountError, t)}
             </Text>
             <Button variant="outline" onPress={() => void loadAccounts()}>
               <Text>{t('mobile.messages.retry_methods')}</Text>
@@ -526,7 +525,7 @@ export function TwoFactorSecurity() {
             </Button>
             {credentialError ? (
               <Text accessibilityRole="alert" className="text-destructive">
-                {credentialError}
+                {uiErrorText(credentialError, t)}
               </Text>
             ) : null}
           </View>
@@ -586,7 +585,7 @@ export function TwoFactorSecurity() {
             />
             {error ? (
               <Text accessibilityRole="alert" className="text-destructive">
-                {error}
+                {uiErrorText(error, t)}
               </Text>
             ) : null}
             <Button

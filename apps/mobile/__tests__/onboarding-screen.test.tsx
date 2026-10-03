@@ -105,7 +105,7 @@ describe('Onboarding screen', () => {
     const screen = render(<Onboarding />);
     await fillAndSubmit(screen);
 
-    await waitFor(() => screen.getByText('Username already taken'));
+    await waitFor(() => screen.getByText('Username is already taken'));
     expect(mockReplace).not.toHaveBeenCalled();
     // Entered values survive the failed submit.
     expect(screen.getByDisplayValue('jane-doe')).toBeTruthy();

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { View } from 'react-native';
 import type { UserProfileRecord } from '@repo/offline-db';
 import { type ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { checkUsernameAvailable, type profileWrites } from '@/lib/profile';
 import {
   Card,
@@ -40,7 +40,7 @@ export function ProfileForm({
   onSave: ReturnType<typeof profileWrites>['update'];
 }) {
   const { t } = useTranslation();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [saved, setSaved] = useState(false);
   const {
     control,
@@ -89,7 +89,7 @@ export function ProfileForm({
         const available = await checkUsernameAvailable(values.username);
         if (superseded()) return;
         if (!available) {
-          setError('dashboard.settings.profile.username_taken');
+          setError(new UiError('dashboard.settings.profile.username_taken'));
           return;
         }
       }
@@ -98,7 +98,7 @@ export function ProfileForm({
       reset(values);
       setSaved(true);
     } catch (err) {
-      if (!superseded()) setError(apiErrorMessage(err));
+      if (!superseded()) setError(toUiError(err));
     }
   };
 
@@ -194,7 +194,7 @@ export function ProfileForm({
 
       {error && (
         <Text className="text-center text-destructive">
-          {t(error, { defaultValue: error })}
+          {uiErrorText(error, t)}
         </Text>
       )}
       {saved && !formState.isDirty && (

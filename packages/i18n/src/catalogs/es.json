@@ -1,5 +1,6 @@
 {
   "mobile": {
+    "learner": "Estudiante",
     "sync_tables": {
       "deck_one": "{{count}} mazo",
       "deck_few": "{{count}} mazos",
@@ -254,6 +255,14 @@
   },
   "auth": {
     "error": {
+      "invalid_credentials": "El correo electrónico o la contraseña no son correctos.",
+      "user_exists": "Ya existe una cuenta con este correo electrónico.",
+      "invalid_token": "Este enlace no es válido o ha caducado. Solicita uno nuevo.",
+      "session_expired": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
+      "email_not_verified": "Verifica tu correo electrónico antes de iniciar sesión.",
+      "too_many_requests": "Demasiadas solicitudes. Vuelve a intentarlo más tarde.",
+      "forbidden": "No tienes permiso para realizar esta acción.",
+      "not_found": "No se ha encontrado el elemento solicitado.",
       "social_login_failed_callback": "El inicio de sesión social ha fallado. Por favor, inténtalo de nuevo o usa otro proveedor.",
       "social_login_failed": "El inicio de sesión social ha fallado. Por favor, inténtalo de nuevo.",
       "unexpected": "Ha ocurrido un error inesperado",

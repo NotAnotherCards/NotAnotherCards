@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import type { ModerationWarning, OwnerModerationStatus } from '@repo/schemas';
 import type { UserCardRecord, UserDeckRecord } from '@repo/offline-db';
 import { useSessionDatabase } from '@/lib/database-provider';
+import { UiError, toUiError, uiErrorText } from '@/lib/errors';
 import { syncFailure } from '@/lib/sync-outcome';
 import { apiClient } from '@/lib/api-client';
 import { useModerationExplanation } from '@repo/api-client/react';
@@ -36,7 +37,7 @@ export function PublishPanel({
   >(null);
   useEffect(() => setRemoteVisibility(null), [deck.visibility]);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UiError | null>(null);
   const [flagged, setFlagged] = useState<ModerationWarning[]>([]);
   const [warnings, setWarnings] = useState<ModerationWarning[]>([]);
   // "Why?" streams one explanation at a time, as web's deck page does;
@@ -85,7 +86,9 @@ export function PublishPanel({
           </Text>
         ) : null}
         {isActive && explanation.error ? (
-          <Text className="text-sm text-destructive">{explanation.error}</Text>
+          <Text className="text-sm text-destructive">
+            {uiErrorText(toUiError(explanation.error), t)}
+          </Text>
         ) : null}
       </View>
     );
@@ -138,21 +141,21 @@ export function PublishPanel({
         scope,
       );
       if (notSynced) {
-        setError(t('mobile.messages.not_sent', { reason: notSynced }));
+        setError(
+          new UiError('mobile.messages.not_sent', { reason: notSynced }),
+        );
         return;
       }
       if ((await work()) === 'refused') return;
       const behind = await syncFailure(await syncController?.syncNow(), scope);
       if (behind) {
-        setError(t('mobile.messages.server_done', { reason: behind }));
+        setError(
+          new UiError('mobile.messages.server_done', { reason: behind }),
+        );
       }
       await refreshStatus();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : t('mobile.messages.request_failed'),
-      );
+      setError(toUiError(err));
     } finally {
       setPending(false);
     }
@@ -212,10 +215,11 @@ export function PublishPanel({
                 }
                 setFlagged(outcome.refusal.flagged);
                 setError(
-                  outcome.refusal.reason ??
-                    (outcome.refusal.flagged.length > 0
-                      ? t('mobile.messages.refused_details')
-                      : t('mobile.messages.refused')),
+                  new UiError(
+                    outcome.refusal.flagged.length > 0
+                      ? 'mobile.messages.refused_details'
+                      : 'mobile.messages.refused',
+                  ),
                 );
                 return 'refused';
               })
@@ -225,7 +229,9 @@ export function PublishPanel({
           </Button>
         )}
       </View>
-      {error && <Text className="text-destructive">{error}</Text>}
+      {error && (
+        <Text className="text-destructive">{uiErrorText(error, t)}</Text>
+      )}
       {flagged.map((item, index) =>
         finding(item, index, 'working', 'destructive'),
       )}

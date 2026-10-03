@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { authClient } from '@/lib/auth-client';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
@@ -32,7 +32,7 @@ export function ForgotPasswordForm({
   defaultEmail?: string;
 }) {
   const { t } = useTranslation();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<UiError | null>(null);
   const { control, handleSubmit, formState } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: defaultEmail },
@@ -44,7 +44,7 @@ export function ForgotPasswordForm({
       await requestReset(data.email);
       onSent(data.email);
     } catch (err) {
-      setApiError(apiErrorMessage(err));
+      setApiError(toUiError(err));
     }
   };
 
@@ -60,7 +60,9 @@ export function ForgotPasswordForm({
         keyboardType="email-address"
       />
       {apiError && (
-        <Text className="text-center text-destructive">{apiError}</Text>
+        <Text className="text-center text-destructive">
+          {uiErrorText(apiError, t)}
+        </Text>
       )}
       <Button
         loading={formState.isSubmitting}
@@ -79,7 +81,7 @@ export function ResetEmailSent({ email }: { email: string }) {
   const { t } = useTranslation();
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN_SECONDS);
   const [resending, setResending] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<UiError | null>(null);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -92,10 +94,10 @@ export function ResetEmailSent({ email }: { email: string }) {
     setMessage(null);
     try {
       await requestReset(email);
-      setMessage(t('auth.forgot_password.resend_success'));
+      setMessage(new UiError('auth.forgot_password.resend_success'));
       setCountdown(RESEND_COOLDOWN_SECONDS);
     } catch (err) {
-      setMessage(apiErrorMessage(err));
+      setMessage(toUiError(err));
     } finally {
       setResending(false);
     }
@@ -108,7 +110,9 @@ export function ResetEmailSent({ email }: { email: string }) {
         <Text className="font-medium text-foreground">{email}</Text>
         {t('auth.forgot_password.check_inbox_2')}
       </Text>
-      {message && <Text className="text-center text-sm">{message}</Text>}
+      {message && (
+        <Text className="text-center text-sm">{uiErrorText(message, t)}</Text>
+      )}
       <Button
         variant="outline"
         loading={resending}
