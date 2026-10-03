@@ -32,6 +32,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Test browser runner cleanup
+        run: node --test scripts/browser-tests.test.mjs
       - name: Install stable Chrome and system dependencies
         run: pnpm --filter web exec playwright install --with-deps --force chrome
       - name: Log Chrome version

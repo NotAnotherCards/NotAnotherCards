@@ -13,7 +13,7 @@ node_modules
 # Browser tests run on the host against these images.
 apps/web/e2e
 apps/web/playwright.config.ts
-scripts/browser-tests.mjs
+scripts/browser-tests*.mjs
 infra/browser.env
 docker-compose.browser.yml
 **/.env

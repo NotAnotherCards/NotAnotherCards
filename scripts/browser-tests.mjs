@@ -33,10 +33,11 @@ const compose = [
 
 let activeChild;
 let interrupted = false;
+let cleaningUp = false;
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     interrupted = true;
-    activeChild?.kill('SIGTERM');
+    if (!cleaningUp) activeChild?.kill('SIGTERM');
   });
 }
 
@@ -46,6 +47,9 @@ function run(command, args, logName, echo = true) {
     const child = spawn(command, args, {
       cwd: root,
       env,
+      // Terminal signals target the whole foreground process group. Isolate
+      // cleanup too, so Ctrl+C cannot bypass the parent's signal handler.
+      detached: cleaningUp,
       stdio: ['inherit', 'pipe', 'pipe'],
     });
     activeChild = child;
@@ -85,6 +89,9 @@ try {
     ]);
   }
 } finally {
+  // Keep handlers installed, but let logs and removal finish even if another
+  // interrupt arrives. The interrupted exit status is set after teardown.
+  cleaningUp = true;
   try {
     await run(
       'docker',

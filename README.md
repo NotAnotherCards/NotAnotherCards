@@ -130,8 +130,10 @@ must be free; the API and database are not exposed to the host.
 
 The harness pins disposable credentials from `infra/browser.env`, collects
 Compose build/runtime logs, and removes its containers, images, and database
-volume after passing or failing tests, or interruption. It does not read the
-developer's `.env` or reuse a running stack. If Chrome is installed outside its standard location, set
+volume after passing or failing tests, or interruption. Cleanup waits for
+completion even if SIGINT or SIGTERM arrives again during teardown. It does not
+read the developer's `.env` or reuse a running stack. If Chrome is installed
+outside its standard location, set
 `E2E_CHROME_EXECUTABLE` to its executable path.
 
 Use `pnpm e2e --project=phone` for one viewport or `pnpm e2e --headed` to watch.
