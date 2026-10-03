@@ -1,7 +1,17 @@
 import { useTranslation } from 'react-i18next';
-import { createContext, useContext, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { View } from 'react-native';
-import type { DatabaseManager, SyncController } from '@remelondb/core';
+import type {
+  DatabaseManager,
+  SyncController,
+  SyncControllerState,
+} from '@remelondb/core';
 import {
   DatabaseProvider,
   useSessionDatabase as useOwnedDatabase,
@@ -9,6 +19,8 @@ import {
 import { authClient } from './auth-client';
 import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
+import { isSyncAuthBlocked } from './sync-status';
+import { signOutForExpiredSyncSession } from './sync-sign-out';
 import { nativeSyncTriggers } from './sync-triggers';
 import { Text } from '@/components/ui/text';
 import { useTwoFactorChallengeState } from './two-factor-challenge';
@@ -61,6 +73,27 @@ export function SessionDatabaseProvider({
     sync: { pullChanges, pushChanges, migrationsEnabledAtVersion: 1 },
     controller: { triggers: nativeSyncTriggers },
   });
+
+  const signedOutController = useRef<SyncController | null>(null);
+  useEffect(() => {
+    if (!syncController || !userId) return;
+    // #384: keep userId null while a 2FA challenge is pending, so a
+    // partial session can neither sync nor enter this sign-out path.
+    const onState = (state: SyncControllerState) => {
+      if (
+        !isSyncAuthBlocked(state) ||
+        signedOutController.current === syncController
+      )
+        return;
+      signedOutController.current = syncController;
+      // RequireSession redirects after Expo's first clear. Login waits for
+      // the response's second clear before it creates another session.
+      void signOutForExpiredSyncSession();
+    };
+    const unsubscribe = syncController.subscribe(onState);
+    onState(syncController.state);
+    return unsubscribe;
+  }, [syncController, userId]);
 
   useEffect(() => {
     if (

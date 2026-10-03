@@ -353,7 +353,8 @@
     "validation_more_one": "…и еще {{count}}",
     "validation_more_few": "…и еще {{count}}",
     "validation_more_many": "…и еще {{count}}",
-    "validation_more_other": "…и еще {{count}}"
+    "validation_more_other": "…и еще {{count}}",
+    "signing_out": "Выход…"
   },
   "profile": {
     "validation": {
@@ -537,7 +538,8 @@
       "offline": "Офлайн",
       "failed": "Ошибка синхронизации",
       "reset_required": "Требуется сброс",
-      "rejected": "Синхронизировано, {{rejected}} не принято"
+      "rejected": "Синхронизировано, {{rejected}} не принято",
+      "signed_out": "Вы вышли"
     },
     "overview": {
       "badges": {

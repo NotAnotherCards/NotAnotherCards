@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
+import { useSignOutBarrier } from '@/lib/sync-sign-out';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -18,6 +19,7 @@ import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 export function LoginForm() {
   const { t } = useTranslation();
+  const { signingOut, waitForSignOut } = useSignOutBarrier();
   const router = useRouter();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<LoginFormData>({
@@ -28,6 +30,7 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     setApiError(null);
+    if (!(await waitForSignOut())) return;
 
     await finishTwoFactorChallenge();
     try {
@@ -75,7 +78,9 @@ export function LoginForm() {
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
       >
-        <Text>{t('auth.login.submit')}</Text>
+        <Text>
+          {signingOut ? t('auth.signing_out') : t('auth.login.submit')}
+        </Text>
       </Button>
       <SocialLoginButtons />
       <Text className="mt-1 text-center text-muted-foreground">

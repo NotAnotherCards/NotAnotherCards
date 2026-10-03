@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
+import { useSignOutBarrier } from '@/lib/sync-sign-out';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -26,6 +27,7 @@ const LABELS: Record<SocialProvider, string> = {
 // URL. The screen's session effect then navigates, as it does for email.
 export function SocialLoginButtons() {
   const { t } = useTranslation();
+  const { signingOut, waitForSignOut } = useSignOutBarrier();
   const router = useRouter();
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export function SocialLoginButtons() {
     setApiError(null);
     setBusy(provider);
     try {
+      if (!(await waitForSignOut())) return;
       const { data, error } = await authClient.signIn.social({
         provider,
         callbackURL: '/dashboard',
@@ -80,7 +83,7 @@ export function SocialLoginButtons() {
         >
           <View className="flex-row items-center gap-2">
             {busy !== provider && <GoogleIcon />}
-            <Text>{LABELS[provider]}</Text>
+            <Text>{signingOut ? t('auth.signing_out') : LABELS[provider]}</Text>
           </View>
         </Button>
       ))}

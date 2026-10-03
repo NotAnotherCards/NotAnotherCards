@@ -353,7 +353,8 @@
     "validation_more_one": "1",
     "validation_more_few": "{{count}}",
     "validation_more_many": "{{count}}",
-    "validation_more_other": "{{count}}"
+    "validation_more_other": "{{count}}",
+    "signing_out": "Abmelden…"
   },
   "profile": {
     "validation": {
@@ -537,7 +538,8 @@
       "offline": "Offline",
       "failed": "Synchronisierung fehlgeschlagen",
       "reset_required": "Zurücksetzen erforderlich",
-      "rejected": "Synchronisiert, {{rejected}} nicht akzeptiert"
+      "rejected": "Synchronisiert, {{rejected}} nicht akzeptiert",
+      "signed_out": "Abgemeldet"
     },
     "overview": {
       "badges": {

@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { SyncTransportError } from '@repo/offline-db';
 import type { SyncControllerState } from '@remelondb/core';
 import {
   SYNCING_SHOW_DELAY_MS,
@@ -92,4 +93,33 @@ describe('useSettledSyncState', () => {
     rerender({ current: state({ status: 'error' }) });
     expect(result.current.status).toBe('error');
   });
+});
+
+it('shows Signed out without Retry for a sync 401, even after rejections', () => {
+  expect(
+    syncStatusView(
+      state({
+        status: 'error',
+        cause: new SyncTransportError('Unauthorized', 401),
+        lastResult: {
+          resynced: false,
+          rejected: 1,
+          rejectedRecords: { review_events: ['r1'] },
+        },
+      }),
+    ),
+  ).toEqual({
+    label: 'Signed out',
+    tone: 'error',
+    retryable: false,
+    details: undefined,
+  });
+});
+
+it('keeps Sync failed and Retry for a plain network error', () => {
+  expect(
+    syncStatusView(
+      state({ status: 'error', cause: new Error('Network request failed') }),
+    ),
+  ).toMatchObject({ label: 'Sync failed', retryable: true });
 });

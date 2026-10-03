@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type SignupFormData } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
+import { useSignOutBarrier } from '@/lib/sync-sign-out';
 import { apiErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -22,6 +23,7 @@ function getTimezone(): string | undefined {
 
 export function SignupForm() {
   const { t } = useTranslation();
+  const { signingOut, waitForSignOut } = useSignOutBarrier();
   const [apiError, setApiError] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
@@ -36,6 +38,7 @@ export function SignupForm() {
 
   const onSubmit = async (data: SignupFormData) => {
     setApiError(null);
+    if (!(await waitForSignOut())) return;
     try {
       const { error } = await authClient.signUp.email({
         name: data.name,
@@ -95,7 +98,9 @@ export function SignupForm() {
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
       >
-        <Text>{t('auth.register.submit')}</Text>
+        <Text>
+          {signingOut ? t('auth.signing_out') : t('auth.register.submit')}
+        </Text>
       </Button>
 
       <SocialLoginButtons />
