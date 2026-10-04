@@ -26,6 +26,7 @@ import {
   countCardsPerDeck,
   deckLearningCounts,
   type DeckNoteType,
+  selectDueCards,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 
@@ -240,6 +241,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                 }
                 dueCount={dueCardsPerDeck.get(deck.id) ?? 0}
                 inactiveCards={cards.filter((card) => !card.active).length}
+                reviewableCards={selectDueCards(cards, Date.now()).length}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}

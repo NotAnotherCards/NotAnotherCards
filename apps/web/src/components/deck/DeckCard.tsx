@@ -26,6 +26,12 @@ interface DeckCardProps {
   dueCount: number;
   /** Cards not yet activated; the review page is where they are activated. */
   inactiveCards?: number;
+  /**
+   * Cards due at this moment. The store's due count runs on a clock rounded
+   * down to 10 seconds, so cards activated just now are missing from it for
+   * a moment; Start Review goes by this one. Defaults to `dueCount`.
+   */
+  reviewableCards?: number;
   onSelectDeck: (deckId: string) => void;
   onStartReview: (deckId: string) => void;
   onEditDeck: (deck: Deck) => void;
@@ -40,6 +46,7 @@ export function DeckCard({
   activeWords,
   dueCount,
   inactiveCards = 0,
+  reviewableCards = dueCount,
   onSelectDeck,
   onStartReview,
   onEditDeck,
@@ -164,7 +171,7 @@ export function DeckCard({
               inactive cards keeps its way in. */}
           <Button
             variant="outline"
-            disabled={dueCount === 0 && inactiveCards === 0}
+            disabled={reviewableCards === 0 && inactiveCards === 0}
             onClick={() => onStartReview(deck.id)}
             className="w-full cursor-pointer gap-1.5"
             size="sm"

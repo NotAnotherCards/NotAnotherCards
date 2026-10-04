@@ -215,6 +215,10 @@ describe('DeckCard Component', () => {
     rerender(<DeckCard {...props} dueCount={0} inactiveCards={2} />);
     expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
 
+    // just activated: due now, though the store's rounded count is still 0
+    rerender(<DeckCard {...props} dueCount={0} reviewableCards={4} />);
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
+
     rerender(<DeckCard {...props} dueCount={3} />);
     expect(screen.getByTestId('due-cards-badge')).toHaveClass('text-primary');
     expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
