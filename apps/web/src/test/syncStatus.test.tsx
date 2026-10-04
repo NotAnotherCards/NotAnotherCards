@@ -94,7 +94,7 @@ describe('SyncStatus', () => {
     );
     expect(screen.getByText('Synced')).toBeInTheDocument();
     const pill = screen.getByTestId('sync-status');
-    expect(pill.querySelector('.bg-emerald-500')).not.toBeNull();
+    expect(pill.querySelector('.bg-sage-border')).not.toBeNull();
     expect(pill).not.toHaveAttribute('title');
     expect(pill.querySelector('details')).toBeNull();
   });
@@ -124,8 +124,8 @@ describe('SyncStatus', () => {
     const explanation =
       '1 deck. 513 deck memberships. The server refused these changes. They stay on this device and are sent again with the next sync.';
     expect(pill).toHaveAttribute('title', explanation);
-    expect(pill.querySelector('.bg-amber-500')).not.toBeNull();
-    expect(pill.querySelector('.bg-emerald-500')).toBeNull();
+    expect(pill.querySelector('.bg-yellow-300')).not.toBeNull();
+    expect(pill.querySelector('.bg-sage-border')).toBeNull();
     expect(screen.queryByText('Retry')).toBeNull();
     // Native summary/details gives keyboard and touch users the same explanation.
     expect(summary.tagName).toBe('SUMMARY');

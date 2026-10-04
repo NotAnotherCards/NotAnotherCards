@@ -28,27 +28,27 @@ export function SyncStatus() {
         <span
           className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
             rejected
-              ? 'bg-amber-400'
+              ? 'bg-yellow-300'
               : state.status === 'idle'
-                ? 'bg-emerald-400'
+                ? 'bg-sage-border'
                 : state.status === 'syncing'
                   ? 'bg-blue-400'
                   : state.status === 'error'
                     ? 'bg-destructive'
-                    : 'bg-amber-400'
+                    : 'bg-yellow-300'
           }`}
         ></span>
         <span
           className={`relative inline-flex rounded-full h-2 w-2 ${
             rejected
-              ? 'bg-amber-500'
+              ? 'bg-yellow-400'
               : state.status === 'idle'
-                ? 'bg-emerald-500'
+                ? 'bg-sage-foreground'
                 : state.status === 'syncing'
                   ? 'bg-blue-500'
                   : state.status === 'error'
                     ? 'bg-destructive'
-                    : 'bg-amber-500'
+                    : 'bg-yellow-400'
           }`}
         ></span>
       </span>

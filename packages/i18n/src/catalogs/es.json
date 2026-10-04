@@ -254,6 +254,27 @@
     "error_default": "Error al guardar los datos de configuración"
   },
   "auth": {
+    "layout": {
+      "title": "Domina cualquier tema con facilidad.",
+      "description": "Not Another Cards utiliza repetición espaciada avanzada e IA para ayudarte a aprender más rápido y recordar por más tiempo. Únete a la comunidad hoy.",
+      "cards": {
+        "card1": {
+          "title": "descubrir",
+          "subtitle": "to discover",
+          "tag": "Verbo"
+        },
+        "card2": {
+          "title": "conocimiento",
+          "subtitle": "knowledge",
+          "tag": "Sustantivo"
+        },
+        "card3": {
+          "title": "sin esfuerzo",
+          "subtitle": "effortless",
+          "tag": "Adjetivo"
+        }
+      }
+    },
     "error": {
       "invalid_credentials": "El correo electrónico o la contraseña no son correctos.",
       "user_exists": "Ya existe una cuenta con este correo electrónico.",

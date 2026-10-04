@@ -1,9 +1,6 @@
 # Design
 
-Both clients share one visual system: shadcn's neutral theme on web, and the
-same tokens transcribed for React Native on mobile. This document is the
-checkable description of that system; the rules below are what the code
-follows.
+Both clients share one unified brand visual system (a custom palette centered around Pine, Sage, and Indigo primary), moving away from the default standalone neutral theme. This unified palette is used on the landing page and the web application, and the same tokens are transcribed for React Native on mobile. This document is the checkable description of that system; the rules below are what the code follows.
 
 ## Palette
 
@@ -49,8 +46,16 @@ Tailwind exposes each as a utility of the same name: `bg-card`,
 The four rating tokens are the second place the palette leaves greyscale,
 after the charts: forgot, hard, remember and very easy have to be told apart
 at a glance. `--rating-again` is `--destructive`; hard, good and easy are
-tailwind 3's orange, emerald and blue (600, and 400 in dark). Web's review
+tailored colors based on the design system. Web's review
 buttons still use inline tailwind classes and have not moved to them yet.
+
+### Brand Tokens
+
+- **Pine/Sage.** `--pine`, `--sage` and their variants. These form the core 
+  brand identity colors for the application and landing page, moving away from 
+  neutral greys.
+- **Primary.** `--primary` is set to an Indigo tone, offering contrast and 
+  interactivity.
 
 ### Web-only tokens
 
@@ -79,14 +84,14 @@ change. A token only web needs is added to `style.css` and listed above.
 
 ## Typography
 
-Web loads Inter Variable through `@fontsource-variable/inter` and exposes two
-tokens: `--font-sans` (`'Inter Variable', sans-serif`) and `--font-heading`,
-which currently aliases `--font-sans`. Headings and body share a family; weight
-and size do the work.
+Web loads Poppins through `@fontsource/poppins` and exposes two
+tokens: `--font-sans` (`'Poppins', sans-serif`) and `--font-heading` 
+(also `'Poppins', sans-serif`). Headings and body share a family; weight
+and size do the work. This unifies typography between the marketing pages and the app.
 
 Mobile defines no font tokens and loads no font. Text renders in the platform
 default, San Francisco on iOS and Roboto on Android, and that is intended:
-React Native Reusables ships with the system font, loading Inter through
+React Native Reusables ships with the system font, loading Poppins through
 `expo-font` would hold first render until the font resolves, and the two faces
 are close enough that only Android would show a difference. Should that change,
 `components/ui/text.tsx` and one `fontFamily` entry in `tailwind.config.js` are

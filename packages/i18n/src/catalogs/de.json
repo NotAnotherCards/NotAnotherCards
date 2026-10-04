@@ -254,6 +254,27 @@
     "error_default": "Fehler beim Speichern der Onboarding-Daten"
   },
   "auth": {
+    "layout": {
+      "title": "Meistere jedes Thema mit Leichtigkeit.",
+      "description": "Not Another Cards nutzt fortschrittliche verteilte Wiederholung und KI, damit du schneller lernst und dich länger erinnerst. Tritt noch heute der Community bei.",
+      "cards": {
+        "card1": {
+          "title": "entdecken",
+          "subtitle": "to discover",
+          "tag": "Verb"
+        },
+        "card2": {
+          "title": "Wissen",
+          "subtitle": "knowledge",
+          "tag": "Substantiv"
+        },
+        "card3": {
+          "title": "mühelos",
+          "subtitle": "effortless",
+          "tag": "Adjektiv"
+        }
+      }
+    },
     "error": {
       "invalid_credentials": "E-Mail-Adresse oder Passwort ist falsch.",
       "user_exists": "Für diese E-Mail-Adresse gibt es bereits ein Konto.",
