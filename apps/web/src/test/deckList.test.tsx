@@ -37,6 +37,7 @@ describe('DeckList', () => {
 
     const badge = screen.getByTestId('due-cards-badge');
     expect(badge).toHaveTextContent('2');
-    expect(badge).toHaveClass('text-foreground');
+    // a deck with work is accented
+    expect(badge).toHaveClass('text-primary');
   });
 });

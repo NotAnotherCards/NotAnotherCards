@@ -24,6 +24,8 @@ interface DeckCardProps {
   totalWords?: number;
   activeWords?: number;
   dueCount: number;
+  /** Cards not yet activated; the review page is where they are activated. */
+  inactiveCards?: number;
   onSelectDeck: (deckId: string) => void;
   onStartReview: (deckId: string) => void;
   onEditDeck: (deck: Deck) => void;
@@ -37,6 +39,7 @@ export function DeckCard({
   totalWords,
   activeWords,
   dueCount,
+  inactiveCards = 0,
   onSelectDeck,
   onStartReview,
   onEditDeck,
@@ -121,6 +124,7 @@ export function DeckCard({
               <Count
                 label={t('deck.card.due')}
                 value={dueCount}
+                work
                 testId="due-cards-badge"
               />
             </>
@@ -139,6 +143,7 @@ export function DeckCard({
               <Count
                 label={t('deck.card.due_short', 'Due')}
                 value={dueCount}
+                work
                 testId="due-cards-badge"
               />
             </>
@@ -154,8 +159,12 @@ export function DeckCard({
             <FolderOpen className="size-3.5" />
             {t('deck.card.actions.manage_cards', 'Manage Cards')}
           </Button>
+          {/* Off when nothing is due and no card is left to activate: the
+              review page is where cards are activated, so a deck with
+              inactive cards keeps its way in. */}
           <Button
             variant="outline"
+            disabled={dueCount === 0 && inactiveCards === 0}
             onClick={() => onStartReview(deck.id)}
             className="w-full cursor-pointer gap-1.5"
             size="sm"
@@ -169,13 +178,17 @@ export function DeckCard({
   );
 }
 
+// Any zero is faded, so the figures that say something stand out. `work`
+// marks the due count, accented while there is something to review.
 function Count({
   label,
   value,
+  work = false,
   testId,
 }: {
   label: string;
   value: number;
+  work?: boolean;
   testId: string;
 }) {
   return (
@@ -184,7 +197,13 @@ function Count({
         {label}
       </div>
       <span
-        className="text-sm font-bold tabular-nums text-foreground"
+        className={`text-sm font-bold tabular-nums ${
+          value === 0
+            ? 'text-muted-foreground'
+            : work
+              ? 'text-primary'
+              : 'text-foreground'
+        }`}
         data-testid={testId}
       >
         {value}

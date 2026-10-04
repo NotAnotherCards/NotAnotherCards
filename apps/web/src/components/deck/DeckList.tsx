@@ -239,6 +239,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                     : undefined
                 }
                 dueCount={dueCardsPerDeck.get(deck.id) ?? 0}
+                inactiveCards={cards.filter((card) => !card.active).length}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}

@@ -498,7 +498,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               </Button>
             ) : (
               <Button
-                variant="secondary"
+                variant="outline"
                 disabled={isPublishing || isPendingPublishAction}
                 onClick={async () => {
                   if (isBusyRef.current) return;
