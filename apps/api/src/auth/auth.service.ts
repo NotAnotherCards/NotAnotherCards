@@ -46,6 +46,16 @@ export class AuthService {
     }
 
     const auth = betterAuth({
+      advanced: {
+        ipAddress: {
+          trustedProxies: (
+            this.configService.get<string>('BETTER_AUTH_TRUSTED_PROXIES') ?? ''
+          )
+            .split(',')
+            .map((proxy) => proxy.trim())
+            .filter(Boolean),
+        },
+      },
       database: drizzleAdapter(this.db, {
         provider: 'pg',
       }),

@@ -26,41 +26,7 @@ export function ProtectedLayoutComponent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
-  const { profile } = useStore();
-  const { i18n } = useTranslation();
-
   const [logoutError, setLogoutError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const enforceLanguage = () => {
-      if (!profile) return;
-      const preferences = getUiPreferences(session?.user.id);
-      const useTargetActive =
-        profile.target_language_active ?? preferences.useTargetLanguageForUi;
-      const languageId = useTargetActive
-        ? profile.target_language_id
-        : profile.native_language_id;
-
-      if (languageId) {
-        const locale = languageFor(languageId)?.locale;
-        if (locale && i18n.resolvedLanguage !== locale) {
-          void i18n.changeLanguage(locale);
-        }
-      }
-    };
-
-    enforceLanguage();
-    window.addEventListener('uiPreferencesChanged', enforceLanguage);
-    return () => {
-      window.removeEventListener('uiPreferencesChanged', enforceLanguage);
-    };
-  }, [
-    profile?.native_language_id,
-    profile?.target_language_id,
-    profile?.target_language_active,
-    session?.user.id,
-    i18n,
-  ]);
 
   if (!manager && location.pathname !== '/onboarding') {
     return null;
@@ -99,6 +65,7 @@ export function ProtectedLayoutComponent() {
 
   return (
     <SyncProvider controller={syncController}>
+      {manager && <ProfileLanguageEnforcer />}
       <div className="flex-1 flex flex-col bg-background">
         <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 border-b border-border/40 bg-background/80 backdrop-blur-xs">
           <Link
@@ -193,6 +160,47 @@ export function ProtectedLayoutComponent() {
       </div>
     </SyncProvider>
   );
+}
+
+// Profile queries require a database provider, which is absent during onboarding
+// and while the session database owner is still creating the manager.
+function ProfileLanguageEnforcer() {
+  const { data: session } = authClient.useSession();
+  const { profile } = useStore();
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    const enforceLanguage = () => {
+      if (!profile) return;
+      const preferences = getUiPreferences(session?.user.id);
+      const useTargetActive =
+        profile.target_language_active ?? preferences.useTargetLanguageForUi;
+      const languageId = useTargetActive
+        ? profile.target_language_id
+        : profile.native_language_id;
+
+      if (languageId) {
+        const locale = languageFor(languageId)?.locale;
+        if (locale && i18n.resolvedLanguage !== locale) {
+          void i18n.changeLanguage(locale);
+        }
+      }
+    };
+
+    enforceLanguage();
+    window.addEventListener('uiPreferencesChanged', enforceLanguage);
+    return () => {
+      window.removeEventListener('uiPreferencesChanged', enforceLanguage);
+    };
+  }, [
+    profile?.native_language_id,
+    profile?.target_language_id,
+    profile?.target_language_active,
+    session?.user.id,
+    i18n,
+  ]);
+
+  return null;
 }
 
 // A failed database open is reported once, by the banner above. Nothing
