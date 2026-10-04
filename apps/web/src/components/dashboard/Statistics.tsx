@@ -234,16 +234,18 @@ export function Statistics() {
           aria-label="Learning streak"
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span className="shrink-0 rounded-xl bg-rose-500/10 p-2 text-rose-500">
-                <Flame className="size-4" />
-              </span>
-              {t('dashboard.statistics.learning_streak')}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t('dashboard.statistics.consecutive_days')}
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+            <div>
+              <CardTitle className="text-base">
+                {t('dashboard.statistics.learning_streak')}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {t('dashboard.statistics.consecutive_days')}
+              </CardDescription>
+            </div>
+            <div className="shrink-0 rounded-xl bg-rose-500/10 p-2 text-rose-500">
+              <Flame className="size-4" />
+            </div>
           </CardHeader>
           <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
             <p className="text-lg font-bold text-foreground">
@@ -267,16 +269,18 @@ export function Statistics() {
           aria-label="Learned notes"
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span className="shrink-0 rounded-xl bg-primary/10 p-2 text-primary">
-                <Brain className="size-4" />
-              </span>
-              {t('dashboard.statistics.learned_notes')}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t('dashboard.statistics.learned_description')}
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+            <div>
+              <CardTitle className="text-base">
+                {t('dashboard.statistics.learned_notes')}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {t('dashboard.statistics.learned_description')}
+              </CardDescription>
+            </div>
+            <div className="shrink-0 rounded-xl bg-primary/10 p-2 text-primary">
+              <Brain className="size-4" />
+            </div>
           </CardHeader>
           <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
             <p className="text-lg font-bold text-foreground">
@@ -291,16 +295,18 @@ export function Statistics() {
           aria-label="Due forecast"
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span className="shrink-0 rounded-xl bg-pine/10 p-2 text-pine">
-                <CalendarClock className="size-4" />
-              </span>
-              {t('dashboard.statistics.due_forecast')}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t('dashboard.statistics.due_forecast_description')}
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+            <div>
+              <CardTitle className="text-base">
+                {t('dashboard.statistics.due_forecast')}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {t('dashboard.statistics.due_forecast_description')}
+              </CardDescription>
+            </div>
+            <div className="shrink-0 rounded-xl bg-pine/10 p-2 text-pine">
+              <CalendarClock className="size-4" />
+            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground mt-auto">
             <div className="bg-muted/40 rounded-xl p-2 flex flex-col justify-center">
@@ -328,16 +334,18 @@ export function Statistics() {
           aria-label="Card maturity"
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span className="shrink-0 rounded-xl bg-sage p-2 text-sage-foreground">
-                <Sprout className="size-4" />
-              </span>
-              {t('dashboard.statistics.card_maturity')}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t('dashboard.statistics.card_maturity_description')}
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+            <div>
+              <CardTitle className="text-base">
+                {t('dashboard.statistics.card_maturity')}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {t('dashboard.statistics.card_maturity_description')}
+              </CardDescription>
+            </div>
+            <div className="shrink-0 rounded-xl bg-sage p-2 text-sage-foreground">
+              <Sprout className="size-4" />
+            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-auto">
             {Object.entries(maturity).map(([label, value]) => (
