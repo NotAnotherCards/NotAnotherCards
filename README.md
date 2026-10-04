@@ -313,6 +313,8 @@ A significant technical challenge he addressed was ensuring the reliability of t
 
 @tpandya handled the API, CI/CD, deployment, and monitoring. He implemented Better Auth, database schemas, AI job queues, Prometheus/Grafana monitoring, VPS deployment, HTTPS, and 2FA. He ensured reliability through automated validation scripts and end-to-end tests.
 
+Challenge: monitoring, deployment configuration, and API code all changed at the same time quite quickly so implementing appropriate tests was quite challenging for me, in the end we addressed this issue with validation script for infra. The grafana, prometheus, and Better Auth documentation was consulted through opencode. Additionally adapting to learning pace was bit tough as well.
+
 ### @pschneid
 
 Worked on the mobile app, offline sync, the AI gateway, content moderation, the shared packages, and the web deck views.
