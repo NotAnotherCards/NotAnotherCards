@@ -123,8 +123,8 @@ function LandingPage() {
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             <ValueProposition
               icon={<MessageCircle className="size-5" aria-hidden="true" />}
-              title="Learn words you will use"
-              description="Focus on high-frequency vocabulary for the conversations and content you meet every day."
+              title="Cards for any subject"
+              description="Create cards for vocabulary, phrases, grammar, facts, and the material you want to remember."
             />
             <ValueProposition
               icon={<span className="text-2xl leading-none">✦</span>}
@@ -181,7 +181,7 @@ function LandingPage() {
             Start with the next card.
           </h2>
           <p className="mt-5 text-lg text-muted">
-            Free to begin. Built for your daily learning rhythm.
+            Free and open source. Built for your daily learning rhythm.
           </p>
           <Button asChild size="lg" className="mt-8 h-12 px-5 text-base">
             <a href={`${APP_URL}/register`}>Create your account</a>

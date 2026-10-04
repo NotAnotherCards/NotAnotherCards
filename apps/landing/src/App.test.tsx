@@ -89,14 +89,21 @@ describe('App', () => {
     );
   });
 
-  it('renders the requested landing copy and links to the open-source repository', () => {
+  it('renders current product copy and links to the open-source repository', () => {
     render(<App />);
 
-    expect(screen.getByText('Learn words you will use')).toBeInTheDocument();
+    expect(screen.getByText('Cards for any subject')).toBeInTheDocument();
     expect(screen.getByText('Useful word details')).toBeInTheDocument();
     expect(screen.getByText('Study offline. Sync later.')).toBeInTheDocument();
-    expect(screen.getByText(/high-frequency vocabulary/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/high-frequency vocabulary/i),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('Etymology')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Free and open source. Built for your daily learning rhythm.',
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('link', {
         name: 'Free and open source',
