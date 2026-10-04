@@ -217,7 +217,7 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
             <div
               className="flex flex-col"
               role="table"
-              aria-label="Card Catalog"
+              aria-label={t('deck.cards.catalog')}
               aria-rowcount={filteredCards.length + 1}
             >
               {/* Header row (visible on desktop) */}

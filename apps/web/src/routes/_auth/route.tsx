@@ -45,12 +45,12 @@ function AuthLayout() {
           >
             <img
               src="/brand/notanothercards-logo.svg"
-              alt="NotAnotherCards Logo"
+              alt="NotAnotherCards"
               className="h-10 dark:hidden"
             />
             <img
               src="/brand/notanothercards-logo-dark.svg"
-              alt="NotAnotherCards Logo"
+              alt="NotAnotherCards"
               className="h-8 hidden dark:block"
             />
           </a>
@@ -137,12 +137,12 @@ function AuthLayout() {
           >
             <img
               src="/brand/notanothercards-logo.svg"
-              alt="NotAnotherCards Logo"
+              alt="NotAnotherCards"
               className="h-10 dark:hidden"
             />
             <img
               src="/brand/notanothercards-logo-dark.svg"
-              alt="NotAnotherCards Logo"
+              alt="NotAnotherCards"
               className="h-8 hidden dark:block"
             />
           </a>
