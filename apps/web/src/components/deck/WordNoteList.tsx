@@ -151,7 +151,11 @@ export function WordNoteList({
           </div>
         ) : (
           <div className="@container">
-            <div role="table" aria-label="Word Catalog" style={tableStyle}>
+            <div
+              role="table"
+              aria-label={t('deck.words.catalog')}
+              style={tableStyle}
+            >
               <div role="rowgroup">
                 <div
                   role="row"
@@ -232,7 +236,9 @@ export function WordNoteList({
                           <div
                             role="cell"
                             className="flex min-w-0 items-center @[880px]:justify-self-center"
-                            aria-label={`${row.cards.length} cards`}
+                            aria-label={t('dashboard.overview.stats.cards', {
+                              count: row.cards.length,
+                            })}
                           >
                             <span className="text-left text-xs text-muted-foreground">
                               <span className="@[880px]:hidden">
