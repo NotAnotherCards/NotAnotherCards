@@ -450,7 +450,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
+          {/* Bounded to the row, or the title's truncate never applies and a
+              long title widens the page past a phone screen. */}
+          <div className="min-w-0 max-w-full">
             <div className="flex min-w-0 items-center gap-2">
               <span
                 className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
