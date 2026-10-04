@@ -3,6 +3,7 @@ import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 // The app's root loads the catalogs; these render the forms without it.
 import '@/lib/i18n';
 import Login from '@/app/login';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import {
   beginTwoFactorChallenge,
   finishTwoFactorChallenge,
@@ -25,7 +26,7 @@ jest.mock('expo-router', () => {
 // The real auth client pulls in native modules; mock it like web does in setup.ts.
 type MockSignInResult = {
   data: { twoFactorRedirect?: boolean } | null;
-  error: { message?: string } | null;
+  error: { message?: string; code?: string; status?: number } | null;
 };
 const mockSignIn = jest.fn(
   async (_input?: unknown): Promise<MockSignInResult> => ({
@@ -65,14 +66,86 @@ beforeEach(() => {
 });
 
 describe('Login screen', () => {
+  it.each([
+    [
+      {
+        code: 'INVALID_EMAIL_OR_PASSWORD',
+        message: 'Invalid email or password',
+        status: 401,
+      },
+      'El correo electrónico o la contraseña no son correctos.',
+    ],
+    [
+      { message: 'Private server diagnostic' },
+      'Ha ocurrido un error inesperado',
+    ],
+  ])(
+    'translates API errors without exposing server text: %j',
+    async (error, expected) => {
+      mockSignIn.mockResolvedValueOnce({ data: null, error });
+      const screen = await renderWithLocale(<Login />, 'es');
+      fireEvent.changeText(
+        screen.getByPlaceholderText('nombre@ejemplo.com'),
+        'jane@example.com',
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('Contraseña'),
+        'Password123*',
+      );
+      fireEvent.press(screen.getByText('Iniciar sesión'));
+      expect(await screen.findByText(expected)).toBeTruthy();
+      expect(screen.queryByText(error.message)).toBeNull();
+    },
+  );
+  it('retranslates an already visible network error after switching languages', async () => {
+    mockSignIn.mockRejectedValueOnce(new Error('Network request failed'));
+    const screen = await renderWithLocale(<Login />, 'es');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('nombre@ejemplo.com'),
+      'jane@example.com',
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText('Contraseña'),
+      'Password123*',
+    );
+    fireEvent.press(screen.getByText('Iniciar sesión'));
+    await screen.findByText(/No se puede conectar/);
+    await act(async () => {
+      await screen.i18n.changeLanguage('de');
+    });
+    expect(screen.getByText(/Server.*nicht erreichbar/)).toBeTruthy();
+  });
+  it('translates Spanish labels and validation without changing submitted field names', async () => {
+    const screen = await renderWithLocale(<Login />, 'es');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('nombre@ejemplo.com'),
+      'invalid',
+    );
+    fireEvent.press(screen.getByText('Iniciar sesión'));
+    expect(
+      await screen.findByText(
+        'Por favor, introduce un correo electrónico válido',
+      ),
+    ).toBeTruthy();
+  });
+  it('offers the language picker only before login', () => {
+    const screen = render(<Login />);
+    expect(screen.getByLabelText('Language')).toBeTruthy();
+    mockSession = {
+      data: { user: { name: 'Jane', onBoardingComplete: true } },
+      isPending: false,
+    };
+    screen.rerender(<Login />);
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
   it('navigates to the dashboard only once the session exists', async () => {
     const { getByText, getByPlaceholderText, rerender } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     await waitFor(() => expect(mockSignIn).toHaveBeenCalled());
     await act(async () => {});
 
@@ -96,17 +169,17 @@ describe('Login screen', () => {
   it('renders the card and both fields', () => {
     const { getByText, getByPlaceholderText } = render(<Login />);
     expect(getByText('Welcome Back')).toBeTruthy();
-    expect(getByPlaceholderText('you@example.com')).toBeTruthy();
-    expect(getByPlaceholderText('Your password')).toBeTruthy();
+    expect(getByPlaceholderText('name@example.com')).toBeTruthy();
+    expect(getByPlaceholderText('Password')).toBeTruthy();
   });
 
   it('shows a validation error for an invalid email on submit', async () => {
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'not-an-email',
     );
-    fireEvent.press(getByText('Log in'));
+    fireEvent.press(getByText('Login'));
     // The shared schema gives a key; the field shows its translation.
     expect(await findByText('Please enter a valid email address')).toBeTruthy();
   });
@@ -119,26 +192,26 @@ describe('Login screen', () => {
     );
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     expect(await findByText(/Can't reach the server/)).toBeTruthy();
   });
 
-  it('shows the server message on an API error', async () => {
+  it('recognizes invalid credentials in a legacy API error', async () => {
     mockSignIn.mockResolvedValueOnce({
       data: null,
       error: { message: 'Invalid email or password' },
     });
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     expect(await findByText('Invalid email or password')).toBeTruthy();
   });
 
@@ -149,11 +222,11 @@ describe('Login screen', () => {
     });
     const { getByText, getByPlaceholderText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
 
     await waitFor(() =>
       expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
@@ -205,7 +278,7 @@ describe('Login screen', () => {
     });
     const { getByText, findByText } = render(<Login />);
     fireEvent.press(getByText('Google'));
-    expect(await findByText('Provider refused')).toBeTruthy();
+    expect(await findByText('An unexpected error occurred')).toBeTruthy();
     expect(mockSocialSignIn).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'google' }),
     );

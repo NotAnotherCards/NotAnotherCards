@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { UiError, uiErrorText, writeErrorText } from '@/lib/errors';
 import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
@@ -59,7 +60,7 @@ function ActiveReviewSession({
   const { t } = useTranslation();
   const [activationCount, setActivationCount] = useState('5');
   const [isActivating, setIsActivating] = useState(false);
-  const [activationError, setActivationError] = useState<string | null>(null);
+  const [activationError, setActivationError] = useState<UiError | null>(null);
   useEffect(() => {
     setActivationCount(String(loadActivationCount(userId)));
   }, [userId]);
@@ -95,7 +96,7 @@ function ActiveReviewSession({
           {t('review.recovery.load_error', { message: session.error.message })}
         </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
+          <Text>{t('review.recovery.back_to_deck')}</Text>
         </Button>
       </View>
     );
@@ -105,10 +106,10 @@ function ActiveReviewSession({
     return (
       <View className="gap-4 py-8">
         <Text className="text-center font-semibold">
-          {t('review.recovery.deck_not_found_title', 'Deck not found')}
+          {t('review.recovery.deck_not_found_title')}
         </Text>
         <Button variant="outline" onPress={() => router.back()}>
-          <Text>{t('review.recovery.back', 'Back')}</Text>
+          <Text>{t('review.recovery.back')}</Text>
         </Button>
       </View>
     );
@@ -123,16 +124,16 @@ function ActiveReviewSession({
         <Stack.Screen options={{ title: deck.title }} />
         <Text className="text-center text-destructive">
           {session.lastStep === 'delete'
-            ? 'The card is deleted, but the next cards could not be loaded.'
+            ? t('mobile.messages.deleted_read_failed')
             : session.lastStep === 'activation'
-              ? 'The items are activated, but the next cards could not be loaded.'
-              : 'Your answer is saved, but the next cards could not be loaded.'}
+              ? t('mobile.messages.activated_read_failed')
+              : t('mobile.messages.saved_read_failed')}
         </Text>
         <Button onPress={session.retryNextBatch}>
-          <Text>Retry</Text>
+          <Text>{t('common.retry')}</Text>
         </Button>
         <Button variant="outline" onPress={leave}>
-          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
+          <Text>{t('review.recovery.back_to_deck')}</Text>
         </Button>
       </View>
     );
@@ -151,9 +152,7 @@ function ActiveReviewSession({
         await session.activate(count);
         saveActivationCount(userId, count);
       } catch {
-        setActivationError(
-          t('review.activation.error', 'Activation error. Try again.'),
-        );
+        setActivationError(new UiError('review.activation.error'));
       } finally {
         setIsActivating(false);
       }
@@ -163,15 +162,12 @@ function ActiveReviewSession({
         <Stack.Screen options={{ title: deck.title }} />
         <Text className="text-2xl font-semibold">
           {session.status === 'complete'
-            ? t('review.activation.complete_title', 'Review complete')
-            : t('review.recovery.no_cards_due_title', 'No cards due')}
+            ? t('review.activation.complete_title')
+            : t('review.recovery.no_cards_due_title')}
         </Text>
         <Text className="text-center text-muted-foreground">
           {session.status === 'complete'
-            ? t(
-                'review.activation.complete_description',
-                'All due cards in this deck are done for now.',
-              )
+            ? t('review.activation.complete_description')
             : t('review.recovery.no_cards_due', { title: deck.title })}
         </Text>
         {session.inactiveCount > 0 && (
@@ -180,13 +176,13 @@ function ActiveReviewSession({
             onChangeCount={setActivationCount}
             onActivate={() => void activateMore()}
             isActivating={isActivating}
-            error={activationError}
+            error={activationError ? uiErrorText(activationError, t) : null}
             inactiveItemCount={session.inactiveCount}
             itemLabel={session.itemLabel}
           />
         )}
         <Button onPress={leave}>
-          <Text>{t('review.recovery.back_to_deck', 'Back to deck')}</Text>
+          <Text>{t('review.recovery.back_to_deck')}</Text>
         </Button>
       </View>
     );
@@ -246,7 +242,11 @@ function ActiveReviewSession({
         answered={session.progress.answered}
         total={session.progress.total}
         locked={locked}
-        addLabel={isWordDeck ? 'Add a word' : 'Add a card'}
+        addLabel={
+          isWordDeck
+            ? t('mobile.messages.add_word')
+            : t('mobile.messages.add_card')
+        }
         onEdit={edit}
         onAdd={canAdd ? session.add : undefined}
       />
@@ -257,14 +257,18 @@ function ActiveReviewSession({
         busy={busy}
         swipe={swipe}
         extended={layout.extended}
-        deleteLabel={isWordDeck ? 'Delete word' : 'Delete card'}
+        deleteLabel={
+          isWordDeck
+            ? t('mobile.messages.delete_word')
+            : t('mobile.messages.delete_card')
+        }
         onReveal={session.reveal}
         onEdit={edit}
       />
 
       {session.saveError ? (
         <Text className="text-center text-destructive">
-          {session.saveError}
+          {writeErrorText(session.saveError, t)}
         </Text>
       ) : null}
 

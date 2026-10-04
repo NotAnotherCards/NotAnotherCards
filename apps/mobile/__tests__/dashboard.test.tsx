@@ -1,4 +1,6 @@
 import React from 'react';
+import i18n from '@/lib/i18n';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import { act, render, fireEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
@@ -131,6 +133,52 @@ jest.mock('expo-router', () => {
 });
 
 describe('Dashboard screen', () => {
+  it('renders the overview in German and updates counts and controls when the locale changes', async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane', onBoardingComplete: true } },
+      isPending: false,
+    });
+    mockOverviewStats.stats = { ...NO_STATS, dictionarySize: 1, streak: 2 };
+    mockReviewOverview.dueCount = 1;
+    const screen = await renderWithLocale(<Dashboard />, 'de');
+    expect(screen.getByText('Übersicht')).toBeTruthy();
+    expect(screen.getByText('1 Wort')).toBeTruthy();
+    expect(screen.getByText('2 Tage')).toBeTruthy();
+    for (const word of ['Persönliches', 'Wörterbuch']) {
+      expect(screen.getByText(word).props.numberOfLines).toBe(1);
+      expect(screen.getByText(word).props.adjustsFontSizeToFit).toBe(true);
+    }
+    expect(screen.getByText('Karten wiederholen · 1 fällig')).toBeTruthy();
+    fireEvent(
+      screen.getByTestId('review-label-measure', {
+        includeHiddenElements: true,
+      }),
+      'textLayout',
+      {
+        nativeEvent: { lines: [{}, {}] },
+      },
+    );
+    expect(screen.getByText('Karten wiederholen\n1 fällig')).toBeTruthy();
+    fireEvent(
+      screen.getByTestId('review-label-measure', {
+        includeHiddenElements: true,
+      }),
+      'textLayout',
+      {
+        nativeEvent: { lines: [{}] },
+      },
+    );
+    expect(screen.getByText('Karten wiederholen · 1 fällig')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('So werden Tagesziele gezählt'));
+    expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Schließen' }));
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByText('1 palabra')).toBeTruthy();
+    expect(screen.getByText('Empezar repaso · 1 pendiente')).toBeTruthy();
+    expect(screen.queryByText('Übersicht')).toBeNull();
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     mockParams = {};
@@ -377,11 +425,14 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    expect(getByText('Personal Dictionary')).toBeTruthy();
+    expect(getByText('Personal')).toBeTruthy();
+    expect(getByText('Dictionary')).toBeTruthy();
     expect(getByText('1540 words')).toBeTruthy();
-    expect(getByText('Learning Streak')).toBeTruthy();
+    expect(getByText('Learning')).toBeTruthy();
+    expect(getByText('Streak')).toBeTruthy();
     expect(getByText('1 Day')).toBeTruthy();
-    expect(getByText('Words Learned')).toBeTruthy();
+    expect(getByText('Words')).toBeTruthy();
+    expect(getByText('Learned')).toBeTruthy();
     expect(getByText('12')).toBeTruthy();
   });
 
@@ -411,9 +462,10 @@ describe('Dashboard screen', () => {
 
   it('shows the badges in a row and their details on a tap', () => {
     const { achievements } = jest.requireActual('../lib/achievements');
-    mockAchievements.achievements = achievements([
-      { badge_id: 'first-review', unlocked_at: Date.UTC(2026, 8, 20, 12) },
-    ]);
+    mockAchievements.achievements = achievements(
+      [{ badge_id: 'first-review', unlocked_at: Date.UTC(2026, 8, 20, 12) }],
+      i18n.t,
+    );
     mockUseSession.mockReturnValue({
       data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
       isPending: false,

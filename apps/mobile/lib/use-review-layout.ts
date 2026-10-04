@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ReviewAnswer, ReviewPreferences } from '@repo/offline-db';
 import {
   loadReviewPreferences,
@@ -30,20 +31,21 @@ function nextLayout(preferences: ReviewPreferences): ReviewPreferences {
 
 const layoutName = (preferences: ReviewPreferences) =>
   preferences.reviewMode === 'basic'
-    ? 'Two answers'
+    ? 'mobile.messages.two_answers'
     : preferences.showNextReviewInterval
-      ? 'Four answers with intervals'
-      : 'Four answers';
+      ? 'mobile.messages.four_intervals'
+      : 'mobile.messages.four_answers';
 
 // How the answers are laid out in a review, and the switch between the
 // layouts. Held here, not read once: the long press changes it mid-session,
 // and saving it keeps settings and the next review in step.
 export function useReviewLayout(userId: string) {
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState(() =>
     loadReviewPreferences(userId),
   );
   // The new layout's name, shown for a moment after a switch.
-  const [hint, setHint] = useState<string | null>(null);
+  const [hint, setHint] = useState<ReturnType<typeof layoutName> | null>(null);
   useEffect(() => {
     if (!hint) return;
     const timer = setTimeout(() => setHint(null), 2000);
@@ -62,8 +64,8 @@ export function useReviewLayout(userId: string) {
     showIntervals: preferences.showNextReviewInterval,
     answers:
       preferences.reviewMode === 'extended' ? EXTENDED_ANSWERS : BASIC_ANSWERS,
-    hint,
-    nextName: layoutName(nextLayout(preferences)),
+    hint: hint ? t(hint) : null,
+    nextName: t(layoutName(nextLayout(preferences))),
     switchLayout,
   };
 }

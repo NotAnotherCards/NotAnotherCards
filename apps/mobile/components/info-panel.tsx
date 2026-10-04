@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Card, CardTitle } from './ui/card';
 
@@ -14,6 +15,7 @@ export function InfoPanel({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 items-center justify-center p-6">
@@ -21,7 +23,7 @@ export function InfoPanel({
             is a sibling, not a child, so its text stays readable. */}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t('common.close')}
           onPress={onClose}
           style={StyleSheet.absoluteFill}
           className="bg-black/50"

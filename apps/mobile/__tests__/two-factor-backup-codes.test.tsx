@@ -1,5 +1,6 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import '@/lib/i18n';
 import { RequireSession } from '@/components/require-session';
 import { Settings } from '@/components/settings';
@@ -83,7 +84,7 @@ beforeEach(() => {
   };
 });
 async function enroll() {
-  const view = render(tree());
+  const view = await renderWithLocale(tree(), 'en');
   fireEvent.press(view.getByRole('tab', { name: 'Security' }));
   // Wait for the real component's account lookup to enable the button.
   await waitFor(() =>
@@ -105,6 +106,17 @@ async function enroll() {
   await view.findByText('test-recovery-one');
   return view;
 }
+it('updates the visible backup-code title when the language changes', async () => {
+  const view = await enroll();
+  expect(view.getByText('Save your backup codes')).toBeTruthy();
+  await act(async () => {
+    await view.i18n.changeLanguage('de');
+  });
+  expect(view.getByText('Speichere deine Backup-Codes')).toBeTruthy();
+  expect(view.queryByText('Save your backup codes')).toBeNull();
+  expect(view.getByText('test-recovery-one')).toBeTruthy();
+});
+
 it('keeps codes through a normal refetch and a changed same-account user object', async () => {
   const view = await enroll();
   mockSession = { ...mockSession, isRefetching: true };

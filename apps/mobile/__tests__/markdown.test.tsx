@@ -2,8 +2,19 @@ import React from 'react';
 import { Linking, Text, View } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Markdown } from '@/components/ui/markdown';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 
 describe('Markdown', () => {
+  it('translates its accessibility hint without translating user link text', async () => {
+    const screen = await renderWithLocale(
+      <Markdown content="[Example](https://example.com)" inline />,
+      'de',
+    );
+    expect(screen.getByText('Example')).toBeTruthy();
+    expect(screen.getByRole('link').props.accessibilityHint).toBe(
+      'Öffnet ein neues Fenster',
+    );
+  });
   let openUrl: jest.SpyInstance;
 
   beforeEach(() => {

@@ -171,7 +171,7 @@ describe('CommunityDeckScreen', () => {
     mockPreview.mockRejectedValueOnce(new Error('Network request failed'));
     const result = render(<CommunityDeckScreen />);
 
-    expect(await result.findByText('Network request failed')).toBeTruthy();
+    expect(await result.findByText(/Can't reach the server/)).toBeTruthy();
     fireEvent.press(result.getByText('Retry'));
     expect(await result.findByText('hola')).toBeTruthy();
     expect(result.queryByText('Network request failed')).toBeNull();
@@ -184,7 +184,9 @@ describe('CommunityDeckScreen', () => {
     await result.findByText('hola');
     fireEvent.press(result.getByText('Import'));
 
-    expect(await result.findByText('Deck not found')).toBeTruthy();
+    expect(
+      await result.findByText('An unexpected error occurred'),
+    ).toBeTruthy();
     expect(result.getByText('Import')).toBeTruthy();
     expect(mockDismissTo).not.toHaveBeenCalled();
   });

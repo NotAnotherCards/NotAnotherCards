@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 import type { SyncController } from '@remelondb/core';
 import { useSyncState } from '@remelondb/core/react';
@@ -25,13 +26,14 @@ const TONE_CLASSES: Record<SyncTone, { pill: string; text: string }> = {
 };
 
 export function SyncStatus() {
+  const { t } = useTranslation();
   const { syncController } = useSessionDatabase();
   // No controller: the database is not open (yet), so nothing syncs here.
   // Web says so in plain muted text, not a badge: nothing to wait for.
   if (!syncController) {
     return (
       <Text className="text-xs font-semibold text-muted-foreground">
-        Offline
+        {t('dashboard.sync.offline')}
       </Text>
     );
   }
@@ -41,7 +43,8 @@ export function SyncStatus() {
 // remelonDB's useSyncState needs a controller, hence the split: hooks
 // cannot run on a condition.
 function SyncBadge({ controller }: { controller: SyncController }) {
-  const view = syncStatusView(useSettledSyncState(useSyncState(controller)));
+  const { t } = useTranslation();
+  const view = syncStatusView(useSettledSyncState(useSyncState(controller)), t);
   const tone = TONE_CLASSES[view.tone];
 
   return (
@@ -62,7 +65,9 @@ function SyncBadge({ controller }: { controller: SyncController }) {
           onPress={() => controller.syncNow()}
           hitSlop={8}
         >
-          <Text className="text-xs text-muted-foreground underline">Retry</Text>
+          <Text className="text-xs text-muted-foreground underline">
+            {t('common.retry')}
+          </Text>
         </Pressable>
       )}
     </View>

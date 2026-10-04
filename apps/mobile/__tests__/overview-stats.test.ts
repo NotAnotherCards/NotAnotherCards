@@ -1,4 +1,5 @@
 import { dailyGoals, overviewStats } from '@/lib/overview-stats';
+import i18n from '@/lib/i18n';
 
 const DAY = 86_400_000;
 // Noon UTC, so "yesterday" and "today" are unambiguous UTC days.
@@ -104,10 +105,13 @@ describe('today in the daily challenges', () => {
 
 describe('dailyGoals', () => {
   it("uses web's copy, progress and remaining count", () => {
-    const [review, vocabulary] = dailyGoals([
-      { code: 'daily-review', current: 12, target: 20, completed: false },
-      { code: 'new-vocabulary', current: 7, target: 5, completed: true },
-    ]);
+    const [review, vocabulary] = dailyGoals(
+      [
+        { code: 'daily-review', current: 12, target: 20, completed: false },
+        { code: 'new-vocabulary', current: 7, target: 5, completed: true },
+      ],
+      i18n.t,
+    );
     expect(review).toMatchObject({
       title: 'Daily Review',
       description: 'Review at least 20 words due today',

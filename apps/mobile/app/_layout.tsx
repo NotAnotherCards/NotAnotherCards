@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import '../global.css';
 import '@/lib/i18n';
 import { Stack, useGlobalSearchParams } from 'expo-router';
@@ -18,6 +19,7 @@ import {
 applySavedThemePreference();
 
 export default function RootLayout() {
+  const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const search = useGlobalSearchParams<{
     twoFactorRequired?: string | string[];
@@ -45,30 +47,36 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="login" options={{ title: 'Log in' }} />
-            <Stack.Screen name="register" options={{ title: 'Register' }} />
+            <Stack.Screen
+              name="login"
+              options={{ title: t('auth.login.submit') }}
+            />
+            <Stack.Screen
+              name="register"
+              options={{ title: t('mobile.messages.register_header') }}
+            />
             <Stack.Screen
               name="forgot-password"
-              options={{ title: 'Create or reset a password' }}
+              options={{ title: t('mobile.messages.create_reset_password') }}
             />
             <Stack.Screen
               name="two-factor"
               options={{
-                title: 'Verify your sign-in',
+                title: t('mobile.messages.verify_signin'),
                 headerBackVisible: false,
                 gestureEnabled: false,
               }}
             />
             <Stack.Screen
               name="onboarding"
-              options={{ title: 'Set up profile' }}
+              options={{ title: t('mobile.messages.setup_profile') }}
             />
             {/* The tab strip is the dashboard's top bar, as on web. Screens
               pushed from it (deck, review) keep the native header and its
               back arrow. */}
             <Stack.Screen
               name="dashboard"
-              options={{ title: 'Dashboard', headerShown: false }}
+              options={{ title: t('dashboard.title'), headerShown: false }}
             />
           </Stack>
           <StatusBar style="auto" />

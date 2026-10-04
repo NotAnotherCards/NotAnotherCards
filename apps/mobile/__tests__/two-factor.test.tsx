@@ -1,4 +1,5 @@
 import React from 'react';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import '@/lib/i18n';
@@ -436,6 +437,58 @@ describe('two-factor security settings', () => {
       expect(mockSetStringAsync).toHaveBeenLastCalledWith(''),
     );
   });
+
+  it.each([false, true])(
+    'retranslates clipboard status after a language switch (failed: %s)',
+    async (failed) => {
+      mockEnable.mockResolvedValue({
+        data: {
+          totpURI: 'otpauth://totp/Test?secret=MANUALKEY',
+          backupCodes: [],
+        },
+        error: null,
+      });
+      if (failed)
+        mockSetStringAsync.mockRejectedValueOnce(
+          new Error('clipboard unavailable'),
+        );
+      else mockSetStringAsync.mockResolvedValueOnce(undefined);
+      const screen = await renderWithLocale(<TwoFactorSecurity />, 'es');
+      const button = await screen.findByRole('button', {
+        name: screen.i18n.t('dashboard.settings.two_factor.enable_two_factor'),
+      });
+      await waitFor(() => expect(button).not.toBeDisabled());
+      fireEvent.press(button);
+      fireEvent.changeText(
+        screen.getByLabelText(
+          screen.i18n.t('dashboard.settings.two_factor.current_password'),
+        ),
+        'Password1!',
+      );
+      fireEvent.press(
+        screen.getByText(
+          screen.i18n.t('dashboard.settings.two_factor.continue'),
+        ),
+      );
+      await screen.findByDisplayValue('MANUALKEY');
+      fireEvent.press(
+        screen.getByText(
+          screen.i18n.t('dashboard.settings.two_factor.copy_manual_key'),
+        ),
+      );
+      const key = failed
+        ? 'dashboard.settings.two_factor.manual_key_copy_fail'
+        : 'dashboard.settings.two_factor.manual_key_copied';
+      const spanish = screen.i18n.t(key);
+      expect(await screen.findByText(spanish)).toBeTruthy();
+      await act(async () => {
+        await screen.i18n.changeLanguage('de');
+      });
+      expect(screen.getByText(screen.i18n.t(key))).toBeTruthy();
+      expect(screen.queryByText(spanish)).toBeNull();
+      expect(mockSetStringAsync).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('regenerates backup codes and disables two-factor with a password', async () => {
     mockSession.data!.user.twoFactorEnabled = true;
