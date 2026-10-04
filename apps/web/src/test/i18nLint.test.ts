@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 const eslint = new ESLint({
   cwd: process.cwd(),
-  // Snippets have no TypeScript project; use the real config's i18n rule.
   overrideConfig: [
     {
       languageOptions: {
