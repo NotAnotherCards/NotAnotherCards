@@ -764,7 +764,7 @@ describe('ReviewSession', () => {
 
     expect(screen.getByTestId('swipe-feedback')).toHaveTextContent('Again');
     expect(screen.getByTestId('swipe-feedback')).toHaveClass(
-      'text-muted-foreground',
+      'text-rating-again',
       'z-30',
     );
     expect(screen.getByTestId('review-card-surface')).toHaveStyle({

@@ -40,14 +40,13 @@ const exitTransformByDirection: Record<ReviewCardExitDirection, string> = {
 
 const swipeFeedback: Record<ReviewCardSwipeDirection, { className: string }> = {
   forgot: {
-    className: 'right-5 top-5 text-right text-muted-foreground',
+    className: 'right-5 top-5 text-right text-rating-again',
   },
   remember: {
-    className: 'left-5 top-5 text-emerald-700 dark:text-emerald-400',
+    className: 'left-5 top-5 text-rating-good',
   },
   hard: {
-    className:
-      'bottom-5 left-1/2 -translate-x-1/2 text-amber-700 dark:text-amber-400',
+    className: 'bottom-5 left-1/2 -translate-x-1/2 text-rating-hard',
   },
   delete: {
     className: 'left-1/2 top-5 -translate-x-1/2 text-destructive',
