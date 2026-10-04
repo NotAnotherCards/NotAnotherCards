@@ -65,6 +65,27 @@ describe('useDecks', () => {
     expect(result.current.dueCount('d1')).toBe(1);
   });
 
+  it('counts a card activated moments ago, before the clock ticks again', () => {
+    const { result, rerender } = renderHook(() => useDecks({} as never));
+    expect(result.current.dueCount('d1')).toBe(0);
+
+    // Activation stamps the card due at the current time, seconds after
+    // the last tick; the write changes the data and the count follows.
+    const cards = mockData.cards!;
+    try {
+      jest.setSystemTime(NOW + 5_000);
+      mockData.cards = cards.map((card) =>
+        (card as { id: string }).id === 'c2'
+          ? { ...(card as object), active: true, due_at: NOW + 5_000 }
+          : card,
+      );
+      rerender({});
+      expect(result.current.dueCount('d1')).toBe(1);
+    } finally {
+      mockData.cards = cards;
+    }
+  });
+
   it('counts the notes and cards of a deck, and the active ones', () => {
     const { result } = renderHook(() => useDecks({} as never));
     expect(result.current.learning('d1')).toMatchObject({

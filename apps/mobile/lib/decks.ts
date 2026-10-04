@@ -56,9 +56,16 @@ export function useDecks(manager: DatabaseManager) {
   // is. The Overview's total (#381) is the sum across decks. Recounted as the
   // clock moves too: a card coming due changes no data, so the list would
   // otherwise keep 0 and Start Review stay off until something reloads it.
+  // A data change recounts with the current time, not the last tick's:
+  // activating stamps a card due "now", up to a minute after that tick, and
+  // the deck must count it at once, or Review stays off while it has work.
   const now = useNow();
   const dueCounts = useMemo(
-    () => countCardsPerDeck(memberships.data, selectDueCards(cards.data, now)),
+    () =>
+      countCardsPerDeck(
+        memberships.data,
+        selectDueCards(cards.data, Math.max(now, Date.now())),
+      ),
     [cards.data, memberships.data, now],
   );
   const dueCount = (deckId: string) => dueCounts.get(deckId) ?? 0;
