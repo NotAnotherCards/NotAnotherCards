@@ -24,7 +24,7 @@ review screens.
 | -------------------------------------------- | --------------------------------------- |
 | `--background` / `--foreground`              | page ground and default text            |
 | `--card` / `--card-foreground`               | raised surfaces: cards, forms, dialogs  |
-| `--primary` / `--primary-foreground`         | the main action, and text on it         |
+| `--primary` / `--primary-foreground`         | the main action, text on it, due counts |
 | `--secondary` / `--secondary-foreground`     | a second, quieter action                |
 | `--muted` / `--muted-foreground`             | de-emphasised surfaces and helper text  |
 | `--accent` / `--accent-foreground`           | hover and selected states               |
