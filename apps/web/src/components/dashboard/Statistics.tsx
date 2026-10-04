@@ -245,7 +245,7 @@ export function Statistics() {
               {t('dashboard.statistics.consecutive_days')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="pb-6 flex flex-col items-start justify-end flex-1">
+          <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
             <p className="text-lg font-bold text-foreground">
               {streak.currentStreak === 1
                 ? t('dashboard.statistics.days_current_one')
@@ -278,7 +278,7 @@ export function Statistics() {
               {t('dashboard.statistics.learned_description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="pb-6 flex flex-col items-start justify-end flex-1">
+          <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
             <p className="text-lg font-bold text-foreground">
               {t('dashboard.statistics.learned_value', {
                 value: formatNumber(learnedNotes, locale),
