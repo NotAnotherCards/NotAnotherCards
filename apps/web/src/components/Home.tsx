@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +12,7 @@ import {
 import { Layers } from 'lucide-react';
 
 export function HomeComponent() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md text-center shadow-xl border-border">
@@ -22,7 +24,7 @@ export function HomeComponent() {
             NotAnotherCards
           </CardTitle>
           <CardDescription className="text-sm text-muted-foreground font-medium max-w-xs leading-relaxed">
-            Master any language with smart flashcards.
+            {t('home.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6 space-y-3">
@@ -31,7 +33,7 @@ export function HomeComponent() {
             size="default"
             className="w-full text-sm font-semibold shadow"
           >
-            <Link to="/login">Sign In</Link>
+            <Link to="/login">{t('auth.register.footerLinkText')}</Link>
           </Button>
           <Button
             asChild
@@ -39,12 +41,12 @@ export function HomeComponent() {
             size="default"
             className="w-full text-sm font-semibold"
           >
-            <Link to="/register">Get Started</Link>
+            <Link to="/register">{t('home.get_started')}</Link>
           </Button>
         </CardContent>
         <CardFooter className="justify-center pt-2 pb-6">
           <p className="text-[11px] text-muted-foreground">
-            Start learning offline or sync seamlessly across your devices.
+            {t('home.offline_description')}
           </p>
         </CardFooter>
       </Card>
