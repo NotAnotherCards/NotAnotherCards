@@ -112,19 +112,22 @@ describe('Statistics dashboard', () => {
     [1, 'es', '1 día actual', '1 día máximo'],
     [2, 'es', '2 días actual', '2 días máximo'],
     [5, 'es', '5 días actual', '5 días máximo'],
-  ])('renders a %i-day streak in %s', async (days, locale, current, longest) => {
-    reviews = reviewsForStreak(days);
-    await i18n.changeLanguage(locale);
+  ])(
+    'renders a %i-day streak in %s',
+    async (days, locale, current, longest) => {
+      reviews = reviewsForStreak(days);
+      await i18n.changeLanguage(locale);
 
-    render(<Statistics />);
+      render(<Statistics />);
 
-    expect(
-      within(screen.getByLabelText('Learning streak')).getByText(current),
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByLabelText('Learning streak')).getByText(longest),
-    ).toBeInTheDocument();
-  });
+      expect(
+        within(screen.getByLabelText('Learning streak')).getByText(current),
+      ).toBeInTheDocument();
+      expect(
+        within(screen.getByLabelText('Learning streak')).getByText(longest),
+      ).toBeInTheDocument();
+    },
+  );
 
   it('renders fixture statistics, scopes by deck, and switches range', async () => {
     const user = userEvent.setup();

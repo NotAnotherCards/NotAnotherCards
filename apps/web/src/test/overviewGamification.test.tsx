@@ -213,14 +213,17 @@ describe('Overview Gamification', () => {
 
   it('renders the count for a one-day learning streak in Russian', async () => {
     await i18n.changeLanguage('ru');
-    mockUseQueryWithBadges([], [
-      {
-        id: 'review-today',
-        user_card_id: 'card-1',
-        rating: 3,
-        reviewed_at: Date.now(),
-      },
-    ]);
+    mockUseQueryWithBadges(
+      [],
+      [
+        {
+          id: 'review-today',
+          user_card_id: 'card-1',
+          rating: 3,
+          reviewed_at: Date.now(),
+        },
+      ],
+    );
 
     render(<Overview onChooseDeck={() => {}} />);
 
