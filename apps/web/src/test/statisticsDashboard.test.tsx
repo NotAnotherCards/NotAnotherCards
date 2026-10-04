@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Statistics } from '@/components/dashboard/Statistics';
 import { useStore } from '@/hooks/useStore';
+import i18n from '@/lib/i18n';
 
 const at = (iso: string) => new Date(iso).getTime();
-const reviews = [
+const defaultReviews = [
   {
     id: 'today-forgot',
     user_card_id: 'card-1',
@@ -25,6 +26,16 @@ const reviews = [
     reviewed_at: at('2026-09-15T11:00:00.000Z'),
   },
 ];
+let reviews = defaultReviews;
+const reviewsForStreak = (days: number) =>
+  Array.from({ length: days }, (_, index) => ({
+    id: `day-${index}`,
+    user_card_id: 'card-1',
+    rating: 3,
+    reviewed_at: at(
+      `2026-09-${String(16 - index).padStart(2, '0')}T10:00:00.000Z`,
+    ),
+  }));
 
 vi.mock('@/hooks/useStore', () => ({ useStore: vi.fn() }));
 vi.mock('@remelondb/core/react', () => ({
@@ -34,6 +45,7 @@ vi.mock('@remelondb/core/react', () => ({
 describe('Statistics dashboard', () => {
   beforeEach(() => {
     vi.spyOn(Date, 'now').mockReturnValue(at('2026-09-16T12:00:00.000Z'));
+    reviews = defaultReviews;
     vi.mocked(useStore).mockReturnValue({
       db: null,
       decks: [
@@ -82,8 +94,36 @@ describe('Statistics dashboard', () => {
     } as unknown as ReturnType<typeof useStore>);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.restoreAllMocks();
+    await i18n.changeLanguage('en');
+  });
+
+  it.each([
+    [1, 'en', '1 day current', '1 day longest'],
+    [2, 'en', '2 days current', '2 days longest'],
+    [5, 'en', '5 days current', '5 days longest'],
+    [1, 'ru', '1 день сейчас', '1 день максимум'],
+    [2, 'ru', '2 дня сейчас', '2 дня максимум'],
+    [5, 'ru', '5 дней сейчас', '5 дней максимум'],
+    [1, 'de', '1 Tag aktuell', '1 Tag am längsten'],
+    [2, 'de', '2 Tage aktuell', '2 Tage am längsten'],
+    [5, 'de', '5 Tage aktuell', '5 Tage am längsten'],
+    [1, 'es', '1 día actual', '1 día máximo'],
+    [2, 'es', '2 días actual', '2 días máximo'],
+    [5, 'es', '5 días actual', '5 días máximo'],
+  ])('renders a %i-day streak in %s', async (days, locale, current, longest) => {
+    reviews = reviewsForStreak(days);
+    await i18n.changeLanguage(locale);
+
+    render(<Statistics />);
+
+    expect(
+      within(screen.getByLabelText('Learning streak')).getByText(current),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText('Learning streak')).getByText(longest),
+    ).toBeInTheDocument();
   });
 
   it('renders fixture statistics, scopes by deck, and switches range', async () => {
