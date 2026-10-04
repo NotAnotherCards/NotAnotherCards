@@ -732,6 +732,8 @@
       "no_decks_empty": "Keine Stapel gefunden. Erstelle einen, um anzufangen!",
       "my_library_desc": "Verwalte deine benutzerdefinierten Karteikartenstapel.",
       "no_decks_title": "Noch keine Stapel",
+      "no_deck_title": "Karten und Wörter ohne Stapel",
+      "no_deck_description": "Karten, die sich in keinem aktiven Stapel befinden.",
       "create_first": "Ersten Stapel erstellen"
     },
     "card": {
@@ -765,6 +767,22 @@
       "cards_total": "Karten insgesamt",
       "active": "Aktiv",
       "due": "Fällig"
+    },
+    "no_deck": {
+      "delete_card": "Karte löschen",
+      "delete_word": "Wort löschen",
+      "delete_title": "Karte löschen?",
+      "delete_description": "Diese Karte, ihre Notiz und ihr Wiederholungsverlauf werden dauerhaft gelöscht.",
+      "delete_word_title": "Wort löschen?",
+      "delete_word_description": "Dieses Wort, alle zugehörigen Karten und der Wiederholungsverlauf werden dauerhaft gelöscht.",
+      "search_placeholder": "Suchen",
+      "col_question": "Wort / Frage",
+      "col_answer": "Übersetzung / Antwort",
+      "view_card": "Karte anzeigen",
+      "view_card_description": "Frage und Antwort, die für diese Karte gespeichert sind.",
+      "question": "Frage",
+      "answer": "Antwort",
+      "edit_card": "Karte bearbeiten"
     },
     "form": {
       "title": "Titel",

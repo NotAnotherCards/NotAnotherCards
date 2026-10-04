@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { DeckList } from '@/components/deck/DeckList';
 import { DeckDetail } from '@/components/deck/DeckDetail';
+import { NoDeckDetail } from '@/components/deck/NoDeckDetail';
 import { Settings } from './settings/Settings';
 import { Overview } from './Overview';
 import { Statistics } from './Statistics';
@@ -30,7 +31,7 @@ export function DashboardComponent() {
     | 'settings'
   >('overview');
   const [subView, setSubView] = useState<{
-    type: 'list' | 'detail';
+    type: 'list' | 'detail' | 'no-deck';
     deckId?: string;
   }>({ type: 'list' });
 
@@ -141,10 +142,16 @@ export function DashboardComponent() {
           {subView.type === 'list' ? (
             <DeckList
               onSelectDeck={(deckId) => setSubView({ type: 'detail', deckId })}
+              onSelectNoDeck={() => setSubView({ type: 'no-deck' })}
               onStartReview={(deckId) =>
                 navigate({ to: '/deck-review', search: { deckId } })
               }
+              onStartNoDeckReview={() =>
+                navigate({ to: '/deck-review', search: { collection: 'no-deck' } })
+              }
             />
+          ) : subView.type === 'no-deck' ? (
+            <NoDeckDetail onBack={() => setSubView({ type: 'list' })} />
           ) : (
             <DeckDetail
               deckId={subView.deckId!}

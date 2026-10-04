@@ -14,6 +14,7 @@ import {
 } from '@repo/offline-db';
 import { useQuery } from '@remelondb/core/react';
 import { useSyncController } from '@/offline/syncProvider';
+import { cardsWithoutActiveDeck } from '@/lib/no-deck-cards';
 import {
   getDecksQuery,
   getAllCardsQuery,
@@ -357,6 +358,11 @@ export function useStore() {
     [allCards, noteDecks],
   );
 
+  const getCardsWithoutDeck = useCallback(
+    (): UserCardRecord[] => cardsWithoutActiveDeck(allCards, noteDecks),
+    [allCards, noteDecks],
+  );
+
   const createCardsBatch = useCallback(
     async (options: CreateCardsBatchOptions) => {
       if (!db) throw new Error('Database not initialized');
@@ -434,6 +440,7 @@ export function useStore() {
     updateNoteFields,
     getCardsCount,
     getCardsForDeck,
+    getCardsWithoutDeck,
     getNotesForDeck,
     createUserProfile,
     updateUserProfile,

@@ -5,12 +5,14 @@ interface WordNoteDialogProps {
   children: ReactNode;
   label: string;
   onClose: () => void;
+  className?: string;
 }
 
 export function WordNoteDialog({
   children,
   label,
   onClose,
+  className,
 }: WordNoteDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -60,7 +62,7 @@ export function WordNoteDialog({
         aria-modal="true"
         aria-label={label}
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-lg border border-border/80 shadow-2xl animate-in zoom-in-95 duration-200"
+        className={`w-full max-w-lg border border-border/80 shadow-2xl animate-in zoom-in-95 duration-200 ${className ?? ''}`}
       >
         {children}
       </Card>

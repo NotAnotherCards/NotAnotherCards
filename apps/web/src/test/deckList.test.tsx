@@ -1,6 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { DeckList } from '../components/deck/DeckList';
+
+let cardsWithoutDeck: Array<{ id: string; note_id: string }> = [];
 
 vi.mock('@/hooks/useStore', () => ({
   useStore: () => ({
@@ -28,15 +30,56 @@ vi.mock('@/hooks/useStore', () => ({
     ],
     getCardsForDeck: () => [],
     getCardsCount: () => 4,
+    getCardsWithoutDeck: () => cardsWithoutDeck,
   }),
 }));
 
 describe('DeckList', () => {
   it('shows the number of due cards in each deck', () => {
-    render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
+    render(
+      <DeckList
+        onSelectDeck={vi.fn()}
+        onSelectNoDeck={vi.fn()}
+        onStartReview={vi.fn()}
+        onStartNoDeckReview={vi.fn()}
+      />,
+    );
 
     const badge = screen.getByTestId('due-cards-badge');
     expect(badge).toHaveTextContent('2');
     expect(badge).toHaveClass('text-foreground');
+  });
+
+  it('shows a No deck entry only for cards without an active membership', () => {
+    cardsWithoutDeck = [{ id: 'orphan-card', note_id: 'orphan-note' }];
+    const onSelectNoDeck = vi.fn();
+    const onStartNoDeckReview = vi.fn();
+
+    render(
+      <DeckList
+        onSelectDeck={vi.fn()}
+        onSelectNoDeck={onSelectNoDeck}
+        onStartReview={vi.fn()}
+        onStartNoDeckReview={onStartNoDeckReview}
+      />,
+    );
+
+    const noDeckCard = screen
+      .getByText(/No deck|Cards and words without a deck/)
+      .closest('[data-slot=card]');
+    expect(noDeckCard).not.toBeNull();
+    fireEvent.click(
+      within(noDeckCard as HTMLElement).getByRole('button', {
+        name: 'Manage Cards',
+      }),
+    );
+    expect(onSelectNoDeck).toHaveBeenCalledOnce();
+    fireEvent.click(
+      within(noDeckCard as HTMLElement).getByRole('button', {
+        name: 'Start Review',
+      }),
+    );
+    expect(onStartNoDeckReview).toHaveBeenCalledOnce();
+    cardsWithoutDeck = [];
   });
 });

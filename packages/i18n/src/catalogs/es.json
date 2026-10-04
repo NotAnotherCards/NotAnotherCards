@@ -732,6 +732,8 @@
       "no_decks_empty": "No se encontraron mazos. ¡Crea uno para empezar!",
       "my_library_desc": "Administra tus mazos de cartas personalizados.",
       "no_decks_title": "Aún no hay mazos",
+      "no_deck_title": "Tarjetas y palabras sin mazo",
+      "no_deck_description": "Tarjetas que no están en ningún mazo activo.",
       "create_first": "Crear el primer mazo"
     },
     "card": {
@@ -765,6 +767,22 @@
       "cards_total": "Total de tarjetas",
       "active": "Activas",
       "due": "Pendientes"
+    },
+    "no_deck": {
+      "delete_card": "Eliminar tarjeta",
+      "delete_word": "Eliminar palabra",
+      "delete_title": "¿Eliminar tarjeta?",
+      "delete_description": "Esta tarjeta, su nota y su historial de repaso se eliminarán de forma permanente.",
+      "delete_word_title": "¿Eliminar palabra?",
+      "delete_word_description": "Esta palabra, todas sus tarjetas y su historial de repaso se eliminarán de forma permanente.",
+      "search_placeholder": "Buscar",
+      "col_question": "Palabra / Pregunta",
+      "col_answer": "Traducción / Respuesta",
+      "view_card": "Ver tarjeta",
+      "view_card_description": "Pregunta y respuesta guardadas para esta tarjeta.",
+      "question": "Pregunta",
+      "answer": "Respuesta",
+      "edit_card": "Editar tarjeta"
     },
     "form": {
       "title": "Título",

@@ -34,6 +34,8 @@ interface CardListProps {
   canEditCard: (card: Card) => boolean;
   canAddCard?: boolean;
   canRemoveCard?: boolean;
+  removeCardTitle?: string;
+  removeCardIcon?: 'unlink' | 'delete';
   onAddCard: () => void;
   isLoading?: boolean;
   initialScrollOffset?: number;
@@ -55,6 +57,8 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
       canEditCard,
       canAddCard = true,
       canRemoveCard = true,
+      removeCardTitle,
+      removeCardIcon,
       onAddCard,
       isLoading,
       initialScrollOffset,
@@ -263,6 +267,8 @@ export const CardList = forwardRef<CardListRef, CardListProps>(
                         onViewCard={(c) => setViewingCard(c)}
                         canEdit={canEditCard(card)}
                         canRemove={canRemoveCard}
+                        removeTitle={removeCardTitle}
+                        removeIcon={removeCardIcon}
                         ref={rowVirtualizer.measureElement}
                         data-index={virtualRow.index}
                         style={{

@@ -21,6 +21,7 @@ import { ActivateMoreWords } from './ReviewDialogs';
 
 type DeckReviewPageProps = {
   deckId?: string;
+  collection?: 'no-deck';
 };
 
 type ActiveReviewSession = {
@@ -28,7 +29,7 @@ type ActiveReviewSession = {
   cards: Card[];
 };
 
-export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
+export function DeckReviewPage({ deckId, collection }: DeckReviewPageProps) {
   const { t } = useTranslation();
   const store = useStore();
   const navigate = useNavigate();
@@ -36,8 +37,17 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const [activeSession, setActiveSession] =
     useState<ActiveReviewSession | null>(null);
   const [sessionVersion, setSessionVersion] = useState(0);
-  const getDueCards = (id: string) => selectDueCards(store.getCardsForDeck(id));
-  const dueCards = deckId ? getDueCards(deckId) : [];
+  const isNoDeckCollection = collection === 'no-deck';
+  const reviewId = isNoDeckCollection ? 'no-deck' : deckId;
+  const getDueCards = () =>
+    selectDueCards(
+      isNoDeckCollection
+        ? store.getCardsWithoutDeck()
+        : deckId
+          ? store.getCardsForDeck(deckId)
+          : [],
+    );
+  const dueCards = getDueCards();
   const deck = store.decks.find((item) => item.id === deckId);
   const reviewPreferences = getReviewPreferences(session?.user.id);
   const activationCount = getActivationCount(session?.user.id);
@@ -51,27 +61,27 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
   const activationItemLabel = isWordDeck ? 'words' : 'cards';
 
   useEffect(() => {
-    if (deck && session?.user.id) {
+    if (!isNoDeckCollection && deck && session?.user.id) {
       saveLastReviewDeckId(session.user.id, deck.id);
     }
-  }, [deck, session?.user.id]);
+  }, [deck, isNoDeckCollection, session?.user.id]);
 
   useEffect(() => {
-    if (activeSession && activeSession.deckId !== deckId) {
+    if (activeSession && activeSession.deckId !== reviewId) {
       setActiveSession(null);
     }
-  }, [activeSession, deckId]);
+  }, [activeSession, reviewId]);
 
   useEffect(() => {
-    if (!deckId || !deck || !store.ready || dueCards.length === 0) return;
+    if (!reviewId || (!isNoDeckCollection && !deck) || !store.ready || dueCards.length === 0) return;
 
-    if (activeSession?.deckId === deckId) return;
+    if (activeSession?.deckId === reviewId) return;
 
-    setActiveSession({ deckId, cards: selectReviewBatch(dueCards) });
-  }, [activeSession?.deckId, deck, deckId, dueCards, store.ready]);
+    setActiveSession({ deckId: reviewId, cards: selectReviewBatch(dueCards) });
+  }, [activeSession?.deckId, deck, dueCards, isNoDeckCollection, reviewId, store.ready]);
 
   const hasActiveSession =
-    activeSession !== null && activeSession.deckId === deckId;
+    activeSession !== null && activeSession.deckId === reviewId;
 
   const sessionCards = hasActiveSession
     ? activeSession.cards
@@ -89,7 +99,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
     void navigate({ to: '/dashboard' });
   };
 
-  if (!deckId) {
+  if (!reviewId) {
     return (
       <ReviewRecovery
         title={t('review.recovery.choose_deck_title', 'Choose a deck first')}
@@ -133,7 +143,7 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
     );
   }
 
-  if (!deck) {
+  if (!isNoDeckCollection && !deck) {
     return (
       <ReviewRecovery
         title={t('review.recovery.deck_not_found_title', 'Deck not found')}
@@ -149,12 +159,22 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
     return (
       <ReviewRecovery
         title={t('review.recovery.no_cards_due', {
-          title: deck.title,
+          title: isNoDeckCollection
+            ? t('deck.list.no_deck_title', 'Cards and words without a deck')
+            : deck!.title,
         })}
-        activationCount={inactiveItemCount > 0 ? activationCount : undefined}
-        inactiveItemCount={inactiveItemCount}
+        activationCount={
+          !isNoDeckCollection && inactiveItemCount > 0
+            ? activationCount
+            : undefined
+        }
+        inactiveItemCount={isNoDeckCollection ? 0 : inactiveItemCount}
         itemLabel={activationItemLabel}
-        onActivate={inactiveItemCount > 0 ? activateMoreWords : undefined}
+        onActivate={
+          !isNoDeckCollection && inactiveItemCount > 0
+            ? activateMoreWords
+            : undefined
+        }
         onExit={exitReview}
       />
     );
@@ -162,20 +182,36 @@ export function DeckReviewPage({ deckId }: DeckReviewPageProps) {
 
   return (
     <ReviewSession
-      key={`${deckId}:${sessionVersion}`}
+      key={`${reviewId}:${sessionVersion}`}
       cards={sessionCards}
-      deckTitle={deck.title}
+      deckTitle={
+        isNoDeckCollection
+          ? t('deck.list.no_deck_title', 'Cards and words without a deck')
+          : deck!.title
+      }
       onExit={exitReview}
-      onActivateMore={inactiveItemCount > 0 ? activateMoreWords : undefined}
-      activationCount={inactiveItemCount > 0 ? activationCount : undefined}
-      inactiveItemCount={inactiveItemCount}
+      onActivateMore={
+        !isNoDeckCollection && inactiveItemCount > 0
+          ? activateMoreWords
+          : undefined
+      }
+      activationCount={
+        !isNoDeckCollection && inactiveItemCount > 0
+          ? activationCount
+          : undefined
+      }
+      inactiveItemCount={isNoDeckCollection ? 0 : inactiveItemCount}
       activationItemLabel={activationItemLabel}
-      onCreateCard={async (data) => {
-        await store.createCard(deckId, data.front, data.back);
-      }}
+      onCreateCard={
+        isNoDeckCollection
+          ? undefined
+          : async (data) => {
+              await store.createCard(deckId!, data.front, data.back);
+            }
+      }
       onRecordReview={store.recordReview}
       onDeleteNote={store.deleteNote}
-      onRequestNextBatch={() => nextReviewBatch(() => getDueCards(deckId))}
+      onRequestNextBatch={() => nextReviewBatch(getDueCards)}
       reviewMode={reviewPreferences.reviewMode}
       showNextReviewInterval={reviewPreferences.showNextReviewInterval}
     />

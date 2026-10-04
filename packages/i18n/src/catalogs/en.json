@@ -732,6 +732,8 @@
       "no_decks_empty": "No decks found. Create one to get started!",
       "my_library_desc": "Manage your custom card decks.",
       "no_decks_title": "No Decks Yet",
+      "no_deck_title": "Cards and words without a deck",
+      "no_deck_description": "Cards that are not in an active deck.",
       "create_first": "Create First Deck"
     },
     "card": {
@@ -765,6 +767,22 @@
       "cards_total": "Cards Total",
       "active": "Active",
       "due": "Due"
+    },
+    "no_deck": {
+      "delete_card": "Delete card",
+      "delete_word": "Delete word",
+      "delete_title": "Delete card?",
+      "delete_description": "This permanently deletes the card, its note, and its review history.",
+      "delete_word_title": "Delete word?",
+      "delete_word_description": "This permanently deletes the word, all of its cards, and its review history.",
+      "search_placeholder": "Search",
+      "col_question": "Word / Question",
+      "col_answer": "Translation / Answer",
+      "view_card": "View Card",
+      "view_card_description": "Question and answer saved for this card.",
+      "question": "Question",
+      "answer": "Answer",
+      "edit_card": "Edit Card"
     },
     "form": {
       "title": "Title",
