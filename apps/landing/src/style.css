@@ -57,6 +57,12 @@
   color: var(--sage-foreground);
 }
 
+@media (max-width: 375px) {
+  .brand-logo {
+    width: 76px;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   .card-secondary-label {
     color: var(--foreground);
