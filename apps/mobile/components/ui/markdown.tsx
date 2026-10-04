@@ -32,18 +32,18 @@ interface MarkdownProps {
 const themes = {
   light: {
     colors: {
-      text: '#0a0a0a',
-      link: '#171717',
-      code: '#f5f5f5',
-      border: '#e5e5e5',
+      text: '#18181b',
+      link: '#5865b5',
+      code: '#f2f6f2',
+      border: '#e4e4e7',
     },
   },
   dark: {
     colors: {
       text: '#fafafa',
-      link: '#e5e5e5',
-      code: '#262626',
-      border: '#232323',
+      link: '#9da8ec',
+      code: '#202023',
+      border: '#3f3f46',
     },
   },
 } as const;

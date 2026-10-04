@@ -101,7 +101,7 @@ export default function Onboarding() {
       keyboardShouldPersistTaps="handled"
       contentContainerClassName="flex-grow justify-center p-6"
     >
-      <View className="gap-4 rounded-xl border border-border bg-card p-6">
+      <View className="gap-4 rounded-xl border border-sage-border bg-card p-6">
         <View className="gap-1">
           <Text className="text-2xl font-semibold">
             {t('onboarding.title')}

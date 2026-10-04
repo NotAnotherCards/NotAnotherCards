@@ -8,35 +8,35 @@ Colours are semantic tokens, never raw palette values. Each token is a CSS
 custom property, defined for light in `:root` and for dark in `.dark` (web) or
 the `prefers-color-scheme: dark` media query (mobile).
 
-Web defines them in `apps/web/src/style.css`, in oklch. Mobile defines them in
-`apps/mobile/global.css`, in hex, because React Native does not parse oklch.
-Mobile is a subset of web: every token mobile defines exists on web under the
-same name, and every shared value is the same colour once web's oklch is
-converted to sRGB, with one deliberate exception (41 of 42).
-
-The exception is light-mode `--card`. Web keeps it white like the page and
-separates a card with `shadow-md` and a hairline ring. On Android a shadow
-needs `elevation` and renders unevenly, and nativewind has no ring utility,
-so a white card on a white page had no visible edge. Mobile sets `--card` to
-the muted tone (`245 245 245`) instead, which is how native settings screens
-separate a panel. Dark mode needs none of this: its card tone is already
-lighter than its background on both clients.
+Web defines them in `apps/web/src/style.css`, mostly as hex, with oklch for
+destructive and rating colors. Mobile defines RGB channel triplets in
+`apps/mobile/global.css` so NativeWind can apply alpha. Mobile is a subset of
+web: every mobile token exists on web, and every shared light and dark color
+matches after conversion to sRGB. A card is the page's own colour on both
+clients; a sage border and web's card shadow set it apart. Mobile's screens
+also sit on `--surface` in both modes, since a phone shows a card edge to
+edge with little page around it; web keeps `--surface` for its login and
+review screens.
 
 ### Shared tokens
 
-| token                                        | used for                               |
-| -------------------------------------------- | -------------------------------------- |
-| `--background` / `--foreground`              | page ground and default text           |
-| `--card` / `--card-foreground`               | raised surfaces: cards, forms, dialogs |
-| `--primary` / `--primary-foreground`         | the main action, and text on it        |
-| `--secondary` / `--secondary-foreground`     | a second, quieter action               |
-| `--muted` / `--muted-foreground`             | de-emphasised surfaces and helper text |
-| `--accent` / `--accent-foreground`           | hover and selected states              |
-| `--destructive` / `--destructive-foreground` | delete, errors, and text on them       |
-| `--border`                                   | borders and separators                 |
-| `--input`                                    | input field borders and backgrounds    |
-| `--ring`                                     | focus rings                            |
-| `--rating-again` … `--rating-easy`           | review answer buttons, one hue each    |
+| token                                        | used for                                |
+| -------------------------------------------- | --------------------------------------- |
+| `--background` / `--foreground`              | page ground and default text            |
+| `--card` / `--card-foreground`               | raised surfaces: cards, forms, dialogs  |
+| `--primary` / `--primary-foreground`         | the main action, and text on it         |
+| `--secondary` / `--secondary-foreground`     | a second, quieter action                |
+| `--muted` / `--muted-foreground`             | de-emphasised surfaces and helper text  |
+| `--accent` / `--accent-foreground`           | hover and selected states               |
+| `--destructive` / `--destructive-foreground` | delete, errors, and text on them        |
+| `--border`                                   | borders and separators                  |
+| `--input`                                    | input field borders and backgrounds     |
+| `--ring`                                     | focus rings                             |
+| `--rating-again` … `--rating-easy`           | review answer buttons, one hue each     |
+| `--primary-hover`                            | pressed/hovered primary buttons         |
+| `--sage`, `--sage-border`                    | native switch track and card border     |
+| `--surface`                                  | tinted ground: web auth, mobile screens |
+| `--success`, `--warning`, `--info`           | status: done, needs attention, working  |
 
 Tailwind exposes each as a utility of the same name: `bg-card`,
 `text-muted-foreground`, `border-border`, `ring-ring`. Web does this through
@@ -51,10 +51,10 @@ buttons still use inline tailwind classes and have not moved to them yet.
 
 ### Brand Tokens
 
-- **Pine/Sage.** `--pine`, `--sage` and their variants. These form the core 
-  brand identity colors for the application and landing page, moving away from 
+- **Pine/Sage.** `--pine`, `--sage` and their variants. These form the core
+  brand identity colors for the application and landing page, moving away from
   neutral greys.
-- **Primary.** `--primary` is set to an Indigo tone, offering contrast and 
+- **Primary.** `--primary` is set to an Indigo tone, offering contrast and
   interactivity.
 
 ### Web-only tokens
@@ -71,6 +71,10 @@ decision, not an oversight to fix.
   added, forgot rate); `--chart-4` and `--chart-5` are still neutral. They
   leave greyscale only because a chart without distinguishable series is
   unreadable.
+- **Other brand surfaces.** `--surface-soft`, `--sage-foreground`, `--pine`
+  and `--pine-foreground` remain web-only until a mobile component needs
+  them. `--shadow-card` is a shadow, not a colour: mobile's card repeats its
+  values in `lib/theme.ts` (`cardShadows`), unchecked.
 - **Radius scale.** `--radius` (0.625rem) and `--radius-sm` to `--radius-4xl`
   derived from it. Mobile gains `--radius` with the kit; see Spacing and radius.
 - **`--color-*`.** Tailwind 4's `@theme` bridge, one per token above. These are
@@ -79,23 +83,19 @@ decision, not an oversight to fix.
 ### Adding a token
 
 A token that both clients need is added to `style.css` first, then to
-`global.css` with the converted hex value for light and dark, in the same
-change. A token only web needs is added to `style.css` and listed above.
+`global.css` as RGB triplets for light and dark in the same change. A token
+only web needs is added to `style.css` and listed above.
 
 ## Typography
 
 Web loads Poppins through `@fontsource/poppins` and exposes two
-tokens: `--font-sans` (`'Poppins', sans-serif`) and `--font-heading` 
+tokens: `--font-sans` (`'Poppins', sans-serif`) and `--font-heading`
 (also `'Poppins', sans-serif`). Headings and body share a family; weight
 and size do the work. This unifies typography between the marketing pages and the app.
 
-Mobile defines no font tokens and loads no font. Text renders in the platform
-default, San Francisco on iOS and Roboto on Android, and that is intended:
-React Native Reusables ships with the system font, loading Poppins through
-`expo-font` would hold first render until the font resolves, and the two faces
-are close enough that only Android would show a difference. Should that change,
-`components/ui/text.tsx` and one `fontFamily` entry in `tailwind.config.js` are
-the only places that set it.
+Mobile does not load Poppins yet. It currently renders the platform default,
+San Francisco on iOS and Roboto on Android. The mobile font decision is tracked
+in #371; this palette port does not settle it.
 
 Weight utilities are shared: `font-medium` for labels, `font-semibold` for
 headings and button labels. Size follows Tailwind's default scale on both
@@ -106,14 +106,10 @@ clients (`text-sm`, `text-base`, `text-lg`).
 Spacing uses Tailwind's default scale on both clients. Gaps between stacked
 controls are `gap-2` to `gap-4`; card padding is `p-4`.
 
-Radius differs today. Web derives its scale from `--radius` (0.625rem), so
-`rounded-lg` is 0.625rem and `rounded-xl` is 0.875rem. Mobile uses Tailwind 3's
-defaults, so the same class names produce 0.5rem and 0.75rem. The React Native
-Reusables adoption (#143) closes the gap: the first component that needs
-`--radius` adds it to `global.css` at web's 0.625rem and maps `borderRadius` in
-`tailwind.config.js`, after which the class names mean the same on both clients.
-Buttons are the exception that already matches: web's `rounded-4xl` and
-mobile's `rounded-full` both make a pill at button height.
+Radius still differs: web derives its scale from `--radius` (0.625rem), while
+mobile uses Tailwind 3's defaults. Both card components now use `rounded-2xl`,
+but their exact radii differ until the React Native Reusables adoption (#143)
+maps the shared scale. Buttons remain pill-shaped on both clients.
 
 ## Motion and micro-animations
 
@@ -189,10 +185,11 @@ deck descriptions and word-note notes through the shared `Input` component.
 | `field`, `label`, `input`, `password-input` | `form-field`, `label`, `input`                        |
 | `MarkdownRenderer`                          | `markdown`                                            |
 | `progress`                                  | `progress` (value and indicator colour; no animation) |
+| `select`                                    |                                                       |
 | `separator`                                 |                                                       |
 | `spinner`                                   |                                                       |
 | `switch`                                    |                                                       |
-| `google-icon`                               | `icon` (lucide wrappers)                              |
+| `google-icon`                               | `google-icon`, `icon` (lucide wrappers)               |
 |                                             | `segmented`                                           |
 |                                             | `text`                                                |
 
@@ -233,21 +230,17 @@ holds `navigationColors`. Existing screens migrate incrementally.
 
 ### Enforcement
 
-Nothing enforces these today. The lint rule `better-tailwindcss/no-unknown-classes`
-rejects classes that do not exist, so `bg-emerald-500` passes. Web currently
-contains more than a hundred raw palette utilities in components and routes;
-clearing them is follow-up work, not a precondition for this document.
+`pnpm check:design-docs` runs `scripts/check-design-docs.mjs`; CI runs it too.
+It checks that every web and mobile `components/ui` file appears in the
+inventory and every listed file exists, that mobile defines no token web
+lacks, and that shared light/dark colors and native navigation colors match.
+The table remains hand-written: a new component needs a deliberate row edit.
 
-Two checks are worth adding when someone is in the area:
-
-- A lint rule or script rejecting raw palette utilities outside `components/ui`.
-- A script comparing token names between `style.css` and `global.css`, failing
-  when mobile defines a token web does not. The check that produced the
-  numbers in this document is a shell one-liner:
-
-```sh
-tok() { grep -oE -- '--[a-z][a-z0-9-]*\s*:' "$1" | sed 's/\s*:$//' | sort -u; }
-comm -13 <(tok apps/web/src/style.css) <(tok apps/mobile/global.css)
-```
-
-An empty result means mobile is still a subset.
+Raw palette utilities such as `bg-emerald-500` outside `components/ui` are
+ratcheted: `scripts/design-raw-palette.json` records how many each file has,
+and the check fails when a file exceeds its count or a new file has any. A
+file that drops below its count fails too, until its entry is lowered, so the
+baseline only moves down. Status colours use `--success`, `--warning` and
+`--info`; mobile's sync badge and daily goals already do. Web's existing uses
+are converted file by file. The Overview stat tiles keep a raw hue each on
+both clients: it tells the tiles apart and states nothing.
