@@ -38,7 +38,10 @@ export function BasicCardView({
           {t('deck.no_deck.view_card', 'View Card')}
         </CardTitle>
         <CardDescription>
-          {t('deck.no_deck.view_card_description', 'Question and answer saved for this card.')}
+          {t(
+            'deck.no_deck.view_card_description',
+            'Question and answer saved for this card.',
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="max-h-[60vh] overflow-y-auto pt-4">
@@ -58,7 +61,12 @@ export function BasicCardView({
         </div>
       </CardContent>
       <CardFooter className="flex gap-2 border-t border-border/40 pt-4">
-        <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1"
+          onClick={onClose}
+        >
           {t('common.close', 'Close')}
         </Button>
         <Button type="button" className="flex-1 gap-1.5" onClick={onEdit}>

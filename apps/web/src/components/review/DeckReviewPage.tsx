@@ -73,12 +73,25 @@ export function DeckReviewPage({ deckId, collection }: DeckReviewPageProps) {
   }, [activeSession, reviewId]);
 
   useEffect(() => {
-    if (!reviewId || (!isNoDeckCollection && !deck) || !store.ready || dueCards.length === 0) return;
+    if (
+      !reviewId ||
+      (!isNoDeckCollection && !deck) ||
+      !store.ready ||
+      dueCards.length === 0
+    )
+      return;
 
     if (activeSession?.deckId === reviewId) return;
 
     setActiveSession({ deckId: reviewId, cards: selectReviewBatch(dueCards) });
-  }, [activeSession?.deckId, deck, dueCards, isNoDeckCollection, reviewId, store.ready]);
+  }, [
+    activeSession?.deckId,
+    deck,
+    dueCards,
+    isNoDeckCollection,
+    reviewId,
+    store.ready,
+  ]);
 
   const hasActiveSession =
     activeSession !== null && activeSession.deckId === reviewId;

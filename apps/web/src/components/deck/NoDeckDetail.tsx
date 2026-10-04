@@ -32,10 +32,12 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
   const { t } = useTranslation();
   const store = useStore();
   const [editingCard, setEditingCard] = useState<Card | null>(null);
-  const [editingWordNote, setEditingWordNote] =
-    useState<UserNoteRecord | null>(null);
-  const [viewingWordNote, setViewingWordNote] =
-    useState<UserNoteRecord | null>(null);
+  const [editingWordNote, setEditingWordNote] = useState<UserNoteRecord | null>(
+    null,
+  );
+  const [viewingWordNote, setViewingWordNote] = useState<UserNoteRecord | null>(
+    null,
+  );
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
   const [noteIdToDelete, setNoteIdToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -45,7 +47,11 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
     cards.some((card) => card.note_id === note.id && store.isWordCard(card)),
   );
   const learningCounts = useMemo(
-    () => deckLearningCounts(cards, wordNotes.map((note) => note.id)),
+    () =>
+      deckLearningCounts(
+        cards,
+        wordNotes.map((note) => note.id),
+      ),
     [cards, wordNotes],
   );
   const basicCards = cards.filter(store.isBasicCard);

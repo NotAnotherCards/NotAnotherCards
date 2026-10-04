@@ -147,7 +147,10 @@ export function DashboardComponent() {
                 navigate({ to: '/deck-review', search: { deckId } })
               }
               onStartNoDeckReview={() =>
-                navigate({ to: '/deck-review', search: { collection: 'no-deck' } })
+                navigate({
+                  to: '/deck-review',
+                  search: { collection: 'no-deck' },
+                })
               }
             />
           ) : subView.type === 'no-deck' ? (

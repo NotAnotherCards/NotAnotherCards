@@ -174,11 +174,14 @@ export function WordNoteList({
                     'This deck is empty. Click Add Word above to start building your collection.',
                   )}
             </p>
-            {!searchTerm && notes.length === 0 && basicCards.length === 0 && canAddWord && (
-              <Button onClick={onAddWord} className="cursor-pointer">
-                {t('deck.detail.add_word', 'Add Word')}
-              </Button>
-            )}
+            {!searchTerm &&
+              notes.length === 0 &&
+              basicCards.length === 0 &&
+              canAddWord && (
+                <Button onClick={onAddWord} className="cursor-pointer">
+                  {t('deck.detail.add_word', 'Add Word')}
+                </Button>
+              )}
           </div>
         ) : (
           <div className="@container">
@@ -192,7 +195,8 @@ export function WordNoteList({
                     {firstColumnLabel ?? t('deck.words.col_word', 'Word')}
                   </div>
                   <div role="columnheader">
-                    {secondColumnLabel ?? t('deck.words.col_translation', 'Translation')}
+                    {secondColumnLabel ??
+                      t('deck.words.col_translation', 'Translation')}
                   </div>
                   <div role="columnheader" className="text-center">
                     {t('deck.words.col_cards', 'Cards')}
@@ -361,7 +365,11 @@ export function WordNoteList({
                     aria-rowindex={filteredRows.length + index + 2}
                     className="grid grid-cols-1 items-center @[880px]:grid-cols-[minmax(var(--word-column-min),1fr)_minmax(var(--word-column-min),1fr)_var(--cards-column)_var(--extra-info-column)_var(--actions-column)] gap-3 @[880px]:gap-4 px-6 py-4 border-b border-border/30 hover:bg-muted/10 transition-colors last:border-0"
                   >
-                    <div role="cell" className="min-w-0 truncate font-medium" title={card.front}>
+                    <div
+                      role="cell"
+                      className="min-w-0 truncate font-medium"
+                      title={card.front}
+                    >
                       <button
                         type="button"
                         className="max-w-full cursor-pointer truncate text-left hover:text-primary"
@@ -371,34 +379,78 @@ export function WordNoteList({
                         {card.front}
                       </button>
                     </div>
-                    <div role="cell" className="text-muted-foreground min-w-0 truncate" title={card.back}>
+                    <div
+                      role="cell"
+                      className="text-muted-foreground min-w-0 truncate"
+                      title={card.back}
+                    >
                       {card.back}
                     </div>
                     <div className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)_minmax(max-content,1fr)] items-center gap-3 @[880px]:contents">
-                      <div role="cell" className="flex min-w-0 items-center @[880px]:justify-self-center">
+                      <div
+                        role="cell"
+                        className="flex min-w-0 items-center @[880px]:justify-self-center"
+                      >
                         <span className="text-left text-xs text-muted-foreground">
-                          <span className="@[880px]:hidden">{t('deck.words.cards_count', 'Cards: {{count}}', { count: 1 })}</span>
+                          <span className="@[880px]:hidden">
+                            {t('deck.words.cards_count', 'Cards: {{count}}', {
+                              count: 1,
+                            })}
+                          </span>
                           <span className="hidden @[880px]:inline">1</span>
                         </span>
                       </div>
-                      <div role="cell" className="flex min-w-0 items-center justify-center @[880px]:justify-self-center">
+                      <div
+                        role="cell"
+                        className="flex min-w-0 items-center justify-center @[880px]:justify-self-center"
+                      >
                         <span className="text-left text-xs text-muted-foreground">
-                          <span className="@[880px]:hidden">{t('deck.words.details_count', 'Extra info: {{count}}', { count: 0 })}</span>
+                          <span className="@[880px]:hidden">
+                            {t(
+                              'deck.words.details_count',
+                              'Extra info: {{count}}',
+                              { count: 0 },
+                            )}
+                          </span>
                           <span className="hidden @[880px]:inline">0</span>
                         </span>
                       </div>
-                      <div role="cell" className="flex min-w-0 items-center justify-end @[880px]:justify-center">
+                      <div
+                        role="cell"
+                        className="flex min-w-0 items-center justify-end @[880px]:justify-center"
+                      >
                         <div className="flex items-center gap-1.5">
-                          <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onViewCard?.(card)} title={t('deck.no_deck.view_card', 'View Card')}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
+                            onClick={() => onViewCard?.(card)}
+                            title={t('deck.no_deck.view_card', 'View Card')}
+                          >
                             <Eye className="size-3.5" />
                           </Button>
                           {canEdit && onEditCard && (
-                            <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => onEditCard(card)} title={t('deck.no_deck.edit_card', 'Edit Card')}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground"
+                              onClick={() => onEditCard(card)}
+                              title={t('deck.no_deck.edit_card', 'Edit Card')}
+                            >
                               <Edit className="size-3.5" />
                             </Button>
                           )}
                           {canRemove && onRemoveCard && (
-                            <Button variant="ghost" size="icon" className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => onRemoveCard(card)} title={t('deck.no_deck.delete_card', 'Delete card')}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => onRemoveCard(card)}
+                              title={t(
+                                'deck.no_deck.delete_card',
+                                'Delete card',
+                              )}
+                            >
                               <Trash2 className="size-3.5" />
                             </Button>
                           )}

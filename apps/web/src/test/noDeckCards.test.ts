@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { cardsWithoutActiveDeck } from '@/lib/no-deck-cards';
 
-const card = (id: string, noteId: string) =>
-  ({ id, note_id: noteId });
+const card = (id: string, noteId: string) => ({ id, note_id: noteId });
 
-const membership = (noteId: string, active: boolean) =>
-  ({ note_id: noteId, active });
+const membership = (noteId: string, active: boolean) => ({
+  note_id: noteId,
+  active,
+});
 
 describe('cardsWithoutActiveDeck', () => {
   it('keeps cards whose notes have no membership or only inactive memberships', () => {

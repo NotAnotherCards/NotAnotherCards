@@ -30,13 +30,7 @@ import {
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 
-function Count({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
+function Count({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex min-w-0 flex-col items-center">
       <div className="flex min-h-8 items-center justify-center text-xs leading-4 font-medium text-foreground">
@@ -263,7 +257,9 @@ export function DeckList({
                   />
                   <Count
                     label={t('deck.card.active', 'Active')}
-                    value={cardsWithoutDeck.filter((card) => card.active).length}
+                    value={
+                      cardsWithoutDeck.filter((card) => card.active).length
+                    }
                   />
                   <Count
                     label={t('deck.card.due_short', 'Due')}
