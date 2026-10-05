@@ -17,14 +17,13 @@ Status values:
 - **not started**: nothing exists.
 - **gap**: mandatory, missing, and the subject says it causes rejection.
 
-Progress (2026-09-09): **13 modules, 17 points claimed** (Public API and PWA
+Progress (2026-10-05): **13 modules, 17 points claimed** (Public API and PWA
 at very low priority and not counted in the 17, advanced search open and not
-counted; see section 6). By module: done 4
-(6 pts), in review 1 (1 pt), in progress 4 (6 pts), not started 4 (4 pts).
-Weighted by points and module progress, about **57%** of the claimed 17 points
-is done. The Privacy Policy and Terms of Service pages are in review. One
-mandatory gap remains: the required first line of the README, along with the
-README sections, which are at about 15%.
+counted; see section 6). All 13 claimed modules are merged on `main`. One
+module bullet is still in review: the mobile app's justification in the
+README, which is part of #456. The Privacy Policy and Terms of Service pages
+are merged. One mandatory gap remains on `main` until #456 merges: the
+required first line of the README, along with the README sections.
 
 How the percentages are made: a module's figure is the share of its subject
 bullets that are met; a partly met bullet gets partial credit, stated in its
@@ -35,46 +34,46 @@ are estimates, not measurements; the evidence column is what to check.
 
 The subject says the project is rejected if one of these is not met.
 
-| Requirement                                                                                                                                                                                                                                                                                                       | Status            |   % | Evidence                                                                                                                                    |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --: | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done              | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                                                                                  |
-| The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done              | 100 | 10 authors on `main` (`git shortlog -sn`)                                                                                                   |
-| Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done              | 100 | `docker compose up`, `README.md`                                                                                                            |
-| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | in review         |  90 | #252: stable Chrome against Compose/nginx                                                                                                                        |
-| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | in review         |  70 | #252: strict console gate in every browser context                                                                                                                             |
-| The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | in review         |  90 | public `/privacy` and `/terms` in `apps/landing`, linked from its footer and covered by `apps/landing/src/App.test.tsx` (PRs #374 and #379) |
-| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | #252: three-context isolation/sync and account switching; sync uses triggers, not push                                                      |
+| Requirement                                                                                                                                                                                                                                                                                                       | Status |   % | Evidence                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --: | ------------------------------------------------------------------------------------------------------------------------------------ |
+| The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done   | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                                                                           |
+| The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done   | 100 | 10 authors on `main` (`git shortlog -sn`)                                                                                            |
+| Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done   | 100 | `docker compose up`, `README.md`                                                                                                     |
+| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | done   | 100 | `apps/web/e2e` runs stable Chrome against the Compose/nginx stack on every pull request (#325)                                       |
+| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | done   | 100 | #325: a strict console gate in every browser context; the Browser tests job fails on a JavaScript warning or error                   |
+| The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | done   | 100 | public `/privacy` and `/terms` in `apps/landing`, linked from its footer and covered by `apps/landing/src/App.test.tsx` (#374, #379) |
+| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done   | 100 | #325: three-context isolation/sync and account switching; sync uses triggers, not push                                               |
 
 ## 2. Technical requirements (subject III.3)
 
-| Requirement                                                                                                                                               | Status      |   % | Evidence                                                     |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | --: | ------------------------------------------------------------ |
-| The frontend must be clear, responsive, and accessible on all devices.                                                                                    | in progress |  60 | #252: desktop/phone viewport and clipping checks; accessibility remains in progress                                         |
-| Use a CSS framework or a styling solution.                                                                                                                | done        | 100 | Tailwind CSS                                                 |
-| Store credentials in a local `.env` file that Git ignores. Supply an `.env.example` file.                                                                 | done        | 100 | `apps/api/.env.example`, `.gitignore`                        |
-| The database must have a clear schema and well-defined relations.                                                                                         | done        | 100 | `docs/db-schemas.md`                                         |
-| The application must have basic user management. Users must sign up and log in securely. At minimum: email and password with hashed and salted passwords. | done        | 100 | Better Auth, `apps/api/src/auth`                             |
-| All forms and user inputs must be validated in the frontend and in the backend.                                                                           | done        | 100 | Zod schemas in `@repo/schemas`, used by web, mobile, and api |
-| Every connection to the backend from a browser, a script, or an external API must use HTTPS. Connections inside the backend can be without encryption.    | done        | 100 | nginx TLS on the VPS, `docs/deployment.md`                   |
+| Requirement                                                                                                                                               | Status            |   % | Evidence                                                                                                                                                                   |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The frontend must be clear, responsive, and accessible on all devices.                                                                                    | done, with a note |  80 | #325: desktop and phone viewports with overflow and clipping checks on every pull request; accessibility labels are translated (#468); no accessibility audit has been run |
+| Use a CSS framework or a styling solution.                                                                                                                | done              | 100 | Tailwind CSS                                                                                                                                                               |
+| Store credentials in a local `.env` file that Git ignores. Supply an `.env.example` file.                                                                 | done              | 100 | `apps/api/.env.example`, `.gitignore`                                                                                                                                      |
+| The database must have a clear schema and well-defined relations.                                                                                         | done              | 100 | `docs/db-schemas.md`                                                                                                                                                       |
+| The application must have basic user management. Users must sign up and log in securely. At minimum: email and password with hashed and salted passwords. | done              | 100 | Better Auth, `apps/api/src/auth`                                                                                                                                           |
+| All forms and user inputs must be validated in the frontend and in the backend.                                                                           | done              | 100 | Zod schemas in `@repo/schemas`, used by web, mobile, and api                                                                                                               |
+| Every connection to the backend from a browser, a script, or an external API must use HTTPS. Connections inside the backend can be without encryption.    | done              | 100 | nginx TLS on the VPS, `docs/deployment.md`                                                                                                                                 |
 
 ## 3. README requirements (subject, "Readme Requirements")
 
 The subject says the README is a critical part of the evaluation.
 
-| Requirement                                                                                                                                             | Status      |   % | Evidence                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | --: | ------------------------------------------------------------------------------------------- |
-| The first line must be in italics and read: _This project has been created as part of the 42 curriculum by <login1>, <login2>, ..._                     | **gap**     |   0 | first line is `# NotAnotherCards`                                                           |
-| A "Description" section: the project name, its goal, an overview, and the key features.                                                                 | not started |   0 | none                                                                                        |
-| An "Instructions" section: prerequisites, `.env` setup, step-by-step run instructions.                                                                  | in progress |  50 | "Run the complete app with Docker", "Local development" exist; prerequisites are incomplete |
-| A "Resources" section: references, and which AI tools were used for which tasks.                                                                        | not started |   0 | none                                                                                        |
-| "Team Information": each member, their roles, and their responsibilities.                                                                               | not started |   0 | none                                                                                        |
-| "Project Management": how the team organized the work, the tools, and the communication channels.                                                       | not started |   0 | none                                                                                        |
-| "Technical Stack": frontend, backend, database and why, other libraries, justification of major choices.                                                | in progress |  40 | a "Stack" section exists, no justification                                                  |
-| "Database Schema": a description or a diagram of the tables and relations.                                                                              | not started |   0 | `docs/db-schemas.md` exists, the README does not link it                                    |
-| "Features List": all implemented features, who worked on each, what each does.                                                                          | not started |   0 | none                                                                                        |
-| "Modules": all chosen modules, the point calculation, the justification (required for Modules of choice), how each was implemented, who worked on each. | not started |   0 | none                                                                                        |
-| "Individual Contributions": what each member contributed, and the challenges.                                                                           | not started |   0 | none                                                                                        |
-| The README must be in English.                                                                                                                          | done        | 100 |                                                                                             |
+| Requirement                                                                                                                                             | Status    |   % | Evidence                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | --: | --------------------------------------------------------------------------------------------------------- |
+| The first line must be in italics and read: _This project has been created as part of the 42 curriculum by <login1>, <login2>, ..._                     | in review |  90 | #456 adds it; on `main` the first line is still `# NotAnotherCards`, which is a **gap** until #456 merges |
+| A "Description" section: the project name, its goal, an overview, and the key features.                                                                 | in review |  90 | #456                                                                                                      |
+| An "Instructions" section: prerequisites, `.env` setup, step-by-step run instructions.                                                                  | in review |  90 | #456                                                                                                      |
+| A "Resources" section: references, and which AI tools were used for which tasks.                                                                        | in review |  90 | #456                                                                                                      |
+| "Team Information": each member, their roles, and their responsibilities.                                                                               | in review |  90 | #456                                                                                                      |
+| "Project Management": how the team organized the work, the tools, and the communication channels.                                                       | in review |  90 | #456                                                                                                      |
+| "Technical Stack": frontend, backend, database and why, other libraries, justification of major choices.                                                | in review |  90 | #456                                                                                                      |
+| "Database Schema": a description or a diagram of the tables and relations.                                                                              | in review |  90 | #456                                                                                                      |
+| "Features List": all implemented features, who worked on each, what each does.                                                                          | in review |  90 | #456                                                                                                      |
+| "Modules": all chosen modules, the point calculation, the justification (required for Modules of choice), how each was implemented, who worked on each. | in review |  90 | #456                                                                                                      |
+| "Individual Contributions": what each member contributed, and the challenges.                                                                           | in review |  90 | #456                                                                                                      |
+| The README must be in English.                                                                                                                          | done      | 100 |                                                                                                           |
 
 ## 4. Claimed modules
 
@@ -93,9 +92,9 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 - The web app must be a PWA with offline support and installability. **not started**: no manifest and no service worker in `apps/web`. The offline database exists (remelonDB), the PWA shell does not. Plan item A14. Very low priority since 2026-09-01, gamification first (section 6); not counted in the 17.
 
-### 4.4 Web: custom design system — Minor, 1 — in progress — 50%
+### 4.4 Web: custom design system — Minor, 1 — done — 100%
 
-- Make a custom design system with reusable components. It must include a color palette, typography, and icons. Minimum: 10 reusable components. **in progress**: the component count is met, 11 in `apps/web/src/components/ui`; palette, typography, and icons are not documented as a system, so one of the two requirements is met. Mobile has four hand-rolled primitives on the same palette names; adopting react-native-reusables is under discussion. Plan item A15.
+- Make a custom design system with reusable components. It must include a color palette, typography, and icons. Minimum: 10 reusable components. **done**: 15 components in `apps/web/src/components/ui`; `docs/design.md` documents the palette, typography, icons and the component inventory (#230, #474). Mobile uses the same palette tokens, and `pnpm check:design-docs` fails CI when the two palettes or the inventory drift (#478).
 
 ### 4.5 Web: advanced search — Minor, 1 — open — 10%
 
@@ -111,28 +110,26 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 - Handle streaming responses correctly. **done**: the playground streams generation (`POST /api/ai/playground/stream`, #80); usage recorded per run. `docs/ai-generation.md` describes the whole path.
 - Implement error handling and rate limiting. **done**: job quotas (`AI_MAX_*`), gateway errors mapped, LiteLLM per-key limits.
 
-### 4.8 Data and Analytics: data export and import — Minor, 1 — in review — 90%
+### 4.8 Data and Analytics: data export and import — Minor, 1 — done — 100%
 
-- Export data in multiple formats (JSON, CSV, XML, etc.). **done**: JSON and CSV, `packages/offline-db/src/export.ts` (#249, closes #192).
-- Import data with validation. **done**: Zod schema validation and data-integrity checks, `packages/offline-db/src/import.ts` (#249).
-- Support bulk operations. **done**: the whole import runs inside one `db.batch()` transaction, all-or-nothing (#249).
+- Export data in multiple formats (JSON, CSV, XML, etc.). **done**: JSON and CSV, `packages/offline-db/src/export.ts` (#296, closes #192).
+- Import data with validation. **done**: Zod schema validation and data-integrity checks, `packages/offline-db/src/import.ts` (#296).
+- Support bulk operations. **done**: the whole import runs inside one `db.batch()` transaction, all-or-nothing (#296).
 
-PR #249 is a draft opened 2026-09-04: lint, tests, and build pass; not yet merged.
-
-### 4.9 Gaming and user experience: gamification — Minor, 1 — not started — 0%
+### 4.9 Gaming and user experience: gamification — Minor, 1 — done — 100%
 
 Scope decided 2026-09-03: badges, leaderboards ranked across the whole user
 base, and daily challenges — 3 of the 6 listed options.
 
-- Implement at least 3 of: achievements, badges, leaderboards, XP or levels, daily challenges, rewards. **decided**: badges, leaderboards, daily challenges. Not started.
-- The system must be persistent and stored in the database. **not started**
-- Give visual feedback to users (notifications, progress bars, etc.). **not started**
-- Give clear rules and progression mechanics. **not started**. Plan item A13.
+- Implement at least 3 of: achievements, badges, leaderboards, XP or levels, daily challenges, rewards. **done**: badges (#367), a global leaderboard (#402) and daily challenges on the dashboard overview, on shared activity rules (#339).
+- The system must be persistent and stored in the database. **done**: badge awards and daily challenges are stored by `apps/api/src/gamification` (#359).
+- Give visual feedback to users (notifications, progress bars, etc.). **done**: progress bars for the daily goals on web and in the mobile overview (#419), and a notification on web when a challenge is completed.
+- Give clear rules and progression mechanics. **done**: the rules are one shared module used by the API and both clients (#339), and the overview states each goal and its progress.
 
-### 4.11 Modules of choice: mobile app — Major, 2 — in progress — 25%
+### 4.11 Modules of choice: mobile app — Major, 2 — in review — 90%
 
-- The module must be substantial and show technical complexity. **in progress, about 50% parity with web**: measured against #143's checklist, 8.75 of 17 items. Done: per-account offline database and sync (#151, #177), and sync now runs on Hermes after remelonDB 0.2.6 (#216, verified on a device against staging 2026-08-31 including a deck push); shared deck, card and review queries live in `@repo/offline-db` (#204, #211). Merged: onboarding and route guards (#210), deck list with create, edit and delete (#240), deck detail with card CRUD (#242). Not started: the flashcard viewer, settings, social sign-in (#293 open, blocked on #319), password recovery and change.
-- The README must justify: why this module, which technical challenges it addresses, how it adds value, and why it deserves Major status. **not started**: not in the README. This bullet is half the module's score, hence 25%.
+- The module must be substantial and show technical complexity. **done**: #143's checklist is closed. Per-account offline database and sync (#151, #177); onboarding and route guards (#210); deck list and deck detail with card create, edit and delete (#240, #242, #490); review with swipe answers (#387, #400, #435); overview with statistics, sync status, goals and achievements (#419); settings and profile editing (#358); Google sign-in and password reset (#293, #392); 2FA sign-in and management (#384); community decks and publishing (#462); AI fill-in for a word (#463); four interface languages (#475). Deck, card, review and study rules are shared with web through `@repo/offline-db`, `@repo/study` and `@repo/api-client` (#211, #431, #448). Signed release builds are published to an F-Droid repository and as GitHub releases (#401; 0.0.5 on 2026-10-05).
+- The README must justify: why this module, which technical challenges it addresses, how it adds value, and why it deserves Major status. **in review**: the Modules section of #456; the longer version is "Why a mobile app" in `docs/mobile.md`.
 - Trivial features or shortcuts cause rejection of the module. Note for the README.
 
 ### 4.12 DevOps: monitoring with Prometheus and Grafana — Major, 2 — done — 100%
@@ -184,39 +181,44 @@ All figures are derived from reactive local remelonDB queries and work
 offline. The optional deck filter follows active note-to-deck memberships;
 a note shared by several decks contributes to each of them.
 
-### 4.14 Accessibility and Internationalization: multiple languages — Minor, 1 — not started — 0%
+### 4.14 Accessibility and Internationalization: multiple languages — Minor, 1 — done — 100%
 
 Decided 2026-09-03.
 
-- Implement i18n (internationalization) system. **not started**
-- At least 3 complete language translations. **not started**
-- Language switcher in the UI. **not started**
-- All user-facing text must be translatable. **not started**
+- Implement i18n (internationalization) system. **done**: `@repo/i18n` with i18next, shared by web and mobile (#417).
+- At least 3 complete language translations. **done**: English, German, Spanish and Russian catalogs in `packages/i18n/src/catalogs`.
+- Language switcher in the UI. **done**: in the settings of both clients.
+- All user-facing text must be translatable. **done**: web (#428, #487, with a lint rule against literal JSX text) and mobile (#475), including validation messages from the shared schemas (#429) and accessibility labels (#468).
 
-### 4.15 User Management: 2FA — Minor, 1 — not started — 0%
+### 4.15 User Management: 2FA — Minor, 1 — done — 100%
 
 Decided 2026-09-03.
 
-- Implement a complete 2FA (Two-Factor Authentication) system for the users. **not started**
+- Implement a complete 2FA (Two-Factor Authentication) system for the users. **done**: TOTP with backup codes in the API (#324); enrollment, challenge and recovery on web (#364); sign-in and management on mobile (#384). `apps/api/test/two-factor-oauth.e2e-spec.ts` covers the interaction with Google sign-in.
 
-### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — in review — 90%
+### 4.16 Artificial Intelligence: content moderation AI — Minor, 1 — done, with a note — 100%
 
 Decided 2026-09-03.
 
 - Content moderation AI (auto moderation, auto deletion, auto warning, etc.).
-  **in review**: every card is checked by a classifier at publish (#263);
-  an unsafe card refuses publication and names the card and its category
-  (auto moderation, auto warning); verified on staging against the real
-  gateway 2026-09-10 (a harmful deck refused with 422, a clean deck
-  published). A signed-in report queues a thorough two-classifier re-check;
-  either classifier can automatically take down the exact public snapshot,
-  while an operator can take down content the models miss (#264). Every
-  classifier verdict, including safe opinions and nullable categories, is
-  stored and shown to the owner, with an on-demand streamed explanation,
-  and the report alone never hides a deck. The checked-in independent alias is
-  operational with ShieldGemma's tested `Yes`/`No` response contract. Do not
-  mark this complete until round two selects the final independent classifier
-  and the full report/re-check/owner-warning flow is verified on staging.
+  **done**: every card is checked by a classifier at publish (#332); an
+  unsafe card refuses publication and names the card and its category, and a
+  controversial one publishes with a warning (auto moderation, auto warning).
+  A signed-in report queues a re-check by two classifiers; either one can
+  automatically take down the exact public snapshot, and an operator can take
+  down content the models miss (#342). Every classifier verdict is stored and
+  shown to the owner, with an on-demand streamed explanation, and a report
+  alone never hides a deck. `docs/ai-generation.md` describes the whole path,
+  including the operator calls.
+
+Notes: on production, 2026-10-05, three decks of about 500 cards each were
+published; five harmless vocabulary cards came back as warnings and one was
+refused on staging earlier (#450 lists them and the benchmark behind the
+planned fix). A deck of about 1,500 cards does not fit the publish deadline
+(#449). Round two of the classifier benchmark has not been run, so
+ShieldGemma remains the independent classifier for re-checks. The report and
+operator endpoints are covered by `apps/api/test/sync/sharing.test.ts`; the
+report-to-takedown path has not been exercised by hand on production.
 
 ## 5. Modules not claimed
 
@@ -274,16 +276,14 @@ questions are kept below with the current status on each.
   written backup and recovery procedure, on top of the monitoring stack.
   Estimate: about 1 day.
 
-Arithmetic (2026-09-13): claimed 17. Merged 6 pts (framework, ORM, OAuth,
-monitoring — 4 modules). In review 2 pts (export/import, content moderation
-AI — 2 modules). In progress 6 pts (LLM 2, design system 1, mobile 2,
-activity analytics dashboard 1 — 4 modules). Not started 3 pts (gamification, multiple
-languages, 2FA — 3 modules). To reach 14, at most 3 of
-the remaining 11 points may be missing at evaluation; advanced search (1) is
-an additional reserve outside the 17.
+Arithmetic (2026-10-05): claimed 17, and all 13 modules are merged: 17
+points. One module bullet is still in review, the mobile app's README
+justification (#456); if it were missing at the evaluation, the mobile
+module's 2 points would be at risk and 15 would remain. Advanced search (1)
+is a reserve outside the 17 and has not been built.
 
-Before any of this: the required first line of the README. It gives 0 points
-and its absence rejects the project.
+Before any of this: the required first line of the README (#456). It gives 0
+points and its absence rejects the project.
 
 ## 7. Evaluation dry run
 
@@ -293,13 +293,14 @@ account switching, and representative validation/XSS checks. `pnpm e2e` uses
 stable Chrome against the Compose/nginx stack at desktop and phone widths,
 with a strict browser-console gate and overflow/critical-control clipping checks.
 These are evidence for the covered paths, not complete accessibility, responsive
-layout, or security certification; #318's long-content behavior is still pending.
+layout, or security certification.
 See the README for setup and failure artifacts.
 
-The mechanical checks are becoming CI jobs (#251 fresh-clone start and
-credential scan, #252 browser flows and console, #253 hostile input).
-Until they land they are manual; after, the dry run is green CI plus one
-live rehearsal — CI proves the code, it cannot rehearse a demonstration.
+Of the mechanical checks, the browser flows and console gate run in CI as
+the Browser tests job (#252, merged as #325). The fresh-clone start with the
+credential scan (#251) and the hostile-input corpus (#253) are open, so
+those two stay manual. The dry run is green CI plus one live rehearsal — CI
+proves the code, it cannot rehearse a demonstration.
 
 - **Rehearse the opening**: clone into an empty directory, `.env.example`
   only, `docker compose up` — the evaluation starts with exactly this,
