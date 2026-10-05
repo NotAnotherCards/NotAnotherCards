@@ -39,11 +39,11 @@ For a comprehensive guide on registering OAuth credentials for local testing, ch
 
 Better Auth registers standard endpoints automatically, and we extend it with custom flow endpoints:
 
-| Method | Endpoint Path             | Payload                                                | Description                                        |
-| :----- | :------------------------ | :----------------------------------------------------- | :------------------------------------------------- |
-| `POST` | `/api/auth/sign-up/email` | `{ email, password, name, timezone }`                  | Registers a new user                               |
-| `POST` | `/api/auth/sign-in/email` | `{ email, password }`                                  | Authenticates user & sets session cookies          |
-| `POST` | `/api/auth/sign-out`      | _None_                                                 | Clears the session                                 |
+| Method | Endpoint Path             | Payload                               | Description                               |
+| :----- | :------------------------ | :------------------------------------ | :---------------------------------------- |
+| `POST` | `/api/auth/sign-up/email` | `{ email, password, name, timezone }` | Registers a new user                      |
+| `POST` | `/api/auth/sign-in/email` | `{ email, password }`                 | Authenticates user & sets session cookies |
+| `POST` | `/api/auth/sign-out`      | _None_                                | Clears the session                        |
 | `POST` | `/api/auth/onboard`       | `{ username, native_language_id, target_language_id }` | Creates user profile and marks onboarding complete |
 
 ## Database Schema

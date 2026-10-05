@@ -51,6 +51,7 @@ Follow these steps to obtain a `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`:
 
 ---
 
+
 ## 3. Environment Configuration
 
 Once you have gathered the credentials, update your environment files.
