@@ -101,31 +101,31 @@ describe('Statistics dashboard', () => {
   });
 
   it.each([
-    [1, 'en', '1 day current', '1 day longest'],
-    [2, 'en', '2 days current', '2 days longest'],
-    [5, 'en', '5 days current', '5 days longest'],
-    [1, 'ru', '1 день сейчас', '1 день максимум'],
-    [2, 'ru', '2 дня сейчас', '2 дня максимум'],
-    [5, 'ru', '5 дней сейчас', '5 дней максимум'],
-    [1, 'de', '1 Tag aktuell', '1 Tag am längsten'],
-    [2, 'de', '2 Tage aktuell', '2 Tage am längsten'],
-    [5, 'de', '5 Tage aktuell', '5 Tage am längsten'],
-    [1, 'es', '1 día actual', '1 día máximo'],
-    [2, 'es', '2 días actual', '2 días máximo'],
-    [5, 'es', '5 días actual', '5 días máximo'],
+    [1, 'en', 'Learning streak', '1 day current', '1 day longest'],
+    [2, 'en', 'Learning streak', '2 days current', '2 days longest'],
+    [5, 'en', 'Learning streak', '5 days current', '5 days longest'],
+    [1, 'ru', 'Серия обучения', '1 день сейчас', '1 день максимум'],
+    [2, 'ru', 'Серия обучения', '2 дня сейчас', '2 дня максимум'],
+    [5, 'ru', 'Серия обучения', '5 дней сейчас', '5 дней максимум'],
+    [1, 'de', 'Lernserie', '1 Tag aktuell', '1 Tag am längsten'],
+    [2, 'de', 'Lernserie', '2 Tage aktuell', '2 Tage am längsten'],
+    [5, 'de', 'Lernserie', '5 Tage aktuell', '5 Tage am längsten'],
+    [1, 'es', 'Racha de aprendizaje', '1 día actual', '1 día máximo'],
+    [2, 'es', 'Racha de aprendizaje', '2 días actual', '2 días máximo'],
+    [5, 'es', 'Racha de aprendizaje', '5 días actual', '5 días máximo'],
   ])(
     'renders a %i-day streak in %s',
-    async (days, locale, current, longest) => {
+    async (days, locale, label, current, longest) => {
       reviews = reviewsForStreak(days);
       await i18n.changeLanguage(locale);
 
       render(<Statistics />);
 
       expect(
-        within(screen.getByLabelText('Learning streak')).getByText(current),
+        within(screen.getByLabelText(label)).getByText(current),
       ).toBeInTheDocument();
       expect(
-        within(screen.getByLabelText('Learning streak')).getByText(longest),
+        within(screen.getByLabelText(label)).getByText(longest),
       ).toBeInTheDocument();
     },
   );
@@ -146,7 +146,7 @@ describe('Statistics dashboard', () => {
 
     render(<Statistics />);
 
-    const learningStreak = within(screen.getByLabelText('Learning streak'));
+    const learningStreak = within(screen.getByLabelText('Серия обучения'));
     expect(learningStreak.getByText('2 дня сейчас')).toBeInTheDocument();
     expect(learningStreak.getByText('5 дней максимум')).toBeInTheDocument();
   });
