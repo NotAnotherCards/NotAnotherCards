@@ -51,6 +51,7 @@ vi.mock('@/hooks/useStore', () => ({
     decks,
     getCardsForDeck: () => [],
     getCardsCount: () => 0,
+    getCardsWithoutDeck: () => [],
     isLoading: false,
     isTakenOver: false,
     error: null,
@@ -97,7 +98,13 @@ describe('deck CRUD error handling', () => {
     it('closes the dialog once the write succeeds', async () => {
       createDeck.mockResolvedValue({ id: 'deck-1' });
 
-      render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
+      render(
+        <DeckList
+          onSelectDeck={vi.fn()}
+          onSelectNoDeck={vi.fn()}
+          onStartReview={vi.fn()}
+        />,
+      );
       openForm();
       fillTitleAndSubmit('Spanish Verbs');
 
@@ -107,7 +114,13 @@ describe('deck CRUD error handling', () => {
     it('keeps the dialog open when the write fails', async () => {
       createDeck.mockRejectedValue(new Error('database not initialized'));
 
-      render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
+      render(
+        <DeckList
+          onSelectDeck={vi.fn()}
+          onSelectNoDeck={vi.fn()}
+          onStartReview={vi.fn()}
+        />,
+      );
       openForm();
       fillTitleAndSubmit('Spanish Verbs');
 
@@ -124,7 +137,13 @@ describe('deck CRUD error handling', () => {
   describe('edit', () => {
     const openForm = () => {
       decks = [existingDeck];
-      render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
+      render(
+        <DeckList
+          onSelectDeck={vi.fn()}
+          onSelectNoDeck={vi.fn()}
+          onStartReview={vi.fn()}
+        />,
+      );
       fireEvent.click(screen.getByTitle('Edit'));
     };
 
@@ -144,7 +163,13 @@ describe('deck CRUD error handling', () => {
   describe('delete', () => {
     const openDelete = () => {
       decks = [existingDeck];
-      render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
+      render(
+        <DeckList
+          onSelectDeck={vi.fn()}
+          onSelectNoDeck={vi.fn()}
+          onStartReview={vi.fn()}
+        />,
+      );
       fireEvent.click(screen.getByTitle('Delete'));
     };
 
@@ -289,7 +314,13 @@ describe('deck CRUD error handling', () => {
       deleteDeck.mockRejectedValue(new Error('database not initialized'));
       decks = [existingDeck];
 
-      render(<DeckList onSelectDeck={vi.fn()} onStartReview={vi.fn()} />);
+      render(
+        <DeckList
+          onSelectDeck={vi.fn()}
+          onSelectNoDeck={vi.fn()}
+          onStartReview={vi.fn()}
+        />,
+      );
       fireEvent.click(screen.getByTitle('Delete'));
       fireEvent.click(confirmDeleteButton()!);
 
