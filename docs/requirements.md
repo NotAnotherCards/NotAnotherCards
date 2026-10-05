@@ -40,16 +40,16 @@ The subject says the project is rejected if one of these is not met.
 | The project must be a web application. It must have a frontend, a backend, and a database.                                                                                                                                                                                                                        | done              | 100 | `apps/web`, `apps/api`, PostgreSQL in `docker-compose.yml`                                                                                  |
 | The team must use Git. Commit messages must be clear. The repository must show commits from all team members and a proper distribution of work.                                                                                                                                                                   | done              | 100 | 10 authors on `main` (`git shortlog -sn`)                                                                                                   |
 | Deployment must use containers (Docker or equivalent). It must start with one command.                                                                                                                                                                                                                            | done              | 100 | `docker compose up`, `README.md`                                                                                                            |
-| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | not verified      |  90 | no evidence recorded                                                                                                                        |
-| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | not verified      |  70 | A21 in the plan                                                                                                                             |
+| The website must work with the latest stable Google Chrome.                                                                                                                                                                                                                                                       | in review         |  90 | #252: stable Chrome against Compose/nginx                                                                                                                        |
+| No warnings or errors about the JavaScript code may appear in the browser console. (Changed in 21.2: only JavaScript warnings and errors count.)                                                                                                                                                                  | in review         |  70 | #252: strict console gate in every browser context                                                                                                                             |
 | The project must include a Privacy Policy page and a Terms of Service page. The pages must be easy to reach, for example from a footer. They must have relevant content. They must not be empty or placeholders.                                                                                                  | in review         |  90 | public `/privacy` and `/terms` in `apps/landing`, linked from its footer and covered by `apps/landing/src/App.test.tsx` (PRs #374 and #379) |
-| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | per-user databases and sync (#151, #177); updates arrive on sync triggers, not by push                                                      |
+| The website must support multiple users at the same time. Users must be able to work at the same time without conflicts or performance problems. Concurrent actions must be handled correctly. Real-time updates must reach all connected users when applicable. No data corruption or race conditions may occur. | done, with a note |  90 | #252: three-context isolation/sync and account switching; sync uses triggers, not push                                                      |
 
 ## 2. Technical requirements (subject III.3)
 
 | Requirement                                                                                                                                               | Status      |   % | Evidence                                                     |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | --: | ------------------------------------------------------------ |
-| The frontend must be clear, responsive, and accessible on all devices.                                                                                    | in progress |  60 | A15, A16 in the plan                                         |
+| The frontend must be clear, responsive, and accessible on all devices.                                                                                    | in progress |  60 | #252: desktop/phone viewport and clipping checks; accessibility remains in progress                                         |
 | Use a CSS framework or a styling solution.                                                                                                                | done        | 100 | Tailwind CSS                                                 |
 | Store credentials in a local `.env` file that Git ignores. Supply an `.env.example` file.                                                                 | done        | 100 | `apps/api/.env.example`, `.gitignore`                        |
 | The database must have a clear schema and well-defined relations.                                                                                         | done        | 100 | `docs/db-schemas.md`                                         |
@@ -103,7 +103,7 @@ Points: Major = 2, Minor = 1. Total claimed: 17.
 
 ### 4.6 User Management: OAuth 2.0 — Minor, 1 — done — 100%
 
-- Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google and Facebook in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
+- Implement remote authentication with OAuth 2.0 (Google, GitHub, 42, etc.). **done**: Google in `apps/api/src/auth/auth.service.ts`, tested in `social-login.e2e-spec.ts`.
 
 ### 4.7 Artificial Intelligence: complete LLM system interface — Major, 2 — done — 100%
 
@@ -287,6 +287,15 @@ and its absence rejects the project.
 
 ## 7. Evaluation dry run
 
+Browser coverage for #252 is implemented in `apps/web/e2e`: registration,
+onboarding, deck/card edits, review ratings, three-context sync/isolation,
+account switching, and representative validation/XSS checks. `pnpm e2e` uses
+stable Chrome against the Compose/nginx stack at desktop and phone widths,
+with a strict browser-console gate and overflow/critical-control clipping checks.
+These are evidence for the covered paths, not complete accessibility, responsive
+layout, or security certification; #318's long-content behavior is still pending.
+See the README for setup and failure artifacts.
+
 The mechanical checks are becoming CI jobs (#251 fresh-clone start and
 credential scan, #252 browser flows and console, #253 hostile input).
 Until they land they are manual; after, the dry run is green CI plus one
@@ -298,8 +307,8 @@ live rehearsal — CI proves the code, it cannot rehearse a demonstration.
   touches before running it in front of an evaluator.
 - **Rehearse the demo in real Chrome**: latest stable, DevTools open,
   console clean, main flows at desktop and phone width, two accounts
-  side by side with isolated data and working sync. CI's chromium is not
-  the subject's "latest stable Google Chrome", so one real pass stays.
+  side by side with isolated data and working sync. The browser suite uses
+  stable Chrome, but the live rehearsal still covers the full demonstration.
 - **People**: all five attend. Each of us can explain and demo what we
   built and point at the commits. Architecture, stack choices and the
   work split are explainable by at least two of us. Everyone knows the

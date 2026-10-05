@@ -33,11 +33,6 @@ export class AuthService {
     const googleClientSecret = this.configService.get<string>(
       'GOOGLE_CLIENT_SECRET',
     );
-    const facebookClientId =
-      this.configService.get<string>('FACEBOOK_CLIENT_ID');
-    const facebookClientSecret = this.configService.get<string>(
-      'FACEBOOK_CLIENT_SECRET',
-    );
 
     const socialProviders: Record<
       string,
@@ -49,14 +44,18 @@ export class AuthService {
         clientSecret: googleClientSecret,
       };
     }
-    if (facebookClientId && facebookClientSecret) {
-      socialProviders.facebook = {
-        clientId: facebookClientId,
-        clientSecret: facebookClientSecret,
-      };
-    }
 
     const auth = betterAuth({
+      advanced: {
+        ipAddress: {
+          trustedProxies: (
+            this.configService.get<string>('BETTER_AUTH_TRUSTED_PROXIES') ?? ''
+          )
+            .split(',')
+            .map((proxy) => proxy.trim())
+            .filter(Boolean),
+        },
+      },
       database: drizzleAdapter(this.db, {
         provider: 'pg',
       }),
@@ -106,7 +105,7 @@ export class AuthService {
         // Registered ONLY when OAUTH_TEST_PROVIDER_BASE_URL is set, which
         // happens exclusively in the e2e harness (real OAuth cannot run in
         // CI). Points at a loopback stub so the test drives a genuine
-        // OAuth round-trip without touching Google/Facebook.
+        // OAuth round-trip without touching external providers like Google.
         ...(this.configService.get<string>('OAUTH_TEST_PROVIDER_BASE_URL')
           ? [
               genericOAuth({

@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/lib/i18n';
 import { Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { InfoPanel } from '@/components/info-panel';

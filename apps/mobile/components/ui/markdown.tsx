@@ -17,27 +17,33 @@ import {
   type MarkedStyles,
 } from 'react-native-marked';
 import { isSafeUrl } from '@repo/schemas';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 interface MarkdownProps {
   content: string;
   inline?: boolean;
+  // The review card's look, as web's: card is text-3xl bold and centred
+  // with lists smaller and regular; card-detail is the smaller text below a
+  // word card's translation.
+  variant?: 'card' | 'card-detail';
 }
 
 const themes = {
   light: {
     colors: {
-      text: '#0a0a0a',
-      link: '#171717',
-      code: '#f5f5f5',
-      border: '#e5e5e5',
+      text: '#18181b',
+      link: '#5865b5',
+      code: '#f2f6f2',
+      border: '#e4e4e7',
     },
   },
   dark: {
     colors: {
       text: '#fafafa',
-      link: '#e5e5e5',
-      code: '#262626',
-      border: '#232323',
+      link: '#9da8ec',
+      code: '#202023',
+      border: '#3f3f46',
     },
   },
 } as const;
@@ -52,6 +58,29 @@ const styles: MarkedStyles = {
   },
   codeText: { fontFamily: 'monospace' },
   link: { fontStyle: 'normal', textDecorationLine: 'underline' },
+};
+
+const cardDetailText: TextStyle = {
+  fontSize: 20,
+  lineHeight: 28,
+  fontWeight: '400',
+  textAlign: 'center',
+};
+const cardStyles: MarkedStyles = {
+  ...styles,
+  paragraph: { paddingVertical: 0, justifyContent: 'center' },
+  text: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  list: { marginTop: 16, alignItems: 'center' },
+  li: cardDetailText,
+};
+const cardDetailStyles: MarkedStyles = {
+  ...cardStyles,
+  text: cardDetailText,
 };
 
 const blockedUrl = 'unsafe-markdown:';
@@ -113,8 +142,14 @@ function inheritTextStyle(
 }
 
 class SafeRenderer extends Renderer {
-  constructor(private readonly inline: boolean) {
-    super();
+  // A review card's text is not selectable: a finger resting on it before
+  // a swipe would select a word. Everywhere else text can be selected.
+  constructor(
+    private readonly inline: boolean,
+    selectable: boolean,
+    private readonly t: TFunction,
+  ) {
+    super(selectable ? undefined : { selectable: false });
   }
 
   paragraph(children: ReactNode[], style?: ViewStyle): ReactNode {
@@ -195,9 +230,8 @@ class SafeRenderer extends Renderer {
     return (
       <NativeText
         key={this.getKey()}
-        selectable
         accessibilityRole="link"
-        accessibilityHint="Opens in a new window"
+        accessibilityHint={this.t('mobile.messages.open_link')}
         accessibilityLabel={title}
         onPress={() => openSafeUrl(href)}
         style={safeStyle}
@@ -219,7 +253,9 @@ class SafeRenderer extends Renderer {
         key={this.getKey()}
         source={{ uri }}
         accessibilityRole="image"
-        accessibilityLabel={alt || title || 'Card image'}
+        accessibilityLabel={
+          alt || title || this.t('mobile.messages.card_image')
+        }
         testID="markdown-image"
         style={[
           {
@@ -251,7 +287,7 @@ class SafeRenderer extends Renderer {
         {this.inline ? (
           <NativeText
             accessibilityRole="link"
-            accessibilityHint="Opens in a new window"
+            accessibilityHint={this.t('mobile.messages.open_link')}
             accessibilityLabel={title ?? alt}
             onPress={() => openSafeUrl(href)}
           >
@@ -260,7 +296,7 @@ class SafeRenderer extends Renderer {
         ) : (
           <Pressable
             accessibilityRole="link"
-            accessibilityHint="Opens in a new window"
+            accessibilityHint={this.t('mobile.messages.open_link')}
             accessibilityLabel={title ?? alt}
             onPress={() => openSafeUrl(href)}
           >
@@ -331,14 +367,23 @@ class SafeRenderer extends Renderer {
   }
 }
 
-export function Markdown({ content, inline = false }: MarkdownProps) {
+export function Markdown({ content, inline = false, variant }: MarkdownProps) {
+  const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
-  const renderer = useMemo(() => new SafeRenderer(inline), [inline]);
+  const renderer = useMemo(
+    () => new SafeRenderer(inline, !variant, t),
+    [inline, variant, t],
+  );
   const elements = useMarkdown(content, {
     colorScheme,
     renderer,
     hooks: safeUrlHooks,
-    styles,
+    styles:
+      variant === 'card'
+        ? cardStyles
+        : variant === 'card-detail'
+          ? cardDetailStyles
+          : styles,
     theme: themes[colorScheme === 'dark' ? 'dark' : 'light'],
   });
 

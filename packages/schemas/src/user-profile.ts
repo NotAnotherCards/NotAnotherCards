@@ -1,17 +1,22 @@
 // src/lib/schemas/profile.ts
 import { z } from 'zod';
-export const userProfileFormSchema = z.object({
-  username: z
-    .string()
-    .min(3, 'profile.validation.username_min')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'profile.validation.username_regex'),
-  native_language_id: z
-    .string()
-    .min(1, 'profile.validation.native_language_required'),
-  target_language_id: z
-    .string()
-    .min(1, 'profile.validation.target_language_required'),
-});
+export const userProfileFormSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3, 'profile.validation.username_min')
+      .regex(/^[a-zA-Z0-9_-]+$/, 'profile.validation.username_regex'),
+    native_language_id: z
+      .string()
+      .min(1, 'profile.validation.native_language_required'),
+    target_language_id: z
+      .string()
+      .min(1, 'profile.validation.target_language_required'),
+  })
+  .refine((data) => data.native_language_id !== data.target_language_id, {
+    message: 'profile.validation.languages_must_differ',
+    path: ['target_language_id'],
+  });
 export type ProfileFormValues = z.infer<typeof userProfileFormSchema>;
 
 // Placeholder ids until a languages table exists; the ids are what
@@ -79,9 +84,12 @@ export function languageFor(
   return LANGUAGES.find((language) => language.value === languageId);
 }
 
-/** Flag and name, for a picker. Prompts want `name` on its own. */
-export function languageLabel(language: Language): string {
-  return `${language.flag} ${language.name}`;
+/** Flag and display name, for a picker. Prompts still use `name` on its own. */
+export function languageLabel(
+  language: Language,
+  displayName: string = language.name,
+): string {
+  return `${language.flag} ${displayName}`;
 }
 
 export function gendersFor(

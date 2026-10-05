@@ -1,3 +1,4 @@
+import { formatNumber } from '@repo/i18n';
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,8 +30,19 @@ import {
   type ImportOptions,
 } from '@repo/offline-db';
 
+const importCountFields = [
+  ['decks', 'dashboard.settings.import_export.decks_label', 'text-primary'],
+  ['notes', 'dashboard.settings.import_export.notes_label', 'text-violet-500'],
+  ['cards', 'dashboard.settings.import_export.cards_label', 'text-emerald-500'],
+  [
+    'review_events',
+    'dashboard.settings.import_export.reviews_label',
+    'text-amber-500',
+  ],
+] as const;
+
 export function ImportExport() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { db } = useStore();
 
   // ── Export state ──
@@ -451,7 +463,17 @@ export function ImportExport() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {selectedFile
-                        ? `${(selectedFile.size / 1024).toFixed(1)} KB · ${detectFormat(selectedFile).toUpperCase()}`
+                        ? t('dashboard.settings.import_export.file_summary', {
+                            size: formatNumber(
+                              selectedFile.size / 1024,
+                              i18n.resolvedLanguage || 'en',
+                              {
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1,
+                              },
+                            ),
+                            format: detectFormat(selectedFile).toUpperCase(),
+                          })
                         : ''}
                     </p>
                   </div>
@@ -467,24 +489,17 @@ export function ImportExport() {
 
                 {/* Counts preview */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(
-                    [
-                      ['Decks', importReport.counts.decks, 'text-primary'],
-                      ['Notes', importReport.counts.notes, 'text-violet-500'],
-                      ['Cards', importReport.counts.cards, 'text-emerald-500'],
-                      [
-                        'Reviews',
-                        importReport.counts.review_events,
-                        'text-amber-500',
-                      ],
-                    ] as const
-                  ).map(([label, count, color]) => (
+                  {importCountFields.map(([field, labelKey, color]) => (
                     <div
-                      key={label}
+                      key={field}
                       className="p-3 rounded-xl border border-border/40 bg-muted/10 text-center"
                     >
-                      <p className={`text-lg font-bold ${color}`}>{count}</p>
-                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <p className={`text-lg font-bold ${color}`}>
+                        {importReport.counts[field]}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t(labelKey)}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -505,7 +520,11 @@ export function ImportExport() {
                         >
                           <span className="font-mono shrink-0 opacity-70">
                             {err.path ??
-                              (err.row ? `row ${err.row}` : err.code)}
+                              (err.row
+                                ? t('dashboard.settings.import_export.row', {
+                                    row: err.row,
+                                  })
+                                : err.code)}
                           </span>
                           <span>{err.message}</span>
                         </div>

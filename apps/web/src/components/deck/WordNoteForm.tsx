@@ -117,14 +117,22 @@ export function WordNoteForm({
   const hasLegacyPartOfSpeech =
     Boolean(initialPartOfSpeech) &&
     !PARTS_OF_SPEECH.some(([value]) => value === initialPartOfSpeech);
-  // "Word in German", "Translation in English": the pair is the deck's, and
-  // naming it saves the user guessing which box is which.
-  const targetName = languageFor(targetLanguageId)?.name;
-  const nativeName = languageFor(nativeLanguageId)?.name;
-  const wordLabel = targetName ? `Word in ${targetName}` : 'Word';
-  const translationLabel = nativeName
-    ? `Translation in ${nativeName}`
-    : 'Translation';
+  // The pair is the deck's. Naming each field saves the user guessing which
+  // box is which, while language_forms supplies the grammar each UI locale
+  // needs (for example, Russian "на немецком").
+  const targetLanguage = languageFor(targetLanguageId);
+  const nativeLanguage = languageFor(nativeLanguageId);
+  const languageIn = (locale: string) => t(`language_forms.in.${locale}`);
+  const wordLabel = targetLanguage
+    ? t('deck.word_form.word_in', {
+        language: languageIn(targetLanguage.locale),
+      })
+    : t('deck.word_form.word_label');
+  const translationLabel = nativeLanguage
+    ? t('deck.word_form.translation_in', {
+        language: languageIn(nativeLanguage.locale),
+      })
+    : t('deck.word_form.translation_label');
   const [showDetails, setShowDetails] = useState(
     alwaysShowDetails ||
       DETAIL_FIELDS.some(([name]) => Boolean(initialData?.[name])) ||
@@ -183,10 +191,7 @@ export function WordNoteForm({
         const changed = generatedKeys.some(
           (key) => before[key] !== current[key],
         );
-        if (changed)
-          throw new Error(
-            'You edited the form while AI was working. Your edits were kept; click Fill with AI to try again.',
-          );
+        if (changed) throw new Error(t('deck.word_generation.edited'));
         applyCandidate(candidate);
       },
     };
@@ -451,7 +456,9 @@ export function WordNoteForm({
               />
             )}
             {staleCandidate && (
-              <FormErrorMessage message="The deck languages changed. Generate a new candidate or reopen the form before saving." />
+              <FormErrorMessage
+                message={t('deck.word_generation.languages_changed')}
+              />
             )}
             {error && <FormErrorMessage message={error} />}
             <div className="flex gap-2 w-full">

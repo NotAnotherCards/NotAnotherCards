@@ -37,7 +37,7 @@ export function userDbName(userId: string): string {
 }
 
 export const schema = appSchema({
-  version: 6,
+  version: 7,
   tables: [
     userDecks,
     userNotes,
@@ -167,6 +167,17 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 7,
+      steps: [
+        addColumns({
+          table: 'user_profiles',
+          columns: {
+            target_language_active: column.boolean().optional(),
+          },
+        }),
+      ],
+    },
   ],
 });
 
@@ -183,4 +194,8 @@ export * from './queries.js';
 export * from './export-import-types.js';
 export * from './export.js';
 export * from './import.js';
-export { rejectedSummary, REJECTION_EXPLANATION } from './sync-status.js';
+export {
+  rejectedSummary,
+  rejectionsConcernDeck,
+  REJECTION_EXPLANATION,
+} from './sync-status.js';

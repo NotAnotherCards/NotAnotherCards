@@ -1,0 +1,10 @@
+# Exercise the normal images, migrations, health checks, and nginx routes.
+# Only nginx is exposed; API and database connections stay inside this stack.
+services:
+  postgres:
+    ports: !reset []
+  api:
+    ports: !reset []
+  web:
+    ports: !override
+      - '127.0.0.1:4173:80'

@@ -17,7 +17,6 @@ import {
   BookOpen,
   Sparkles,
   Mail,
-  Library,
   RefreshCw,
   Loader2,
   AlertCircle,
@@ -108,14 +107,14 @@ function DashboardSyncStatus() {
 
   const { count: rejected, details: rejectionDetails } = rejectedSummary(state);
   const statusColor = rejected
-    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+    ? 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300'
     : state.status === 'idle'
-      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+      ? 'bg-sage text-sage-foreground'
       : state.status === 'syncing'
         ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse'
         : state.status === 'error'
           ? 'bg-destructive/10 text-destructive'
-          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+          : 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300';
 
   return (
     <div className="flex items-center gap-1.5 font-semibold">
@@ -160,6 +159,15 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     error: sharedDecksError,
   } = useSharedDecks();
   const { importDeck, importingIds, error: importError } = useImportDeck();
+  const [importedDecks, setImportedDecks] = useState<
+    Record<
+      string,
+      {
+        deckId: string;
+        status: 'syncing' | 'pending' | 'ready';
+      }
+    >
+  >({});
   const {
     reportDeck,
     reportingIds,
@@ -192,8 +200,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     now: Date.now(),
   });
   const handleStartReview = () => {
-    if (target === 'nothing-due') return;
-    if (target === 'library') onChooseDeck();
+    if (target === 'library' || target === 'nothing-due') onChooseDeck();
     else void navigate({ to: '/deck-review', search: { deckId: target } });
   };
 
@@ -206,7 +213,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       }),
       description: t('dashboard.overview.stats.due_for_review'),
       icon: Clock,
-      color: 'text-emerald-500 bg-emerald-500/10',
+      color: 'text-sage-foreground bg-sage',
     },
     {
       title: t('dashboard.overview.stats.personal_dictionary'),
@@ -215,24 +222,21 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       }),
       description: t('dashboard.overview.stats.added_to_collection'),
       icon: BookMarked,
-      color: 'text-blue-500 bg-blue-500/10',
+      color: 'text-pine bg-pine/10',
     },
     {
       title: t('dashboard.overview.stats.learning_streak'),
-      value:
-        streak === 1
-          ? t('dashboard.overview.stats.days_one')
-          : t('dashboard.overview.stats.days_other', { count: streak }),
+      value: t('dashboard.overview.stats.days', { count: streak }),
       description: t('dashboard.overview.stats.daily_streak'),
       icon: Flame,
-      color: 'text-orange-500 bg-orange-500/10',
+      color: 'text-rose-500 bg-rose-500/10',
     },
     {
       title: t('dashboard.overview.stats.words_learned'),
       value: formatNumber(learnedNotes, locale),
       description: t('dashboard.overview.stats.notes_reviewed'),
       icon: GraduationCap,
-      color: 'text-purple-500 bg-purple-500/10',
+      color: 'text-primary bg-primary/10',
     },
   ];
 
@@ -461,7 +465,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       {/* Overview Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
-        <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
+        <Card className="lg:col-span-1 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center gap-4 pb-4">
             <div className="size-14 rounded-full bg-linear-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xl shadow-inner border border-primary/20">
               {user.name
@@ -495,7 +499,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               <span
                 className={`font-semibold px-2 py-0.5 rounded-full transition-colors duration-300 ${
                   isOnline
-                    ? 'bg-emerald-500/10 dark:text-emerald-400'
+                    ? 'bg-sage text-sage-foreground'
                     : 'bg-destructive/10 text-destructive animate-pulse'
                 }`}
               >
@@ -517,9 +521,8 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 className="flex-1 cursor-pointer gap-1.5"
                 size="sm"
                 onClick={handleStartReview}
-                disabled={target === 'nothing-due'}
               >
-                <Library className="size-3.5" />
+                <BookOpen className="size-3.5" />
                 {t('dashboard.overview.profile.start_review')}
               </Button>
             </div>
@@ -533,7 +536,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             return (
               <Card
                 key={i}
-                className="border border-border/60 hover:shadow-md transition-all duration-300"
+                className="hover:shadow-lg transition-all duration-300"
               >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <span className="text-sm font-medium text-muted-foreground">
@@ -560,7 +563,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       {/* Tables and List sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Explore Dictionaries */}
-        <Card className="lg:col-span-2 border border-border/60 hover:shadow-md transition-all duration-300">
+        <Card className="lg:col-span-2 hover:shadow-lg transition-all duration-300">
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <BookOpen className="size-4 text-primary" />
@@ -571,6 +574,25 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
+            {sharedDecks
+              .filter(
+                (deck) =>
+                  importedDecks[deck.id]?.status === 'pending' &&
+                  !store.decks.some(
+                    (local) => local.id === importedDecks[deck.id].deckId,
+                  ),
+              )
+              .map((deck) => (
+                <p
+                  key={deck.id}
+                  role="status"
+                  className="mx-6 mt-4 text-sm text-muted-foreground"
+                >
+                  {t('dashboard.overview.community.import_pending', {
+                    title: deck.title,
+                  })}
+                </p>
+              ))}
             {(importError || (reportError && !reportingDeck)) && (
               <div className="mx-6 mt-4 p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20 flex items-center gap-2">
                 <AlertCircle className="size-4" />
@@ -645,7 +667,14 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                               size="sm"
                               className="cursor-pointer"
                               disabled={reportingIds.has(deck.id)}
-                              aria-label={`Report ${deck.title || 'deck'}`}
+                              aria-label={t(
+                                'dashboard.overview.community.report_deck',
+                                {
+                                  deck:
+                                    deck.title ||
+                                    t('dashboard.overview.community.untitled'),
+                                },
+                              )}
                               onClick={() => {
                                 setReportError(null);
                                 setReportReason('');
@@ -659,16 +688,45 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                               variant="outline"
                               size="sm"
                               className="cursor-pointer min-w-17.5"
-                              disabled={importingIds.has(deck.id)}
+                              disabled={
+                                importingIds.has(deck.id) ||
+                                !!importedDecks[deck.id]
+                              }
                               onClick={async () => {
                                 const result = await importDeck(deck.id);
                                 if (result) {
-                                  controller?.syncNow();
+                                  setImportedDecks((prev) => ({
+                                    ...prev,
+                                    [deck.id]: {
+                                      deckId: result.deckId,
+                                      status: 'syncing',
+                                    },
+                                  }));
+                                  const state = await controller?.syncNow();
+                                  const synced =
+                                    state &&
+                                    (state.status === 'idle' ||
+                                      state.status === 'resync-required') &&
+                                    state.lastResult &&
+                                    // a run another tab locked out
+                                    // transferred nothing
+                                    state.lastResult.lease === 'acquired' &&
+                                    state.lastResult.rejected === 0;
+                                  setImportedDecks((prev) => ({
+                                    ...prev,
+                                    [deck.id]: {
+                                      deckId: result.deckId,
+                                      status: synced ? 'ready' : 'pending',
+                                    },
+                                  }));
                                 }
                               }}
                             >
-                              {importingIds.has(deck.id) ? (
+                              {importingIds.has(deck.id) ||
+                              importedDecks[deck.id]?.status === 'syncing' ? (
                                 <Loader2 className="size-4 animate-spin" />
+                              ) : importedDecks[deck.id] ? (
+                                t('dashboard.overview.community.imported')
                               ) : (
                                 t('dashboard.overview.community.import')
                               )}
@@ -685,10 +743,10 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         </Card>
 
         {/* Daily Learning Goals */}
-        <Card className="lg:col-span-1 border border-border/60 hover:shadow-md transition-all duration-300">
+        <Card className="lg:col-span-1 hover:shadow-lg transition-all duration-300">
           <CardHeader className="border-b border-border/40 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Sparkles className="size-4 text-amber-500" />
+              <Sparkles className="size-4 text-yellow-400" />
               {t('dashboard.overview.goals.daily_learning_goals')}
             </CardTitle>
             <CardDescription>
@@ -711,16 +769,18 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 </p>
                 <Progress
                   value={quest.percent}
-                  aria-label={`${quest.title} progress`}
+                  aria-label={t('dashboard.overview.goals.progress', {
+                    title: quest.title,
+                  })}
                   className="h-1.5 w-full"
-                  indicatorClassName="bg-linear-to-r from-amber-500 to-amber-400"
+                  indicatorClassName="bg-linear-to-r from-yellow-400 to-yellow-300"
                 />
                 <div className="flex justify-end">
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                       quest.percent === 100
-                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        ? 'bg-sage text-sage-foreground'
+                        : 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-300'
                     }`}
                   >
                     {quest.reward}
@@ -737,7 +797,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
       </div>
 
       {/* Achievements */}
-      <Card className="border border-border/60 hover:shadow-md transition-all duration-300">
+      <Card className="hover:shadow-lg transition-all duration-300">
         <CardHeader className="border-b border-border/40 pb-4">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <Trophy className="size-4 text-primary" />
@@ -838,7 +898,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 </p>
               ) : (
                 <textarea
-                  aria-label="Reason for report"
+                  aria-label={t('dashboard.overview.community.report_reason')}
                   value={reportReason}
                   maxLength={2000}
                   onChange={(event) => setReportReason(event.target.value)}
@@ -894,7 +954,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
         {notifications.map((code) => (
           <div
             key={code}
-            className="bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-5"
+            className="bg-sage text-sage-foreground border border-sage-border px-4 py-3 rounded-2xl shadow-card flex items-center gap-2 animate-in slide-in-from-bottom-5"
           >
             <Sparkles className="size-4 shrink-0" />
             <div className="text-sm font-medium">
@@ -914,9 +974,13 @@ export function Overview({ onChooseDeck }: OverviewProps) {
             <div
               key={badgeId}
               role="status"
-              className="bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-5"
+              className="bg-primary text-primary-foreground border border-primary/20 px-4 py-3 rounded-2xl shadow-card flex items-center gap-3 animate-in slide-in-from-bottom-5"
             >
-              <span className="sr-only">Badge unlocked: {badgeDef.name}</span>
+              <span className="sr-only">
+                {t('dashboard.overview.toasts.badge_unlocked', {
+                  name: badgeDef.name,
+                })}
+              </span>
               <div
                 className="bg-primary-foreground/20 p-2 rounded-full shrink-0"
                 aria-hidden="true"

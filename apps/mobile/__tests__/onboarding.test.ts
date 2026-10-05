@@ -50,7 +50,7 @@ describe('completeOnboarding', () => {
     expect(headers).toEqual({ 'content-type': 'application/json' });
   });
 
-  it("surfaces the server's message on a taken username", async () => {
+  it('maps the known username conflict to a display key', async () => {
     mockGetCookie.mockReturnValue('session=abc');
     (globalThis.fetch as jest.Mock).mockResolvedValue({
       ok: false,
@@ -59,7 +59,7 @@ describe('completeOnboarding', () => {
     });
 
     await expect(completeOnboarding(values)).rejects.toThrow(
-      'Username is already taken',
+      'dashboard.settings.profile.username_taken',
     );
   });
 
@@ -70,7 +70,7 @@ describe('completeOnboarding', () => {
     );
 
     await expect(completeOnboarding(values)).rejects.toThrow(
-      /Can't reach the server/,
+      'mobile.messages.network_error',
     );
   });
 
@@ -82,7 +82,9 @@ describe('completeOnboarding', () => {
       json: () => Promise.reject(new Error('no body')),
     });
 
-    await expect(completeOnboarding(values)).rejects.toThrow(/HTTP 500/);
+    await expect(completeOnboarding(values)).rejects.toThrow(
+      'mobile.messages.server_error',
+    );
   });
 
   // null is valid JSON, so json() resolves rather than rejects and the
@@ -96,6 +98,8 @@ describe('completeOnboarding', () => {
       json: () => Promise.resolve(null),
     });
 
-    await expect(completeOnboarding(values)).rejects.toThrow(/HTTP 500/);
+    await expect(completeOnboarding(values)).rejects.toThrow(
+      'mobile.messages.server_error',
+    );
   });
 });

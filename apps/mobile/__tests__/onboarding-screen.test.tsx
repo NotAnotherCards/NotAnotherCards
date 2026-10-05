@@ -1,6 +1,12 @@
 import React from 'react';
+import '@/lib/i18n';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Onboarding from '@/app/onboarding';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+} from '@/lib/two-factor-challenge';
 
 const mockReplace = jest.fn();
 
@@ -38,17 +44,15 @@ jest.mock('../lib/auth-client', () => ({
 }));
 
 async function fillAndSubmit(screen: ReturnType<typeof render>) {
-  fireEvent.changeText(
-    screen.getByPlaceholderText('your-username'),
-    'jane-doe',
-  );
-  fireEvent.press(screen.getByLabelText(/Native language: .*German/));
-  fireEvent.press(screen.getByLabelText(/Target language: .*Spanish/));
-  fireEvent.press(screen.getByText('Complete setup'));
+  fireEvent.changeText(screen.getByPlaceholderText('Username'), 'jane-doe');
+  fireEvent.press(screen.getByLabelText(/Native Language: .*German/));
+  fireEvent.press(screen.getByLabelText(/Target Language: .*Spanish/));
+  fireEvent.press(screen.getByText('Complete registration'));
   await act(async () => {});
 }
 
 beforeEach(() => {
+  finishTwoFactorChallenge();
   mockSession = {
     data: { user: { onBoardingComplete: false } },
     isPending: false,
@@ -61,6 +65,22 @@ beforeEach(() => {
 });
 
 describe('Onboarding screen', () => {
+  it('shows the form and schema validation in Spanish', async () => {
+    const screen = await renderWithLocale(<Onboarding />, 'es');
+    expect(screen.getByLabelText('Nombre de usuario')).toBeTruthy();
+    fireEvent.press(screen.getByText('Completar registro'));
+    await waitFor(() =>
+      expect(screen.getByText('El idioma nativo es obligatorio')).toBeTruthy(),
+    );
+    expect(mockCompleteOnboarding).not.toHaveBeenCalled();
+  });
+  it('does not expose onboarding while a second factor is pending', () => {
+    beginTwoFactorChallenge();
+    const { getByText, queryByText } = render(<Onboarding />);
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Complete registration')).toBeNull();
+  });
+
   it('submits, refetches, and navigates only once the flag flips', async () => {
     const screen = render(<Onboarding />);
     await fillAndSubmit(screen);
@@ -85,7 +105,7 @@ describe('Onboarding screen', () => {
     const screen = render(<Onboarding />);
     await fillAndSubmit(screen);
 
-    await waitFor(() => screen.getByText('Username already taken'));
+    await waitFor(() => screen.getByText('Username is already taken'));
     expect(mockReplace).not.toHaveBeenCalled();
     // Entered values survive the failed submit.
     expect(screen.getByDisplayValue('jane-doe')).toBeTruthy();
@@ -118,7 +138,7 @@ describe('Onboarding screen', () => {
     };
     const { getByText, queryByText } = render(<Onboarding />);
     expect(getByText('Retry')).toBeTruthy();
-    expect(queryByText('Complete setup')).toBeNull();
+    expect(queryByText('Complete registration')).toBeNull();
     expect(queryByText('redirect:/login')).toBeNull();
 
     fireEvent.press(getByText('Retry'));
@@ -127,9 +147,9 @@ describe('Onboarding screen', () => {
 
   it('disables the native language in the target picker instead of hiding it', () => {
     const { getByLabelText } = render(<Onboarding />);
-    fireEvent.press(getByLabelText(/Native language: .*German/));
+    fireEvent.press(getByLabelText(/Native Language: .*German/));
 
-    const germanAsTarget = getByLabelText(/Target language: .*German/);
+    const germanAsTarget = getByLabelText(/Target Language: .*German/);
     expect(germanAsTarget.props.accessibilityState).toMatchObject({
       disabled: true,
     });
@@ -137,7 +157,7 @@ describe('Onboarding screen', () => {
     expect(germanAsTarget.props.accessibilityState.selected).toBe(false);
     // The other three stay selectable.
     expect(
-      getByLabelText(/Target language: .*Spanish/).props.accessibilityState
+      getByLabelText(/Target Language: .*Spanish/).props.accessibilityState
         .disabled,
     ).toBeFalsy();
   });

@@ -3,22 +3,61 @@ import { fireEvent, render } from '@testing-library/react-native';
 import i18n from '@/lib/i18n';
 import Storage from 'expo-sqlite/kv-store';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { LanguageField } from '@/components/language-field';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
+import { act, waitFor } from '@testing-library/react-native';
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageCode: 'en', languageTag: 'en-US' }]),
+}));
 
 // Reset the storage mock before testing
-beforeEach(() => {
+beforeEach(async () => {
   Storage.setItemSync('i18nextLng', '');
+  await i18n.changeLanguage('en');
 });
 
 describe('Mobile i18n adapter', () => {
-  it('falls back to English when storage is empty', () => {
-    // We already imported i18n, which initialized synchronously, but we can
-    // test the fallback behavior by observing its current state or re-initializing.
-    // Given the singleton nature of i18next in tests, it should default to 'en'.
-    expect(i18n.options.fallbackLng).toContain('en');
+  it('falls back to English when storage is empty and device locale is unsupported', () => {
+    let freshI18n!: typeof i18n;
+    jest.isolateModules(() => {
+      const Loc = require('expo-localization');
+      Loc.getLocales.mockReturnValue([
+        { languageCode: 'it', languageTag: 'it-IT' },
+      ]);
+      freshI18n = require('@/lib/i18n').default;
+    });
+    expect(freshI18n.options.fallbackLng).toContain('en');
+  });
+
+  it('uses supported device locale on first launch if storage is empty', () => {
+    let freshI18n!: typeof i18n;
+    jest.isolateModules(() => {
+      const Loc = require('expo-localization');
+      Loc.getLocales.mockReturnValue([
+        { languageCode: 'es', languageTag: 'es-ES' },
+      ]);
+      freshI18n = require('@/lib/i18n').default;
+    });
+    expect(freshI18n.options.lng).toBe('es');
   });
 });
 
 describe('LanguageSwitcher', () => {
+  it('translates its label and follows locale changes outside the picker', async () => {
+    const screen = await renderWithLocale(<LanguageSwitcher />, 'de');
+    expect(screen.getByLabelText('Sprache')).toBeTruthy();
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByLabelText('Idioma')).toBeTruthy();
+    expect(screen.getByRole('radio', { selected: true })).toHaveTextContent(
+      /Español/,
+    );
+    fireEvent.press(screen.getByText('Deutsch'));
+    await waitFor(() => expect(screen.i18n.resolvedLanguage).toBe('de'));
+    expect(Storage.getItemSync('i18nextLng')).toBe('de');
+  });
   it('renders the language options and switches language on press', async () => {
     await i18n.changeLanguage('en');
 
@@ -43,5 +82,20 @@ describe('LanguageSwitcher', () => {
 
     // And storage should be updated
     expect(Storage.getItemSync('i18nextLng')).toBe('de');
+  });
+});
+
+describe('LanguageField', () => {
+  it('uses the interface language for language names and accessibility labels', async () => {
+    await i18n.changeLanguage('de');
+
+    const { getByText, getByLabelText } = render(
+      <LanguageField label="Native language" value="" onChange={jest.fn()} />,
+    );
+
+    expect(getByText('🇺🇸 Englisch')).toBeTruthy();
+    expect(getByText('🇩🇪 Deutsch')).toBeTruthy();
+    expect(getByText('🇷🇺 Russisch')).toBeTruthy();
+    expect(getByLabelText('Native language: 🇩🇪 Deutsch')).toBeTruthy();
   });
 });

@@ -23,9 +23,8 @@ describe('AiQueueService', () => {
       select: jest.fn(),
       execute: jest.fn().mockResolvedValue({}),
       transaction: jest.fn(
-        (
-          cb: (tx: NodePgDatabase<Record<string, unknown>>) => Promise<unknown>,
-        ) => cb(mockDb as unknown as NodePgDatabase<Record<string, unknown>>),
+        <T>(cb: (tx: NodePgDatabase<Record<string, unknown>>) => Promise<T>) =>
+          cb(mockDb as unknown as NodePgDatabase<Record<string, unknown>>),
       ),
     };
 

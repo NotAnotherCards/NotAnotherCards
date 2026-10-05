@@ -136,7 +136,7 @@ treatment to OAuth sign-ins (`/callback/:id`,
 `/oauth2/callback/:providerId`, `/sign-in/social` idToken flow): a linked
 provider never mints a usable session for a 2FA-enabled account — the user
 completes the same TOTP/backup-code challenge instead. The after-hook
-redirects the challenge back to the *original* `callbackURL` (recovered from
+redirects the challenge back to the _original_ `callbackURL` (recovered from
 the request-scoped OAuth state via `getOAuthState`) with an added
 `?twoFactorRequired=true` flag, so an Expo deep link (`notanothercards://…`)
 survives to the native app. The `@better-auth/expo` server plugin then
@@ -147,12 +147,12 @@ impossible path where the state is gone, the hook falls back to
 `/two-factor`. The hook uses only public `better-auth/*` imports except the
 `two_factor` challenge-cookie name, which has no public export;
 `test/two-factor-oauth.e2e-spec.ts` (fake loopback OAuth provider, no real
-Google/Facebook traffic) is the upgrade tripwire for that coupling, and
+Google traffic) is the upgrade tripwire for that coupling, and
 `src/test/two-factor-oauth.hook.spec.ts` pins the `/callback/:id` production
 route matcher that e2e cannot reach without live provider traffic.
 
 `src/auth/two-factor-enrollment.hook.ts` guards `/two-factor/enable`:
-re-enrolling an already-*verified* account returns 400 ("already enabled")
+re-enrolling an already-_verified_ account returns 400 ("already enabled")
 until the existing setup is disabled — otherwise the plugin would silently
 rotate the secret under a setup the user may no longer be able to reproduce.
 A stale unverified row (aborted first enrollment) stays restartable.

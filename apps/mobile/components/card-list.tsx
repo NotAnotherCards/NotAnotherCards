@@ -1,29 +1,28 @@
 import { useState } from 'react';
 import { Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
 import { useSessionDatabase } from '@/lib/database-provider';
 import { useCards, type Card as CardRecord } from '@/lib/cards';
-import { writeErrorMessage } from '@/lib/errors';
+import { toWriteError, writeErrorText, type WriteError } from '@/lib/errors';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Text } from './ui/text';
 import { Markdown } from './ui/markdown';
-import { CardForm } from './card-form';
-import { WordNoteForm, type WordFormValues } from './word-note-form';
-import {
-  BASIC_NOTE_TYPE,
-  parseWordFields,
-  WORD_NOTE_TYPE,
-} from '@repo/offline-db';
+import { CardEditor } from './card-editor';
+import { PublishPanel } from './publish-panel';
+import { BASIC_NOTE_TYPE, WORD_NOTE_TYPE } from '@repo/offline-db';
 
 // Readiness gate, as DeckList: no manager yet means no database to query.
 export function CardList({ deckId }: { deckId: string }) {
   const { manager } = useSessionDatabase();
   if (!manager) {
     return (
-      <View className="items-center py-6">
-        <ActivityIndicator />
+      <View className="gap-4 p-6">
+        <View className="items-center py-6">
+          <ActivityIndicator />
+        </View>
       </View>
     );
   }
@@ -50,10 +49,11 @@ function ActiveCardList({
   manager: DatabaseManager;
   deckId: string;
 }) {
+  const { t } = useTranslation();
   const { deck, cards, isLoading, error, canEdit, noteForCard, writes } =
     useCards(manager, deckId);
   const [action, setAction] = useState<CardAction | null>(null);
-  const [writeError, setWriteError] = useState<string | null>(null);
+  const [writeError, setWriteError] = useState<WriteError | null>(null);
   const [pending, setPending] = useState(false);
 
   const open = (next: CardAction | null) => {
@@ -65,39 +65,45 @@ function ActiveCardList({
     setAction(next);
   };
 
-  const run = async (write: () => Promise<unknown>) => {
+  const run = async <T,>(write: () => Promise<T>) => {
     setWriteError(null);
     setPending(true);
     try {
       await write();
       open(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'The write failed'));
+      setWriteError(toWriteError(err, 'mobile.messages.write_failed'));
       setPending(false);
     }
   };
 
   if (isLoading || !writes) {
     return (
-      <View className="items-center py-6">
-        <ActivityIndicator />
+      <View className="gap-4 p-6">
+        <View className="items-center py-6">
+          <ActivityIndicator />
+        </View>
       </View>
     );
   }
 
   if (error) {
     return (
-      <Text className="text-destructive">
-        Failed to load cards: {error.message}
-      </Text>
+      <View className="gap-4 p-6">
+        <Text className="text-destructive">
+          {t('mobile.messages.cards_load_failed', { message: error.message })}
+        </Text>
+      </View>
     );
   }
 
   if (!deck) {
     return (
-      <Text className="text-muted-foreground">
-        This deck is not on this device.
-      </Text>
+      <View className="gap-4 p-6">
+        <Text className="text-muted-foreground">
+          {t('mobile.messages.deck_not_local')}
+        </Text>
+      </View>
     );
   }
 
@@ -105,85 +111,22 @@ function ActiveCardList({
   const isWordDeck = deck.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
 
-  if (action?.kind === 'create') {
-    const nativeLanguageId = deck.native_language_id;
-    const targetLanguageId = deck.target_language_id;
-    if (isWordDeck) {
-      if (!(nativeLanguageId && targetLanguageId)) {
-        return (
-          <Text className="text-destructive">
-            This word deck does not have a valid language pair.
-          </Text>
-        );
-      }
-      return (
-        <WordNoteForm
-          title="New word"
-          targetLanguageId={targetLanguageId}
-          error={writeError}
-          onSubmit={(values) =>
-            run(() =>
-              writes.createWord(deckId, {
-                ...values,
-                native_language_id: nativeLanguageId,
-                target_language_id: targetLanguageId,
-              }),
-            )
-          }
-          onCancel={() => open(null)}
-        />
-      );
-    }
+  if (action?.kind === 'create' || action?.kind === 'edit') {
+    const card = action.kind === 'edit' ? action.card : undefined;
     return (
-      <CardForm
-        title="New card"
-        error={writeError}
-        onSubmit={(values) =>
-          run(() => writes.create(deckId, values.front, values.back))
-        }
-        onCancel={() => open(null)}
-      />
-    );
-  }
-
-  if (action?.kind === 'edit') {
-    const { card } = action;
-    const note = noteForCard(card);
-    if (note?.note_type === WORD_NOTE_TYPE) {
-      // Invalid synced payloads remain visible but cannot be edited.
-      const fields = parseWordFields(note);
-      if (!fields) return null;
-      const updateWord = (values: WordFormValues) =>
-        run(() =>
-          writes.updateWord(note.id, {
-            ...values,
-            native_language_id: fields.native_language_id,
-            target_language_id: fields.target_language_id,
-            ...(fields.image ? { image: fields.image } : {}),
-            ...(fields.word_audio ? { word_audio: fields.word_audio } : {}),
-          }),
-        );
-      return (
-        <WordNoteForm
-          title="Edit word"
-          initialValues={fields}
-          targetLanguageId={fields.target_language_id}
-          error={writeError}
-          onSubmit={updateWord}
-          onCancel={() => open(null)}
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="gap-4 p-6"
+        keyboardShouldPersistTaps="handled"
+      >
+        <CardEditor
+          deck={deck}
+          card={card}
+          note={card ? noteForCard(card) : null}
+          writes={writes}
+          onDone={() => open(null)}
         />
-      );
-    }
-    return (
-      <CardForm
-        title="Edit card"
-        initialValues={{ front: card.front, back: card.back }}
-        error={writeError}
-        onSubmit={(values) =>
-          run(() => writes.update(card.id, values.front, values.back))
-        }
-        onCancel={() => open(null)}
-      />
+      </ScrollView>
     );
   }
 
@@ -194,32 +137,56 @@ function ActiveCardList({
       : null;
 
   return (
-    <View className="gap-3">
+    <>
       {/* The deck's title belongs in the header; the route sets a fallback. */}
       <Stack.Screen options={{ title: deck.title }} />
-      <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-semibold">Cards</Text>
-        {isKnownDeck && (
-          <Button disabled={pending} onPress={() => open({ kind: 'create' })}>
-            <Text>{isWordDeck ? 'New word' : 'New card'}</Text>
-          </Button>
-        )}
-      </View>
-      {!isKnownDeck && (
-        <Text className="text-muted-foreground">
-          This deck uses a note type this app cannot edit yet.
-        </Text>
-      )}
-      {cards.length === 0 && (
-        <Text className="text-muted-foreground">
-          No cards yet. Add your first one.
-        </Text>
-      )}
-      <View role="list" className="gap-3">
-        {cards.map((card) => {
+      <FlatList
+        className="flex-1"
+        contentContainerClassName="p-6"
+        keyboardShouldPersistTaps="handled"
+        role="list"
+        data={cards}
+        keyExtractor={(card) => card.id}
+        initialNumToRender={12}
+        ItemSeparatorComponent={() => <View className="h-3" />}
+        ListHeaderComponent={
+          <View className="gap-4 pb-3">
+            <PublishPanel deck={deck} cards={cards} />
+            <View className="gap-3">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-lg font-semibold">
+                  {t('deck.words.col_cards')}
+                </Text>
+                {isKnownDeck && (
+                  <Button
+                    disabled={pending}
+                    onPress={() => open({ kind: 'create' })}
+                  >
+                    <Text>
+                      {isWordDeck
+                        ? t('mobile.messages.new_word')
+                        : t('mobile.messages.new_card')}
+                    </Text>
+                  </Button>
+                )}
+              </View>
+              {!isKnownDeck && (
+                <Text className="text-muted-foreground">
+                  {t('deck.detail.unknown_note_type')}
+                </Text>
+              )}
+            </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <Text className="text-muted-foreground">
+            {t('mobile.messages.no_cards')}
+          </Text>
+        }
+        renderItem={({ item: card }) => {
           const confirm = confirming(card);
           return (
-            <Card key={card.id} role="listitem">
+            <Card role="listitem">
               <CardHeader>
                 <CardTitle>
                   <Markdown content={card.front} inline />
@@ -227,17 +194,24 @@ function ActiveCardList({
                 <Text className="text-sm text-muted-foreground">
                   <Markdown content={card.back} inline />
                 </Text>
+                {!card.active && (
+                  <Text className="text-xs text-muted-foreground">
+                    {t('review.activation.inactive_label')}
+                  </Text>
+                )}
               </CardHeader>
               <CardContent>
                 {confirm ? (
                   <View className="gap-2">
                     <Text className="text-sm">
                       {confirm === 'remove'
-                        ? 'Remove this card from the deck? The note stays, and so does any other deck it is in.'
-                        : 'Delete this note? Its cards, deck memberships and review history go with it.'}
+                        ? t('mobile.messages.remove_card_help')
+                        : t('mobile.messages.delete_note_help')}
                     </Text>
                     {writeError && (
-                      <Text className="text-destructive">{writeError}</Text>
+                      <Text className="text-destructive">
+                        {writeErrorText(writeError, t)}
+                      </Text>
                     )}
                     <View className="flex-row gap-2">
                       <Button
@@ -246,7 +220,7 @@ function ActiveCardList({
                         onPress={() => open(null)}
                         disabled={pending}
                       >
-                        <Text>Cancel</Text>
+                        <Text>{t('common.cancel')}</Text>
                       </Button>
                       <Button
                         variant="destructive"
@@ -262,23 +236,27 @@ function ActiveCardList({
                       >
                         <Text>
                           {confirm === 'remove'
-                            ? 'Remove from deck'
-                            : 'Delete note'}
+                            ? t('deck.detail.remove_btn')
+                            : t('mobile.messages.delete_note')}
                         </Text>
                       </Button>
                     </View>
                   </View>
                 ) : (
-                  <View className="flex-row gap-2">
+                  <View className="flex-row flex-wrap gap-2">
                     {isKnownDeck && canEdit(card) && (
                       <Button
                         variant="ghost"
                         size="sm"
                         disabled={pending}
-                        accessibilityLabel={`Edit ${short(card.front)}`}
+                        accessibilityLabel={t('mobile.messages.edit_item', {
+                          title: short(card.front),
+                        })}
                         onPress={() => open({ kind: 'edit', card })}
                       >
-                        <Text className="text-primary">Edit</Text>
+                        <Text className="text-primary">
+                          {t('deck.card.actions.edit')}
+                        </Text>
                       </Button>
                     )}
                     {isKnownDeck && (
@@ -287,20 +265,27 @@ function ActiveCardList({
                           variant="ghost"
                           size="sm"
                           disabled={pending}
-                          accessibilityLabel={`Remove ${short(card.front)} from deck`}
+                          accessibilityLabel={t('mobile.messages.remove_item', {
+                            title: short(card.front),
+                          })}
                           onPress={() => open({ kind: 'remove', card })}
                         >
-                          <Text>Remove</Text>
+                          <Text>{t('mobile.messages.remove')}</Text>
                         </Button>
                         {canEdit(card) && (
                           <Button
                             variant="ghost"
                             size="sm"
                             disabled={pending}
-                            accessibilityLabel={`Delete note ${short(card.front)}`}
+                            accessibilityLabel={t(
+                              'mobile.messages.delete_item',
+                              { title: short(card.front) },
+                            )}
                             onPress={() => open({ kind: 'delete', card })}
                           >
-                            <Text className="text-destructive">Delete</Text>
+                            <Text className="text-destructive">
+                              {t('deck.card.actions.delete')}
+                            </Text>
                           </Button>
                         )}
                       </>
@@ -310,8 +295,8 @@ function ActiveCardList({
               </CardContent>
             </Card>
           );
-        })}
-      </View>
-    </View>
+        }}
+      />
+    </>
   );
 }

@@ -18,14 +18,16 @@ type ReviewAnswerButtonsProps = {
   onReveal: () => void;
 };
 
+// One rating hue per answer, the same as mobile's answer buttons: an
+// outline in the hue at 40%, the label in the hue, a faint fill on hover.
 const answerButtonClassName: Record<ReviewAnswer, string> = {
   forgot:
-    'border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground',
-  hard: 'border-amber-500/50 bg-amber-50/80 text-amber-800 shadow-none hover:bg-amber-100 hover:text-amber-900 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50 dark:hover:text-amber-300',
+    'border-rating-again/40 text-rating-again shadow-none hover:bg-rating-again/10 hover:text-rating-again dark:hover:bg-rating-again/10',
+  hard: 'border-rating-hard/40 text-rating-hard shadow-none hover:bg-rating-hard/10 hover:text-rating-hard dark:hover:bg-rating-hard/10',
   remember:
-    'border-emerald-500/30 text-emerald-700 shadow-none hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300',
+    'border-rating-good/40 text-rating-good shadow-none hover:bg-rating-good/10 hover:text-rating-good dark:hover:bg-rating-good/10',
   'very-easy':
-    'border-blue-500/30 text-blue-700 shadow-none hover:bg-blue-500/10 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300',
+    'border-rating-easy/40 text-rating-easy shadow-none hover:bg-rating-easy/10 hover:text-rating-easy dark:hover:bg-rating-easy/10',
 };
 
 /** Answer controls shown below the current review card. */
@@ -56,7 +58,7 @@ export function ReviewAnswerButtons({
           variant="outline"
           onClick={onReveal}
           disabled={disabled}
-          className="min-h-12 w-full cursor-pointer border-border bg-muted/40 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
+          className="min-h-12 w-full cursor-pointer border-primary/20 bg-primary/5 text-primary shadow-sm hover:bg-primary/10 hover:text-primary dark:border-primary/30 dark:bg-primary/10 dark:hover:bg-primary/20"
         >
           {t('review.card.show_answer', 'Show answer')}
         </Button>

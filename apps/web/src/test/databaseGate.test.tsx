@@ -11,6 +11,7 @@ vi.mock('@tanstack/react-router', () => ({
   Outlet: () => <div>outlet</div>,
   useLocation: () => ({ pathname: '/dashboard' }),
   useNavigate: () => vi.fn(),
+  Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 vi.mock('@/offline/sessionDatabase', () => ({
   useSessionDatabase: () => ({ manager: {}, syncController: null }),

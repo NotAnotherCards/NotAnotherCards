@@ -369,6 +369,7 @@ TABLE "public"."user_profiles" RLS DISABLED
 "deleted_at" timestamp with time zone NULL
 "native_language_id" uuid NULL
 "rev" bigint NOT NULL
+"target_language_active" boolean NULL DEFAULT false
 "target_language_id" uuid NULL
 "updated_at" double precision NOT NULL
 "user_id" text NOT NULL PRIMARY KEY
@@ -742,7 +743,7 @@ top.
 <!-- schema:local-schema -->
 
 ```text
-LOCAL SCHEMA VERSION 6
+LOCAL SCHEMA VERSION 7
 
 TABLE review_events SYNCED
 rating number NOT NULL
@@ -796,6 +797,7 @@ avatar_file_id string NULL
 bio string NULL
 created_at number NOT NULL
 native_language_id string NULL
+target_language_active boolean NULL
 target_language_id string NULL
 updated_at number NOT NULL INDEXED
 username string NULL

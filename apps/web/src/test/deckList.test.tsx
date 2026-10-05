@@ -26,6 +26,7 @@ vi.mock('@/hooks/useStore', () => ({
       { note_id: 'note-1' },
       { note_id: 'note-elsewhere' },
     ],
+    getCardsForDeck: () => [],
     getCardsCount: () => 4,
   }),
 }));
@@ -36,7 +37,7 @@ describe('DeckList', () => {
 
     const badge = screen.getByTestId('due-cards-badge');
     expect(badge).toHaveTextContent('2');
-    // a deck with work is emphasised, an empty one is not
+    // a deck with work is accented
     expect(badge).toHaveClass('text-primary');
   });
 });

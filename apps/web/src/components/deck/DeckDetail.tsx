@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useStore, Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,13 +21,14 @@ import { CardForm } from './CardForm';
 import { WordNoteForm, type WordFormValues } from './WordNoteForm';
 import {
   BASIC_NOTE_TYPE,
-  deckKind,
   deckKindShort,
   parseWordFields,
   type UserNoteRecord,
   WORD_NOTE_TYPE,
   WORD_NOTE_FIELDS_VERSION,
+  deckLearningCounts,
 } from '@repo/offline-db';
+import { deckTypeAccessibilityLabel } from '@repo/i18n';
 import { deckKindClassName } from './deck-kind';
 import { CardList } from './CardList';
 import { WordNoteList } from './WordNoteList';
@@ -50,7 +51,7 @@ interface DeckDetailProps {
 }
 
 export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -73,12 +74,23 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     error,
     setError,
     warnings: publishWarnings,
+    remoteVisibility,
+    setRemoteVisibility,
   } = usePublishing();
   const controller = useSyncController();
   const { status: moderationStatus, refresh: refreshModerationStatus } =
     useOwnerModerationStatus(deckId);
   const explanation = useModerationExplanation(deckId);
   const deck = store.decks.find((d) => d.id === deckId);
+  useEffect(() => {
+    if (
+      remoteVisibility &&
+      (remoteVisibility.deckId !== deckId ||
+        deck?.visibility === remoteVisibility.visibility)
+    ) {
+      setRemoteVisibility(null);
+    }
+  }, [deckId, deck?.visibility, remoteVisibility, setRemoteVisibility]);
   const isBasicDeck = deck?.note_type === BASIC_NOTE_TYPE;
   const isWordDeck = deck?.note_type === WORD_NOTE_TYPE;
   const isKnownDeck = isBasicDeck || isWordDeck;
@@ -89,6 +101,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   const wordNotes = useMemo(
     () => (isWordDeck ? store.getNotesForDeck(deckId) : []),
     [deckId, isWordDeck, store.getNotesForDeck],
+  );
+  const learningCounts = useMemo(
+    () =>
+      deckLearningCounts(
+        cards,
+        isWordDeck ? wordNotes.map((note) => note.id) : undefined,
+      ),
+    [cards, isWordDeck, wordNotes],
   );
 
   if (store.isTakenOver) {
@@ -101,7 +121,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           className="cursor-pointer gap-1 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          Back to Decks
+          {t('deck.detail.back_to_decks')}
         </Button>
         <UICard className="border border-amber-500/30 bg-amber-500/10 p-8 flex flex-col items-center justify-center text-center space-y-4">
           <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
@@ -109,12 +129,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           </div>
           <div>
             <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
-              Database Inactive (Taken Over)
+              {t('deck.cards.db_inactive')}
             </h3>
             <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-              This tab is currently inactive because the offline database is
-              open in another tab. Click below to use the database in this
-              window.
+              {t('deck.cards.db_inactive_desc')}
             </p>
           </div>
           <Button
@@ -122,7 +140,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
             className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium border-none shadow-sm"
           >
             <RefreshCw className="size-4" />
-            Use here instead
+            {t('deck.cards.use_here')}
           </Button>
         </UICard>
       </div>
@@ -135,7 +153,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
           <Loader2 className="animate-spin size-8 text-primary" />
           <p className="text-sm text-muted-foreground animate-pulse">
-            Loading deck details...
+            {t('deck.detail.loading')}
           </p>
         </div>
       );
@@ -144,7 +162,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   }
 
   const isPublic =
-    deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
+    remoteVisibility?.deckId === deckId
+      ? remoteVisibility.visibility === 'public'
+      : deck?.visibility === 'public' && moderationStatus.status !== 'blocked';
   // The note's own fields, parsed from the note rather than read off the
   // card, whose front and back are a template's output.
   const editingWordFields =
@@ -153,13 +173,22 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
   if (!deck) {
     return (
       <div className="text-center p-8">
-        <p className="text-destructive font-semibold">Deck not found.</p>
+        <p className="text-destructive font-semibold">
+          {t('deck.detail.not_found')}
+        </p>
         <Button onClick={onBack} className="mt-4 cursor-pointer">
-          <ArrowLeft className="size-4 mr-2" /> Back to Decks
+          <ArrowLeft className="size-4 mr-2" />
+          {t('deck.detail.back_to_decks')}
         </Button>
       </div>
     );
   }
+
+  const kindLabel = deckTypeAccessibilityLabel(
+    deck,
+    i18n.resolvedLanguage ?? i18n.language,
+    (key, options) => t(`deck.type.${key}`, options),
+  );
 
   const viewingWordCards =
     viewingWordNote === null
@@ -207,7 +236,13 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 cursor-pointer gap-1"
-                  onClick={() => void explanation.explain(finding, source)}
+                  onClick={() =>
+                    void explanation.explain(
+                      `${source}:${key}`,
+                      finding,
+                      source,
+                    )
+                  }
                   disabled={isActive && explanation.isLoading}
                 >
                   {isActive && explanation.isLoading ? (
@@ -215,7 +250,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   ) : (
                     <HelpCircle className="size-3.5" />
                   )}
-                  Why?
+                  {t('deck.moderation.why')}
                 </Button>
               </div>
               {isActive && (explanation.text || explanation.error) && (
@@ -241,7 +276,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
     if (moderationStatus.status !== 'blocked') return null;
     return (
       <div className="space-y-2">
-        <p className="text-sm font-semibold">Classifier results</p>
+        <p className="text-sm font-semibold">
+          {t('deck.moderation.classifier_results')}
+        </p>
         <ul className="space-y-2 text-sm">
           {moderationStatus.results.map((result, index) => {
             const reason = result.categories?.length
@@ -266,14 +303,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                     {result.cardId.slice(0, 8)}
                   </span>
                   <span className="font-semibold capitalize">
-                    {result.verdict}
+                    {t(`deck.moderation.verdict.${result.verdict}`)}
                   </span>
                   <span className="grow text-foreground">
                     {result.categories === null
-                      ? 'No category supplied'
+                      ? t('deck.moderation.no_category')
                       : result.categories.length > 0
                         ? result.categories.join(', ')
-                        : 'Categories: none'}
+                        : t('deck.moderation.categories_none')}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {result.classifier}
@@ -285,7 +322,11 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                       size="sm"
                       className="h-7 cursor-pointer gap-1"
                       onClick={() =>
-                        void explanation.explain(finding, 'published')
+                        void explanation.explain(
+                          `published:${key}`,
+                          finding,
+                          'published',
+                        )
                       }
                       disabled={isActive && explanation.isLoading}
                     >
@@ -294,13 +335,13 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                       ) : (
                         <HelpCircle className="size-3.5" />
                       )}
-                      Why?
+                      {t('deck.moderation.why')}
                     </Button>
                   )}
                 </div>
                 {result.error && (
                   <p className="mt-2 text-xs text-destructive">
-                    Check failed: {result.error}
+                    {t('deck.moderation.check_failed', { error: result.error })}
                   </p>
                 )}
                 {isActive && (explanation.text || explanation.error) && (
@@ -331,7 +372,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       await store.createCard(deckId, data.front, data.back);
       setShowCreateForm(false);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to create card'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.create_card')));
     }
   };
 
@@ -347,7 +388,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       });
       setShowCreateForm(false);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to create card'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.create_card')));
     }
   };
 
@@ -366,7 +407,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       });
       setEditingWordNote(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to update word'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.update_word')));
     }
   };
 
@@ -377,7 +418,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       await store.updateCard(editingCard.id, data.front, data.back);
       setEditingCard(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to update card'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.update_card')));
     }
   };
 
@@ -389,7 +430,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       await store.removeNoteFromDeck(noteIdToRemove, deckId);
       setNoteIdToRemove(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to remove note from deck'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.remove_note')));
     } finally {
       setIsRemoving(false);
     }
@@ -412,13 +453,15 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
+          {/* Bounded to the row, or the title's truncate never applies and a
+              long title widens the page past a phone screen. */}
+          <div className="min-w-0 max-w-full">
             <div className="flex min-w-0 items-center gap-2">
               <span
                 className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
                 data-testid="deck-kind"
-                title={deckKind(deck)}
-                aria-label={deckKind(deck)}
+                title={kindLabel}
+                aria-label={kindLabel}
               >
                 {deckKindShort(deck)}
               </span>
@@ -444,10 +487,10 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   isBusyRef.current = true;
                   setIsPendingPublishAction(true);
                   try {
-                    await controller?.syncNow();
                     await unpublish(
                       deckId,
-                      () => controller?.syncNow() || Promise.resolve(),
+                      controller ? () => controller.syncNow() : undefined,
+                      store.db,
                     );
                   } finally {
                     setIsPendingPublishAction(false);
@@ -460,17 +503,17 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
               </Button>
             ) : (
               <Button
-                variant="secondary"
+                variant="outline"
                 disabled={isPublishing || isPendingPublishAction}
                 onClick={async () => {
                   if (isBusyRef.current) return;
                   isBusyRef.current = true;
                   setIsPendingPublishAction(true);
                   try {
-                    await controller?.syncNow();
                     const published = await publish(
                       deckId,
-                      () => controller?.syncNow() || Promise.resolve(),
+                      controller ? () => controller.syncNow() : undefined,
+                      store.db,
                     );
                     if (published) await refreshModerationStatus();
                   } finally {
@@ -511,16 +554,14 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2 text-amber-800 dark:text-amber-300">
               <AlertCircle className="size-5" />
-              Published with moderation warnings
+              {t('deck.moderation.warnings_title')}
             </CardTitle>
             <CardDescription>
-              Your deck is public, but these cards may cover sensitive or
-              controversial material. You can review the reason without
-              unpublishing it.
+              {t('deck.moderation.warnings_description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
-            {findingList(visibleWarnings, 'Warnings')}
+            {findingList(visibleWarnings, t('deck.moderation.warnings'))}
           </CardContent>
         </UICard>
       )}
@@ -530,29 +571,30 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
               <AlertCircle className="size-5" />
-              Deck taken down
+              {t('deck.moderation.taken_down')}
             </CardTitle>
             <CardDescription>
-              This deck is no longer visible to the community. Review the
-              moderation result, edit the working copy, and publish again when
-              it is ready.
+              {t('deck.moderation.taken_down_description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 pt-0">
             <FormErrorMessage
-              message={
-                moderationStatus.reason ??
-                'The reported deck did not pass moderation.'
-              }
+              message={moderationStatus.reason ?? t('deck.moderation.refused')}
             />
             {moderationStatus.results.length > 0 ? (
               classifierResultList()
             ) : (
               <>
                 {moderationStatus.flagged.length > 0 &&
-                  findingList(moderationStatus.flagged, 'Flagged cards')}
+                  findingList(
+                    moderationStatus.flagged,
+                    t('deck.moderation.flagged_cards'),
+                  )}
                 {moderationStatus.warnings.length > 0 &&
-                  findingList(moderationStatus.warnings, 'Warnings')}
+                  findingList(
+                    moderationStatus.warnings,
+                    t('deck.moderation.warnings'),
+                  )}
               </>
             )}
           </CardContent>
@@ -564,7 +606,9 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         <WordNoteList
           notes={wordNotes}
           cards={cards}
-          dueCards={store.dueCards ?? []}
+          activeWordCount={learningCounts.activeNotes}
+          totalCardCount={learningCounts.totalCards}
+          dueCardCount={learningCounts.dueCards}
           onViewNote={(note) => setViewingWordNote(note)}
           onEditWord={(note) => setEditingWordNote(note)}
           onRemoveWord={(note) => setNoteIdToRemove(note.id)}
@@ -575,6 +619,8 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
       ) : (
         <CardList
           cards={cards}
+          activeCardCount={learningCounts.activeCards}
+          dueCardCount={learningCounts.dueCards}
           onEditCard={(card) => setEditingCard(card)}
           onRemoveFromDeck={(card) => setNoteIdToRemove(card.note_id)}
           canEditCard={isBasicDeck ? store.isBasicCard : () => false}
@@ -590,7 +636,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
         (isWordDeck ? (
           <WordNoteForm
             key={deckId}
-            title="Add New Word"
+            title={t('deck.detail.add_word')}
             generationDeck={
               deck.native_language_id && deck.target_language_id
                 ? {
@@ -619,7 +665,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
           the front and back a template rendered from them */}
       {editingWordNote && isWordDeck ? (
         <WordNoteForm
-          title="Edit Word"
+          title={t('deck.word_view.edit_word')}
           alwaysShowDetails
           targetLanguageId={editingWordFields?.target_language_id}
           nativeLanguageId={editingWordFields?.native_language_id}
@@ -726,14 +772,22 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                 className="text-lg font-bold flex items-center gap-2"
               >
                 <AlertCircle className="size-5 text-destructive" />
-                {error.action === 'publish'
-                  ? 'Could Not Publish Deck'
-                  : 'Could Not Unpublish Deck'}
+                {error.completed
+                  ? t('deck.moderation.sync_pending')
+                  : error.action === 'publish'
+                    ? t('deck.moderation.publish_failed')
+                    : t('deck.moderation.unpublish_failed')}
               </CardTitle>
               <CardDescription>
-                {error.flagged && error.flagged.length > 0
-                  ? 'The deck was refused by our automated moderation system. Please review the flagged content before trying again.'
-                  : 'There was an issue processing your request. Please try again.'}
+                {error.completed
+                  ? t(
+                      error.action === 'publish'
+                        ? 'deck.moderation.published_pending'
+                        : 'deck.moderation.unpublished_pending',
+                    )
+                  : error.flagged && error.flagged.length > 0
+                    ? t('deck.moderation.automated_refusal')
+                    : t('deck.moderation.action_failed')}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">
@@ -741,7 +795,11 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
 
               {error.flagged && error.flagged.length > 0 && (
                 <div className="bg-muted/50 rounded-lg p-4 border border-border text-sm max-h-48 overflow-y-auto">
-                  {findingList(error.flagged, 'Flagged cards', 'working')}
+                  {findingList(
+                    error.flagged,
+                    t('deck.moderation.flagged_cards'),
+                    'working',
+                  )}
                 </div>
               )}
               <div className="flex justify-end pt-2">
@@ -750,7 +808,7 @@ export function DeckDetail({ deckId, onBack }: DeckDetailProps) {
                   onClick={() => setError(null)}
                   className="cursor-pointer"
                 >
-                  Close
+                  {t('common.close')}
                 </Button>
               </div>
             </CardContent>

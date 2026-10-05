@@ -1,31 +1,29 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SyncController } from '@remelondb/core';
 
-const noController = () => () => {};
-
-// A pull runs a sync and shows its spinner for as long as that sync runs.
-// The spinner follows the controller's state, not what syncNow() returns:
-// syncNow() only starts the sync. A sync that started by itself shows no
-// spinner, and a failed one is reported by the sync status.
+// A pull runs a sync and shows its spinner until that sync settles.
+// syncNow() resolves, never rejects, once the run it started or joined has
+// finished, so a sync that started by itself shows no spinner, and a failed
+// one is reported by the sync status rather than here.
 export function usePullToSync(controller: SyncController | null) {
-  const [pulled, setPulled] = useState(false);
-  const status = useSyncExternalStore(
-    controller ? (notify) => controller.subscribe(notify) : noController,
-    () => controller?.state.status ?? 'idle',
-  );
-  const syncing = status === 'syncing';
+  const [refreshing, setRefreshing] = useState(false);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    if (pulled && !syncing) setPulled(false);
-  }, [pulled, syncing]);
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   return {
-    refreshing: pulled && syncing,
+    refreshing,
     onRefresh: () => {
       if (!controller) return;
-      setPulled(true);
-      // Sets the state to syncing before it returns.
-      controller.syncNow();
+      setRefreshing(true);
+      void controller.syncNow().then(() => {
+        if (mounted.current) setRefreshing(false);
+      });
     },
   };
 }

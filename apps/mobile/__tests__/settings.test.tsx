@@ -1,8 +1,9 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import '@/lib/i18n';
 import { Settings, initials } from '@/components/settings';
 import { loadReviewPreferences } from '@/lib/review-preferences';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 
 const mockUseSession = jest.fn();
 const mockSignOut = jest.fn();
@@ -21,6 +22,9 @@ jest.mock('expo-router', () => ({
 jest.mock('../lib/database-provider', () => ({
   useSessionDatabase: () => ({ manager: null, syncController: null }),
 }));
+jest.mock('../components/two-factor-security', () => ({
+  TwoFactorSecurity: () => null,
+}));
 jest.mock('../components/ui/icon', () => ({
   LogOutIcon: () => null,
   SettingsIcon: () => null,
@@ -36,6 +40,32 @@ describe('initials', () => {
 });
 
 describe('Settings', () => {
+  it('translates the missing-name fallback', async () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: { id: 'user-settings', name: '', email: 'test@example.com' },
+      },
+      isPending: false,
+    });
+    const screen = await renderWithLocale(<Settings />, 'de');
+    expect(screen.getByText('Lernende Person')).toBeTruthy();
+    expect(screen.queryByText('Learner')).toBeNull();
+  });
+  it('translates the section tabs and keeps the selection when the locale changes', async () => {
+    const screen = await renderWithLocale(<Settings />, 'de');
+    expect(screen.getByLabelText('Einstellungsbereiche')).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Profil & Sprachen' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Einstellungen' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('tab', { name: 'Sicherheit' }));
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByRole('tab', { name: 'Perfil e Idiomas' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Preferencias' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Seguridad' })).toBeSelected();
+    expect(screen.getByLabelText('Secciones de ajustes')).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Sicherheit' })).toBeNull();
+  });
   beforeEach(() => {
     mockUseSession.mockReturnValue({
       data: {
@@ -50,12 +80,15 @@ describe('Settings', () => {
   });
 
   it('shows the account header and the saved preferences', () => {
-    const { getByText, getByLabelText } = render(<Settings />);
+    const { getByText, getByLabelText, queryByLabelText } = render(
+      <Settings />,
+    );
     fireEvent.press(getByText('Preferences'));
     expect(getByText('JD')).toBeTruthy();
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(getByText(/jane@example.com/)).toBeTruthy();
     expect(getByLabelText('Review mode')).toBeTruthy();
+    expect(queryByLabelText('Language')).toBeNull();
     expect(getByText('Basic').props.className).toContain('font-semibold');
   });
 

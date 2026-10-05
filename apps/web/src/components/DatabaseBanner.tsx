@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { useDatabaseState } from '@remelondb/core/react';
 
@@ -13,20 +14,24 @@ function isOpfsBlocked(error: Error | null): boolean {
   );
 }
 
-function getFriendlyErrorMessage(error: Error | null): string {
-  if (!error) return 'Failed to load database.';
+function getFriendlyErrorMessage(
+  error: Error | null,
+  t: (key: string) => string,
+): string {
+  if (!error) return t('database.load_failed');
   // remelondb >=0.3.1: another window, or a worker the browser never shut
   // down (Firefox after suspend/resume), still holds the storage handles.
   if ('code' in error && error.code === 'OPFS_POOL_HELD') {
-    return 'Local storage is held by another window or by a worker that did not shut down. Retry; if it keeps happening, close every window of this site or restart the browser.';
+    return t('database.storage_held');
   }
   if (error.message.includes('shared worker did not answer')) {
-    return 'Database connection timed out. Please retry or refresh the page.';
+    return t('database.timeout');
   }
   return error.message;
 }
 
 export function DatabaseBanner() {
+  const { t } = useTranslation();
   const { status, error } = useDatabaseState();
 
   if (status === 'ready' || status === 'idle') {
@@ -43,8 +48,8 @@ export function DatabaseBanner() {
         <div className="bg-blue-500/10 border-blue-500/20 text-blue-800 px-4 py-3.5 flex items-center gap-2.5 text-xs">
           <Loader2 className="size-4 animate-spin text-blue-500 shrink-0" />
           <span>
-            <strong>Connecting Database:</strong> Reclaiming and initializing
-            local offline storage...
+            <strong>{t('database.connecting_title')}</strong>{' '}
+            {t('database.connecting_description')}
           </span>
         </div>
       )}
@@ -53,8 +58,8 @@ export function DatabaseBanner() {
           <div className="flex items-center gap-2">
             <AlertCircle className="size-4 text-amber-500 shrink-0" />
             <span>
-              <strong>Offline Database Inactive:</strong> This application is
-              open in another tab. Offline features are disabled here.
+              <strong>{t('database.inactive_title')}</strong>{' '}
+              {t('database.inactive_description')}
             </span>
           </div>
           <button
@@ -62,7 +67,7 @@ export function DatabaseBanner() {
             className="flex items-center gap-1.5 px-3 py-1 rounded text-white font-medium hover:bg-amber-600 active:bg-amber-700 transition-colors text-[10px] cursor-pointer shadow-sm shrink-0"
           >
             <RefreshCw className="size-3" />
-            Use here instead
+            {t('deck.cards.use_here')}
           </button>
         </div>
       )}
@@ -71,9 +76,8 @@ export function DatabaseBanner() {
         <div className="bg-amber-500/10 border-amber-500/20 dark:text-amber-300 px-4 py-3.5 flex items-center gap-2 text-xs">
           <AlertCircle className="size-4 text-amber-500 shrink-0" />
           <span>
-            <strong>Storage blocked:</strong> this browser blocks site storage
-            (private browsing or blocked site data), so your decks cannot be
-            loaded. Allow site data for this site or use a normal window.
+            <strong>{t('database.blocked_title')}</strong>{' '}
+            {t('database.blocked_description')}
           </span>
         </div>
       )}
@@ -83,8 +87,8 @@ export function DatabaseBanner() {
           <div className="flex items-center gap-2">
             <AlertCircle className="size-4 text-destructive shrink-0" />
             <span>
-              <strong>Offline Database Error:</strong>{' '}
-              {getFriendlyErrorMessage(error)}
+              <strong>{t('database.error_title')}</strong>{' '}
+              {getFriendlyErrorMessage(error, t)}
             </span>
           </div>
           <button
@@ -92,7 +96,7 @@ export function DatabaseBanner() {
             className="flex items-center gap-1.5 px-3 py-1 rounded text-destructive-foreground font-medium hover:bg-destructive/90 active:bg-destructive transition-colors text-[10px] cursor-pointer shadow-sm shrink-0"
           >
             <RefreshCw className="size-3" />
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}

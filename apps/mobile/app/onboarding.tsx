@@ -1,21 +1,29 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Redirect, useRouter } from 'expo-router';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { type ProfileFormValues, userProfileFormSchema } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
-import { apiErrorMessage } from '@/lib/errors';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { completeOnboarding } from '@/lib/onboarding';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
 import { LanguageField } from '@/components/language-field';
+import {
+  useTwoFactorChallengeState,
+  useTwoFactorDeepLinkPending,
+} from '@/lib/two-factor-challenge';
 
 export default function Onboarding() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: session, isPending, error, refetch } = authClient.useSession();
-  const [apiError, setApiError] = useState<string | null>(null);
+  const challenge = useTwoFactorChallengeState();
+  const deepLinkPending = useTwoFactorDeepLinkPending();
+  const [apiError, setApiError] = useState<UiError | null>(null);
   const { control, handleSubmit, formState, watch, setValue } =
     useForm<ProfileFormValues>({
       resolver: zodResolver(userProfileFormSchema),
@@ -29,8 +37,15 @@ export default function Onboarding() {
   const targetLanguage = watch('target_language_id');
 
   useEffect(() => {
-    if (session?.user.onBoardingComplete) router.replace('/dashboard');
-  }, [router, session?.user.onBoardingComplete]);
+    if (
+      challenge.hydrated &&
+      !challenge.pending &&
+      !deepLinkPending &&
+      session?.user.onBoardingComplete
+    ) {
+      router.replace('/dashboard');
+    }
+  }, [challenge, deepLinkPending, router, session?.user.onBoardingComplete]);
 
   useEffect(() => {
     if (nativeLanguage && nativeLanguage === targetLanguage) {
@@ -44,16 +59,20 @@ export default function Onboarding() {
       await completeOnboarding(values);
       await refetch();
     } catch (error) {
-      setApiError(apiErrorMessage(error));
+      setApiError(toUiError(error));
     }
   };
 
-  if (isPending) {
+  if (isPending || !challenge.hydrated) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator />
       </View>
     );
+  }
+
+  if (deepLinkPending || challenge.pending) {
+    return <Redirect href="/two-factor" />;
   }
 
   // refetch() resolves even when the request failed and stores the error
@@ -64,10 +83,10 @@ export default function Onboarding() {
     return (
       <View className="flex-1 items-center justify-center gap-4 p-6">
         <Text className="text-center text-destructive">
-          {apiErrorMessage(error)}
+          {uiErrorText(toUiError(error), t)}
         </Text>
         <Button onPress={() => refetch()}>
-          <Text>Retry</Text>
+          <Text>{t('common.retry')}</Text>
         </Button>
       </View>
     );
@@ -82,19 +101,21 @@ export default function Onboarding() {
       keyboardShouldPersistTaps="handled"
       contentContainerClassName="flex-grow justify-center p-6"
     >
-      <View className="gap-4 rounded-xl border border-border bg-card p-6">
+      <View className="gap-4 rounded-xl border border-sage-border bg-card p-6">
         <View className="gap-1">
-          <Text className="text-2xl font-semibold">Set up your profile</Text>
+          <Text className="text-2xl font-semibold">
+            {t('onboarding.title')}
+          </Text>
           <Text className="text-muted-foreground">
-            Choose your username and language preferences.
+            {t('onboarding.description')}
           </Text>
         </View>
 
         <FormField
           control={control}
           name="username"
-          label="Username"
-          placeholder="your-username"
+          label={t('onboarding.username')}
+          placeholder={t('dashboard.settings.profile.username_placeholder')}
           autoCapitalize="none"
           autoComplete="username"
         />
@@ -104,7 +125,7 @@ export default function Onboarding() {
           name="native_language_id"
           render={({ field, fieldState }) => (
             <LanguageField
-              label="Native language"
+              label={t('onboarding.nativeLanguage')}
               value={field.value}
               onChange={field.onChange}
               error={fieldState.error?.message}
@@ -117,7 +138,7 @@ export default function Onboarding() {
           name="target_language_id"
           render={({ field, fieldState }) => (
             <LanguageField
-              label="Target language"
+              label={t('onboarding.targetLanguage')}
               value={field.value}
               onChange={field.onChange}
               error={fieldState.error?.message}
@@ -127,14 +148,16 @@ export default function Onboarding() {
         />
 
         {apiError && (
-          <Text className="text-center text-destructive">{apiError}</Text>
+          <Text className="text-center text-destructive">
+            {uiErrorText(apiError, t)}
+          </Text>
         )}
 
         <Button
           loading={formState.isSubmitting}
           onPress={handleSubmit(onSubmit)}
         >
-          <Text>Complete setup</Text>
+          <Text>{t('onboarding.submit')}</Text>
         </Button>
       </View>
     </ScrollView>

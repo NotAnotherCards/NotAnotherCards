@@ -11,6 +11,7 @@ jest.mock('expo-router', () => {
   const { Text } = require('react-native');
   return {
     useRouter: () => ({ replace: mockReplace }),
+    useIsFocused: () => true,
     Link: ({ children }: { children: React.ReactNode }) =>
       React.createElement(Text, null, children),
   };
@@ -43,17 +44,14 @@ beforeEach(() => {
 describe('Register screen', () => {
   it('navigates to the dashboard only once the session exists', async () => {
     const { getByRole, getByPlaceholderText, rerender } = render(<Register />);
-    fireEvent.changeText(getByPlaceholderText('Jane Doe'), 'Jane Doe');
+    fireEvent.changeText(getByPlaceholderText('Name'), 'Jane Doe');
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Create a password'), 'Abcdef1!');
-    fireEvent.changeText(
-      getByPlaceholderText('Repeat your password'),
-      'Abcdef1!',
-    );
-    fireEvent.press(getByRole('button', { name: 'Create account' }));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Abcdef1!');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'Abcdef1!');
+    fireEvent.press(getByRole('button', { name: 'Sign up' }));
     await waitFor(() => expect(mockSignUp).toHaveBeenCalled());
     await act(async () => {});
 
@@ -73,17 +71,14 @@ describe('Register screen', () => {
     const { getByRole, getByPlaceholderText, findByText } = render(
       <Register />,
     );
-    fireEvent.changeText(getByPlaceholderText('Jane Doe'), 'Jane Doe');
+    fireEvent.changeText(getByPlaceholderText('Name'), 'Jane Doe');
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Create a password'), 'Abcdef1!');
-    fireEvent.changeText(
-      getByPlaceholderText('Repeat your password'),
-      'Abcdef2!',
-    );
-    fireEvent.press(getByRole('button', { name: 'Create account' }));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Abcdef1!');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'Abcdef2!');
+    fireEvent.press(getByRole('button', { name: 'Sign up' }));
     expect(await findByText('Passwords do not match')).toBeTruthy();
   });
 
@@ -96,17 +91,14 @@ describe('Register screen', () => {
     const { getByRole, getByPlaceholderText, findByText } = render(
       <Register />,
     );
-    fireEvent.changeText(getByPlaceholderText('Jane Doe'), 'Jane Doe');
+    fireEvent.changeText(getByPlaceholderText('Name'), 'Jane Doe');
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Create a password'), 'Abcdef1!');
-    fireEvent.changeText(
-      getByPlaceholderText('Repeat your password'),
-      'Abcdef1!',
-    );
-    fireEvent.press(getByRole('button', { name: 'Create account' }));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Abcdef1!');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'Abcdef1!');
+    fireEvent.press(getByRole('button', { name: 'Sign up' }));
     expect(await findByText(/Can't reach the server/)).toBeTruthy();
   });
 

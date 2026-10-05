@@ -49,6 +49,7 @@ export function Profile() {
   const { isSubmitting, isDirty } = form.formState;
 
   const nativeLanguage = form.watch('native_language_id');
+  const targetLanguage = form.watch('target_language_id');
 
   // Sync form values once profile or session is loaded
   useEffect(() => {
@@ -66,6 +67,14 @@ export function Profile() {
       });
     }
   }, [profile, session, form]);
+
+  // The target options leave out the native language, so a target equal to
+  // it would be kept but not shown. Clear it instead, as mobile does (#455).
+  useEffect(() => {
+    if (nativeLanguage && nativeLanguage === targetLanguage) {
+      form.setValue('target_language_id', '', { shouldValidate: true });
+    }
+  }, [form, nativeLanguage, targetLanguage]);
 
   useEffect(() => {
     if (isDirty) {
@@ -223,7 +232,7 @@ export function Profile() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {languageLabel(lang)}
+                            {languageLabel(lang, t(`languages.${lang.locale}`))}
                           </option>
                         ))}
                       </select>
@@ -276,7 +285,7 @@ export function Profile() {
                             value={lang.value}
                             className="bg-background text-foreground"
                           >
-                            {languageLabel(lang)}
+                            {languageLabel(lang, t(`languages.${lang.locale}`))}
                           </option>
                         ))}
                       </select>

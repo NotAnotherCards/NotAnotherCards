@@ -22,8 +22,10 @@ import {
 } from '@/lib/ui-preferences';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useStore } from '@/hooks/useStore';
 
 export function Preferences() {
+  const { profile, updateUserProfile } = useStore();
   const { t } = useTranslation();
   const { data: session } = authClient.useSession();
   const [reviewPreferences, setReviewPreferences] = useState(() =>
@@ -77,13 +79,22 @@ export function Preferences() {
             <div className="mt-1">
               <Switch
                 id="use-target-language"
-                checked={uiPreferences.useTargetLanguageForUi}
-                onCheckedChange={(useTargetLanguageForUi) =>
+                checked={
+                  session && profile
+                    ? (profile.target_language_active ?? false)
+                    : uiPreferences.useTargetLanguageForUi
+                }
+                onCheckedChange={async (useTargetLanguageForUi) => {
                   updateUiPreferences({
                     ...uiPreferences,
                     useTargetLanguageForUi,
-                  })
-                }
+                  });
+                  if (session && profile) {
+                    await updateUserProfile({
+                      target_language_active: useTargetLanguageForUi,
+                    });
+                  }
+                }}
                 aria-label={t(
                   'dashboard.settings.preferences.use_target_language',
                 )}

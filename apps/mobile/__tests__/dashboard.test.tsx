@@ -1,7 +1,14 @@
 import React from 'react';
+import i18n from '@/lib/i18n';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
 import { act, render, fireEvent } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+  TwoFactorDeepLinkProvider,
+} from '@/lib/two-factor-challenge';
 import Storage from 'expo-sqlite/kv-store';
 import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
@@ -11,6 +18,8 @@ import {
 
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
+let mockParams: { tab?: string } = {};
+let mockSetParams: (params: { tab?: string }) => void;
 const mockManager = { tag: 'manager' };
 let mockSyncController: {
   state: {
@@ -81,9 +90,9 @@ jest.mock('../lib/overview-stats', () => ({
 
 // The deck list and settings have their own tests; keep this one about the
 // session guard and the tab strip. Each tab renders a marker instead.
-jest.mock('../components/deck-list', () => {
+jest.mock('../components/library', () => {
   const { Text } = require('react-native');
-  return { DeckList: () => <Text>deck-list</Text> };
+  return { Library: () => <Text>deck-list</Text> };
 });
 jest.mock('../components/settings', () => {
   const { Text } = require('react-native');
@@ -111,13 +120,69 @@ jest.mock('expo-router', () => {
   return {
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
-    useRouter: () => ({ push: mockPush }),
+    useLocalSearchParams: () => {
+      const [params, setParams] = React.useState(mockParams);
+      mockSetParams = setParams;
+      return params;
+    },
+    useRouter: () => ({
+      push: mockPush,
+      setParams: (params: { tab?: string }) => mockSetParams(params),
+    }),
   };
 });
 
 describe('Dashboard screen', () => {
+  it('renders the overview in German and updates counts and controls when the locale changes', async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane', onBoardingComplete: true } },
+      isPending: false,
+    });
+    mockOverviewStats.stats = { ...NO_STATS, dictionarySize: 1, streak: 2 };
+    mockReviewOverview.dueCount = 1;
+    const screen = await renderWithLocale(<Dashboard />, 'de');
+    expect(screen.getByText('Übersicht')).toBeTruthy();
+    expect(screen.getByText('1 Wort')).toBeTruthy();
+    expect(screen.getByText('2 Tage')).toBeTruthy();
+    for (const word of ['Persönliches', 'Wörterbuch']) {
+      expect(screen.getByText(word).props.numberOfLines).toBe(1);
+      expect(screen.getByText(word).props.adjustsFontSizeToFit).toBe(true);
+    }
+    expect(screen.getByText('Karten wiederholen · 1 fällig')).toBeTruthy();
+    fireEvent(
+      screen.getByTestId('review-label-measure', {
+        includeHiddenElements: true,
+      }),
+      'textLayout',
+      {
+        nativeEvent: { lines: [{}, {}] },
+      },
+    );
+    expect(screen.getByText('Karten wiederholen\n1 fällig')).toBeTruthy();
+    fireEvent(
+      screen.getByTestId('review-label-measure', {
+        includeHiddenElements: true,
+      }),
+      'textLayout',
+      {
+        nativeEvent: { lines: [{}] },
+      },
+    );
+    expect(screen.getByText('Karten wiederholen · 1 fällig')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('So werden Tagesziele gezählt'));
+    expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Schließen' }));
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByText('1 palabra')).toBeTruthy();
+    expect(screen.getByText('Empezar repaso · 1 pendiente')).toBeTruthy();
+    expect(screen.queryByText('Übersicht')).toBeNull();
+  });
   beforeEach(() => {
     jest.clearAllMocks();
+    mockParams = {};
+    finishTwoFactorChallenge();
     Storage.removeItemSync(lastReviewDeckStorageKey('user-dashboard'));
     mockReviewOverview = {
       target: 'nothing-due',
@@ -134,7 +199,7 @@ describe('Dashboard screen', () => {
     mockAchievements = { achievements: [], isLoading: false, error: null };
   });
 
-  it('shows the pull spinner for as long as the sync runs', () => {
+  it('shows the pull spinner until the sync it started settles', async () => {
     mockUseSession.mockReturnValue({
       data: {
         user: {
@@ -146,28 +211,31 @@ describe('Dashboard screen', () => {
       },
       isPending: false,
     });
-    // As the controller does: syncNow() returns nothing, sets the state to
-    // syncing before it returns, and reports the end through its state.
+    // As the controller does: syncNow() resolves with the state once the run
+    // has settled, and never rejects.
     const listeners = new Set<() => void>();
-    const setStatus = (status: string) => {
-      controller.state = { ...controller.state, status };
-      listeners.forEach((notify) => notify());
+    let settle: () => void = () => {};
+    const state = {
+      status: 'idle',
+      lastSyncAt: null,
+      error: null,
+      cause: null,
+      lastResult: null,
     };
     const controller = {
-      state: {
-        status: 'idle',
-        lastSyncAt: null,
-        error: null,
-        cause: null,
-        lastResult: null,
-      },
+      state,
       subscribe: (notify: () => void) => {
         listeners.add(notify);
         return () => {
           listeners.delete(notify);
         };
       },
-      syncNow: jest.fn(() => setStatus('syncing')),
+      syncNow: jest.fn(
+        () =>
+          new Promise<typeof state>((resolve) => {
+            settle = () => resolve(controller.state);
+          }),
+      ),
     };
     mockSyncController = controller;
     const result = render(<Dashboard />);
@@ -182,16 +250,56 @@ describe('Dashboard screen', () => {
       }>;
     expect(refresh().props.refreshing).toBe(false);
 
+    // a sync that starts by itself shows no pull spinner
+    act(() => {
+      controller.state = { ...state, status: 'syncing' };
+      listeners.forEach((notify) => notify());
+    });
+    expect(refresh().props.refreshing).toBe(false);
+
     act(() => refresh().props.onRefresh());
     expect(controller.syncNow).toHaveBeenCalledTimes(1);
     expect(refresh().props.refreshing).toBe(true);
 
-    act(() => setStatus('idle'));
+    await act(async () => settle());
     expect(refresh().props.refreshing).toBe(false);
+  });
 
-    // a sync that starts by itself shows no pull spinner
-    act(() => setStatus('syncing'));
-    expect(refresh().props.refreshing).toBe(false);
+  it('redirects a pending challenge before rendering a cached session', () => {
+    beginTwoFactorChallenge();
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
+  });
+
+  it('gates a deep-linked challenge before its persisted state is written', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(
+      <TwoFactorDeepLinkProvider pending>
+        <Dashboard />
+      </TwoFactorDeepLinkProvider>,
+    );
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
   });
 
   it('redirects to login when there is no session', () => {
@@ -215,6 +323,17 @@ describe('Dashboard screen', () => {
     const { getByText, queryByText } = render(<Dashboard />);
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(queryByText(/jane@example.com/)).toBeNull();
+  });
+
+  it('opens the library when returning from a community import', () => {
+    mockParams = { tab: 'library' };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+    const result = render(<Dashboard />);
+    expect(result.getByText('deck-list')).toBeTruthy();
+    expect(result.queryByText('Jane Doe')).toBeNull();
   });
 
   it('opens on Overview and switches to the library and settings tabs', () => {
@@ -306,11 +425,14 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    expect(getByText('Personal Dictionary')).toBeTruthy();
+    expect(getByText('Personal')).toBeTruthy();
+    expect(getByText('Dictionary')).toBeTruthy();
     expect(getByText('1540 words')).toBeTruthy();
-    expect(getByText('Learning Streak')).toBeTruthy();
+    expect(getByText('Learning')).toBeTruthy();
+    expect(getByText('Streak')).toBeTruthy();
     expect(getByText('1 Day')).toBeTruthy();
-    expect(getByText('Words Learned')).toBeTruthy();
+    expect(getByText('Words')).toBeTruthy();
+    expect(getByText('Learned')).toBeTruthy();
     expect(getByText('12')).toBeTruthy();
   });
 
@@ -340,9 +462,10 @@ describe('Dashboard screen', () => {
 
   it('shows the badges in a row and their details on a tap', () => {
     const { achievements } = jest.requireActual('../lib/achievements');
-    mockAchievements.achievements = achievements([
-      { badge_id: 'first-review', unlocked_at: Date.UTC(2026, 8, 20, 12) },
-    ]);
+    mockAchievements.achievements = achievements(
+      [{ badge_id: 'first-review', unlocked_at: Date.UTC(2026, 8, 20, 12) }],
+      i18n.t,
+    );
     mockUseSession.mockReturnValue({
       data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
       isPending: false,
@@ -455,7 +578,7 @@ describe('Dashboard screen', () => {
     expect(queryByText(/Start Review/)).toBeNull();
   });
 
-  it('disables Start Review when nothing is due', () => {
+  it('opens the library when nothing is due', () => {
     saveLastReviewDeckId('user-dashboard', 'deck-spanish');
     mockUseSession.mockReturnValue({
       data: {
@@ -470,10 +593,13 @@ describe('Dashboard screen', () => {
 
     const { getByRole } = render(<Dashboard />);
     const button = getByRole('button', { name: 'Start Review · 0 due' });
-    expect(button.props.accessibilityState.disabled).toBe(true);
+    expect(button.props.accessibilityState.disabled).toBe(false);
     fireEvent.press(button);
 
     expect(mockPush).not.toHaveBeenCalled();
+    expect(
+      getByRole('tab', { name: 'My Library' }).props.accessibilityState,
+    ).toEqual({ selected: true });
     // Nothing due now does not forget the deck: it can be due again later.
     expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });

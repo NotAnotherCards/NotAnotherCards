@@ -1,8 +1,13 @@
 import React from 'react';
 import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
-import Login from '@/app/login';
 // The app's root loads the catalogs; these render the forms without it.
 import '@/lib/i18n';
+import Login from '@/app/login';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+} from '@/lib/two-factor-challenge';
 
 const mockReplace = jest.fn();
 
@@ -12,14 +17,20 @@ jest.mock('expo-router', () => {
   const { Text } = require('react-native');
   return {
     useRouter: () => ({ replace: mockReplace }),
+    useIsFocused: () => true,
     Link: ({ children }: { children: React.ReactNode }) =>
       React.createElement(Text, null, children),
   };
 });
 
 // The real auth client pulls in native modules; mock it like web does in setup.ts.
+type MockSignInResult = {
+  data: { twoFactorRedirect?: boolean } | null;
+  error: { message?: string; code?: string; status?: number } | null;
+};
 const mockSignIn = jest.fn(
-  async (): Promise<{ error: { message?: string } | null }> => ({
+  async (_input?: unknown): Promise<MockSignInResult> => ({
+    data: {},
     error: null,
   }),
 );
@@ -30,27 +41,111 @@ let mockSession: {
   isPending: boolean;
 };
 
+const mockSocialSignIn = jest.fn(
+  async (_input: unknown): Promise<{ error: { message?: string } | null }> => ({
+    error: null,
+  }),
+);
+
 jest.mock('../lib/auth-client', () => ({
   authClient: {
-    signIn: { email: () => mockSignIn() },
+    signIn: {
+      email: (input: unknown) => mockSignIn(input),
+      social: (input: unknown) => mockSocialSignIn(input),
+    },
     useSession: () => mockSession,
+    getCookie: () => '',
   },
 }));
 
 beforeEach(() => {
+  finishTwoFactorChallenge();
   mockSession = { data: null, isPending: false };
   mockReplace.mockClear();
+  mockSocialSignIn.mockClear();
 });
 
 describe('Login screen', () => {
+  it.each([
+    [
+      {
+        code: 'INVALID_EMAIL_OR_PASSWORD',
+        message: 'Invalid email or password',
+        status: 401,
+      },
+      'El correo electrónico o la contraseña no son correctos.',
+    ],
+    [
+      { message: 'Private server diagnostic' },
+      'Ha ocurrido un error inesperado',
+    ],
+  ])(
+    'translates API errors without exposing server text: %j',
+    async (error, expected) => {
+      mockSignIn.mockResolvedValueOnce({ data: null, error });
+      const screen = await renderWithLocale(<Login />, 'es');
+      fireEvent.changeText(
+        screen.getByPlaceholderText('nombre@ejemplo.com'),
+        'jane@example.com',
+      );
+      fireEvent.changeText(
+        screen.getByPlaceholderText('Contraseña'),
+        'Password123*',
+      );
+      fireEvent.press(screen.getByText('Iniciar sesión'));
+      expect(await screen.findByText(expected)).toBeTruthy();
+      expect(screen.queryByText(error.message)).toBeNull();
+    },
+  );
+  it('retranslates an already visible network error after switching languages', async () => {
+    mockSignIn.mockRejectedValueOnce(new Error('Network request failed'));
+    const screen = await renderWithLocale(<Login />, 'es');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('nombre@ejemplo.com'),
+      'jane@example.com',
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText('Contraseña'),
+      'Password123*',
+    );
+    fireEvent.press(screen.getByText('Iniciar sesión'));
+    await screen.findByText(/No se puede conectar/);
+    await act(async () => {
+      await screen.i18n.changeLanguage('de');
+    });
+    expect(screen.getByText(/Server.*nicht erreichbar/)).toBeTruthy();
+  });
+  it('translates Spanish labels and validation without changing submitted field names', async () => {
+    const screen = await renderWithLocale(<Login />, 'es');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('nombre@ejemplo.com'),
+      'invalid',
+    );
+    fireEvent.press(screen.getByText('Iniciar sesión'));
+    expect(
+      await screen.findByText(
+        'Por favor, introduce un correo electrónico válido',
+      ),
+    ).toBeTruthy();
+  });
+  it('offers the language picker only before login', () => {
+    const screen = render(<Login />);
+    expect(screen.getByLabelText('Language')).toBeTruthy();
+    mockSession = {
+      data: { user: { name: 'Jane', onBoardingComplete: true } },
+      isPending: false,
+    };
+    screen.rerender(<Login />);
+    expect(screen.queryByLabelText('Language')).toBeNull();
+  });
   it('navigates to the dashboard only once the session exists', async () => {
     const { getByText, getByPlaceholderText, rerender } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     await waitFor(() => expect(mockSignIn).toHaveBeenCalled());
     await act(async () => {});
 
@@ -73,18 +168,18 @@ describe('Login screen', () => {
 
   it('renders the card and both fields', () => {
     const { getByText, getByPlaceholderText } = render(<Login />);
-    expect(getByText('Welcome back')).toBeTruthy();
-    expect(getByPlaceholderText('you@example.com')).toBeTruthy();
-    expect(getByPlaceholderText('Your password')).toBeTruthy();
+    expect(getByText('Welcome Back')).toBeTruthy();
+    expect(getByPlaceholderText('name@example.com')).toBeTruthy();
+    expect(getByPlaceholderText('Password')).toBeTruthy();
   });
 
   it('shows a validation error for an invalid email on submit', async () => {
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'not-an-email',
     );
-    fireEvent.press(getByText('Log in'));
+    fireEvent.press(getByText('Login'));
     // The shared schema gives a key; the field shows its translation.
     expect(await findByText('Please enter a valid email address')).toBeTruthy();
   });
@@ -97,26 +192,60 @@ describe('Login screen', () => {
     );
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     expect(await findByText(/Can't reach the server/)).toBeTruthy();
   });
 
-  it('shows the server message on an API error', async () => {
+  it('recognizes invalid credentials in a legacy API error', async () => {
     mockSignIn.mockResolvedValueOnce({
+      data: null,
       error: { message: 'Invalid email or password' },
     });
     const { getByText, getByPlaceholderText, findByText } = render(<Login />);
     fireEvent.changeText(
-      getByPlaceholderText('you@example.com'),
+      getByPlaceholderText('name@example.com'),
       'jane@example.com',
     );
-    fireEvent.changeText(getByPlaceholderText('Your password'), 'Password123*');
-    fireEvent.press(getByText('Log in'));
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
     expect(await findByText('Invalid email or password')).toBeTruthy();
+  });
+
+  it('routes a two-factor sign-in to verification before session navigation', async () => {
+    mockSignIn.mockResolvedValueOnce({
+      data: { twoFactorRedirect: true },
+      error: null,
+    });
+    const { getByText, getByPlaceholderText } = render(<Login />);
+    fireEvent.changeText(
+      getByPlaceholderText('name@example.com'),
+      'jane@example.com',
+    );
+    fireEvent.changeText(getByPlaceholderText('Password'), 'Password123*');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
+    );
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('does not let a cached session bypass a pending challenge', async () => {
+    beginTwoFactorChallenge();
+    mockSession = {
+      data: { user: { name: 'Previous User', onBoardingComplete: true } },
+      isPending: false,
+    };
+    render(<Login />);
+
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith('/two-factor'),
+    );
+    expect(mockReplace).not.toHaveBeenCalledWith('/dashboard');
   });
 
   it('routes to onboarding when the profile is unfinished', async () => {
@@ -127,6 +256,31 @@ describe('Login screen', () => {
     render(<Login />);
     await waitFor(() =>
       expect(mockReplace).toHaveBeenCalledWith('/onboarding'),
+    );
+  });
+  it('starts a social sign-in with the provider and in-app callbacks', async () => {
+    const { getByText } = render(<Login />);
+    fireEvent.press(getByText('Google'));
+    await waitFor(() => expect(mockSocialSignIn).toHaveBeenCalledTimes(1));
+    // relative paths: the Expo client turns them into the app's scheme URL
+    expect(mockSocialSignIn).toHaveBeenCalledWith({
+      provider: 'google',
+      callbackURL: '/dashboard',
+      errorCallbackURL: '/login',
+    });
+    // navigation still waits for the session, as with email
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('shows the message when a social sign-in fails', async () => {
+    mockSocialSignIn.mockResolvedValueOnce({
+      error: { message: 'Provider refused' },
+    });
+    const { getByText, findByText } = render(<Login />);
+    fireEvent.press(getByText('Google'));
+    expect(await findByText('An unexpected error occurred')).toBeTruthy();
+    expect(mockSocialSignIn).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'google' }),
     );
   });
 });

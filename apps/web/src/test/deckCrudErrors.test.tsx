@@ -49,6 +49,7 @@ vi.mock('@/hooks/useStore', () => ({
   useStore: () => ({
     ready: true,
     decks,
+    getCardsForDeck: () => [],
     getCardsCount: () => 0,
     isLoading: false,
     isTakenOver: false,

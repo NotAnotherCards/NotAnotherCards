@@ -1,18 +1,24 @@
 import { Text, TextClassContext } from '@/components/ui/text';
+import { cardShadows } from '@/lib/theme';
 import { cn } from '@/lib/utils';
+import { useColorScheme } from 'nativewind';
 import { View } from 'react-native';
 
 function Card({
   className,
+  style,
   ...props
 }: React.ComponentProps<typeof View> & React.RefAttributes<View>) {
+  const { colorScheme } = useColorScheme();
+  const boxShadow = cardShadows[colorScheme === 'dark' ? 'dark' : 'light'];
   return (
     <TextClassContext.Provider value="text-card-foreground">
       <View
         className={cn(
-          'bg-card border-border flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5',
+          'bg-card border-sage-border flex flex-col gap-6 rounded-2xl border py-6',
           className,
         )}
+        style={[{ boxShadow }, style]}
         {...props}
       />
     </TextClassContext.Provider>
