@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   cardsForDeck,
+  cardsWithoutActiveDeck,
   countCardsPerDeck,
   deckLearningCounts,
   reviewTarget,
@@ -146,6 +147,32 @@ describe('countCardsPerDeck', () => {
     expect(counts.get('d1')).toBe(0);
     expect(counts.get('d2')).toBeUndefined();
     expect(countCardsPerDeck([], [])).toEqual(new Map());
+  });
+});
+
+describe('cardsWithoutActiveDeck', () => {
+  it('keeps cards with no membership or only inactive memberships', () => {
+    expect(
+      cardsWithoutActiveDeck(
+        [card('n1'), card('n2'), card('n3')],
+        [
+          { note_id: 'n1', active: true },
+          { note_id: 'n2', active: false },
+        ],
+      ),
+    ).toEqual([card('n2'), card('n3')]);
+  });
+
+  it('excludes a note when any of its memberships is active', () => {
+    expect(
+      cardsWithoutActiveDeck(
+        [card('n1'), card('n2')],
+        [
+          { note_id: 'n1', active: false },
+          { note_id: 'n1', active: true },
+        ],
+      ),
+    ).toEqual([card('n2')]);
   });
 });
 

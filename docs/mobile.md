@@ -304,8 +304,11 @@ The APKs are signed with the certificate (SHA-256):
 `build-release.sh` refuses a build signed with any other key, because an
 installed app only updates in place from the same certificate.
 
-The current builds talk to the staging server at cards.dustyway.org and are
-arm64 only. Updates arrive through the client like any other app.
+Since 0.0.5 the builds talk to the production server at
+app.notanothercards.com and are arm64 only. Updates arrive through the client
+like any other app. Builds up to 0.0.4 talked to the staging server at
+cards.dustyway.org: when coming from one of those, uninstall the app or clear
+its data before installing, then sign in again.
 
 The same APK is attached to a GitHub Release tagged `mobile-v<version>`, with
 its SHA-256 in the notes. Obtainium can follow those releases instead:

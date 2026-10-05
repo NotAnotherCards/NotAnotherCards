@@ -66,6 +66,19 @@ export function cardsForDeck<C extends { note_id: string }>(
   return cards.filter((card) => noteIds.has(card.note_id));
 }
 
+/** Cards whose note does not belong to any active deck. */
+export function cardsWithoutActiveDeck<C extends { note_id: string }>(
+  cards: readonly C[],
+  memberships: readonly { note_id: string; active: boolean }[],
+): C[] {
+  const noteIdsInActiveDeck = new Set(
+    memberships
+      .filter((membership) => membership.active)
+      .map((membership) => membership.note_id),
+  );
+  return cards.filter((card) => !noteIdsInActiveDeck.has(card.note_id));
+}
+
 // The deck Start review opens a due deck when there is one. Starting from an
 // empty queue belongs to the library, where the learner chooses a deck.
 export function reviewTarget({
