@@ -19,6 +19,7 @@ import {
   deleteDeck,
   deleteDeckWithNotes,
   deleteNote,
+  deleteNotes,
   disableCard,
   getPersonalDictionaryQuery,
   getReviewHistoryQuery,
@@ -337,6 +338,20 @@ describe('note, card, and membership operations', () => {
         .query(Q.where('note_id', firstCard.note_id))
         .fetch(),
     ).toEqual([]);
+  });
+
+  it('deletes several notes and all of their dependent rows in one batch', async () => {
+    const db = await openDatabase();
+    const deck = await createDeck(db, 'Deck');
+    const firstCard = await createCard(db, deck.id, 'first', 'back');
+    const secondCard = await createCard(db, deck.id, 'second', 'back');
+    await recordReviewEvent(db, firstCard.id, 2);
+    await recordReviewEvent(db, secondCard.id, 3);
+
+    await deleteNotes(db, [firstCard.note_id, secondCard.note_id]);
+
+    expect(await getPersonalDictionaryQuery(db).fetch()).toEqual([]);
+    expect(await getReviewHistoryQuery(db).fetch()).toEqual([]);
   });
 
   it('edits basic notes but rejects structured notes without changing them', async () => {

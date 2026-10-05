@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
-import { Edit, Unlink, Eye, Trash2 } from 'lucide-react';
+import { Edit, Unlink, Eye } from 'lucide-react';
 import { WORD_TO_TRANSLATION_TEMPLATE_KEY } from '@repo/offline-db';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 import { useTranslation } from 'react-i18next';
@@ -13,8 +13,6 @@ interface CardItemProps {
   onViewCard: (card: Card) => void;
   canEdit?: boolean;
   canRemove?: boolean;
-  removeTitle?: string;
-  removeIcon?: 'unlink' | 'delete';
   style?: React.CSSProperties;
   'data-index'?: number;
 }
@@ -28,8 +26,6 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
       onViewCard,
       canEdit = true,
       canRemove = true,
-      removeTitle,
-      removeIcon = 'unlink',
       style,
       'data-index': dataIndex,
     },
@@ -104,15 +100,9 @@ export const CardItem = forwardRef<HTMLDivElement, CardItemProps>(
               size="icon"
               className="size-7 rounded-lg cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               onClick={() => onRemoveFromDeck(card)}
-              title={
-                removeTitle ?? t('deck.card_item.remove', 'Remove from Deck')
-              }
+              title={t('deck.card_item.remove', 'Remove from Deck')}
             >
-              {removeIcon === 'delete' ? (
-                <Trash2 className="size-3.5" />
-              ) : (
-                <Unlink className="size-3.5" />
-              )}
+              <Unlink className="size-3.5" />
             </Button>
           )}
         </div>

@@ -15,6 +15,7 @@ import {
 import { type UserNoteRecord } from '@repo/offline-db';
 import { toWordListRow, type WordListRow } from './word-note-rows';
 import { DeckStat } from './DeckStat';
+import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 import { useTranslation } from 'react-i18next';
 
 // Word rows switch once: a stacked layout below 880px and a table above it.
@@ -30,6 +31,7 @@ interface WordNoteListProps {
   notes: UserNoteRecord[];
   cards: Card[];
   activeWordCount?: number;
+  wordCount?: number;
   totalCardCount?: number;
   dueCardCount?: number;
   onViewNote: (note: UserNoteRecord) => void;
@@ -49,12 +51,15 @@ interface WordNoteListProps {
   removeWordTitle?: string;
   removeWordLabel?: string;
   removeWordIcon?: 'unlink' | 'delete';
+  removeInvalidNoteTitle?: string;
+  removeInvalidNoteLabel?: string;
 }
 
 export function WordNoteList({
   notes,
   cards,
   activeWordCount = 0,
+  wordCount = notes.length,
   totalCardCount = cards.length,
   dueCardCount = 0,
   onViewNote,
@@ -74,6 +79,8 @@ export function WordNoteList({
   removeWordTitle,
   removeWordLabel,
   removeWordIcon = 'unlink',
+  removeInvalidNoteTitle,
+  removeInvalidNoteLabel,
 }: WordNoteListProps) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,7 +135,7 @@ export function WordNoteList({
         <div className="grid grid-cols-2 gap-2 @[720px]:grid-cols-4">
           <DeckStat
             label={t('deck.stats.words_total', 'Words Total')}
-            value={notes.length}
+            value={wordCount}
           />
           <DeckStat
             label={t('deck.stats.active_words', 'Active Words')}
@@ -235,8 +242,10 @@ export function WordNoteList({
                             size="sm"
                             className="cursor-pointer"
                             onClick={() => onRemoveWord(row.note)}
+                            title={removeInvalidNoteTitle}
                           >
-                            {removeWordLabel ??
+                            {removeInvalidNoteLabel ??
+                              removeWordLabel ??
                               t('deck.words.remove_word', 'Remove word')}
                           </Button>
                         )}
@@ -367,24 +376,23 @@ export function WordNoteList({
                   >
                     <div
                       role="cell"
-                      className="min-w-0 truncate font-medium"
+                      className="min-w-0 overflow-hidden font-medium"
                       title={card.front}
                     >
-                      <button
-                        type="button"
-                        className="max-w-full cursor-pointer truncate text-left hover:text-primary"
-                        onClick={() => onViewCard?.(card)}
-                        title={t('deck.no_deck.view_card', 'View Card')}
-                      >
-                        {card.front}
-                      </button>
+                      <MarkdownRenderer
+                        content={card.front}
+                        className="line-clamp-2 [&_p]:m-0 [&_img]:max-h-12 [&_img]:max-w-full [&_audio]:max-w-full"
+                      />
                     </div>
                     <div
                       role="cell"
-                      className="text-muted-foreground min-w-0 truncate"
+                      className="text-muted-foreground min-w-0 overflow-hidden"
                       title={card.back}
                     >
-                      {card.back}
+                      <MarkdownRenderer
+                        content={card.back}
+                        className="line-clamp-2 [&_p]:m-0 [&_img]:max-h-12 [&_img]:max-w-full [&_audio]:max-w-full"
+                      />
                     </div>
                     <div className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1fr)_minmax(max-content,1fr)] items-center gap-3 @[880px]:contents">
                       <div

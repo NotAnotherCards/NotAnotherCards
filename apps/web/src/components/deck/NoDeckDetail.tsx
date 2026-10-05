@@ -6,6 +6,11 @@ import {
   parseWordFields,
   type UserNoteRecord,
 } from '@repo/offline-db';
+import {
+  isBasicCard as isBasicNoteCard,
+  WORD_NOTE_FIELDS_VERSION,
+  WORD_NOTE_TYPE,
+} from '@repo/study';
 import { useStore, type Card } from '@/hooks/useStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +22,7 @@ import {
 import { CardForm } from './CardForm';
 import { WordNoteList } from './WordNoteList';
 import { WordNoteView } from './WordNoteView';
-import { BasicCardView } from './BasicCardView';
+import { FlashcardModal } from './FlashcardModal';
 import { toWordRow } from './word-note-rows';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import { WordNoteForm, type WordFormValues } from './WordNoteForm';
@@ -39,13 +44,69 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
     null,
   );
   const [viewingCard, setViewingCard] = useState<Card | null>(null);
-  const [noteIdToDelete, setNoteIdToDelete] = useState<string | null>(null);
+  const [noteToDelete, setNoteToDelete] = useState<{
+    id: string;
+    kind: 'card' | 'word' | 'note';
+  } | null>(null);
+  const [bulkDeleteStage, setBulkDeleteStage] = useState<
+    'confirm' | 'final' | null
+  >(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
   const cards = store.getCardsWithoutDeck();
-  const wordNotes = store.notes.filter((note) =>
-    cards.some((card) => card.note_id === note.id && store.isWordCard(card)),
+  const cardsByNoteId = useMemo(() => {
+    const result = new Map<string, Card[]>();
+    for (const card of cards) {
+      const noteCards = result.get(card.note_id) ?? [];
+      noteCards.push(card);
+      result.set(card.note_id, noteCards);
+    }
+    return result;
+  }, [cards]);
+  const notesById = useMemo(
+    () => new Map(store.notes.map((note) => [note.id, note])),
+    [store.notes],
   );
+  const notesWithCards = useMemo(
+    () =>
+      [...cardsByNoteId.keys()]
+        .map((noteId) => notesById.get(noteId))
+        .filter((note): note is UserNoteRecord => note !== undefined),
+    [cardsByNoteId, notesById],
+  );
+  const { wordNotes, basicCards, unparsedNotes } = useMemo(() => {
+    const wordNotes: UserNoteRecord[] = [];
+    const basicCards: Card[] = [];
+    const unparsedNotes: UserNoteRecord[] = [];
+
+    for (const note of notesWithCards) {
+      const noteCards = cardsByNoteId.get(note.id) ?? [];
+      const isWordNote =
+        note.note_type === WORD_NOTE_TYPE &&
+        note.fields_version === WORD_NOTE_FIELDS_VERSION &&
+        parseWordFields(note) !== null;
+
+      if (isWordNote) {
+        wordNotes.push(note);
+        continue;
+      }
+
+      const noteBasicCards = noteCards.filter((card) =>
+        isBasicNoteCard(card, note),
+      );
+      if (noteBasicCards.length > 0) {
+        basicCards.push(...noteBasicCards);
+      } else {
+        unparsedNotes.push(note);
+      }
+    }
+
+    for (const card of cards) {
+      if (!notesById.has(card.note_id)) basicCards.push(card);
+    }
+
+    return { wordNotes, basicCards, unparsedNotes };
+  }, [cards, cardsByNoteId, notesById, notesWithCards]);
   const learningCounts = useMemo(
     () =>
       deckLearningCounts(
@@ -54,26 +115,22 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
       ),
     [cards, wordNotes],
   );
-  const basicCards = cards.filter(store.isBasicCard);
-  const isDeletingWord =
-    noteIdToDelete !== null &&
-    wordNotes.some((note) => note.id === noteIdToDelete);
   const viewingWordRow = viewingWordNote
-    ? toWordRow(
-        viewingWordNote,
-        cards.filter((card) => card.note_id === viewingWordNote.id),
-      )
+    ? toWordRow(viewingWordNote, cardsByNoteId.get(viewingWordNote.id) ?? [])
     : null;
   const editingWordFields = editingWordNote
     ? parseWordFields(editingWordNote)
     : null;
 
   const handleEdit = (card: Card) => {
-    if (store.isBasicCard(card)) setEditingCard(card);
-    else if (store.isWordCard(card)) {
-      const note = store.noteForCard(card);
-      if (note) setEditingWordNote(note);
-    }
+    const note = notesById.get(card.note_id);
+    if (!note || isBasicNoteCard(card, note)) setEditingCard(card);
+    else if (
+      note.note_type === WORD_NOTE_TYPE &&
+      note.fields_version === WORD_NOTE_FIELDS_VERSION &&
+      parseWordFields(note) !== null
+    )
+      setEditingWordNote(note);
   };
 
   const handleEditCard = async (data: { front: string; back: string }) => {
@@ -83,7 +140,9 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
       await store.updateCard(editingCard.id, data.front, data.back);
       setEditingCard(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to update card'));
+      setWriteError(
+        writeErrorMessage(err, t('deck.no_deck.update_card_failed')),
+      );
     }
   };
 
@@ -102,20 +161,36 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
       });
       setEditingWordNote(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to update word'));
+      setWriteError(
+        writeErrorMessage(err, t('deck.no_deck.update_word_failed')),
+      );
     }
   };
 
   const handleDelete = async () => {
-    if (!noteIdToDelete) return;
+    if (!noteToDelete) return;
     setIsDeleting(true);
     setWriteError(null);
     try {
-      await store.deleteNote(noteIdToDelete);
-      setNoteIdToDelete(null);
-      if (!cards.some((card) => card.note_id !== noteIdToDelete)) onBack();
+      await store.deleteNote(noteToDelete.id);
+      setNoteToDelete(null);
+      if (!cards.some((card) => card.note_id !== noteToDelete.id)) onBack();
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to delete card'));
+      setWriteError(writeErrorMessage(err, t('deck.no_deck.delete_failed')));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setIsDeleting(true);
+    setWriteError(null);
+    try {
+      await store.deleteNotes([...cardsByNoteId.keys()]);
+      setBulkDeleteStage(null);
+      onBack();
+    } catch (err) {
+      setWriteError(writeErrorMessage(err, t('deck.no_deck.delete_failed')));
     } finally {
       setIsDeleting(false);
     }
@@ -138,7 +213,7 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground font-heading">
-              {t('deck.list.no_deck_title', 'No deck')}
+              {t('deck.list.no_deck_title', 'Cards and words without a deck')}
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               {t(
@@ -147,22 +222,43 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
               )}
             </p>
           </div>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setWriteError(null);
+              setBulkDeleteStage('confirm');
+            }}
+            className="cursor-pointer gap-1.5 justify-center self-stretch md:self-auto"
+          >
+            <Trash2 className="size-4" />
+            {t('deck.no_deck.delete_all_action', { count: cards.length })}
+          </Button>
         </div>
       </div>
 
       <WordNoteList
-        notes={wordNotes}
+        notes={[...wordNotes, ...unparsedNotes]}
         cards={cards}
         basicCards={basicCards}
+        wordCount={wordNotes.length}
         activeWordCount={learningCounts.activeNotes}
         totalCardCount={learningCounts.totalCards}
         dueCardCount={learningCounts.dueCards}
         onViewNote={setViewingWordNote}
         onEditWord={setEditingWordNote}
-        onRemoveWord={(note) => setNoteIdToDelete(note.id)}
+        onRemoveWord={(note) =>
+          setNoteToDelete({
+            id: note.id,
+            kind: wordNotes.some((word) => word.id === note.id)
+              ? 'word'
+              : 'note',
+          })
+        }
         onViewCard={setViewingCard}
         onEditCard={handleEdit}
-        onRemoveCard={(card) => setNoteIdToDelete(card.note_id)}
+        onRemoveCard={(card) =>
+          setNoteToDelete({ id: card.note_id, kind: 'card' })
+        }
         canEdit
         canRemove
         canAddWord={false}
@@ -170,6 +266,8 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
         removeWordTitle={t('deck.no_deck.delete_word', 'Delete word')}
         removeWordLabel={t('deck.no_deck.delete_word', 'Delete word')}
         removeWordIcon="delete"
+        removeInvalidNoteTitle={t('deck.no_deck.delete_note', 'Delete note')}
+        removeInvalidNoteLabel={t('deck.no_deck.delete_note', 'Delete note')}
         searchPlaceholder={t('deck.no_deck.search_placeholder', 'Search')}
         firstColumnLabel={t('deck.no_deck.col_question', 'Word / Question')}
         secondColumnLabel={t('deck.no_deck.col_answer', 'Translation / Answer')}
@@ -187,7 +285,7 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
 
       {editingWordNote && editingWordFields && (
         <WordNoteForm
-          title="Edit Word"
+          title={t('deck.word_view.edit_word', 'Edit Word')}
           alwaysShowDetails
           targetLanguageId={editingWordFields.target_language_id}
           nativeLanguageId={editingWordFields.native_language_id}
@@ -211,46 +309,50 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
       )}
 
       {viewingCard && (
-        <BasicCardView
-          front={viewingCard.front}
-          back={viewingCard.back}
+        <FlashcardModal
+          card={viewingCard}
           onClose={() => setViewingCard(null)}
-          onEdit={() => {
-            setViewingCard(null);
-            setEditingCard(viewingCard);
-          }}
         />
       )}
 
-      {noteIdToDelete && (
+      {noteToDelete && (
         <WordNoteDialog
           label={
-            isDeletingWord
+            noteToDelete.kind === 'word'
               ? t('deck.no_deck.delete_word_title', 'Delete word?')
-              : t('deck.no_deck.delete_title', 'Delete card?')
+              : noteToDelete.kind === 'note'
+                ? t('deck.no_deck.delete_note_title', 'Delete note?')
+                : t('deck.no_deck.delete_title', 'Delete card?')
           }
           onClose={() => {
-            if (!isDeleting) setNoteIdToDelete(null);
+            if (!isDeleting) setNoteToDelete(null);
           }}
           className="max-w-sm border-destructive/20"
         >
           <CardHeader>
             <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
               <Trash2 className="size-5" />
-              {isDeletingWord
+              {noteToDelete.kind === 'word'
                 ? t('deck.no_deck.delete_word_title', 'Delete word?')
-                : t('deck.no_deck.delete_title', 'Delete card?')}
+                : noteToDelete.kind === 'note'
+                  ? t('deck.no_deck.delete_note_title', 'Delete note?')
+                  : t('deck.no_deck.delete_title', 'Delete card?')}
             </CardTitle>
             <CardDescription>
-              {isDeletingWord
+              {noteToDelete.kind === 'word'
                 ? t(
                     'deck.no_deck.delete_word_description',
                     'This permanently deletes the word, all of its cards, and its review history.',
                   )
-                : t(
-                    'deck.no_deck.delete_description',
-                    'This permanently deletes the card, its note, and its review history.',
-                  )}
+                : noteToDelete.kind === 'note'
+                  ? t(
+                      'deck.no_deck.delete_note_description',
+                      'This permanently deletes the note, its cards, and its review history.',
+                    )
+                  : t(
+                      'deck.no_deck.delete_description',
+                      'This permanently deletes the card, its note, and its review history.',
+                    )}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -259,7 +361,7 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
               <Button
                 variant="outline"
                 disabled={isDeleting}
-                onClick={() => setNoteIdToDelete(null)}
+                onClick={() => setNoteToDelete(null)}
                 className="cursor-pointer"
               >
                 {t('common.cancel', 'Cancel')}
@@ -271,6 +373,73 @@ export function NoDeckDetail({ onBack }: NoDeckDetailProps) {
                 className="cursor-pointer"
               >
                 {t('common.delete', 'Delete')}
+              </Button>
+            </div>
+          </CardContent>
+        </WordNoteDialog>
+      )}
+
+      {bulkDeleteStage && (
+        <WordNoteDialog
+          label={
+            bulkDeleteStage === 'final'
+              ? t('deck.no_deck.delete_all_final_title', {
+                  count: cards.length,
+                })
+              : t('deck.no_deck.delete_all_title', { count: cards.length })
+          }
+          onClose={() => {
+            if (!isDeleting) setBulkDeleteStage(null);
+          }}
+          className="max-w-sm border-destructive/20"
+        >
+          <CardHeader>
+            <CardTitle className="text-lg font-bold text-destructive flex items-center gap-2">
+              <Trash2 className="size-5" />
+              {bulkDeleteStage === 'final'
+                ? t('deck.no_deck.delete_all_final_title', {
+                    count: cards.length,
+                  })
+                : t('deck.no_deck.delete_all_title', { count: cards.length })}
+            </CardTitle>
+            <CardDescription>
+              {bulkDeleteStage === 'final'
+                ? t('deck.no_deck.delete_all_final_description')
+                : t('deck.no_deck.delete_all_description', {
+                    count: cards.length,
+                  })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <FormErrorMessage message={writeError} className="mb-4" />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                disabled={isDeleting}
+                onClick={() =>
+                  bulkDeleteStage === 'final'
+                    ? setBulkDeleteStage('confirm')
+                    : setBulkDeleteStage(null)
+                }
+                className="cursor-pointer"
+              >
+                {bulkDeleteStage === 'final'
+                  ? t('deck.form.back')
+                  : t('common.cancel', 'Cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={isDeleting}
+                onClick={() =>
+                  bulkDeleteStage === 'final'
+                    ? void handleDeleteAll()
+                    : setBulkDeleteStage('final')
+                }
+                className="cursor-pointer"
+              >
+                {bulkDeleteStage === 'final'
+                  ? t('common.delete', 'Delete')
+                  : t('deck.no_deck.delete_all_continue')}
               </Button>
             </div>
           </CardContent>
