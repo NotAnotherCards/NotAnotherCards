@@ -123,7 +123,7 @@
       "no_decks": "Noch keine Stapel. Erstelle deinen ersten oder importiere einen aus der Gemeinschaft.",
       "published_community": "In der Gemeinschaft veröffentlicht",
       "published": "Veröffentlicht",
-      "delete_deck_help": "Stapel löschen? Seine Karten bleiben erhalten und werden weiter wiederholt.",
+      "delete_deck_help": "Stapel löschen? Karten, die nur in diesem Stapel sind, werden mit ihrem Lernverlauf gelöscht.",
       "why": "Warum?",
       "asking": "Wird angefragt…",
       "taken_down": "Von der Moderation entfernt",

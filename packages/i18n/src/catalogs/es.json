@@ -123,7 +123,7 @@
       "no_decks": "Aún no hay mazos. Crea el primero o importa uno de la comunidad.",
       "published_community": "Publicado en la comunidad",
       "published": "Publicado",
-      "delete_deck_help": "¿Eliminar este mazo? Sus tarjetas se conservarán y seguirán apareciendo en el repaso.",
+      "delete_deck_help": "¿Eliminar este mazo? Las tarjetas que solo están en este mazo se eliminarán con su historial de repaso.",
       "why": "¿Por qué?",
       "asking": "Consultando…",
       "taken_down": "Retirado por moderación",

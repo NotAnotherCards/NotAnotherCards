@@ -207,7 +207,6 @@ function StartReviewBar({
       )}
       {/* Keep the due count together when the full label needs two lines. */}
       <Button
-        variant="outline"
         size="lg"
         // 48 high, Android's touch target size.
         className="h-auto min-h-12 py-3 sm:h-auto"
@@ -215,7 +214,7 @@ function StartReviewBar({
         disabled={!!error}
         onPress={startReview}
       >
-        <BookOpenIcon size={18} className="text-foreground" />
+        <BookOpenIcon size={18} className="text-primary-foreground" />
         <View className="flex-1">
           {/* Measure the unsplit label so resizing can restore one line. */}
           <Text

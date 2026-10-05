@@ -123,7 +123,7 @@
       "no_decks": "No decks yet. Create your first one, or import one from the community.",
       "published_community": "Published to the community",
       "published": "Published",
-      "delete_deck_help": "Delete this deck? Its cards are kept and stay in review.",
+      "delete_deck_help": "Delete this deck? Cards that are only in this deck are deleted with their review history.",
       "why": "Why?",
       "asking": "Asking…",
       "taken_down": "Taken down by moderation",
