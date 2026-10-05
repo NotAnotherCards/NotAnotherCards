@@ -305,7 +305,7 @@ A technical challenge was keeping data and account security consistent across th
 
 @samcasti is the main Frontend developer. He led the implementation of the core web dashboard, user profile and settings, bringing the user interface to life with a custom design system and reactive components. His major feature contributions include the gamification system (badges, leaderboards, and daily challenges), the Playground tab for AI-assisted card generation, the global internationalization (i18n) setup with multiple language translations, and the reactivity layer that drives the offline-first data synchronization and local database operations.
 
-A significant technical challenge he addressed was ensuring the reliability of the UI and offline logic across different devices and scenarios. Addressed this by implementing a local-first IndexedDB strategy with optimistic UI updates, background synchronization retries, and multi-tab Web Locks to prevent database race conditions.
+Challenge: making web and mobile share the exact same database schema and offline logic. Implemented sqlite-wasm on OPFS in a Web Worker through RemelonDB's web driver so both web and phone use SQLite, with multi tab access handled by the library's lease.
 
 ### @tpandya
 
