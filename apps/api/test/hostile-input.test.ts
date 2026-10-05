@@ -10,6 +10,7 @@ import {
   aiPlaygroundEventSchema,
   apiErrorBodySchema,
   ENGLISH,
+  moderationExplanationEventSchema,
   SPANISH,
 } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
@@ -21,6 +22,7 @@ import {
   describe,
   expect,
   it,
+  type MockInstance,
   vi,
 } from 'vitest';
 import { AppModule } from '../src/app.module';
@@ -28,7 +30,13 @@ import { configureHttp } from '../src/configure-http';
 import { DATABASE_CONNECTION } from '../src/database/database-connection';
 import { user } from '../src/database/schema';
 import { aiGenerationJobs } from '../src/ai/schema';
-import { userProfiles } from '../src/sync/schema';
+import { AiGatewayService } from '../src/ai/ai-gateway.service';
+import {
+  deckReports,
+  deckTakedowns,
+  publishedDecks,
+} from '../src/sharing/schema';
+import { userDecks, userProfiles } from '../src/sync/schema';
 import {
   db,
   getTestConnectionString,
@@ -40,6 +48,10 @@ import {
 const origin = 'http://localhost:5173';
 const password = 'HostileInputPassword123!';
 const email = 'corpus-owner@example.test';
+const operatorKey = 'corpus-operator-key';
+const sharedDeckId = 'corpus-published-deck';
+const sharedCardId = 'corpus-published-card';
+const otherOwnerId = 'corpus-other-owner';
 const injections = ['<script>alert(1)</script>', "' OR 1=1 --"];
 const oversized = 'x'.repeat(1024 * 1024 + 1);
 const unknownFields = {
@@ -117,7 +129,17 @@ function contentChanges(text: string) {
 interface Endpoint {
   name: string;
   path: string;
-  kind: 'signup' | 'signin' | 'onboard' | 'sync' | 'job' | 'playground';
+  kind:
+    | 'signup'
+    | 'signin'
+    | 'onboard'
+    | 'sync'
+    | 'job'
+    | 'playground'
+    | 'update-user'
+    | 'report'
+    | 'takedown'
+    | 'explain';
   valid: (context: Context, text: string) => Record<string, unknown>;
   wrongTypes: Record<string, unknown>;
   injectionStatus: number;
@@ -220,6 +242,47 @@ const endpoints: Endpoint[] = [
     injectionStatus: 200,
     unknownStatus: 200,
   },
+  {
+    name: 'update user',
+    path: '/api/auth/update-user',
+    kind: 'update-user',
+    valid: (_context, text) => ({ name: text, timezone: 'UTC' }),
+    wrongTypes: { name: {}, timezone: [] },
+    injectionStatus: 200,
+    // Better Auth rejects writes to the known server-owned onboarding flag.
+    unknownStatus: 400,
+  },
+  {
+    name: 'deck report',
+    path: `/api/shared/decks/${sharedDeckId}/report`,
+    kind: 'report',
+    valid: (_context, text) => ({ reason: text }),
+    wrongTypes: { reason: [] },
+    injectionStatus: 201,
+    unknownStatus: 201,
+  },
+  {
+    name: 'operator takedown',
+    path: `/api/operator/decks/${sharedDeckId}/takedown`,
+    kind: 'takedown',
+    valid: (_context, text) => ({ reason: text }),
+    wrongTypes: { reason: {} },
+    injectionStatus: 200,
+    unknownStatus: 200,
+  },
+  {
+    name: 'moderation explanation',
+    path: `/api/decks/${sharedDeckId}/moderation/explain`,
+    kind: 'explain',
+    valid: (_context, text) => ({
+      cardId: sharedCardId,
+      reason: text,
+      source: 'published',
+    }),
+    wrongTypes: { cardId: [], reason: {}, source: 42 },
+    injectionStatus: 200,
+    unknownStatus: 200,
+  },
 ];
 
 interface CorpusCase {
@@ -280,7 +343,7 @@ const corpus: CorpusCase[] = [
 function expectJsonError(response: Response, status: number): void {
   expect(response.status).toBeGreaterThanOrEqual(400);
   expect(response.status).toBeLessThan(500);
-  expect(response.status).toBe(status);
+  expect(response.status, response.text).toBe(status);
   expect(response.headers['content-type']).toMatch(/application\/json/);
   const body: unknown = JSON.parse(response.text);
   expect(apiErrorBodySchema.parse(body).message).toEqual(expect.any(String));
@@ -294,6 +357,51 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
   let cookie: string;
   let context: Context;
   let tables: string[];
+  let generateText: MockInstance<AiGatewayService['generateText']>;
+
+  // Use real public snapshots and the correct owner for each route. A missing
+  // deck, self-report, or absent finding must not conceal bypassed validation.
+  async function prepareEndpoint(endpoint: Endpoint) {
+    if (!['report', 'takedown', 'explain'].includes(endpoint.kind)) return;
+    const ownerId = endpoint.kind === 'report' ? otherOwnerId : context.userId;
+    const now = Date.now();
+    await db.insert(userDecks).values({
+      id: sharedDeckId,
+      userId: ownerId,
+      rev: sql`nextval('remelon_rev')`,
+      title: 'Published corpus deck',
+      noteType: 'basic',
+      visibility: 'public',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await db.insert(publishedDecks).values({
+      deckId: sharedDeckId,
+      userId: ownerId,
+      title: 'Published corpus deck',
+      noteType: 'basic',
+      cardCount: 1,
+      content: {
+        notes: [],
+        cards: [
+          {
+            id: sharedCardId,
+            note_id: 'corpus-published-note',
+            template_key: BASIC_FRONT_BACK_TEMPLATE_KEY,
+            front: 'Front',
+            back: 'Back',
+          },
+        ],
+      },
+      moderationVerdict: {
+        flagged: [],
+        warnings: [...injections, 'corpus_user'].map((reason) => ({
+          cardId: sharedCardId,
+          reason,
+        })),
+      },
+    });
+  }
 
   // Compare complete rows, including auth accounts/sessions and onboarding
   // flags: counts alone would miss damaged existing rows or partial updates.
@@ -322,6 +430,8 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
     vi.stubEnv('NODE_ENV', 'test'); // Better Auth rate limits must not mask validation.
     vi.stubEnv('AI_WORKER_ENABLED', 'false');
     vi.stubEnv('AI_MOCK', '1');
+    vi.stubEnv('AI_API_BASE', '');
+    vi.stubEnv('MODERATION_OPERATOR_KEY', operatorKey);
 
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(DATABASE_CONNECTION)
@@ -332,6 +442,7 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
     });
     configureHttp(app);
     await app.init();
+    generateText = vi.spyOn(app.get(AiGatewayService), 'generateText');
 
     const signup = await request(app.getHttpServer())
       .post('/api/auth/sign-up/email')
@@ -344,6 +455,11 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
     expect(cookie).toContain('better-auth.session_token=');
     const owner = await db.select().from(user).where(eq(user.email, email));
     context = { userId: owner[0].id, cursor: '' };
+    await db.insert(user).values({
+      id: otherOwnerId,
+      name: 'Other Owner',
+      email: 'corpus-other-owner@example.test',
+    });
     const result = await db.execute<{ tablename: string }>(sql`
       select tablename from pg_tables where schemaname = 'public' order by tablename
     `);
@@ -351,6 +467,7 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
   }, 30_000);
 
   beforeEach(async () => {
+    generateText.mockClear();
     await db.execute(sql`
       truncate daily_challenge_completions, badge_awards, deck_takedowns,
         deck_reports, published_decks, user_profiles, review_events,
@@ -360,6 +477,10 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
       delete from remelon_sync_meta;
       update "user" set on_boarding_complete = false;
     `);
+    await db
+      .update(user)
+      .set({ name: 'Corpus Owner', image: null, timezone: 'UTC' })
+      .where(eq(user.id, context.userId));
     // A genuine owned word deck lets valid word_note requests reach the queue.
     // Otherwise a 404 could conceal a missing DTO validation check.
     const pull = await request(app.getHttpServer())
@@ -400,6 +521,7 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
       await app?.close();
       await tearDownPostgres();
     } finally {
+      generateText?.mockRestore();
       vi.unstubAllEnvs();
     }
   }, 30_000);
@@ -519,6 +641,72 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
       expect([...profiles.created, ...profiles.updated]).toContainEqual(
         expect.objectContaining({ id: context.userId, bio: text }),
       );
+    } else if (endpoint.kind === 'update-user') {
+      const [stored] = await db
+        .select()
+        .from(user)
+        .where(eq(user.id, context.userId));
+      expect(stored.name).toBe(text);
+      expect(stored.timezone).toBe('UTC');
+      expect(stored.onBoardingComplete).toBe(false);
+      expect(stored.id).not.toBe(unknownFields.userId);
+      expect(response.body).toEqual({ status: true });
+      const session = await request(app.getHttpServer())
+        .get('/api/auth/get-session')
+        .set('Cookie', cookie)
+        .expect(200);
+      expect(session.body).toMatchObject({
+        user: { id: context.userId, name: text, onBoardingComplete: false },
+      });
+    } else if (endpoint.kind === 'report' || endpoint.kind === 'takedown') {
+      const [stored] =
+        endpoint.kind === 'report'
+          ? await db.select().from(deckReports)
+          : await db.select().from(deckTakedowns);
+      expect(stored).toMatchObject({ deckId: sharedDeckId, reason: text });
+      if (endpoint.kind === 'report') {
+        expect(stored).toMatchObject({ reporterUserId: context.userId });
+        expect(response.body).toMatchObject({ report: { reason: text } });
+      } else {
+        expect(stored).toMatchObject({ source: 'operator' });
+        expect(response.body).toEqual({ status: 'blocked' });
+        const [deck] = await db
+          .select()
+          .from(userDecks)
+          .where(eq(userDecks.id, sharedDeckId));
+        expect(deck.visibility).toBe('private');
+      }
+      const fetched = await request(app.getHttpServer())
+        .get('/api/operator/deck-reports')
+        .set('x-moderation-operator-key', operatorKey)
+        .expect(200);
+      if (endpoint.kind === 'report') {
+        expect(fetched.body).toMatchObject({ reports: [{ reason: text }] });
+      } else {
+        const status = await request(app.getHttpServer())
+          .get(`/api/decks/${sharedDeckId}/moderation`)
+          .set('Cookie', cookie)
+          .expect(200);
+        expect(status.body).toMatchObject({ status: 'blocked', reason: text });
+      }
+    } else if (endpoint.kind === 'explain') {
+      expect(response.headers['content-type']).toMatch(/text\/event-stream/);
+      const events = response.text
+        .split('\n\n')
+        .filter((line) => line.startsWith('data: '))
+        .map((line) =>
+          moderationExplanationEventSchema.parse(JSON.parse(line.slice(6))),
+        );
+      expect(events.at(-1)?.type).toBe('result');
+      expect(generateText).toHaveBeenCalledOnce();
+      expect(generateText.mock.calls[0][1]).toBe(
+        `Category: ${text}\nFront: Front\nBack: Back`,
+      );
+      const [snapshot] = await db.select().from(publishedDecks);
+      expect(snapshot.moderationVerdict?.warnings).toContainEqual({
+        cardId: sharedCardId,
+        reason: text,
+      });
     } else {
       const [job] = await db.select().from(aiGenerationJobs);
       expect(job.userId).toBe(context.userId);
@@ -560,12 +748,16 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
   for (const endpoint of endpoints) {
     describe(endpoint.name, () => {
       it.each(corpus)('$name', async (testCase) => {
+        await prepareEndpoint(endpoint);
         const before = await snapshot();
         const req = request(app.getHttpServer())
           .post(endpoint.path)
           .set('Origin', origin)
           .set('Cookie', cookie)
           .set('Content-Type', 'application/json');
+        if (endpoint.kind === 'takedown') {
+          req.set('x-moderation-operator-key', operatorKey);
+        }
         const body = testCase.body(endpoint, context);
         const response = await (body === undefined ? req : req.send(body));
         const status = testCase.status(endpoint);
@@ -579,6 +771,130 @@ describePostgres('hostile input at the HTTP boundary (#253)', () => {
       });
     });
   }
+
+  const additionalInvalidFields = endpoints.flatMap((endpoint) => {
+    const patches: Record<string, unknown>[] =
+      endpoint.kind === 'report' || endpoint.kind === 'takedown'
+        ? [{ reason: ' ' }, { reason: 'x'.repeat(2001) }]
+        : endpoint.kind === 'explain'
+          ? [
+              { cardId: [] },
+              { reason: {} },
+              { reason: ' ' },
+              { reason: 'x'.repeat(501) },
+              { source: 42 },
+              { source: injections[1] },
+            ]
+          : endpoint.kind === 'update-user'
+            ? [{ name: 42 }, { name: null }, { image: {} }, { timezone: [] }]
+            : [];
+    return patches.map((patch) => ({
+      endpoint,
+      patch,
+      name: `${endpoint.name}: ${JSON.stringify(patch).slice(0, 80)}`,
+    }));
+  });
+  it.each(additionalInvalidFields)(
+    '$name leaves the database unchanged',
+    async ({ endpoint, patch }) => {
+      await prepareEndpoint(endpoint);
+      const before = await snapshot();
+      const req = request(app.getHttpServer())
+        .post(endpoint.path)
+        .set('Origin', origin)
+        .set('Cookie', cookie);
+      if (endpoint.kind === 'takedown') {
+        req.set('x-moderation-operator-key', operatorKey);
+      }
+      const response = await req.send({
+        ...endpoint.valid(context, 'corpus_user'),
+        ...patch,
+      });
+      expectJsonError(response, 400);
+      expect(await snapshot()).toEqual(before);
+      expect(generateText).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(injections)(
+    'moderation explanation rejects an unrecognized card id: %s',
+    async (text) => {
+      const endpoint = endpoints.find(({ kind }) => kind === 'explain')!;
+      await prepareEndpoint(endpoint);
+      const before = await snapshot();
+      const response = await request(app.getHttpServer())
+        .post(endpoint.path)
+        .set('Cookie', cookie)
+        .send({ ...endpoint.valid(context, 'corpus_user'), cardId: text });
+      expectJsonError(response, 404);
+      expect(await snapshot()).toEqual(before);
+      expect(generateText).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(
+    endpoints
+      .filter(({ kind }) =>
+        ['update-user', 'report', 'takedown', 'explain'].includes(kind),
+      )
+      .map((endpoint) => ({ endpoint, name: endpoint.name })),
+  )('$name requires authentication', async ({ endpoint }) => {
+    await prepareEndpoint(endpoint);
+    const before = await snapshot();
+    const response = await request(app.getHttpServer())
+      .post(endpoint.path)
+      .set('Origin', origin)
+      .send(endpoint.valid(context, 'corpus_user'));
+    expectJsonError(response, 401);
+    expect(await snapshot()).toEqual(before);
+    expect(generateText).not.toHaveBeenCalled();
+  });
+
+  it('operator takedown rejects an incorrect operator key', async () => {
+    const endpoint = endpoints.find(({ kind }) => kind === 'takedown')!;
+    await prepareEndpoint(endpoint);
+    const before = await snapshot();
+    const response = await request(app.getHttpServer())
+      .post(endpoint.path)
+      .set('Cookie', cookie)
+      .set('x-moderation-operator-key', 'incorrect-key')
+      .send(endpoint.valid(context, 'corpus_user'));
+    expectJsonError(response, 401);
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it.each([
+    { patch: { name: 'Updated Name', unexpected: injections[0] } },
+    { patch: { timezone: 'Europe/Berlin' } },
+    { patch: { image: 'https://example.test/avatar.png' } },
+    { patch: { image: null } },
+  ])('update user accepts partial fields: $patch', async ({ patch }) => {
+    // Clearing an image should update a previously populated value.
+    await db
+      .update(user)
+      .set({ image: 'https://example.test/previous.png' })
+      .where(eq(user.id, context.userId));
+    await request(app.getHttpServer())
+      .post('/api/auth/update-user')
+      .set('Origin', origin)
+      .set('Cookie', cookie)
+      .send(patch)
+      .expect(200);
+    const expected = Object.fromEntries(
+      Object.entries(patch).filter(([field]) => field !== 'unexpected'),
+    );
+    const [stored] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, context.userId));
+    expect(stored).toMatchObject(expected);
+    const fetched = await request(app.getHttpServer())
+      .get('/api/auth/get-session')
+      .set('Cookie', cookie)
+      .expect(200);
+    expect(fetched.body).toMatchObject({ user: expected });
+    expect(stored.onBoardingComplete).toBe(false);
+  });
 
   it.each([
     {

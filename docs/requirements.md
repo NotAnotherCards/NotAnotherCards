@@ -299,21 +299,46 @@ See the README for setup and failure artifacts.
 The #253 hostile-input corpus in `apps/api/test/hostile-input.test.ts` runs
 against a Nest app and an isolated, migrated Postgres database alongside the
 existing Postgres suites in CI (`pnpm --filter api test`, with
-`TEST_DATABASE_URL` set). It covers email signup/signin, onboarding, sync push,
-all three AI job types, and the AI playground with missing, empty, null,
+`TEST_DATABASE_URL` set). Its 163 cases cover email signup/signin, user updates,
+onboarding, sync push, all three AI job types, the AI playground, deck reports,
+operator takedowns, and moderation explanations with missing, empty, null,
 malformed, wrong-typed, oversized, injection-shaped, and unknown-field bodies.
 Transport and validation errors must be 4xx JSON responses with the string
 `message` clients read through `apiErrorBodySchema`; complete database row
 snapshots check rejected requests leave neither partial inserts nor damaged
 existing rows. Accepted script and SQL injection strings round-trip unchanged
 through storage and subsequent HTTP reads, preserving #221's renderer contract.
-Unknown fields follow each endpoint's existing strip/ignore or reject policy.
+Unknown fields follow each endpoint's existing strip/ignore or reject policy,
+including Better Auth's rejection of updates to the server-owned onboarding
+flag. Sharing cases use real published snapshots, separate report ownership,
+stored moderation findings, and operator credentials so missing resources or
+authentication cannot conceal validation gaps. Rejected explanations must not
+invoke the AI gateway; accepted reasons reach it unchanged. User update cases
+also cover valid partial updates and clearing an image.
 Sync row-level rejections retain the wire protocol's HTTP 200 `rejected` map;
 these cases also check the database is unchanged. Malformed sync envelopes
 still require a 4xx. The corpus demonstrated onboarding's wrong-type and invalid
 language-id 500s and sync profile UUID-field 500s before their validation was
 fixed. A local mutation check confirmed that bypassing AI job validation makes
-all three oversized-field cases fail.
+all three oversized-field cases fail. The expanded corpus exposed `update-user`
+accepting wrong-typed name, image, and timezone fields and returning 500 for a
+null name; the HTTP boundary now validates these fields before Better Auth's
+adapter writes them.
+
+After deployment, smoke-test the stricter onboarding and sync validation on the
+production site with a fresh account:
+
+1. Register with a new email, then complete onboarding with a valid username
+   and two different supported languages.
+2. Create a deck and a card, then wait for synchronization to complete.
+3. Sign into that account in a second browser session and verify the profile,
+   deck, and card arrive. Edit the card there, wait for synchronization, and
+   verify the first session receives the edit.
+4. Confirm both sessions have no failed onboarding or sync requests in the
+   browser network panel, and record the deployed version and outcome.
+
+This production check must run after the change is deployed; local and CI
+results do not establish that it passed.
 
 The mechanical checks are becoming CI jobs (#251 fresh-clone start and
 credential scan and #252 browser flows and console); #253's HTTP corpus is

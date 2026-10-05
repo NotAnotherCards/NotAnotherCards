@@ -29,6 +29,16 @@ const onboardingSchema = userProfileFormSchema.safeExtend({
   native_language_id: languageId,
   target_language_id: languageId,
 });
+// Better Auth's update-user route accepts a record of arbitrary values. Check
+// the editable field types before its adapter can coerce them or hit SQL
+// constraints, while leaving auth and server-owned field checks to Better Auth.
+const updateUserSchema = z
+  .object({
+    name: z.string().optional(),
+    image: z.string().nullable().optional(),
+    timezone: z.string().optional(),
+  })
+  .passthrough();
 
 @Controller('api/auth')
 export class AuthController {
@@ -114,6 +124,18 @@ export class AuthController {
     });
 
     return { success: true };
+  }
+
+  @Post('update-user')
+  async updateUser(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body: unknown,
+  ) {
+    if (!updateUserSchema.safeParse(body).success) {
+      throw new BadRequestException('Invalid user update fields');
+    }
+    return this.handleAuth(req, res);
   }
 
   @All('{*path}')
