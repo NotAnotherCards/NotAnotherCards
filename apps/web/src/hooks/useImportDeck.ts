@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 export function useImportDeck() {
+  const { t } = useTranslation();
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +19,7 @@ export function useImportDeck() {
     try {
       return await apiClient.sharedDecks.import(deckId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setError(err instanceof Error ? err.message : t('common.unknown_error'));
       return null;
     } finally {
       setImportingIds((prev) => {

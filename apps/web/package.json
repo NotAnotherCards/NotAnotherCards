@@ -7,10 +7,11 @@
     "dev": "vite --clearScreen false",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\" --max-warnings 0",
     "pretest": "pnpm --filter @repo/offline-db... build && pnpm --filter @repo/api-client... build",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "e2e:typecheck": "tsc --project e2e/tsconfig.json",
     "test:watch": "vitest --watch"
   },
   "devDependencies": {
@@ -32,6 +33,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^10.6.0",
     "eslint-plugin-better-tailwindcss": "^4.7.0",
+    "eslint-plugin-i18next": "^6.1.5",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.2",
     "typescript": "5.9.3",

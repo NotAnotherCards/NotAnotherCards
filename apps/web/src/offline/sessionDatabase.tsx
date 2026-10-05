@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -94,20 +95,20 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
  * this replaces the tree rather than sitting inside it.
  */
 function DatabaseUnrecoverable({ error }: { error: Error }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
       <AlertCircle className="size-8 text-destructive" />
       <h1 className="text-lg font-semibold text-foreground">
-        Reload to continue
+        {t('database.reload_title')}
       </h1>
       <p className="max-w-md text-sm text-muted-foreground">
-        The offline database could not be closed, so it is not safe to open it
-        again on this page.
+        {t('database.close_failed')}
       </p>
       <p className="max-w-md text-xs text-muted-foreground">{error.message}</p>
       <Button onClick={() => window.location.reload()}>
         <RefreshCw />
-        Reload
+        {t('database.reload')}
       </Button>
     </div>
   );

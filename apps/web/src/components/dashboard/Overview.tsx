@@ -589,8 +589,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                   role="status"
                   className="mx-6 mt-4 text-sm text-muted-foreground"
                 >
-                  {deck.title}: imported. It will appear after the next
-                  successful sync.
+                  {t('dashboard.overview.community.import_pending', {
+                    title: deck.title,
+                  })}
                 </p>
               ))}
             {(importError || (reportError && !reportingDeck)) && (
@@ -667,7 +668,14 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                               size="sm"
                               className="cursor-pointer"
                               disabled={reportingIds.has(deck.id)}
-                              aria-label={`Report ${deck.title || 'deck'}`}
+                              aria-label={t(
+                                'dashboard.overview.community.report_deck',
+                                {
+                                  deck:
+                                    deck.title ||
+                                    t('dashboard.overview.community.untitled'),
+                                },
+                              )}
                               onClick={() => {
                                 setReportError(null);
                                 setReportReason('');
@@ -719,7 +727,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                               importedDecks[deck.id]?.status === 'syncing' ? (
                                 <Loader2 className="size-4 animate-spin" />
                               ) : importedDecks[deck.id] ? (
-                                'Imported'
+                                t('dashboard.overview.community.imported')
                               ) : (
                                 t('dashboard.overview.community.import')
                               )}
@@ -762,7 +770,9 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 </p>
                 <Progress
                   value={quest.percent}
-                  aria-label={`${quest.title} progress`}
+                  aria-label={t('dashboard.overview.goals.progress', {
+                    title: quest.title,
+                  })}
                   className="h-1.5 w-full"
                   indicatorClassName="bg-linear-to-r from-yellow-400 to-yellow-300"
                 />
@@ -889,7 +899,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 </p>
               ) : (
                 <textarea
-                  aria-label="Reason for report"
+                  aria-label={t('dashboard.overview.community.report_reason')}
                   value={reportReason}
                   maxLength={2000}
                   onChange={(event) => setReportReason(event.target.value)}
@@ -967,7 +977,11 @@ export function Overview({ onChooseDeck }: OverviewProps) {
               role="status"
               className="bg-primary text-primary-foreground border border-primary/20 px-4 py-3 rounded-2xl shadow-card flex items-center gap-3 animate-in slide-in-from-bottom-5"
             >
-              <span className="sr-only">Badge unlocked: {badgeDef.name}</span>
+              <span className="sr-only">
+                {t('dashboard.overview.toasts.badge_unlocked', {
+                  name: badgeDef.name,
+                })}
+              </span>
               <div
                 className="bg-primary-foreground/20 p-2 rounded-full shrink-0"
                 aria-hidden="true"
