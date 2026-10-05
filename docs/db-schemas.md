@@ -574,6 +574,9 @@ FOREIGN KEY "deck_reports_reporter_user_id_user_id_fk" ("reporter_user_id") REFE
 
 Audit trail of takedowns, whether the moderation classifier (`automatic`) or
 an operator decided. `verdict` stores the classifier result that justified it.
+`operator_user_id` records the authenticated moderator for session-based actions
+(migration `0021`); automatic and legacy key-only actions leave it null. Deleting
+the moderator sets the actor to null while preserving the audit record.
 
 <!-- schema:table:public.deck_takedowns -->
 
@@ -582,11 +585,13 @@ TABLE "public"."deck_takedowns" RLS DISABLED
 "created_at" timestamp with time zone NOT NULL DEFAULT now()
 "deck_id" text NOT NULL
 "id" text NOT NULL PRIMARY KEY
+"operator_user_id" text NULL
 "reason" text NULL
 "snapshot_published_at" timestamp with time zone NOT NULL
 "source" text NOT NULL
 "verdict" jsonb NOT NULL
 INDEX "deck_takedowns_deck_created_idx" USING btree ("deck_id" ASC NULLS LAST, "created_at" ASC NULLS LAST)
+FOREIGN KEY "deck_takedowns_operator_user_id_user_id_fk" ("operator_user_id") REFERENCES "public"."user" ("id") ON DELETE SET NULL ON UPDATE NO ACTION
 CHECK "deck_takedowns_source_check": "deck_takedowns"."source" in ('automatic', 'operator')
 ```
 

@@ -119,6 +119,9 @@ export const deckTakedowns = pgTable(
     id: text('id').primaryKey(),
     deckId: text('deck_id').notNull(),
     source: text('source').$type<'automatic' | 'operator'>().notNull(),
+    operatorUserId: text('operator_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
     reason: text('reason'),
     verdict: jsonb('verdict').$type<StoredModerationVerdict>().notNull(),
     snapshotPublishedAt: timestamp('snapshot_published_at', {
