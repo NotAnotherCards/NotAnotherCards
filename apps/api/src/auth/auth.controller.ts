@@ -21,6 +21,14 @@ import { userProfiles } from '../sync/schema';
 import { eq, sql } from 'drizzle-orm';
 import type { AppDatabase } from '../database/database-schema';
 import { syncScopeLockKey, getActiveUsernameOwner } from '../sync/sync-store';
+import { LANGUAGES, userProfileFormSchema } from '@repo/schemas';
+import { z } from 'zod';
+
+const languageId = z.enum(LANGUAGES.map((language) => language.value));
+const onboardingSchema = userProfileFormSchema.safeExtend({
+  native_language_id: languageId,
+  target_language_id: languageId,
+});
 
 @Controller('api/auth')
 export class AuthController {
@@ -55,24 +63,17 @@ export class AuthController {
 
   @Post('onboard')
   @HttpCode(200)
-  async onboard(
-    @Req() req: Request,
-    @Body()
-    body: {
-      username: string;
-      native_language_id: string;
-      target_language_id: string;
-    },
-  ) {
+  async onboard(@Req() req: Request, @Body() body: unknown) {
     const userId = await this.authService.userIdFromHeaders(req.headers);
     if (!userId) {
       throw new UnauthorizedException('Not authenticated');
     }
 
-    const { username, native_language_id, target_language_id } = body;
-    if (!username || !native_language_id || !target_language_id) {
-      throw new BadRequestException('Missing onboarding fields');
+    const parsed = onboardingSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException('Invalid onboarding fields');
     }
+    const { username, native_language_id, target_language_id } = parsed.data;
 
     await this.db.transaction(async (tx) => {
       await tx.execute(
