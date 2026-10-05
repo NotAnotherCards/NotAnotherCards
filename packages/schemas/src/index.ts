@@ -4,5 +4,6 @@ export * from './ai.js';
 export * from './card.js';
 export * from './api-error.js';
 export * from './sharing.js';
+export * from './operator.js';
 export * from './gamification.js';
 export * from './url.js';
