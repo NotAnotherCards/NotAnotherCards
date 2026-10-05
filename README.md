@@ -10,88 +10,99 @@ NotAnotherCards is a language-learning application built around smart flashcards
 
 ### Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) with Docker Compose, for the complete containerised application;
-- [Node.js](https://nodejs.org/) 24 or newer and [pnpm](https://pnpm.io/) 11, for local development;
-- PostgreSQL is started by Docker Compose; no separate local PostgreSQL installation is required.
+- Docker with Docker Compose v2 for the containerised application.
+- Node.js 24 or newer and pnpm 11 for local development.
+- OpenSSL to generate a local authentication secret.
 
-### Run the complete app with Docker
+### Environment setup
 
-From a fresh clone, start every required service with one command:
+From the repository root, copy the environment example:
 
-1. Copy the root environment example file:
+```bash
+cp .env.example .env
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+AI, Google OAuth, the VPS, Grafana, and production email are already configured. Ask a team member for the credentials or access you need. Add application credentials to the root `.env` for Docker, or to `apps/api/.env` for a local API. Keep these files out of Git.
 
-2. Build and start all services, then wait until their health checks pass:
+Generate a local `BETTER_AUTH_SECRET` and paste the result into your environment file:
 
-   ```bash
-   docker compose up --build --wait
-   ```
+```bash
+openssl rand -base64 32
+```
 
-3. Open the application at <http://localhost:5173> and the public landing page at <http://localhost:5174>.
+Keep `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` consistent with `DATABASE_URL`. Docker uses `postgres` as the database hostname, a local API uses `localhost`.
 
-4. Optionally check that the landing container is healthy:
+### Run with Docker
 
-   ```bash
-   curl --fail http://127.0.0.1:5174/health
-   ```
+```bash
+docker compose up --build --wait
+```
 
-The first run builds all images and applies database migrations automatically.
+Database migrations run automatically. Open the application at <http://localhost:5173> and the landing page at <http://localhost:5174>.
 
-In production, the landing port is bound only to `127.0.0.1:5174` on the VPS. It is for the host Nginx proxy and must not be published directly to the internet.
+### Run locally
 
-> The AI gateway is optional, so leaving `AI_API_BASE` empty does not prevent the app from starting.
+Copy the API environment example and add the local secret and credentials described above:
 
-### Local development without app containers
+```bash
+cp apps/api/.env.example apps/api/.env
+```
 
-1. Install dependencies:
+Set `DATABASE_URL` in `apps/api/.env` to use `localhost` and the root `.env`'s `POSTGRES_PORT`. Then install dependencies, start PostgreSQL, apply migrations, and start the applications:
 
-   ```bash
-   pnpm install
-   ```
+```bash
+pnpm install
+docker compose up -d postgres
+pnpm --filter api db:migrate
+pnpm dev
+```
 
-2. Copy the environment files:
+### Optional integrations
 
-   ```bash
-   cp .env.example .env
-   cd apps/api
-   cp .env.example .env
-   cd ../..
-   ```
+- **AI generation and moderation:** set `AI_API_BASE` and `AI_API_KEY` using the values supplied by a team member. Without the gateway, generation and deck publishing are unavailable. See [AI documentation](docs/ai-generation.md).
+- **Google sign-in:** set the supplied `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. If you change the local port or origin, ask the team to update the existing OAuth configuration. See [OAuth configuration](docs/oauth-setup.md).
+- **Password-reset email:** use the team's email configuration or run Mailpit locally as shown below.
 
-3. Replace the default values with your database credentials and the desired backend port.
-4. Start the local database:
+For Mailpit, set these values in your application environment file. Use `SMTP_HOST=localhost` when running the API locally.
 
-   ```bash
-   docker compose up -d postgres
-   ```
+```dotenv
+RESEND_API_KEY=
+SMTP_HOST=mail
+SMTP_PORT=1025
+SMTP_SECURE=false
+```
 
-5. Apply the database migrations:
+Start the mail service and open <http://localhost:8025> to read emails:
 
-   ```bash
-   pnpm --filter api db:migrate
-   ```
+```bash
+docker compose --profile dev up -d mail
+```
 
-   Without migrations, the database is empty and authentication requests fail.
+Restart the API after changing its environment. For Docker, use `docker compose up --wait api`.
 
-6. Optionally configure Google sign-in by following the [OAuth setup guide](docs/oauth-setup.md).
-7. Start the monorepo:
+### Production and monitoring
 
-   ```bash
-   pnpm dev
-   ```
+Production runs at <https://app.notanothercards.com>, with the landing page, [Privacy Policy](https://notanothercards.com/privacy), and [Terms of Service](https://notanothercards.com/terms) at <https://notanothercards.com>. Nginx provides HTTPS, the application containers use loopback ports. See [deployment architecture](docs/deployment.md) and the [VPS operations guide](infra/vps/README.md).
+
+Grafana is available at <https://grafana.notanothercards.com>. Ask a team member for access. For local work on the monitoring stack, copy its environment example and fill in the values provided by the team:
+
+```bash
+cp infra/monitoring/.env.example infra/monitoring/.env
+```
+
+The [monitoring runbook](infra/monitoring/README.md) covers running and maintaining that stack.
 
 ### Common commands
 
-- `pnpm dev`: run the web and API development tasks through Turbo.
+- `pnpm dev`: start development tasks through Turbo.
 - `pnpm build`: build all packages and applications.
-- `pnpm lint`: check the workspace for code-style problems.
-- `pnpm test`: run the workspace test suites.
-- `pnpm test:watch`: run tests again when supported files change.
-- `pnpm format`: format Markdown and TypeScript files.
-- Mobile app: see [docs/mobile.md](docs/mobile.md) for the Android emulator setup, the development build and release APKs.
+- `pnpm lint`: check code style.
+- `pnpm test`: run the workspace tests.
+- `pnpm test:watch`: run tests in watch mode where supported.
+- `pnpm format`: format JavaScript and TypeScript files.
+- `pnpm e2e`: run the Chrome browser tests; first install Chrome with `pnpm --filter web exec playwright install chrome`.
+- `pnpm test:infra`: validate infrastructure configuration.
+- Mobile setup and builds: [docs/mobile.md](docs/mobile.md).
 
 ## Resources
 
@@ -155,7 +166,7 @@ The complete working agreement, including branch and review rules, is in [Team a
 | Web frontend                 | React, Vite, TypeScript, Tailwind CSS, shadcn/ui | React provides reusable components, Vite a fast development setup, and Tailwind with shadcn/ui consistent responsive UI.                                           |
 | Backend                      | NestJS, TypeScript                               | NestJS provides a modular API structure, while TypeScript keeps contracts consistent with the frontend.                                                            |
 | Authentication               | Better Auth                                      | Better Auth provides shared web and mobile authentication, session management, password recovery, social sign-in, and two-factor authentication with backup codes. |
-| AI generation and moderation | LiteLLM, Ollama                                  | LiteLLM provides a common gateway for streamed and queued requests; Ollama hosts generation and moderation models for creating cards and checking shared content.  |
+| AI generation and moderation | LiteLLM, Ollama                                  | LiteLLM provides a common gateway for streamed and queued requests. Ollama hosts generation and moderation models for creating cards and checking shared content.  |
 | Database                     | PostgreSQL, Drizzle ORM                          | PostgreSQL provides relational storage, while Drizzle adds typed schemas and queries in TypeScript.                                                                |
 | Offline data                 | RemelonDB                                        | Keeps per-user learning data available offline on web and mobile and synchronises it through the API.                                                              |
 | Mobile                       | Expo, React Native, expo-router, NativeWind      | Provides a native mobile app while reusing the project's React and TypeScript stack.                                                                               |
@@ -243,50 +254,54 @@ For the complete details around the schemas, including authentication, AI, shari
 
 | Feature                               | What it does                                                                                                                                  | Contributors                                         |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Account management and social sign-in | Lets users register, sign in, keep a session, recover access, and use Google as a sign-in provider.                                           | @amoiseik; @dgomez-a; @samcasti; @tpandya; @pschneid |
-| Two-factor authentication             | Lets users protect an account with time-based one-time passwords and backup codes.                                                            | @dgomez-a; @tpandya                                  |
-| Password management and recovery      | Lets users reset a forgotten password by email and change their password while signed in.                                                     | @dgomez-a; @samcasti; @pschneid                      |
-| User profile and preferences          | Lets users manage their profile, language, theme, and review preferences.                                                                     | @dgomez-a; @samcasti; @pschneid                      |
-| Theme preferences                     | Lets users choose and retain a light or dark application theme.                                                                               | @samcasti; @pschneid                                 |
-| Deck, note, and card management       | Lets a learner create, edit, organise, and delete decks, notes, and cards.                                                                    | @amoiseik; @dgomez-a; @samcasti; @tpandya; @pschneid |
-| Starter sample decks                  | Provides ready-to-use learning decks that help a new learner begin studying.                                                                  | @amoiseik; @pschneid                                 |
-| Word-note deck views                  | Displays word notes and their details in deck views, including compact counters, filtering, actions, and responsive layouts.                  | @amoiseik; @samcasti; @pschneid                      |
-| Deck review session and answer modes  | Lets a learner start a deck-scoped review session, reveal cards, answer with ratings, use keyboard controls, and move through a review batch. | @amoiseik; @dgomez-a; @pschneid                      |
-| Markdown card content                 | Renders formatted card fronts and backs on web and mobile, with shared validation for safe links and images.                                  | @dgomez-a; @samcasti                                 |
-| Offline-first learning data           | Keeps each user's learning data locally available on web and mobile, then synchronises accepted changes with the API and PostgreSQL.          | @dgomez-a; @samcasti; @tpandya; @pschneid            |
-| Community deck sharing                | Lets owners publish decks, lets learners import personal copies, and preserves ownership of an imported copy.                                 | @samcasti; @pschneid                                 |
-| AI card generation                    | Creates card drafts from user input through queued generation jobs and a streamed web playground.                                             | @samcasti; @tpandya; @pschneid                       |
-| AI content moderation                 | Checks published content, refuses unsafe content, supports reports and independent re-checks, and explains moderation decisions to owners.    | @dgomez-a; @pschneid                                 |
+| Account management and social sign-in | Lets users register, sign in, keep a session, recover access, and use Google as a sign-in provider.                                           | @amoiseik, @dgomez-a, @samcasti, @tpandya, @pschneid |
+| Two-factor authentication             | Lets users protect an account with time-based one-time passwords and backup codes.                                                            | @dgomez-a, @tpandya                                  |
+| Password management and recovery      | Lets users reset a forgotten password by email and change their password while signed in.                                                     | @dgomez-a, @samcasti, @pschneid                      |
+| User profile and preferences          | Lets users manage their profile, language, theme, and review preferences.                                                                     | @dgomez-a, @samcasti, @pschneid                      |
+| Theme preferences                     | Lets users choose and retain a light or dark application theme.                                                                               | @samcasti, @pschneid                                 |
+| Deck, note, and card management       | Lets a learner create, edit, organise, and delete decks, notes, and cards.                                                                    | @amoiseik, @dgomez-a, @samcasti, @tpandya, @pschneid |
+| Starter sample decks                  | Provides ready-to-use learning decks that help a new learner begin studying.                                                                  | @amoiseik, @pschneid                                 |
+| Word-note deck views                  | Displays word notes and their details in deck views, including compact counters, filtering, actions, and responsive layouts.                  | @amoiseik, @samcasti, @pschneid                      |
+| Deck review session and answer modes  | Lets a learner start a deck-scoped review session, reveal cards, answer with ratings, use keyboard controls, and move through a review batch. | @amoiseik, @dgomez-a, @pschneid                      |
+| Markdown card content                 | Renders formatted card fronts and backs on web and mobile, with shared validation for safe links and images.                                  | @dgomez-a, @samcasti                                 |
+| Offline-first learning data           | Keeps each user's learning data locally available on web and mobile, then synchronises accepted changes with the API and PostgreSQL.          | @dgomez-a, @samcasti, @tpandya, @pschneid            |
+| Community deck sharing                | Lets owners publish decks, lets learners import personal copies, and preserves ownership of an imported copy.                                 | @samcasti, @pschneid                                 |
+| AI card generation                    | Creates card drafts from user input through queued generation jobs and a streamed web playground.                                             | @samcasti, @tpandya, @pschneid                       |
+| AI content moderation                 | Checks published content, refuses unsafe content, supports reports and independent re-checks, and explains moderation decisions to owners.    | @dgomez-a, @pschneid                                 |
 | Import and export                     | Exports learning data as JSON or CSV and imports validated data as one all-or-nothing operation.                                              | @samcasti                                            |
-| Learning analytics                    | Shows due cards, dictionary size, review activity, streaks, forecasts, and card maturity, including while offline.                            | @dgomez-a; @samcasti; @pschneid                      |
-| Gamification                          | Provides badges, global leaderboards, and daily challenges with persistent progress and feedback.                                             | @dgomez-a; @samcasti; @pschneid                      |
-| Multiple languages                    | Provides a language switcher and translated user-facing text.                                                                                 | @amoiseik; @samcasti; @pschneid                      |
-| Native mobile application             | Provides Android and iOS learning flows with local data, synchronisation, deck/card management, and review.                                   | @dgomez-a; @samcasti; @pschneid                      |
-| Standalone landing application        | Provides a separate public marketing application, packaged with the project services and branded with the project identity.                   | @amoiseik; @tpandya                                  |
+| Learning analytics                    | Shows due cards, dictionary size, review activity, streaks, forecasts, and card maturity, including while offline.                            | @dgomez-a, @samcasti, @pschneid                      |
+| Gamification                          | Provides badges, global leaderboards, and daily challenges with persistent progress and feedback.                                             | @dgomez-a, @samcasti, @pschneid                      |
+| Multiple languages                    | Provides a language switcher and translated user-facing text.                                                                                 | @amoiseik, @samcasti, @pschneid                      |
+| Native mobile application             | Provides Android and iOS learning flows with local data, synchronisation, deck/card management, and review.                                   | @dgomez-a, @samcasti, @pschneid                      |
+| Standalone landing application        | Provides a separate public marketing application, packaged with the project services and branded with the project identity.                   | @amoiseik, @tpandya                                  |
 | Privacy Policy and Terms of Service   | Makes the required public legal information available from the landing application.                                                           | @amoiseik                                            |
-| Production monitoring and alerts      | Collects infrastructure and application metrics, presents Grafana dashboards, and sends operational alerts to Slack.                          | @dgomez-a; @tpandya; @pschneid                       |
+| Production monitoring and alerts      | Collects infrastructure and application metrics, presents Grafana dashboards, and sends operational alerts to Slack.                          | @dgomez-a, @tpandya, @pschneid                       |
 
 ## Modules
 
-The project claims the 13 modules below: four Major modules worth 2 points each and nine Minor modules worth 1 point each, for a total of 17 points. The 42 subject requires 14 points. The current point calculation and each module's requirement evidence are maintained in [Project requirements and progress](docs/requirements.md#4-claimed-modules).
+The 13 modules below comprise four Major modules worth 2 points each and nine Minor modules worth 1 point each, for a total of 17 points. Each entry explains its purpose, implementation, and contributors. Detailed tracking is available in [Project requirements and progress](docs/requirements.md#4-claimed-modules).
 
-<!-- Each module entry must explain its implementation, contributor(s), and justification where the subject requires one. -->
+| Module                                                          | Points   | Implementation and justification                                                                                                                                                                                              | Contributors                                         |
+| --------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Web: framework for frontend and backend                         | Major, 2 | React provides reusable learning screens, and NestJS organises the API into feature modules. Both use TypeScript to keep contracts consistent.                                                                                | @amoiseik, @dgomez-a, @samcasti, @tpandya, @pschneid |
+| Web: ORM for the database                                       | Minor, 1 | Drizzle provides typed PostgreSQL schemas, queries, and migrations to keep database access consistent.                                                                                                                        | @dgomez-a, @samcasti, @tpandya, @pschneid            |
+| Web: custom design system                                       | Minor, 1 | A shared palette, Poppins typography, Lucide icons, and at least 10 reusable components keep the UI consistent. See the [design reference](docs/design.md).                                                                   | @amoiseik, @samcasti, @pschneid                      |
+| User Management: OAuth 2.0                                      | Minor, 1 | Google sign-in through Better Auth simplifies account access and handles provider callbacks and sessions.                                                                                                                     | @amoiseik, @samcasti, @tpandya, @pschneid            |
+| Artificial Intelligence: complete LLM system interface          | Major, 2 | Queued card generation and a streamed playground reduce manual preparation of learning material. The API handles gateway errors, usage quotas, and rate limits.                                                               | @samcasti, @tpandya, @pschneid                       |
+| Data and Analytics: data export and import                      | Minor, 1 | JSON and CSV exports let learners back up their material. Imports use Zod validation and integrity checks, with bulk changes applied in one transaction.                                                                      | @samcasti                                            |
+| Gaming and user experience: gamification                        | Minor, 1 | Badges, global leaderboards, and daily challenges encourage regular study, with persistent progress, visual feedback, and defined progression rules.                                                                          | @dgomez-a, @samcasti, @pschneid                      |
+| Modules of choice: mobile app                                   | Major, 2 | The native Expo/React Native app supports study away from a desktop, with account isolation, offline data, synchronisation, and deck/card review. Its scope is explained below.                                               | @dgomez-a, @samcasti, @pschneid                      |
+| DevOps: monitoring with Prometheus and Grafana                  | Major, 2 | Prometheus exporters, custom Grafana dashboards, and Slack alerts help identify application and infrastructure failures. Grafana requires authentication and HTTPS. See the [monitoring runbook](infra/monitoring/README.md). | @dgomez-a, @tpandya, @pschneid                       |
+| User Management: user activity analytics and insights dashboard | Minor, 1 | Offline statistics show due cards, dictionary size, streaks, review activity, forecasts, and card maturity to help learners track progress.                                                                                   | @dgomez-a, @samcasti, @pschneid                      |
+| Accessibility and Internationalization: multiple languages      | Minor, 1 | Shared English, German, Spanish, and Russian translations, a language switcher, and localized formatting make the app usable in different native languages.                                                                   | @amoiseik, @samcasti, @pschneid                      |
+| User Management: 2FA                                            | Minor, 1 | Better Auth adds account protection through TOTP enrollment, sign-in challenges, backup codes, and disabling 2FA, with web and mobile screens.                                                                                | @dgomez-a, @tpandya                                  |
+| Artificial Intelligence: content moderation AI                  | Minor, 1 | AI checks published decks, refuses unsafe content, and re-checks reports to protect community content. Owners can inspect verdicts and explanations. See [moderation](docs/ai-generation.md#moderation-at-publish).           | @dgomez-a, @pschneid                                 |
 
-| Module                                                          | Points   | Implementation and justification                                                                                                                                                                                                                                                           | Contributors                                         |
-| --------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| Web: framework for frontend and backend                         | Major, 2 | React implements the web client and NestJS implements the API.                                                                                                                                                                                                                             | @amoiseik; @dgomez-a; @samcasti; @tpandya; @pschneid |
-| Web: ORM for the database                                       | Minor, 1 | Drizzle ORM defines the PostgreSQL schema and provides typed database queries.                                                                                                                                                                                                             | @dgomez-a; @samcasti; @tpandya; @pschneid            |
-| Web: custom design system                                       | Minor, 1 | The web application has reusable UI components, a shared palette, typography, icons, and responsive layouts.                                                                                                                                                                               | @amoiseik; @samcasti; @pschneid                      |
-| User Management: OAuth 2.0                                      | Minor, 1 | Google social sign-in is implemented through Better Auth and tested through the API.                                                                                                                                                                                                       | @amoiseik; @samcasti; @tpandya; @pschneid            |
-| Artificial Intelligence: complete LLM system interface          | Major, 2 | Card-generation jobs accept user input, stream results in the web playground, record usage, and enforce quotas and rate limits.                                                                                                                                                            | @samcasti; @tpandya; @pschneid                       |
-| Data and Analytics: data export and import                      | Minor, 1 | The application exports JSON and CSV, validates imports with Zod, and applies an import in one all-or-nothing database batch.                                                                                                                                                              | @samcasti                                            |
-| Gaming and user experience: gamification                        | Minor, 1 | The system provides badges, global leaderboards, and daily challenges, with persistent storage, visual feedback, and clear progression rules.                                                                                                                                              | @dgomez-a; @samcasti; @pschneid                      |
-| Modules of choice: mobile app                                   | Major, 2 | The native Expo and React Native application extends learning to Android and iOS with per-account offline data, synchronisation, route guards, review, and deck/card management. It addresses mobile offline use and shared-data synchronisation rather than wrapping the web application. | @dgomez-a; @samcasti; @pschneid                      |
-| DevOps: monitoring with Prometheus and Grafana                  | Major, 2 | Prometheus collects API, PostgreSQL, VPS, GPU, and AI metrics; Grafana provides dashboards; Alertmanager sends alerts to Slack; Grafana is served through authenticated HTTPS access.                                                                                                      | @dgomez-a; @tpandya; @pschneid                       |
-| User Management: user activity analytics and insights dashboard | Minor, 1 | Offline-capable statistics show due cards, dictionary size, streaks, review activity, forecasts, and card maturity from local learning data.                                                                                                                                               | @dgomez-a; @samcasti; @pschneid                      |
-| Accessibility and Internationalization: multiple languages      | Minor, 1 | The application provides an internationalization system, at least three complete translations, a language switcher, and translatable user-facing text.                                                                                                                                     | @amoiseik; @samcasti; @pschneid                      |
-| User Management: 2FA                                            | Minor, 1 | The application provides a complete two-factor authentication flow for users.                                                                                                                                                                                                              | @dgomez-a; @tpandya                                  |
-| Artificial Intelligence: content moderation AI                  | Minor, 1 | Published content is classified before publication. Unsafe content is refused, reports trigger an independent re-check, and owners can inspect classifier verdicts and request an explanation.                                                                                             | @dgomez-a; @pschneid                                 |
+### Native mobile application
+
+The native app supports short study sessions on Android and iOS, including offline use. Each account has its own local database; edits and reviews persist on the device and synchronise with the API. Shared schemas and study rules keep web and mobile behaviour consistent.
+
+Its Major scope (2 points) comes from combining native navigation, authentication and 2FA, account isolation, deck/card management, review scheduling, and synchronisation across devices. See the [mobile guide](docs/mobile.md) and [local database contract](docs/db-schemas.md#local-database-contract).
 
 ## Individual Contributions
 
