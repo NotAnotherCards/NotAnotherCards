@@ -237,26 +237,26 @@ export function Statistics() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card
           aria-label={t('dashboard.statistics.learning_streak')}
-          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between items-center text-center p-6"
         >
-          <CardHeader className="items-center pb-2 text-center">
-            <div className="bg-rose-500/10 p-3 rounded-2xl text-rose-500 mb-2">
-              <Flame className="h-5 w-5" />
+          <CardHeader className="flex flex-col items-center text-center gap-1 pb-4 pt-0 px-0 w-full">
+            <div className="mb-1 rounded-full bg-rose-500/10 p-2.5 text-rose-500">
+              <Flame className="size-4" />
             </div>
-            <CardTitle className="text-base">
+            <CardTitle className="text-base font-semibold">
               {t('dashboard.statistics.learning_streak')}
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs text-muted-foreground">
               {t('dashboard.statistics.consecutive_days')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
+          <CardContent className="flex flex-col items-center justify-center text-center w-full p-0 mt-auto">
             <p className="text-lg font-bold text-foreground">
               {t('dashboard.statistics.days_current', {
                 count: streak.currentStreak,
               })}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="mt-1 text-xs text-muted-foreground">
               {t('dashboard.statistics.days_longest', {
                 count: streak.longestStreak,
               })}
@@ -266,20 +266,20 @@ export function Statistics() {
 
         <Card
           aria-label={t('dashboard.statistics.learned_notes')}
-          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between items-center text-center p-6"
         >
-          <CardHeader className="items-center pb-2 text-center">
-            <div className="bg-primary/10 p-3 rounded-2xl text-primary mb-2">
-              <Brain className="h-5 w-5" />
+          <CardHeader className="flex flex-col items-center text-center gap-1 pb-4 pt-0 px-0 w-full">
+            <div className="mb-1 rounded-full bg-primary/10 p-2.5 text-primary">
+              <Brain className="size-4" />
             </div>
-            <CardTitle className="text-base">
+            <CardTitle className="text-base font-semibold">
               {t('dashboard.statistics.learned_notes')}
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs text-muted-foreground">
               {t('dashboard.statistics.learned_description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
+          <CardContent className="flex flex-col items-center justify-center text-center w-full p-0 mt-auto">
             <p className="text-lg font-bold text-foreground">
               {t('dashboard.statistics.learned_value', {
                 value: formatNumber(learnedNotes, locale),
@@ -290,34 +290,34 @@ export function Statistics() {
 
         <Card
           aria-label={t('dashboard.statistics.due_forecast')}
-          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between items-center text-center p-6"
         >
-          <CardHeader className="items-center pb-2 text-center">
-            <div className="bg-pine/10 p-3 rounded-2xl text-pine mb-2">
-              <CalendarClock className="h-5 w-5" />
+          <CardHeader className="flex flex-col items-center text-center gap-1 pb-4 pt-0 px-0 w-full">
+            <div className="mb-1 rounded-full bg-pine/10 p-2.5 text-pine">
+              <CalendarClock className="size-4" />
             </div>
-            <CardTitle className="text-base">
+            <CardTitle className="text-base font-semibold">
               {t('dashboard.statistics.due_forecast')}
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs text-muted-foreground">
               {t('dashboard.statistics.due_forecast_description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground mt-auto">
-            <div className="bg-muted/40 rounded-xl p-2 flex flex-col justify-center">
-              <strong className="block text-base text-foreground font-bold">
+          <CardContent className="grid grid-cols-3 gap-2 w-full text-center text-xs text-muted-foreground p-0 mt-auto">
+            <div className="rounded-2xl bg-muted/40 p-2.5 flex flex-col items-center justify-center">
+              <strong className="block text-base font-bold text-foreground">
                 {due.today}
               </strong>
               {t('dashboard.statistics.today')}
             </div>
-            <div className="bg-muted/40 rounded-xl p-2 flex flex-col justify-center">
-              <strong className="block text-base text-foreground font-bold">
+            <div className="rounded-2xl bg-muted/40 p-2.5 flex flex-col items-center justify-center">
+              <strong className="block text-base font-bold text-foreground">
                 {due.tomorrow}
               </strong>
               {t('dashboard.statistics.tomorrow')}
             </div>
-            <div className="bg-muted/40 rounded-xl p-2 flex flex-col justify-center">
-              <strong className="block text-base text-foreground font-bold">
+            <div className="rounded-2xl bg-muted/40 p-2.5 flex flex-col items-center justify-center">
+              <strong className="block text-base font-bold text-foreground">
                 {due.nextSevenDays}
               </strong>
               {t('dashboard.statistics.next_7_days')}
@@ -327,26 +327,26 @@ export function Statistics() {
 
         <Card
           aria-label={t('dashboard.statistics.card_maturity')}
-          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+          className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between items-center text-center p-6"
         >
-          <CardHeader className="items-center pb-2 text-center">
-            <div className="bg-sage p-3 rounded-2xl text-sage-foreground mb-2">
-              <Sprout className="h-5 w-5" />
+          <CardHeader className="flex flex-col items-center text-center gap-1 pb-4 pt-0 px-0 w-full">
+            <div className="mb-1 rounded-full bg-sage p-2.5 text-sage-foreground">
+              <Sprout className="size-4" />
             </div>
-            <CardTitle className="text-base">
+            <CardTitle className="text-base font-semibold">
               {t('dashboard.statistics.card_maturity')}
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs text-muted-foreground">
               {t('dashboard.statistics.card_maturity_description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-auto">
+          <CardContent className="grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground p-0 mt-auto">
             {Object.entries(maturity).map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-xl bg-muted/40 p-2 flex flex-col items-center justify-center text-center"
+                className="rounded-2xl bg-muted/40 p-2.5 flex flex-col items-center justify-center text-center"
               >
-                <strong className="block text-base text-foreground font-bold">
+                <strong className="block text-base font-bold text-foreground">
                   {value}
                 </strong>
                 <span>{t(`dashboard.statistics.maturity.${label}`)}</span>
