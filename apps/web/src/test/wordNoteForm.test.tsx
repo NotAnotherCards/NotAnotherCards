@@ -1,7 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { WordNoteForm } from '../components/deck/WordNoteForm';
 import { ENGLISH, GERMAN, RUSSIAN, SPANISH } from '@repo/schemas';
+import i18n from '@/lib/i18n';
 
 // The form owns the fields a person types. Languages are the deck's and the
 // two media ids are file references, so neither appears here — see
@@ -13,7 +20,10 @@ const onCancel = vi.fn();
 const fill = (label: RegExp, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-beforeEach(() => {
+beforeEach(async () => {
+  await act(async () => {
+    await i18n.changeLanguage('en');
+  });
   onSubmit.mockReset();
   onSubmit.mockResolvedValue(undefined);
   onCancel.mockReset();
@@ -30,6 +40,24 @@ const renderForm = (initialData?: Record<string, string>) =>
   );
 
 describe('WordNoteForm', () => {
+  it('uses a grammatically correct localized language form in Russian', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('ru');
+    });
+    render(
+      <WordNoteForm
+        title="Добавить слово"
+        targetLanguageId={GERMAN}
+        nativeLanguageId={RUSSIAN}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />,
+    );
+
+    expect(screen.getByLabelText('Слово на немецком')).toBeTruthy();
+    expect(screen.getByLabelText('Перевод на русском')).toBeTruthy();
+  });
+
   it('asks for the word and its translation, and nothing else up front', () => {
     renderForm();
     expect(screen.getByLabelText(/^word( in \w+)?$/i)).toBeTruthy();

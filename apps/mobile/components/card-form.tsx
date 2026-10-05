@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { View } from 'react-native';
@@ -13,6 +15,10 @@ type CardFormProps = {
   error?: string | null;
   onSubmit: (values: CardFormValues) => Promise<void>;
   onCancel: () => void;
+  // Right side of the header, e.g. the editor's delete.
+  headerAction?: ReactNode;
+  // Another write of the editor is running, e.g. its delete.
+  busy?: boolean;
 };
 
 // Front and back of a basic note. Does not know whether it creates or
@@ -23,7 +29,10 @@ export function CardForm({
   error,
   onSubmit,
   onCancel,
+  headerAction,
+  busy = false,
 }: CardFormProps) {
+  const { t } = useTranslation();
   const { control, handleSubmit, formState } = useForm<CardFormValues>({
     resolver: zodResolver(cardFormSchema),
     defaultValues: initialValues ?? { front: '', back: '' },
@@ -31,23 +40,24 @@ export function CardForm({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+      <CardHeader className="flex-row items-center justify-between gap-2">
+        <CardTitle className="flex-1">{title}</CardTitle>
+        {headerAction}
       </CardHeader>
       <CardContent className="gap-4">
         <FormField
           control={control}
           name="front"
-          label="Front"
-          placeholder="The question or prompt"
+          label={t('review.card.front')}
+          placeholder={t('mobile.messages.front_placeholder')}
           multiline
           autoFocus
         />
         <FormField
           control={control}
           name="back"
-          label="Back"
-          placeholder="The answer"
+          label={t('review.card.back')}
+          placeholder={t('mobile.messages.back_placeholder')}
           multiline
         />
         {error && <Text className="text-destructive">{error}</Text>}
@@ -56,18 +66,19 @@ export function CardForm({
             variant="secondary"
             className="flex-1"
             onPress={onCancel}
-            disabled={formState.isSubmitting}
+            disabled={formState.isSubmitting || busy}
           >
-            <Text>Cancel</Text>
+            <Text>{t('common.cancel')}</Text>
           </Button>
           <Button
             className="flex-1"
             loading={formState.isSubmitting}
+            disabled={busy}
             // awaited so isSubmitting covers the write, and a failed write
             // keeps the form open with its values
             onPress={handleSubmit((values) => onSubmit(values))}
           >
-            <Text>Save</Text>
+            <Text>{t('common.save')}</Text>
           </Button>
         </View>
       </CardContent>

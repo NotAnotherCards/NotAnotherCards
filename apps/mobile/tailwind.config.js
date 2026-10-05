@@ -4,12 +4,15 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      // the web's card and button radius (tailwind v4 ships 4xl; v3 stops at 3xl)
+      borderRadius: { '4xl': '2rem' },
       colors: {
         background: 'rgb(var(--background) / <alpha-value>)',
         foreground: 'rgb(var(--foreground) / <alpha-value>)',
         card: 'rgb(var(--card) / <alpha-value>)',
         'card-foreground': 'rgb(var(--card-foreground) / <alpha-value>)',
         primary: 'rgb(var(--primary) / <alpha-value>)',
+        'primary-hover': 'rgb(var(--primary-hover) / <alpha-value>)',
         'primary-foreground': 'rgb(var(--primary-foreground) / <alpha-value>)',
         secondary: 'rgb(var(--secondary) / <alpha-value>)',
         'secondary-foreground':
@@ -24,6 +27,16 @@ module.exports = {
         border: 'rgb(var(--border) / <alpha-value>)',
         input: 'rgb(var(--input) / <alpha-value>)',
         ring: 'rgb(var(--ring) / <alpha-value>)',
+        surface: 'rgb(var(--surface) / <alpha-value>)',
+        sage: 'rgb(var(--sage) / <alpha-value>)',
+        'sage-border': 'rgb(var(--sage-border) / <alpha-value>)',
+        'rating-again': 'rgb(var(--rating-again) / <alpha-value>)',
+        'rating-hard': 'rgb(var(--rating-hard) / <alpha-value>)',
+        'rating-good': 'rgb(var(--rating-good) / <alpha-value>)',
+        'rating-easy': 'rgb(var(--rating-easy) / <alpha-value>)',
+        success: 'rgb(var(--success) / <alpha-value>)',
+        warning: 'rgb(var(--warning) / <alpha-value>)',
+        info: 'rgb(var(--info) / <alpha-value>)',
       },
     },
   },

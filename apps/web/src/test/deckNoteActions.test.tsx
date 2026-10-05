@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { DeckDetail } from '@/components/deck/DeckDetail';
 import type { UserNoteRecord } from '@repo/offline-db';
+import { GERMAN, RUSSIAN } from '@repo/schemas';
+import i18n from '@/lib/i18n';
 
 const store = vi.hoisted(() => {
   const card = {
@@ -92,6 +100,25 @@ describe('deck note actions', () => {
 
     expect(screen.queryByTitle('Edit Card')).not.toBeInTheDocument();
     expect(screen.getByTitle('Remove from Deck')).toBeInTheDocument();
+  });
+
+  it('localizes the word deck accessibility label in the detail header', async () => {
+    store.decks[0].note_type = 'word';
+    store.decks[0].native_language_id = GERMAN;
+    store.decks[0].target_language_id = RUSSIAN;
+    await act(async () => {
+      await i18n.changeLanguage('ru');
+    });
+
+    render(<DeckDetail deckId="deck-1" onBack={vi.fn()} />);
+
+    expect(screen.getByLabelText('🇩🇪 Немецкий → 🇷🇺 Русский')).toHaveTextContent(
+      '🇩🇪→🇷🇺',
+    );
+
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
   });
 
   it('edits a word note and preserves its canonical languages and media', async () => {

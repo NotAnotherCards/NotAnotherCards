@@ -1,4 +1,217 @@
 {
+  "mobile": {
+    "learner": "Learner",
+    "sync_tables": {
+      "deck_one": "{{count}} deck",
+      "deck_few": "{{count}} decks",
+      "deck_many": "{{count}} decks",
+      "deck_other": "{{count}} decks",
+      "note_one": "{{count}} note",
+      "note_few": "{{count}} notes",
+      "note_many": "{{count}} notes",
+      "note_other": "{{count}} notes",
+      "card_one": "{{count}} card",
+      "card_few": "{{count}} cards",
+      "card_many": "{{count}} cards",
+      "card_other": "{{count}} cards",
+      "membership_one": "{{count}} deck membership",
+      "membership_few": "{{count}} deck memberships",
+      "membership_many": "{{count}} deck memberships",
+      "membership_other": "{{count}} deck memberships",
+      "review_one": "{{count}} review",
+      "review_few": "{{count}} reviews",
+      "review_many": "{{count}} reviews",
+      "review_other": "{{count}} reviews",
+      "profile_one": "{{count}} profile",
+      "profile_few": "{{count}} profiles",
+      "profile_many": "{{count}} profiles",
+      "profile_other": "{{count}} profiles",
+      "badge_one": "{{count}} badge",
+      "badge_few": "{{count}} badges",
+      "badge_many": "{{count}} badges",
+      "badge_other": "{{count}} badges",
+      "change_one": "{{count}} change",
+      "change_few": "{{count}} changes",
+      "change_many": "{{count}} changes",
+      "change_other": "{{count}} changes"
+    },
+    "messages": {
+      "delete_deck_label": "Delete {{title}}",
+      "show_answer_hint": "Show the answer",
+      "edit_card_hint": "Edit this card",
+      "question": "Question",
+      "answer": "Answer",
+      "edit_card": "Edit card",
+      "delete_card": "Delete card",
+      "continue_provider": "Continue with {{provider}}",
+      "open_deck": "Open {{title}}",
+      "edit_item": "Edit {{title}}",
+      "remove_item": "Remove {{title}} from deck",
+      "delete_item": "Delete note {{title}}",
+      "delete_named": "Delete \"{{title}}\"?",
+      "edit_word": "Edit word",
+      "community_count_one": "{{count}} card · by @{{author}}",
+      "community_count_few": "{{count}} cards · by @{{author}}",
+      "community_count_many": "{{count}} cards · by @{{author}}",
+      "community_count_other": "{{count}} cards · by @{{author}}",
+      "import_pending": "Imported. It appears in your library after the next sync. {{reason}}",
+      "not_sent": "Not sent: {{reason}}",
+      "server_done": "Done on the server; this device catches up at the next sync. {{reason}}",
+      "flagged_why": "Why was {{title}} flagged?",
+      "warning": "Warning, ",
+      "unnamed_card": "A card",
+      "reason": "Reason",
+      "progress": "{{current}} of {{total}}",
+      "switch_answers": "Switch to {{layout}}",
+      "network_error": "Can't reach the server at {{url}} — is the API running?",
+      "server_error": "The server hit an error (HTTP {{status}}) — check the API logs.",
+      "front_required": "Front is required",
+      "back_required": "Back is required",
+      "front_max": "Front cannot exceed 1000 characters",
+      "back_max": "Back cannot exceed 1000 characters",
+      "title_required": "Deck title is required",
+      "title_max": "Deck title cannot exceed 100 characters",
+      "description_max": "Description cannot exceed 500 characters",
+      "both_languages": "A word deck needs both languages",
+      "different_language": "Choose a different target language",
+      "word_required": "Word is required",
+      "translation_required": "Translation is required",
+      "gender_option": "Gender: {{gender}}",
+      "sync_details": "The server refused these changes. They stay on this device and are sent again with the next sync.",
+      "deck_header": "Deck",
+      "register_header": "Register",
+      "verify_signin": "Verify your sign-in",
+      "setup_profile": "Set up profile",
+      "create_reset_password": "Create or reset a password",
+      "community_deck": "Community deck",
+      "load_deck_failed": "Could not load the deck",
+      "request_failed": "The request failed",
+      "loading_deck": "Loading the deck",
+      "retry_sync": "Retry sync",
+      "report_deck": "Report this deck",
+      "report_reason": "What is wrong with it?",
+      "report_sent": "Thanks, the deck is reported.",
+      "send_report": "Send report",
+      "report": "Report",
+      "session_unconfirmed": "Your code was accepted, but the signed-in session could not be confirmed. Retry or return to sign in.",
+      "unsafe_signout": "Could not safely sign out on this device. Please try again before leaving verification.",
+      "signin_failed": "Sign-in could not continue",
+      "verification_method": "Verification method",
+      "authentication_code": "Authentication code",
+      "retry_session": "Retry session",
+      "write_failed": "The write failed",
+      "invalid_language_pair": "This word deck does not have a valid language pair.",
+      "new_word": "New word",
+      "new_card": "New card",
+      "no": "No",
+      "front_placeholder": "The question or prompt",
+      "back_placeholder": "The answer",
+      "cards_load_failed": "Failed to load cards: {{message}}",
+      "deck_not_local": "This deck is not on this device.",
+      "no_cards": "No cards yet. Add your first one.",
+      "remove_card_help": "Remove this card from the deck? The note stays, and so does any other deck it is in.",
+      "delete_note_help": "Delete this note? Its cards, deck memberships and review history go with it.",
+      "delete_note": "Delete note",
+      "remove": "Remove",
+      "load_decks_failed": "Could not load the decks",
+      "loading_community": "Loading community decks",
+      "no_community": "No community decks yet.",
+      "load_more": "Load more",
+      "decks_load_failed": "Failed to load decks: {{message}}",
+      "new_deck": "New deck",
+      "edit_deck": "Edit deck",
+      "no_decks": "No decks yet. Create your first one, or import one from the community.",
+      "published_community": "Published to the community",
+      "published": "Published",
+      "delete_deck_help": "Delete this deck? Cards that are only in this deck are deleted with their review history.",
+      "why": "Why?",
+      "asking": "Asking…",
+      "taken_down": "Taken down by moderation",
+      "refused_details": "Moderation refused the deck. Review the flagged cards and try again.",
+      "refused": "Moderation refused the deck.",
+      "delete_failed": "The delete failed",
+      "delete_word_help": "Removes the word, its cards and their review history on all your devices.",
+      "delete_card_help": "Removes the card and its review history on all your devices.",
+      "answer_tap": "Answer, tap to show",
+      "deleted_read_failed": "The card is deleted, but the next cards could not be loaded.",
+      "activated_read_failed": "The items are activated, but the next cards could not be loaded.",
+      "saved_read_failed": "Your answer is saved, but the next cards could not be loaded.",
+      "add_word": "Add a word",
+      "add_card": "Add a card",
+      "delete_word": "Delete word",
+      "local_signout": "Signed out on this device only",
+      "local_signout_help": "The server could not be reached, so your session elsewhere may stay active until it expires.",
+      "logout": "Log out",
+      "signin_methods_failed": "Could not check your sign-in methods. Retry before changing two-factor authentication.",
+      "security_failed": "The security change could not be completed. Please try again.",
+      "retry_methods": "Retry sign-in methods",
+      "word_changed": "The word changed. Fill in again for the new word.",
+      "check_generation": "Check generation again",
+      "fill_ai": "Fill in with AI",
+      "fill": "Fill in",
+      "fill_offline": "Fill in needs a connection.",
+      "generating": "Generating…",
+      "generation_pending": "Generation may still be running.",
+      "meaning_placeholder": "What it means",
+      "ai_busy": "Too many generations are running. Try again in a moment.",
+      "ai_quota": "Your AI quota is used up for today.",
+      "ai_failed": "Generation failed. Try again.",
+      "restart_app": "Restart the app",
+      "database_close_failed": "The offline database could not be closed, so it is not safe to open it again in this session.",
+      "username_check_failed": "Could not check the username. Try again.",
+      "sync_unavailable": "Sync is unavailable.",
+      "offline": "You are offline.",
+      "sync_failed": "The sync failed.",
+      "sync_unconfirmed": "The sync could not be confirmed.",
+      "sync_rejected": "The server did not accept some of your changes.",
+      "locked": "Too many failed attempts. Your account is temporarily locked. Sign in again later.",
+      "challenge_exhausted": "Too many failed attempts. Sign in again to start a new verification request.",
+      "challenge_expired": "This verification request has expired. Sign in again.",
+      "two_answers": "Two answers",
+      "four_intervals": "Four answers with intervals",
+      "four_answers": "Four answers",
+      "save_answer_failed": "Could not save your answer",
+      "deck_example": "e.g. Spanish vocabulary",
+      "optional": "Optional",
+      "open_link": "Opens in a new window",
+      "card_image": "Card image"
+    },
+    "manage_deck": "Cards in {{title}}",
+    "review_deck": "Review {{title}}",
+    "my_decks": "My decks",
+    "community": "Community",
+    "welcome": "Welcome, <name>{{name}}</name>!",
+    "loading_overview": "Loading review overview",
+    "due_error": "Could not load cards due: {{message}}",
+    "statistics_error": "Could not load your statistics: {{message}}",
+    "loading_statistics": "Loading statistics",
+    "goal_rules": "How daily goals count",
+    "goal_progress": "{{goal}} progress",
+    "badges_error": "Could not load your badges: {{message}}",
+    "loading_badges": "Loading badges",
+    "badge_locked": "{{name}}, locked",
+    "badge_unlocked": "{{name}}, unlocked",
+    "database_unavailable": "Offline database unavailable. Your cards are not saved on this device.",
+    "profile_description": "Your public screen username",
+    "saved": "Saved",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "review_goal_one": "Review at least one word due today",
+    "review_goal_other": "Review at least {{count}} words due today",
+    "vocabulary_goal_one": "Add one new word to your personal dictionary",
+    "vocabulary_goal_other": "Add {{count}} new words to your personal dictionary",
+    "review_goal_few": "Review at least {{count}} words due today",
+    "review_goal_many": "Review at least {{count}} words due today",
+    "vocabulary_goal_few": "Add {{count}} new words to your personal dictionary",
+    "vocabulary_goal_many": "Add {{count}} new words to your personal dictionary",
+    "start_review_due_one": "Start Review · {{count}} due",
+    "start_review_due_other": "Start Review · {{count}} due",
+    "start_review_due_few": "Start Review · {{count}} due",
+    "start_review_due_many": "Start Review · {{count}} due"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -7,12 +220,24 @@
     "close": "Close",
     "previous": "Previous",
     "next": "Next",
-    "page": "Page {{page}}"
+    "page": "Page {{page}}",
+    "not_available": "N/A",
+    "loading_label": "Loading",
+    "unknown_error": "Unknown error occurred"
   },
-  "locales": {
+  "languages": {
     "en": "English",
-    "es": "Español",
-    "de": "Deutsch"
+    "es": "Spanish",
+    "de": "German",
+    "ru": "Russian"
+  },
+  "language_forms": {
+    "in": {
+      "en": "English",
+      "es": "Spanish",
+      "de": "German",
+      "ru": "Russian"
+    }
   },
   "nav": {
     "home": "Home",
@@ -32,7 +257,36 @@
     "error_default": "Failed to save onboarding data"
   },
   "auth": {
+    "layout": {
+      "title": "Master any subject with ease.",
+      "description": "Not Another Cards uses advanced spaced repetition and AI to help you learn faster and remember longer. Join the community today.",
+      "cards": {
+        "card1": {
+          "title": "to discover",
+          "subtitle": "descubrir",
+          "tag": "Verb"
+        },
+        "card2": {
+          "title": "knowledge",
+          "subtitle": "conocimiento",
+          "tag": "Noun"
+        },
+        "card3": {
+          "title": "effortless",
+          "subtitle": "sin esfuerzo",
+          "tag": "Adjective"
+        }
+      }
+    },
     "error": {
+      "invalid_credentials": "Invalid email or password",
+      "user_exists": "An account with this email already exists.",
+      "invalid_token": "This link is invalid or has expired. Request a new one.",
+      "session_expired": "Your session has expired. Sign in again.",
+      "email_not_verified": "Verify your email before signing in.",
+      "too_many_requests": "Too many requests. Please try again later.",
+      "forbidden": "You do not have permission to do this.",
+      "not_found": "The requested item was not found.",
       "social_login_failed_callback": "Social login failed. Please try again or use another provider.",
       "social_login_failed": "Social login failed. Please try again.",
       "unexpected": "An unexpected error occurred",
@@ -110,7 +364,8 @@
       "verify_and_continue": "Verify and continue",
       "back_to_sign_in": "Back to sign in",
       "totp_legend": "Six-digit authentication code",
-      "totp_digit_aria": "Digit {{digit}} of {{total}}"
+      "totp_digit_aria": "Digit {{digit}} of {{total}}",
+      "verification_method": "Verification method"
     },
     "validation": {
       "password_min": "Password must be at least 8 characters",
@@ -132,23 +387,34 @@
     "validation_more_one": "1",
     "validation_more_few": "{{count}}",
     "validation_more_many": "{{count}}",
-    "validation_more_other": "{{count}}"
+    "validation_more_other": "{{count}}",
+    "signing_out": "Signing out…",
+    "account_menu": "Account menu",
+    "user_avatar": "User avatar",
+    "logout": "Log out",
+    "logout_error": "Sign-out Error:",
+    "logout_failed": "Failed to log out. Please try again.",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "profile": {
     "validation": {
       "username_min": "Username must be at least 3 characters",
       "username_regex": "Username can only contain letters, numbers, underscores, and hyphens",
       "native_language_required": "Native language is required",
-      "target_language_required": "Target language is required"
+      "target_language_required": "Target language is required",
+      "languages_must_differ": "Choose a target language different from your native language"
     }
   },
   "preferences": {
+    "language_save_error": "Could not save the language preference. Try again.",
     "title": "Preferences",
     "language": "Language",
     "systemDefault": "System Default"
   },
   "dashboard": {
     "settings": {
+      "aria_sections": "Settings sections",
       "preferences": {
         "title": "Preferences",
         "description": "Customize your application settings and appearance",
@@ -196,7 +462,8 @@
         "update_password": "Update Password",
         "updating": "Updating...",
         "success": "Password changed successfully!",
-        "unexpected_error": "An unexpected error occurred"
+        "unexpected_error": "An unexpected error occurred",
+        "update_failed": "Failed to update password"
       },
       "two_factor": {
         "title": "Two-factor authentication",
@@ -293,8 +560,16 @@
         "count_cards": "{{count}} cards",
         "count_notes": "{{count}} notes",
         "count_reviews": "{{count}} reviews",
-        "count_decks": "{{count}} decks"
-      }
+        "count_decks": "{{count}} decks",
+        "decks_label": "Decks",
+        "notes_label": "Notes",
+        "cards_label": "Cards",
+        "reviews_label": "Reviews",
+        "file_summary": "{{size}} KB · {{format}}",
+        "row": "row {{row}}"
+      },
+      "learner": "Legendary Learner",
+      "user": "user"
     },
     "title": "Dashboard",
     "description": "Welcome to your language learning portal. Track your vocabulary review progress, explore dictionaries, and build your learning streak.",
@@ -313,7 +588,14 @@
       "offline": "Offline",
       "failed": "Sync failed",
       "reset_required": "Reset required",
-      "rejected": "Synced, {{rejected}} not accepted"
+      "rejected": "Synced, {{rejected}} not accepted",
+      "signed_out": "Signed out",
+      "offline_description": "Offline — changes will sync later",
+      "recovered": "Recovered from a server reset",
+      "rejected_changes_one": "Synced, {{count}} change not accepted",
+      "rejected_changes_few": "Synced, {{count}} changes not accepted",
+      "rejected_changes_many": "Synced, {{count}} changes not accepted",
+      "rejected_changes_other": "Synced, {{count}} changes not accepted"
     },
     "overview": {
       "badges": {
@@ -373,7 +655,8 @@
         "completed": "Completed",
         "remaining": "{{value}} remaining",
         "footer_points": "One review earns one point regardless of rating.",
-        "footer_reset": "Daily challenges and streaks reset at 00:00 UTC."
+        "footer_reset": "Daily challenges and streaks reset at 00:00 UTC.",
+        "progress": "{{title}} progress"
       },
       "profile": {
         "status": "Status",
@@ -398,7 +681,10 @@
         "report_description": "Tell the moderation team what is wrong. A report may queue a thorough automatic re-check, but the report alone never hides the deck.",
         "report_recorded": "Thank you. Your report was recorded.",
         "report_placeholder": "Describe the problem with this deck",
-        "submit_report": "Submit report"
+        "submit_report": "Submit report",
+        "report_reason": "Reason for report",
+        "imported": "Imported",
+        "import_pending": "{{title}}: imported. It will appear after the next successful sync."
       },
       "achievements": {
         "title": "Achievements",
@@ -408,7 +694,8 @@
       },
       "toasts": {
         "challenge_completed": "Challenge Completed: ",
-        "new_badge": "New Badge Unlocked!"
+        "new_badge": "New Badge Unlocked!",
+        "badge_unlocked": "Badge unlocked: {{name}}"
       }
     },
     "leaderboard": {
@@ -458,10 +745,24 @@
         "notesAdded": "Notes added per day",
         "forgotRate": "Forgot rate per day"
       },
-      "empty": "No {{series}} in this range"
+      "empty": "No {{series}} in this range",
+      "deck_aria": "Statistics deck",
+      "range_aria": "Statistics range",
+      "chart_description": "{{series}}, {{from}} to {{to}}, highest {{peak}}",
+      "maturity": {
+        "new": "New",
+        "learning": "Learning",
+        "young": "Young",
+        "mature": "Mature"
+      }
     }
   },
   "deck": {
+    "type": {
+      "basic": "Card deck",
+      "word": "Word deck",
+      "unknown": "Unknown deck type: {{noteType}}"
+    },
     "list": {
       "my_library": "My Library",
       "add_deck": "Add Deck",
@@ -471,14 +772,18 @@
       "no_decks_empty": "No decks found. Create one to get started!",
       "my_library_desc": "Manage your custom card decks.",
       "no_decks_title": "No Decks Yet",
-      "create_first": "Create First Deck"
+      "create_first": "Create First Deck",
+      "connecting": "Connecting Local Database...",
+      "initializing": "Initializing offline storage handles and loading library."
     },
     "card": {
       "no_description": "No description provided.",
-      "due": "Due",
+      "due": "Cards Due",
       "new": "New",
       "learned": "Learned",
       "actions": {
+        "manage_cards_short": "Cards",
+        "start_review_short": "Review",
         "study": "Study",
         "edit": "Edit",
         "settings": "Settings",
@@ -486,7 +791,22 @@
         "manage_cards": "Manage Cards",
         "start_review": "Start Review"
       },
-      "total_cards": "Total Cards"
+      "total_cards": "Total Cards",
+      "total_words": "Total Words",
+      "active_words": "Active Words",
+      "active_cards": "Active Cards",
+      "cards": "Cards",
+      "active": "Active",
+      "due_short": "Due"
+    },
+    "stats": {
+      "words_total": "Words Total",
+      "active_words": "Active Words",
+      "cards": "Cards",
+      "cards_due": "Cards Due",
+      "cards_total": "Cards Total",
+      "active": "Active",
+      "due": "Due"
     },
     "form": {
       "title": "Title",
@@ -586,7 +906,9 @@
       "delete_deck_and_words_one": "1",
       "delete_deck_and_words_few": "{{count}}",
       "delete_deck_and_words_many": "{{count}}",
-      "delete_deck_and_words_other": "{{count}}"
+      "delete_deck_and_words_other": "{{count}}",
+      "loading": "Loading deck details...",
+      "not_found": "Deck not found."
     },
     "cards": {
       "search_placeholder": "Search front, back...",
@@ -603,7 +925,8 @@
       "title_one": "{{count}} Cards",
       "title_few": "{{count}} Cards",
       "title_many": "{{count}} Cards",
-      "title_other": "{{count}} Cards"
+      "title_other": "{{count}} Cards",
+      "catalog": "Card Catalog"
     },
     "words": {
       "search_placeholder": "Search word, translation...",
@@ -623,7 +946,8 @@
       "title_one": "{{count}} Words",
       "title_few": "{{count}} Words",
       "title_many": "{{count}} Words",
-      "title_other": "{{count}} Words"
+      "title_other": "{{count}} Words",
+      "catalog": "Word Catalog"
     },
     "card_form": {
       "desc": "Create the question and answer for this study card.",
@@ -687,9 +1011,66 @@
       "cards_count_few": "Cards ({{count}})",
       "cards_count_many": "Cards ({{count}})",
       "cards_count_other": "Cards ({{count}})"
+    },
+    "moderation": {
+      "why": "Why?",
+      "classifier_results": "Classifier results",
+      "no_category": "No category supplied",
+      "categories_none": "Categories: none",
+      "check_failed": "Check failed: {{error}}",
+      "warnings_title": "Published with moderation warnings",
+      "warnings_description": "Your deck is public, but these cards may cover sensitive or controversial material. You can review the reason without unpublishing it.",
+      "warnings": "Warnings",
+      "taken_down": "Deck taken down",
+      "taken_down_description": "This deck is no longer visible to the community. Review the moderation result, edit the working copy, and publish again when it is ready.",
+      "refused": "The reported deck did not pass moderation.",
+      "flagged_cards": "Flagged cards",
+      "sync_pending": "Deck Updated, Sync Pending",
+      "publish_failed": "Could Not Publish Deck",
+      "unpublish_failed": "Could Not Unpublish Deck",
+      "published_pending": "The deck was published. This device will update after the next successful sync.",
+      "unpublished_pending": "The deck was unpublished. This device will update after the next successful sync.",
+      "automated_refusal": "The deck was refused by our automated moderation system. Please review the flagged content before trying again.",
+      "action_failed": "There was an issue processing your request. Please try again.",
+      "verdict": {
+        "safe": "Safe",
+        "unsafe": "Unsafe",
+        "controversial": "Controversial",
+        "error": "Error"
+      },
+      "sync_unavailable": "Sync is unavailable. Please try again when connected.",
+      "sync_incomplete": "Sync did not complete. Please try again when connected.",
+      "sync_busy": "Another tab is syncing right now. Please try again in a moment.",
+      "sync_unconfirmed": "Sync could not be confirmed. Please try again.",
+      "changes_rejected": "The deck's changes were not accepted by the server. {{explanation}}",
+      "failed": "Moderation failed"
+    },
+    "word_generation": {
+      "check_again": "Check generation again",
+      "filling": "Filling…",
+      "fill": "Fill with AI",
+      "running": "Generation may still be running.",
+      "filling_note": "Filling your word note…",
+      "failed": "Generation failed. Your form has not changed. You can try again.",
+      "invalid": "The generated fields are invalid or their languages no longer match the deck. Try again.",
+      "enter_word": "Enter a word or translation of up to 100 characters first.",
+      "unable": "Unable to fill the form.",
+      "edited": "You edited the form while AI was working. Your edits were kept; click Fill with AI to try again.",
+      "languages_changed": "The deck languages changed. Generate a new candidate or reopen the form before saving."
+    },
+    "errors": {
+      "count_cards": "Failed to count cards",
+      "create_deck": "Failed to create deck",
+      "update_deck": "Failed to update deck",
+      "delete_deck": "Failed to delete deck",
+      "create_card": "Failed to create card",
+      "update_card": "Failed to update card",
+      "update_word": "Failed to update word",
+      "remove_note": "Failed to remove note from deck"
     }
   },
   "review": {
+    "title": "Review",
     "session": {
       "completed_title": "Review complete",
       "completed_desc": "You have finished all due cards for this session.",
@@ -697,6 +1078,38 @@
       "cards_reviewed": "Cards Reviewed",
       "correct_rate": "Correct Rate",
       "time_spent": "Time Spent"
+    },
+    "activation": {
+      "activate": "Activate",
+      "count_label": "Number of items to activate",
+      "inactive_label": "Inactive",
+      "continue": "Activate and continue",
+      "error": "Activation error. Try again.",
+      "complete_title": "Review complete",
+      "complete_description": "All due cards in this deck are done for now.",
+      "available_words_one": "{{count}} inactive word available",
+      "available_words_few": "{{count}} inactive words available",
+      "available_words_many": "{{count}} inactive words available",
+      "available_words_other": "{{count}} inactive words available",
+      "available_cards_one": "{{count}} inactive card available",
+      "available_cards_few": "{{count}} inactive cards available",
+      "available_cards_many": "{{count}} inactive cards available",
+      "available_cards_other": "{{count}} inactive cards available"
+    },
+    "recovery": {
+      "choose_deck_title": "Choose a deck first",
+      "choose_deck_message": "Start a review from a specific deck.",
+      "database_inactive_title": "Database inactive",
+      "database_inactive_message": "Your offline database is open in another tab.",
+      "use_here": "Use here instead",
+      "loading_deck": "Loading your deck...",
+      "deck_not_found_title": "Deck not found",
+      "deck_not_found_message": "This deck does not exist or was deleted.",
+      "no_cards_due": "No cards are due in {{title}} right now.",
+      "no_cards_due_title": "No cards due",
+      "back_to_deck": "Back to deck",
+      "back": "Back",
+      "load_error": "Failed to load this review: {{message}}"
     },
     "card": {
       "show_answer": "Show answer",
@@ -724,6 +1137,24 @@
       "forgot_basic": "Forgot",
       "remember_basic": "Remembered",
       "hard_basic": "Struggled"
+    },
+    "intervals": {
+      "minute_one": "{{count}} min",
+      "minute_few": "{{count}} min",
+      "minute_many": "{{count}} min",
+      "minute_other": "{{count}} min",
+      "hour_one": "{{count}} hour",
+      "hour_few": "{{count}} hours",
+      "hour_many": "{{count}} hours",
+      "hour_other": "{{count}} hours",
+      "day_one": "{{count}} day",
+      "day_few": "{{count}} days",
+      "day_many": "{{count}} days",
+      "day_other": "{{count}} days"
+    },
+    "errors": {
+      "delete_word": "Could not delete this word. Try again.",
+      "save_answer": "Could not save your answer. Try again."
     }
   },
   "playground": {
@@ -868,5 +1299,33 @@
       "fill_error": "Could not fill the fields. Please check your network and try again.",
       "network_error": "Network error, please try again"
     }
+  },
+  "home": {
+    "description": "Master any language with smart flashcards.",
+    "get_started": "Get Started",
+    "offline_description": "Start learning offline or sync seamlessly across your devices."
+  },
+  "not_found": {
+    "message": "Page not found",
+    "go_home": "Go Home"
+  },
+  "route_error": {
+    "title": "Session Error",
+    "message": "An error occurred while loading your session."
+  },
+  "database": {
+    "connecting_title": "Connecting Database:",
+    "connecting_description": "Reclaiming and initializing local offline storage...",
+    "inactive_title": "Offline Database Inactive:",
+    "inactive_description": "This application is open in another tab. Offline features are disabled here.",
+    "blocked_title": "Storage blocked:",
+    "blocked_description": "This browser blocks site storage (private browsing or blocked site data), so your decks cannot be loaded. Allow site data for this site or use a normal window.",
+    "error_title": "Offline Database Error:",
+    "load_failed": "Failed to load database.",
+    "storage_held": "Local storage is held by another window or by a worker that did not shut down. Retry; if it keeps happening, close every window of this site or restart the browser.",
+    "timeout": "Database connection timed out. Please retry or refresh the page.",
+    "reload_title": "Reload to continue",
+    "close_failed": "The offline database could not be closed, so it is not safe to open it again on this page.",
+    "reload": "Reload"
   }
 }

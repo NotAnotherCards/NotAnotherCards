@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { apiErrorBodySchema, sharedDeckImportSchema } from '@repo/schemas';
+import { apiClient } from '@/lib/api-client';
 
 export function useImportDeck() {
+  const { t } = useTranslation();
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
@@ -15,21 +17,9 @@ export function useImportDeck() {
     });
     setError(null);
     try {
-      const res = await fetch(
-        `/api/shared/decks/${encodeURIComponent(deckId)}/import`,
-        {
-          method: 'POST',
-        },
-      );
-      if (!res.ok) {
-        const json: unknown = await res.json().catch(() => null);
-        const errorBody = apiErrorBodySchema.parse(json);
-        throw new Error(errorBody.message || 'Failed to import deck');
-      }
-      const json: unknown = await res.json();
-      return sharedDeckImportSchema.parse(json);
+      return await apiClient.sharedDecks.import(deckId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setError(err instanceof Error ? err.message : t('common.unknown_error'));
       return null;
     } finally {
       setImportingIds((prev) => {

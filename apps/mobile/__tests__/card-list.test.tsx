@@ -1,6 +1,8 @@
 import React from 'react';
+import i18n from '@/lib/i18n';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { CardList } from '@/components/card-list';
+import { Markdown } from '@/components/ui/markdown';
 
 const manager = { tag: 'manager' };
 let mockSessionDb: { manager: unknown } = { manager };
@@ -16,7 +18,13 @@ const mockWrites = {
   removeFromDeck: jest.fn(() => Promise.resolve(undefined)),
   deleteNote: jest.fn(() => Promise.resolve(undefined)),
 };
-type MockCard = { id: string; note_id: string; front: string; back: string };
+type MockCard = {
+  id: string;
+  note_id: string;
+  front: string;
+  back: string;
+  active?: boolean;
+};
 type MockNote = {
   id: string;
   note_type: string;
@@ -39,6 +47,7 @@ let mockCardsState: {
   writes: typeof mockWrites | null;
 };
 const mockScreenOptions = jest.fn();
+jest.mock('../components/publish-panel', () => ({ PublishPanel: () => null }));
 jest.mock('expo-router', () => ({
   Stack: {
     Screen: ({ options }: { options: unknown }) => {
@@ -63,8 +72,14 @@ beforeEach(() => {
       target_language_id: null,
     },
     cards: [
-      { id: 'c1', note_id: 'n1', front: 'hola', back: 'hello' },
-      { id: 'c2', note_id: 'n2', front: 'adiós', back: 'goodbye' },
+      { id: 'c1', note_id: 'n1', front: 'hola', back: 'hello', active: true },
+      {
+        id: 'c2',
+        note_id: 'n2',
+        front: 'adiós',
+        back: 'goodbye',
+        active: true,
+      },
     ],
     isLoading: false,
     error: null,
@@ -102,6 +117,29 @@ describe('CardList', () => {
     expect(getByText('hola')).toBeTruthy();
     expect(getByText('hello')).toBeTruthy();
     expect(getByText('adiós')).toBeTruthy();
+  });
+
+  it('marks inactive cards in the deck list', () => {
+    mockCardsState.cards[1].active = false;
+
+    expect(render(<CardList deckId="d1" />).getByText('Inactive')).toBeTruthy();
+  });
+
+  it('renders only a small window of a 300-card deck', () => {
+    mockCardsState.cards = Array.from({ length: 300 }, (_, index) => ({
+      id: `c${index}`,
+      note_id: `n${index}`,
+      front: `Front ${index}`,
+      back: `Back ${index}`,
+    }));
+
+    const result = render(<CardList deckId="d1" />);
+
+    expect(result.getByText('Cards')).toBeTruthy();
+    expect(result.getByText('Front 0')).toBeTruthy();
+    expect(result.getByText('Back 0')).toBeTruthy();
+    expect(result.UNSAFE_getAllByType(Markdown).length).toBeLessThan(100);
+    expect(result.queryByText('Front 299')).toBeNull();
   });
 
   it('renders card fronts and backs as markdown', () => {
@@ -203,7 +241,7 @@ describe('CardList', () => {
 
     fireEvent.press(r.getByText('New word'));
     fireEvent.changeText(
-      r.getByPlaceholderText('The word you are learning'),
+      r.getByPlaceholderText('the word you are learning'),
       'Katze',
     );
     fireEvent.changeText(r.getByPlaceholderText('What it means'), 'cat');
@@ -248,7 +286,7 @@ describe('CardList', () => {
     fireEvent.press(getByLabelText('Remove hola from deck'));
     expect(getByText(/The note stays/)).toBeTruthy();
     expect(mockWrites.removeFromDeck).not.toHaveBeenCalled();
-    fireEvent.press(getByText('Remove from deck'));
+    fireEvent.press(getByText('Remove from Deck'));
     await waitFor(() =>
       expect(mockWrites.removeFromDeck).toHaveBeenCalledWith('n1', 'd1'),
     );
@@ -327,4 +365,30 @@ describe('CardList', () => {
     fireEvent.press(r.getByLabelText('Edit hola'));
     expect(r.queryByText('Database not initialized')).toBeNull();
   });
+
+  it('translates a failed write again when the language changes', async () => {
+    mockWrites.create.mockRejectedValueOnce(new Error(''));
+    const r = render(<CardList deckId="d1" />);
+    fireEvent.press(r.getByText('New card'));
+    fireEvent.changeText(
+      r.getByPlaceholderText('The question or prompt'),
+      'gato',
+    );
+    fireEvent.changeText(r.getByPlaceholderText('The answer'), 'cat');
+    fireEvent.press(r.getByText('Save'));
+    await waitFor(() => r.getByText('The write failed'));
+    try {
+      await act(async () => {
+        await i18n.changeLanguage('de');
+      });
+      expect(r.getByText('Speichern fehlgeschlagen')).toBeTruthy();
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('en');
+      });
+    }
+  });
 });
+jest.mock('@/lib/api-client', () => ({
+  apiClient: { ai: { generateWordNote: jest.fn() } },
+}));

@@ -40,13 +40,13 @@ export function Segmented<T extends string>({
             accessibilityRole={itemRole}
             accessibilityState={{ selected }}
             className={`flex-1 items-center justify-center rounded-md ${
-              stacked ? 'gap-1 py-2' : 'flex-row gap-1.5 py-1.5'
+              stacked ? 'gap-1 py-2' : 'flex-row gap-1.5 py-2.5'
             } ${selected ? 'bg-background' : ''}`}
           >
             {renderIcon?.(option.value, selected)}
             <Text
-              numberOfLines={1}
-              className={`${stacked ? 'text-xs' : ''} ${
+              numberOfLines={stacked ? 2 : 1}
+              className={`shrink text-center ${stacked ? 'px-1 text-xs' : ''} ${
                 selected
                   ? 'font-semibold text-foreground'
                   : 'text-muted-foreground'

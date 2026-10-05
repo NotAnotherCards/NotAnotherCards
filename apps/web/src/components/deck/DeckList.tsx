@@ -24,6 +24,7 @@ import { writeErrorMessage } from '@/lib/write-error';
 import { FormErrorMessage } from '@/components/auth/form-error-message';
 import {
   countCardsPerDeck,
+  deckLearningCounts,
   type DeckNoteType,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
@@ -59,7 +60,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       },
       (err: unknown) => {
         if (!cancelled)
-          setWriteError(writeErrorMessage(err, 'Failed to count cards'));
+          setWriteError(writeErrorMessage(err, t('deck.errors.count_cards')));
       },
     );
     return () => {
@@ -89,7 +90,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       });
       setShowCreateForm(false);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to create deck'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.create_deck')));
     }
   };
 
@@ -103,7 +104,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       await store.updateDeck(editingDeck.id, data.title, data.description);
       setEditingDeck(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to update deck'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.update_deck')));
     }
   };
 
@@ -116,7 +117,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       else await store.deleteDeck(deckToDelete);
       setDeckToDelete(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to delete deck'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.delete_deck')));
     } finally {
       setIsDeleting(false);
     }
@@ -130,11 +131,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
         </div>
         <div>
           <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
-            Database Inactive (Taken Over)
+            {t('deck.cards.db_inactive')}
           </h3>
           <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-            This tab is currently inactive because the offline database is open
-            in another tab. Click below to use the database in this window.
+            {t('deck.cards.db_inactive_desc')}
           </p>
         </div>
         <Button
@@ -142,7 +142,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
           className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium border-none shadow-sm"
         >
           <RefreshCw className="size-4" />
-          Use here instead
+          {t('deck.cards.use_here')}
         </Button>
       </div>
     );
@@ -154,10 +154,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
         <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
           <Loader2 className="animate-spin size-8 text-primary" />
           <p className="text-sm font-semibold text-foreground animate-pulse">
-            Connecting Local Database...
+            {t('deck.list.connecting')}
           </p>
           <p className="text-xs text-muted-foreground">
-            Initializing offline storage handles and loading library.
+            {t('deck.list.initializing')}
           </p>
         </div>
       );
@@ -211,18 +211,32 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {store.decks.map((deck) => {
-            const totalCards = store.getCardsCount(deck.id);
-            const totalWords =
+            const cards = store.getCardsForDeck(deck.id);
+            const wordNotes =
               deck.note_type === WORD_NOTE_TYPE
-                ? store.getNotesForDeck(deck.id).length
-                : undefined;
+                ? store.getNotesForDeck(deck.id)
+                : [];
+            const counts = deckLearningCounts(
+              cards,
+              wordNotes.map((note) => note.id),
+            );
 
             return (
               <DeckCard
                 key={deck.id}
                 deck={deck}
-                totalCards={totalCards}
-                totalWords={totalWords}
+                totalCards={counts.totalCards}
+                activeCards={counts.activeCards}
+                totalWords={
+                  deck.note_type === WORD_NOTE_TYPE
+                    ? counts.totalNotes
+                    : undefined
+                }
+                activeWords={
+                  deck.note_type === WORD_NOTE_TYPE
+                    ? counts.activeNotes
+                    : undefined
+                }
                 dueCount={dueCardsPerDeck.get(deck.id) ?? 0}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}

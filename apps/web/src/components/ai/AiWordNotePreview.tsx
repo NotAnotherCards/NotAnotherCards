@@ -67,7 +67,7 @@ export function AiWordNotePreview({
         </div>
       </div>
 
-      <div className="bg-card/40 border border-border/60 rounded-2xl p-6 shadow-sm hover:border-violet-500/30 transition-all duration-200">
+      <div className="bg-card/40 border border-border/60 rounded-2xl p-6 shadow-sm hover:border-primary/30 transition-all duration-200">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
@@ -110,7 +110,7 @@ export function AiWordNotePreview({
                 {t('playground.preview.pronunciation', 'Pronunciation')}
               </h4>
               <div className="text-sm font-mono">
-                {note.fields.pronunciation || 'N/A'}
+                {note.fields.pronunciation || t('common.not_available')}
               </div>
             </div>
 
@@ -118,7 +118,7 @@ export function AiWordNotePreview({
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                 {t('playground.preview.example', 'Example')}
               </h4>
-              <div className="text-sm italic border-l-2 border-violet-500/30 pl-3 py-1">
+              <div className="text-sm italic border-l-2 border-primary/30 pl-3 py-1">
                 <MarkdownRenderer content={note.fields.example} />
               </div>
             </div>
@@ -139,7 +139,7 @@ export function AiWordNotePreview({
       </div>
 
       {/* Persistence Section */}
-      <div className="bg-card/30 border border-border/50 rounded-3xl p-6 backdrop-blur-sm space-y-6">
+      <div className="bg-card/30 border border-border/50 rounded-2xl p-6 backdrop-blur-sm space-y-6">
         <div>
           <h3 className="text-lg font-bold tracking-tight">
             {t('playground.preview.save_db', 'Save to Database')}
@@ -162,7 +162,7 @@ export function AiWordNotePreview({
         <Button
           onClick={handleSave}
           disabled={isSaving}
-          className="w-full bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-3xl py-5 shadow-lg shadow-emerald-500/10 font-semibold cursor-pointer"
+          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-2xl py-5 shadow-card font-semibold cursor-pointer"
         >
           {isSaving
             ? t('playground.preview.saving_note', 'Saving to Deck...')
@@ -172,13 +172,13 @@ export function AiWordNotePreview({
 
       {/* Toast Notification */}
       {savedSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-500/30 transition-all duration-300">
-          <CheckCircle2 className="size-5 shrink-0 text-white" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-sage text-sage-foreground px-4 py-3 rounded-2xl shadow-card border border-sage-border transition-all duration-300">
+          <CheckCircle2 className="size-5 shrink-0 text-sage-foreground" />
           <div>
             <h4 className="font-semibold text-sm">
               {t('playground.preview.note_saved', 'Note Saved!')}
             </h4>
-            <p className="text-xs text-emerald-100">
+            <p className="text-xs text-sage-foreground/80">
               {t(
                 'playground.preview.note_saved_desc',
                 'The word note has been added to your selected deck.',

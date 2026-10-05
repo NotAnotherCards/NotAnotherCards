@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Deck } from '@/hooks/useStore';
-import { deckKind, deckKindClassName, deckKindShort } from './deck-kind';
+import { deckKindClassName } from './deck-kind';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,12 +10,19 @@ import {
   CardContent,
 } from '@/components/ui/card';
 import { BookOpen, Edit, Trash2, FolderOpen } from 'lucide-react';
-import { noteTypeRegistry, WORD_NOTE_TYPE } from '@repo/offline-db';
+import {
+  deckKindShort,
+  noteTypeRegistry,
+  WORD_NOTE_TYPE,
+} from '@repo/offline-db';
+import { deckTypeAccessibilityLabel } from '@repo/i18n';
 
 interface DeckCardProps {
   deck: Deck;
   totalCards: number;
+  activeCards?: number;
   totalWords?: number;
+  activeWords?: number;
   dueCount: number;
   onSelectDeck: (deckId: string) => void;
   onStartReview: (deckId: string) => void;
@@ -26,7 +33,9 @@ interface DeckCardProps {
 export function DeckCard({
   deck,
   totalCards,
+  activeCards = 0,
   totalWords,
+  activeWords,
   dueCount,
   onSelectDeck,
   onStartReview,
@@ -39,23 +48,28 @@ export function DeckCard({
   // stays: a tombstone carries ids only, so there is nothing to lose, and it
   // is the only way to be rid of a deck this client cannot use.
   const isKnownType = deck.note_type in noteTypeRegistry;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const kindLabel = deckTypeAccessibilityLabel(
+    deck,
+    i18n.resolvedLanguage ?? i18n.language,
+    (key, options) => t(`deck.type.${key}`, options),
+  );
 
   return (
-    <Card className="group border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
+    <Card className="group hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
       <CardHeader className="min-w-0 pb-3">
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="flex flex-1 items-center gap-2 min-w-0">
             <span
               className={`${deckKindClassName} inline-flex h-6 shrink-0 items-center whitespace-nowrap font-medium leading-none`}
               data-testid="deck-kind"
-              title={deckKind(deck)}
-              aria-label={deckKind(deck)}
+              title={kindLabel}
+              aria-label={kindLabel}
             >
               {deckKindShort(deck)}
             </span>
             <CardTitle
-              className="text-base font-bold group-hover:text-primary transition-colors cursor-pointer truncate"
+              className="text-base font-bold group-hover:text-pine transition-colors cursor-pointer truncate"
               onClick={() => onSelectDeck(deck.id)}
               title={deck.title}
             >
@@ -91,52 +105,44 @@ export function DeckCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Card count tags */}
-        <div
-          className={`grid divide-x divide-border/40 gap-2 py-2 px-3 bg-muted/40 rounded-2xl border border-border/30 text-center ${
-            deck.note_type === WORD_NOTE_TYPE ? 'grid-cols-3' : 'grid-cols-2'
-          }`}
-        >
-          {deck.note_type === WORD_NOTE_TYPE && (
-            <div>
-              <div className="text-xs text-muted-foreground font-medium">
-                Total Words
-              </div>
-              <span
-                className="text-sm font-bold text-foreground"
-                data-testid="total-words-badge"
-              >
-                {totalWords ?? 0}
-              </span>
-            </div>
+        <div className="grid grid-cols-3 divide-x divide-border/40 gap-2 rounded-2xl border border-border/30 bg-muted/40 px-3 py-2 text-center">
+          {deck.note_type === WORD_NOTE_TYPE ? (
+            <>
+              <Count
+                label={t('deck.card.total_words', 'Total Words')}
+                value={totalWords ?? 0}
+                testId="total-words-badge"
+              />
+              <Count
+                label={t('deck.card.active_words', 'Active Words')}
+                value={activeWords ?? 0}
+                testId="active-words-badge"
+              />
+              <Count
+                label={t('deck.card.due')}
+                value={dueCount}
+                testId="due-cards-badge"
+              />
+            </>
+          ) : (
+            <>
+              <Count
+                label={t('deck.card.cards', 'Cards')}
+                value={totalCards}
+                testId="total-cards-badge"
+              />
+              <Count
+                label={t('deck.card.active', 'Active')}
+                value={activeCards}
+                testId="active-cards-badge"
+              />
+              <Count
+                label={t('deck.card.due_short', 'Due')}
+                value={dueCount}
+                testId="due-cards-badge"
+              />
+            </>
           )}
-          <div>
-            <div className="text-xs text-muted-foreground font-medium">
-              {t('deck.card.total_cards', 'Total Cards')}
-            </div>
-            <span
-              className="text-sm font-bold text-foreground"
-              data-testid="total-cards-badge"
-            >
-              {totalCards}
-            </span>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground font-medium">
-              {t('deck.card.due')}
-            </div>
-            {/* A deck with work reads at a glance; zero stays quiet. */}
-            <span
-              className={
-                dueCount > 0
-                  ? 'text-sm font-bold text-primary'
-                  : 'text-sm font-bold text-muted-foreground'
-              }
-              data-testid="due-cards-badge"
-            >
-              {dueCount}
-            </span>
-          </div>
         </div>
 
         <div className="flex flex-col gap-2 pt-2">
@@ -160,5 +166,29 @@ export function DeckCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function Count({
+  label,
+  value,
+  testId,
+}: {
+  label: string;
+  value: number;
+  testId: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-center">
+      <div className="flex min-h-8 items-center justify-center text-xs leading-4 font-medium text-foreground">
+        {label}
+      </div>
+      <span
+        className="text-sm font-bold tabular-nums text-foreground"
+        data-testid={testId}
+      >
+        {value}
+      </span>
+    </div>
   );
 }

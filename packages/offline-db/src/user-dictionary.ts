@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { ModelFor, type InferRecord } from '@remelondb/core';
 import { zodTable } from '@remelondb/core/zod';
-import { refineNoteFields } from './note-registry.js';
-import { REVIEW_INTERVAL_CAP_MINUTES } from './review-scheduler.js';
+import { refineNoteFields } from '@repo/study';
+import { REVIEW_INTERVAL_CAP_MINUTES } from '@repo/study';
 
 export const DECK_VISIBILITIES = ['private', 'public'] as const;
 export type DeckVisibility = (typeof DECK_VISIBILITIES)[number];
@@ -86,6 +86,7 @@ export const UserProfileRow = z.object({
   avatar_file_id: z.string().nullable(),
   native_language_id: z.string().nullable(),
   target_language_id: z.string().nullable(),
+  target_language_active: z.boolean().nullable(),
   created_at: z.number().int().nonnegative(),
   updated_at: z.number().int().nonnegative(),
 });

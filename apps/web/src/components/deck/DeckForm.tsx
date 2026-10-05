@@ -30,6 +30,11 @@ import {
   FieldSet,
 } from '@/components/ui/field';
 
+const languageFields = [
+  ['nativeLanguageId', 'deck.form.native_lang'],
+  ['targetLanguageId', 'deck.form.target_lang'],
+] as const;
+
 // A deck's note type is chosen once, at creation: its notes are compiled
 // against it, so it cannot change under them. The edit form omits it.
 const deckSchema = z.object({
@@ -256,25 +261,16 @@ export function DeckForm({
 
                 {showNoteType &&
                   isWord &&
-                  (
-                    [
-                      [
-                        'nativeLanguageId',
-                        t('deck.form.native_lang', 'Your language'),
-                      ],
-                      [
-                        'targetLanguageId',
-                        t('deck.form.target_lang', 'Language you are learning'),
-                      ],
-                    ] as const
-                  ).map(([name, label]) => (
+                  languageFields.map(([name, labelKey]) => (
                     <Controller
                       key={name}
                       name={name}
                       control={form.control}
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                          <FieldLabel htmlFor={field.name}>
+                            {t(labelKey)}
+                          </FieldLabel>
                           <select
                             {...field}
                             value={field.value ?? ''}
@@ -294,7 +290,10 @@ export function DeckForm({
                                 key={language.value}
                                 value={language.value}
                               >
-                                {languageLabel(language)}
+                                {languageLabel(
+                                  language,
+                                  t(`languages.${language.locale}`),
+                                )}
                               </option>
                             ))}
                           </select>

@@ -1,4 +1,5 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { DatabaseManager, SyncController } from '@remelondb/core';
@@ -10,6 +11,8 @@ import { authClient } from '@/lib/auth-client';
 import { createUserDatabaseManager } from './db';
 import { pullChanges, pushChanges } from './sync';
 import { browserSyncTriggers } from './syncController';
+import { normalizeLegacyCardContentAfterSync } from '@repo/offline-db';
+import { legacyCardContentCleanupState } from '@/lib/legacy-card-content-cleanup';
 
 type SessionDatabase = {
   manager: DatabaseManager | null;
@@ -47,6 +50,23 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
     controller: { triggers: browserSyncTriggers },
   });
 
+  useEffect(() => {
+    if (
+      !manager ||
+      !syncController ||
+      !userId ||
+      manager.state?.status !== 'ready'
+    ) {
+      return;
+    }
+
+    return normalizeLegacyCardContentAfterSync(
+      manager.database,
+      syncController,
+      legacyCardContentCleanupState(userId),
+    );
+  }, [manager, syncController, userId]);
+
   if (closeError) {
     return <DatabaseUnrecoverable error={closeError} />;
   }
@@ -75,20 +95,20 @@ export function SessionDatabaseProvider({ children }: { children: ReactNode }) {
  * this replaces the tree rather than sitting inside it.
  */
 function DatabaseUnrecoverable({ error }: { error: Error }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
       <AlertCircle className="size-8 text-destructive" />
       <h1 className="text-lg font-semibold text-foreground">
-        Reload to continue
+        {t('database.reload_title')}
       </h1>
       <p className="max-w-md text-sm text-muted-foreground">
-        The offline database could not be closed, so it is not safe to open it
-        again on this page.
+        {t('database.close_failed')}
       </p>
       <p className="max-w-md text-xs text-muted-foreground">{error.message}</p>
       <Button onClick={() => window.location.reload()}>
         <RefreshCw />
-        Reload
+        {t('database.reload')}
       </Button>
     </div>
   );

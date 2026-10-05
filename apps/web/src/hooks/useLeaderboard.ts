@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   gamificationLeaderboardSchema,
@@ -5,6 +6,7 @@ import {
 } from '@repo/schemas';
 
 export function useLeaderboard(limit: number, offset: number) {
+  const { t } = useTranslation();
   const [data, setData] = useState<GamificationLeaderboard | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +37,7 @@ export function useLeaderboard(limit: number, offset: number) {
         { signal: abortController.signal },
       );
       if (!response.ok) {
-        throw new Error('Failed to fetch leaderboard');
+        throw new Error(t('dashboard.leaderboard.failed_to_load'));
       }
       const json: unknown = await response.json();
       const parsedData = gamificationLeaderboardSchema.parse(json);
@@ -52,13 +54,13 @@ export function useLeaderboard(limit: number, offset: number) {
       if (err instanceof Error && err.name === 'AbortError') {
         return; // Ignore abort errors
       }
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t('common.unknown_error'));
     } finally {
       if (abortControllerRef.current === abortController) {
         setIsLoading(false);
       }
     }
-  }, [limit, offset]);
+  }, [limit, offset, t]);
 
   useEffect(() => {
     void fetchLeaderboard();

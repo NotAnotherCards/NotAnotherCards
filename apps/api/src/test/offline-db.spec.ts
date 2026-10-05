@@ -96,6 +96,7 @@ describe('@repo/offline-db wiring on API', () => {
                   avatar_file_id: null,
                   native_language_id: null,
                   target_language_id: null,
+                  target_language_active: null,
                   created_at: 0,
                   updated_at: 0,
                 }).success,
@@ -111,7 +112,7 @@ describe('@repo/offline-db wiring on API', () => {
     );
 
     expect(JSON.parse(output)).toEqual({
-      schemaVersion: 6,
+      schemaVersion: 7,
       userCardsTableDefined: true,
       userDecksTableDefined: true,
       userNotesTableDefined: true,

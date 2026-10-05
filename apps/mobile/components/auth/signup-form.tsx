@@ -1,12 +1,15 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type SignupFormData } from '@repo/schemas';
 import { authClient } from '@/lib/auth-client';
-import { apiErrorMessage } from '@/lib/errors';
+import { useSignOutBarrier } from '@/lib/sync-sign-out';
+import { toUiError, UiError, uiErrorText } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Text } from '@/components/ui/text';
+import { SocialLoginButtons } from '@/components/auth/social-login-buttons';
 
 // Hermes' Intl support is partial; if timezone detection fails the field
 // stays unset and the server defaults to UTC.
@@ -19,7 +22,9 @@ function getTimezone(): string | undefined {
 }
 
 export function SignupForm() {
-  const [apiError, setApiError] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const { signingOut, waitForSignOut } = useSignOutBarrier();
+  const [apiError, setApiError] = useState<UiError | null>(null);
   const { control, handleSubmit, formState } = useForm<SignupFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -33,6 +38,7 @@ export function SignupForm() {
 
   const onSubmit = async (data: SignupFormData) => {
     setApiError(null);
+    if (!(await waitForSignOut())) return;
     try {
       const { error } = await authClient.signUp.email({
         name: data.name,
@@ -41,10 +47,10 @@ export function SignupForm() {
         timezone: getTimezone(),
       });
       if (error) {
-        setApiError(apiErrorMessage(error));
+        setApiError(toUiError(error));
       }
     } catch (err) {
-      setApiError(apiErrorMessage(err));
+      setApiError(toUiError(err));
     }
   };
 
@@ -53,15 +59,15 @@ export function SignupForm() {
       <FormField
         control={control}
         name="name"
-        label="Name"
-        placeholder="Jane Doe"
+        label={t('auth.name')}
+        placeholder={t('auth.name')}
         autoCapitalize="words"
       />
       <FormField
         control={control}
         name="email"
-        label="Email"
-        placeholder="you@example.com"
+        label={t('auth.email')}
+        placeholder={t('auth.email_placeholder')}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
@@ -69,22 +75,24 @@ export function SignupForm() {
       <FormField
         control={control}
         name="password"
-        label="Password"
-        placeholder="Create a password"
+        label={t('auth.password')}
+        placeholder={t('auth.password')}
         secureTextEntry
         autoCapitalize="none"
       />
       <FormField
         control={control}
         name="confirmPassword"
-        label="Confirm password"
-        placeholder="Repeat your password"
+        label={t('auth.confirm_password')}
+        placeholder={t('auth.confirm_password')}
         secureTextEntry
         autoCapitalize="none"
       />
 
       {apiError && (
-        <Text className="text-center text-destructive">{apiError}</Text>
+        <Text className="text-center text-destructive">
+          {uiErrorText(apiError, t)}
+        </Text>
       )}
 
       <Button
@@ -92,8 +100,12 @@ export function SignupForm() {
         onPress={handleSubmit(onSubmit)}
         className="mt-1"
       >
-        <Text>Create account</Text>
+        <Text>
+          {signingOut ? t('auth.signing_out') : t('auth.register.submit')}
+        </Text>
       </Button>
+
+      <SocialLoginButtons />
     </>
   );
 }

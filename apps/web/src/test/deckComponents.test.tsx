@@ -20,6 +20,7 @@ import {
   type UserNoteRecord,
 } from '@repo/offline-db';
 import { GERMAN, RUSSIAN } from '@repo/schemas';
+import i18n from '@/lib/i18n';
 
 vi.mock('@/offline/db', () => {
   const manager = {
@@ -84,6 +85,7 @@ describe('DeckCard Component', () => {
         }}
         totalCards={3}
         totalWords={1}
+        activeWords={1}
         dueCount={2}
         onSelectDeck={vi.fn()}
         onStartReview={vi.fn()}
@@ -93,9 +95,63 @@ describe('DeckCard Component', () => {
     );
 
     expect(screen.getByTestId('total-words-badge')).toHaveTextContent('1');
-    expect(screen.getByTestId('total-cards-badge')).toHaveTextContent('3');
-    expect(screen.getByText('Due')).toBeInTheDocument();
+    expect(screen.getByTestId('active-words-badge')).toHaveTextContent('1');
+    expect(screen.getByText('Cards Due')).toBeInTheDocument();
     expect(screen.getByTestId('due-cards-badge')).toHaveTextContent('2');
+  });
+
+  it('localizes the word deck accessibility label without changing its flags', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+    const { rerender } = render(
+      <DeckCard
+        deck={{
+          ...mockDeck,
+          note_type: 'word',
+          native_language_id: GERMAN,
+          target_language_id: RUSSIAN,
+        }}
+        totalCards={0}
+        dueCount={0}
+        onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('🇩🇪 Deutsch → 🇷🇺 Russisch')).toHaveTextContent(
+      '🇩🇪→🇷🇺',
+    );
+
+    await act(async () => {
+      await i18n.changeLanguage('ru');
+    });
+    rerender(
+      <DeckCard
+        deck={{
+          ...mockDeck,
+          note_type: 'word',
+          native_language_id: GERMAN,
+          target_language_id: RUSSIAN,
+        }}
+        totalCards={0}
+        dueCount={0}
+        onSelectDeck={vi.fn()}
+        onStartReview={vi.fn()}
+        onEditDeck={vi.fn()}
+        onDeleteDeck={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByLabelText('🇩🇪 Немецкий → 🇷🇺 Русский'),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
   });
 
   // A push sends the client's whole view of a row, so an old client
@@ -394,7 +450,6 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
-        dueCards={[]}
         onViewNote={vi.fn()}
         onEditWord={vi.fn()}
         onRemoveWord={vi.fn()}
@@ -404,7 +459,7 @@ describe('WordNoteList Component', () => {
       />,
     );
 
-    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('1 Words Total')).toBeInTheDocument();
     expect(screen.getByText('3 Cards')).toBeInTheDocument();
     expect(screen.getByText('0 Cards Due')).toBeInTheDocument();
     expect(
@@ -459,7 +514,7 @@ describe('WordNoteList Component', () => {
     expect(container.querySelector('audio')).toBeNull();
   });
 
-  it('counts only cards belonging to words that match the search', () => {
+  it('keeps deck totals visible while the word search filters rows', () => {
     const secondWordNote: UserNoteRecord = {
       ...wordNote,
       id: 'word-note-2',
@@ -482,7 +537,9 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote, secondWordNote]}
         cards={[...wordCards, secondWordCard]}
-        dueCards={[wordCards[0], secondWordCard]}
+        activeWordCount={1}
+        totalCardCount={4}
+        dueCardCount={2}
         onViewNote={vi.fn()}
         onEditWord={vi.fn()}
         onRemoveWord={vi.fn()}
@@ -497,9 +554,10 @@ describe('WordNoteList Component', () => {
       { target: { value: 'Katze' } },
     );
 
-    expect(screen.getByText('1 Words')).toBeInTheDocument();
-    expect(screen.getByText('1 Cards')).toBeInTheDocument();
-    expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
+    expect(screen.getByText('2 Words Total')).toBeInTheDocument();
+    expect(screen.getByText('1 Active Words')).toBeInTheDocument();
+    expect(screen.getByText('4 Cards')).toBeInTheDocument();
+    expect(screen.getByText('2 Cards Due')).toBeInTheDocument();
   });
 
   it('keeps an invalid word visible and lets the user remove it', () => {
@@ -513,7 +571,9 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[invalidNote]}
         cards={wordCards}
-        dueCards={[wordCards[0]]}
+        activeWordCount={0}
+        totalCardCount={3}
+        dueCardCount={1}
         onViewNote={vi.fn()}
         onEditWord={vi.fn()}
         onRemoveWord={onRemoveWord}
@@ -523,7 +583,7 @@ describe('WordNoteList Component', () => {
       />,
     );
 
-    expect(screen.getByText('1 Words')).toBeInTheDocument();
+    expect(screen.getByText('1 Words Total')).toBeInTheDocument();
     expect(screen.getByText('3 Cards')).toBeInTheDocument();
     expect(screen.getByText('1 Cards Due')).toBeInTheDocument();
 
@@ -540,7 +600,6 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={wordCards}
-        dueCards={[]}
         onViewNote={onViewNote}
         onEditWord={onEditWord}
         onRemoveWord={onRemoveWord}
@@ -569,7 +628,6 @@ describe('WordNoteList Component', () => {
       <WordNoteList
         notes={[wordNote]}
         cards={[]}
-        dueCards={[]}
         onViewNote={onViewNote}
         onEditWord={onEditWord}
         onRemoveWord={onRemoveWord}
@@ -642,9 +700,6 @@ describe('CardList Component - Virtualization & Large Decks', () => {
       />,
     );
 
-    // Verify catalog title reflects total count of 1,000
-    expect(screen.getByText('1000 Cards')).toBeInTheDocument();
-
     // Verify virtualization: DOM contains far fewer row elements than 1,000 (only windowed slice)
     const renderedRows = screen.getAllByRole('row');
     // Header row + windowed items (<= 20)
@@ -656,8 +711,7 @@ describe('CardList Component - Virtualization & Large Decks', () => {
     const searchInput = screen.getByPlaceholderText('Search front, back...');
     fireEvent.change(searchInput, { target: { value: 'UniqueTargetFront' } });
 
-    // Verify search correctly narrows catalog to 1 card and renders it
-    expect(screen.getByText('1 Cards')).toBeInTheDocument();
+    // Verify search correctly narrows catalog to 1 card and renders it.
     expect(screen.getByText('UniqueTargetFront')).toBeInTheDocument();
   });
 

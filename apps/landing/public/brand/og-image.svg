@@ -22,9 +22,9 @@
       <text x="132" y="35" fill="#18181B" font-size="29" font-weight="700" letter-spacing="-1.4">NotAnotherCards</text>
     </g>
 
-    <text x="72" y="255" fill="#18181B" font-size="64" font-weight="700" letter-spacing="-4">Learn the words</text>
-    <text x="72" y="326" fill="#18181B" font-size="64" font-weight="700" letter-spacing="-4">that matter most.</text>
-    <text x="76" y="390" fill="#71717A" font-size="25">Smart flashcards for everyday learning.</text>
+    <text x="72" y="255" fill="#18181B" font-size="60" font-weight="700" letter-spacing="-4">Learn what</text>
+    <text x="72" y="326" fill="#18181B" font-size="60" font-weight="700" letter-spacing="-4">matters to you.</text>
+    <text x="76" y="390" fill="#71717A" font-size="25">Flashcards for any subject.</text>
   </g>
 
   <g filter="url(#shadow)" font-family="Inter, Arial, sans-serif">
@@ -34,9 +34,9 @@
       <text x="30" y="96" fill="#71717A" font-size="21">aprender</text>
       <path d="M30 128H230" stroke="#E4E4E7" stroke-width="2"/>
       <rect x="30" y="151" width="105" height="33" rx="9" fill="#EEF0FC" stroke="#CDD3F5"/>
-      <text x="43" y="173" fill="#5865B5" font-size="15" font-weight="700">Frequency</text>
+      <text x="43" y="173" fill="#5865B5" font-size="15" font-weight="700">Translation</text>
       <rect x="30" y="194" width="90" height="33" rx="9" fill="#F2F6F2"/>
-      <text x="43" y="216" fill="#27342C" font-size="15" font-weight="700">Examples</text>
+      <text x="43" y="216" fill="#27342C" font-size="15" font-weight="700">Example</text>
       <text x="30" y="258" fill="#71717A" font-size="17">A little practice, every day.</text>
     </g>
 
@@ -46,10 +46,10 @@
       <text x="30" y="96" fill="#71717A" font-size="21">recordar</text>
       <path d="M30 128H240" stroke="#E4E4E7" stroke-width="2"/>
       <rect x="30" y="151" width="124" height="33" rx="9" fill="#EEF0FC" stroke="#CDD3F5"/>
-      <text x="43" y="173" fill="#5865B5" font-size="15" font-weight="700">Memorization</text>
+      <text x="43" y="173" fill="#5865B5" font-size="15" font-weight="700">Part of speech</text>
       <rect x="30" y="194" width="93" height="33" rx="9" fill="#F2F6F2"/>
-      <text x="43" y="216" fill="#27342C" font-size="15" font-weight="700">Etymology</text>
-      <text x="30" y="258" fill="#71717A" font-size="17">Make the word easier to recall.</text>
+      <text x="43" y="216" fill="#27342C" font-size="15" font-weight="700">Gender</text>
+      <text x="30" y="258" fill="#71717A" font-size="17">Give each card useful details.</text>
     </g>
 
     <g transform="translate(944 274) rotate(-1 120 135)">
@@ -57,10 +57,10 @@
       <text x="27" y="58" fill="#18181B" font-size="29" font-weight="700" letter-spacing="-1.7">to practise</text>
       <text x="27" y="91" fill="#71717A" font-size="20">practicar</text>
       <path d="M27 122H203" stroke="#E4E4E7" stroke-width="2"/>
-      <rect x="27" y="145" width="111" height="33" rx="9" fill="#EEF0FC" stroke="#CDD3F5"/>
-      <text x="40" y="167" fill="#5865B5" font-size="15" font-weight="700">Similar words</text>
+      <rect x="27" y="145" width="150" height="33" rx="9" fill="#EEF0FC" stroke="#CDD3F5"/>
+      <text x="40" y="167" fill="#5865B5" font-size="15" font-weight="700">Pronunciation</text>
       <rect x="27" y="188" width="119" height="33" rx="9" fill="#F2F6F2"/>
-      <text x="40" y="210" fill="#27342C" font-size="15" font-weight="700">Pronunciation</text>
+      <text x="40" y="210" fill="#27342C" font-size="15" font-weight="700">AI Generated</text>
     </g>
   </g>
 </svg>

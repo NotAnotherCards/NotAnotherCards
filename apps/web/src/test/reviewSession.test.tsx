@@ -49,7 +49,6 @@ function renderSession(
     reviewMode?: 'basic' | 'extended';
     showNextReviewInterval?: boolean;
   } = {},
-  onComplete = vi.fn(),
 ) {
   const { reviewMode, showNextReviewInterval } = reviewPreferences;
   const onExit = vi.fn();
@@ -63,10 +62,9 @@ function renderSession(
       onDeleteNote={onDeleteNote}
       reviewMode={reviewMode ?? 'extended'}
       showNextReviewInterval={showNextReviewInterval}
-      onComplete={onComplete}
     />,
   );
-  return { onComplete, onCreateCard, onExit, onRecordReview, onDeleteNote };
+  return { onCreateCard, onExit, onRecordReview, onDeleteNote };
 }
 
 function revealCard() {
@@ -189,7 +187,7 @@ describe('ReviewSession', () => {
     revealCard();
 
     expect(flip).toHaveAttribute('data-flipped', 'true');
-    expect(flip).toHaveClass('[transform:rotateY(180deg)]');
+    expect(flip).toHaveClass('transform-[rotateY(180deg)]');
   });
 
   it('keeps a tap target for the card while both faces are present', () => {
@@ -219,7 +217,7 @@ describe('ReviewSession', () => {
     const onCreateCard = vi.fn().mockResolvedValue(undefined);
     renderSession([card], onCreateCard);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add a new card' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add New Card' }));
     expect(screen.getByText('Add New Card')).toBeInTheDocument();
 
     fireEvent.change(
@@ -252,7 +250,7 @@ describe('ReviewSession', () => {
       const { onRecordReview } = renderSession([card, secondCard]);
       if (revealAnswerFirst) revealCard();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Add a new card' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add New Card' }));
       const frontInput = screen.getByLabelText(
         'Front (Question, term, or prompt)',
       );
@@ -277,7 +275,7 @@ describe('ReviewSession', () => {
     },
   );
 
-  it('keeps the review answer area stable and aligns footer actions with its outer columns', () => {
+  it('keeps the review answer area stable and places navigation actions in the header', () => {
     renderSession();
 
     expect(screen.getByTestId('review-front-answer-buttons')).toHaveTextContent(
@@ -286,24 +284,18 @@ describe('ReviewSession', () => {
     expect(screen.getByTestId('review-card-flip')).toHaveClass('h-full');
     expect(screen.getByTestId('review-answer-area')).toHaveClass(
       'mt-6',
-      'min-h-[104px]',
+      'min-h-26',
     );
-    const footerActions = screen.getByTestId('review-footer-actions');
-    expect(footerActions).toHaveClass('grid-cols-3', 'mt-6');
+
     expect(
-      screen.getByRole('button', { name: 'Back to dashboard' }).parentElement,
-    ).toHaveClass('col-start-1', 'justify-start');
-    expect(
-      screen.getByRole('button', { name: 'Back to dashboard' }),
-    ).toHaveClass('size-12');
-    expect(
-      screen.getByRole('button', { name: 'Add a new card' }).parentElement,
-    ).toHaveClass('col-start-3', 'justify-end');
-    expect(screen.getByRole('button', { name: 'Add a new card' })).toHaveClass(
-      'rounded-none',
-      'size-12',
-      'text-muted-foreground',
-      'hover:text-foreground',
+      screen.getByRole('button', { name: 'Back to Dashboard' }),
+    ).toHaveClass('size-10', 'rounded-full');
+
+    expect(screen.getByRole('button', { name: 'Add New Card' })).toHaveClass(
+      'size-10',
+      'rounded-full',
+      'border-sage-border',
+      'bg-surface',
     );
   });
 
@@ -330,7 +322,7 @@ describe('ReviewSession', () => {
     const showAnswerButton = screen.getByRole('button', {
       name: 'Show answer',
     });
-    expect(showAnswerButton).toHaveClass('bg-muted/40', 'shadow-none');
+    expect(showAnswerButton).toHaveClass('bg-primary/5', 'shadow-sm');
 
     fireEvent.click(showAnswerButton);
 
@@ -713,34 +705,54 @@ describe('ReviewSession', () => {
     );
   });
 
-  it('loads a new batch after the current batch is completed', async () => {
-    const onRequestNextBatch = vi.fn(() => [secondCard]);
-    render(
-      <ReviewSession
-        cards={[card]}
-        deckTitle="German basics"
-        onExit={vi.fn()}
-        onCreateCard={vi.fn().mockResolvedValue(undefined)}
-        onRecordReview={vi.fn().mockResolvedValue({ id: 'review-1' })}
-        onDeleteNote={vi.fn().mockResolvedValue(undefined)}
-        onRequestNextBatch={onRequestNextBatch}
-        reviewMode="extended"
-      />,
-    );
+  it.each(['available', 'empty', 'failed'] as const)(
+    'advances after the saved final answer when the next batch is %s',
+    async (outcome) => {
+      const onRequestNextBatch = vi.fn(async () => {
+        if (outcome === 'failed') throw new Error('Next batch unavailable');
+        return outcome === 'available' ? [secondCard] : [];
+      });
+      const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
+      render(
+        <ReviewSession
+          cards={[card]}
+          deckTitle="German basics"
+          onExit={vi.fn()}
+          onCreateCard={vi.fn().mockResolvedValue(undefined)}
+          onRecordReview={onRecordReview}
+          onDeleteNote={vi.fn().mockResolvedValue(undefined)}
+          onRequestNextBatch={onRequestNextBatch}
+          reviewMode="extended"
+        />,
+      );
 
-    revealCard();
-    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
-    await act(async () => {
-      await Promise.resolve();
-    });
-    finishCardExit();
+      revealCard();
+      fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(onRecordReview).toHaveBeenCalledExactlyOnceWith(card.id, 3);
+      expect(onRequestNextBatch).not.toHaveBeenCalled();
 
-    expect(onRequestNextBatch).toHaveBeenCalledOnce();
-    expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
-      'data-card-id',
-      'card-2',
-    );
-  });
+      finishCardExit();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(onRequestNextBatch).toHaveBeenCalledOnce();
+      expect(onRecordReview).toHaveBeenCalledTimes(1);
+      if (outcome === 'available') {
+        expect(screen.getByTestId('review-card-surface')).toHaveAttribute(
+          'data-card-id',
+          'card-2',
+        );
+      } else {
+        expect(
+          screen.getByRole('heading', { name: 'Review complete' }),
+        ).toBeInTheDocument();
+      }
+    },
+  );
 
   it('shows the matching feedback while dragging the answer side', () => {
     renderSession();
@@ -936,7 +948,7 @@ describe('ReviewSession', () => {
     expect(confirmButton).toHaveFocus();
   });
 
-  it('cancels delete confirmation with Escape and restores card focus', () => {
+  it('cancels delete confirmation with Escape and restores card focus', async () => {
     const onRecordReview = vi.fn().mockResolvedValue({ id: 'review-1' });
     renderSession([card], undefined, onRecordReview);
     revealCard();
@@ -954,6 +966,11 @@ describe('ReviewSession', () => {
     fireEvent.keyDown(screen.getByTestId('review-card'), {
       key: 'ArrowRight',
     });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(onRecordReview).toHaveBeenCalledWith('card-1', 3);
   });
 
@@ -1100,22 +1117,20 @@ describe('ReviewSession', () => {
   it('returns to the dashboard', () => {
     const { onExit } = renderSession();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to dashboard' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Dashboard' }));
     expect(onExit).toHaveBeenCalledOnce();
   });
 
   it('shows the completed-session state when the session has no cards', () => {
-    const { onComplete } = renderSession([]);
+    renderSession([]);
 
     expect(
       screen.getByRole('heading', { name: 'Review complete' }),
     ).toBeInTheDocument();
-    expect(onComplete).toHaveBeenCalledOnce();
   });
 
-  it('notifies its parent when the final card is completed', async () => {
-    const onComplete = vi.fn();
-    renderSession([card], undefined, undefined, undefined, {}, onComplete);
+  it('saves the final answer and shows review completion', async () => {
+    const { onRecordReview } = renderSession([card]);
     revealCard();
     fireEvent.click(screen.getByRole('button', { name: 'Good' }));
 
@@ -1124,6 +1139,9 @@ describe('ReviewSession', () => {
     });
     finishCardExit();
 
-    expect(onComplete).toHaveBeenCalledOnce();
+    expect(onRecordReview).toHaveBeenCalledExactlyOnceWith(card.id, 3);
+    expect(
+      screen.getByRole('heading', { name: 'Review complete' }),
+    ).toBeInTheDocument();
   });
 });

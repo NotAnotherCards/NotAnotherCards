@@ -1,9 +1,6 @@
 # Design
 
-Both clients share one visual system: shadcn's neutral theme on web, and the
-same tokens transcribed for React Native on mobile. This document is the
-checkable description of that system; the rules below are what the code
-follows.
+Both clients share one unified brand visual system (a custom palette centered around Pine, Sage, and Indigo primary), moving away from the default standalone neutral theme. This unified palette is used on the landing page and the web application, and the same tokens are transcribed for React Native on mobile. This document is the checkable description of that system; the rules below are what the code follows.
 
 ## Palette
 
@@ -11,39 +8,54 @@ Colours are semantic tokens, never raw palette values. Each token is a CSS
 custom property, defined for light in `:root` and for dark in `.dark` (web) or
 the `prefers-color-scheme: dark` media query (mobile).
 
-Web defines them in `apps/web/src/style.css`, in oklch. Mobile defines them in
-`apps/mobile/global.css`, in hex, because React Native does not parse oklch.
-Mobile is a subset of web: every token mobile defines exists on web under the
-same name, and every shared value is the same colour once web's oklch is
-converted to sRGB, with one deliberate exception (33 of 34).
-
-The exception is light-mode `--card`. Web keeps it white like the page and
-separates a card with `shadow-md` and a hairline ring. On Android a shadow
-needs `elevation` and renders unevenly, and nativewind has no ring utility,
-so a white card on a white page had no visible edge. Mobile sets `--card` to
-the muted tone (`245 245 245`) instead, which is how native settings screens
-separate a panel. Dark mode needs none of this: its card tone is already
-lighter than its background on both clients.
+Web defines them in `apps/web/src/style.css`, mostly as hex, with oklch for
+destructive and rating colors. Mobile defines RGB channel triplets in
+`apps/mobile/global.css` so NativeWind can apply alpha. Mobile is a subset of
+web: every mobile token exists on web, and every shared light and dark color
+matches after conversion to sRGB. A card is the page's own colour on both
+clients; a sage border and web's card shadow set it apart. Mobile's screens
+also sit on `--surface` in both modes, since a phone shows a card edge to
+edge with little page around it; web keeps `--surface` for its login and
+review screens.
 
 ### Shared tokens
 
-| token                                        | used for                               |
-| -------------------------------------------- | -------------------------------------- |
-| `--background` / `--foreground`              | page ground and default text           |
-| `--card` / `--card-foreground`               | raised surfaces: cards, forms, dialogs |
-| `--primary` / `--primary-foreground`         | the main action, and text on it        |
-| `--secondary` / `--secondary-foreground`     | a second, quieter action               |
-| `--muted` / `--muted-foreground`             | de-emphasised surfaces and helper text |
-| `--accent` / `--accent-foreground`           | hover and selected states              |
-| `--destructive` / `--destructive-foreground` | delete, errors, and text on them       |
-| `--border`                                   | borders and separators                 |
-| `--input`                                    | input field borders and backgrounds    |
-| `--ring`                                     | focus rings                            |
+| token                                        | used for                                |
+| -------------------------------------------- | --------------------------------------- |
+| `--background` / `--foreground`              | page ground and default text            |
+| `--card` / `--card-foreground`               | raised surfaces: cards, forms, dialogs  |
+| `--primary` / `--primary-foreground`         | the main action, text on it, due counts |
+| `--secondary` / `--secondary-foreground`     | a second, quieter action                |
+| `--muted` / `--muted-foreground`             | de-emphasised surfaces and helper text  |
+| `--accent` / `--accent-foreground`           | hover and selected states               |
+| `--destructive` / `--destructive-foreground` | delete, errors, and text on them        |
+| `--border`                                   | borders and separators                  |
+| `--input`                                    | input field borders and backgrounds     |
+| `--ring`                                     | focus rings                             |
+| `--rating-again` … `--rating-easy`           | review answer buttons, one hue each     |
+| `--primary-hover`                            | pressed/hovered primary buttons         |
+| `--sage`, `--sage-border`                    | native switch track and card border     |
+| `--surface`                                  | tinted ground: web auth, mobile screens |
+| `--success`, `--warning`, `--info`           | status: done, needs attention, working  |
 
 Tailwind exposes each as a utility of the same name: `bg-card`,
 `text-muted-foreground`, `border-border`, `ring-ring`. Web does this through
 `@theme inline` in `style.css`; mobile through `theme.extend.colors` in
 `tailwind.config.js`.
+
+The four rating tokens are the second place the palette leaves greyscale,
+after the charts: forgot, hard, remember and very easy have to be told apart
+at a glance. `--rating-again` is `--destructive`; hard, good and easy are
+tailored colors based on the design system. Web's review
+buttons still use inline tailwind classes and have not moved to them yet.
+
+### Brand Tokens
+
+- **Pine/Sage.** `--pine`, `--sage` and their variants. These form the core
+  brand identity colors for the application and landing page, moving away from
+  neutral greys.
+- **Primary.** `--primary` is set to an Indigo tone, offering contrast and
+  interactivity.
 
 ### Web-only tokens
 
@@ -56,9 +68,13 @@ decision, not an oversight to fix.
 - **Sidebar.** `--sidebar` and its seven companions. Desktop navigation only.
 - **Charts.** `--chart-1` to `--chart-5`. Web statistics only. The first
   three carry a hue each so a reader tells the series apart (reviews, notes
-  added, forgot rate); `--chart-4` and `--chart-5` are still neutral. This is
-  the only place the palette leaves greyscale, and only because a chart
-  without distinguishable series is unreadable.
+  added, forgot rate); `--chart-4` and `--chart-5` are still neutral. They
+  leave greyscale only because a chart without distinguishable series is
+  unreadable.
+- **Other brand surfaces.** `--surface-soft`, `--sage-foreground`, `--pine`
+  and `--pine-foreground` remain web-only until a mobile component needs
+  them. `--shadow-card` is a shadow, not a colour: mobile's card repeats its
+  values in `lib/theme.ts` (`cardShadows`), unchecked.
 - **Radius scale.** `--radius` (0.625rem) and `--radius-sm` to `--radius-4xl`
   derived from it. Mobile gains `--radius` with the kit; see Spacing and radius.
 - **`--color-*`.** Tailwind 4's `@theme` bridge, one per token above. These are
@@ -67,23 +83,19 @@ decision, not an oversight to fix.
 ### Adding a token
 
 A token that both clients need is added to `style.css` first, then to
-`global.css` with the converted hex value for light and dark, in the same
-change. A token only web needs is added to `style.css` and listed above.
+`global.css` as RGB triplets for light and dark in the same change. A token
+only web needs is added to `style.css` and listed above.
 
 ## Typography
 
-Web loads Inter Variable through `@fontsource-variable/inter` and exposes two
-tokens: `--font-sans` (`'Inter Variable', sans-serif`) and `--font-heading`,
-which currently aliases `--font-sans`. Headings and body share a family; weight
-and size do the work.
+Web loads Poppins through `@fontsource/poppins` and exposes two
+tokens: `--font-sans` (`'Poppins', sans-serif`) and `--font-heading`
+(also `'Poppins', sans-serif`). Headings and body share a family; weight
+and size do the work. This unifies typography between the marketing pages and the app.
 
-Mobile defines no font tokens and loads no font. Text renders in the platform
-default, San Francisco on iOS and Roboto on Android, and that is intended:
-React Native Reusables ships with the system font, loading Inter through
-`expo-font` would hold first render until the font resolves, and the two faces
-are close enough that only Android would show a difference. Should that change,
-`components/ui/text.tsx` and one `fontFamily` entry in `tailwind.config.js` are
-the only places that set it.
+Mobile does not load Poppins yet. It currently renders the platform default,
+San Francisco on iOS and Roboto on Android. The mobile font decision is tracked
+in #371; this palette port does not settle it.
 
 Weight utilities are shared: `font-medium` for labels, `font-semibold` for
 headings and button labels. Size follows Tailwind's default scale on both
@@ -94,12 +106,10 @@ clients (`text-sm`, `text-base`, `text-lg`).
 Spacing uses Tailwind's default scale on both clients. Gaps between stacked
 controls are `gap-2` to `gap-4`; card padding is `p-4`.
 
-Radius differs today. Web derives its scale from `--radius` (0.625rem), so
-`rounded-lg` is 0.625rem and `rounded-xl` is 0.875rem. Mobile uses Tailwind 3's
-defaults, so the same class names produce 0.5rem and 0.75rem. The React Native
-Reusables adoption (#143) closes the gap: the first component that needs
-`--radius` adds it to `global.css` at web's 0.625rem and maps `borderRadius` in
-`tailwind.config.js`, after which the class names mean the same on both clients.
+Radius still differs: web derives its scale from `--radius` (0.625rem), while
+mobile uses Tailwind 3's defaults. Both card components now use `rounded-2xl`,
+but their exact radii differ until the React Native Reusables adoption (#143)
+maps the shared scale. Buttons remain pill-shaped on both clients.
 
 ## Motion and micro-animations
 
@@ -113,10 +123,19 @@ Animations are designed to be fast and functional: they confirm user actions wit
 - **Reduced motion.** Target standard. Web currently has no `motion-reduce:` usage
   (0 of 128). Newly introduced animated surfaces should pair each animation with
   `motion-reduce:animate-none` / `motion-reduce:transition-none`.
-- **Mobile.** Mobile includes no motion today: 10 Pressables, none using ripple,
-  pressed opacity, or timed transitions, and no `Animated` usage. Touch
-  feedback will arrive with the React Native Reusables adoption (#233); until then
-  its absence is intentional, not an oversight.
+- **Mobile.** The review is the one animated surface, through Reanimated and
+  gesture-handler. Once the answer shows, the answer card follows a swipe,
+  tilts slightly, springs back below the threshold and leaves in the swipe's
+  direction in 260ms before the answer is recorded. With four answers, a
+  swipe down and to the right (30 to 60 degrees) answers easy, towards the
+  Easy button. While it is dragged, the
+  question fades out over the first half of the way and the next question
+  comes in over the second, growing from 95%; both follow the finger, so they
+  apply with reduced motion too. With the system's reduced motion setting on
+  (`useReducedMotion`), the answer is recorded without the flight. Elsewhere
+  mobile has no motion: Pressables use no ripple, pressed opacity or timed
+  transitions. Touch feedback will arrive with the React Native Reusables
+  adoption (#233); until then its absence is intentional, not an oversight.
 
 ## Responsive breakpoints and layout grid
 
@@ -137,7 +156,7 @@ that is a design decision, not a gap to fix.
 ## Icons
 
 - **Web** uses `lucide-react` for general UI icons. Brand marks are dedicated
-  components: `components/ui/google-icon.tsx` and `facebook-icon.tsx`.
+  components: `components/ui/google-icon.tsx`.
 - **Mobile** uses no icon library today. When #143 lands it uses
   `lucide-react-native`, the same icon set with the same names. Brand marks
   stay dedicated assets.
@@ -153,21 +172,26 @@ is missing; the fix is to add it there, not to copy the markup.
 
 ### Inventory
 
+Mobile multiline inputs use a minimum height of 6rem and top-aligned text;
+single-line inputs keep their compact height. This applies to card sides,
+deck descriptions and word-note notes through the shared `Input` component.
+
 | web `apps/web/src/components/ui`            | mobile `apps/mobile/components/ui`                    |
 | ------------------------------------------- | ----------------------------------------------------- |
 | `alert`                                     |                                                       |
 | `button`                                    | `button` (primary, secondary, destructive; `loading`) |
-| `card`                                      |                                                       |
-| `field`, `label`, `input`, `password-input` | `form-field`, `input`                                 |
+| `card`                                      | `card`                                                |
+| `dropdown-menu`                             |                                                       |
+| `field`, `label`, `input`, `password-input` | `form-field`, `label`, `input`                        |
+| `MarkdownRenderer`                          | `markdown`                                            |
+| `progress`                                  | `progress` (value and indicator colour; no animation) |
+| `select`                                    |                                                       |
 | `separator`                                 |                                                       |
 | `spinner`                                   |                                                       |
-| `google-icon`, `facebook-icon`              |                                                       |
+| `switch`                                    |                                                       |
+| `google-icon`                               | `google-icon`, `icon` (lucide wrappers)               |
+|                                             | `segmented`                                           |
 |                                             | `text`                                                |
-
-The first mobile deck CRUD slice in #68 introduces the `secondary` and
-`destructive` button variants. They are listed here because this document is
-the review contract for that work; until the slice lands, `main` has only the
-primary variant and `loading` state.
 
 Web components come from shadcn (`components.json`: style `radix-luma`, base
 colour `neutral`, CSS variables on, icon library lucide). They are added with
@@ -206,21 +230,17 @@ holds `navigationColors`. Existing screens migrate incrementally.
 
 ### Enforcement
 
-Nothing enforces these today. The lint rule `better-tailwindcss/no-unknown-classes`
-rejects classes that do not exist, so `bg-emerald-500` passes. Web currently
-contains more than a hundred raw palette utilities in components and routes;
-clearing them is follow-up work, not a precondition for this document.
+`pnpm check:design-docs` runs `scripts/check-design-docs.mjs`; CI runs it too.
+It checks that every web and mobile `components/ui` file appears in the
+inventory and every listed file exists, that mobile defines no token web
+lacks, and that shared light/dark colors and native navigation colors match.
+The table remains hand-written: a new component needs a deliberate row edit.
 
-Two checks are worth adding when someone is in the area:
-
-- A lint rule or script rejecting raw palette utilities outside `components/ui`.
-- A script comparing token names between `style.css` and `global.css`, failing
-  when mobile defines a token web does not. The check that produced the
-  numbers in this document is a shell one-liner:
-
-```sh
-tok() { grep -oE -- '--[a-z][a-z0-9-]*\s*:' "$1" | sed 's/\s*:$//' | sort -u; }
-comm -13 <(tok apps/web/src/style.css) <(tok apps/mobile/global.css)
-```
-
-An empty result means mobile is still a subset.
+Raw palette utilities such as `bg-emerald-500` outside `components/ui` are
+ratcheted: `scripts/design-raw-palette.json` records how many each file has,
+and the check fails when a file exceeds its count or a new file has any. A
+file that drops below its count fails too, until its entry is lowered, so the
+baseline only moves down. Status colours use `--success`, `--warning` and
+`--info`; mobile's sync badge and daily goals already do. Web's existing uses
+are converted file by file. The Overview stat tiles keep a raw hue each on
+both clients: it tells the tiles apart and states nothing.

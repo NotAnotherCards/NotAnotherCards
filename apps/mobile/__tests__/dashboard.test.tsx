@@ -1,6 +1,14 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import i18n from '@/lib/i18n';
+import { renderWithLocale } from '@/lib/test-utils/render-with-locale';
+import { act, render, fireEvent } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
 import Dashboard from '@/app/dashboard';
+import {
+  beginTwoFactorChallenge,
+  finishTwoFactorChallenge,
+  TwoFactorDeepLinkProvider,
+} from '@/lib/two-factor-challenge';
 import Storage from 'expo-sqlite/kv-store';
 import { lastReviewDeckStorageKey } from '@repo/offline-db';
 import {
@@ -10,7 +18,20 @@ import {
 
 const mockUseSession = jest.fn();
 const mockPush = jest.fn();
+let mockParams: { tab?: string } = {};
+let mockSetParams: (params: { tab?: string }) => void;
 const mockManager = { tag: 'manager' };
+let mockSyncController: {
+  state: {
+    status: string;
+    lastSyncAt: null;
+    error: null;
+    cause: null;
+    lastResult: null;
+  };
+  subscribe: (notify: () => void) => () => void;
+  syncNow: jest.Mock;
+} | null = null;
 const mockUseReviewOverview = jest.fn(
   (..._args: unknown[]) => mockReviewOverview,
 );
@@ -25,17 +46,53 @@ jest.mock('../lib/auth-client', () => ({
   authClient: { useSession: () => mockUseSession() },
 }));
 jest.mock('../lib/database-provider', () => ({
-  useSessionDatabase: () => ({ manager: mockManager }),
+  useSessionDatabase: () => ({
+    manager: mockManager,
+    syncController: mockSyncController,
+  }),
 }));
 jest.mock('../lib/review', () => ({
   useReviewOverview: (...args: unknown[]) => mockUseReviewOverview(...args),
 }));
+const NO_STATS = {
+  dictionarySize: 0,
+  streak: 0,
+  wordsLearned: 0,
+  challenges: [
+    { code: 'daily-review', current: 0, target: 20, completed: false },
+    { code: 'new-vocabulary', current: 0, target: 5, completed: false },
+  ],
+};
+let mockOverviewStats = {
+  stats: { ...NO_STATS } as typeof NO_STATS | null,
+  isLoading: false,
+  error: null as Error | null,
+};
+let mockAchievements = {
+  achievements: [] as {
+    code: string;
+    name: string;
+    rule: string;
+    description: string;
+    unlockedAt: number | null;
+  }[],
+  isLoading: false,
+  error: null as Error | null,
+};
+jest.mock('../lib/achievements', () => ({
+  useAchievements: () => mockAchievements,
+}));
+// Only the hook is faked: dailyGoals is the real copy the card renders.
+jest.mock('../lib/overview-stats', () => ({
+  ...jest.requireActual('../lib/overview-stats'),
+  useOverviewStats: () => mockOverviewStats,
+}));
 
 // The deck list and settings have their own tests; keep this one about the
 // session guard and the tab strip. Each tab renders a marker instead.
-jest.mock('../components/deck-list', () => {
+jest.mock('../components/library', () => {
   const { Text } = require('react-native');
-  return { DeckList: () => <Text>deck-list</Text> };
+  return { Library: () => <Text>deck-list</Text> };
 });
 jest.mock('../components/settings', () => {
   const { Text } = require('react-native');
@@ -46,9 +103,16 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('../components/ui/icon', () => ({
+  BookMarkedIcon: () => null,
   BookOpenIcon: () => null,
+  FlameIcon: () => null,
+  GraduationCapIcon: () => null,
+  InfoIcon: () => null,
   LibraryIcon: () => null,
+  MedalIcon: () => null,
   SettingsIcon: () => null,
+  SparklesIcon: () => null,
+  TrophyIcon: () => null,
 }));
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -56,13 +120,69 @@ jest.mock('expo-router', () => {
   return {
     Redirect: ({ href }: { href: string }) =>
       React.createElement(Text, null, `redirect:${href}`),
-    useRouter: () => ({ push: mockPush }),
+    useLocalSearchParams: () => {
+      const [params, setParams] = React.useState(mockParams);
+      mockSetParams = setParams;
+      return params;
+    },
+    useRouter: () => ({
+      push: mockPush,
+      setParams: (params: { tab?: string }) => mockSetParams(params),
+    }),
   };
 });
 
 describe('Dashboard screen', () => {
+  it('renders the overview in German and updates counts and controls when the locale changes', async () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane', onBoardingComplete: true } },
+      isPending: false,
+    });
+    mockOverviewStats.stats = { ...NO_STATS, dictionarySize: 1, streak: 2 };
+    mockReviewOverview.dueCount = 1;
+    const screen = await renderWithLocale(<Dashboard />, 'de');
+    expect(screen.getByText('Übersicht')).toBeTruthy();
+    expect(screen.getByText('1 Wort')).toBeTruthy();
+    expect(screen.getByText('2 Tage')).toBeTruthy();
+    for (const word of ['Persönliches', 'Wörterbuch']) {
+      expect(screen.getByText(word).props.numberOfLines).toBe(1);
+      expect(screen.getByText(word).props.adjustsFontSizeToFit).toBe(true);
+    }
+    expect(screen.getByText('Karten wiederholen · 1 fällig')).toBeTruthy();
+    fireEvent(
+      screen.getByTestId('review-label-measure', {
+        includeHiddenElements: true,
+      }),
+      'textLayout',
+      {
+        nativeEvent: { lines: [{}, {}] },
+      },
+    );
+    expect(screen.getByText('Karten wiederholen\n1 fällig')).toBeTruthy();
+    fireEvent(
+      screen.getByTestId('review-label-measure', {
+        includeHiddenElements: true,
+      }),
+      'textLayout',
+      {
+        nativeEvent: { lines: [{}] },
+      },
+    );
+    expect(screen.getByText('Karten wiederholen · 1 fällig')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('So werden Tagesziele gezählt'));
+    expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Schließen' }));
+    await act(async () => {
+      await screen.i18n.changeLanguage('es');
+    });
+    expect(screen.getByText('1 palabra')).toBeTruthy();
+    expect(screen.getByText('Empezar repaso · 1 pendiente')).toBeTruthy();
+    expect(screen.queryByText('Übersicht')).toBeNull();
+  });
   beforeEach(() => {
     jest.clearAllMocks();
+    mockParams = {};
+    finishTwoFactorChallenge();
     Storage.removeItemSync(lastReviewDeckStorageKey('user-dashboard'));
     mockReviewOverview = {
       target: 'nothing-due',
@@ -70,6 +190,116 @@ describe('Dashboard screen', () => {
       isLoading: false,
       error: null,
     };
+    mockOverviewStats = {
+      stats: { ...NO_STATS },
+      isLoading: false,
+      error: null,
+    };
+    mockSyncController = null;
+    mockAchievements = { achievements: [], isLoading: false, error: null };
+  });
+
+  it('shows the pull spinner until the sync it started settles', async () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          id: 'user-dashboard',
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    // As the controller does: syncNow() resolves with the state once the run
+    // has settled, and never rejects.
+    const listeners = new Set<() => void>();
+    let settle: () => void = () => {};
+    const state = {
+      status: 'idle',
+      lastSyncAt: null,
+      error: null,
+      cause: null,
+      lastResult: null,
+    };
+    const controller = {
+      state,
+      subscribe: (notify: () => void) => {
+        listeners.add(notify);
+        return () => {
+          listeners.delete(notify);
+        };
+      },
+      syncNow: jest.fn(
+        () =>
+          new Promise<typeof state>((resolve) => {
+            settle = () => resolve(controller.state);
+          }),
+      ),
+    };
+    mockSyncController = controller;
+    const result = render(<Dashboard />);
+
+    // jest-expo mocks RefreshControl away, so the control is read off the
+    // ScrollView's prop.
+    const refresh = () =>
+      result.UNSAFE_getByProps({ keyboardShouldPersistTaps: 'handled' }).props
+        .refreshControl as ReactElement<{
+        refreshing: boolean;
+        onRefresh: () => void;
+      }>;
+    expect(refresh().props.refreshing).toBe(false);
+
+    // a sync that starts by itself shows no pull spinner
+    act(() => {
+      controller.state = { ...state, status: 'syncing' };
+      listeners.forEach((notify) => notify());
+    });
+    expect(refresh().props.refreshing).toBe(false);
+
+    act(() => refresh().props.onRefresh());
+    expect(controller.syncNow).toHaveBeenCalledTimes(1);
+    expect(refresh().props.refreshing).toBe(true);
+
+    await act(async () => settle());
+    expect(refresh().props.refreshing).toBe(false);
+  });
+
+  it('redirects a pending challenge before rendering a cached session', () => {
+    beginTwoFactorChallenge();
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
+  });
+
+  it('gates a deep-linked challenge before its persisted state is written', () => {
+    mockUseSession.mockReturnValue({
+      data: {
+        user: {
+          name: 'Previous User',
+          email: 'previous@example.com',
+          onBoardingComplete: true,
+        },
+      },
+      isPending: false,
+    });
+    const { getByText, queryByText } = render(
+      <TwoFactorDeepLinkProvider pending>
+        <Dashboard />
+      </TwoFactorDeepLinkProvider>,
+    );
+    expect(getByText('redirect:/two-factor')).toBeTruthy();
+    expect(queryByText('Previous User')).toBeNull();
   });
 
   it('redirects to login when there is no session', () => {
@@ -93,6 +323,17 @@ describe('Dashboard screen', () => {
     const { getByText, queryByText } = render(<Dashboard />);
     expect(getByText('Jane Doe')).toBeTruthy();
     expect(queryByText(/jane@example.com/)).toBeNull();
+  });
+
+  it('opens the library when returning from a community import', () => {
+    mockParams = { tab: 'library' };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+    const result = render(<Dashboard />);
+    expect(result.getByText('deck-list')).toBeTruthy();
+    expect(result.queryByText('Jane Doe')).toBeNull();
   });
 
   it('opens on Overview and switches to the library and settings tabs', () => {
@@ -137,8 +378,7 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    expect(getByText('3 cards due')).toBeTruthy();
-    fireEvent.press(getByText('Start Review'));
+    fireEvent.press(getByText('Start Review · 3 due'));
 
     expect(mockPush).toHaveBeenCalledWith('/review/deck-spanish');
     expect(mockUseReviewOverview).toHaveBeenCalledWith(
@@ -166,13 +406,179 @@ describe('Dashboard screen', () => {
     });
 
     const { getByText } = render(<Dashboard />);
-    fireEvent.press(getByText('Start Review'));
+    fireEvent.press(getByText('Start Review · 3 due'));
 
     expect(getByText('deck-list')).toBeTruthy();
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('disables Start Review when nothing is due', () => {
+  it("shows web's three stat tiles on the Overview", () => {
+    mockOverviewStats.stats = {
+      ...NO_STATS,
+      dictionarySize: 1540,
+      streak: 1,
+      wordsLearned: 12,
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('Personal')).toBeTruthy();
+    expect(getByText('Dictionary')).toBeTruthy();
+    expect(getByText('1540 words')).toBeTruthy();
+    expect(getByText('Learning')).toBeTruthy();
+    expect(getByText('Streak')).toBeTruthy();
+    expect(getByText('1 Day')).toBeTruthy();
+    expect(getByText('Words')).toBeTruthy();
+    expect(getByText('Learned')).toBeTruthy();
+    expect(getByText('12')).toBeTruthy();
+  });
+
+  it("shows today's goals under the tiles, count or Completed", () => {
+    mockOverviewStats.stats = {
+      ...NO_STATS,
+      challenges: [
+        { code: 'daily-review', current: 20, target: 20, completed: true },
+        { code: 'new-vocabulary', current: 2, target: 5, completed: false },
+      ],
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText, getByLabelText } = render(<Dashboard />);
+    expect(getByText('Daily Learning Goals')).toBeTruthy();
+    // A finished goal says so instead of its count
+    expect(getByText('Completed')).toBeTruthy();
+    expect(queryByText('20 / 20')).toBeNull();
+    expect(getByText('2 / 5')).toBeTruthy();
+    expect(
+      getByLabelText('New Vocabulary progress').props.accessibilityValue,
+    ).toMatchObject({ now: 40 });
+  });
+
+  it('shows the badges in a row and their details on a tap', () => {
+    const { achievements } = jest.requireActual('../lib/achievements');
+    mockAchievements.achievements = achievements(
+      [{ badge_id: 'first-review', unlocked_at: Date.UTC(2026, 8, 20, 12) }],
+      i18n.t,
+    );
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText, getByLabelText } = render(<Dashboard />);
+    expect(getByText('Achievements')).toBeTruthy();
+    expect(getByLabelText('Century Mark, locked')).toBeTruthy();
+
+    // The row shows the badges; a tap opens rule, story and date
+    fireEvent.press(getByLabelText('First Step, unlocked'));
+    expect(getByText('Complete your first review')).toBeTruthy();
+    expect(getByText(/^Unlocked: /)).toBeTruthy();
+    fireEvent.press(getByLabelText('Close'));
+    expect(queryByText('Complete your first review')).toBeNull();
+
+    fireEvent.press(getByLabelText('Week Warrior, locked'));
+    expect(getByText('7-day streak')).toBeTruthy();
+    expect(getByText('Locked')).toBeTruthy();
+  });
+
+  it('opens the goal rules over the screen from the info button', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByLabelText, getByText, queryByText } = render(<Dashboard />);
+    expect(queryByText(/One review earns one point/)).toBeNull();
+
+    fireEvent.press(getByLabelText('How daily goals count'));
+    expect(getByText(/One review earns one point/)).toBeTruthy();
+    // A tap anywhere closes it: on the panel or beside it
+    fireEvent.press(getByText(/One review earns one point/));
+    expect(queryByText(/One review earns one point/)).toBeNull();
+
+    fireEvent.press(getByLabelText('How daily goals count'));
+    fireEvent.press(getByLabelText('Close'));
+    expect(queryByText(/One review earns one point/)).toBeNull();
+  });
+
+  it('reports a statistics error and keeps Start Review usable', () => {
+    mockOverviewStats = {
+      stats: null,
+      isLoading: false,
+      error: new Error('Unsupported review rating: 9'),
+    };
+    mockReviewOverview.target = 'library';
+    mockReviewOverview.dueCount = 2;
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, getByRole } = render(<Dashboard />);
+    expect(
+      getByText(/Could not load your statistics: Unsupported review rating: 9/),
+    ).toBeTruthy();
+    expect(
+      getByRole('button', { name: 'Start Review · 2 due' }).props
+        .accessibilityState.disabled,
+    ).toBeFalsy();
+  });
+
+  it('shows the sync status next to the greeting, with a retry after a failure', () => {
+    mockSyncController = {
+      state: {
+        status: 'error',
+        lastSyncAt: null,
+        error: null,
+        cause: null,
+        lastResult: null,
+      },
+      subscribe: () => () => {},
+      syncNow: jest.fn(),
+    };
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText } = render(<Dashboard />);
+    expect(getByText('Jane Doe')).toBeTruthy();
+    expect(getByText('Sync failed')).toBeTruthy();
+    fireEvent.press(getByText('Retry'));
+    expect(mockSyncController.syncNow).toHaveBeenCalled();
+  });
+
+  it('says Offline in plain text while no sync runs, as web does', () => {
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('Offline')).toBeTruthy();
+    expect(queryByText('Retry')).toBeNull();
+  });
+
+  it('keeps Start Review to the Overview tab', () => {
+    mockReviewOverview.dueCount = 4;
+    mockUseSession.mockReturnValue({
+      data: { user: { name: 'Jane Doe', onBoardingComplete: true } },
+      isPending: false,
+    });
+
+    const { getByText, queryByText } = render(<Dashboard />);
+    expect(getByText('Start Review · 4 due')).toBeTruthy();
+    fireEvent.press(getByText('My Library'));
+    expect(queryByText(/Start Review/)).toBeNull();
+  });
+
+  it('opens the library when nothing is due', () => {
     saveLastReviewDeckId('user-dashboard', 'deck-spanish');
     mockUseSession.mockReturnValue({
       data: {
@@ -185,13 +591,15 @@ describe('Dashboard screen', () => {
       isPending: false,
     });
 
-    const { getByRole, getByText } = render(<Dashboard />);
-    expect(getByText('0 cards due')).toBeTruthy();
-    const button = getByRole('button', { name: 'Start Review' });
-    expect(button.props.accessibilityState.disabled).toBe(true);
+    const { getByRole } = render(<Dashboard />);
+    const button = getByRole('button', { name: 'Start Review · 0 due' });
+    expect(button.props.accessibilityState.disabled).toBe(false);
     fireEvent.press(button);
 
     expect(mockPush).not.toHaveBeenCalled();
+    expect(
+      getByRole('tab', { name: 'My Library' }).props.accessibilityState,
+    ).toEqual({ selected: true });
     // Nothing due now does not forget the deck: it can be due again later.
     expect(loadLastReviewDeckId('user-dashboard')).toBe('deck-spanish');
   });

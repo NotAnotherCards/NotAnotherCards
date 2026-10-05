@@ -7,11 +7,8 @@ import {
   UserNoteRecord,
   UserNoteDeckRecord,
   UserProfileRecord,
-  BASIC_FRONT_BACK_TEMPLATE_KEY,
-  BASIC_NOTE_FIELDS_VERSION,
-  BASIC_NOTE_TYPE,
   type DeckNoteType,
-  WordNoteFieldsV1,
+  parseWordFields,
   WORD_NOTE_FIELDS_VERSION,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
@@ -19,6 +16,7 @@ import { useQuery } from '@remelondb/core/react';
 import { useSyncController } from '@/offline/syncProvider';
 import {
   getDecksQuery,
+  getAllCardsQuery,
   getPersonalDictionaryQuery,
   getNotesQuery,
   getNoteDecksQuery,
@@ -38,8 +36,14 @@ import {
   updateNoteFields as dbUpdateNoteFields,
   createUserProfile as dbCreateUserProfile,
   updateUserProfile as dbUpdateUserProfile,
+  activateWordsInDeck as dbActivateWordsInDeck,
   CreateCardsBatchOptions,
 } from '@repo/offline-db';
+import {
+  cardsForDeck,
+  isBasicCard as isBasicNoteCard,
+  selectDueCards,
+} from '@repo/study';
 
 export type Deck = UserDeckRecord;
 export type Card = UserCardRecord;
@@ -119,6 +123,8 @@ export function useStore() {
   const { data: cards, isLoading: cardsLoading } = useQuery<UserCardRecord>(
     db && getPersonalDictionaryQuery(db),
   );
+  const { data: allCards, isLoading: allCardsLoading } =
+    useQuery<UserCardRecord>(db && getAllCardsQuery(db));
 
   const { data: notes, isLoading: notesLoading } = useQuery<UserNoteRecord>(
     db && getNotesQuery(db),
@@ -134,6 +140,7 @@ export function useStore() {
     isInitializing ||
     decksLoading ||
     cardsLoading ||
+    allCardsLoading ||
     notesLoading ||
     noteDecksLoading ||
     profileLoading;
@@ -144,10 +151,7 @@ export function useStore() {
     db && getPersonalDictionaryQuery(db),
     {
       select: useCallback(
-        (rows: UserCardRecord[]) =>
-          rows
-            .filter((c) => c.due_at <= now)
-            .sort((a, b) => a.due_at - b.due_at),
+        (rows: UserCardRecord[]) => selectDueCards(rows, now),
         [now],
       ),
     },
@@ -214,6 +218,16 @@ export function useStore() {
     async (deckId: string, front: string, back: string) => {
       if (!db) throw new Error('Database not initialized');
       const result = await dbCreateCard(db, deckId, front, back);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
+  const activateWordsInDeck = useCallback(
+    async (deckId: string, count: number) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbActivateWordsInDeck(db, deckId, count);
       sync?.notifyLocalWrite();
       return result;
     },
@@ -290,11 +304,7 @@ export function useStore() {
   const isBasicCard = useCallback(
     (card: UserCardRecord): boolean => {
       const note = notes.find((candidate) => candidate.id === card.note_id);
-      return (
-        note?.note_type === BASIC_NOTE_TYPE &&
-        note.fields_version === BASIC_NOTE_FIELDS_VERSION &&
-        card.template_key === BASIC_FRONT_BACK_TEMPLATE_KEY
-      );
+      return isBasicNoteCard(card, note);
     },
     [notes],
   );
@@ -308,11 +318,7 @@ export function useStore() {
       ) {
         return false;
       }
-      try {
-        return WordNoteFieldsV1.safeParse(JSON.parse(note.fields_json)).success;
-      } catch {
-        return false;
-      }
+      return parseWordFields(note) !== null;
     },
     [notes],
   );
@@ -328,15 +334,9 @@ export function useStore() {
   );
 
   const getCardsCount = useCallback(
-    (deckId: string): number => {
-      const noteIds = new Set(
-        noteDecks
-          .filter((noteDeck) => noteDeck.deck_id === deckId)
-          .map((noteDeck) => noteDeck.note_id),
-      );
-      return cards.filter((card) => noteIds.has(card.note_id)).length;
-    },
-    [cards, noteDecks],
+    (deckId: string): number =>
+      cardsForDeck(noteDecks, allCards, deckId).length,
+    [allCards, noteDecks],
   );
 
   const getNotesForDeck = useCallback(
@@ -352,15 +352,9 @@ export function useStore() {
   );
 
   const getCardsForDeck = useCallback(
-    (deckId: string): UserCardRecord[] => {
-      const noteIds = new Set(
-        noteDecks
-          .filter((noteDeck) => noteDeck.deck_id === deckId)
-          .map((noteDeck) => noteDeck.note_id),
-      );
-      return cards.filter((card) => noteIds.has(card.note_id));
-    },
-    [cards, noteDecks],
+    (deckId: string): UserCardRecord[] =>
+      cardsForDeck(noteDecks, allCards, deckId),
+    [allCards, noteDecks],
   );
 
   const createCardsBatch = useCallback(
@@ -393,11 +387,14 @@ export function useStore() {
   );
 
   const updateUserProfile = useCallback(
-    async (profile: {
-      username: string;
-      native_language_id: string;
-      target_language_id: string;
-    }) => {
+    async (
+      profile: Partial<{
+        username: string | null;
+        native_language_id: string | null;
+        target_language_id: string | null;
+        target_language_active: boolean | null;
+      }>,
+    ) => {
       if (!db) throw new Error('Database not initialized');
       const result = await dbUpdateUserProfile(db, profile);
       sync?.notifyLocalWrite();
@@ -425,6 +422,7 @@ export function useStore() {
     deleteDeckWithNotes,
     deckDeletionSummary,
     createCard,
+    activateWordsInDeck,
     updateCard,
     removeNoteFromDeck,
     deleteNote,

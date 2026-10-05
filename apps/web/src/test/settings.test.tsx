@@ -8,6 +8,7 @@ import {
 import userEvent from '@testing-library/user-event';
 import { authClient } from '@/lib/auth-client';
 import { useStore } from '@/hooks/useStore';
+import i18n from '@/lib/i18n';
 import { Settings } from '../components/dashboard/settings/Settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -68,9 +69,10 @@ vi.mock('@remelondb/core/react', () => ({
 describe('Settings Tab Component Specs', () => {
   const mockUpdateUserProfile = vi.fn().mockResolvedValue(undefined);
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
     vi.mocked(useStore).mockReset();
 
     vi.mocked(useStore).mockReturnValue({
@@ -130,6 +132,22 @@ describe('Settings Tab Component Specs', () => {
     expect(saveBtn).toBeDisabled();
   });
 
+  it('shows localized language names in the profile pickers', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('de');
+    });
+    render(<Settings />);
+
+    const selects = screen
+      .getAllByRole('combobox')
+      .filter((element) => element.tagName === 'SELECT');
+    const [nativeSelect, targetSelect] = selects;
+    expect(nativeSelect).toHaveTextContent('🇺🇸 Englisch');
+    expect(nativeSelect).toHaveTextContent('🇩🇪 Deutsch');
+    expect(targetSelect).toHaveTextContent('🇷🇺 Russisch');
+    expect(nativeSelect).not.toHaveTextContent('🇩🇪 German');
+  });
+
   it('navigates between sub-tabs', async () => {
     const user = userEvent.setup();
     render(<Settings />);
@@ -184,6 +202,29 @@ describe('Settings Tab Component Specs', () => {
       screen.getByRole('switch', { name: 'Show next review interval' }),
     ).toHaveAttribute('data-slot', 'switch');
   });
+  it('lets the user toggle the Use target language for UI switch and saves target_language_active', async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+
+    await user.click(screen.getByRole('button', { name: /^Preferences$/i }));
+    const targetLangSwitch = screen.getByRole('switch', {
+      name: 'Use target language for interface',
+    });
+
+    // Default mockProfile does not define target_language_active, so it defaults to false
+    expect(targetLangSwitch).toHaveAttribute('aria-checked', 'false');
+
+    await user.click(targetLangSwitch);
+
+    // Verify database action updateUserProfile was invoked with target_language_active set to true
+    await waitFor(() => {
+      expect(mockUpdateUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target_language_active: true,
+        }),
+      );
+    });
+  });
 
   it('filters selected native language from target language options', async () => {
     const user = userEvent.setup();
@@ -202,7 +243,7 @@ describe('Settings Tab Component Specs', () => {
     );
     expect(englishOption).toBeUndefined();
 
-    // Change Native Language to French (00000000-0000-0000-0000-000000000003)
+    // Change Native Language to German (00000000-0000-0000-0000-000000000003)
     await user.selectOptions(
       nativeSelect,
       '00000000-0000-0000-0000-000000000003',
@@ -214,11 +255,50 @@ describe('Settings Tab Component Specs', () => {
     );
     expect(englishOption).toBeDefined();
 
-    // French should now be filtered out / unavailable in target language select options
-    const frenchOption = Array.from(targetSelect.options).find(
+    // German should now be filtered out / unavailable in target language select options
+    const germanOption = Array.from(targetSelect.options).find(
       (opt) => opt.value === '00000000-0000-0000-0000-000000000003',
     );
-    expect(frenchOption).toBeUndefined();
+    expect(germanOption).toBeUndefined();
+  });
+
+  it('clears the target when the native language becomes the target, and saves only once one is chosen', async () => {
+    const user = userEvent.setup();
+    render(<Settings />);
+
+    const nativeSelect = screen.getByLabelText(
+      /Native Language/i,
+    ) as HTMLSelectElement;
+    const targetSelect = screen.getByLabelText(
+      /Target Language/i,
+    ) as HTMLSelectElement;
+
+    // The profile is native English, target Spanish; Spanish becomes native
+    await user.selectOptions(
+      nativeSelect,
+      '00000000-0000-0000-0000-000000000002',
+    );
+    await waitFor(() => expect(targetSelect.value).toBe(''));
+
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    expect(
+      await screen.findByText('Target language is required'),
+    ).toBeInTheDocument();
+    expect(mockUpdateUserProfile).not.toHaveBeenCalled();
+
+    await user.selectOptions(
+      targetSelect,
+      '00000000-0000-0000-0000-000000000001',
+    );
+    await user.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() =>
+      expect(mockUpdateUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          native_language_id: '00000000-0000-0000-0000-000000000002',
+          target_language_id: '00000000-0000-0000-0000-000000000001',
+        }),
+      ),
+    );
   });
 
   it('displays validation error for too-short usernames', async () => {
@@ -255,13 +335,13 @@ describe('Settings Tab Component Specs', () => {
     await user.selectOptions(
       nativeSelect,
       '00000000-0000-0000-0000-000000000003',
-    ); // French
+    ); // German
 
     const targetSelect = screen.getByLabelText(/Target Language/i);
     await user.selectOptions(
       targetSelect,
       '00000000-0000-0000-0000-000000000004',
-    ); // German
+    ); // Russian
 
     const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     await user.click(saveBtn);
@@ -329,7 +409,7 @@ describe('Settings Tab Component Specs', () => {
     await user.selectOptions(
       nativeSelect,
       '00000000-0000-0000-0000-000000000003',
-    ); // French
+    ); // German
 
     const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
     await user.click(saveBtn);
