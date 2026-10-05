@@ -145,6 +145,14 @@ function mockUseQueryWithBadges(
   );
 }
 
+const reviewEventsForStreak = (days: number) =>
+  Array.from({ length: days }, (_, index) => ({
+    id: `review-${index}`,
+    user_card_id: 'card-1',
+    rating: 3,
+    reviewed_at: Date.now() - index * 86_400_000,
+  }));
+
 describe('Overview Gamification', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
   let originalFetch: typeof globalThis.fetch;
@@ -211,23 +219,26 @@ describe('Overview Gamification', () => {
     vi.useRealTimers();
   });
 
-  it('renders the count for a one-day learning streak in Russian', async () => {
-    await i18n.changeLanguage('ru');
-    mockUseQueryWithBadges(
-      [],
-      [
-        {
-          id: 'review-today',
-          user_card_id: 'card-1',
-          rating: 3,
-          reviewed_at: Date.now(),
-        },
-      ],
-    );
+  it.each([
+    [1, 'en', '1 Day'],
+    [2, 'en', '2 Days'],
+    [5, 'en', '5 Days'],
+    [1, 'ru', '1 день'],
+    [2, 'ru', '2 дня'],
+    [5, 'ru', '5 дней'],
+    [1, 'de', '1 Tag'],
+    [2, 'de', '2 Tage'],
+    [5, 'de', '5 Tage'],
+    [1, 'es', '1 Día'],
+    [2, 'es', '2 Días'],
+    [5, 'es', '5 Días'],
+  ])('renders a %i-day learning streak in %s', async (days, locale, value) => {
+    await i18n.changeLanguage(locale);
+    mockUseQueryWithBadges([], reviewEventsForStreak(days));
 
     render(<Overview onChooseDeck={() => {}} />);
 
-    expect(await screen.findByText('1 день')).toBeInTheDocument();
+    expect(await screen.findByText(value)).toBeInTheDocument();
   });
 
   it.each(['idle', 'offline', 'error', 'rejected', 'lease-denied'] as const)(

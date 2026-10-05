@@ -129,6 +129,27 @@ describe('Statistics dashboard', () => {
     },
   );
 
+  it('uses the longest streak value instead of the current streak value', async () => {
+    reviews = [
+      ...reviewsForStreak(2),
+      ...Array.from({ length: 5 }, (_, index) => ({
+        id: `past-${index}`,
+        user_card_id: 'card-1',
+        rating: 3,
+        reviewed_at: at(
+          `2026-09-${String(10 - index).padStart(2, '0')}T10:00:00.000Z`,
+        ),
+      })),
+    ];
+    await i18n.changeLanguage('ru');
+
+    render(<Statistics />);
+
+    const learningStreak = within(screen.getByLabelText('Learning streak'));
+    expect(learningStreak.getByText('2 дня сейчас')).toBeInTheDocument();
+    expect(learningStreak.getByText('5 дней максимум')).toBeInTheDocument();
+  });
+
   it('renders fixture statistics, scopes by deck, and switches range', async () => {
     const user = userEvent.setup();
     render(<Statistics />);
