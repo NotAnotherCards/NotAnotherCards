@@ -77,11 +77,12 @@ model_list:
   # Independent report-triggered re-check. ShieldGemma is the strongest
   # already-measured independent round-one candidate (88/100 harmful and
   # 0/100 benign flags); its response contract is exactly Yes (unsafe) or No.
+  # `latest` is the 9B model, the one that benchmark ran and the box has.
   # Round two may replace the backing model, but the API parser and contract
   # tests must change in the same release if its native output differs.
   - model_name: moderation-thorough
     litellm_params:
-      model: ollama_chat/shieldgemma:2b
+      model: ollama_chat/shieldgemma:latest
       api_base: http://ollama:11434
 
   - model_name: embeddings
