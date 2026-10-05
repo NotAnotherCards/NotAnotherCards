@@ -290,8 +290,6 @@ The project claims the 13 modules below: four Major modules worth 2 points each 
 
 ## Individual Contributions
 
-<!-- Each member adds their completed contribution and the technical or product challenge they addressed. -->
-
 ### @amoiseik
 
 Product Owner and Developer. Defined the product scope, spaced repetition requirements, and review flow. Worked on the web UI, deck views, and landing page.
