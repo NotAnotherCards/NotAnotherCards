@@ -82,7 +82,7 @@ export default function Dashboard() {
 
   return (
     <RequireSession>
-      <View className="flex-1 bg-background">
+      <View className="flex-1 bg-surface">
         <View
           className="border-b border-border bg-card px-4 pb-3"
           style={{ paddingTop: insets.top + 8 }}
@@ -207,7 +207,6 @@ function StartReviewBar({
       )}
       {/* Keep the due count together when the full label needs two lines. */}
       <Button
-        variant="outline"
         size="lg"
         // 48 high, Android's touch target size.
         className="h-auto min-h-12 py-3 sm:h-auto"
@@ -215,7 +214,7 @@ function StartReviewBar({
         disabled={!!error}
         onPress={startReview}
       >
-        <BookOpenIcon size={18} className="text-foreground" />
+        <BookOpenIcon size={18} className="text-primary-foreground" />
         <View className="flex-1">
           {/* Measure the unsplit label so resizing can restore one line. */}
           <Text
@@ -240,8 +239,8 @@ function StartReviewBar({
 }
 
 // Web's Overview stat tiles, with web's titles and colours.
-// The colours are raw palette values like web's, which docs/design.md rules
-// out; both clients move to semantic tokens together (#396). Full class
+// Each tile keeps a raw hue like web's: it tells the tiles apart and states
+// nothing, so no status token fits (docs/design.md, Enforcement). Full class
 // names, not concatenated: nativewind only sees classes written out whole.
 function OverviewStatTiles({ manager }: { manager: DatabaseManager }) {
   const { t, i18n } = useTranslation();
@@ -367,7 +366,7 @@ function DailyGoalsCard({
     <Card className="gap-3 py-4">
       <CardHeader className="px-4">
         <View className="flex-row items-center gap-2">
-          <SparklesIcon size={16} className="text-amber-500" />
+          <SparklesIcon size={16} className="text-warning" />
           <CardTitle className="flex-1 text-base">
             {t('dashboard.overview.goals.daily_learning_goals')}
           </CardTitle>
@@ -389,7 +388,7 @@ function DailyGoalsCard({
               <Text
                 className={`text-xs ${
                   goal.completed
-                    ? 'font-semibold text-emerald-600 dark:text-emerald-400'
+                    ? 'font-semibold text-success'
                     : 'text-muted-foreground'
                 }`}
               >
@@ -401,15 +400,13 @@ function DailyGoalsCard({
             <Text className="text-xs text-muted-foreground">
               {goal.description}
             </Text>
-            {/* The track takes the page colour: a mobile card is the muted
-                tone already (docs/design.md), so web's track would not show. */}
             <Progress
               value={goal.percent}
               accessibilityLabel={t('mobile.goal_progress', {
                 goal: goal.title,
               })}
-              className="h-1.5 bg-background"
-              indicatorClassName="bg-amber-500"
+              className="h-1.5"
+              indicatorClassName="bg-warning"
             />
           </View>
         ))}
@@ -438,8 +435,8 @@ const BADGE_ICONS: Record<Achievement['code'], LucideIcon> = {
 };
 
 // Web's Achievements, as one row of three badges: unlocked ones in the
-// primary colour like web's (colours for both clients come with the
-// tokens, #396), locked ones faded (web greys them with a CSS filter,
+// primary colour like web's (neither client gives badges a colour of
+// their own yet), locked ones faded (web greys them with a CSS filter,
 // which React Native lacks). A tap opens the rule, story and date.
 function AchievementsCard({ manager }: { manager: DatabaseManager }) {
   const { t, i18n } = useTranslation();

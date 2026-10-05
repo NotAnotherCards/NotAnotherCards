@@ -19,6 +19,28 @@ import { authClient } from '@/lib/auth-client';
 import * as syncProvider from '@/offline/syncProvider';
 import * as useStoreModule from '@/hooks/useStore';
 import * as dbReact from '@remelondb/core/react';
+import i18n from '@/lib/i18n';
+
+const storedValues = new Map<string, string>();
+const localStorageMock: Storage = {
+  get length() {
+    return storedValues.size;
+  },
+  clear: () => storedValues.clear(),
+  getItem: (key) => storedValues.get(key) ?? null,
+  key: (index) => Array.from(storedValues.keys())[index] ?? null,
+  removeItem: (key) => storedValues.delete(key),
+  setItem: (key, value) => storedValues.set(key, value),
+};
+
+Object.defineProperty(window, 'localStorage', {
+  configurable: true,
+  value: localStorageMock,
+});
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: localStorageMock,
+});
 
 // Mock router
 vi.mock('@tanstack/react-router', () => ({
@@ -107,15 +129,29 @@ function mockUseQueryWithBadges(
     created_at: number;
     updated_at: number;
   }>,
+  reviewEvents: Array<{
+    id: string;
+    user_card_id: string;
+    rating: number;
+    reviewed_at: number;
+  }> = [],
 ) {
   let callIndex = 0;
   vi.spyOn(dbReact, 'useQuery').mockImplementation(
     () =>
       ({
-        data: ++callIndex % 2 === 0 ? badges : [],
+        data: ++callIndex % 2 === 0 ? badges : reviewEvents,
       }) as unknown as ReturnType<typeof dbReact.useQuery>,
   );
 }
+
+const reviewEventsForStreak = (days: number) =>
+  Array.from({ length: days }, (_, index) => ({
+    id: `review-${index}`,
+    user_card_id: 'card-1',
+    rating: 3,
+    reviewed_at: Date.now() - index * 86_400_000,
+  }));
 
 describe('Overview Gamification', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
@@ -176,10 +212,33 @@ describe('Overview Gamification', () => {
     localStorage.clear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await i18n.changeLanguage('en');
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
     vi.useRealTimers();
+  });
+
+  it.each([
+    [1, 'en', '1 Day'],
+    [2, 'en', '2 Days'],
+    [5, 'en', '5 Days'],
+    [1, 'ru', '1 день'],
+    [2, 'ru', '2 дня'],
+    [5, 'ru', '5 дней'],
+    [1, 'de', '1 Tag'],
+    [2, 'de', '2 Tage'],
+    [5, 'de', '5 Tage'],
+    [1, 'es', '1 Día'],
+    [2, 'es', '2 Días'],
+    [5, 'es', '5 Días'],
+  ])('renders a %i-day learning streak in %s', async (days, locale, value) => {
+    await i18n.changeLanguage(locale);
+    mockUseQueryWithBadges([], reviewEventsForStreak(days));
+
+    render(<Overview onChooseDeck={() => {}} />);
+
+    expect(await screen.findByText(value)).toBeInTheDocument();
   });
 
   it.each(['idle', 'offline', 'error', 'rejected', 'lease-denied'] as const)(
@@ -628,7 +687,7 @@ describe('Overview Gamification', () => {
       json: async () =>
         gamificationResponse('2026-09-17', { dailyReviewCurrent: 20 }),
     });
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
       throw new DOMException('denied', 'SecurityError');
     });
 
@@ -666,7 +725,7 @@ describe('Overview Gamification', () => {
     });
     // Reads succeed (empty storage); only the write throws.
     const setItemSpy = vi
-      .spyOn(Storage.prototype, 'setItem')
+      .spyOn(localStorage, 'setItem')
       .mockImplementation(() => {
         throw new DOMException('quota exceeded', 'QuotaExceededError');
       });

@@ -122,6 +122,26 @@ takedown require `x-moderation-operator-key` to match
 Manual takedowns use the same durable blocked state and owner-visible refusal
 details as automatic takedowns.
 
+There is no screen for the operator; both actions are API calls. With the key
+in `$KEY`:
+
+```sh
+# the reports, newest first (limit up to 100, offset for the next page)
+curl -H "x-moderation-operator-key: $KEY" \
+  "https://<host>/api/operator/deck-reports?limit=50"
+
+# take a published deck down, with the reason its owner will see
+curl -X POST -H "x-moderation-operator-key: $KEY" \
+  -H "content-type: application/json" -d '{"reason":"..."}' \
+  "https://<host>/api/operator/decks/<deck id>/takedown"
+```
+
+Each report carries the deck id, the reporter, the reason, and the deck's
+current moderation status and verdict. A takedown answers
+`{"status":"blocked"}`, or 404 when the deck is not public. Both answer 401
+without the key, and always when `MODERATION_OPERATOR_KEY` is empty on the
+server.
+
 Warnings are shown immediately after publish and remain attached to the
 published snapshot. Refusals, warnings, and takedown findings each offer an
 owner-only **Why?** action; it streams a short contextual explanation from the

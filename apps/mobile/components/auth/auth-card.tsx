@@ -21,8 +21,8 @@ export function AuthCard({
   footerLinkTo,
 }: AuthCardProps) {
   return (
-    <View className="flex-1 justify-center bg-background p-6">
-      <View className="gap-3 rounded-4xl border border-border bg-card p-6">
+    <View className="flex-1 justify-center bg-surface p-6">
+      <View className="gap-3 rounded-4xl border border-sage-border bg-card p-6">
         <Text className="text-center text-2xl font-semibold">{title}</Text>
         <Text
           className="mb-2 text-center text-sm text-muted-foreground"

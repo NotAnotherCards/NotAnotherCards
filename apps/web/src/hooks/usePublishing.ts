@@ -1,6 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import type { Database, SyncControllerState } from '@remelondb/core';
-import { REJECTION_EXPLANATION, rejectionsConcernDeck } from '@repo/offline-db';
+import { rejectionsConcernDeck } from '@repo/offline-db';
 import { type ModerationWarning } from '@repo/schemas';
 import { apiClient } from '@/lib/api-client';
 
@@ -21,19 +22,17 @@ export interface ModerationError {
 // without a database to tell, a refusal blocks.
 async function syncForPublishing(
   deckId: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
   onSync?: () => Promise<SyncControllerState>,
   db?: Database | null,
 ) {
-  if (!onSync)
-    throw new Error('Sync is unavailable. Please try again when connected.');
+  if (!onSync) throw new Error(t('deck.moderation.sync_unavailable'));
   const state = await onSync();
   if (
     (state.status !== 'idle' && state.status !== 'resync-required') ||
     !state.lastResult
   ) {
-    throw new Error(
-      state.error || 'Sync did not complete. Please try again when connected.',
-    );
+    throw new Error(state.error || t('deck.moderation.sync_incomplete'));
   }
   // With the database shared between tabs only one of them syncs at a
   // time; a run another tab locked out transferred nothing, and its zero
@@ -41,14 +40,12 @@ async function syncForPublishing(
   // it keeps syncing, so there is no wait after which a retry is sure to
   // get it: say so and let the user try again.
   if (state.lastResult.lease === 'unavailable') {
-    throw new Error(
-      'Another tab is syncing right now. Please try again in a moment.',
-    );
+    throw new Error(t('deck.moderation.sync_busy'));
   }
   // 'lost' (the lease was taken during the run) or absent: nothing says
   // the changes arrived.
   if (state.lastResult.lease !== 'acquired') {
-    throw new Error('Sync could not be confirmed. Please try again.');
+    throw new Error(t('deck.moderation.sync_unconfirmed'));
   }
   const { rejected, rejectedRecords } = state.lastResult;
   if (
@@ -56,12 +53,15 @@ async function syncForPublishing(
     (!db || (await rejectionsConcernDeck(db, deckId, rejectedRecords)))
   ) {
     throw new Error(
-      `The deck's changes were not accepted by the server. ${REJECTION_EXPLANATION}`,
+      t('deck.moderation.changes_rejected', {
+        explanation: t('mobile.messages.sync_details'),
+      }),
     );
   }
 }
 
 export function usePublishing() {
+  const { t } = useTranslation();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const [error, setError] = useState<ModerationError | null>(null);
@@ -81,12 +81,12 @@ export function usePublishing() {
     setWarnings([]);
     let completed = false;
     try {
-      await syncForPublishing(deckId, onSync, db);
+      await syncForPublishing(deckId, t, onSync, db);
       const published = await apiClient.publishing.publish(deckId);
       if (!published.published) {
         setError({
           action: 'publish',
-          reason: published.refusal.reason || 'Moderation failed',
+          reason: published.refusal.reason || t('deck.moderation.failed'),
           flagged: published.refusal.flagged,
         });
         return false;
@@ -94,12 +94,12 @@ export function usePublishing() {
       setWarnings(published.warnings);
       completed = true;
       setRemoteVisibility({ deckId, visibility: 'public' });
-      await syncForPublishing(deckId, onSync, db);
+      await syncForPublishing(deckId, t, onSync, db);
       return true;
     } catch (err) {
       setError({
         action: 'publish',
-        reason: err instanceof Error ? err.message : 'Unknown error occurred',
+        reason: err instanceof Error ? err.message : t('common.unknown_error'),
         flagged: [],
         completed,
       });
@@ -118,17 +118,17 @@ export function usePublishing() {
     setError(null);
     let completed = false;
     try {
-      await syncForPublishing(deckId, onSync, db);
+      await syncForPublishing(deckId, t, onSync, db);
       await apiClient.publishing.unpublish(deckId);
       completed = true;
       setRemoteVisibility({ deckId, visibility: 'private' });
       setWarnings([]);
-      await syncForPublishing(deckId, onSync, db);
+      await syncForPublishing(deckId, t, onSync, db);
       return true;
     } catch (err) {
       setError({
         action: 'unpublish',
-        reason: err instanceof Error ? err.message : 'Unknown error occurred',
+        reason: err instanceof Error ? err.message : t('common.unknown_error'),
         flagged: [],
         completed,
       });

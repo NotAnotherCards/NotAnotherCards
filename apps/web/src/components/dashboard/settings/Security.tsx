@@ -83,7 +83,9 @@ export function Security() {
       if (!mounted.current) return;
 
       if (error) {
-        throw new Error(error.message || 'Failed to update password');
+        throw new Error(
+          error.message || t('dashboard.settings.security.update_failed'),
+        );
       }
 
       setSecuritySuccess(t('dashboard.settings.security.success'));

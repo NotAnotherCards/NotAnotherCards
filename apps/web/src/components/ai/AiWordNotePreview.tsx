@@ -110,7 +110,7 @@ export function AiWordNotePreview({
                 {t('playground.preview.pronunciation', 'Pronunciation')}
               </h4>
               <div className="text-sm font-mono">
-                {note.fields.pronunciation || 'N/A'}
+                {note.fields.pronunciation || t('common.not_available')}
               </div>
             </div>
 

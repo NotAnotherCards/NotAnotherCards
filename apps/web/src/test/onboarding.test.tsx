@@ -369,6 +369,9 @@ describe('Onboarding Flow and Guard Specs', () => {
 
   it('allows rendering /onboarding when manager is null (for incomplete user)', async () => {
     mockManager = null;
+    vi.mocked(useStore).mockImplementation(() => {
+      throw new Error('Profile queries require a database manager');
+    });
     render(<App />);
     expect(
       await screen.findByText(

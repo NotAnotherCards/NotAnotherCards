@@ -85,7 +85,7 @@ export function DeckList({
       },
       (err: unknown) => {
         if (!cancelled)
-          setWriteError(writeErrorMessage(err, 'Failed to count cards'));
+          setWriteError(writeErrorMessage(err, t('deck.errors.count_cards')));
       },
     );
     return () => {
@@ -115,7 +115,7 @@ export function DeckList({
       });
       setShowCreateForm(false);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to create deck'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.create_deck')));
     }
   };
 
@@ -129,7 +129,7 @@ export function DeckList({
       await store.updateDeck(editingDeck.id, data.title, data.description);
       setEditingDeck(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to update deck'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.update_deck')));
     }
   };
 
@@ -142,7 +142,7 @@ export function DeckList({
       else await store.deleteDeck(deckToDelete);
       setDeckToDelete(null);
     } catch (err) {
-      setWriteError(writeErrorMessage(err, 'Failed to delete deck'));
+      setWriteError(writeErrorMessage(err, t('deck.errors.delete_deck')));
     } finally {
       setIsDeleting(false);
     }
@@ -156,11 +156,10 @@ export function DeckList({
         </div>
         <div>
           <h3 className="text-lg font-bold text-amber-900 dark:text-amber-200">
-            Database Inactive (Taken Over)
+            {t('deck.cards.db_inactive')}
           </h3>
           <p className="text-sm text-amber-800/80 dark:text-amber-300/80 mt-1 max-w-md">
-            This tab is currently inactive because the offline database is open
-            in another tab. Click below to use the database in this window.
+            {t('deck.cards.db_inactive_desc')}
           </p>
         </div>
         <Button
@@ -168,7 +167,7 @@ export function DeckList({
           className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium border-none shadow-sm"
         >
           <RefreshCw className="size-4" />
-          Use here instead
+          {t('deck.cards.use_here')}
         </Button>
       </div>
     );
@@ -180,10 +179,10 @@ export function DeckList({
         <div className="flex flex-col items-center justify-center min-h-80 space-y-4 animate-in fade-in duration-300">
           <Loader2 className="animate-spin size-8 text-primary" />
           <p className="text-sm font-semibold text-foreground animate-pulse">
-            Connecting Local Database...
+            {t('deck.list.connecting')}
           </p>
           <p className="text-xs text-muted-foreground">
-            Initializing offline storage handles and loading library.
+            {t('deck.list.initializing')}
           </p>
         </div>
       );
@@ -237,7 +236,7 @@ export function DeckList({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cardsWithoutDeck.length > 0 && (
-            <Card className="border border-amber-500/40 bg-amber-500/5 flex flex-col justify-between">
+            <Card className="border border-warning/40 bg-warning/5 flex flex-col justify-between">
               <CardHeader className="min-w-0 pb-3">
                 <CardTitle className="text-base font-bold">
                   {t('deck.list.no_deck_title', 'No deck')}
