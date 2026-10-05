@@ -6,10 +6,15 @@ import { AiModule } from '../ai/ai.module';
 import { SharingController } from './sharing.controller';
 import { SharingService } from './sharing.service';
 import { ModerationExplanationService } from './moderation-explanation.service';
+import { ModerationAccessService } from './moderation-access.service';
 
 @Module({
   imports: [ConfigModule, DatabaseModule, AuthModule, AiModule],
   controllers: [SharingController],
-  providers: [SharingService, ModerationExplanationService],
+  providers: [
+    SharingService,
+    ModerationExplanationService,
+    ModerationAccessService,
+  ],
 })
 export class SharingModule {}

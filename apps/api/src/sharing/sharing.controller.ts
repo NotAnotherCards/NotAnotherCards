@@ -11,14 +11,16 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
-import { moderationExplanationRequestSchema } from '@repo/schemas';
+import {
+  moderationExplanationRequestSchema,
+  operatorTakedownRequestSchema,
+} from '@repo/schemas';
 import { z } from 'zod';
-import { timingSafeEqual } from 'node:crypto';
 import { AuthService } from '../auth/auth.service';
 import { SharingService } from './sharing.service';
 import { ModerationExplanationService } from './moderation-explanation.service';
+import { ModerationAccessService } from './moderation-access.service';
 
 // Paging is clamped, not validated: only a buggy client sends limit=101 or
 // offset=-1, and a page of results serves it better than a 400 nobody reads.
@@ -36,9 +38,6 @@ const browseQuerySchema = z.object({
 const reportBodySchema = z.object({
   reason: z.string().trim().min(1).max(2_000),
 });
-const takedownBodySchema = z.object({
-  reason: z.string().trim().min(1).max(2_000),
-});
 
 const reasonFrom = (schema: typeof reportBodySchema, body: unknown) => {
   const parsed = schema.safeParse(body);
@@ -51,7 +50,7 @@ export class SharingController {
   constructor(
     private readonly authService: AuthService,
     private readonly sharingService: SharingService,
-    private readonly config: ConfigService,
+    private readonly moderationAccess: ModerationAccessService,
     private readonly explanationService: ModerationExplanationService,
   ) {}
 
@@ -144,9 +143,20 @@ export class SharingController {
     await this.explanationService.stream(userId, input, res);
   }
 
+  @Get('operator/capabilities')
+  async operatorCapabilities(@Req() req: Request) {
+    return this.moderationAccess.capabilities(req);
+  }
+
+  @Get('operator/decks/:id')
+  async reviewReportedDeck(@Req() req: Request, @Param('id') deckId: string) {
+    await this.moderationAccess.authorize(req);
+    return this.sharingService.reviewReportedDeck(deckId);
+  }
+
   @Get('operator/deck-reports')
   async listReports(@Req() req: Request, @Query() query: unknown) {
-    this.assertOperator(req);
+    await this.moderationAccess.authorize(req);
     const page = browseQuerySchema.parse(query);
     return this.sharingService.listReports(page.limit, page.offset);
   }
@@ -158,24 +168,18 @@ export class SharingController {
     @Param('id') deckId: string,
     @Body() body: unknown,
   ) {
-    this.assertOperator(req);
-    const reason = reasonFrom(takedownBodySchema, body);
-    return this.sharingService.operatorTakedown(deckId, reason);
-  }
-
-  private assertOperator(req: Request) {
-    const expected = this.config.get<string>('MODERATION_OPERATOR_KEY');
-    const received = req.header('x-moderation-operator-key');
-    if (!expected || !received) {
-      throw new UnauthorizedException('Operator authentication required');
+    const operatorUserId = await this.moderationAccess.authorize(req, true);
+    const parsed = operatorTakedownRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        'A reason and expectedPublishedAt are required',
+      );
     }
-    const expectedBytes = Buffer.from(expected);
-    const receivedBytes = Buffer.from(received);
-    if (
-      expectedBytes.length !== receivedBytes.length ||
-      !timingSafeEqual(expectedBytes, receivedBytes)
-    ) {
-      throw new UnauthorizedException('Operator authentication required');
-    }
+    return this.sharingService.operatorTakedown(
+      deckId,
+      parsed.data.reason,
+      new Date(parsed.data.expectedPublishedAt),
+      operatorUserId,
+    );
   }
 }

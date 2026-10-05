@@ -18,7 +18,14 @@ import {
   sharedDeckListSchema,
   sharedDeckPreviewSchema,
   sharedDeckImportSchema,
+  operatorCapabilitiesSchema,
+  operatorReportPageSchema,
+  operatorDeckReviewSchema,
+  operatorTakedownResponseSchema,
+  operatorTakedownErrorSchema,
 } from '@repo/schemas';
+import { createOTP } from '@better-auth/utils/otp';
+import { base32 } from '@better-auth/utils/base32';
 import { asc, eq, sql } from 'drizzle-orm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
@@ -36,6 +43,7 @@ import { AppModule } from '../../src/app.module';
 import { DATABASE_CONNECTION } from '../../src/database/database-connection';
 import { ModerationService } from '../../src/sharing/moderation.service';
 import { SharingService } from '../../src/sharing/sharing.service';
+import { user } from '../../src/database/schema';
 import {
   deckReports,
   deckTakedowns,
@@ -93,6 +101,8 @@ describePostgres('deck sharing endpoints', () => {
   let userA: TestUser;
   let userB: TestUser;
   let userC: TestUser;
+  let twoFactorAdmin: TestUser;
+  let deletionAdmin: TestUser;
 
   const previousEnvironment = {
     databaseUrl: process.env.DATABASE_URL,
@@ -101,6 +111,7 @@ describePostgres('deck sharing endpoints', () => {
     authUrl: process.env.BETTER_AUTH_URL,
     moderationAllowAll: process.env.MODERATION_ALLOW_ALL,
     operatorKey: process.env.MODERATION_OPERATOR_KEY,
+    adminUserIds: process.env.MODERATION_ADMIN_USER_IDS,
     workerEnabled: process.env.AI_WORKER_ENABLED,
     maxDailyReports: process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER,
   };
@@ -249,11 +260,36 @@ describePostgres('deck sharing endpoints', () => {
   const storedDeck = async (deckId: string) =>
     (await db.select().from(userDecks).where(eq(userDecks.id, deckId)))[0];
 
+  const storedPublication = async (deckId: string) =>
+    (
+      await db
+        .select()
+        .from(publishedDecks)
+        .where(eq(publishedDecks.deckId, deckId))
+    )[0];
+
+  const takedown = (
+    admin: TestUser,
+    deckId: string,
+    expectedPublishedAt: string,
+  ) =>
+    post(admin, `/api/operator/decks/${deckId}/takedown`)
+      .set('Origin', 'http://localhost:5173')
+      .send({ reason: 'Reviewed complaint.', expectedPublishedAt });
+
   const post = (user: TestUser, path: string) =>
     request(app.getHttpServer()).post(path).set('Cookie', user.cookie);
 
   const get = (user: TestUser, path: string) =>
     request(app.getHttpServer()).get(path).set('Cookie', user.cookie);
+
+  const responseCookies = (response: request.Response) => {
+    const header = response.headers['set-cookie'] as
+      string[] | string | undefined;
+    return (Array.isArray(header) ? header : header ? [header] : [])
+      .map((cookie) => cookie.split(';')[0])
+      .join('; ');
+  };
 
   const browse = async (user: TestUser, query = '') => {
     const response = await get(user, `/api/shared/decks${query}`).expect(200);
@@ -277,6 +313,20 @@ describePostgres('deck sharing endpoints', () => {
     };
   };
 
+  const createApp = async () => {
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+      .overrideProvider(DATABASE_CONNECTION)
+      .useValue(db)
+      .compile();
+    const instance = moduleFixture.createNestApplication<INestApplication<App>>(
+      { logger: false },
+    );
+    await instance.init();
+    return instance;
+  };
+
   beforeAll(async () => {
     await setUpPostgres();
     process.env.DATABASE_URL = getTestConnectionString();
@@ -285,22 +335,21 @@ describePostgres('deck sharing endpoints', () => {
     process.env.BETTER_AUTH_URL = 'http://localhost:3000';
     process.env.MODERATION_ALLOW_ALL = '1';
     process.env.MODERATION_OPERATOR_KEY = 'test-operator-key';
+    process.env.MODERATION_ADMIN_USER_IDS = '';
     process.env.AI_WORKER_ENABLED = 'false';
     process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER = '10';
 
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(DATABASE_CONNECTION)
-      .useValue(db)
-      .compile();
-
-    app = moduleFixture.createNestApplication({ logger: false });
-    await app.init();
+    app = await createApp();
 
     userA = await signUp('sharing-user-a');
     userB = await signUp('sharing-user-b');
     userC = await signUp('sharing-user-c');
+    twoFactorAdmin = await signUp('sharing-2fa-admin');
+    deletionAdmin = await signUp('sharing-deletion-admin');
+    await app.close();
+    // Recreate the API with existing account IDs, as configuration changes require.
+    process.env.MODERATION_ADMIN_USER_IDS = ` , ${userB.id}, ${twoFactorAdmin.id}, ${deletionAdmin.id}, ${userB.id}, `;
+    app = await createApp();
   }, 30_000);
 
   beforeEach(async () => {
@@ -352,6 +401,10 @@ describePostgres('deck sharing endpoints', () => {
     process.env.BETTER_AUTH_URL = previousEnvironment.authUrl;
     process.env.MODERATION_ALLOW_ALL = previousEnvironment.moderationAllowAll;
     process.env.MODERATION_OPERATOR_KEY = previousEnvironment.operatorKey;
+    if (previousEnvironment.adminUserIds === undefined)
+      delete process.env.MODERATION_ADMIN_USER_IDS;
+    else
+      process.env.MODERATION_ADMIN_USER_IDS = previousEnvironment.adminUserIds;
     process.env.AI_WORKER_ENABLED = previousEnvironment.workerEnabled;
     process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER =
       previousEnvironment.maxDailyReports;
@@ -485,7 +538,8 @@ describePostgres('deck sharing endpoints', () => {
     const before = await storedDeck('unchecked');
     const config = app.get(ConfigService);
     const getSpy = vi.spyOn(config, 'get').mockImplementation((key) => {
-      if (key === 'MODERATION_ALLOW_ALL') return undefined;
+      if (key === 'MODERATION_ALLOW_ALL' || key === 'AI_API_BASE')
+        return undefined;
       return process.env[key as string];
     });
 
@@ -653,6 +707,7 @@ describePostgres('deck sharing endpoints', () => {
       expect.objectContaining({
         deckId: 'auto-blocked',
         source: 'automatic',
+        operatorUserId: null,
       }),
     );
     expect(takedown.verdict.results).toEqual([
@@ -766,7 +821,7 @@ describePostgres('deck sharing endpoints', () => {
     ).toBe('private');
   });
 
-  it('keeps operator reports and takedown behind the operator key', async () => {
+  it('keeps the independent operator-key CLI path with a null actor', async () => {
     await seedDeck(userA, 'operator-blocked', { visibility: 'public' });
     await post(userB, '/api/shared/decks/operator-blocked/report')
       .send({ reason: 'The facts are dangerously wrong.' })
@@ -793,16 +848,712 @@ describePostgres('deck sharing endpoints', () => {
     await request(app.getHttpServer())
       .post('/api/operator/decks/operator-blocked/takedown')
       .set('x-moderation-operator-key', 'test-operator-key')
-      .send({ reason: 'Copyright complaint verified.' })
+      .send({
+        reason: 'Copyright complaint verified.',
+        expectedPublishedAt: (
+          await storedPublication('operator-blocked')
+        ).publishedAt.toISOString(),
+        operatorUserId: userB.id,
+      })
       .expect(200);
     expect((await storedDeck('operator-blocked')).visibility).toBe('private');
     expect(await db.select().from(deckTakedowns)).toEqual([
       expect.objectContaining({
         deckId: 'operator-blocked',
         source: 'operator',
+        operatorUserId: null,
         reason: 'Copyright complaint verified.',
       }),
     ]);
+  });
+
+  it('authorizes only completed allowlisted sessions and exposes only their capability', async () => {
+    await seedDeck(userA, 'access-check', { visibility: 'public' });
+    await post(userC, '/api/shared/decks/access-check/report')
+      .send({ reason: 'Review please.' })
+      .expect(201);
+    const publishedAt = (
+      await storedPublication('access-check')
+    ).publishedAt.toISOString();
+    for (const path of [
+      '/api/operator/capabilities',
+      '/api/operator/deck-reports',
+      '/api/operator/decks/access-check',
+    ]) {
+      await request(app.getHttpServer()).get(path).expect(401);
+    }
+    await request(app.getHttpServer())
+      .get('/api/operator/capabilities')
+      .set('x-moderation-operator-key', 'test-operator-key')
+      .expect(401);
+    const denied = await get(
+      userA,
+      '/api/operator/capabilities?canModerate=true&role=admin',
+    ).expect(200);
+    expect(operatorCapabilitiesSchema.parse(denied.body)).toEqual({
+      canModerate: false,
+    });
+    expect(denied.body).toEqual({ canModerate: false });
+    const allowed = await get(userB, '/api/operator/capabilities').expect(200);
+    expect(allowed.body).toEqual({ canModerate: true });
+    for (const path of [
+      '/api/operator/deck-reports',
+      '/api/operator/decks/access-check',
+    ]) {
+      await get(userA, path)
+        .set('x-user-id', userB.id)
+        .set('x-role', 'admin')
+        .expect(403);
+      await get(userA, path)
+        .set('x-moderation-operator-key', 'wrong')
+        .expect(403);
+      await get(userB, path)
+        .set('x-moderation-operator-key', 'wrong')
+        .expect(200);
+    }
+    await request(app.getHttpServer())
+      .get('/api/operator/deck-reports')
+      .set('x-moderation-operator-key', 'wrong')
+      .expect(401);
+    await post(userA, '/api/operator/decks/access-check/takedown')
+      .set('Origin', 'http://localhost:5173')
+      .send({
+        reason: 'Forged permission.',
+        expectedPublishedAt: publishedAt,
+        canModerate: true,
+        role: 'admin',
+        operatorUserId: userB.id,
+      })
+      .expect(403);
+    expect(await db.select().from(deckTakedowns)).toEqual([]);
+    expect((await storedDeck('access-check')).visibility).toBe('public');
+  });
+
+  it.each([undefined, '', ' , , '])(
+    'disables session moderation for an absent/empty allowlist (%s)',
+    async (configuration) => {
+      const previous = process.env.MODERATION_ADMIN_USER_IDS;
+      if (configuration === undefined)
+        delete process.env.MODERATION_ADMIN_USER_IDS;
+      else process.env.MODERATION_ADMIN_USER_IDS = configuration;
+      let emptyApp: INestApplication<App> | undefined;
+      try {
+        emptyApp = await createApp();
+        const server = emptyApp.getHttpServer();
+        await request(server)
+          .get('/api/operator/capabilities')
+          .set('Cookie', userB.cookie)
+          .expect(200, { canModerate: false });
+        await request(server)
+          .get('/api/operator/deck-reports')
+          .set('Cookie', userB.cookie)
+          .expect(403);
+        await request(server)
+          .get('/api/operator/decks/any')
+          .set('Cookie', userB.cookie)
+          .expect(403);
+        await request(server)
+          .post('/api/operator/decks/any/takedown')
+          .set('Cookie', userB.cookie)
+          .set('Origin', 'http://localhost:5173')
+          .send({ reason: 'No permission.' })
+          .expect(403);
+        await request(server)
+          .get('/api/operator/deck-reports')
+          .set('x-moderation-operator-key', 'test-operator-key')
+          .expect(200);
+        // The already-running API retains its startup policy until recreated.
+        await get(userB, '/api/operator/capabilities').expect(200, {
+          canModerate: true,
+        });
+      } finally {
+        await emptyApp?.close();
+        if (previous === undefined)
+          delete process.env.MODERATION_ADMIN_USER_IDS;
+        else process.env.MODERATION_ADMIN_USER_IDS = previous;
+      }
+    },
+  );
+
+  it('rejects a pending second factor and accepts the completed admin login', async () => {
+    const enabled = await post(twoFactorAdmin, '/api/auth/two-factor/enable')
+      .set('Origin', 'http://localhost:5173')
+      .send({ password: 'SharingPassword123!' })
+      .expect(200);
+    const encodedSecret = new URL(
+      (enabled.body as { totpURI: string }).totpURI,
+    ).searchParams.get('secret')!;
+    const secret = new TextDecoder().decode(base32.decode(encodedSecret));
+    const code = await createOTP(secret).totp();
+    await post(twoFactorAdmin, '/api/auth/two-factor/verify-totp')
+      .set('Origin', 'http://localhost:5173')
+      .send({ code })
+      .expect(200);
+    const challenge = await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', 'http://localhost:5173')
+      .send({
+        email: 'sharing-2fa-admin@example.test',
+        password: 'SharingPassword123!',
+      })
+      .expect(200);
+    expect(challenge.body).toMatchObject({ twoFactorRedirect: true });
+    const cookies = responseCookies(challenge);
+    for (const path of [
+      '/api/operator/capabilities',
+      '/api/operator/deck-reports',
+      '/api/operator/decks/any',
+    ]) {
+      await request(app.getHttpServer())
+        .get(path)
+        .set('Cookie', cookies)
+        .expect(401);
+    }
+    await request(app.getHttpServer())
+      .post('/api/operator/decks/any/takedown')
+      .set('Cookie', cookies)
+      .set('Origin', 'http://localhost:5173')
+      .send({ reason: 'Pending challenge.' })
+      .expect(401);
+    // The plugin limits second-factor endpoints to three requests per ten seconds.
+    await new Promise((resolve) => setTimeout(resolve, 11_000));
+    const completed = await request(app.getHttpServer())
+      .post('/api/auth/two-factor/verify-totp')
+      .set('Cookie', cookies)
+      .set('Origin', 'http://localhost:5173')
+      .send({ code: await createOTP(secret).totp() })
+      .expect(200);
+    const completedCookies = responseCookies(completed);
+    await request(app.getHttpServer())
+      .get('/api/operator/capabilities')
+      .set('Cookie', completedCookies)
+      .expect(200, { canModerate: true });
+    await request(app.getHttpServer())
+      .get('/api/operator/deck-reports')
+      .set('Cookie', completedCookies)
+      .expect(200);
+    await seedDeck(userA, 'completed-2fa', { visibility: 'public' });
+    await post(userC, '/api/shared/decks/completed-2fa/report')
+      .send({ reason: 'Second-factor review.' })
+      .expect(201);
+    const reviewed = operatorDeckReviewSchema.parse(
+      (
+        await request(app.getHttpServer())
+          .get('/api/operator/decks/completed-2fa')
+          .set('Cookie', completedCookies)
+          .expect(200)
+      ).body,
+    );
+    await request(app.getHttpServer())
+      .post('/api/operator/decks/completed-2fa/takedown')
+      .set('Cookie', completedCookies)
+      .set('Origin', 'http://localhost:5173')
+      .send({
+        reason: 'Completed second factor.',
+        expectedPublishedAt: reviewed.currentSnapshotPublishedAt!.toISOString(),
+      })
+      .expect(200);
+    expect((await db.select().from(deckTakedowns))[0].operatorUserId).toBe(
+      twoFactorAdmin.id,
+    );
+  }, 20_000);
+
+  it.each([
+    undefined,
+    'null',
+    'https://attacker.example',
+    'http://localhost:5173.attacker.example',
+    'http://localhost:5174',
+  ])(
+    'rejects a session mutation with an untrusted/missing Origin (%s)',
+    async (origin) => {
+      await seedDeck(userA, 'csrf', { visibility: 'public' });
+      const before = await storedDeck('csrf');
+      const mutation = post(userB, '/api/operator/decks/csrf/takedown');
+      if (origin !== undefined) mutation.set('Origin', origin);
+      await mutation
+        .send({
+          reason: 'Cross-site complaint.',
+          expectedPublishedAt: (
+            await storedPublication('csrf')
+          ).publishedAt.toISOString(),
+        })
+        .expect(403);
+      expect(await db.select().from(deckTakedowns)).toEqual([]);
+      expect(await storedDeck('csrf')).toEqual(before);
+      expect((await storedPublication('csrf')).moderationStatus).toBe(
+        'visible',
+      );
+    },
+  );
+
+  it('reviews the complete published snapshot and classifier findings, preserving pagination and privacy', async () => {
+    const { cardIds, noteIds } = await seedDeck(userA, 'review', {
+      visibility: 'public',
+      cards: 12,
+    });
+    await post(userC, '/api/shared/decks/review/report')
+      .send({ reason: 'First report.' })
+      .expect(201);
+    await post(userB, '/api/shared/decks/review/report')
+      .send({ reason: 'Second report.' })
+      .expect(201);
+    const verdict = {
+      flagged: [],
+      warnings: [
+        {
+          cardId: cardIds[0],
+          reason: 'Controversial',
+          classifier: 'moderation-thorough',
+        },
+      ],
+      results: [
+        {
+          cardId: cardIds[0],
+          classifier: 'moderation',
+          verdict: 'safe' as const,
+          categories: [],
+        },
+        {
+          cardId: cardIds[0],
+          classifier: 'moderation-thorough',
+          verdict: 'controversial' as const,
+          categories: null,
+        },
+        {
+          cardId: cardIds[1],
+          classifier: 'moderation-thorough',
+          verdict: 'error' as const,
+          categories: null,
+          error: 'Classifier unavailable',
+        },
+      ],
+    };
+    await db
+      .update(publishedDecks)
+      .set({ moderationVerdict: verdict })
+      .where(eq(publishedDecks.deckId, 'review'));
+    await db
+      .update(userDecks)
+      .set({ title: 'PRIVATE WORKING TITLE' })
+      .where(eq(userDecks.id, 'review'));
+    await db
+      .update(userCards)
+      .set({ front: 'PRIVATE WORKING CARD' })
+      .where(eq(userCards.id, cardIds[0]));
+    await db
+      .update(userNotes)
+      .set({
+        fieldsJson: '{"front":"PRIVATE NOTE"}',
+        additionalContent: 'PRIVATE NOTES',
+      })
+      .where(eq(userNotes.id, noteIds[0]));
+    const first = await get(
+      userB,
+      '/api/operator/deck-reports?limit=1&offset=0',
+    ).expect(200);
+    const second = await get(
+      userB,
+      '/api/operator/deck-reports?limit=1&offset=1',
+    ).expect(200);
+    const firstPage = operatorReportPageSchema.parse(first.body);
+    const secondPage = operatorReportPageSchema.parse(second.body);
+    expect(firstPage.reports).toHaveLength(1);
+    expect(secondPage.reports).toHaveLength(1);
+    expect(firstPage.reports[0].id).not.toBe(secondPage.reports[0].id);
+    expect(firstPage.reports[0]).toMatchObject({
+      title: 'Deck review',
+      owner: { username: 'user-a' },
+      status: 'visible',
+      publicationChanged: false,
+      moderationVerdict: verdict,
+    });
+    const response = await get(userB, '/api/operator/decks/review').expect(200);
+    const review = operatorDeckReviewSchema.parse(response.body);
+    expect(review.deck?.cards).toHaveLength(12);
+    expect(review.deck?.cards[0]).toEqual({
+      id: cardIds[0],
+      front: 'front 0',
+      back: 'back 0',
+    });
+    expect(review.moderationVerdict).toEqual(verdict);
+    expect(review.currentSnapshotPublishedAt).toEqual(
+      (await storedPublication('review')).publishedAt,
+    );
+    expect(review.reports.map((report) => report.publicationChanged)).toEqual([
+      false,
+      false,
+    ]);
+    expect(JSON.stringify(response.body)).not.toMatch(
+      /PRIVATE|email|password|private-image-id|private-audio-id|MODERATION_/,
+    );
+    await takedown(
+      userB,
+      'review',
+      review.currentSnapshotPublishedAt!.toISOString(),
+    ).expect(200);
+    const retained = operatorDeckReviewSchema.parse(
+      (await get(userB, '/api/operator/decks/review').expect(200)).body,
+    );
+    expect(retained.status).toBe('blocked');
+    expect(retained.moderationVerdict).toEqual({
+      ...verdict,
+      reason: 'Reviewed complaint.',
+    });
+    await seedDeck(userA, 'never-reported', { visibility: 'public' });
+    await get(userB, '/api/operator/decks/never-reported').expect(404);
+  });
+
+  it.each([
+    'unpublished',
+    'deleted',
+    'missing-deck',
+    'missing-publication',
+    'private',
+  ])(
+    'retains report metadata and never substitutes private content for an unavailable publication (%s)',
+    async (state) => {
+      await seedDeck(userA, 'unavailable', { visibility: 'public' });
+      const report = await post(userC, '/api/shared/decks/unavailable/report')
+        .send({ reason: 'Keep this metadata.' })
+        .expect(201);
+      const publishedAt = (
+        await storedPublication('unavailable')
+      ).publishedAt.toISOString();
+      await db.update(userCards).set({ front: 'PRIVATE CONTENT' });
+      if (state === 'unpublished')
+        await post(userA, '/api/decks/unavailable/unpublish').expect(200);
+      if (state === 'deleted')
+        await db
+          .update(userDecks)
+          .set({ deletedAt: new Date() })
+          .where(eq(userDecks.id, 'unavailable'));
+      if (state === 'missing-deck')
+        await db.delete(userDecks).where(eq(userDecks.id, 'unavailable'));
+      if (state === 'missing-publication')
+        await db
+          .delete(publishedDecks)
+          .where(eq(publishedDecks.deckId, 'unavailable'));
+      if (state === 'private')
+        await db
+          .update(userDecks)
+          .set({ visibility: 'private' })
+          .where(eq(userDecks.id, 'unavailable'));
+      const reviewResponse = await get(
+        userB,
+        '/api/operator/decks/unavailable',
+      ).expect(200);
+      const review = operatorDeckReviewSchema.parse(reviewResponse.body);
+      expect(review).toMatchObject({
+        status: 'unavailable',
+        deck: null,
+        reports: [{ reason: 'Keep this metadata.' }],
+      });
+      expect(review.reports[0].snapshotPublishedAt.toISOString()).toBe(
+        (report.body as { report: { snapshotPublishedAt: string } }).report
+          .snapshotPublishedAt,
+      );
+      expect(JSON.stringify(reviewResponse.body)).not.toContain(
+        'PRIVATE CONTENT',
+      );
+      const page = operatorReportPageSchema.parse(
+        (await get(userB, '/api/operator/deck-reports').expect(200)).body,
+      );
+      expect(page.reports).toHaveLength(1);
+      expect(page.reports[0].status).toBe('unavailable');
+      const failed = await takedown(userB, 'unavailable', publishedAt).expect(
+        404,
+      );
+      expect(operatorTakedownErrorSchema.parse(failed.body).code).toBe(
+        'PUBLICATION_UNAVAILABLE',
+      );
+      expect(await db.select().from(deckTakedowns)).toEqual([]);
+    },
+  );
+
+  it.each([
+    {},
+    { reason: '' },
+    { reason: '   ' },
+    { reason: 'x'.repeat(2_001) },
+    { reason: 1 },
+    { reason: 'Valid reason.', expectedPublishedAt: undefined },
+    { reason: 'Valid reason.', expectedPublishedAt: 'not-a-date' },
+    {
+      reason: 'Valid reason.',
+      expectedPublishedAt: '2026-02-30T00:00:00.000Z',
+    },
+  ])(
+    'validates reasons and requires a publication timestamp (%j)',
+    async (input) => {
+      await seedDeck(userA, 'validation', { visibility: 'public' });
+      await post(userB, '/api/operator/decks/validation/takedown')
+        .set('Origin', 'http://localhost:5173')
+        .send({
+          expectedPublishedAt: (
+            await storedPublication('validation')
+          ).publishedAt.toISOString(),
+          ...input,
+        })
+        .expect(400);
+      expect(await db.select().from(deckTakedowns)).toEqual([]);
+      expect((await storedDeck('validation')).visibility).toBe('public');
+    },
+  );
+
+  it('records the authenticated actor and trimmed reason atomically with visibility/sync effects, keeping imported copies usable', async () => {
+    await seedDeck(userA, 'session-blocked', { visibility: 'public' });
+    await post(userC, '/api/shared/decks/session-blocked/report')
+      .send({ reason: 'Complaint.' })
+      .expect(201);
+    const imported = await post(
+      userC,
+      '/api/shared/decks/session-blocked/import',
+    ).expect(201);
+    const importedId = sharedDeckImportSchema.parse(imported.body).deckId;
+    const before = await storedDeck('session-blocked');
+    const importedBefore = await storedDeck(importedId);
+    const cursor = (await pull(userA)).cursor;
+    const reviewed = operatorDeckReviewSchema.parse(
+      (await get(userB, '/api/operator/decks/session-blocked').expect(200))
+        .body,
+    );
+    const response = await post(
+      userB,
+      '/api/operator/decks/session-blocked/takedown',
+    )
+      .set('Origin', 'http://localhost:5173')
+      .send({
+        reason: '  Copyright complaint verified.  ',
+        expectedPublishedAt: reviewed.currentSnapshotPublishedAt!.toISOString(),
+        operatorUserId: userA.id,
+        operator_user_id: userA.id,
+      })
+      .expect(200);
+    expect(operatorTakedownResponseSchema.parse(response.body)).toEqual({
+      status: 'blocked',
+      snapshotPublishedAt: reviewed.currentSnapshotPublishedAt,
+    });
+    const after = await storedDeck('session-blocked');
+    expect(after.visibility).toBe('private');
+    expect(after.rev).toBeGreaterThan(before.rev);
+    expect((await storedPublication('session-blocked')).moderationStatus).toBe(
+      'blocked',
+    );
+    expect(await db.select().from(deckTakedowns)).toEqual([
+      expect.objectContaining({
+        source: 'operator',
+        operatorUserId: userB.id,
+        reason: 'Copyright complaint verified.',
+        snapshotPublishedAt: reviewed.currentSnapshotPublishedAt,
+      }),
+    ]);
+    expect((await pull(userA, cursor)).changes.user_decks.updated).toEqual([
+      expect.objectContaining({ id: 'session-blocked', visibility: 'private' }),
+    ]);
+    expect(
+      (await get(userA, '/api/decks/session-blocked/moderation').expect(200))
+        .body,
+    ).toMatchObject({
+      status: 'blocked',
+      reason: 'Copyright complaint verified.',
+    });
+    expect(await browse(userC)).toEqual([]);
+    await get(userC, '/api/shared/decks/session-blocked').expect(404);
+    await post(userC, '/api/shared/decks/session-blocked/import').expect(404);
+    expect(await storedDeck(importedId)).toEqual(importedBefore);
+    await get(userC, `/api/shared/decks/${importedId}`).expect(200);
+    await db
+      .update(userCards)
+      .set({ front: 'PRIVATE EDIT AFTER BLOCK' })
+      .where(eq(userCards.userId, userA.id));
+    const blockedReview = operatorDeckReviewSchema.parse(
+      (await get(userB, '/api/operator/decks/session-blocked').expect(200))
+        .body,
+    );
+    expect(blockedReview.status).toBe('blocked');
+    expect(blockedReview.deck?.cards[0].front).toBe('front 0');
+    const page = operatorReportPageSchema.parse(
+      (await get(userB, '/api/operator/deck-reports').expect(200)).body,
+    );
+    expect(page.reports[0].status).toBe('blocked');
+    await takedown(
+      userB,
+      'session-blocked',
+      reviewed.currentSnapshotPublishedAt!.toISOString(),
+    ).expect(404);
+    expect(await db.select().from(deckTakedowns)).toHaveLength(1);
+  });
+
+  it('distinguishes republished content from the report and rejects a stale reviewed publication without writes', async () => {
+    await seedDeck(userA, 'stale-review', {
+      visibility: 'public',
+      updatedAt: Date.now() - 10_000,
+    });
+    await post(userC, '/api/shared/decks/stale-review/report')
+      .send({ reason: 'The first version.' })
+      .expect(201);
+    const reviewed = operatorDeckReviewSchema.parse(
+      (await get(userB, '/api/operator/decks/stale-review').expect(200)).body,
+    );
+    await db
+      .update(userCards)
+      .set({ front: 'new publication' })
+      .where(eq(userCards.userId, userA.id));
+    await post(userA, '/api/decks/stale-review/publish').expect(200);
+    const before = await storedDeck('stale-review');
+    const response = await takedown(
+      userB,
+      'stale-review',
+      reviewed.currentSnapshotPublishedAt!.toISOString(),
+    ).expect(409);
+    expect(operatorTakedownErrorSchema.parse(response.body).code).toBe(
+      'PUBLICATION_CHANGED',
+    );
+    const current = operatorDeckReviewSchema.parse(
+      (await get(userB, '/api/operator/decks/stale-review').expect(200)).body,
+    );
+    expect(current.reports[0].publicationChanged).toBe(true);
+    expect(current.reports[0].snapshotPublishedAt).toEqual(
+      reviewed.currentSnapshotPublishedAt,
+    );
+    expect(current.deck?.cards[0].front).toBe('new publication');
+    const page = operatorReportPageSchema.parse(
+      (await get(userB, '/api/operator/deck-reports').expect(200)).body,
+    );
+    expect(page.reports[0].publicationChanged).toBe(true);
+    expect(await storedDeck('stale-review')).toEqual(before);
+    expect(await db.select().from(deckTakedowns)).toEqual([]);
+    expect((await storedPublication('stale-review')).moderationStatus).toBe(
+      'visible',
+    );
+    await takedown(
+      userB,
+      'stale-review',
+      current.currentSnapshotPublishedAt!.toISOString(),
+    ).expect(200);
+  });
+
+  it('changes the review token even when a republish occurs in the same clock millisecond', async () => {
+    await seedDeck(userA, 'same-millisecond', { visibility: 'public' });
+    const before = await storedPublication('same-millisecond');
+    vi.spyOn(Date, 'now').mockReturnValue(before.publishedAt.getTime());
+    await post(userA, '/api/decks/same-millisecond/publish').expect(200);
+    const after = await storedPublication('same-millisecond');
+    expect(after.publishedAt.getTime()).toBeGreaterThan(
+      before.publishedAt.getTime(),
+    );
+    await takedown(
+      userB,
+      'same-millisecond',
+      before.publishedAt.toISOString(),
+    ).expect(409);
+    expect(await db.select().from(deckTakedowns)).toEqual([]);
+  });
+
+  it.each(['republish', 'unpublish'])(
+    'rechecks the publication after waiting for the owner sync lock (%s)',
+    async (change) => {
+      await seedDeck(userA, 'lock-race', { visibility: 'public' });
+      const publishedAt = (await storedPublication('lock-race')).publishedAt;
+      let pending!: Promise<request.Response>;
+      await db.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(userA.id).toString()})`,
+        );
+        pending = takedown(userB, 'lock-race', publishedAt.toISOString()).then(
+          (response) => response,
+        );
+        await expect
+          .poll(async () => {
+            const result = await tx.execute<{ count: number }>(sql`
+          SELECT count(*)::int AS count FROM pg_locks l
+          WHERE l.database = (SELECT oid FROM pg_database WHERE datname = current_database())
+            AND l.locktype = 'advisory' AND NOT l.granted
+        `);
+            return result.rows[0].count;
+          })
+          .toBe(1);
+        if (change === 'republish') {
+          await tx
+            .update(publishedDecks)
+            .set({ publishedAt: new Date(publishedAt.getTime() + 1_000) })
+            .where(eq(publishedDecks.deckId, 'lock-race'));
+        } else {
+          await tx
+            .delete(publishedDecks)
+            .where(eq(publishedDecks.deckId, 'lock-race'));
+          await tx
+            .update(userDecks)
+            .set({ visibility: 'private' })
+            .where(eq(userDecks.id, 'lock-race'));
+        }
+      });
+      const response = await pending;
+      expect(response.status).toBe(change === 'republish' ? 409 : 404);
+      expect(operatorTakedownErrorSchema.parse(response.body).code).toBe(
+        change === 'republish'
+          ? 'PUBLICATION_CHANGED'
+          : 'PUBLICATION_UNAVAILABLE',
+      );
+      expect(await db.select().from(deckTakedowns)).toEqual([]);
+      if (change === 'republish')
+        expect((await storedDeck('lock-race')).visibility).toBe('public');
+    },
+  );
+
+  it('serializes concurrent takedowns so only one writes an audit and revision', async () => {
+    await seedDeck(userA, 'concurrent', { visibility: 'public' });
+    const expected = (
+      await storedPublication('concurrent')
+    ).publishedAt.toISOString();
+    const responses = await Promise.all([
+      takedown(userB, 'concurrent', expected),
+      takedown(userB, 'concurrent', expected),
+    ]);
+    expect(responses.map((response) => response.status).sort()).toEqual([
+      200, 404,
+    ]);
+    expect(await db.select().from(deckTakedowns)).toHaveLength(1);
+    expect((await storedDeck('concurrent')).visibility).toBe('private');
+  });
+
+  it('preserves the audit when the authenticated operator account is deleted', async () => {
+    await seedDeck(userA, 'deleted-actor', { visibility: 'public' });
+    await takedown(
+      deletionAdmin,
+      'deleted-actor',
+      (await storedPublication('deleted-actor')).publishedAt.toISOString(),
+    ).expect(200);
+    const [before] = await db.select().from(deckTakedowns);
+    expect(before.operatorUserId).toBe(deletionAdmin.id);
+    await db.delete(user).where(eq(user.id, deletionAdmin.id));
+    expect(await db.select().from(deckTakedowns)).toEqual([
+      { ...before, operatorUserId: null },
+    ]);
+  });
+
+  it('rolls back publication and sync changes if the takedown audit cannot be written', async () => {
+    await seedDeck(userA, 'atomic-takedown', { visibility: 'public' });
+    const before = await storedDeck('atomic-takedown');
+    const snapshot = await storedPublication('atomic-takedown');
+    await db.execute(
+      sql`ALTER TABLE deck_takedowns ADD CONSTRAINT test_takedown_failure CHECK (deck_id <> 'atomic-takedown')`,
+    );
+    try {
+      await takedown(
+        userB,
+        'atomic-takedown',
+        snapshot.publishedAt.toISOString(),
+      ).expect(500);
+      expect(await storedDeck('atomic-takedown')).toEqual(before);
+      expect(await storedPublication('atomic-takedown')).toEqual(snapshot);
+      expect(await db.select().from(deckTakedowns)).toEqual([]);
+    } finally {
+      await db.execute(
+        sql`ALTER TABLE deck_takedowns DROP CONSTRAINT test_takedown_failure`,
+      );
+    }
   });
 
   it('still rejects a client push to public after a publish and unpublish', async () => {

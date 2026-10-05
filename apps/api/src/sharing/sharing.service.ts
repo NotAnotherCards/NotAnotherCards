@@ -102,6 +102,30 @@ const liveOwner = and(
   isNotNull(userProfiles.username),
 );
 
+const reportColumns = {
+  id: deckReports.id,
+  deckId: deckReports.deckId,
+  reporterUserId: deckReports.reporterUserId,
+  reason: deckReports.reason,
+  snapshotPublishedAt: deckReports.snapshotPublishedAt,
+  createdAt: deckReports.createdAt,
+};
+
+// Blocked snapshots are retained even though takedown makes the working
+// deck private. Deleted, missing and otherwise unpublished decks are unavailable.
+const currentPublicationStatus = sql<'visible' | 'blocked' | 'unavailable'>`case
+  when ${publishedDecks.deckId} is null or ${userDecks.id} is null
+    or ${userDecks.deletedAt} is not null
+    or ${userDecks.userId} <> ${publishedDecks.userId} then 'unavailable'
+  when ${publishedDecks.moderationStatus} = 'blocked' then 'blocked'
+  when ${userDecks.visibility} = 'public' then 'visible'
+  else 'unavailable'
+end`;
+const publishedOwner = and(
+  eq(userProfiles.userId, publishedDecks.userId),
+  isNull(userProfiles.deletedAt),
+);
+
 @Injectable()
 export class SharingService {
   constructor(
@@ -509,12 +533,13 @@ export class SharingService {
   async listReports(limit: number, offset: number) {
     const reports = await this.db
       .select({
-        id: deckReports.id,
-        deckId: deckReports.deckId,
-        reporterUserId: deckReports.reporterUserId,
-        reason: deckReports.reason,
-        snapshotPublishedAt: deckReports.snapshotPublishedAt,
-        createdAt: deckReports.createdAt,
+        ...reportColumns,
+        title: publishedDecks.title,
+        username: userProfiles.username,
+        status: currentPublicationStatus,
+        publicationChanged: sql<
+          boolean | null
+        >`${publishedDecks.publishedAt} <> ${deckReports.snapshotPublishedAt}`,
         currentSnapshotPublishedAt: publishedDecks.publishedAt,
         moderationStatus: publishedDecks.moderationStatus,
         moderationVerdict: publishedDecks.moderationVerdict,
@@ -522,32 +547,115 @@ export class SharingService {
       })
       .from(deckReports)
       .leftJoin(publishedDecks, eq(publishedDecks.deckId, deckReports.deckId))
+      .leftJoin(userDecks, eq(userDecks.id, deckReports.deckId))
+      .leftJoin(userProfiles, publishedOwner)
       .orderBy(desc(deckReports.createdAt), desc(deckReports.id))
       .limit(limit)
       .offset(offset);
-    return { reports };
+    return {
+      reports: reports.map(({ username, ...report }) => ({
+        ...report,
+        owner: username ? { username } : null,
+      })),
+    };
   }
 
-  async operatorTakedown(deckId: string, reason: string) {
-    const verdict: StoredModerationVerdict = {
-      reason,
-      flagged: [],
-      warnings: [],
-      results: [],
-    };
+  async reviewReportedDeck(deckId: string) {
+    // Keep metadata and the inspected publication consistent across both reads.
+    return this.db.transaction(
+      async (tx) => {
+        const reports = await tx
+          .select(reportColumns)
+          .from(deckReports)
+          .where(eq(deckReports.deckId, deckId))
+          .orderBy(desc(deckReports.createdAt), desc(deckReports.id));
+        if (reports.length === 0)
+          throw new NotFoundException('Reported deck not found');
+
+        const [published] = await tx
+          .select({
+            ...publishedSummaryColumns,
+            username: userProfiles.username,
+            content: publishedDecks.content,
+            status: currentPublicationStatus,
+            publishedAt: publishedDecks.publishedAt,
+            moderatedAt: publishedDecks.moderatedAt,
+            moderationVerdict: publishedDecks.moderationVerdict,
+          })
+          .from(publishedDecks)
+          .leftJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
+          .leftJoin(userProfiles, publishedOwner)
+          .where(eq(publishedDecks.deckId, deckId));
+
+        const status = published?.status ?? 'unavailable';
+        const publishedAt = published?.publishedAt ?? null;
+        const deck =
+          published && status !== 'unavailable'
+            ? {
+                id: published.id,
+                title: published.title,
+                description: published.description,
+                noteType: published.noteType,
+                nativeLanguageId: published.nativeLanguageId,
+                targetLanguageId: published.targetLanguageId,
+                cardCount: published.cardCount,
+                updatedAt: published.updatedAt,
+                owner: published.username
+                  ? { username: published.username }
+                  : null,
+                cards: published.content.cards.map(({ id, front, back }) => ({
+                  id,
+                  front,
+                  back,
+                })),
+              }
+            : null;
+        return {
+          deckId,
+          status,
+          deck,
+          currentSnapshotPublishedAt: publishedAt,
+          moderatedAt: published?.moderatedAt ?? null,
+          moderationVerdict: published?.moderationVerdict ?? null,
+          reports: reports.map((report) => ({
+            ...report,
+            // Reports contain timestamps, not historical copies of content.
+            publicationChanged: publishedAt
+              ? publishedAt.getTime() !== report.snapshotPublishedAt.getTime()
+              : null,
+          })),
+        };
+      },
+      { isolationLevel: 'repeatable read', accessMode: 'read only' },
+    );
+  }
+
+  async operatorTakedown(
+    deckId: string,
+    reason: string,
+    expectedPublishedAt: Date,
+    operatorUserId: string | null,
+  ) {
     const blocked = await this.blockPublishedSnapshot(
       deckId,
-      verdict,
-      'operator',
+      reason,
+      expectedPublishedAt,
+      operatorUserId,
     );
-    if (!blocked) throw new NotFoundException('Deck not found');
-    return { status: 'blocked' as const };
+    if (!blocked)
+      throw new NotFoundException({
+        statusCode: 404,
+        code: 'PUBLICATION_UNAVAILABLE',
+        message: 'Publication unavailable or already blocked',
+      });
+    return { status: 'blocked' as const, snapshotPublishedAt: blocked };
   }
 
   private async blockPublishedSnapshot(
     deckId: string,
-    verdict: StoredModerationVerdict,
-    source: 'operator',
+    reason: string,
+    expectedPublishedAt: Date,
+    operatorUserId: string | null,
   ) {
     return this.db.transaction(async (tx) => {
       await tx.execute(
@@ -564,17 +672,33 @@ export class SharingService {
           and(eq(publishedDecks.deckId, deckId), publicGate, visibleSnapshot),
         );
       if (!snapshot) return false;
+      this.assertExpectedPublication(snapshot.publishedAt, expectedPublishedAt);
       await tx.execute(
         sql`SELECT pg_advisory_xact_lock(${syncScopeLockKey(snapshot.userId).toString()})`,
       );
       const [lockedSnapshot] = await tx
-        .select({ publishedAt: publishedDecks.publishedAt })
+        .select({
+          publishedAt: publishedDecks.publishedAt,
+          verdict: publishedDecks.moderationVerdict,
+        })
         .from(publishedDecks)
         .innerJoin(userDecks, eq(userDecks.id, publishedDecks.deckId))
         .where(
           and(eq(publishedDecks.deckId, deckId), publicGate, visibleSnapshot),
-        );
+        )
+        .for('update', { of: [publishedDecks, userDecks] });
       if (!lockedSnapshot) return false;
+      this.assertExpectedPublication(
+        lockedSnapshot.publishedAt,
+        expectedPublishedAt,
+      );
+
+      const verdict: StoredModerationVerdict = {
+        reason,
+        flagged: lockedSnapshot.verdict?.flagged ?? [],
+        warnings: lockedSnapshot.verdict?.warnings ?? [],
+        results: lockedSnapshot.verdict?.results ?? [],
+      };
 
       const now = new Date();
       await tx
@@ -588,7 +712,8 @@ export class SharingService {
       await tx.insert(deckTakedowns).values({
         id: randomUUID(),
         deckId,
-        source,
+        source: 'operator',
+        operatorUserId,
         reason: verdict.reason,
         verdict,
         snapshotPublishedAt: lockedSnapshot.publishedAt,
@@ -607,11 +732,23 @@ export class SharingService {
             isNull(userDecks.deletedAt),
           ),
         );
-      return true;
+      return lockedSnapshot.publishedAt;
     });
   }
 
-  /** 404 rather than 403 for someone else's deck: 403 would confirm the id. */
+  private assertExpectedPublication(current: Date, expected: Date) {
+    if (current.getTime() !== expected.getTime()) {
+      throw new ConflictException({
+        statusCode: 409,
+        code: 'PUBLICATION_CHANGED',
+        message:
+          'Publication changed since review; review it again before taking it down',
+        currentSnapshotPublishedAt: current,
+      });
+    }
+  }
+
+  // 404 rather than 403 for someone else's deck: 403 would confirm the id
   private async ownedVisibility(
     userId: string,
     deckId: string,
@@ -660,12 +797,20 @@ export class SharingService {
       );
       const current = await this.ownedVisibility(userId, deckId, tx);
       if (snapshot) {
+        const [previous] = await tx
+          .select({ publishedAt: publishedDecks.publishedAt })
+          .from(publishedDecks)
+          .where(eq(publishedDecks.deckId, deckId));
         const values = {
           ...snapshot,
           moderationStatus: 'visible' as const,
           moderationVerdict: moderationVerdict ?? null,
           moderatedAt: null,
-          publishedAt: new Date(),
+          // The timestamp is also the review token. Even publications within
+          // one millisecond (or a clock adjustment) must get distinct tokens.
+          publishedAt: new Date(
+            Math.max(Date.now(), (previous?.publishedAt.getTime() ?? 0) + 1),
+          ),
         };
         await tx.insert(publishedDecks).values(values).onConflictDoUpdate({
           target: publishedDecks.deckId,
