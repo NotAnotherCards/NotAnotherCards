@@ -69,6 +69,154 @@ and review→card are checked in [sync validation](../apps/api/src/sync/sync-val
 | Device-local preferences     | Theme; web review mode and interval display                                                                 | Saves locally without cross-device sync                                            |
 | Server sync bookkeeping      | Revision sequence, revision checkpoints, garbage-collection floor                                           | Used by the sync service, not exposed as local application tables                  |
 
+## Full database diagram
+
+All 21 PostgreSQL tables are shown below with their key fields. Solid lines
+represent SQL foreign keys; dotted lines represent application references.
+`PK`, `FK`, and `UK` mark primary, foreign, and unique keys. Repeated `PK`
+labels within a table form a composite key.
+
+```mermaid
+erDiagram
+    user ||--o{ session : "has sessions"
+    user ||--o{ account : "has credentials"
+    user ||--o{ two_factor : "has 2FA records"
+    user ||--o| user_profiles : "has profile"
+    user ||--o{ user_decks : owns
+    user ||--o{ user_notes : owns
+    user ||--o{ user_cards : owns
+    user ||--o{ user_note_decks : owns
+    user ||--o{ review_events : owns
+    user ||--o{ user_badges : "has synced badges"
+    user ||--o{ ai_generation_jobs : requests
+    user ||--o{ ai_usage : "records usage"
+    user ||--o{ deck_reports : reports
+    user ||--o{ badge_awards : earns
+    user ||--o{ daily_challenge_completions : completes
+
+    user_notes ||..o{ user_cards : generates
+    user_notes ||..o{ user_note_decks : "belongs through"
+    user_decks ||..o{ user_note_decks : contains
+    user_cards ||..o{ review_events : "has review history"
+    ai_generation_jobs |o..o{ ai_usage : "optional job reference"
+    user ||..o{ published_decks : publishes
+    user_decks ||..o| published_decks : "has published snapshot"
+    published_decks ||..o{ deck_reports : "reported snapshot"
+    published_decks ||..o{ deck_takedowns : "snapshot takedown history"
+
+    user {
+        text id PK
+        text email UK
+    }
+    session {
+        text id PK
+        text user_id FK
+        timestamp expires_at
+    }
+    account {
+        text id PK
+        text user_id FK
+        text provider_id
+    }
+    verification {
+        text id PK
+        text identifier
+        timestamp expires_at
+    }
+    two_factor {
+        text id PK
+        text user_id FK
+        boolean verified
+    }
+    user_profiles {
+        text user_id PK,FK
+        text username UK
+    }
+    user_decks {
+        text id PK
+        text user_id FK
+        text title
+    }
+    user_notes {
+        text id PK
+        text user_id FK
+        text fields_json
+    }
+    user_cards {
+        text id PK
+        text user_id FK
+        text note_id
+    }
+    user_note_decks {
+        text id PK
+        text user_id FK
+        text note_id
+        text deck_id
+    }
+    review_events {
+        text id PK
+        text user_id FK
+        text user_card_id
+    }
+    user_badges {
+        text id PK
+        text user_id FK
+        text badge_id
+    }
+    ai_generation_jobs {
+        text id PK
+        text user_id FK
+        text type
+        text status
+    }
+    ai_usage {
+        text id PK
+        text user_id FK
+        text job_id "Nullable"
+    }
+    published_decks {
+        text deck_id PK
+        text user_id
+        timestamptz published_at
+        text moderation_status
+    }
+    deck_reports {
+        text id PK
+        text reporter_user_id FK
+        text deck_id
+        timestamptz snapshot_published_at
+    }
+    deck_takedowns {
+        text id PK
+        text deck_id
+        timestamptz snapshot_published_at
+        text source
+    }
+    badge_awards {
+        text user_id PK,FK
+        text badge_code PK
+    }
+    daily_challenge_completions {
+        text user_id PK,FK
+        text challenge_code PK
+        date utc_date PK
+    }
+    remelon_revision_checkpoints {
+        timestamptz observed_at PK
+        bigint rev
+    }
+    remelon_sync_meta {
+        text key PK
+        bigint value
+    }
+```
+
+`verification` and the two sync bookkeeping tables have no table references.
+Reports and takedowns also store the publication timestamp to identify the
+snapshot they concern; their history can outlive that snapshot. `remelon_rev`
+is a sequence, described below. The device-local tables mirror the synced
+records and are listed in the [local database contract](#local-database-contract).
+
 ## Current architecture
 
 Each block lists a table's columns alphabetically with type, nullability and
