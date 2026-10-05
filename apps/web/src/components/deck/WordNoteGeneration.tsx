@@ -44,23 +44,21 @@ export function WordNoteGeneration({
   const target = languageFor(deck.targetLanguageId);
   const rawError =
     generation.error instanceof AiJobFailedError
-      ? 'Generation failed. Your form has not changed. You can try again.'
+      ? t('deck.word_generation.failed')
       : generation.error instanceof Error
         ? generation.error.name === 'ZodError'
-          ? 'The generated fields are invalid or their languages no longer match the deck. Try again.'
+          ? t('deck.word_generation.invalid')
           : generation.error.message
         : null;
-  const error = localError || (rawError ? t(rawError, rawError) : null);
+  const error = localError
+    ? t(localError, { defaultValue: localError })
+    : rawError;
 
   useEffect(() => {
     onBusyChange(generating || paused);
   }, [generating, paused, onBusyChange]);
   useEffect(() => {
-    setLocalError(
-      cancel()
-        ? 'The generated fields are invalid or their languages no longer match the deck. Try again.'
-        : null,
-    );
+    setLocalError(cancel() ? 'deck.word_generation.invalid' : null);
     apply.current = null;
   }, [deck.deckId, deck.nativeLanguageId, deck.targetLanguageId, cancel]);
 
@@ -79,9 +77,7 @@ export function WordNoteGeneration({
         direction,
       });
       if (!parsed.success || parsed.data.type !== 'word_note') {
-        setLocalError(
-          'Enter a word or translation of up to 100 characters first.',
-        );
+        setLocalError(t('deck.word_generation.enter_word'));
         return;
       }
       apply.current = applyResult;
@@ -104,7 +100,7 @@ export function WordNoteGeneration({
       });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Unable to fill the form.';
+        err instanceof Error ? err.message : t('deck.word_generation.unable');
       setLocalError(t(message, message));
     }
   };
@@ -127,17 +123,17 @@ export function WordNoteGeneration({
             <Sparkles className="size-4 animate-pulse" />
           )}
           {paused
-            ? 'Check generation again'
+            ? t('deck.word_generation.check_again')
             : generating
-              ? 'Filling…'
-              : 'Fill with AI'}
+              ? t('deck.word_generation.filling')
+              : t('deck.word_generation.fill')}
         </span>
       </Button>
       {(generating || paused) && (
         <p role="status" className="text-sm">
           {paused
-            ? 'Generation may still be running.'
-            : 'Filling your word note…'}
+            ? t('deck.word_generation.running')
+            : t('deck.word_generation.filling_note')}
         </p>
       )}
       {error && <FormErrorMessage message={error} />}

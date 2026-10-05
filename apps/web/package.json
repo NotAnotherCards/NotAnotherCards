@@ -33,6 +33,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^10.6.0",
     "eslint-plugin-better-tailwindcss": "^4.7.0",
+    "eslint-plugin-i18next": "^6.1.5",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.2",
     "typescript": "5.9.3",

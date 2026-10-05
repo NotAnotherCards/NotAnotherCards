@@ -1,15 +1,27 @@
+import { useTranslation } from 'react-i18next';
 import { rejectedSummary } from '@repo/offline-db';
 import { useSyncController, useSyncState } from '@/offline/syncProvider';
 
-const LABELS: Record<string, string> = {
-  idle: 'Synced',
-  syncing: 'Syncing…',
-  offline: 'Offline — changes will sync later',
-  error: 'Sync failed',
-  'resync-required': 'Recovered from a server reset',
+const rejectionTableKeys: Record<string, string> = {
+  user_decks: 'mobile.sync_tables.deck',
+  user_notes: 'mobile.sync_tables.note',
+  user_cards: 'mobile.sync_tables.card',
+  user_note_decks: 'mobile.sync_tables.membership',
+  review_events: 'mobile.sync_tables.review',
+  user_profiles: 'mobile.sync_tables.profile',
+  user_badges: 'mobile.sync_tables.badge',
+};
+
+const LABEL_KEYS: Record<string, string> = {
+  idle: 'dashboard.sync.synced',
+  syncing: 'dashboard.sync.syncing',
+  offline: 'dashboard.sync.offline_description',
+  error: 'dashboard.sync.failed',
+  'resync-required': 'dashboard.sync.recovered',
 };
 
 export function SyncStatus() {
+  const { t } = useTranslation();
   const controller = useSyncController();
   const state = useSyncState();
   if (!controller) {
@@ -17,7 +29,18 @@ export function SyncStatus() {
   }
 
   const retryable = state.status === 'error' || state.status === 'offline';
-  const { count: rejected, details: rejectionDetails } = rejectedSummary(state);
+  const { count: rejected } = rejectedSummary(state);
+  const rejectionDetails = rejected
+    ? Object.entries(state.lastResult?.rejectedRecords ?? {})
+        .filter(([, ids]) => ids.length > 0)
+        .map(([table, ids]) =>
+          t(rejectionTableKeys[table] ?? 'mobile.sync_tables.change', {
+            count: ids.length,
+          }),
+        )
+        .concat(t('mobile.messages.sync_details'))
+        .join('. ')
+    : undefined;
   return (
     <div
       className="fixed bottom-4 right-4 z-40 flex items-center gap-2.5 px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-background/90 backdrop-blur-xs border border-border/80 rounded-full shadow-md transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-2"
@@ -55,15 +78,14 @@ export function SyncStatus() {
       {rejected ? (
         <details className="relative">
           <summary className="cursor-pointer list-none rounded-sm focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
-            Synced, {rejected} {rejected === 1 ? 'change' : 'changes'} not
-            accepted
+            {t('dashboard.sync.rejected_changes', { count: rejected })}
           </summary>
           <p className="absolute bottom-full right-0 mb-4 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-background p-3 text-foreground shadow-md">
             {rejectionDetails}
           </p>
         </details>
       ) : (
-        <span>{LABELS[state.status] ?? state.status}</span>
+        <span>{t(LABEL_KEYS[state.status] ?? 'dashboard.sync.synced')}</span>
       )}
       {retryable && (
         <button
@@ -71,7 +93,7 @@ export function SyncStatus() {
           className="underline cursor-pointer ml-0.5 hover:text-foreground transition-colors"
           onClick={() => controller.syncNow()}
         >
-          Retry
+          {t('common.retry')}
         </button>
       )}
     </div>

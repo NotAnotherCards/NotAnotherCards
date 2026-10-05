@@ -576,8 +576,8 @@ describe('Deck Publishing Controls', () => {
       screen.getByText('Reported deck did not pass the thorough check.'),
     ).toBeInTheDocument();
     expect(screen.getByText('Classifier results')).toBeInTheDocument();
-    expect(screen.getByText('safe')).toBeInTheDocument();
-    expect(screen.getByText('unsafe')).toBeInTheDocument();
+    expect(screen.getByText('Safe')).toBeInTheDocument();
+    expect(screen.getByText('Unsafe')).toBeInTheDocument();
     expect(screen.getByText('Categories: none')).toBeInTheDocument();
     expect(screen.getByText('No category supplied')).toBeInTheDocument();
     expect(screen.getByText('moderation')).toBeInTheDocument();

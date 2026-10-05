@@ -32,6 +32,12 @@ let mockDecksState: {
   error: Error | null;
   cardCount: (id: string) => number;
   dueCount: (id: string) => number;
+  learning: (id: string) => {
+    totalNotes: number;
+    activeNotes: number;
+    activeCards: number;
+    inactiveCards: number;
+  };
   profile: {
     native_language_id: string | null;
     target_language_id: string | null;
@@ -60,6 +66,10 @@ beforeEach(() => {
     error: null,
     cardCount: (id) => (id === 'd1' ? 12 : 0),
     dueCount: (id) => (id === 'd1' ? 3 : 0),
+    learning: (id) =>
+      id === 'd1'
+        ? { totalNotes: 6, activeNotes: 4, activeCards: 8, inactiveCards: 4 }
+        : { totalNotes: 0, activeNotes: 0, activeCards: 0, inactiveCards: 0 },
     profile: null,
     writes: mockWrites,
   };
@@ -78,15 +88,17 @@ describe('DeckList', () => {
     ).toBeTruthy();
   });
   it.each([
-    ['en', 'Cards', 'Review'],
-    ['de', 'Karten', 'Wiederholen'],
-    ['es', 'Tarjetas', 'Repasar'],
-    ['ru', 'Карточки', 'Повторить'],
+    // the word is also the card deck's count label, except in Russian,
+    // where the count takes the genitive
+    ['en', 'Cards', 'Review', 4],
+    ['de', 'Karten', 'Wiederholen', 4],
+    ['es', 'Tarjetas', 'Repasar', 4],
+    ['ru', 'Карточки', 'Повторить', 3],
   ] as const)(
     'uses compact library actions in %s',
-    async (locale, edit, review) => {
+    async (locale, edit, review, editCount) => {
       const screen = await renderWithLocale(<DeckList />, locale);
-      expect(screen.getAllByText(edit)).toHaveLength(3);
+      expect(screen.getAllByText(edit)).toHaveLength(editCount);
       expect(screen.getAllByText(review)).toHaveLength(2);
       const editLabel = screen.i18n.t('mobile.manage_deck', {
         title: 'Spanish',
@@ -109,7 +121,9 @@ describe('DeckList', () => {
     for (const label of screen.getAllByText('Wiederholen')) {
       expect(label.props.numberOfLines).toBe(1);
     }
-    expect(screen.getAllByText('Alle Karten')).toHaveLength(2);
+    expect(screen.getAllByText('Alle Wörter')).toHaveLength(1);
+    expect(screen.getAllByText('Aktive Wörter')).toHaveLength(1);
+    expect(screen.getAllByText('Aktiv')).toHaveLength(1);
     expect(screen.getAllByText('Fällig')).toHaveLength(2);
     fireEvent.press(screen.getByLabelText('Karten in Spanish'));
     expect(mockPush).toHaveBeenCalledWith('/deck/d1');
@@ -130,6 +144,32 @@ describe('DeckList', () => {
     expect(mockPush).toHaveBeenCalledWith('/deck/d1');
   });
 
+  it('turns Review off only when a deck has nothing due and nothing to activate', () => {
+    const { getByLabelText, rerender } = render(<DeckList />);
+    expect(getByLabelText('Review Spanish')).toBeEnabled();
+    expect(getByLabelText('Review Yoga')).toBeDisabled();
+    fireEvent.press(getByLabelText('Review Yoga'));
+    expect(mockPush).not.toHaveBeenCalledWith('/review/d2');
+
+    // nothing due, but cards wait to be activated on the review screen
+    mockDecksState = {
+      ...mockDecksState,
+      learning: () => ({
+        totalNotes: 0,
+        activeNotes: 0,
+        activeCards: 0,
+        inactiveCards: 5,
+      }),
+    };
+    rerender(<DeckList />);
+    expect(getByLabelText('Review Yoga')).toBeEnabled();
+    fireEvent.press(getByLabelText('Review Yoga'));
+    expect(mockPush).toHaveBeenCalledWith('/review/d2');
+
+    fireEvent.press(getByLabelText('Review Spanish'));
+    expect(mockPush).toHaveBeenCalledWith('/review/d1');
+  });
+
   it('waits for the database manager before rendering decks', () => {
     mockSessionDb = { manager: null };
     const { queryByText } = render(<DeckList />);
@@ -146,12 +186,25 @@ describe('DeckList', () => {
     ).toHaveLength(2);
     expect(getByText('Spanish')).toBeTruthy();
     expect(getByText('Verbs')).toBeTruthy();
-    expect(getByText('12')).toBeTruthy();
+    // a word deck counts words: all of them, the active ones, the due cards
+    expect(getByText('Total Words')).toBeTruthy();
+    expect(getByText('6')).toBeTruthy();
+    expect(getByTestId('deck-active-d1')).toHaveTextContent('4');
     // the kind pill names the deck the way web does
     expect(getByLabelText('🇩🇪 German → 🇪🇸 Spanish')).toBeTruthy();
     expect(getByLabelText('Card deck')).toBeTruthy();
-    // the deck with work is accented, the empty one stays muted
     expect(getByTestId('deck-due-d1')).toHaveTextContent('3');
+    // a card deck counts cards
+    expect(getByTestId('deck-active-d2')).toHaveTextContent('0');
+    expect(getByTestId('deck-due-d2')).toHaveTextContent('0');
+    // a zero is faded, whichever figure it is
+    expect(getByTestId('deck-active-d2').props.className).toContain(
+      'text-muted-foreground',
+    );
+    expect(getByTestId('deck-active-d1').props.className).not.toContain(
+      'text-muted-foreground',
+    );
+    // the deck with work is accented, the one with nothing due stays quiet
     expect(getByTestId('deck-due-d1').props.className).toContain(
       'text-primary',
     );
@@ -176,17 +229,6 @@ describe('DeckList', () => {
     await act(async () => {
       await i18n.changeLanguage('en');
     });
-  });
-
-  it('starts a deck review from the list, whatever is due', () => {
-    // nothing due: the review screen offers to activate more
-    const { getByLabelText } = render(<DeckList />);
-
-    fireEvent.press(getByLabelText('Review Yoga'));
-    expect(mockPush).toHaveBeenCalledWith('/review/d2');
-
-    fireEvent.press(getByLabelText('Review Spanish'));
-    expect(mockPush).toHaveBeenCalledWith('/review/d1');
   });
 
   it('shows the empty state without decks', () => {

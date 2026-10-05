@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CardForm } from '@/components/deck/CardForm';
 import { Card } from '@/hooks/useStore';
@@ -44,6 +45,7 @@ export function ReviewSession({
   reviewMode = 'basic',
   showNextReviewInterval = false,
 }: ReviewSessionProps) {
+  const { t } = useTranslation();
   const [sessionCards, setSessionCards] = useState(cards);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -81,7 +83,7 @@ export function ReviewSession({
       await onCreateCard(data);
       setIsCreateCardOpen(false);
     } catch (err) {
-      setCreateCardError(writeErrorMessage(err, 'Failed to create card'));
+      setCreateCardError(writeErrorMessage(err, t('deck.errors.create_card')));
     }
   };
 
@@ -106,7 +108,7 @@ export function ReviewSession({
     try {
       await onDeleteNote(deletedNoteId);
     } catch {
-      setDeleteError('Could not delete this word. Try again.');
+      setDeleteError(t('review.errors.delete_word'));
       setIsDeletingNote(false);
       return;
     }
@@ -167,7 +169,7 @@ export function ReviewSession({
     try {
       await onRecordReview(card.id, reviewRatingByAnswer[answer]);
     } catch {
-      setReviewError('Could not save your answer. Try again.');
+      setReviewError(t('review.errors.save_answer'));
       setIsSavingReview(false);
       return;
     }
@@ -232,7 +234,7 @@ export function ReviewSession({
             size="icon"
             onClick={onExit}
             className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
-            aria-label="Back to dashboard"
+            aria-label={t('review.session.back_to_dashboard')}
           >
             <ArrowLeft className="size-5" />
           </Button>
@@ -247,7 +249,7 @@ export function ReviewSession({
             size="icon"
             onClick={openCreateCardForm}
             className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
-            aria-label="Add a new card"
+            aria-label={t('deck.card_form.add_new_card')}
           >
             <Plus className="size-5" />
           </Button>
@@ -299,7 +301,7 @@ export function ReviewSession({
 
       {isCreateCardOpen && (
         <CardForm
-          title="Add New Card"
+          title={t('deck.card_form.add_new_card')}
           onSubmit={createCard}
           error={createCardError}
           onCancel={() => setIsCreateCardOpen(false)}

@@ -93,7 +93,7 @@ export default function CommunityDeckScreen() {
         options={{ title: deck?.title ?? t('mobile.messages.community_deck') }}
       />
       <ScrollView
-        className="flex-1 bg-background"
+        className="flex-1 bg-surface"
         contentContainerClassName="gap-4 p-6"
         keyboardShouldPersistTaps="handled"
       >

@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import type { DatabaseManager } from '@remelondb/core';
-import { deckKindShort } from '@repo/offline-db';
+import { deckKindShort, WORD_NOTE_TYPE } from '@repo/offline-db';
 import { deckTypeAccessibilityLabel } from '@repo/i18n';
 import { useTranslation } from 'react-i18next';
 import { useSessionDatabase } from '@/lib/database-provider';
@@ -69,8 +69,16 @@ function ActiveDeckList({
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { fontScale, width } = useWindowDimensions();
-  const { decks, isLoading, error, cardCount, dueCount, profile, writes } =
-    useDecks(manager);
+  const {
+    decks,
+    isLoading,
+    error,
+    cardCount,
+    dueCount,
+    learning,
+    profile,
+    writes,
+  } = useDecks(manager);
   const [action, setAction] = useState<DeckAction | null>(null);
   const [writeError, setWriteError] = useState<WriteError | null>(null);
   const [pending, setPending] = useState(false);
@@ -271,33 +279,52 @@ function ActiveDeckList({
                       {deck.description}
                     </CardDescription>
                   ) : null}
-                  {/* Web's two figures side by side, same wording. A deck with
-                    work reads at a glance; zero stays quiet. */}
-                  <View className="mt-1 flex-row rounded-2xl border border-border px-3 py-2">
-                    <View className="flex-1 items-center">
-                      <Text className="text-xs font-medium text-muted-foreground">
-                        {t('deck.card.total_cards')}
-                      </Text>
-                      <Text className="text-sm font-bold">
-                        {cardCount(deck.id)}
-                      </Text>
-                    </View>
-                    <View className="w-px bg-border" />
-                    <View className="flex-1 items-center">
-                      <Text className="text-xs font-medium text-muted-foreground">
-                        {t('deck.card.due_short')}
-                      </Text>
-                      <Text
-                        testID={`deck-due-${deck.id}`}
-                        className={
-                          dueCount(deck.id) > 0
-                            ? 'text-sm font-bold text-primary'
-                            : 'text-sm font-bold text-muted-foreground'
-                        }
-                      >
-                        {dueCount(deck.id)}
-                      </Text>
-                    </View>
+                  {/* Web's three figures on its faint strip, same wording:
+                    words for a word deck, cards for a card deck. Due takes
+                    the short label for both; a third of a phone's width
+                    has no room for web's "Cards Due" in every language. */}
+                  <View className="mt-1 flex-row rounded-2xl border border-border/30 bg-muted/40 px-3 py-2">
+                    {deck.note_type === WORD_NOTE_TYPE ? (
+                      <>
+                        <Count
+                          label={t('deck.card.total_words')}
+                          value={learning(deck.id).totalNotes}
+                        />
+                        <View className="w-px bg-border/40" />
+                        <Count
+                          label={t('deck.card.active_words')}
+                          value={learning(deck.id).activeNotes}
+                          testID={`deck-active-${deck.id}`}
+                        />
+                        <View className="w-px bg-border/40" />
+                        <Count
+                          label={t('deck.card.due_short')}
+                          value={dueCount(deck.id)}
+                          work
+                          testID={`deck-due-${deck.id}`}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <Count
+                          label={t('deck.card.cards')}
+                          value={cardCount(deck.id)}
+                        />
+                        <View className="w-px bg-border/40" />
+                        <Count
+                          label={t('deck.card.active')}
+                          value={learning(deck.id).activeCards}
+                          testID={`deck-active-${deck.id}`}
+                        />
+                        <View className="w-px bg-border/40" />
+                        <Count
+                          label={t('deck.card.due_short')}
+                          value={dueCount(deck.id)}
+                          work
+                          testID={`deck-due-${deck.id}`}
+                        />
+                      </>
+                    )}
                   </View>
                 </Pressable>
               </CardHeader>
@@ -343,7 +370,10 @@ function ActiveDeckList({
                       with web's folder, then the outline review button with
                       its icon. Short labels and compact padding fit a
                       360dp screen without splitting words.
-                      Nothing due, nothing to start. */}
+                      Review is off when nothing is due and no card is
+                      left to activate: the review screen is where cards
+                      are activated, so a deck with inactive cards keeps
+                      its way in. */}
                     <Button
                       className="h-auto min-h-12 flex-1 gap-1 px-2 py-2 sm:h-auto"
                       disabled={pending}
@@ -363,7 +393,11 @@ function ActiveDeckList({
                     <Button
                       variant="outline"
                       className="h-auto min-h-12 flex-1 gap-1 px-2 py-2 sm:h-auto"
-                      disabled={pending}
+                      disabled={
+                        pending ||
+                        (dueCount(deck.id) === 0 &&
+                          learning(deck.id).inactiveCards === 0)
+                      }
                       accessibilityLabel={t('mobile.review_deck', {
                         title: deck.title,
                       })}
@@ -381,6 +415,36 @@ function ActiveDeckList({
           );
         })}
       </View>
+    </View>
+  );
+}
+
+// Any zero is faded, so the figures that say something stand out. `work`
+// marks the due count, accented while there is something to review.
+function Count({
+  label,
+  value,
+  work = false,
+  testID,
+}: {
+  label: string;
+  value: number;
+  work?: boolean;
+  testID?: string;
+}) {
+  return (
+    <View className="flex-1 items-center justify-between gap-0.5 px-1">
+      <Text className="text-center text-xs font-medium" numberOfLines={2}>
+        {label}
+      </Text>
+      <Text
+        testID={testID}
+        className={`text-sm font-bold ${
+          value === 0 ? 'text-muted-foreground' : work ? 'text-primary' : ''
+        }`}
+      >
+        {value}
+      </Text>
     </View>
   );
 }

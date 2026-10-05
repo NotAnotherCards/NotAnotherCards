@@ -116,7 +116,12 @@ function BarSeries({
       <div
         className="flex h-36 items-end gap-1"
         role="img"
-        aria-label={`${t(`dashboard.statistics.series.${valueKey}`)}, ${rows[0].label} to ${rows[rows.length - 1].label}, highest ${format(peak)}`}
+        aria-label={t('dashboard.statistics.chart_description', {
+          series: t(`dashboard.statistics.series.${valueKey}`),
+          from: rows[0].label,
+          to: rows[rows.length - 1].label,
+          peak: format(peak),
+        })}
       >
         {rows.map((row) => {
           const value = row[valueKey];
@@ -214,7 +219,7 @@ export function Statistics() {
         <label className="flex items-center gap-2 text-sm font-medium">
           {t('dashboard.statistics.deck_label')}
           <select
-            aria-label="Statistics deck"
+            aria-label={t('dashboard.statistics.deck_aria')}
             value={deckId}
             onChange={(event) => setDeckId(event.target.value)}
             className="h-9 rounded-xl border border-input bg-background px-3 text-sm"
@@ -231,7 +236,7 @@ export function Statistics() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card
-          aria-label="Learning streak"
+          aria-label={t('dashboard.statistics.learning_streak')}
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
           <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
@@ -249,24 +254,20 @@ export function Statistics() {
           </CardHeader>
           <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
             <p className="text-lg font-bold text-foreground">
-              {streak.currentStreak === 1
-                ? t('dashboard.statistics.days_current_one')
-                : t('dashboard.statistics.days_current_other', {
-                    count: streak.currentStreak,
-                  })}
+              {t('dashboard.statistics.days_current', {
+                count: streak.currentStreak,
+              })}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {streak.longestStreak === 1
-                ? t('dashboard.statistics.days_longest_one')
-                : t('dashboard.statistics.days_longest_other', {
-                    count: streak.longestStreak,
-                  })}
+              {t('dashboard.statistics.days_longest', {
+                count: streak.longestStreak,
+              })}
             </p>
           </CardContent>
         </Card>
 
         <Card
-          aria-label="Learned notes"
+          aria-label={t('dashboard.statistics.learned_notes')}
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
           <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
@@ -292,7 +293,7 @@ export function Statistics() {
         </Card>
 
         <Card
-          aria-label="Due forecast"
+          aria-label={t('dashboard.statistics.due_forecast')}
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
           <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
@@ -331,7 +332,7 @@ export function Statistics() {
         </Card>
 
         <Card
-          aria-label="Card maturity"
+          aria-label={t('dashboard.statistics.card_maturity')}
           className="hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
         >
           <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
@@ -351,19 +352,22 @@ export function Statistics() {
             {Object.entries(maturity).map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-xl bg-muted/40 p-2 capitalize flex flex-col items-center justify-center text-center"
+                className="rounded-xl bg-muted/40 p-2 flex flex-col items-center justify-center text-center"
               >
                 <strong className="block text-base text-foreground font-bold">
                   {value}
                 </strong>
-                <span>{label}</span>
+                <span>{t(`dashboard.statistics.maturity.${label}`)}</span>
               </div>
             ))}
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex gap-2" aria-label="Statistics range">
+      <div
+        className="flex gap-2"
+        aria-label={t('dashboard.statistics.range_aria')}
+      >
         {getRanges(t).map(({ value, label }) => (
           <Button
             key={value}
@@ -378,7 +382,7 @@ export function Statistics() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card aria-label="Reviews per day">
+        <Card aria-label={t('dashboard.statistics.series.reviews')}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-chart-1" />
@@ -389,7 +393,7 @@ export function Statistics() {
             <BarSeries rows={series} valueKey="reviews" locale={locale} t={t} />
           </CardContent>
         </Card>
-        <Card aria-label="Notes added per day">
+        <Card aria-label={t('dashboard.statistics.series.notesAdded')}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FilePlus className="h-5 w-5 text-sage" />
@@ -405,7 +409,7 @@ export function Statistics() {
             />
           </CardContent>
         </Card>
-        <Card aria-label="Forgot rate per day">
+        <Card aria-label={t('dashboard.statistics.series.forgotRate')}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingDown className="h-5 w-5 text-chart-3" />
