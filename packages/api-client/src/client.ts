@@ -15,6 +15,14 @@ import {
   type ModerationExplanationRequest,
   type ModerationRefusal,
   type ModerationWarning,
+  operatorCapabilitiesSchema,
+  operatorReportPageSchema,
+  operatorDeckReviewSchema,
+  operatorTakedownRequestSchema,
+  operatorTakedownResponseSchema,
+  operatorTakedownErrorSchema,
+  type OperatorTakedownRequest,
+  type OperatorTakedownError,
 } from '@repo/schemas';
 import {
   ApiError,
@@ -47,6 +55,13 @@ export type PublishOutcome =
   | { published: true; warnings: ModerationWarning[] }
   | { published: false; refusal: ModerationRefusal };
 
+export class ModerationTakedownError extends ApiError {
+  constructor(readonly details: OperatorTakedownError) {
+    super(details.message, details.statusCode, details);
+    this.name = 'ModerationTakedownError';
+  }
+}
+
 export function createApiClient(transport: ApiTransport) {
   const request = createRequest(transport);
   const json = <T>(
@@ -69,6 +84,61 @@ export function createApiClient(transport: ApiTransport) {
     `/api/shared/decks/${encodeURIComponent(id)}`;
 
   return {
+    operator: {
+      capabilities(options?: RequestOptions) {
+        return json(
+          '/api/operator/capabilities',
+          operatorCapabilitiesSchema,
+          {},
+          options,
+        );
+      },
+      reports(
+        page: { limit?: number; offset?: number } = {},
+        options?: RequestOptions,
+      ) {
+        const query = new URLSearchParams();
+        if (page.limit !== undefined) query.set('limit', String(page.limit));
+        if (page.offset !== undefined) query.set('offset', String(page.offset));
+        return json(
+          `/api/operator/deck-reports${query.size ? `?${query}` : ''}`,
+          operatorReportPageSchema,
+          {},
+          options,
+        );
+      },
+      review(id: string, options?: RequestOptions) {
+        return json(
+          `/api/operator/decks/${encodeURIComponent(id)}`,
+          operatorDeckReviewSchema,
+          {},
+          options,
+        );
+      },
+      async takedown(
+        id: string,
+        input: OperatorTakedownRequest,
+        options?: RequestOptions,
+      ) {
+        const body = operatorTakedownRequestSchema.parse(input);
+        try {
+          return await json(
+            `/api/operator/decks/${encodeURIComponent(id)}/takedown`,
+            operatorTakedownResponseSchema,
+            { method: 'POST', body: JSON.stringify(body) },
+            options,
+          );
+        } catch (error) {
+          if (error instanceof ApiError) {
+            const parsed = operatorTakedownErrorSchema.safeParse(error.body);
+            if (parsed.success && parsed.data.statusCode === error.status) {
+              throw new ModerationTakedownError(parsed.data);
+            }
+          }
+          throw error;
+        }
+      },
+    },
     ai: {
       generateWordNote(
         input: WordNoteGenerationInput,
