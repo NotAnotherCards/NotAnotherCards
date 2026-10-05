@@ -126,19 +126,23 @@ file.
   is deploying; reverting a PR is rolling back.
 - The compose files, HTTP bootstrap nginx configs
   (`infra/vps/app.notanothercards.com.conf`,
-  `infra/vps/grafana.notanothercards.com.conf`, and
-  `infra/vps/notanothercards.com.conf`), and the reproducible setup guide
+  `infra/vps/grafana.notanothercards.com.conf`,
+  `infra/vps/notanothercards.com.conf`, and
+  `infra/vps/www.notanothercards.com.conf`), and the reproducible setup guide
   (`infra/vps/README.md`) live in the repo.
 - After the stacks are up, the deployment verifies the monitoring stack, its
   Prometheus targets, and the public endpoints: application and Grafana health
   plus the apex landing page (`https://notanothercards.com/` and `/privacy`
   over hostname-validated HTTPS, a real 404 for an unknown path, the
-  HTTP-to-HTTPS redirect, and a certificate naming the apex domain). Any of
+  HTTP-to-HTTPS redirect, and a certificate naming the apex domain), plus the
+  `www` redirect to the apex over HTTP and certificate-validated HTTPS. Any of
   those failing fails the deployment.
 - `pnpm test:infra` validates the same nginx host configurations offline: it
-  loads all three virtual hosts into a throwaway nginx, asserts the apex site
+  loads all four virtual hosts into a throwaway nginx, asserts the apex site
   proxies to the loopback landing container on `5174`, and proves the
-  application and Grafana routes still reach `5173` and `3001`.
+  application and Grafana routes still reach `5173` and `3001`. It verifies
+  that `www` redirects directly to the apex over HTTP and trusted test HTTPS,
+  preserving paths and query strings.
 - Production values stay in `/opt/notanothercards/.env` and the team password
   manager; deployment credentials use GitHub's protected `production`
   environment (subject III.3).
@@ -171,6 +175,8 @@ records are configured:
 ```bash
 dig +short A    notanothercards.com
 dig +short AAAA notanothercards.com
+dig +short A    www.notanothercards.com
+dig +short AAAA www.notanothercards.com
 ```
 
 Install and enable the site on a clean host, then let Certbot add TLS:
@@ -181,30 +187,46 @@ cd /opt/notanothercards
 sudo cp infra/vps/notanothercards.com.conf /etc/nginx/sites-available/
 sudo ln -sf /etc/nginx/sites-available/notanothercards.com.conf \
            /etc/nginx/sites-enabled/
+sudo cp infra/vps/www.notanothercards.com.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/www.notanothercards.com.conf \
+           /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d notanothercards.com
+sudo certbot --nginx --no-redirect -d www.notanothercards.com
 sudo certbot renew --dry-run
 ```
 
 Certbot rewrites the installed copy, so never copy the repository file over it
-again. Health checks:
+again. The `www` site redirects directly to the apex on both protocols;
+`--no-redirect` prevents an extra redirect through HTTPS on `www`.
+On an existing host, install only the new `www` site and issue its certificate
+before deploying the new checks; follow the _Adding www to an existing
+production host_ steps in [`infra/vps/README.md`](../infra/vps/README.md).
+The deployment workflow verifies host sites but does not install them.
+Health checks:
 
 ```bash
 curl --fail https://notanothercards.com/
 curl --fail https://notanothercards.com/privacy
 curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://notanothercards.com/
 curl -o /dev/null -w '%{http_code}\n' https://notanothercards.com/not-a-real-page
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' \
+  'http://www.notanothercards.com/privacy?source=www'
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' \
+  'https://www.notanothercards.com/privacy?source=www'
 ```
 
 Troubleshooting starts with `sudo nginx -t`, `sudo systemctl status nginx`,
 `sudo certbot certificates`, and `curl --fail http://127.0.0.1:5174/health`.
-Roll back by removing the enabled site and its certificate, then reverting
-the deploy commit that requires the apex endpoint:
+Roll back by removing the enabled sites and their certificates, then reverting
+the deploy commit that requires the apex and www endpoints:
 
 ```bash
 sudo rm /etc/nginx/sites-enabled/notanothercards.com.conf
+sudo rm /etc/nginx/sites-enabled/www.notanothercards.com.conf
 sudo nginx -t && sudo systemctl reload nginx
 sudo certbot delete --cert-name notanothercards.com
+sudo certbot delete --cert-name www.notanothercards.com
 ```
 
 The full runbook — DNS and IPv6 detail, troubleshooting, and why the rollback

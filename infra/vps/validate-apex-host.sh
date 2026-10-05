@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APEX_CONF="$SCRIPT_DIR/notanothercards.com.conf"
+WWW_CONF="$SCRIPT_DIR/www.notanothercards.com.conf"
 APP_CONF="$SCRIPT_DIR/app.notanothercards.com.conf"
 GRAFANA_CONF="$SCRIPT_DIR/grafana.notanothercards.com.conf"
 
@@ -62,6 +63,17 @@ forbid "$APEX_CONF" 'listen[[:space:]]+443' \
 forbid "$APEX_CONF" 'ssl_certificate' \
   "apex site must not ship certificate paths in the repository"
 
+require "$WWW_CONF" 'server_name[[:space:]]+www\.notanothercards\.com;' \
+  "www must have its own virtual host instead of falling through to the app"
+require "$WWW_CONF" 'listen[[:space:]]+80;' \
+  "www must listen on IPv4 port 80"
+require "$WWW_CONF" 'listen[[:space:]]+\[::\]:80;' \
+  "www must listen on IPv6 port 80"
+require "$WWW_CONF" 'return 301 https://notanothercards\.com\$request_uri;' \
+  "www must redirect directly to the apex, preserving the path and query"
+forbid "$WWW_CONF" 'proxy_pass|ssl_certificate|listen[[:space:]]+443' \
+  "www must stay a redirect-only HTTP bootstrap config; certbot adds TLS on the host"
+
 require "$APP_CONF" 'server_name[[:space:]]+app\.notanothercards\.com;' \
   "app site must keep its server_name"
 require "$APP_CONF" 'proxy_pass[[:space:]]+http://127\.0\.0\.1:5173;' \
@@ -75,7 +87,21 @@ echo "  [OK] apex, app, and grafana host configurations are wired to their own u
 
 echo "==> Validating host Nginx configuration syntax..."
 mkdir -p "$CONF_DIR" "$FIXTURES/landing" "$FIXTURES/web" "$FIXTURES/grafana"
-cp "$APEX_CONF" "$APP_CONF" "$GRAFANA_CONF" "$CONF_DIR/"
+cp "$APEX_CONF" "$WWW_CONF" "$APP_CONF" "$GRAFANA_CONF" "$CONF_DIR/"
+
+# Model Certbot's installed TLS listener with a locally trusted test certificate.
+# HTTPS requests must verify both the certificate and the www hostname.
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+  -subj '/CN=www.notanothercards.com' \
+  -addext 'subjectAltName=DNS:www.notanothercards.com' \
+  -keyout "$TEST_DIR/www.key" \
+  -out "$TEST_DIR/www.crt" >/dev/null 2>&1
+sed '/listen 80;/a\
+  listen 443 ssl;\
+  listen [::]:443 ssl;\
+  ssl_certificate /etc/nginx/test/www.crt;\
+  ssl_certificate_key /etc/nginx/test/www.key;\
+' "$WWW_CONF" > "$CONF_DIR/$(basename "$WWW_CONF")"
 
 # Test-only catch-all: the production VPS answers unmatched hostnames with a
 # plain 404 instead of leaking them into a real virtual host.
@@ -133,6 +159,7 @@ printf '%s\n' '<!doctype html><body>nac-fixture-grafana</body>' > "$FIXTURES/gra
 
 docker run --rm \
   --volume "$CONF_DIR:/etc/nginx/conf.d:ro" \
+  --volume "$TEST_DIR:/etc/nginx/test:ro" \
   nginx:1.28-alpine nginx -t
 
 echo "  [OK] host Nginx configuration syntax"
@@ -141,12 +168,16 @@ echo "==> Validating host Nginx virtual host routing..."
 docker run --detach --rm \
   --name "$CONTAINER_NAME" \
   --publish 127.0.0.1::80 \
+  --publish 127.0.0.1::443 \
   --volume "$CONF_DIR:/etc/nginx/conf.d:ro" \
+  --volume "$TEST_DIR:/etc/nginx/test:ro" \
   --volume "$FIXTURES:/fixtures:ro" \
   nginx:1.28-alpine >/dev/null
 
 HOST_PORT="$(docker port "$CONTAINER_NAME" 80/tcp | awk -F: 'NR == 1 { print $NF }')"
+TLS_PORT="$(docker port "$CONTAINER_NAME" 443/tcp | awk -F: 'NR == 1 { print $NF }')"
 [[ -n "$HOST_PORT" ]] || fail "could not determine the temporary nginx port"
+[[ -n "$TLS_PORT" ]] || fail "could not determine the temporary nginx TLS port"
 
 for attempt in {1..20}; do
   status="$(curl --silent --noproxy '*' --output /dev/null --write-out '%{http_code}' \
@@ -166,14 +197,21 @@ request() {
   local host="$2"
   local path="$3"
   local expected_status="$4"
+  local protocol="${5:-http}"
+  local port="$HOST_PORT"
   local headers="$TEST_DIR/$name.headers"
   local body="$TEST_DIR/$name.body"
   local status
 
+  if [[ "$protocol" == "https" ]]; then
+    port="$TLS_PORT"
+  fi
+
   if ! status="$(curl --silent --show-error --noproxy '*' \
+    --cacert "$TEST_DIR/www.crt" \
     --output "$body" --dump-header "$headers" --write-out '%{http_code}' \
-    --resolve "$host:$HOST_PORT:127.0.0.1" \
-    "http://$host:$HOST_PORT$path")"; then
+    --resolve "$host:$port:127.0.0.1" \
+    "$protocol://$host:$port$path")"; then
     fail "$name: request failed"
   fi
 
@@ -210,6 +248,18 @@ assert_body_contains 'nac-fixture-landing-privacy' \
 
 request apex-not-found notanothercards.com /not-a-real-page 404
 
+for protocol in http https; do
+  for path in / '/privacy?source=www&lang=en' /login; do
+    request "www-$protocol" www.notanothercards.com "$path" 301 "$protocol"
+    # Compare the complete Location header so a dropped query, alternate host,
+    # extra redirect hop, or login-page fallback cannot pass.
+    location="$(tr -d '\r' < "$RESPONSE_HEADERS" | sed -n 's/^[Ll]ocation: //p')"
+    [[ "$location" == "https://notanothercards.com$path" ]] \
+      || fail "www over $protocol must redirect directly to https://notanothercards.com$path, got '$location'"
+    assert_body_lacks 'nac-fixture-web' "www must not serve the application"
+  done
+done
+
 request app-home app.notanothercards.com / 200
 assert_body_contains 'nac-fixture-web' \
   "app.notanothercards.com must still use the web upstream on 5173"
@@ -226,4 +276,4 @@ request unknown-host unknown-host.example / 404
 assert_body_lacks 'nac-fixture-landing' \
   "an unmatched hostname must not be proxied to the landing container"
 
-echo "  [OK] apex routes to 127.0.0.1:5174 without changing app or grafana"
+echo "  [OK] apex routes to 127.0.0.1:5174; www redirects over HTTP and verified HTTPS; app and grafana keep their upstreams"
