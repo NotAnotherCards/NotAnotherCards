@@ -37,7 +37,7 @@ flagged card, through the gateway, with reasoning on and off.
 | model | items | flagged of 100 harmful | flagged of 100 benign | p50 | p95 |
 |---|---|---|---|---|---|
 | qwen3guard-8b | 200 | 85 `Unsafe` + 15 `Controversial` | 0 | 0.24 s | 0.48 s |
-| shieldgemma:2b | 200 | 88 | 0 | 0.30 s | 0.54 s |
+| shieldgemma:latest (9B) | 200 | 88 | 0 | 0.30 s | 0.54 s |
 | granite4.1-guardian:8b | 100 | 43 of 50 | 0 of 50 | 9.9 s | 14.4 s |
 | llama-guard3:8b | 200 | 75 | 0 | 0.08 s | 0.29 s |
 
@@ -102,7 +102,7 @@ Latency and output, direct to ollama, warm:
 |---|---|---|---|
 | granite4.1-guardian:8b | 9.5 s | 275 to 293 | `<score> yes </score>` after its reasoning |
 | llama-guard3:8b | 0.15 s | 2 to 5 | `unsafe S1` |
-| shieldgemma:2b | 0.27 s | 2 | `Yes` |
+| shieldgemma:latest (9B) | 0.27 s | 2 | `Yes` |
 | qwen3guard-8b | 0.27 s | 8 to 10 | `Safety: Unsafe Categories: Unethical Acts` |
 
 Guardian streams 342 `reasoning_content` deltas before the seven tokens of

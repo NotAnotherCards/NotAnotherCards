@@ -148,7 +148,7 @@ file.
   edits never unpublish it, and republishing replaces the snapshot. Existing
   public decks without a snapshot must be republished to appear.
 - The checked-in `moderation-thorough` gateway alias currently maps to
-  ShieldGemma 2B and has a `Yes` (unsafe) / `No` (safe) application parser.
+  ShieldGemma 9B and has a `Yes` (unsafe) / `No` (safe) application parser.
   It makes report-triggered re-checks operational before round two. Round two
   remains a release gate for the final independent model: if it replaces
   ShieldGemma with a model that has a different native response, update the

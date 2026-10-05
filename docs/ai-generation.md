@@ -100,7 +100,7 @@ the exact published snapshot. One pending/running job is allowed per deck.
 
 The thorough job sends every card to the fast `moderation` alias (Qwen3Guard)
 and to the checked-in independent `moderation-thorough` alias (currently
-ShieldGemma 2B). Qwen3Guard's structured safety/category response and
+ShieldGemma 9B). Qwen3Guard's structured safety/category response and
 ShieldGemma's native `Yes`/`No` response have separate parsers and contract
 tests. Each classifier receives its own deck deadline, so a failed or timed-out
 request from one cannot prevent the other from running. Either classifier
