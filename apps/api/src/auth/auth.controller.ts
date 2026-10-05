@@ -21,6 +21,24 @@ import { userProfiles } from '../sync/schema';
 import { eq, sql } from 'drizzle-orm';
 import type { AppDatabase } from '../database/database-schema';
 import { syncScopeLockKey, getActiveUsernameOwner } from '../sync/sync-store';
+import { LANGUAGES, userProfileFormSchema } from '@repo/schemas';
+import { z } from 'zod';
+
+const languageId = z.enum(LANGUAGES.map((language) => language.value));
+const onboardingSchema = userProfileFormSchema.safeExtend({
+  native_language_id: languageId,
+  target_language_id: languageId,
+});
+// Better Auth's update-user route accepts a record of arbitrary values. Check
+// the editable field types before its adapter can coerce them or hit SQL
+// constraints, while leaving auth and server-owned field checks to Better Auth.
+const updateUserSchema = z
+  .object({
+    name: z.string().optional(),
+    image: z.string().nullable().optional(),
+    timezone: z.string().optional(),
+  })
+  .passthrough();
 
 @Controller('api/auth')
 export class AuthController {
@@ -55,24 +73,17 @@ export class AuthController {
 
   @Post('onboard')
   @HttpCode(200)
-  async onboard(
-    @Req() req: Request,
-    @Body()
-    body: {
-      username: string;
-      native_language_id: string;
-      target_language_id: string;
-    },
-  ) {
+  async onboard(@Req() req: Request, @Body() body: unknown) {
     const userId = await this.authService.userIdFromHeaders(req.headers);
     if (!userId) {
       throw new UnauthorizedException('Not authenticated');
     }
 
-    const { username, native_language_id, target_language_id } = body;
-    if (!username || !native_language_id || !target_language_id) {
-      throw new BadRequestException('Missing onboarding fields');
+    const parsed = onboardingSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException('Invalid onboarding fields');
     }
+    const { username, native_language_id, target_language_id } = parsed.data;
 
     await this.db.transaction(async (tx) => {
       await tx.execute(
@@ -113,6 +124,18 @@ export class AuthController {
     });
 
     return { success: true };
+  }
+
+  @Post('update-user')
+  async updateUser(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body: unknown,
+  ) {
+    if (!updateUserSchema.safeParse(body).success) {
+      throw new BadRequestException('Invalid user update fields');
+    }
+    return this.handleAuth(req, res);
   }
 
   @All('{*path}')

@@ -1,5 +1,6 @@
 import type { SyncEngineOptions, SyncStoreTx } from '@remelondb/server';
 import type { DrizzleStore } from '@remelondb/store-drizzle';
+import { z } from 'zod';
 import {
   liveRows,
   MAX_FUTURE_ACTIVITY_SKEW_MS,
@@ -18,6 +19,12 @@ const USER_NOTE_DECKS = 'user_note_decks';
 const REVIEW_EVENTS = 'review_events';
 const USER_PROFILES = 'user_profiles';
 const USER_BADGES = 'user_badges';
+const profileUuid = z.guid().nullable();
+const PROFILE_UUID_FIELDS = [
+  'avatar_file_id',
+  'native_language_id',
+  'target_language_id',
+] as const;
 
 export type ProfileUsernameOwnerLookup = (
   usernames: readonly string[],
@@ -239,6 +246,13 @@ export function createCrossValidateSyncRelationships(
       [USER_PROFILES]: profileRows
         .filter((profile) => {
           if (profile.id !== scope) return true;
+          if (
+            PROFILE_UUID_FIELDS.some(
+              (field) => !profileUuid.safeParse(profile[field]).success,
+            )
+          ) {
+            return true;
+          }
           const username = stringField(profile, 'username');
           if (username === null) return false;
           const owner = usernameOwners.get(username);

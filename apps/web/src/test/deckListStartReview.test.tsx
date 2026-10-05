@@ -87,6 +87,15 @@ function startReview(title: string) {
   return within(deckCard).getByRole('button', { name: 'Start Review' });
 }
 
+function renderDeckList() {
+  const props = {
+    onSelectDeck: vi.fn(),
+    onSelectNoDeck: vi.fn(),
+    onStartReview: vi.fn(),
+  };
+  return render(<DeckList {...props} />);
+}
+
 describe('DeckList Start Review', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -95,13 +104,7 @@ describe('DeckList Start Review', () => {
   afterEach(() => vi.useRealTimers());
 
   it('is on while there is something to review or activate', () => {
-    render(
-      <DeckList
-        onSelectDeck={vi.fn()}
-        onSelectNoDeck={vi.fn()}
-        onStartReview={vi.fn()}
-      />,
-    );
+    renderDeckList();
 
     expect(startReview('Due deck')).toBeEnabled();
     expect(startReview('Just activated')).toBeEnabled();
@@ -110,13 +113,7 @@ describe('DeckList Start Review', () => {
   });
 
   it('is off when nothing is due now and nothing waits to be activated', () => {
-    render(
-      <DeckList
-        onSelectDeck={vi.fn()}
-        onSelectNoDeck={vi.fn()}
-        onStartReview={vi.fn()}
-      />,
-    );
+    renderDeckList();
 
     expect(startReview('Done for now')).toBeDisabled();
     expect(startReview('Empty deck')).toBeDisabled();
