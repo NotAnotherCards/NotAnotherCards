@@ -17,6 +17,7 @@ import {
   Loader2,
   Trash2,
   RefreshCw,
+  FolderOpen,
 } from 'lucide-react';
 import { DeckForm } from './DeckForm';
 import { DeckCard } from './DeckCard';
@@ -26,15 +27,36 @@ import {
   countCardsPerDeck,
   deckLearningCounts,
   type DeckNoteType,
+  selectDueCards,
   WORD_NOTE_TYPE,
 } from '@repo/offline-db';
 
-interface DeckListProps {
-  onSelectDeck: (deckId: string) => void;
-  onStartReview: (deckId: string) => void;
+function Count({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center">
+      <div className="flex min-h-8 items-center justify-center text-xs leading-4 font-medium text-foreground">
+        {label}
+      </div>
+      <span className="text-sm font-bold tabular-nums text-foreground">
+        {value}
+      </span>
+    </div>
+  );
 }
 
-export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
+interface DeckListProps {
+  onSelectDeck: (deckId: string) => void;
+  onSelectNoDeck: () => void;
+  onStartReview: (deckId: string) => void;
+  onStartNoDeckReview?: () => void;
+}
+
+export function DeckList({
+  onSelectDeck,
+  onSelectNoDeck,
+  onStartReview,
+  onStartNoDeckReview,
+}: DeckListProps) {
   const { t } = useTranslation();
   const store = useStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -50,6 +72,10 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
     store.noteDecks ?? [],
     store.dueCards ?? [],
   );
+  const cardsWithoutDeck = store.getCardsWithoutDeck();
+  const dueCardsWithoutDeck = cardsWithoutDeck.filter((card) =>
+    (store.dueCards ?? []).some((dueCard) => dueCard.id === card.id),
+  ).length;
   const { deckDeletionSummary } = store;
   useEffect(() => {
     if (!deckToDelete) return;
@@ -192,7 +218,7 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
       </div>
 
       {/* Decks Grid */}
-      {store.decks.length === 0 ? (
+      {store.decks.length === 0 && cardsWithoutDeck.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 rounded-3xl border border-dashed border-border/85 bg-muted/10 text-center min-h-75">
           <BookOpen className="size-12 text-muted-foreground/60 mb-4 stroke-1 animate-bounce" />
           <h3 className="text-lg font-semibold mb-1">
@@ -210,6 +236,58 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cardsWithoutDeck.length > 0 && (
+            <Card className="border border-warning/40 bg-warning/5 flex flex-col justify-between">
+              <CardHeader className="min-w-0 pb-3">
+                <CardTitle className="text-base font-bold">
+                  {t('deck.list.no_deck_title', 'No deck')}
+                </CardTitle>
+                <CardDescription className="text-xs min-h-8 mt-1">
+                  {t(
+                    'deck.list.no_deck_description',
+                    'Cards that are not in an active deck.',
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 divide-x divide-border/40 gap-2 rounded-2xl border border-border/30 bg-muted/40 px-3 py-2 text-center">
+                  <Count
+                    label={t('deck.card.total_cards', 'Total Cards')}
+                    value={cardsWithoutDeck.length}
+                  />
+                  <Count
+                    label={t('deck.card.active', 'Active')}
+                    value={
+                      cardsWithoutDeck.filter((card) => card.active).length
+                    }
+                  />
+                  <Count
+                    label={t('deck.card.due_short', 'Due')}
+                    value={dueCardsWithoutDeck}
+                  />
+                </div>
+                <div className="flex flex-col gap-2 pt-2">
+                  <Button
+                    onClick={onSelectNoDeck}
+                    className="w-full cursor-pointer gap-1.5"
+                    size="sm"
+                  >
+                    <FolderOpen className="size-3.5" />
+                    {t('deck.card.actions.manage_cards', 'Manage Cards')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={onStartNoDeckReview}
+                    className="w-full cursor-pointer gap-1.5"
+                    size="sm"
+                  >
+                    <BookOpen className="size-3.5" />
+                    {t('deck.card.actions.start_review', 'Start Review')}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {store.decks.map((deck) => {
             const cards = store.getCardsForDeck(deck.id);
             const wordNotes =
@@ -238,6 +316,8 @@ export function DeckList({ onSelectDeck, onStartReview }: DeckListProps) {
                     : undefined
                 }
                 dueCount={dueCardsPerDeck.get(deck.id) ?? 0}
+                inactiveCards={cards.filter((card) => !card.active).length}
+                reviewableCards={selectDueCards(cards, Date.now()).length}
                 onSelectDeck={onSelectDeck}
                 onStartReview={onStartReview}
                 onEditDeck={(d) => setEditingDeck(d)}

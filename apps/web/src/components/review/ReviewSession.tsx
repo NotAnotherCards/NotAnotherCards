@@ -16,7 +16,7 @@ type ReviewSessionProps = {
   cards: Card[];
   deckTitle: string;
   onExit: () => void;
-  onCreateCard: (data: { front: string; back: string }) => Promise<void>;
+  onCreateCard?: (data: { front: string; back: string }) => Promise<void>;
   onRecordReview: (cardId: string, rating: number) => Promise<{ id: string }>;
   onDeleteNote: (noteId: string) => Promise<void>;
   onRequestNextBatch?: () => Promise<Card[]>;
@@ -73,11 +73,13 @@ export function ReviewSession({
     setIsFlipped(false);
   };
   const openCreateCardForm = () => {
+    if (!onCreateCard) return;
     setCreateCardError(null);
     setIsCreateCardOpen(true);
   };
 
   const createCard = async (data: { front: string; back: string }) => {
+    if (!onCreateCard) return;
     setCreateCardError(null);
     try {
       await onCreateCard(data);
@@ -243,16 +245,20 @@ export function ReviewSession({
             {deckTitle}
           </h1>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={openCreateCardForm}
-            className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
-            aria-label={t('deck.card_form.add_new_card')}
-          >
-            <Plus className="size-5" />
-          </Button>
+          {onCreateCard ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={openCreateCardForm}
+              className="size-10 rounded-full border-sage-border bg-surface text-pine shadow-sm hover:bg-primary/5 hover:text-primary dark:text-sage"
+              aria-label={t('deck.card_form.add_new_card')}
+            >
+              <Plus className="size-5" />
+            </Button>
+          ) : (
+            <div className="size-10" aria-hidden="true" />
+          )}
         </header>
         <ReviewCard
           card={card}

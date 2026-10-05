@@ -191,6 +191,39 @@ describe('DeckCard Component', () => {
     expect(screen.getByTitle('Edit')).toBeInTheDocument();
   });
 
+  it('fades a zero and turns Start Review off when there is nothing to do', () => {
+    const props = {
+      deck: mockDeck,
+      totalCards: 4,
+      activeCards: 4,
+      onSelectDeck: vi.fn(),
+      onStartReview: vi.fn(),
+      onEditDeck: vi.fn(),
+      onDeleteDeck: vi.fn(),
+    };
+    const { rerender } = render(<DeckCard {...props} dueCount={0} />);
+
+    expect(screen.getByTestId('due-cards-badge')).toHaveClass(
+      'text-muted-foreground',
+    );
+    expect(screen.getByTestId('total-cards-badge')).toHaveClass(
+      'text-foreground',
+    );
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeDisabled();
+
+    // nothing due, but cards wait to be activated on the review page
+    rerender(<DeckCard {...props} dueCount={0} inactiveCards={2} />);
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
+
+    // just activated: due now, though the store's rounded count is still 0
+    rerender(<DeckCard {...props} dueCount={0} reviewableCards={4} />);
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
+
+    rerender(<DeckCard {...props} dueCount={3} />);
+    expect(screen.getByTestId('due-cards-badge')).toHaveClass('text-primary');
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
+  });
+
   it('calls action callbacks on click events', () => {
     const onSelectDeck = vi.fn();
     const onStartReview = vi.fn();
@@ -483,6 +516,71 @@ describe('WordNoteList Component', () => {
     expect(screen.getByText('Extra info: 3')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'View 3 cards' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'View 3 details' })).toBeNull();
+  });
+
+  it('renders Markdown in simple-card rows', () => {
+    const basicCard: Card = {
+      id: 'basic-card',
+      note_id: 'basic-note',
+      template_key: 'basic:front-back',
+      active: true,
+      front: '**Bold question**',
+      back: '![Card image](/vite.svg)',
+      due_at: 0,
+      scheduled_interval_minutes: 0,
+      created_at: 0,
+      updated_at: 0,
+    };
+    const audioCard: Card = {
+      ...basicCard,
+      id: 'audio-card',
+      note_id: 'audio-note',
+      front: '[Audio](audio:https://example.com/card.mp3)',
+      back: 'Answer',
+    };
+    const linkCard: Card = {
+      ...basicCard,
+      id: 'link-card',
+      note_id: 'link-note',
+      front: '[Documentation](https://example.com/docs)',
+      back: 'Answer',
+    };
+    const onViewCard = vi.fn();
+
+    const { container } = render(
+      <WordNoteList
+        notes={[]}
+        cards={[basicCard, audioCard, linkCard]}
+        basicCards={[basicCard, audioCard, linkCard]}
+        onViewNote={vi.fn()}
+        onEditWord={vi.fn()}
+        onRemoveWord={vi.fn()}
+        onViewCard={onViewCard}
+        onEditCard={vi.fn()}
+        onRemoveCard={vi.fn()}
+        canEdit
+        canRemove
+        onAddWord={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Bold question').tagName).toBe('STRONG');
+    expect(container.querySelector('img[alt="Card image"]')).toHaveAttribute(
+      'src',
+      '/vite.svg',
+    );
+    expect(container.querySelector('audio source')).toHaveAttribute(
+      'src',
+      'https://example.com/card.mp3',
+    );
+
+    fireEvent.keyDown(screen.getByRole('link', { name: 'Documentation' }), {
+      key: 'Enter',
+    });
+    expect(onViewCard).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getAllByTitle('View Card')[0]);
+    expect(onViewCard).toHaveBeenCalledWith(basicCard);
   });
 
   it('shows details and card types in the unified word dialog', () => {

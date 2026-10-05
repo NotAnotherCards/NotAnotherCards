@@ -96,6 +96,7 @@ function makeStore(overrides: Record<string, unknown> = {}) {
   return {
     decks: [deck],
     getCardsForDeck: vi.fn(() => []),
+    getCardsWithoutDeck: vi.fn(() => []),
     isTakenOver: false,
     error: null,
     ready: true,
@@ -163,6 +164,23 @@ describe('DeckReviewRoute', () => {
     expect(screen.getByTestId('review-session')).toBeInTheDocument();
     expect(getCardsForDeck).toHaveBeenCalledWith(deck.id);
     expect(routeTestState.reviewSession).toHaveBeenCalledWith([dueCard]);
+  });
+
+  it('reviews due cards without an active deck and does not offer card creation', () => {
+    const dueCard = makeCard('no-deck-due', Date.now() - 1);
+    const futureCard = makeCard('no-deck-future', Date.now() + 60_000);
+    const getCardsWithoutDeck = vi.fn(() => [futureCard, dueCard]);
+    routeTestState.store = makeStore({ getCardsWithoutDeck });
+
+    render(<DeckReviewPage collection="no-deck" />);
+
+    expect(screen.getByTestId('review-session')).toBeInTheDocument();
+    expect(getCardsWithoutDeck).toHaveBeenCalled();
+    expect(routeTestState.reviewSession).toHaveBeenCalledWith([dueCard]);
+    expect(routeTestState.reviewSessionProps).toMatchObject({
+      deckTitle: 'Cards and words without a deck',
+      onCreateCard: undefined,
+    });
   });
 
   it('applies a saved review preference to the review session', () => {

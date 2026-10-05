@@ -19,7 +19,5 @@
   "apps/web/src/components/deck/FlashcardModal.tsx": 6,
   "apps/web/src/components/deck/WordNoteGeneration.tsx": 5,
   "apps/web/src/components/deck/WordNoteList.tsx": 6,
-  "apps/web/src/components/review/ReviewAnswerButtons.tsx": 21,
-  "apps/web/src/components/review/ReviewCard.tsx": 4,
   "apps/web/src/test/syncStatus.test.tsx": 1
 }
