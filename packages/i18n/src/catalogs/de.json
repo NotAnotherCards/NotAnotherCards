@@ -220,7 +220,10 @@
     "close": "Schließen",
     "previous": "Zurück",
     "next": "Weiter",
-    "page": "Seite {{page}}"
+    "page": "Seite {{page}}",
+    "not_available": "Nicht verfügbar",
+    "loading_label": "Wird geladen",
+    "unknown_error": "Ein unbekannter Fehler ist aufgetreten"
   },
   "languages": {
     "en": "Englisch",
@@ -361,7 +364,8 @@
       "verify_and_continue": "Überprüfen und fortfahren",
       "back_to_sign_in": "Zurück zur Anmeldung",
       "totp_legend": "Sechsstelliger Authentifizierungscode",
-      "totp_digit_aria": "Ziffer {{digit}} von {{total}}"
+      "totp_digit_aria": "Ziffer {{digit}} von {{total}}",
+      "verification_method": "Verifizierungsmethode"
     },
     "validation": {
       "password_min": "Das Passwort muss mindestens 8 Zeichen lang sein",
@@ -384,7 +388,14 @@
     "validation_more_few": "{{count}}",
     "validation_more_many": "{{count}}",
     "validation_more_other": "{{count}}",
-    "signing_out": "Abmelden…"
+    "signing_out": "Abmelden…",
+    "account_menu": "Kontomenü",
+    "user_avatar": "Benutzerbild",
+    "logout": "Abmelden",
+    "logout_error": "Fehler beim Abmelden:",
+    "logout_failed": "Abmelden fehlgeschlagen. Bitte versuche es erneut.",
+    "show_password": "Passwort anzeigen",
+    "hide_password": "Passwort verbergen"
   },
   "profile": {
     "validation": {
@@ -451,7 +462,8 @@
         "update_password": "Passwort aktualisieren",
         "updating": "Aktualisiere...",
         "success": "Passwort erfolgreich geändert!",
-        "unexpected_error": "Ein unerwarteter Fehler ist aufgetreten"
+        "unexpected_error": "Ein unerwarteter Fehler ist aufgetreten",
+        "update_failed": "Passwort konnte nicht aktualisiert werden"
       },
       "two_factor": {
         "title": "Zwei-Faktor-Authentifizierung",
@@ -548,8 +560,16 @@
         "count_cards": "{{count}} Karten",
         "count_notes": "{{count}} Notizen",
         "count_reviews": "{{count}} Wiederholungen",
-        "count_decks": "{{count}} Stapel"
-      }
+        "count_decks": "{{count}} Stapel",
+        "decks_label": "Decks",
+        "notes_label": "Notizen",
+        "cards_label": "Karten",
+        "reviews_label": "Wiederholungen",
+        "file_summary": "{{size}} KB · {{format}}",
+        "row": "Zeile {{row}}"
+      },
+      "learner": "Legendärer Lerner",
+      "user": "Benutzer"
     },
     "title": "Dashboard",
     "description": "Willkommen in deinem Sprachlern-Portal. Verfolge deinen Fortschritt, entdecke Wörterbücher und baue deine Lernserie auf.",
@@ -569,7 +589,13 @@
       "failed": "Synchronisierung fehlgeschlagen",
       "reset_required": "Zurücksetzen erforderlich",
       "rejected": "Synchronisiert, {{rejected}} nicht akzeptiert",
-      "signed_out": "Abgemeldet"
+      "signed_out": "Abgemeldet",
+      "offline_description": "Offline — Änderungen werden später synchronisiert",
+      "recovered": "Nach Server-Zurücksetzung wiederhergestellt",
+      "rejected_changes_one": "Synchronisiert, {{count}} Änderung nicht angenommen",
+      "rejected_changes_few": "Synchronisiert, {{count}} Änderungen nicht angenommen",
+      "rejected_changes_many": "Synchronisiert, {{count}} Änderungen nicht angenommen",
+      "rejected_changes_other": "Synchronisiert, {{count}} Änderungen nicht angenommen"
     },
     "overview": {
       "badges": {
@@ -629,7 +655,8 @@
         "completed": "Abgeschlossen",
         "remaining": "{{value}} verbleibend",
         "footer_points": "Eine Wiederholung bringt genau einen Punkt, unabhängig von der Bewertung.",
-        "footer_reset": "Tägliche Herausforderungen und Serien werden um 00:00 UTC zurückgesetzt."
+        "footer_reset": "Tägliche Herausforderungen und Serien werden um 00:00 UTC zurückgesetzt.",
+        "progress": "Fortschritt: {{title}}"
       },
       "profile": {
         "status": "Status",
@@ -654,7 +681,10 @@
         "report_description": "Teile dem Moderationsteam mit, was falsch ist. Ein Bericht führt zu einer automatischen Überprüfung, verbirgt den Stapel jedoch nicht sofort.",
         "report_recorded": "Danke. Dein Bericht wurde erfasst.",
         "report_placeholder": "Beschreibe das Problem mit diesem Stapel",
-        "submit_report": "Bericht senden"
+        "submit_report": "Bericht senden",
+        "report_reason": "Grund für die Meldung",
+        "imported": "Importiert",
+        "import_pending": "{{title}}: importiert. Das Deck erscheint nach der nächsten erfolgreichen Synchronisierung."
       },
       "achievements": {
         "title": "Erfolge",
@@ -664,7 +694,8 @@
       },
       "toasts": {
         "challenge_completed": "Herausforderung abgeschlossen: ",
-        "new_badge": "Neues Abzeichen freigeschaltet!"
+        "new_badge": "Neues Abzeichen freigeschaltet!",
+        "badge_unlocked": "Abzeichen freigeschaltet: {{name}}"
       }
     },
     "leaderboard": {
@@ -714,7 +745,16 @@
         "notesAdded": "Hinzugefügte Notizen pro Tag",
         "forgotRate": "Vergessensrate pro Tag"
       },
-      "empty": "Keine {{series}} in diesem Zeitraum"
+      "empty": "Keine {{series}} in diesem Zeitraum",
+      "deck_aria": "Deck für Statistiken",
+      "range_aria": "Statistikzeitraum",
+      "chart_description": "{{series}}, von {{from}} bis {{to}}, Höchstwert {{peak}}",
+      "maturity": {
+        "new": "Neu",
+        "learning": "In Lernphase",
+        "young": "Jung",
+        "mature": "Gefestigt"
+      }
     }
   },
   "deck": {
@@ -734,7 +774,9 @@
       "no_decks_title": "Noch keine Stapel",
       "no_deck_title": "Karten und Wörter ohne Stapel",
       "no_deck_description": "Karten, die sich in keinem aktiven Stapel befinden.",
-      "create_first": "Ersten Stapel erstellen"
+      "create_first": "Ersten Stapel erstellen",
+      "connecting": "Verbindung zur lokalen Datenbank wird hergestellt...",
+      "initializing": "Offline-Speicher wird initialisiert und Bibliothek geladen."
     },
     "card": {
       "no_description": "Keine Beschreibung angegeben.",
@@ -898,7 +940,9 @@
       "delete_deck_and_words_one": "1",
       "delete_deck_and_words_few": "{{count}}",
       "delete_deck_and_words_many": "{{count}}",
-      "delete_deck_and_words_other": "{{count}}"
+      "delete_deck_and_words_other": "{{count}}",
+      "loading": "Deck-Details werden geladen...",
+      "not_found": "Deck nicht gefunden."
     },
     "cards": {
       "search_placeholder": "Suche Vorderseite, Rückseite...",
@@ -915,7 +959,8 @@
       "title_one": "{{count}} Karten",
       "title_few": "{{count}} Karten",
       "title_many": "{{count}} Karten",
-      "title_other": "{{count}} Karten"
+      "title_other": "{{count}} Karten",
+      "catalog": "Kartenkatalog"
     },
     "words": {
       "search_placeholder": "Suche Wort, Übersetzung...",
@@ -935,7 +980,8 @@
       "title_one": "{{count}} Wörter",
       "title_few": "{{count}} Wörter",
       "title_many": "{{count}} Wörter",
-      "title_other": "{{count}} Wörter"
+      "title_other": "{{count}} Wörter",
+      "catalog": "Wortkatalog"
     },
     "card_form": {
       "desc": "Erstellen Sie Frage und Antwort für diese Lernkarte.",
@@ -999,6 +1045,62 @@
       "cards_count_few": "Karten ({{count}})",
       "cards_count_many": "Karten ({{count}})",
       "cards_count_other": "Karten ({{count}})"
+    },
+    "moderation": {
+      "why": "Warum?",
+      "classifier_results": "Klassifikator-Ergebnisse",
+      "no_category": "Keine Kategorie angegeben",
+      "categories_none": "Kategorien: keine",
+      "check_failed": "Prüfung fehlgeschlagen: {{error}}",
+      "warnings_title": "Mit Moderationswarnungen veröffentlicht",
+      "warnings_description": "Dein Deck ist öffentlich, aber diese Karten können sensible oder kontroverse Inhalte enthalten. Du kannst den Grund prüfen, ohne die Veröffentlichung zurückzunehmen.",
+      "warnings": "Warnungen",
+      "taken_down": "Deck entfernt",
+      "taken_down_description": "Dieses Deck ist für die Community nicht mehr sichtbar. Prüfe das Moderationsergebnis, bearbeite die Arbeitskopie und veröffentliche sie erneut, sobald sie bereit ist.",
+      "refused": "Das gemeldete Deck hat die Moderation nicht bestanden.",
+      "flagged_cards": "Beanstandete Karten",
+      "sync_pending": "Deck aktualisiert, Synchronisierung ausstehend",
+      "publish_failed": "Deck konnte nicht veröffentlicht werden",
+      "unpublish_failed": "Veröffentlichung konnte nicht zurückgenommen werden",
+      "published_pending": "Das Deck wurde veröffentlicht. Dieses Gerät wird nach der nächsten erfolgreichen Synchronisierung aktualisiert.",
+      "unpublished_pending": "Die Veröffentlichung wurde zurückgenommen. Dieses Gerät wird nach der nächsten erfolgreichen Synchronisierung aktualisiert.",
+      "automated_refusal": "Das Deck wurde von unserer automatischen Moderation abgelehnt. Prüfe die beanstandeten Inhalte, bevor du es erneut versuchst.",
+      "action_failed": "Bei deiner Anfrage ist ein Problem aufgetreten. Bitte versuche es erneut.",
+      "verdict": {
+        "safe": "Unbedenklich",
+        "unsafe": "Bedenklich",
+        "controversial": "Kontrovers",
+        "error": "Fehler"
+      },
+      "sync_unavailable": "Synchronisierung ist nicht verfügbar. Versuche es erneut, wenn du verbunden bist.",
+      "sync_incomplete": "Synchronisierung wurde nicht abgeschlossen. Versuche es erneut, wenn du verbunden bist.",
+      "sync_busy": "Ein anderer Tab synchronisiert gerade. Versuche es in einem Moment erneut.",
+      "sync_unconfirmed": "Synchronisierung konnte nicht bestätigt werden. Versuche es erneut.",
+      "changes_rejected": "Die Änderungen am Deck wurden vom Server nicht angenommen. {{explanation}}",
+      "failed": "Moderation fehlgeschlagen"
+    },
+    "word_generation": {
+      "check_again": "Generierung erneut prüfen",
+      "filling": "Wird ausgefüllt…",
+      "fill": "Mit KI ausfüllen",
+      "running": "Die Generierung läuft möglicherweise noch.",
+      "filling_note": "Deine Wortnotiz wird ausgefüllt…",
+      "failed": "Generierung fehlgeschlagen. Dein Formular wurde nicht geändert. Du kannst es erneut versuchen.",
+      "invalid": "Die generierten Felder sind ungültig oder ihre Sprachen passen nicht mehr zum Deck. Versuche es erneut.",
+      "enter_word": "Gib zuerst ein Wort oder eine Übersetzung mit bis zu 100 Zeichen ein.",
+      "unable": "Das Formular konnte nicht ausgefüllt werden.",
+      "edited": "Du hast das Formular während der KI-Generierung bearbeitet. Deine Änderungen wurden beibehalten. Klicke auf „Mit KI ausfüllen“, um es erneut zu versuchen.",
+      "languages_changed": "Die Deck-Sprachen wurden geändert. Generiere einen neuen Vorschlag oder öffne das Formular vor dem Speichern erneut."
+    },
+    "errors": {
+      "count_cards": "Karten konnten nicht gezählt werden",
+      "create_deck": "Deck konnte nicht erstellt werden",
+      "update_deck": "Deck konnte nicht aktualisiert werden",
+      "delete_deck": "Deck konnte nicht gelöscht werden",
+      "create_card": "Karte konnte nicht erstellt werden",
+      "update_card": "Karte konnte nicht aktualisiert werden",
+      "update_word": "Wort konnte nicht aktualisiert werden",
+      "remove_note": "Notiz konnte nicht aus dem Deck entfernt werden"
     }
   },
   "review": {
@@ -1083,6 +1185,10 @@
       "day_few": "{{count}} Tage",
       "day_many": "{{count}} Tage",
       "day_other": "{{count}} Tage"
+    },
+    "errors": {
+      "delete_word": "Dieses Wort konnte nicht gelöscht werden. Versuche es erneut.",
+      "save_answer": "Deine Antwort konnte nicht gespeichert werden. Versuche es erneut."
     }
   },
   "playground": {
@@ -1227,5 +1333,33 @@
       "fill_error": "Felder konnten nicht ausgefüllt werden. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
       "network_error": "Netzwerkfehler, bitte versuchen Sie es erneut"
     }
+  },
+  "home": {
+    "description": "Lerne jede Sprache mit intelligenten Lernkarten.",
+    "get_started": "Jetzt starten",
+    "offline_description": "Lerne offline oder synchronisiere nahtlos zwischen deinen Geräten."
+  },
+  "not_found": {
+    "message": "Seite nicht gefunden",
+    "go_home": "Zur Startseite"
+  },
+  "route_error": {
+    "title": "Sitzungsfehler",
+    "message": "Beim Laden deiner Sitzung ist ein Fehler aufgetreten."
+  },
+  "database": {
+    "connecting_title": "Datenbankverbindung:",
+    "connecting_description": "Lokaler Offline-Speicher wird übernommen und initialisiert...",
+    "inactive_title": "Offline-Datenbank inaktiv:",
+    "inactive_description": "Diese Anwendung ist in einem anderen Tab geöffnet. Offline-Funktionen sind hier deaktiviert.",
+    "blocked_title": "Speicher blockiert:",
+    "blocked_description": "Dieser Browser blockiert den Website-Speicher (privates Surfen oder blockierte Website-Daten). Deine Decks können daher nicht geladen werden. Erlaube Website-Daten für diese Seite oder nutze ein normales Fenster.",
+    "error_title": "Offline-Datenbankfehler:",
+    "load_failed": "Datenbank konnte nicht geladen werden.",
+    "storage_held": "Der lokale Speicher wird von einem anderen Fenster oder einem nicht beendeten Worker verwendet. Versuche es erneut. Falls das Problem bleibt, schließe alle Fenster dieser Website oder starte den Browser neu.",
+    "timeout": "Zeitüberschreitung bei der Datenbankverbindung. Versuche es erneut oder lade die Seite neu.",
+    "reload_title": "Zum Fortfahren neu laden",
+    "close_failed": "Die Offline-Datenbank konnte nicht geschlossen werden und kann auf dieser Seite nicht sicher erneut geöffnet werden.",
+    "reload": "Neu laden"
   }
 }

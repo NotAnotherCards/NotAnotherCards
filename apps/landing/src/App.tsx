@@ -3,6 +3,7 @@ import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const APP_URL = 'https://app.notanothercards.com';
+const GITHUB_URL = 'https://github.com/NotAnotherCards/NotAnotherCards';
 
 export function App() {
   if (window.location.pathname === '/') {
@@ -17,17 +18,7 @@ function LandingPage() {
     <main>
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
         <a className="min-w-0" href="/" aria-label="NotAnotherCards home">
-          <picture>
-            <source
-              media="(prefers-color-scheme: dark)"
-              srcSet="/brand/notanothercards-logo-dark.svg"
-            />
-            <img
-              className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
-              src="/brand/notanothercards-logo.svg"
-              alt="NotAnotherCards"
-            />
-          </picture>
+          <BrandLogo />
         </a>
         <nav
           className="flex shrink-0 items-center gap-2"
@@ -45,11 +36,11 @@ function LandingPage() {
       <section className="hero-section">
         <div className="hero-copy">
           <h1 className="text-balance text-5xl font-semibold tracking-[-0.065em] text-foreground sm:text-6xl">
-            Learn the words that matter most.
+            Learn what matters to you.
           </h1>
           <p className="mx-auto mt-7 max-w-lg text-lg leading-8 text-muted sm:text-xl">
-            Build real vocabulary with focused flashcards, helpful context, and
-            short sessions that fit your day.
+            Create flashcards for any subject, review them over time, and build
+            a learning habit that fits your day.
           </p>
           <Button asChild size="lg" className="mt-8 h-12 px-5 text-base">
             <a href={`${APP_URL}/register`}>Get started free</a>
@@ -64,7 +55,7 @@ function LandingPage() {
             <div className="my-5 border-t border-border" />
             <div className="learning-card-labels flex gap-2 text-xs font-medium">
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
-                Frequency
+                Translation
               </span>
               <span className="card-secondary-label rounded-md border border-sage-border bg-surface px-2 py-1">
                 Examples
@@ -86,18 +77,18 @@ function LandingPage() {
             <div className="my-5 border-t border-border" />
             <div className="learning-card-labels flex gap-2 text-xs font-medium">
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
-                Memorization
+                Part of speech
               </span>
               <span className="card-secondary-label rounded-md border border-sage-border bg-surface px-2 py-1">
-                Etymology
+                Gender
               </span>
             </div>
             <p className="mt-3 text-sm leading-5 text-muted">
-              Make the word
+              Give each card
               <span className="card-overlap-break">
                 <br />
               </span>{' '}
-              <span className="whitespace-nowrap">easier to recall.</span>
+              <span className="whitespace-nowrap">useful details.</span>
             </p>
           </article>
           <article className="learning-card learning-card-three z-30 -rotate-[1deg] rounded-2xl border border-sage-border bg-background p-5 shadow-card sm:p-6">
@@ -108,15 +99,14 @@ function LandingPage() {
             <div className="my-5 border-t border-border" />
             <div className="learning-card-labels flex gap-2 text-xs font-medium">
               <span className="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-primary">
-                Similar words
+                Pronunciation
               </span>
               <span className="card-secondary-label rounded-md border border-sage-border bg-surface px-2 py-1">
-                Pronunciation
+                AI Generated
               </span>
             </div>
             <p className="mt-3 text-sm leading-5 text-muted">
-              Notice links{' '}
-              <span className="whitespace-nowrap">between languages.</span>
+              Review at a pace that works for you.
             </p>
           </article>
           <p className="session-badge z-40 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted shadow-card">
@@ -128,18 +118,18 @@ function LandingPage() {
       <section className="border-y border-sage-border bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 lg:py-24">
           <h2 className="mx-auto text-center text-3xl font-semibold tracking-[-0.05em] sm:text-4xl">
-            Designed to make every word useful.
+            Designed to help you remember.
           </h2>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             <ValueProposition
               icon={<MessageCircle className="size-5" aria-hidden="true" />}
-              title="Learn words you will use"
-              description="Focus on high-frequency vocabulary for the conversations and content you meet every day."
+              title="Cards for any subject"
+              description="Create cards for vocabulary, phrases, grammar, facts, and the material you want to remember."
             />
             <ValueProposition
               icon={<span className="text-2xl leading-none">✦</span>}
-              title="More than a translation"
-              description="AI adds frequency, origins, examples, language connections, and memory cues that make a word stick."
+              title="Useful word details"
+              description="Word cards can include a translation, example, part of speech, gender, and pronunciation."
             />
             <ValueProposition
               icon={
@@ -148,7 +138,7 @@ function LandingPage() {
                 </span>
               }
               title="Study offline. Sync later."
-              description="Keep learning without internet. Your progress synchronizes across devices when you reconnect."
+              description="Keep learning on the web and mobile without internet. Your cards and progress synchronize when you reconnect."
             />
           </div>
         </div>
@@ -160,8 +150,9 @@ function LandingPage() {
             More than individual words
           </h2>
           <p className="mt-5 text-lg leading-8 text-muted">
-            Use cards for vocabulary, phrases, grammar — and any ideas, facts,
-            or information you want to remember.
+            Create cards for vocabulary, phrases, grammar, ideas, facts, and any
+            information you want to remember. Use your own cards or shared
+            decks.
           </p>
         </div>
         <ul
@@ -190,7 +181,7 @@ function LandingPage() {
             Start with the next card.
           </h2>
           <p className="mt-5 text-lg text-muted">
-            Free to begin. Built for your daily learning rhythm.
+            Free and open source. Built for your daily learning rhythm.
           </p>
           <Button asChild size="lg" className="mt-8 h-12 px-5 text-base">
             <a href={`${APP_URL}/register`}>Create your account</a>
@@ -224,17 +215,7 @@ function NotFoundPage() {
     <main className="flex min-h-screen flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 border-b border-border px-5 py-5 sm:px-8">
         <a className="min-w-0" href="/" aria-label="NotAnotherCards home">
-          <picture>
-            <source
-              media="(prefers-color-scheme: dark)"
-              srcSet="/brand/notanothercards-logo-dark.svg"
-            />
-            <img
-              className="h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
-              src="/brand/notanothercards-logo.svg"
-              alt="NotAnotherCards"
-            />
-          </picture>
+          <BrandLogo />
         </a>
         <nav
           className="flex shrink-0 items-center gap-2"
@@ -283,6 +264,26 @@ function NotFoundPage() {
   );
 }
 
+function BrandLogo() {
+  return (
+    <picture>
+      <source
+        media="(max-width: 375px)"
+        srcSet="/brand/notanothercards-mark.svg"
+      />
+      <source
+        media="(prefers-color-scheme: dark)"
+        srcSet="/brand/notanothercards-logo-dark.svg"
+      />
+      <img
+        className="brand-logo h-[44px] w-[346px] max-w-[calc(100vw-14rem)] sm:max-w-none"
+        src="/brand/notanothercards-logo.svg"
+        alt="NotAnotherCards"
+      />
+    </picture>
+  );
+}
+
 function useNotFoundPageMetadata() {
   useEffect(() => {
     const originalTitle = document.title;
@@ -300,6 +301,13 @@ function LandingFooter() {
       <span>© 2026 NotAnotherCards</span>
       <span aria-hidden="true">·</span>
       <span>Learn at your own pace.</span>
+      <span aria-hidden="true">·</span>
+      <a
+        className="underline underline-offset-4 hover:text-foreground"
+        href={GITHUB_URL}
+      >
+        Free and open source
+      </a>
       <span aria-hidden="true">·</span>
       <a
         className="underline underline-offset-4 hover:text-foreground"

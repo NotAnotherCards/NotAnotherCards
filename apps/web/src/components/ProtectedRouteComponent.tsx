@@ -22,14 +22,149 @@ import { languageFor } from '@repo/schemas';
 import { useTranslation } from 'react-i18next';
 
 export function ProtectedLayoutComponent() {
+  const { t } = useTranslation();
   const { manager, syncController } = useSessionDatabase();
   const location = useLocation();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  if (!manager && location.pathname !== '/onboarding') {
+    return null;
+  }
+
+  const user = session?.user;
+  const initials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase()
+    : (user?.email?.[0]?.toUpperCase() ?? 'U');
+
+  const handleLogout = async () => {
+    setLogoutError(null);
+    try {
+      const res = await authClient.signOut();
+      if (res?.error) {
+        setLogoutError(res.error.message || t('auth.logout_failed'));
+        return;
+      }
+      void navigate({ to: '/login' });
+    } catch (err) {
+      console.error('Logout failed', err);
+      setLogoutError(
+        err instanceof Error ? err.message : t('auth.logout_failed'),
+      );
+    }
+  };
+
+  return (
+    <SyncProvider controller={syncController}>
+      {manager && <ProfileLanguageEnforcer />}
+      <div className="flex-1 flex flex-col bg-background">
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 border-b border-border/40 bg-background/80 backdrop-blur-xs">
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-2 hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            aria-label={t('dashboard.title')}
+          >
+            <img
+              src="/brand/notanothercards-logo.svg"
+              alt="NotAnotherCards"
+              className="h-6 sm:h-8 dark:hidden"
+            />
+            <img
+              src="/brand/notanothercards-logo-dark.svg"
+              alt="NotAnotherCards"
+              className="h-5 sm:h-7 hidden dark:block"
+            />
+          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label={t('auth.account_menu')}
+              className="flex items-center gap-2 rounded-full p-1 sm:px-3 sm:py-1.5 hover:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer border border-border/40"
+            >
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user.name || t('auth.user_avatar')}
+                  className="size-8 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="size-8 rounded-full bg-linear-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xs shadow-xs shrink-0">
+                  {initials}
+                </div>
+              )}
+              <span className="hidden sm:inline-block font-medium text-sm text-foreground truncate max-w-40">
+                {user?.name || user?.email}
+              </span>
+              <ChevronDown className="size-4 text-muted-foreground shrink-0" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+              >
+                <LogOut className="size-4 mr-2" />
+                {t('auth.logout')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
+
+        <FloatingBannerContainer>
+          {logoutError && (
+            <Alert
+              variant="destructive"
+              className="bg-background/95 backdrop-blur-xs border-border/80 rounded-2xl shadow-lg overflow-hidden pointer-events-auto flex items-center justify-between gap-3 text-xs py-3.5 px-4"
+            >
+              <div className="flex items-center gap-2">
+                <AlertCircle className="size-4 text-destructive shrink-0" />
+                <AlertDescription className="text-xs text-foreground">
+                  <strong className="text-destructive font-semibold">
+                    {t('auth.logout_error')}
+                  </strong>{' '}
+                  {logoutError}
+                </AlertDescription>
+              </div>
+              <Button
+                size="xs"
+                variant="destructive"
+                onClick={handleLogout}
+                className="gap-1.5 cursor-pointer shadow-xs shrink-0 text-[10px]"
+              >
+                <RefreshCw className="size-3" />
+                {t('common.retry')}
+              </Button>
+            </Alert>
+          )}
+
+          {manager && <DatabaseBanner />}
+        </FloatingBannerContainer>
+        <SyncStatus />
+        <div className="flex-1 flex flex-col">
+          {manager ? (
+            <DatabaseGate>
+              <Outlet />
+            </DatabaseGate>
+          ) : (
+            <Outlet />
+          )}
+        </div>
+      </div>
+    </SyncProvider>
+  );
+}
+
+// Profile queries require a database provider, which is absent during onboarding
+// and while the session database owner is still creating the manager.
+function ProfileLanguageEnforcer() {
+  const { data: session } = authClient.useSession();
   const { profile } = useStore();
   const { i18n } = useTranslation();
-
-  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   useEffect(() => {
     const enforceLanguage = () => {
@@ -62,137 +197,7 @@ export function ProtectedLayoutComponent() {
     i18n,
   ]);
 
-  if (!manager && location.pathname !== '/onboarding') {
-    return null;
-  }
-
-  const user = session?.user;
-  const initials = user?.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase()
-    : (user?.email?.[0]?.toUpperCase() ?? 'U');
-
-  const handleLogout = async () => {
-    setLogoutError(null);
-    try {
-      const res = await authClient.signOut();
-      if (res?.error) {
-        setLogoutError(
-          res.error.message || 'Failed to log out. Please try again.',
-        );
-        return;
-      }
-      void navigate({ to: '/login' });
-    } catch (err) {
-      console.error('Logout failed', err);
-      setLogoutError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to log out. Please try again.',
-      );
-    }
-  };
-
-  return (
-    <SyncProvider controller={syncController}>
-      <div className="flex-1 flex flex-col bg-background">
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 border-b border-border/40 bg-background/80 backdrop-blur-xs">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2 hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-            aria-label="Dashboard"
-          >
-            <img
-              src="/brand/notanothercards-logo.svg"
-              alt="NotAnotherCards Logo"
-              className="h-6 sm:h-8 dark:hidden"
-            />
-            <img
-              src="/brand/notanothercards-logo-dark.svg"
-              alt="NotAnotherCards Logo"
-              className="h-5 sm:h-7 hidden dark:block"
-            />
-          </Link>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="Account menu"
-              className="flex items-center gap-2 rounded-full p-1 sm:px-3 sm:py-1.5 hover:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer border border-border/40"
-            >
-              {user?.image ? (
-                <img
-                  src={user.image}
-                  alt={user.name || 'User avatar'}
-                  className="size-8 rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div className="size-8 rounded-full bg-linear-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xs shadow-xs shrink-0">
-                  {initials}
-                </div>
-              )}
-              <span className="hidden sm:inline-block font-medium text-sm text-foreground truncate max-w-40">
-                {user?.name || user?.email}
-              </span>
-              <ChevronDown className="size-4 text-muted-foreground shrink-0" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-              >
-                <LogOut className="size-4 mr-2" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-
-        <FloatingBannerContainer>
-          {logoutError && (
-            <Alert
-              variant="destructive"
-              className="bg-background/95 backdrop-blur-xs border-border/80 rounded-2xl shadow-lg overflow-hidden pointer-events-auto flex items-center justify-between gap-3 text-xs py-3.5 px-4"
-            >
-              <div className="flex items-center gap-2">
-                <AlertCircle className="size-4 text-destructive shrink-0" />
-                <AlertDescription className="text-xs text-foreground">
-                  <strong className="text-destructive font-semibold">
-                    Sign-out Error:
-                  </strong>{' '}
-                  {logoutError}
-                </AlertDescription>
-              </div>
-              <Button
-                size="xs"
-                variant="destructive"
-                onClick={handleLogout}
-                className="gap-1.5 cursor-pointer shadow-xs shrink-0 text-[10px]"
-              >
-                <RefreshCw className="size-3" />
-                Retry
-              </Button>
-            </Alert>
-          )}
-
-          {manager && <DatabaseBanner />}
-        </FloatingBannerContainer>
-        <SyncStatus />
-        <div className="flex-1 flex flex-col">
-          {manager ? (
-            <DatabaseGate>
-              <Outlet />
-            </DatabaseGate>
-          ) : (
-            <Outlet />
-          )}
-        </div>
-      </div>
-    </SyncProvider>
-  );
+  return null;
 }
 
 // A failed database open is reported once, by the banner above. Nothing
