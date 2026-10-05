@@ -227,10 +227,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
     },
     {
       title: t('dashboard.overview.stats.learning_streak'),
-      value:
-        streak === 1
-          ? t('dashboard.overview.stats.days_one')
-          : t('dashboard.overview.stats.days_other', { count: streak }),
+      value: t('dashboard.overview.stats.days', { count: streak }),
       description: t('dashboard.overview.stats.daily_streak'),
       icon: Flame,
       color: 'text-rose-500 bg-rose-500/10',
