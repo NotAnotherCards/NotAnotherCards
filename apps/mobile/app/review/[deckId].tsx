@@ -14,7 +14,7 @@ export default function ReviewScreen() {
       {/* ReviewSession sets the deck title once it has loaded. */}
       <Stack.Screen options={{ title: t('review.title') }} />
       <ScrollView
-        className="flex-1 bg-background"
+        className="flex-1 bg-surface"
         contentContainerClassName="flex-grow justify-center p-6"
         keyboardShouldPersistTaps="handled"
       >

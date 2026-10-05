@@ -40,7 +40,7 @@ export default function RootLayout() {
               headerStyle: { backgroundColor: nav.card },
               headerTintColor: nav.foreground,
               contentStyle: {
-                backgroundColor: nav.background,
+                backgroundColor: nav.surface,
                 borderTopWidth: StyleSheet.hairlineWidth,
                 borderTopColor: nav.border,
               },

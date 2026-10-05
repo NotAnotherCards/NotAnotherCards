@@ -217,15 +217,20 @@ if $HEADLESS; then
   WINDOW_ARGS=(-no-window -no-audio)
 fi
 
+# The emulator outlives this script and keeps printing (graphics warnings
+# mostly), which would scribble over whatever runs in the terminal next,
+# Metro for one. Its output goes to a log file instead.
+EMULATOR_LOG="${TMPDIR:-/tmp}/android-emulator-$AVD_NAME.log"
 log "starting emulator '$AVD_NAME' with -gpu $EMULATOR_GPU (first boot takes a minute or two)"
+log "emulator output: $EMULATOR_LOG"
 emulator -avd "$AVD_NAME" -gpu "$EMULATOR_GPU" -no-snapshot-save -no-metrics \
-  "${ACCEL_ARGS[@]}" "${WINDOW_ARGS[@]}" &
+  "${ACCEL_ARGS[@]}" "${WINDOW_ARGS[@]}" >"$EMULATOR_LOG" 2>&1 &
 EMULATOR_PID=$!
 
 log "waiting for the device to boot..."
 adb wait-for-device
 until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do
-  kill -0 "$EMULATOR_PID" 2>/dev/null || die "emulator exited during boot"
+  kill -0 "$EMULATOR_PID" 2>/dev/null || die "emulator exited during boot; see $EMULATOR_LOG"
   sleep 2
 done
 

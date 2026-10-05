@@ -30,6 +30,9 @@
   --color-rating-hard: var(--rating-hard);
   --color-rating-good: var(--rating-good);
   --color-rating-easy: var(--rating-easy);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -99,6 +102,9 @@
   --rating-hard: oklch(0.646 0.194 41.116);
   --rating-good: oklch(0.596 0.127 163.225);
   --rating-easy: oklch(0.546 0.215 262.881);
+  --success: #059669;
+  --warning: #d97706;
+  --info: #2563eb;
   --chart-1: oklch(0.55 0.16 250);
   --chart-2: oklch(0.58 0.13 165);
   --chart-3: oklch(0.65 0.15 70);
@@ -148,6 +154,9 @@
   --rating-hard: oklch(0.758 0.159 55.934);
   --rating-good: oklch(0.773 0.153 163.223);
   --rating-easy: oklch(0.714 0.143 254.624);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --info: #60a5fa;
   --chart-1: oklch(0.7 0.15 250);
   --chart-2: oklch(0.72 0.13 165);
   --chart-3: oklch(0.76 0.14 70);

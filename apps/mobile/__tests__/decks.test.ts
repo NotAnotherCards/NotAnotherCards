@@ -2,17 +2,28 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useDecks } from '@/lib/decks';
 
 // The due count is the only clock-dependent part of useDecks; the queries
-// are stubbed with one deck holding one card.
+// are stubbed with one deck holding two notes, one of them not activated.
 const NOW = Date.UTC(2026, 8, 27, 12, 0);
 const mockData: Record<string, unknown[]> = {
   decks: [{ id: 'd1' }],
-  memberships: [{ deck_id: 'd1', note_id: 'n1' }],
+  memberships: [
+    { deck_id: 'd1', note_id: 'n1' },
+    { deck_id: 'd1', note_id: 'n2' },
+  ],
   cards: [
     {
       id: 'c1',
       note_id: 'n1',
       due_at: NOW + 30_000,
       active: true,
+      front: 'front',
+      back: 'back',
+    },
+    {
+      id: 'c2',
+      note_id: 'n2',
+      due_at: null,
+      active: false,
       front: 'front',
       back: 'back',
     },
@@ -52,5 +63,38 @@ describe('useDecks', () => {
 
     act(() => jest.advanceTimersByTime(60_000));
     expect(result.current.dueCount('d1')).toBe(1);
+  });
+
+  it('counts a card activated moments ago, before the clock ticks again', () => {
+    const { result, rerender } = renderHook(() => useDecks({} as never));
+    expect(result.current.dueCount('d1')).toBe(0);
+
+    // Activation stamps the card due at the current time, seconds after
+    // the last tick; the write changes the data and the count follows.
+    const cards = mockData.cards!;
+    try {
+      jest.setSystemTime(NOW + 5_000);
+      mockData.cards = cards.map((card) =>
+        (card as { id: string }).id === 'c2'
+          ? { ...(card as object), active: true, due_at: NOW + 5_000 }
+          : card,
+      );
+      rerender({});
+      expect(result.current.dueCount('d1')).toBe(1);
+    } finally {
+      mockData.cards = cards;
+    }
+  });
+
+  it('counts the notes and cards of a deck, and the active ones', () => {
+    const { result } = renderHook(() => useDecks({} as never));
+    expect(result.current.learning('d1')).toMatchObject({
+      totalNotes: 2,
+      activeNotes: 1,
+      totalCards: 2,
+      activeCards: 1,
+      inactiveCards: 1,
+    });
+    expect(result.current.learning('unknown').totalCards).toBe(0);
   });
 });
