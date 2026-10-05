@@ -30,13 +30,13 @@ export function Settings() {
                   .join('')
                   .substring(0, 2)
                   .toUpperCase()
-              : 'U'}
+              : t('dashboard.settings.user').slice(0, 1).toUpperCase()}
           </div>
           <h3 className="font-heading font-bold text-lg text-foreground truncate">
-            {session?.user?.name || 'Legendary Learner'}
+            {session?.user?.name || t('dashboard.settings.learner')}
           </h3>
           <p className="text-xs text-muted-foreground truncate mb-6">
-            {profile?.username || 'user'}
+            {profile?.username || t('dashboard.settings.user')}
           </p>
 
           {/* Navigation subtabs */}

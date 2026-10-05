@@ -191,10 +191,7 @@ export function WordNoteForm({
         const changed = generatedKeys.some(
           (key) => before[key] !== current[key],
         );
-        if (changed)
-          throw new Error(
-            'You edited the form while AI was working. Your edits were kept; click Fill with AI to try again.',
-          );
+        if (changed) throw new Error(t('deck.word_generation.edited'));
         applyCandidate(candidate);
       },
     };
@@ -459,7 +456,9 @@ export function WordNoteForm({
               />
             )}
             {staleCandidate && (
-              <FormErrorMessage message="The deck languages changed. Generate a new candidate or reopen the form before saving." />
+              <FormErrorMessage
+                message={t('deck.word_generation.languages_changed')}
+              />
             )}
             {error && <FormErrorMessage message={error} />}
             <div className="flex gap-2 w-full">

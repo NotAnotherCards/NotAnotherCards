@@ -22,6 +22,7 @@ import { languageFor } from '@repo/schemas';
 import { useTranslation } from 'react-i18next';
 
 export function ProtectedLayoutComponent() {
+  const { t } = useTranslation();
   const { manager, syncController } = useSessionDatabase();
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,18 +48,14 @@ export function ProtectedLayoutComponent() {
     try {
       const res = await authClient.signOut();
       if (res?.error) {
-        setLogoutError(
-          res.error.message || 'Failed to log out. Please try again.',
-        );
+        setLogoutError(res.error.message || t('auth.logout_failed'));
         return;
       }
       void navigate({ to: '/login' });
     } catch (err) {
       console.error('Logout failed', err);
       setLogoutError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to log out. Please try again.',
+        err instanceof Error ? err.message : t('auth.logout_failed'),
       );
     }
   };
@@ -71,29 +68,29 @@ export function ProtectedLayoutComponent() {
           <Link
             to="/dashboard"
             className="flex items-center gap-2 hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-            aria-label="Dashboard"
+            aria-label={t('dashboard.title')}
           >
             <img
               src="/brand/notanothercards-logo.svg"
-              alt="NotAnotherCards Logo"
+              alt="NotAnotherCards"
               className="h-6 sm:h-8 dark:hidden"
             />
             <img
               src="/brand/notanothercards-logo-dark.svg"
-              alt="NotAnotherCards Logo"
+              alt="NotAnotherCards"
               className="h-5 sm:h-7 hidden dark:block"
             />
           </Link>
 
           <DropdownMenu>
             <DropdownMenuTrigger
-              aria-label="Account menu"
+              aria-label={t('auth.account_menu')}
               className="flex items-center gap-2 rounded-full p-1 sm:px-3 sm:py-1.5 hover:bg-accent/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer border border-border/40"
             >
               {user?.image ? (
                 <img
                   src={user.image}
-                  alt={user.name || 'User avatar'}
+                  alt={user.name || t('auth.user_avatar')}
                   className="size-8 rounded-full object-cover shrink-0"
                 />
               ) : (
@@ -112,7 +109,7 @@ export function ProtectedLayoutComponent() {
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
               >
                 <LogOut className="size-4 mr-2" />
-                Log out
+                {t('auth.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -128,7 +125,7 @@ export function ProtectedLayoutComponent() {
                 <AlertCircle className="size-4 text-destructive shrink-0" />
                 <AlertDescription className="text-xs text-foreground">
                   <strong className="text-destructive font-semibold">
-                    Sign-out Error:
+                    {t('auth.logout_error')}
                   </strong>{' '}
                   {logoutError}
                 </AlertDescription>
@@ -140,7 +137,7 @@ export function ProtectedLayoutComponent() {
                 className="gap-1.5 cursor-pointer shadow-xs shrink-0 text-[10px]"
               >
                 <RefreshCw className="size-3" />
-                Retry
+                {t('common.retry')}
               </Button>
             </Alert>
           )}
