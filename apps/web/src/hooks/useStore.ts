@@ -31,6 +31,7 @@ import {
   createCardsBatch as dbCreateCardsBatch,
   removeNoteFromDeck as dbRemoveNoteFromDeck,
   deleteNote as dbDeleteNote,
+  deleteNotes as dbDeleteNotes,
   recordReviewEvent as dbRecordReview,
   createNote as dbCreateNote,
   updateNoteFields as dbUpdateNoteFields,
@@ -41,6 +42,7 @@ import {
 } from '@repo/offline-db';
 import {
   cardsForDeck,
+  cardsWithoutActiveDeck,
   isBasicCard as isBasicNoteCard,
   selectDueCards,
 } from '@repo/study';
@@ -264,6 +266,16 @@ export function useStore() {
     [db, sync],
   );
 
+  const deleteNotes = useCallback(
+    async (noteIds: readonly string[]) => {
+      if (!db) throw new Error('Database not initialized');
+      const result = await dbDeleteNotes(db, noteIds);
+      sync?.notifyLocalWrite();
+      return result;
+    },
+    [db, sync],
+  );
+
   // The note behind a card, so a form can edit the note's own fields rather
   // than the rendered front and back a template produced from them.
   const noteForCard = useCallback(
@@ -357,6 +369,11 @@ export function useStore() {
     [allCards, noteDecks],
   );
 
+  const getCardsWithoutDeck = useCallback(
+    (): UserCardRecord[] => cardsWithoutActiveDeck(allCards, noteDecks),
+    [allCards, noteDecks],
+  );
+
   const createCardsBatch = useCallback(
     async (options: CreateCardsBatchOptions) => {
       if (!db) throw new Error('Database not initialized');
@@ -426,6 +443,7 @@ export function useStore() {
     updateCard,
     removeNoteFromDeck,
     deleteNote,
+    deleteNotes,
     recordReview,
     isBasicCard,
     isWordCard,
@@ -434,6 +452,7 @@ export function useStore() {
     updateNoteFields,
     getCardsCount,
     getCardsForDeck,
+    getCardsWithoutDeck,
     getNotesForDeck,
     createUserProfile,
     updateUserProfile,

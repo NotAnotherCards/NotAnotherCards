@@ -370,6 +370,22 @@ export async function deleteNote(db: Database, noteId: string) {
   });
 }
 
+/** Delete notes and all dependent cards, memberships, and review events together. */
+export async function deleteNotes(db: Database, noteIds: readonly string[]) {
+  const uniqueNoteIds = [...new Set(noteIds)];
+  if (uniqueNoteIds.length === 0) return;
+
+  return await db.write(async () => {
+    const notes = await Promise.all(
+      uniqueNoteIds.map((noteId) => db.get(UserNote).find(noteId)),
+    );
+    const deletions = await Promise.all(
+      notes.map((note) => prepareDeleteNote(db, note)),
+    );
+    await db.batch(deletions.flat());
+  });
+}
+
 export async function recordReviewEvent(
   db: Database,
   cardId: string,
