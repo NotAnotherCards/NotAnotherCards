@@ -17,7 +17,6 @@ import {
   BookOpen,
   Sparkles,
   Mail,
-  Library,
   RefreshCw,
   Loader2,
   AlertCircle,
@@ -526,7 +525,7 @@ export function Overview({ onChooseDeck }: OverviewProps) {
                 size="sm"
                 onClick={handleStartReview}
               >
-                <Library className="size-3.5" />
+                <BookOpen className="size-3.5" />
                 {t('dashboard.overview.profile.start_review')}
               </Button>
             </div>
