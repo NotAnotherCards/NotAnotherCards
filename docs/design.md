@@ -46,8 +46,8 @@ Tailwind exposes each as a utility of the same name: `bg-card`,
 The four rating tokens are the second place the palette leaves greyscale,
 after the charts: forgot, hard, remember and very easy have to be told apart
 at a glance. `--rating-again` is `--destructive`; hard, good and easy are
-tailored colors based on the design system. Web's review
-buttons still use inline tailwind classes and have not moved to them yet.
+tailored colors based on the design system. Both clients colour their
+answer buttons and swipe labels with them.
 
 ### Brand Tokens
 

@@ -191,6 +191,39 @@ describe('DeckCard Component', () => {
     expect(screen.getByTitle('Edit')).toBeInTheDocument();
   });
 
+  it('fades a zero and turns Start Review off when there is nothing to do', () => {
+    const props = {
+      deck: mockDeck,
+      totalCards: 4,
+      activeCards: 4,
+      onSelectDeck: vi.fn(),
+      onStartReview: vi.fn(),
+      onEditDeck: vi.fn(),
+      onDeleteDeck: vi.fn(),
+    };
+    const { rerender } = render(<DeckCard {...props} dueCount={0} />);
+
+    expect(screen.getByTestId('due-cards-badge')).toHaveClass(
+      'text-muted-foreground',
+    );
+    expect(screen.getByTestId('total-cards-badge')).toHaveClass(
+      'text-foreground',
+    );
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeDisabled();
+
+    // nothing due, but cards wait to be activated on the review page
+    rerender(<DeckCard {...props} dueCount={0} inactiveCards={2} />);
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
+
+    // just activated: due now, though the store's rounded count is still 0
+    rerender(<DeckCard {...props} dueCount={0} reviewableCards={4} />);
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
+
+    rerender(<DeckCard {...props} dueCount={3} />);
+    expect(screen.getByTestId('due-cards-badge')).toHaveClass('text-primary');
+    expect(screen.getByRole('button', { name: 'Start Review' })).toBeEnabled();
+  });
+
   it('calls action callbacks on click events', () => {
     const onSelectDeck = vi.fn();
     const onStartReview = vi.fn();
