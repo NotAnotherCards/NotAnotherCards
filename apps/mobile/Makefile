@@ -40,6 +40,7 @@ api-url:
 	elif grep -qs '^EXPO_PUBLIC_API_URL=.' .env.local; then \
 		echo "backend: $$(sed -n 's/^EXPO_PUBLIC_API_URL=//p' .env.local) (from .env.local)"; \
 	else \
+		if [ -s .env.local ] && [ -n "$$(tail -c1 .env.local)" ]; then echo >> .env.local; fi; \
 		echo 'EXPO_PUBLIC_API_URL=$(API_URL)' >> .env.local; \
 		echo "backend: $(API_URL) (none was set; written to .env.local)"; \
 	fi
