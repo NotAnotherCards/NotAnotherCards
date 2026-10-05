@@ -1,7 +1,7 @@
 import type { Database, SyncController } from '@remelondb/core';
 import {
   createDeck,
-  deleteDeck,
+  deleteDeckWithNotes,
   type DeckNoteType,
   updateDeck,
 } from '@repo/offline-db';
@@ -25,6 +25,8 @@ export function deckWrites(db: Database, sync: SyncController | null) {
     ) => createDeck(db, title, description || null, options).then(afterWrite),
     update: (id: string, title: string, description: string) =>
       updateDeck(db, id, title, description || null).then(afterWrite),
-    remove: (id: string) => deleteDeck(db, id).then(afterWrite),
+    // Mobile has no list for cards without a deck, so the notes that are only
+    // in this deck go with it; notes also in another deck stay.
+    remove: (id: string) => deleteDeckWithNotes(db, id).then(afterWrite),
   };
 }

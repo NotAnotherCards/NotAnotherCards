@@ -11,6 +11,7 @@ import {
   getDecksQuery,
   createCard,
   getNoteDecksQuery,
+  noteDeckId,
 } from '@repo/offline-db';
 import { deckWrites } from '@/lib/deck-writes';
 
@@ -65,19 +66,52 @@ describe('deckWrites', () => {
     expect(sync.notifyLocalWrite).toHaveBeenCalledTimes(3);
   });
 
-  it('removing a deck drops its memberships but keeps the cards', async () => {
+  it('removing a deck deletes the cards that are only in it', async () => {
     const writes = deckWrites(db, sync as never);
     const deck = await writes.create('Yoga', '', {
       noteType: 'basic',
       nativeLanguageId: null,
       targetLanguageId: null,
     });
-    const card = await createCard(db, deck.id, 'Tadasana', 'Mountain pose');
+    await createCard(db, deck.id, 'Tadasana', 'Mountain pose');
     expect(await getNoteDecksQuery(db).fetch()).toHaveLength(1);
 
     await writes.remove(deck.id);
 
     expect(await getNoteDecksQuery(db).fetch()).toHaveLength(0);
+    expect(await db.get(UserCard).query().fetch()).toHaveLength(0);
+    expect(await db.get(UserNote).query().fetch()).toHaveLength(0);
+  });
+
+  it('removing a deck keeps a card that is also in another deck', async () => {
+    const writes = deckWrites(db, sync as never);
+    const options = {
+      noteType: 'basic' as const,
+      nativeLanguageId: null,
+      targetLanguageId: null,
+    };
+    const deck = await writes.create('Yoga', '', options);
+    const other = await writes.create('Morning routine', '', options);
+    const card = await createCard(db, deck.id, 'Tadasana', 'Mountain pose');
+    const now = Date.now();
+    await db.write(async () =>
+      db.get(UserNoteDeck).create({
+        id: noteDeckId(card.note_id, other.id),
+        note_id: card.note_id,
+        deck_id: other.id,
+        active: true,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+
+    await writes.remove(deck.id);
+
     expect(await db.get(UserCard).find(card.id)).toBeTruthy();
+    expect(
+      (await getNoteDecksQuery(db).fetch()).map(
+        (membership) => membership.deck_id,
+      ),
+    ).toEqual([other.id]);
   });
 });
