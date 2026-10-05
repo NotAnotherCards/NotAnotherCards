@@ -220,7 +220,10 @@
     "close": "Cerrar",
     "previous": "Anterior",
     "next": "Siguiente",
-    "page": "Página {{page}}"
+    "page": "Página {{page}}",
+    "not_available": "No disponible",
+    "loading_label": "Cargando",
+    "unknown_error": "Se produjo un error desconocido"
   },
   "languages": {
     "en": "Inglés",
@@ -361,7 +364,8 @@
       "verify_and_continue": "Verificar y continuar",
       "back_to_sign_in": "Volver al inicio de sesión",
       "totp_legend": "Código de autenticación de seis dígitos",
-      "totp_digit_aria": "Dígito {{digit}} de {{total}}"
+      "totp_digit_aria": "Dígito {{digit}} de {{total}}",
+      "verification_method": "Método de verificación"
     },
     "validation": {
       "password_min": "La contraseña debe tener al menos 8 caracteres",
@@ -384,7 +388,14 @@
     "validation_more_few": "{{count}}",
     "validation_more_many": "{{count}}",
     "validation_more_other": "{{count}}",
-    "signing_out": "Cerrando sesión…"
+    "signing_out": "Cerrando sesión…",
+    "account_menu": "Menú de cuenta",
+    "user_avatar": "Avatar del usuario",
+    "logout": "Cerrar sesión",
+    "logout_error": "Error al cerrar sesión:",
+    "logout_failed": "No se pudo cerrar sesión. Inténtalo de nuevo.",
+    "show_password": "Mostrar contraseña",
+    "hide_password": "Ocultar contraseña"
   },
   "profile": {
     "validation": {
@@ -451,7 +462,8 @@
         "update_password": "Actualizar Contraseña",
         "updating": "Actualizando...",
         "success": "¡Contraseña cambiada con éxito!",
-        "unexpected_error": "Ocurrió un error inesperado"
+        "unexpected_error": "Ocurrió un error inesperado",
+        "update_failed": "No se pudo actualizar la contraseña"
       },
       "two_factor": {
         "title": "Autenticación de dos factores",
@@ -548,8 +560,16 @@
         "count_cards": "{{count}} tarjetas",
         "count_notes": "{{count}} notas",
         "count_reviews": "{{count}} repasos",
-        "count_decks": "{{count}} mazos"
-      }
+        "count_decks": "{{count}} mazos",
+        "decks_label": "Mazos",
+        "notes_label": "Notas",
+        "cards_label": "Tarjetas",
+        "reviews_label": "Repasos",
+        "file_summary": "{{size}} kB · {{format}}",
+        "row": "fila {{row}}"
+      },
+      "learner": "Estudiante legendario",
+      "user": "usuario"
     },
     "title": "Panel",
     "description": "Bienvenido a tu portal de aprendizaje de idiomas. Haz un seguimiento de tu progreso, explora diccionarios y construye tu racha de aprendizaje.",
@@ -569,7 +589,13 @@
       "failed": "Fallo al sincronizar",
       "reset_required": "Reinicio requerido",
       "rejected": "Sincronizado, {{rejected}} no aceptados",
-      "signed_out": "Sesión cerrada"
+      "signed_out": "Sesión cerrada",
+      "offline_description": "Sin conexión — los cambios se sincronizarán más tarde",
+      "recovered": "Recuperado tras un reinicio del servidor",
+      "rejected_changes_one": "Sincronizado, {{count}} cambio no aceptado",
+      "rejected_changes_few": "Sincronizado, {{count}} cambios no aceptados",
+      "rejected_changes_many": "Sincronizado, {{count}} cambios no aceptados",
+      "rejected_changes_other": "Sincronizado, {{count}} cambios no aceptados"
     },
     "overview": {
       "badges": {
@@ -629,7 +655,8 @@
         "completed": "Completado",
         "remaining": "{{value}} restantes",
         "footer_points": "Un repaso da un punto sin importar la calificación.",
-        "footer_reset": "Los retos y rachas se reinician a las 00:00 UTC."
+        "footer_reset": "Los retos y rachas se reinician a las 00:00 UTC.",
+        "progress": "Progreso de {{title}}"
       },
       "profile": {
         "status": "Estado",
@@ -654,7 +681,10 @@
         "report_description": "Avisa al equipo de moderación si hay un problema. Un reporte pondrá el mazo en revisión, pero no lo ocultará automáticamente.",
         "report_recorded": "Gracias. Tu reporte ha sido guardado.",
         "report_placeholder": "Describe el problema de este mazo",
-        "submit_report": "Enviar reporte"
+        "submit_report": "Enviar reporte",
+        "report_reason": "Motivo del reporte",
+        "imported": "Importado",
+        "import_pending": "{{title}}: importado. Aparecerá tras la próxima sincronización correcta."
       },
       "achievements": {
         "title": "Logros",
@@ -664,7 +694,8 @@
       },
       "toasts": {
         "challenge_completed": "Reto Completado: ",
-        "new_badge": "¡Nueva Insignia!"
+        "new_badge": "¡Nueva Insignia!",
+        "badge_unlocked": "Insignia desbloqueada: {{name}}"
       }
     },
     "leaderboard": {
@@ -714,7 +745,16 @@
         "notesAdded": "Notas añadidas por día",
         "forgotRate": "Tasa de olvido por día"
       },
-      "empty": "No hay {{series}} en este rango"
+      "empty": "No hay {{series}} en este rango",
+      "deck_aria": "Mazo de estadísticas",
+      "range_aria": "Periodo de estadísticas",
+      "chart_description": "{{series}}, de {{from}} a {{to}}, máximo {{peak}}",
+      "maturity": {
+        "new": "Nuevas",
+        "learning": "En aprendizaje",
+        "young": "Recientes",
+        "mature": "Consolidadas"
+      }
     }
   },
   "deck": {
@@ -732,7 +772,9 @@
       "no_decks_empty": "No se encontraron mazos. ¡Crea uno para empezar!",
       "my_library_desc": "Administra tus mazos de cartas personalizados.",
       "no_decks_title": "Aún no hay mazos",
-      "create_first": "Crear el primer mazo"
+      "create_first": "Crear el primer mazo",
+      "connecting": "Conectando la base de datos local...",
+      "initializing": "Inicializando el almacenamiento sin conexión y cargando la biblioteca."
     },
     "card": {
       "no_description": "Sin descripción.",
@@ -864,7 +906,9 @@
       "delete_deck_and_words_one": "1",
       "delete_deck_and_words_few": "{{count}}",
       "delete_deck_and_words_many": "{{count}}",
-      "delete_deck_and_words_other": "{{count}}"
+      "delete_deck_and_words_other": "{{count}}",
+      "loading": "Cargando los detalles del mazo...",
+      "not_found": "Mazo no encontrado."
     },
     "cards": {
       "search_placeholder": "Buscar en anverso, reverso...",
@@ -881,7 +925,8 @@
       "title_one": "{{count}} tarjetas",
       "title_few": "{{count}} tarjetas",
       "title_many": "{{count}} tarjetas",
-      "title_other": "{{count}} tarjetas"
+      "title_other": "{{count}} tarjetas",
+      "catalog": "Catálogo de tarjetas"
     },
     "words": {
       "search_placeholder": "Buscar palabra, traducción...",
@@ -901,7 +946,8 @@
       "title_one": "{{count}} palabras",
       "title_few": "{{count}} palabras",
       "title_many": "{{count}} palabras",
-      "title_other": "{{count}} palabras"
+      "title_other": "{{count}} palabras",
+      "catalog": "Catálogo de palabras"
     },
     "card_form": {
       "desc": "Crea la pregunta y respuesta para esta tarjeta de estudio.",
@@ -965,6 +1011,62 @@
       "cards_count_few": "Tarjetas ({{count}})",
       "cards_count_many": "Tarjetas ({{count}})",
       "cards_count_other": "Tarjetas ({{count}})"
+    },
+    "moderation": {
+      "why": "¿Por qué?",
+      "classifier_results": "Resultados del clasificador",
+      "no_category": "No se indicó ninguna categoría",
+      "categories_none": "Categorías: ninguna",
+      "check_failed": "La comprobación falló: {{error}}",
+      "warnings_title": "Publicado con advertencias de moderación",
+      "warnings_description": "Tu mazo es público, pero estas tarjetas pueden tratar contenido sensible o controvertido. Puedes revisar el motivo sin retirar la publicación.",
+      "warnings": "Advertencias",
+      "taken_down": "Mazo retirado",
+      "taken_down_description": "Este mazo ya no está visible para la comunidad. Revisa el resultado de la moderación, edita la copia de trabajo y vuelve a publicarlo cuando esté listo.",
+      "refused": "El mazo reportado no superó la moderación.",
+      "flagged_cards": "Tarjetas señaladas",
+      "sync_pending": "Mazo actualizado, sincronización pendiente",
+      "publish_failed": "No se pudo publicar el mazo",
+      "unpublish_failed": "No se pudo retirar la publicación del mazo",
+      "published_pending": "Se publicó el mazo. Este dispositivo se actualizará tras la próxima sincronización correcta.",
+      "unpublished_pending": "Se retiró la publicación del mazo. Este dispositivo se actualizará tras la próxima sincronización correcta.",
+      "automated_refusal": "Nuestro sistema de moderación automática rechazó el mazo. Revisa el contenido señalado antes de intentarlo de nuevo.",
+      "action_failed": "Hubo un problema con tu solicitud. Inténtalo de nuevo.",
+      "verdict": {
+        "safe": "Seguro",
+        "unsafe": "No seguro",
+        "controversial": "Controvertido",
+        "error": "Error"
+      },
+      "sync_unavailable": "La sincronización no está disponible. Inténtalo de nuevo cuando tengas conexión.",
+      "sync_incomplete": "La sincronización no se completó. Inténtalo de nuevo cuando tengas conexión.",
+      "sync_busy": "Otra pestaña se está sincronizando. Inténtalo de nuevo en un momento.",
+      "sync_unconfirmed": "No se pudo confirmar la sincronización. Inténtalo de nuevo.",
+      "changes_rejected": "El servidor no aceptó los cambios del mazo. {{explanation}}",
+      "failed": "La moderación falló"
+    },
+    "word_generation": {
+      "check_again": "Comprobar la generación de nuevo",
+      "filling": "Completando…",
+      "fill": "Completar con IA",
+      "running": "La generación puede seguir en curso.",
+      "filling_note": "Completando tu nota de palabra…",
+      "failed": "La generación falló. Tu formulario no ha cambiado. Puedes intentarlo de nuevo.",
+      "invalid": "Los campos generados no son válidos o sus idiomas ya no coinciden con el mazo. Inténtalo de nuevo.",
+      "enter_word": "Primero escribe una palabra o traducción de hasta 100 caracteres.",
+      "unable": "No se pudo completar el formulario.",
+      "edited": "Editaste el formulario mientras la IA trabajaba. Se conservaron tus cambios; pulsa Completar con IA para intentarlo de nuevo.",
+      "languages_changed": "Los idiomas del mazo cambiaron. Genera una nueva propuesta o vuelve a abrir el formulario antes de guardar."
+    },
+    "errors": {
+      "count_cards": "No se pudieron contar las tarjetas",
+      "create_deck": "No se pudo crear el mazo",
+      "update_deck": "No se pudo actualizar el mazo",
+      "delete_deck": "No se pudo eliminar el mazo",
+      "create_card": "No se pudo crear la tarjeta",
+      "update_card": "No se pudo actualizar la tarjeta",
+      "update_word": "No se pudo actualizar la palabra",
+      "remove_note": "No se pudo quitar la nota del mazo"
     }
   },
   "review": {
@@ -1049,6 +1151,10 @@
       "day_few": "{{count}} días",
       "day_many": "{{count}} días",
       "day_other": "{{count}} días"
+    },
+    "errors": {
+      "delete_word": "No se pudo eliminar esta palabra. Inténtalo de nuevo.",
+      "save_answer": "No se pudo guardar tu respuesta. Inténtalo de nuevo."
     }
   },
   "playground": {
@@ -1193,5 +1299,33 @@
       "fill_error": "No se pudieron rellenar los campos. Por favor, compruebe su conexión e inténtelo de nuevo.",
       "network_error": "Error de red, por favor inténtelo de nuevo"
     }
+  },
+  "home": {
+    "description": "Domina cualquier idioma con tarjetas inteligentes.",
+    "get_started": "Empezar",
+    "offline_description": "Empieza a aprender sin conexión o sincroniza fácilmente entre tus dispositivos."
+  },
+  "not_found": {
+    "message": "Página no encontrada",
+    "go_home": "Ir al inicio"
+  },
+  "route_error": {
+    "title": "Error de sesión",
+    "message": "Se produjo un error al cargar tu sesión."
+  },
+  "database": {
+    "connecting_title": "Conectando la base de datos:",
+    "connecting_description": "Recuperando e inicializando el almacenamiento local sin conexión...",
+    "inactive_title": "Base de datos sin conexión inactiva:",
+    "inactive_description": "Esta aplicación está abierta en otra pestaña. Las funciones sin conexión están desactivadas aquí.",
+    "blocked_title": "Almacenamiento bloqueado:",
+    "blocked_description": "Este navegador bloquea el almacenamiento del sitio (navegación privada o datos del sitio bloqueados), por lo que no se pueden cargar tus mazos. Permite los datos de este sitio o usa una ventana normal.",
+    "error_title": "Error de la base de datos sin conexión:",
+    "load_failed": "No se pudo cargar la base de datos.",
+    "storage_held": "Otra ventana o un proceso que no se cerró está usando el almacenamiento local. Inténtalo de nuevo; si el problema continúa, cierra todas las ventanas de este sitio o reinicia el navegador.",
+    "timeout": "Se agotó el tiempo de conexión con la base de datos. Inténtalo de nuevo o actualiza la página.",
+    "reload_title": "Recarga para continuar",
+    "close_failed": "No se pudo cerrar la base de datos sin conexión, por lo que no es seguro volver a abrirla en esta página.",
+    "reload": "Recargar"
   }
 }

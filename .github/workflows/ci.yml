@@ -80,6 +80,12 @@ jobs:
       - name: Check Database Docs
         run: node scripts/check-db-docs.mjs
 
+      - name: Check Design Docs
+        run: pnpm check:design-docs
+
+      - name: Test Design Documentation Check
+        run: node --test scripts/design-docs.test.mjs
+
       - name: Test Database Documentation Checks
         run: node --test scripts/schema-docs.test.mjs
 

@@ -123,7 +123,7 @@ export function TwoFactorChallenge({ redirect }: { redirect?: string }) {
       <div
         className="mb-5 flex rounded-2xl bg-muted/50 p-1"
         role="group"
-        aria-label="Verification method"
+        aria-label={t('auth.two_factor.verification_method')}
       >
         <Button
           type="button"

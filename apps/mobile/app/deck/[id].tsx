@@ -14,7 +14,7 @@ export default function DeckScreen() {
   return (
     <RequireSession>
       <Stack.Screen options={{ title: t('mobile.messages.deck_header') }} />
-      <View className="flex-1 bg-background">
+      <View className="flex-1 bg-surface">
         <CardList deckId={id} />
       </View>
     </RequireSession>

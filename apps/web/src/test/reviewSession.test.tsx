@@ -217,7 +217,7 @@ describe('ReviewSession', () => {
     const onCreateCard = vi.fn().mockResolvedValue(undefined);
     renderSession([card], onCreateCard);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add a new card' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add New Card' }));
     expect(screen.getByText('Add New Card')).toBeInTheDocument();
 
     fireEvent.change(
@@ -250,7 +250,7 @@ describe('ReviewSession', () => {
       const { onRecordReview } = renderSession([card, secondCard]);
       if (revealAnswerFirst) revealCard();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Add a new card' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Add New Card' }));
       const frontInput = screen.getByLabelText(
         'Front (Question, term, or prompt)',
       );
@@ -288,10 +288,10 @@ describe('ReviewSession', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: 'Back to dashboard' }),
+      screen.getByRole('button', { name: 'Back to Dashboard' }),
     ).toHaveClass('size-10', 'rounded-full');
 
-    expect(screen.getByRole('button', { name: 'Add a new card' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Add New Card' })).toHaveClass(
       'size-10',
       'rounded-full',
       'border-sage-border',
@@ -1117,7 +1117,7 @@ describe('ReviewSession', () => {
   it('returns to the dashboard', () => {
     const { onExit } = renderSession();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to dashboard' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Dashboard' }));
     expect(onExit).toHaveBeenCalledOnce();
   });
 

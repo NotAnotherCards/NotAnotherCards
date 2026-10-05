@@ -7,6 +7,7 @@ const { FlatCompat } = require('@eslint/eslintrc');
 const tsParser = require('@typescript-eslint/parser');
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const betterTailwindcss = require('eslint-plugin-better-tailwindcss');
+const i18next = require('eslint-plugin-i18next');
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
@@ -54,6 +55,59 @@ module.exports = defineConfig([
       '@typescript-eslint/no-unsafe-type-assertion': 'error',
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'error',
+    },
+  },
+  // User-facing JSX, including accessibility labels and template strings.
+  // Tests contain fixtures; structural attributes are not translated.
+  {
+    files: ['src/**/*.tsx'],
+    ignores: ['src/test/**', 'src/**/__tests__/**', 'src/**/*.{test,spec}.tsx'],
+    plugins: { i18next },
+    rules: {
+      'i18next/no-literal-string': [
+        'error',
+        {
+          mode: 'jsx-only',
+          'should-validate-template': true,
+          words: {
+            exclude: ['NotAnotherCards', '[0-9!-/:-@[-`{-~✓●✕○▼•]+'],
+          },
+          'jsx-attributes': {
+            exclude: [
+              'className',
+              'style',
+              'type',
+              'key',
+              'id',
+              'width',
+              'height',
+              'role',
+              'src',
+              'href',
+              'to',
+              'target',
+              'rel',
+              'name',
+              'value',
+              'htmlFor',
+              'autoComplete',
+              'inputMode',
+              'pattern',
+              'data-.*',
+              'aria-live',
+              'aria-atomic',
+              'aria-haspopup',
+              'aria-describedby',
+              'aria-labelledby',
+              'on[A-Z].*',
+              'footerLinkTo',
+              'indicatorClassName',
+              'testId',
+              'errorId',
+            ],
+          },
+        },
+      ],
     },
   },
   // Tests cast mocks as a matter of course; that is not what the unsafe

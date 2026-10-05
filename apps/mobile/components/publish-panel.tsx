@@ -200,7 +200,7 @@ export function PublishPanel({
           </Button>
         ) : (
           <Button
-            variant="secondary"
+            variant="outline"
             className="h-12 sm:h-12"
             loading={pending}
             onPress={() =>
