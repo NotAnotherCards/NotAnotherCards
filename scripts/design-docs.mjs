@@ -33,15 +33,39 @@ export function cssTokens(block) {
   );
 }
 
+// Every block of one selector, merged in source order: as in CSS, a later
+// declaration overrides an earlier one.
+function declarations(css, selector) {
+  const blocks = [
+    ...css.matchAll(new RegExp(`${selector}\\s*\\{([^{}]*)\\}`, 'g')),
+  ];
+  return blocks.length
+    ? cssTokens(blocks.map(([, block]) => block).join('\n'))
+    : undefined;
+}
+
+const COMMENT = /\/\*[\s\S]*?\*\//g;
+const MEDIA = /@media([^{]*)\{((?:[^{}]|\{[^{}]*\})*)\}/g;
+const DARK_QUERY = /^\s*\(\s*prefers-color-scheme:\s*dark\s*\)\s*$/;
+
+// Light is :root outside any media query. Dark is .dark on web and :root
+// under prefers-color-scheme: dark on mobile.
 export function palettes(css, darkSelector) {
-  const roots = [...css.matchAll(/:root\s*\{([^{}]*)\}/g)];
-  const light = roots[0]?.[1];
+  const active = css.replace(COMMENT, '');
+  const unconditional = active.replace(MEDIA, '');
+  const light = declarations(unconditional, ':root');
   const dark =
     darkSelector === '.dark'
-      ? css.match(/\.dark\s*\{([^{}]*)\}/)?.[1]
-      : roots.at(-1)?.[1];
+      ? declarations(unconditional, '\\.dark')
+      : declarations(
+          [...active.matchAll(MEDIA)]
+            .filter(([, query]) => DARK_QUERY.test(query))
+            .map(([, , body]) => body)
+            .join('\n'),
+          ':root',
+        );
   if (!light || !dark) throw new Error('Missing light or dark palette');
-  return { light: cssTokens(light), dark: cssTokens(dark) };
+  return { light, dark };
 }
 
 export function hexColor(value) {

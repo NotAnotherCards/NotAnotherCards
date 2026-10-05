@@ -48,6 +48,41 @@ test('a token missing in dark mode is not silently accepted', () => {
   );
 });
 
+test('a dark palette under another media query is not the dark palette', () => {
+  assert.throws(
+    () =>
+      palettes(
+        ':root { --primary: 88 101 181; } @media (prefers-color-scheme: light) { :root { --primary: 1 2 3; } }',
+        'media',
+      ),
+    /Missing light or dark palette/,
+  );
+});
+
+test('a later block overrides an earlier one', () => {
+  const web = palettes(
+    ':root { --primary: #5865b5; } .dark { --primary: #9da8ec; } :root { --primary: #000000; } .dark { --primary: #ffffff; }',
+    '.dark',
+  );
+  assert.equal(web.light.get('--primary'), '#000000');
+  assert.equal(web.dark.get('--primary'), '#ffffff');
+  const mobile = palettes(
+    ':root { --primary: 1 2 3; } @media (prefers-color-scheme: dark) { :root { --primary: 4 5 6; } } @media (prefers-color-scheme: dark) { :root { --primary: 7 8 9; } }',
+    'media',
+  );
+  assert.equal(mobile.light.get('--primary'), '1 2 3');
+  assert.equal(mobile.dark.get('--primary'), '7 8 9');
+});
+
+test('a commented-out declaration is not a token', () => {
+  const web = palettes(
+    ':root {\n /* --success: #00ff00; */\n --primary: #5865b5;\n}\n.dark {\n /* --success: #00ff00; */\n --primary: #9da8ec;\n}',
+    '.dark',
+  );
+  assert.equal(web.light.has('--success'), false);
+  assert.equal(web.dark.has('--success'), false);
+});
+
 test('navigation colors follow mobile tokens', () => {
   const declarations =
     '--background: 255 255 255;\n --surface: 242 246 242;\n --foreground: 24 24 27;\n --card: 255 255 255;\n --border: 228 228 231;';
