@@ -252,18 +252,14 @@ export function Statistics() {
           </CardHeader>
           <CardContent className="text-center pb-6 flex flex-col items-center justify-end flex-1">
             <p className="text-lg font-bold text-foreground">
-              {streak.currentStreak === 1
-                ? t('dashboard.statistics.days_current_one')
-                : t('dashboard.statistics.days_current_other', {
-                    count: streak.currentStreak,
-                  })}
+              {t('dashboard.statistics.days_current', {
+                count: streak.currentStreak,
+              })}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {streak.longestStreak === 1
-                ? t('dashboard.statistics.days_longest_one')
-                : t('dashboard.statistics.days_longest_other', {
-                    count: streak.longestStreak,
-                  })}
+              {t('dashboard.statistics.days_longest', {
+                count: streak.longestStreak,
+              })}
             </p>
           </CardContent>
         </Card>
