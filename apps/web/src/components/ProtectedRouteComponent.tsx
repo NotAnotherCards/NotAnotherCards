@@ -53,7 +53,6 @@ export function ProtectedLayoutComponent() {
       }
       void navigate({ to: '/login' });
     } catch (err) {
-      console.error('Logout failed', err);
       setLogoutError(
         err instanceof Error ? err.message : t('auth.logout_failed'),
       );
