@@ -239,6 +239,24 @@ jobs:
             fi
             echo "Plain HTTP redirects to the equivalent HTTPS URL"
 
+            # www needs a valid certificate even though it only redirects:
+            # browsers validate TLS before receiving the Location header.
+            for protocol in http https; do
+              for path in / '/privacy?source=www&lang=en' /login; do
+                redirect="$(curl \
+                  --silent \
+                  --show-error \
+                  --output /dev/null \
+                  --write-out '%{http_code} %{redirect_url}' \
+                  "$protocol://www.notanothercards.com$path" || true)"
+                if [ "$redirect" != "301 https://notanothercards.com$path" ]; then
+                  echo "FATAL: $protocol://www.notanothercards.com$path must redirect directly to the apex over valid TLS, got '${redirect}' (install the www Nginx site and certificate; see infra/vps/README.md)" >&2
+                  exit 1
+                fi
+              done
+            done
+            echo "www redirects directly to the apex over HTTP and verified HTTPS, preserving paths and queries"
+
             cert_sans="$(echo | openssl s_client -connect 127.0.0.1:443 -servername notanothercards.com 2>/dev/null \
               | openssl x509 -noout -ext subjectAltName 2>/dev/null || true)"
             case "$cert_sans" in

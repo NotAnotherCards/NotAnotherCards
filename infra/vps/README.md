@@ -13,6 +13,7 @@ in [`docs/deployment.md`](../../docs/deployment.md).
 | -------------------- | ------------------------------------------------------------- |
 | Public application   | `https://app.notanothercards.com`                             |
 | Public landing       | `https://notanothercards.com`                                 |
+| Landing alias        | `https://www.notanothercards.com` redirects to the apex       |
 | Monitoring Grafana   | `https://grafana.notanothercards.com`                         |
 | VPS IPv4             | `169.58.127.208`                                              |
 | VPS IPv6             | `2a02:c207:3020:2790::1`                                      |
@@ -20,6 +21,7 @@ in [`docs/deployment.md`](../../docs/deployment.md).
 | Runtime environment  | `/opt/notanothercards/.env`                                   |
 | Host Nginx site      | `/etc/nginx/sites-available/app.notanothercards.com.conf`     |
 | Host Nginx landing   | `/etc/nginx/sites-available/notanothercards.com.conf`         |
+| Host Nginx alias     | `/etc/nginx/sites-available/www.notanothercards.com.conf`     |
 | Host Nginx Grafana   | `/etc/nginx/sites-available/grafana.notanothercards.com.conf` |
 | Compose files        | `docker-compose.yml` and `docker-compose.production.yml`      |
 | Monitoring Compose   | `infra/monitoring/docker-compose.yml`                         |
@@ -219,7 +221,8 @@ The public landing and legal pages are served at
 <https://notanothercards.com>. The `landing` container publishes
 `127.0.0.1:5174` only, so host Nginx is the sole public entry point; nothing
 else may bind that port. The checked-in bootstrap configuration is
-`infra/vps/notanothercards.com.conf`.
+`infra/vps/notanothercards.com.conf`. The `www` alias uses the separate
+`infra/vps/www.notanothercards.com.conf` redirect site.
 
 ### DNS
 
@@ -231,10 +234,15 @@ dig +short A    notanothercards.com   # 169.58.127.208
 dig +short AAAA notanothercards.com   # 2a02:c207:3020:2790::1
 curl -4 -sS -o /dev/null -w '%{http_code}\n' http://notanothercards.com/
 curl -6 -sS -o /dev/null -w '%{http_code}\n' http://notanothercards.com/
+dig +short A    www.notanothercards.com
+dig +short AAAA www.notanothercards.com
 ```
 
-`www.notanothercards.com` resolves to the same VPS but is deliberately not
-served; it must keep returning 404.
+`www.notanothercards.com` must resolve to the same VPS and redirect directly
+to `https://notanothercards.com`, preserving the path and query string.
+It needs its own valid certificate: TLS is validated before the browser can
+receive a redirect. Without its own HTTPS virtual host, Nginx can fall back
+to the application's certificate, which does not cover `www`.
 
 ### Installing the host site
 
@@ -249,6 +257,9 @@ cd /opt/notanothercards
 sudo cp infra/vps/notanothercards.com.conf /etc/nginx/sites-available/
 sudo ln -sf /etc/nginx/sites-available/notanothercards.com.conf \
            /etc/nginx/sites-enabled/
+sudo cp infra/vps/www.notanothercards.com.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/www.notanothercards.com.conf \
+           /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -261,12 +272,35 @@ them.
 
 ```bash
 sudo certbot --nginx -d notanothercards.com
+sudo certbot --nginx --no-redirect -d www.notanothercards.com
 sudo certbot certificates
 sudo certbot renew --dry-run
 ```
 
-Certbot edits `/etc/nginx/sites-available/notanothercards.com.conf` in place
-and reloads Nginx. The other virtual hosts are untouched.
+Certbot edits each installed site in place and reloads Nginx. `--no-redirect`
+keeps the `www` site's direct redirect to the apex for both HTTP and HTTPS,
+instead of adding an intermediate HTTPS redirect on `www`.
+
+### Adding www to an existing production host
+
+Complete this one-time setup before deploying the checks that require `www`.
+After reviewing the new alias configuration, install that file from the
+reviewed checkout on the VPS. Keep the existing Certbot-managed apex site:
+
+```bash
+cd /opt/notanothercards
+sudo cp infra/vps/www.notanothercards.com.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/www.notanothercards.com.conf \
+           /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx --no-redirect -d www.notanothercards.com
+sudo nginx -t
+sudo certbot renew --dry-run
+```
+
+Do not re-copy either bootstrap file over its installed copy after Certbot
+has added TLS. GitHub Actions deploys containers and verifies these host sites;
+it does not install Nginx configurations or issue certificates.
 
 ### Health checks
 
@@ -275,12 +309,17 @@ curl --fail https://notanothercards.com/
 curl --fail https://notanothercards.com/privacy
 curl -o /dev/null -w '%{http_code} %{redirect_url}\n' http://notanothercards.com/
 curl -o /dev/null -w '%{http_code}\n' https://notanothercards.com/not-a-real-page
+for protocol in http https; do
+  curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' \
+    "$protocol://www.notanothercards.com/privacy?source=www&lang=en"
+done
 echo | openssl s_client -connect 127.0.0.1:443 -servername notanothercards.com 2>/dev/null \
   | openssl x509 -noout -ext subjectAltName
 ss -ltn | awk 'NR > 1 && $4 ~ /:5174$/ { print "  listener", $4 }'
 ```
 
-Expected: two `200`s, `301 https://notanothercards.com/`, `404`, a
+Expected: two `200`s, `301 https://notanothercards.com/`, `404`, two
+`301 https://notanothercards.com/privacy?source=www&lang=en` responses, a
 certificate whose subject alternative name lists `DNS:notanothercards.com`,
 and a single `listener 127.0.0.1:5174` line: nothing on port 5174 may bind to
 `0.0.0.0`, `*`, `[::]`, or the VPS public address.
@@ -303,19 +342,24 @@ ss -ltnp | grep 5174
 `ss` must show `127.0.0.1:5174` and never `0.0.0.0:5174` or `[::]:5174`. If
 HTTPS fails while HTTP works, the certificate is missing or expired; if both
 fail, the site is not enabled or the container is down.
+If `www` presents a certificate for `app.notanothercards.com`, its TLS site
+is missing or not enabled. Install the alias site and issue its certificate
+using the existing-host steps above.
 
 ### Rollback
 
-Remove the public landing route and its certificate:
+Remove the public landing and www routes and their certificates:
 
 ```bash
 sudo rm /etc/nginx/sites-enabled/notanothercards.com.conf
+sudo rm /etc/nginx/sites-enabled/www.notanothercards.com.conf
 sudo nginx -t && sudo systemctl reload nginx
 sudo certbot delete --cert-name notanothercards.com
+sudo certbot delete --cert-name www.notanothercards.com
 ```
 
-Then revert the deployment smoke-check commit that requires the apex endpoint,
-otherwise the next deployment fails its verification step.
+Then revert the deployment smoke-check commit that requires the apex and www
+endpoints, otherwise the next deployment fails its verification step.
 
 ## Production checks and logs
 
@@ -459,7 +503,9 @@ sudo -u deploy docker compose \
 
 - Certbot manages the installed TLS configuration and renewal timer, covering
   `app.notanothercards.com`, `grafana.notanothercards.com`, and
-  `notanothercards.com`. Check it periodically with `sudo certbot renew --dry-run`.
+  `notanothercards.com`. The `www.notanothercards.com` alias needs the one-time
+  setup above before its certificate joins automated renewal. Check renewal
+  periodically with `sudo certbot renew --dry-run`.
 - Provider firewall and UFW allow public TCP 22, 80, and 443 only. Do not
   expose ports 3000, 5173, 5174, 5432, or branch-test ports publicly.
 - Docker volumes provide persistence, not backups. Keep encrypted PostgreSQL
