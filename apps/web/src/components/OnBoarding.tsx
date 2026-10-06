@@ -147,11 +147,8 @@ export function OnBoardingComponent() {
                                 form.clearErrors('username');
                               }
                             }
-                          } catch (err) {
-                            console.error(
-                              'Failed to check username availability',
-                              err,
-                            );
+                          } catch {
+                            // the server checks again on submit
                           }
                         }
                       }}
