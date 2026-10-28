@@ -15,8 +15,8 @@ in [`docs/deployment.md`](../../docs/deployment.md).
 | Public landing       | `https://notanothercards.com`                                 |
 | Landing alias        | `https://www.notanothercards.com` redirects to the apex       |
 | Monitoring Grafana   | `https://grafana.notanothercards.com`                         |
-| VPS IPv4             | `169.58.127.208`                                              |
-| VPS IPv6             | `2a02:c207:3020:2790::1`                                      |
+| VPS IPv4             | `95.111.246.241`                                              |
+| VPS IPv6             | `2a02:c207:3021:0712::1`                                      |
 | Production checkout  | `/opt/notanothercards`                                        |
 | Runtime environment  | `/opt/notanothercards/.env`                                   |
 | Host Nginx site      | `/etc/nginx/sites-available/app.notanothercards.com.conf`     |
@@ -96,7 +96,9 @@ sudo -u deploy grep -E '^[A-Z0-9_]+=' /opt/notanothercards/.env \
 
 Expected ownership and mode are `deploy deploy 600`.
 
-## Tailnet access to the GX10
+<!-- DISABLED UNTIL FURTHER NOTICE <------
+
+ ## Tailnet access to the GX10
 
 Production reaches the AI gateway and all three GX10 metrics endpoints directly
 over the self-hosted tailnet. `ai.dustyway.org` remains available to teammates
@@ -178,7 +180,7 @@ curl --fail http://100.64.0.1:9400/metrics >/dev/null
 ```
 
 No new public firewall rule is required: these services bind only to the GX10
-tailnet address.
+tailnet address. -->
 
 ## Production deployments
 
@@ -230,8 +232,8 @@ Both address families must resolve to the VPS before Certbot can issue a
 certificate, and both should keep resolving afterwards:
 
 ```bash
-dig +short A    notanothercards.com   # 169.58.127.208
-dig +short AAAA notanothercards.com   # 2a02:c207:3020:2790::1
+dig +short A    notanothercards.com   # 95.111.246.241
+dig +short AAAA notanothercards.com   # 2a02:c207:3021:0712::1
 curl -4 -sS -o /dev/null -w '%{http_code}\n' http://notanothercards.com/
 curl -6 -sS -o /dev/null -w '%{http_code}\n' http://notanothercards.com/
 dig +short A    www.notanothercards.com

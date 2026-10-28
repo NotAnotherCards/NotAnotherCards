@@ -2,6 +2,12 @@
 
 Status: current deployment architecture.
 
+> **Current Contabo deployment:** the GX10 is not part of this deployment. The
+> three GX10 scrape jobs and their alert rules are disabled in
+> `infra/monitoring`, and AI generation uses the NanoGPT fallback described
+> below. The topology below remains the target architecture for when the box is
+> available again.
+
 The subject sets one hard rule that shapes everything here: deployment must use
 containers and run with a single command (III.2, rejection-level). Evaluation
 happens on a school machine, not on our servers. So the compose file is the
@@ -168,8 +174,8 @@ file.
 
 `https://notanothercards.com` is served by the host Nginx site
 `infra/vps/notanothercards.com.conf`, which proxies to the landing container
-on loopback `127.0.0.1:5174`. DNS carries `A 169.58.127.208` and
-`AAAA 2a02:c207:3020:2790::1`; verify both address families where those
+on loopback `127.0.0.1:5174`. DNS carries `A 95.111.246.241` and
+`AAAA 2a02:c207:3021:0712::1`; verify both address families where those
 records are configured:
 
 ```bash

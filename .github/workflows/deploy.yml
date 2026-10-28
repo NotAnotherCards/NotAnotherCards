@@ -141,7 +141,7 @@ jobs:
             echo "Alertmanager delivered the production Slack smoke-test notification"
 
             # 6. Verify every named Prometheus scrape target is up
-            for job in prometheus api-vps postgres-vps node-vps litellm-gx10 dcgm-gpu-gx10 node-gx10; do
+            for job in prometheus api-vps postgres-vps node-vps; do
               health="missing"
               for attempt in 1 2 3 4 5 6; do
                 health=$(curl -s http://127.0.0.1:9090/api/v1/targets \
