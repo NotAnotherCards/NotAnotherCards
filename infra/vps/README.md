@@ -96,7 +96,29 @@ sudo -u deploy grep -E '^[A-Z0-9_]+=' /opt/notanothercards/.env \
 
 Expected ownership and mode are `deploy deploy 600`.
 
-<!-- DISABLED UNTIL FURTHER NOTICE <------
+## Hosted AI configuration
+
+The current deployment runs without the GX10. Configure the API in
+`/opt/notanothercards/.env` with the project-owned Groq primary and
+OpenRouter fallback keys:
+
+```dotenv
+AI_API_BASE=https://api.groq.com/openai/v1
+AI_API_KEY=<Groq key>
+AI_FALLBACK_API_BASE=https://openrouter.ai/api/v1
+AI_FALLBACK_API_KEY=<OpenRouter key>
+AI_DEFAULT_MODEL=balanced
+MODERATION_ALLOW_ALL=1
+```
+
+Keep the keys in the GitHub `production` environment and the project password
+manager, not in this repository. OpenRouter has a hard credit cap and the demo
+budget is approximately $10. See
+[`docs/adr/ai-provider-migration.md`](../../docs/adr/ai-provider-migration.md)
+for aliases, model IDs, and failover behavior.
+
+<!-- DISABLED UNTIL FURTHER NOTICE: historical GX10 target architecture only.
+<------
 
  ## Tailnet access to the GX10
 
