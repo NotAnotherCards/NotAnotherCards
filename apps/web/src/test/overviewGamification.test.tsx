@@ -1,4 +1,5 @@
 import {
+  cleanup,
   render,
   screen,
   waitFor,
@@ -213,7 +214,10 @@ describe('Overview Gamification', () => {
   });
 
   afterEach(async () => {
-    await i18n.changeLanguage('en');
+    cleanup();
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
     vi.useRealTimers();

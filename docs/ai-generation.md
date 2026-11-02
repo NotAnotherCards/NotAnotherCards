@@ -3,6 +3,13 @@
 How a user's input becomes cards. Two paths share one backend; the
 difference is who waits.
 
+## Provider strategy
+
+AI generation now routes through hosted OpenAI-compatible providers
+(Groq primary, OpenRouter failover) instead of the self-hosted GX10
+LiteLLM gateway. See [`docs/adr/ai-provider-migration.md`](../adr/ai-provider-migration.md)
+for the provider strategy, failover policy, model aliases, and cost model.
+
 ## The shared pieces
 
 Every generation goes through `AiGatewayService` in `apps/api/src/ai`. It

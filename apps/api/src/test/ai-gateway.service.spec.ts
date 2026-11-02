@@ -120,26 +120,21 @@ describe('AiGatewayService', () => {
     const config = {
       get: jest.fn((key: string) => {
         if (key === 'AI_API_BASE') return 'https://mock-ai.test/v1';
-        if (key === 'AI_DEFAULT_MODEL') return 'qwen';
+        if (key === 'AI_DEFAULT_MODEL') return 'balanced';
         return undefined;
       }),
     } as unknown as ConfigService;
 
     const gateway = new AiGatewayService(config);
     // Request only 2 cards
-    const result = await gateway.generateCards(
-      'sys',
-      'user',
-      'mistral-small',
-      2,
-    );
+    const result = await gateway.generateCards('sys', 'user', 'smart', 2);
 
     expect(result.cards).toEqual([
       { front: 'Hola', back: 'Hello' },
       { front: 'Adios', back: 'Goodbye' },
     ]);
     expect(result.usage.totalTokens).toBe(40);
-    expect(result.model).toBe('mistral-small');
+    expect(result.model).toBe('qwen/qwen3.8-27b');
 
     // Reasoning must be off: with it, a five-card job runs into the 60s
     // request timeout (measured 26-56s vs ~3s without).
@@ -176,7 +171,7 @@ describe('AiGatewayService', () => {
       }),
     } as unknown as ConfigService;
 
-    await new AiGatewayService(config).generateCards('sys', 'user', 'qwen', 1);
+    await new AiGatewayService(config).generateCards('sys', 'user', 'fast', 1);
 
     const fetchCalls = mockFetch.mock.calls as [string, RequestInit][];
     expect(fetchCalls[0][0]).toBe('https://mock-ai.test/v1/chat/completions');
@@ -306,6 +301,86 @@ describe('AiGatewayService', () => {
     expect(result.model).toBe('qwen3.6');
   });
 
+  it('fails over from a retryable primary response', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(new Response('busy', { status: 503 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify([{ front: 'a', back: 'b' }]),
+                },
+              },
+            ],
+            usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+          }),
+        ),
+      );
+    const config = {
+      get: jest.fn((key: string) => {
+        if (key === 'AI_API_BASE') return 'https://groq.test/v1';
+        if (key === 'AI_FALLBACK_API_BASE') return 'https://openrouter.test/v1';
+        if (key === 'AI_FALLBACK_API_KEY') return 'fallback-key';
+        return undefined;
+      }),
+    } as unknown as ConfigService;
+
+    const result = await new AiGatewayService(config).generateCards(
+      'sys',
+      'user',
+      'fast',
+      1,
+    );
+
+    expect(result.cards).toEqual([{ front: 'a', back: 'b' }]);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const calls = global.fetch as jest.MockedFunction<typeof fetch>;
+    const fallbackBody = calls.mock.calls[1][1]?.body;
+    expect(typeof fallbackBody).toBe('string');
+    if (typeof fallbackBody !== 'string')
+      throw new Error('Missing request body');
+    expect(JSON.parse(fallbackBody)).toMatchObject({
+      model: 'openai/gpt-oss-20b',
+    });
+  });
+
+  it('does not fail over on a non-retryable HTTP response or parse error', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(new Response('bad request', { status: 400 }));
+    global.fetch = fetchMock;
+    const config = {
+      get: jest.fn((key: string) =>
+        key === 'AI_API_BASE'
+          ? 'https://groq.test/v1'
+          : key === 'AI_FALLBACK_API_BASE'
+            ? 'https://openrouter.test/v1'
+            : undefined,
+      ),
+    } as unknown as ConfigService;
+
+    await expect(
+      new AiGatewayService(config).generateCards('sys', 'user'),
+    ).rejects.toThrow('400');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          choices: [{ message: { content: 'not json' } }],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+      ),
+    );
+    await expect(
+      new AiGatewayService(config).generateCards('sys', 'user'),
+    ).rejects.toBeInstanceOf(AiParseError);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   describe('streaming through generateCards', () => {
     const event = (value: unknown) => 'data: ' + JSON.stringify(value) + '\n\n';
     const usageEvent = event({
@@ -409,6 +484,62 @@ describe('AiGatewayService', () => {
         model: 'served',
         usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 },
       });
+    });
+
+    it('fails over a stream that fails before its first delta', async () => {
+      const raw = JSON.stringify([{ front: 'a', back: 'b' }]);
+      global.fetch = jest
+        .fn()
+        .mockResolvedValueOnce(new Response('upstream failed', { status: 503 }))
+        .mockResolvedValueOnce(
+          new Response(
+            event({ choices: [{ delta: { content: raw } }] }) +
+              'data: [DONE]\n\n',
+          ),
+        );
+      const deltas: string[] = [];
+      const result = await new AiGatewayService({
+        get: (key: string) =>
+          key === 'AI_API_BASE'
+            ? 'https://groq.test/v1'
+            : key === 'AI_FALLBACK_API_BASE'
+              ? 'https://openrouter.test/v1'
+              : undefined,
+      } as ConfigService).generateCards('sys', 'topic', 'fast', 1, {
+        onDelta: (delta) => {
+          deltas.push(delta);
+        },
+      });
+
+      expect(result.cards).toEqual([{ front: 'a', back: 'b' }]);
+      expect(deltas).toEqual([raw]);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not fail over after the first delta', async () => {
+      global.fetch = jest
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            event({ choices: [{ delta: { content: 'partial' } }] }) +
+              'data: [DONE]\n\n',
+          ),
+        );
+      const onDelta = jest.fn();
+      await expect(
+        new AiGatewayService({
+          get: (key: string) =>
+            key === 'AI_API_BASE'
+              ? 'https://groq.test/v1'
+              : key === 'AI_FALLBACK_API_BASE'
+                ? 'https://openrouter.test/v1'
+                : undefined,
+        } as ConfigService).generateCards('sys', 'topic', 'fast', 1, {
+          onDelta,
+        }),
+      ).rejects.toBeInstanceOf(AiParseError);
+      expect(onDelta).toHaveBeenCalledWith('partial');
+      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
     it('keeps usage on invalid generated cards', async () => {

@@ -108,7 +108,7 @@ describe('AI Generation Playground Test Suite', () => {
       await user.type(topicInput, 'German Modal Verbs');
 
       const modelSelect = screen.getByLabelText(/Model Selection/i);
-      await user.selectOptions(modelSelect, 'qwen-next-80b');
+      await user.selectOptions(modelSelect, 'balanced');
 
       const submitBtn = screen.getByRole('button', {
         name: /Create$/i,
@@ -119,7 +119,7 @@ describe('AI Generation Playground Test Suite', () => {
         type: 'topic_deck',
         topic: 'German Modal Verbs',
         count: 5,
-        model: 'qwen-next-80b',
+        model: 'balanced',
       });
     });
 
@@ -144,7 +144,7 @@ describe('AI Generation Playground Test Suite', () => {
       await user.type(screen.getByLabelText(/Word \/ Translation/i), 'bonjour');
       await user.selectOptions(
         screen.getByLabelText(/Model Selection/i),
-        'qwen-next-80b',
+        'balanced',
       );
 
       // Submit with default (target) direction
@@ -154,7 +154,7 @@ describe('AI Generation Playground Test Suite', () => {
         deckId: 'deck-2',
         word: 'bonjour',
         direction: 'target',
-        model: 'qwen-next-80b',
+        model: 'balanced',
       });
 
       // Clear mock
@@ -170,7 +170,7 @@ describe('AI Generation Playground Test Suite', () => {
         deckId: 'deck-2',
         word: 'bonjour',
         direction: 'native',
-        model: 'qwen-next-80b',
+        model: 'balanced',
       });
     });
   });

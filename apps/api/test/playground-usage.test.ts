@@ -39,8 +39,8 @@ describe.skipIf(!hasPostgres)(
     it('serializes concurrent requests and updates the single reserved row', async () => {
       const service = limits();
       const attempts = await Promise.allSettled([
-        service.reservePlaygroundUsage('user-a', 'gemma4'),
-        service.reservePlaygroundUsage('user-a', 'gemma4'),
+        service.reservePlaygroundUsage('user-a', 'balanced'),
+        service.reservePlaygroundUsage('user-a', 'balanced'),
       ]);
       const accepted = attempts.filter(
         (attempt) => attempt.status === 'fulfilled',
@@ -82,11 +82,11 @@ describe.skipIf(!hasPostgres)(
 
     it('keeps failed runs at zero tokens and leaves other accounts independent', async () => {
       const service = limits();
-      await service.reservePlaygroundUsage('user-a', 'gemma4');
+      await service.reservePlaygroundUsage('user-a', 'balanced');
       await expect(
-        service.reservePlaygroundUsage('user-a', 'gemma4'),
+        service.reservePlaygroundUsage('user-a', 'balanced'),
       ).rejects.toThrow(HttpException);
-      await service.reservePlaygroundUsage('user-b', 'gemma4');
+      await service.reservePlaygroundUsage('user-b', 'balanced');
       const rows = await db.select().from(aiUsage);
       expect(rows).toHaveLength(2);
       expect(rows.every((row) => row.totalTokens === 0)).toBe(true);
@@ -106,7 +106,7 @@ describe.skipIf(!hasPostgres)(
           const result = {
             cards: [{ front: 'Hola', back: 'Hello' }],
             usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 },
-            model: 'gemma4',
+            model: 'balanced',
           };
           const gateway = {
             generateCards: vi
@@ -129,7 +129,12 @@ describe.skipIf(!hasPostgres)(
           );
           await service.stream(
             'user-a',
-            { type: 'topic_deck', topic: 'Spanish', count: 1, model: 'gemma4' },
+            {
+              type: 'topic_deck',
+              topic: 'Spanish',
+              count: 1,
+              model: 'balanced',
+            },
             res as unknown as Response,
           );
 

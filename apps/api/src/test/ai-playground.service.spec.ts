@@ -59,7 +59,7 @@ describe('playground streaming HTTP boundary', () => {
     type: 'topic_deck',
     topic: 'Spanish',
     count: 1,
-    model: 'gemma4',
+    model: 'balanced',
   };
   const usage = { promptTokens: 2, completionTokens: 3, totalTokens: 5 };
   const result = {
@@ -122,7 +122,7 @@ describe('playground streaming HTTP boundary', () => {
     ]);
     expect(limits.reservePlaygroundUsage).toHaveBeenCalledWith(
       'user-1',
-      'gemma4',
+      'balanced',
     );
     expect(limits.completePlaygroundUsage).toHaveBeenCalledTimes(1);
     expect(limits.completePlaygroundUsage).toHaveBeenCalledWith(
@@ -199,7 +199,7 @@ describe('playground streaming HTTP boundary', () => {
       expect(limits.completePlaygroundUsage).toHaveBeenCalledTimes(1);
       expect(limits.completePlaygroundUsage).toHaveBeenCalledWith(
         'usage-1',
-        knownUsage ? 'served' : 'gemma4',
+        knownUsage ? 'served' : 'balanced',
         knownUsage
           ? usage
           : { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
@@ -263,7 +263,7 @@ describe('playground streaming HTTP boundary', () => {
       const res = response();
       await service.stream(
         'user-1',
-        { ...input, type: 'topic_deck', model: 'gemma4' },
+        { ...input, type: 'topic_deck', model: 'balanced' },
         res as unknown as Response,
       );
       expect(createTimeout.mock.invocationCallOrder[0]).toBeLessThan(
@@ -281,7 +281,7 @@ describe('playground streaming HTTP boundary', () => {
       );
       expect(limits.completePlaygroundUsage).toHaveBeenCalledWith(
         'usage-1',
-        phase === 'reservation' ? 'gemma4' : 'served',
+        phase === 'reservation' ? 'balanced' : 'served',
         phase === 'reservation'
           ? { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
           : usage,
@@ -305,7 +305,7 @@ describe('playground streaming HTTP boundary', () => {
     );
     await timed.stream(
       'user-1',
-      { ...input, type: 'topic_deck', model: 'gemma4' },
+      { ...input, type: 'topic_deck', model: 'balanced' },
       res as unknown as Response,
     );
     expect(res.end).toHaveBeenCalledWith(expect.stringContaining('timed out'));
@@ -329,7 +329,7 @@ describe('playground streaming HTTP boundary', () => {
     });
     const run = service.stream(
       'user-1',
-      { ...input, type: 'topic_deck', model: 'gemma4' },
+      { ...input, type: 'topic_deck', model: 'balanced' },
       res as unknown as Response,
     );
     await accountingStarted;
@@ -365,7 +365,7 @@ describe('playground streaming HTTP boundary', () => {
     });
     const run = service.stream(
       'user-1',
-      { ...input, type: 'topic_deck', model: 'gemma4' },
+      { ...input, type: 'topic_deck', model: 'balanced' },
       res as unknown as Response,
     );
     await ready;
