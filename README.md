@@ -59,7 +59,7 @@ pnpm dev
 
 ### Optional integrations
 
-- **AI generation and moderation:** set `AI_API_BASE` and `AI_API_KEY` using the values supplied by a team member. Without the gateway, generation and deck publishing are unavailable. See [AI documentation](docs/ai-generation.md). Deck content moderation is currently bypassed (`MODERATION_ALLOW_ALL=1`) while generation moves to hosted providers; report and takedown endpoints remain live. Restoring fail-closed moderation is tracked as a follow-up epic in [`docs/adr/ai-provider-migration.md`](docs/adr/ai-provider-migration.md).
+- **AI generation and moderation:** set `AI_API_BASE` and `AI_API_KEY` using the values supplied by a team member. Without the gateway, generation and deck publishing are unavailable. See [AI documentation](docs/ai-generation.md). Deck content moderation is currently bypassed (`MODERATION_ALLOW_ALL=1`) while generation moves to hosted providers; report and takedown endpoints remain live. Restoring fail-closed moderation is tracked as a follow-up epic in [`docs/adr/ai-provider-migration.md`](docs/adr/ai-provider-migration.md). Hosted-provider benchmarks (Groq + OpenRouter) are tracked in [`docs/model-report-v3.md`](docs/model-report-v3.md).
 - **Google sign-in:** set the supplied `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. If you change the local port or origin, ask the team to update the existing OAuth configuration. See [OAuth configuration](docs/oauth-setup.md).
 - **Password-reset email:** use the team's email configuration or run Mailpit locally as shown below.
 
