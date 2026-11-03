@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ConfigService } from '@nestjs/config';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
   db,
   hasPostgres,
@@ -289,5 +289,116 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
 
     expect(await db.select().from(aiGenerationJobs)).toHaveLength(0);
     expect(await db.select().from(aiUsage)).toHaveLength(0);
+  });
+});
+
+describePostgres('AI Forced-Failure Integration', () => {
+  let limitsService: AiLimitsService;
+  let queueService: AiQueueService;
+  let workerService: AiWorkerService;
+  let gatewayService: AiGatewayService;
+  let configService: ConfigService;
+  let metricsService: MetricsService;
+
+  beforeAll(async () => {
+    await setUpPostgres();
+
+    // Both primary and fallback are unreachable: every attempt fails over
+    // once then exhausts all providers, forcing the worker to retry until
+    // max attempts is reached.
+    configService = new ConfigService({
+      AI_MAX_PENDING_JOBS_PER_USER: '2',
+      AI_MAX_DAILY_TOKENS_PER_USER: '50000',
+      AI_MAX_DAILY_REQUESTS_PER_USER: '25',
+      AI_WORKER_ENABLED: 'false',
+      AI_MOCK: '',
+      AI_API_BASE: 'http://127.0.0.1:1/nonexistent',
+      AI_API_KEY: 'unused',
+      AI_FALLBACK_API_BASE: 'http://127.0.0.1:1/nonexistent',
+      AI_FALLBACK_API_KEY: 'unused',
+    });
+
+    metricsService = new MetricsService();
+    limitsService = new AiLimitsService(db, configService);
+    queueService = new AiQueueService(db, limitsService);
+    gatewayService = new AiGatewayService(configService);
+    workerService = new AiWorkerService(
+      db,
+      gatewayService,
+      configService,
+      metricsService,
+    );
+  });
+
+  beforeEach(async () => {
+    await resetPostgres();
+  });
+
+  afterAll(async () => {
+    await tearDownPostgres();
+  });
+
+  it('retries across profiles and marks the job failed after max attempts', async () => {
+    const userId = 'user-a';
+
+    const job = await queueService.enqueueJob(userId, {
+      type: 'topic_deck',
+      topic: 'forced failure topic',
+      count: 5,
+    });
+
+    expect(job.status).toBe('pending');
+
+    // Run the worker max_attempts (3) times. Each attempt fails over from
+    // primary to fallback, both are unreachable, so each attempt fails.
+    // After each failure the worker sets next_run_at into the future
+    // (backoff), so force the job due again before the next call.
+    for (let i = 0; i < 3; i++) {
+      await workerService.processNextJob();
+      await db.execute(
+        sql`UPDATE ai_generation_jobs SET next_run_at = NOW() WHERE id = ${job.id}`,
+      );
+    }
+
+    const [failedJob] = await db
+      .select()
+      .from(aiGenerationJobs)
+      .where(eq(aiGenerationJobs.id, job.id));
+
+    expect(failedJob.status).toBe('failed');
+    expect(failedJob.error).toBeDefined();
+    expect(failedJob.attempts).toBe(3);
+  });
+
+  it('records ai_usage per attempt with the serving provider', async () => {
+    const userId = 'user-b';
+
+    const job = await queueService.enqueueJob(userId, {
+      type: 'topic_deck',
+      topic: 'usage tracking topic',
+      count: 5,
+    });
+
+    for (let i = 0; i < 3; i++) {
+      await workerService.processNextJob();
+      await db.execute(
+        sql`UPDATE ai_generation_jobs SET next_run_at = NOW() WHERE id = ${job.id}`,
+      );
+    }
+
+    const usageRecords = await db
+      .select()
+      .from(aiUsage)
+      .where(eq(aiUsage.userId, userId))
+      .orderBy(aiUsage.createdAt);
+
+    // One usage row per failed attempt (connection errors produce no token
+    // usage, but the row is still written with the serving provider).
+    expect(usageRecords).toHaveLength(3);
+    for (const record of usageRecords) {
+      expect(record.jobId).toBe(job.id);
+      expect(record.provider).toBeDefined();
+      expect(record.totalTokens).toBe(0);
+    }
   });
 });

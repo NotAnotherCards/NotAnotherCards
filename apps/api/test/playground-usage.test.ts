@@ -107,6 +107,7 @@ describe.skipIf(!hasPostgres)(
             cards: [{ front: 'Hola', back: 'Hello' }],
             usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 },
             model: 'balanced',
+            provider: 'unknown',
           };
           const gateway = {
             generateCards: vi

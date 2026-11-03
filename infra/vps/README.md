@@ -117,6 +117,29 @@ budget is approximately $10. See
 [`docs/adr/ai-provider-migration.md`](../../docs/adr/ai-provider-migration.md)
 for aliases, model IDs, and failover behavior.
 
+### Moderation operator key rotation
+
+`MODERATION_OPERATOR_KEY` gates the operator report listing and manual takedown
+endpoints. Rotate it on a regular cadence and whenever a team member with access
+leaves the project:
+
+1. Generate a new value: `openssl rand -base64 32`
+2. Add the new value to `MODERATION_OPERATOR_KEY` in `/opt/notanothercards/.env`
+   alongside the previous value (the operator endpoints accept the current
+   value only; there is no grace window).
+3. Redeploy the api container:
+   ```bash
+   cd /opt/notanothercards
+   sudo -u deploy docker compose \
+     -f docker-compose.yml \
+     -f docker-compose.production.yml \
+     up -d --no-deps --force-recreate api
+   ```
+4. Remove the previous value from the environment file and redeploy again to
+   confirm only the new key works.
+5. Update the value in the GitHub `production` environment and the project
+   password manager.
+
 <!-- DISABLED UNTIL FURTHER NOTICE: historical GX10 target architecture only.
 <------
 

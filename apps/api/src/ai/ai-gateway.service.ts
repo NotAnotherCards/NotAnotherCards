@@ -13,18 +13,21 @@ export interface InferenceResult {
     totalTokens: number;
   };
   model: string;
+  provider: string;
 }
 
 export interface ObjectInferenceResult {
   value: Record<string, unknown>;
   usage: InferenceResult['usage'];
   model: string;
+  provider: string;
 }
 
 export interface TextInferenceResult {
   text: string;
   usage: InferenceResult['usage'];
   model: string;
+  provider: string;
 }
 
 export class AiParseError extends Error {
@@ -36,6 +39,7 @@ export class AiParseError extends Error {
       totalTokens: number;
     },
     public readonly model: string,
+    public readonly provider: string,
   ) {
     super(message);
     this.name = 'AiParseError';
@@ -159,6 +163,7 @@ interface Completion {
   rawContent: string;
   usage: InferenceResult['usage'];
   model: string;
+  provider: string;
 }
 
 @Injectable()
@@ -213,10 +218,20 @@ export class AiGatewayService {
       cards = this.parseCardsFromJson(completion.rawContent, requestedCount);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new AiParseError(msg, completion.usage, completion.model);
+      throw new AiParseError(
+        msg,
+        completion.usage,
+        completion.model,
+        completion.provider,
+      );
     }
 
-    return { cards, usage: completion.usage, model: completion.model };
+    return {
+      cards,
+      usage: completion.usage,
+      model: completion.model,
+      provider: completion.provider,
+    };
   }
 
   async generateText(
@@ -235,6 +250,7 @@ export class AiGatewayService {
           text,
           usage: { promptTokens: 20, completionTokens: 30, totalTokens: 50 },
           model: `${settings.alias}-mock`,
+          provider: 'mock',
         };
       }
       throw new Error('AI gateway is not configured (AI_API_BASE is unset).');
@@ -252,6 +268,7 @@ export class AiGatewayService {
       text: completion.rawContent.trim(),
       usage: completion.usage,
       model: completion.model,
+      provider: completion.provider,
     };
   }
 
@@ -264,12 +281,13 @@ export class AiGatewayService {
     let lastError: unknown;
     for (const provider of this.providers(settings)) {
       try {
-        return await this.requestStreamingCompletionOnce(
+        const completion = await this.requestStreamingCompletionOnce(
           systemPrompt,
           userPrompt,
           provider,
           stream,
         );
+        return completion;
       } catch (error) {
         lastError = error;
         if (
@@ -302,6 +320,7 @@ export class AiGatewayService {
     const completion: Completion = {
       rawContent: '',
       model: provider.model,
+      provider: provider.apiBase,
       usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
     };
     let emittedDelta = false;
@@ -377,10 +396,16 @@ export class AiGatewayService {
         value: this.parseObjectFromJson(completion.rawContent),
         usage: completion.usage,
         model: completion.model,
+        provider: completion.provider,
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new AiParseError(msg, completion.usage, completion.model);
+      throw new AiParseError(
+        msg,
+        completion.usage,
+        completion.model,
+        completion.provider,
+      );
     }
   }
 
@@ -394,6 +419,9 @@ export class AiGatewayService {
       fast: 'openai/gpt-oss-20b',
       balanced: 'openai/gpt-oss-120b',
       smart: 'qwen/qwen3.8-27b',
+      // Deprecated Ollama-era alias kept for existing job rows; maps to the
+      // smart provider model so legacy payloads still process.
+      qwen: 'qwen/qwen3.8-27b',
     };
     const model = modelMap[alias] ?? alias;
     const provider = (
@@ -498,6 +526,7 @@ export class AiGatewayService {
     settings: GatewaySettings,
   ): Promise<Completion> {
     let lastError: unknown;
+    let servedProvider = '';
     for (const provider of this.providers(settings)) {
       try {
         const res = await this.chatRequest(
@@ -512,10 +541,12 @@ export class AiGatewayService {
           completionTokens: data.usage?.completion_tokens ?? 0,
           totalTokens: data.usage?.total_tokens ?? 0,
         };
+        servedProvider = provider.apiBase;
         return {
           rawContent: data.choices?.[0]?.message?.content ?? '',
           usage,
           model: data.model ?? provider.model,
+          provider: servedProvider,
         };
       } catch (error) {
         lastError = error;
@@ -657,6 +688,7 @@ export class AiGatewayService {
         totalTokens: 45 + count * 15,
       },
       model: `${model}-mock`,
+      provider: 'mock',
     };
   }
 
@@ -676,6 +708,7 @@ export class AiGatewayService {
         totalTokens: 60,
       },
       model: `${model}-mock`,
+      provider: 'mock',
     };
   }
 }

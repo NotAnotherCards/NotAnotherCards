@@ -347,6 +347,52 @@ describe('AiGatewayService', () => {
     });
   });
 
+  it('fails over from a 429 rate-limited primary response', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(new Response('rate limited', { status: 429 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify([{ front: 'a', back: 'b' }]),
+                },
+              },
+            ],
+            usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+          }),
+        ),
+      );
+    const config = {
+      get: jest.fn((key: string) => {
+        if (key === 'AI_API_BASE') return 'https://groq.test/v1';
+        if (key === 'AI_FALLBACK_API_BASE') return 'https://openrouter.test/v1';
+        if (key === 'AI_FALLBACK_API_KEY') return 'fallback-key';
+        return undefined;
+      }),
+    } as unknown as ConfigService;
+
+    const result = await new AiGatewayService(config).generateCards(
+      'sys',
+      'user',
+      'fast',
+      1,
+    );
+
+    expect(result.cards).toEqual([{ front: 'a', back: 'b' }]);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const calls = global.fetch as jest.MockedFunction<typeof fetch>;
+    const fallbackBody = calls.mock.calls[1][1]?.body;
+    expect(typeof fallbackBody).toBe('string');
+    if (typeof fallbackBody !== 'string')
+      throw new Error('Missing request body');
+    expect(JSON.parse(fallbackBody)).toMatchObject({
+      model: 'openai/gpt-oss-20b',
+    });
+  });
+
   it('does not fail over on a non-retryable HTTP response or parse error', async () => {
     const fetchMock = jest
       .fn()

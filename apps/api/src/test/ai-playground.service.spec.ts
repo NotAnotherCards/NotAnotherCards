@@ -66,6 +66,7 @@ describe('playground streaming HTTP boundary', () => {
     cards: [{ front: 'Hola', back: 'Hello' }],
     usage,
     model: 'served',
+    provider: 'served',
   };
 
   beforeEach(async () => {
