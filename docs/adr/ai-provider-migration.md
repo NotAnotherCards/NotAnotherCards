@@ -58,7 +58,7 @@ The alias→provider-id mapping lives in the gateway provider-profile config (Is
 
 ### Reasoning
 
-All requests set `reasoning_effort: 'none'`. Reasoning models inflate a five-card job from ~250 tokens to ~2,000 tokens and add 26–56s of latency. `stripThinking()` remains as a safety net in case a provider ignores the hint.
+Requests set `reasoning_effort: 'low'` for `openai/gpt-oss-*` models (they do not accept `none`) and `'none'` for every other model; see `gatewaySettings` in `apps/api/src/ai/ai-gateway.service.ts`. Whether Groq honors `none` is measured by the probe runs in [`docs/model-report-v3.md`](../model-report-v3.md). Reasoning models inflate a five-card job from ~250 tokens to ~2,000 tokens and add 26–56s of latency. `stripThinking()` remains as a safety net in case a provider ignores the hint.
 
 ### Cost model (per five-card job)
 

@@ -96,6 +96,78 @@ The provider aliases and concrete model IDs are documented in
 the primary provider and OpenRouter is the budget-capped fallback. The
 production demo budget is approximately $10.
 
+### Production environment
+
+`/opt/notanothercards/.env` holds the provider pairs:
+
+```dotenv
+AI_API_BASE=https://api.groq.com/openai/v1
+AI_API_KEY=<groq key>
+AI_FALLBACK_API_BASE=https://openrouter.ai/api/v1
+AI_FALLBACK_API_KEY=<openrouter key>
+AI_DEFAULT_MODEL=balanced
+# TEMPORARY: moderation bypass while generation moves to hosted providers.
+# Remove when fail-closed moderation is restored (see the ADR follow-up).
+MODERATION_ALLOW_ALL=1
+```
+
+### Watching the provider (first 24 h after a provider change)
+
+`ai_usage.provider` records the API base that served each request, so a
+healthy rollout shows `groq.com` rows with OpenRouter appearing only
+during failover:
+
+```sql
+SELECT provider, model, count(*)
+FROM ai_usage
+WHERE created_at > now() - interval '24 hours'
+GROUP BY 1, 2 ORDER BY 3 DESC;
+
+SELECT status, count(*), max(created_at)
+FROM ai_generation_jobs
+WHERE created_at > now() - interval '24 hours'
+GROUP BY 1;
+
+SELECT created_at, error
+FROM ai_generation_jobs
+WHERE status = 'failed' AND created_at > now() - interval '24 hours'
+ORDER BY created_at DESC LIMIT 20;
+```
+
+Run them with
+`sudo -u deploy docker compose -f docker-compose.yml -f docker-compose.production.yml exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`
+from `/opt/notanothercards`.
+
+### Rollback runbook (AI provider)
+
+The GX10 gateway is no longer reachable, so rollback means moving traffic
+off the failing hosted provider rather than returning to self-hosting.
+Use the first step that applies:
+
+1. **Groq is down or rate-limited and OpenRouter is healthy.** Nothing has to
+   change: failover already happens per request. Confirm that OpenRouter
+   rows appear in `ai_usage` and that failed jobs are not increasing.
+2. **Groq misbehaves in a way failover does not catch** (bad output, parse
+   errors, latency close to the timeout). Make OpenRouter the primary: in
+   `/opt/notanothercards/.env`, swap `AI_API_BASE`/`AI_API_KEY` with the
+   `AI_FALLBACK_*` pair. Then recreate the api with
+   `sudo -u deploy docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --wait api`.
+   Or re-run `deploy.yml` (`workflow_dispatch`) so the deploy's
+   checks also run.
+3. **The model choice is the problem.** Point `AI_DEFAULT_MODEL` at another
+   alias (`fast` or `smart`) and recreate the api as in step 2.
+4. **Both providers fail or the budget is exhausted.** Set `AI_MOCK=1` so
+   generation keeps answering without spending anything, recreate the api,
+   and tell the team that generation is serving mock cards.
+5. **The application code is at fault.** Revert the PR on `main`; the merge
+   triggers `deploy.yml`. Review migrations first. `ai_usage.provider` is
+   additive, and older code ignores it.
+
+After any step, re-run the watch queries above. Record what happened in the
+team channel and in the ADR if the provider decision changes. Keep
+`MODERATION_ALLOW_ALL=1` in place until the moderation follow-up epic lands;
+a provider rollback does not change it.
+
 ## Deploys
 
 - GitHub Actions deploys on merge to main (`.github/workflows/deploy.yml`):
