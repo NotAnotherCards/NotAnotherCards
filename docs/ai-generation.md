@@ -13,12 +13,14 @@ for the provider strategy, failover policy, model aliases, and cost model.
 ## The shared pieces
 
 Every generation goes through `AiGatewayService` in `apps/api/src/ai`. It
-holds one request builder for the LiteLLM gateway (`AI_API_BASE`) and one
-card parser that strips `<think>` blocks, extracts the JSON array, requires
-string front and back, truncates long fields and clamps the count.
+holds one request builder for an OpenAI-compatible provider, tried as the
+primary profile (`AI_API_BASE`) and then the fallback (`AI_FALLBACK_API_BASE`),
+and one card parser that strips `<think>` blocks, extracts the JSON array,
+requires string front and back, truncates long fields and clamps the count.
 `AiLimitsService` checks quotas before a run starts: daily requests and
 daily tokens over a rolling 24 h window, plus a cap on queued jobs. Each
-run writes one row to `ai_usage`. `AI_MOCK=1` answers without a GPU.
+attempt that reaches the gateway writes one row to `ai_usage`, including the
+provider that served it. `AI_MOCK=1` answers without any provider.
 
 ## Queued jobs
 

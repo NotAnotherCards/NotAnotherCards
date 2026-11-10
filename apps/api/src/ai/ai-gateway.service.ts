@@ -497,11 +497,10 @@ export class AiGatewayService {
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.7,
-        // Generation must not reason: with reasoning, a five-card job runs
-        // 26-56s against the 60s timeout (a measured 4s margin on an idle
-        // GPU); without it, ~3s and a tenth of the tokens. Works on the
-        // LiteLLM path and on OpenAI-compatible fallbacks; providers that
-        // ignore it are no worse off.
+        // Keep reasoning minimal: with full reasoning, a five-card job can
+        // approach the 60s timeout and burns many times the tokens. gpt-oss
+        // models take 'low' and the rest 'none' (see gatewaySettings);
+        // OpenAI-compatible providers that ignore it are no worse off.
         reasoning_effort: settings.reasoningEffort,
         // usage only arrives in a stream's final chunk when asked for
         ...(stream
