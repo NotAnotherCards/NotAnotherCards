@@ -86,8 +86,9 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 To get social logins working on a deployed instance:
 
 1. **Google Console Credentials**: In the same Google client configuration (or a new production-specific client), add your deployment's URLs:
-   - **Authorized JavaScript origins**: `https://cards.dustyway.org`
-   - **Authorized redirect URIs**: `https://cards.dustyway.org/api/auth/callback/google`
+   - **Authorized JavaScript origins**: `https://app.notanothercards.com`
+   - **Authorized redirect URIs**: `https://app.notanothercards.com/api/auth/callback/google`
+   - The server's `BETTER_AUTH_URL` and `FRONTEND_URL` must both be `https://app.notanothercards.com`; Better Auth builds the redirect URI from `BETTER_AUTH_URL`, so a mismatch fails with `redirect_uri_mismatch`.
 2. **Environment Variables**: Configure the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables in your server's deployment or Docker Compose configuration exactly as shown in [Section 3](#3-environment-configuration).
 
 ---

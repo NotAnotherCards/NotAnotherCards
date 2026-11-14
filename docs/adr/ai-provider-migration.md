@@ -82,7 +82,7 @@ curl --fail -H "Authorization: Bearer $OPENROUTER_API_KEY" \
 
 ### Moderation deferral
 
-Deck content moderation is bypassed for the duration of this migration via `MODERATION_ALLOW_ALL=1`; the publish gate skips classifiers for tests and demos. Report recording, queued re-checks, and manual takedown endpoints remain live. The api's boot-time sweep that fails pending `deck_moderation` jobs is gated on the same flag: when the flag is removed to restore fail-closed moderation, the sweep must be removed with it (or it will silently disable report-triggered re-checks across restarts). Re-hosting production moderation (two classifiers, fail-closed) is a separate follow-up epic.
+Deck content moderation is bypassed for the duration of this migration via `MODERATION_ALLOW_ALL=1`; the publish gate skips classifiers for tests and demos. Report recording and manual takedown endpoints remain live, but no `deck_moderation` re-check is enqueued while the flag is set: the report response returns `recheck: 'skipped'`. The api's boot-time sweep that fails pending `deck_moderation` jobs is gated on the same flag: when the flag is removed to restore fail-closed moderation, the sweep must be removed with it (or it will silently disable report-triggered re-checks across restarts). Re-hosting production moderation (two classifiers, fail-closed) is a separate follow-up epic.
 
 ## Consequences
 

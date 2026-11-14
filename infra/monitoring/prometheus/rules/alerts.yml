@@ -68,6 +68,18 @@ groups:
           summary: 'AI queue depth metrics are stale'
           description: 'The API cannot refresh queue depth from the database; dashboards show the last known values.'
 
+      - alert: AiJobsFailing
+        # Replaces the retired GX10/LiteLLM availability alerts: with hosted
+        # providers, a dead key or exhausted budget shows up only as failed
+        # jobs, which leave the queue and never trip AiQueueDepthHigh.
+        expr: increase(ai_jobs_failed_total[15m]) >= 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'AI generation jobs are failing ({{ $value }} in the last 15m)'
+          description: 'Check the Groq/OpenRouter keys and budget, then the ai_usage provider query in docs/deployment.md ("Watching the provider").'
+
       - alert: DiskFilling
         expr: (node_filesystem_free_bytes{job="node-vps",mountpoint="/"} / node_filesystem_size_bytes{job="node-vps",mountpoint="/"}) < 0.15
         for: 10m
