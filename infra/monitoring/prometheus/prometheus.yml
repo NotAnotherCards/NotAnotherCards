@@ -33,20 +33,21 @@ scrape_configs:
     static_configs:
       - targets: ['postgres-exporter:9187']
 
-  # LiteLLM AI Gateway metrics on GX10
-  - job_name: 'litellm-gx10'
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['100.64.0.1:4000']
+  # ----> DISABLED UNTIL FURTHER NOTICE <------
+  # # LiteLLM AI Gateway metrics on GX10
+  # - job_name: 'litellm-gx10'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets: ['100.64.0.1:4000']
 
-  # NVIDIA DCGM GPU exporter on GX10 (GPU utilization, memory, temperature)
-  - job_name: 'dcgm-gpu-gx10'
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['100.64.0.1:9400']
+  # # NVIDIA DCGM GPU exporter on GX10 (GPU utilization, memory, temperature)
+  # - job_name: 'dcgm-gpu-gx10'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets: ['100.64.0.1:9400']
 
-  # GX10 host hardware metrics
-  - job_name: 'node-gx10'
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['100.64.0.1:9100']
+  # # GX10 host hardware metrics
+  # - job_name: 'node-gx10'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets: ['100.64.0.1:9100']

@@ -97,6 +97,14 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       };
     });
 
+    // Moderation bypass: sweep any existing deck_moderation rows to a
+    // terminal state so they no longer block the queue or retry indefinitely.
+    // Gated on the same flag as the classifier bypass: with live moderation,
+    // pending re-checks must keep running rather than being failed at boot.
+    if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
+      void this.sweepDeckModerationJobs();
+    }
+
     if (this.workerEnabled) {
       this.timer = setInterval(() => {
         void this.processNextJob();
@@ -110,6 +118,38 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   onModuleDestroy() {
     if (this.timer) {
       clearInterval(this.timer);
+    }
+  }
+
+  /**
+   * Moderation bypass: mark any existing deck_moderation rows (pending or
+   * processing) as failed so they reach a terminal state and no longer block
+   * the queue. Only runs while MODERATION_ALLOW_ALL=1; when live moderation is
+   * restored, pending re-check jobs must keep running. Reports and takedown
+   * endpoints remain live; re-check jobs are not re-enqueued.
+   */
+  private async sweepDeckModerationJobs(): Promise<void> {
+    try {
+      const result = await this.db.execute(sql`
+        UPDATE ai_generation_jobs
+        SET status = 'failed',
+            error = 'Moderation bypass: deck re-check jobs are suspended during the provider migration.',
+            updated_at = NOW()
+        WHERE type = 'deck_moderation'
+          AND status IN ('pending', 'processing')
+        RETURNING id;
+      `);
+      if (result.rows.length > 0) {
+        this.logger.log(
+          `Swept ${result.rows.length} deck_moderation job(s) to terminal failed state`,
+        );
+        this.metricsService?.aiJobsFailedTotal.inc(result.rows.length);
+      }
+    } catch (err: unknown) {
+      this.logger.error(
+        'Failed to sweep deck_moderation jobs to terminal state',
+        err instanceof Error ? (err.stack ?? err.message) : String(err),
+      );
     }
   }
 
@@ -178,6 +218,9 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
   private async executeJob(job: ClaimedJobRow) {
     const startTime = process.hrtime.bigint();
     let metricModel = 'unknown';
+    let model = 'unknown';
+    let provider = 'unknown';
+    let aiGatewayAttempted = false;
 
     try {
       const rawPayload: unknown =
@@ -199,13 +242,13 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
       }
       let result: GenerationResult;
       let usage: InferenceResult['usage'];
-      let model: string;
       let resultLabel: string;
 
       switch (job.type) {
         case 'topic_deck': {
           const payload = topicDeckPayloadSchema.parse(rawPayload);
           metricModel = payload.model ?? metricModel;
+          aiGatewayAttempted = true;
           const inference = await this.aiGateway.generateCards(
             TOPIC_GENERATION_V1.system,
             TOPIC_GENERATION_V1.buildUserPrompt(payload.topic, payload.count),
@@ -215,6 +258,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           result = inference.cards;
           usage = inference.usage;
           model = inference.model;
+          provider = inference.provider;
           metricModel = model;
           resultLabel = `${result.length} cards`;
           break;
@@ -222,6 +266,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         case 'text_cards': {
           const payload = textCardsPayloadSchema.parse(rawPayload);
           metricModel = payload.model ?? metricModel;
+          aiGatewayAttempted = true;
           const inference = await this.aiGateway.generateCards(
             TEXT_GENERATION_V1.system,
             TEXT_GENERATION_V1.buildUserPrompt(
@@ -234,6 +279,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           result = inference.cards;
           usage = inference.usage;
           model = inference.model;
+          provider = inference.provider;
           metricModel = model;
           resultLabel = `${result.length} cards`;
           break;
@@ -241,6 +287,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         case 'word_note': {
           const payload = wordNotePayloadSchema.parse(rawPayload);
           metricModel = payload.model ?? metricModel;
+          aiGatewayAttempted = true;
           const inference = await this.aiGateway.generateObject(
             WORD_NOTE_V1.system,
             WORD_NOTE_V1.buildUserPrompt(payload),
@@ -253,10 +300,12 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
               error instanceof Error ? error.message : String(error),
               inference.usage,
               inference.model,
+              inference.provider,
             );
           }
           usage = inference.usage;
           model = inference.model;
+          provider = inference.provider;
           metricModel = model;
           resultLabel = '1 word note';
           break;
@@ -283,6 +332,7 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
           userId: job.user_id,
           jobId: job.id,
           model,
+          provider,
           promptTokens: usage.promptTokens,
           completionTokens: usage.completionTokens,
           totalTokens: usage.totalTokens,
@@ -317,29 +367,49 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
         Math.pow(2, Math.max(1, job.attempts)) * 10,
       );
 
-      // If gateway returned usage before parse failure, log the token usage
-      if (err instanceof AiParseError && err.usage) {
-        metricModel = err.model;
+      // Record usage for attempts that reached the AI gateway: parse errors
+      // carry usage from the gateway; connection/HTTP failures record zero
+      // tokens with the last known provider (or 'unknown' when none was
+      // determined). Errors before the gateway call (payload validation,
+      // deck_moderation) wrote no usage row — nothing was generated.
+      const recordProvider =
+        err instanceof AiParseError ? err.provider : provider;
+      const recordModel = err instanceof AiParseError ? err.model : model;
+      const recordUsage: InferenceResult['usage'] | null =
+        err instanceof AiParseError
+          ? err.usage
+          : aiGatewayAttempted
+            ? { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+            : null;
+
+      if (recordUsage) {
         try {
           await this.db.insert(aiUsage).values({
             id: randomUUID(),
             userId: job.user_id,
             jobId: job.id,
-            model: err.model,
-            promptTokens: err.usage.promptTokens,
-            completionTokens: err.usage.completionTokens,
-            totalTokens: err.usage.totalTokens,
+            model: recordModel,
+            provider: recordProvider,
+            promptTokens: recordUsage.promptTokens,
+            completionTokens: recordUsage.completionTokens,
+            totalTokens: recordUsage.totalTokens,
           });
-          this.metricsService?.aiTokensConsumedTotal.inc(
-            { model: err.model },
-            err.usage.totalTokens,
-          );
+          if (recordUsage.totalTokens > 0) {
+            this.metricsService?.aiTokensConsumedTotal.inc(
+              { model: recordModel },
+              recordUsage.totalTokens,
+            );
+          }
         } catch (usageErr) {
           this.logger.error(
-            'Failed to log token usage on parse error',
+            'Failed to log token usage on job failure',
             usageErr,
           );
         }
+      }
+
+      if (err instanceof AiParseError) {
+        metricModel = err.model;
       }
 
       this.metricsService?.observeAiJobDuration(
@@ -554,38 +624,42 @@ export class AiWorkerService implements OnModuleInit, OnModuleDestroy {
             updated_at = NOW()
         WHERE id = ${jobId}
       `);
-      if (result.outcome !== 'stale') return;
-
-      const followUp = await tx.execute(sql`
-        SELECT p.published_at, r.reporter_user_id
-        FROM published_decks p
-        JOIN user_decks d ON d.id = p.deck_id
-        JOIN deck_reports r
-          ON r.deck_id = p.deck_id
-         AND r.snapshot_published_at = p.published_at
-        WHERE p.deck_id = ${result.deckId}
-          AND p.moderation_status = 'visible'
-          AND p.moderated_at IS NULL
-          AND d.visibility = 'public'
-          AND d.deleted_at IS NULL
-        ORDER BY r.created_at ASC
-        LIMIT 1
-      `);
-      const row = followUp.rows[0] as
-        { published_at: Date | string; reporter_user_id: string } | undefined;
-      if (!row) return;
-      await tx.execute(sql`
-        INSERT INTO ai_generation_jobs (id, user_id, type, payload)
-        VALUES (
-          ${randomUUID()},
-          ${row.reporter_user_id},
-          'deck_moderation',
-          ${JSON.stringify({
-            deckId: result.deckId,
-            snapshotPublishedAt: new Date(row.published_at).toISOString(),
-          })}::jsonb
-        )
-      `);
+      if (result.outcome === 'stale') {
+        // Carry an unresolved report forward into a fresh re-check job for the
+        // snapshot that reporter actually saw. Any matching report works: the
+        // re-check covers the whole deck snapshot, not just that reporter's card.
+        const followUp = await tx.execute(sql`
+          SELECT p.published_at, r.reporter_user_id
+          FROM published_decks p
+          JOIN user_decks d ON d.id = p.deck_id
+          JOIN deck_reports r
+            ON r.deck_id = p.deck_id
+           AND r.snapshot_published_at = p.published_at
+          WHERE p.deck_id = ${result.deckId}
+            AND p.moderation_status = 'visible'
+            AND p.moderated_at IS NULL
+            AND d.visibility = 'public'
+            AND d.deleted_at IS NULL
+          ORDER BY r.created_at ASC
+          LIMIT 1
+        `);
+        const row = followUp.rows[0] as
+          { published_at: Date | string; reporter_user_id: string } | undefined;
+        if (row) {
+          await tx.execute(sql`
+            INSERT INTO ai_generation_jobs (id, user_id, type, payload)
+            VALUES (
+              ${randomUUID()},
+              ${row.reporter_user_id},
+              'deck_moderation',
+              ${JSON.stringify({
+                deckId: result.deckId,
+                snapshotPublishedAt: new Date(row.published_at).toISOString(),
+              })}::jsonb
+            )
+          `);
+        }
+      }
     });
   }
 }

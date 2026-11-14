@@ -99,7 +99,7 @@ export const deckReportResponseSchema = z.object({
     snapshotPublishedAt: z.coerce.date(),
     createdAt: z.coerce.date(),
   }),
-  recheck: z.enum(['queued', 'pending', 'cached']),
+  recheck: z.enum(['queued', 'pending', 'cached', 'skipped']),
 });
 
 export const ownerModerationStatusSchema = z.discriminatedUnion('status', [

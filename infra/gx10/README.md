@@ -6,6 +6,12 @@ postgres for LiteLLM's keys, and two metrics exporters. Background and
 tradeoffs: [docs/inference-server.md](../../docs/inference-server.md),
 topology in [docs/deployment.md](../../docs/deployment.md).
 
+`results/` holds the model campaign drivers and outputs. The
+`2026-08-24/` campaigns measured local Ollama models on the (now
+decommissioned) GX10; `2026-11-03-hosted/` adapts the same drivers to
+hosted Groq/OpenRouter for
+[model-report-v3](../../docs/model-report-v3.md).
+
 Convention: our own code gets Dockerfiles, third-party software runs
 official images plus config. This whole stack is third-party, so there
 are no Dockerfiles here — config comes in via compose (env vars, mounted
@@ -88,19 +94,19 @@ across models.
 Which model for what (measured, see
 [docs/model-report.md](../../docs/model-report.md)):
 
-| model           | use it for                             | notes                                                                                                               |
-| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `gemma4`        | default generation                     | best quality in the v2 run, 3.49 s median for five cards; falls back to `qwen3.6` on failure                        |
-| `qwen3.6`       | low-latency fallback, chat             | ~0.8 s faster than `gemma4`, a few more errors; thinking mode is slower, more accurate, and doubles as our reviewer |
-| `qwen`          | nothing new                            | deprecated alias for `qwen3.6`, removed once all clients send the new name                                          |
-| `qwen-next-80b` | best accuracy, no hurry                | ~45 s per answer                                                                                                    |
-| `qwen3.8`       | comparison only                        | 2.5x slower than `qwen3.6` with more errors; send `reasoning_effort: "none"`                                        |
-| `muse-glimmer`  | comparison only                        | quality on par with `gemma4`, ~17 s per set                                                                         |
-| `mistral-small` | second opinion, dense-model style      | older results, rerun pending                                                                                        |
-| `fact-check`    | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no                                                                  |
-| `moderation`    | content screening                      | qwen3guard verdicts: Safe, Unsafe, or Controversial, plus categories                                                |
-| `moderation-thorough` | report re-check                 | independent ShieldGemma 9B; native `Yes` (unsafe) / `No` (safe) contract; final round-two selection pending        |
-| `embeddings`    | vectors (bge-m3)                       | embeddings API, not chat                                                                                            |
+| model                 | use it for                             | notes                                                                                                               |
+| --------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `gemma4`              | default generation                     | best quality in the v2 run, 3.49 s median for five cards; falls back to `qwen3.6` on failure                        |
+| `qwen3.6`             | low-latency fallback, chat             | ~0.8 s faster than `gemma4`, a few more errors; thinking mode is slower, more accurate, and doubles as our reviewer |
+| `qwen`                | nothing new                            | deprecated alias for `qwen3.6`, removed once all clients send the new name                                          |
+| `qwen-next-80b`       | best accuracy, no hurry                | ~45 s per answer                                                                                                    |
+| `qwen3.8`             | comparison only                        | 2.5x slower than `qwen3.6` with more errors; send `reasoning_effort: "none"`                                        |
+| `muse-glimmer`        | comparison only                        | quality on par with `gemma4`, ~17 s per set                                                                         |
+| `mistral-small`       | second opinion, dense-model style      | older results, rerun pending                                                                                        |
+| `fact-check`          | "is this claim supported by this text" | prompt `Document: ...\nClaim: ...`, answers yes/no                                                                  |
+| `moderation`          | content screening                      | qwen3guard verdicts: Safe, Unsafe, or Controversial, plus categories                                                |
+| `moderation-thorough` | report re-check                        | independent ShieldGemma 9B; native `Yes` (unsafe) / `No` (safe) contract; final round-two selection pending         |
+| `embeddings`          | vectors (bge-m3)                       | embeddings API, not chat                                                                                            |
 
 Good to know:
 

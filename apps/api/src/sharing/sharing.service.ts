@@ -388,6 +388,13 @@ export class SharingService {
         return { report, recheck: 'cached' as const };
       }
 
+      // Moderation bypass: the report is recorded, but no re-check job is
+      // enqueued while classifiers are offline (the boot sweep fails any that
+      // remain). Remove together with MODERATION_ALLOW_ALL, per the ADR.
+      if (this.config.get('MODERATION_ALLOW_ALL') === '1') {
+        return { report, recheck: 'skipped' as const };
+      }
+
       const [active] = await tx
         .select({ id: aiGenerationJobs.id })
         .from(aiGenerationJobs)
