@@ -86,6 +86,7 @@ export const aiUsage = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     jobId: text('job_id'),
     model: text('model').notNull(),
+    provider: text('provider').notNull().default('unknown'),
     promptTokens: integer('prompt_tokens').default(0).notNull(),
     completionTokens: integer('completion_tokens').default(0).notNull(),
     totalTokens: integer('total_tokens').default(0).notNull(),

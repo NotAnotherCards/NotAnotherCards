@@ -13,14 +13,14 @@ describe('createAiJobSchema', () => {
       type: 'topic_deck',
       topic: 'Spanish greetings',
       count: 5,
-      model: 'gemma4',
+      model: 'balanced',
     };
     const result = createAiJobSchema.safeParse(input);
     expect(result.success).toBe(true);
-    if (result.success) {
+    if (result.success && result.data.type === 'topic_deck') {
       expect(result.data.topic).toBe('Spanish greetings');
       expect(result.data.count).toBe(5);
-      expect(result.data.model).toBe('gemma4');
+      expect(result.data.model).toBe('balanced');
     }
   });
 

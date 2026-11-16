@@ -13,18 +13,21 @@ export interface InferenceResult {
     totalTokens: number;
   };
   model: string;
+  provider: string;
 }
 
 export interface ObjectInferenceResult {
   value: Record<string, unknown>;
   usage: InferenceResult['usage'];
   model: string;
+  provider: string;
 }
 
 export interface TextInferenceResult {
   text: string;
   usage: InferenceResult['usage'];
   model: string;
+  provider: string;
 }
 
 export class AiParseError extends Error {
@@ -36,6 +39,7 @@ export class AiParseError extends Error {
       totalTokens: number;
     },
     public readonly model: string,
+    public readonly provider: string,
   ) {
     super(message);
     this.name = 'AiParseError';
@@ -132,16 +136,34 @@ interface RawCardItem {
 }
 
 interface GatewaySettings {
-  apiBase: string | undefined;
-  apiKey: string;
+  primary: ProviderSettings | undefined;
+  fallback: ProviderSettings | undefined;
   isMock: boolean;
+  alias: string;
+}
+
+interface ProviderSettings {
+  apiBase: string;
+  apiKey: string;
   model: string;
+  reasoningEffort: 'none' | 'low';
+}
+
+class AiHttpError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'AiHttpError';
+  }
 }
 
 interface Completion {
   rawContent: string;
   usage: InferenceResult['usage'];
   model: string;
+  provider: string;
 }
 
 @Injectable()
@@ -159,12 +181,12 @@ export class AiGatewayService {
   ): Promise<InferenceResult> {
     const settings = this.gatewaySettings(requestedModel);
 
-    if (!settings.apiBase) {
+    if (!settings.primary && !settings.fallback) {
       if (settings.isMock) {
         this.logger.log('AI_MOCK is active. Using mock generator.');
         const mock = this.mockGeneration(
           userPrompt,
-          settings.model,
+          settings.alias,
           requestedCount,
         );
         if (stream) {
@@ -196,10 +218,20 @@ export class AiGatewayService {
       cards = this.parseCardsFromJson(completion.rawContent, requestedCount);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new AiParseError(msg, completion.usage, completion.model);
+      throw new AiParseError(
+        msg,
+        completion.usage,
+        completion.model,
+        completion.provider,
+      );
     }
 
-    return { cards, usage: completion.usage, model: completion.model };
+    return {
+      cards,
+      usage: completion.usage,
+      model: completion.model,
+      provider: completion.provider,
+    };
   }
 
   async generateText(
@@ -209,7 +241,7 @@ export class AiGatewayService {
     stream?: StreamingOptions,
   ): Promise<TextInferenceResult> {
     const settings = this.gatewaySettings(requestedModel);
-    if (!settings.apiBase) {
+    if (!settings.primary && !settings.fallback) {
       if (settings.isMock) {
         const text =
           'This card was flagged because its wording may match the selected safety category. Revise it to keep the learning objective while removing or clearly contextualizing the sensitive wording.';
@@ -217,7 +249,8 @@ export class AiGatewayService {
         return {
           text,
           usage: { promptTokens: 20, completionTokens: 30, totalTokens: 50 },
-          model: `${settings.model}-mock`,
+          model: `${settings.alias}-mock`,
+          provider: 'mock',
         };
       }
       throw new Error('AI gateway is not configured (AI_API_BASE is unset).');
@@ -235,6 +268,7 @@ export class AiGatewayService {
       text: completion.rawContent.trim(),
       usage: completion.usage,
       model: completion.model,
+      provider: completion.provider,
     };
   }
 
@@ -244,16 +278,57 @@ export class AiGatewayService {
     settings: GatewaySettings,
     stream: StreamingOptions,
   ): Promise<Completion> {
+    let lastError: unknown;
+    for (const provider of this.providers(settings)) {
+      try {
+        const completion = await this.requestStreamingCompletionOnce(
+          systemPrompt,
+          userPrompt,
+          provider,
+          stream,
+        );
+        return completion;
+      } catch (error) {
+        lastError = error;
+        if (
+          !this.shouldFailover(error, stream.signal) ||
+          stream.signal?.aborted
+        ) {
+          break;
+        }
+      }
+    }
+    const error =
+      lastError instanceof Error ? lastError : new Error(String(lastError));
+    const streamError =
+      error instanceof AiStreamError
+        ? error
+        : new AiStreamError(
+            error.message,
+            { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+            settings.primary?.model ?? settings.alias,
+          );
+    throw streamError;
+  }
+
+  private async requestStreamingCompletionOnce(
+    systemPrompt: string,
+    userPrompt: string,
+    provider: ProviderSettings,
+    stream: StreamingOptions,
+  ): Promise<Completion> {
     const completion: Completion = {
       rawContent: '',
-      model: settings.model,
+      model: provider.model,
+      provider: provider.apiBase,
       usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
     };
+    let emittedDelta = false;
     try {
       const response = await this.chatRequest(
         systemPrompt,
         userPrompt,
-        settings,
+        provider,
         true,
         stream.signal,
       );
@@ -270,17 +345,28 @@ export class AiGatewayService {
         if (chunk.error) throw new Error(chunk.error.message);
         const delta = chunk.choices?.[0]?.delta?.content;
         if (delta) {
+          emittedDelta = true;
           completion.rawContent += delta;
           await stream.onDelta(delta);
         }
       }
       return completion;
     } catch (error) {
-      throw new AiStreamError(
+      const wrapped = new AiStreamError(
         error instanceof Error ? error.message : String(error),
         completion.usage,
         completion.model,
       );
+      Object.defineProperties(wrapped, {
+        emittedDelta: { value: emittedDelta },
+        retryable: {
+          value:
+            error instanceof AiHttpError
+              ? this.isRetryableTransportError(error)
+              : true,
+        },
+      });
+      throw wrapped;
     }
   }
 
@@ -290,10 +376,10 @@ export class AiGatewayService {
     requestedModel?: string,
   ): Promise<ObjectInferenceResult> {
     const settings = this.gatewaySettings(requestedModel);
-    if (!settings.apiBase) {
+    if (!settings.primary && !settings.fallback) {
       if (settings.isMock) {
         this.logger.log('AI_MOCK is active. Using mock generator.');
-        return this.mockObjectGeneration(settings.model);
+        return this.mockObjectGeneration(settings.alias);
       }
       throw new Error(
         'AI gateway is not configured (AI_API_BASE is unset). Jobs remain queued.',
@@ -310,37 +396,92 @@ export class AiGatewayService {
         value: this.parseObjectFromJson(completion.rawContent),
         usage: completion.usage,
         model: completion.model,
+        provider: completion.provider,
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new AiParseError(msg, completion.usage, completion.model);
+      throw new AiParseError(
+        msg,
+        completion.usage,
+        completion.model,
+        completion.provider,
+      );
     }
   }
 
   private gatewaySettings(requestedModel?: string): GatewaySettings {
     const mock = this.config.get<string>('AI_MOCK');
+    const alias =
+      requestedModel ||
+      this.config.get<string>('AI_DEFAULT_MODEL') ||
+      'balanced';
+    const modelMap: Record<string, string> = {
+      fast: 'openai/gpt-oss-20b',
+      balanced: 'openai/gpt-oss-120b',
+      smart: 'qwen/qwen3.8-27b',
+      // Deprecated Ollama-era alias kept for existing job rows; maps to the
+      // smart provider model so legacy payloads still process.
+      qwen: 'qwen/qwen3.8-27b',
+    };
+    const model = modelMap[alias] ?? alias;
+    const provider = (
+      baseKey: string,
+      keyKey: string,
+    ): ProviderSettings | undefined => {
+      const apiBase = this.config.get<string>(baseKey)?.replace(/\/+$/, '');
+      return apiBase
+        ? {
+            apiBase,
+            apiKey: this.config.get<string>(keyKey) ?? '',
+            model,
+            reasoningEffort: model.startsWith('openai/gpt-oss')
+              ? 'low'
+              : 'none',
+          }
+        : undefined;
+    };
     return {
-      // A trailing slash produced `POST //chat/completions`, which gateways
-      // answer with 404.
-      apiBase: this.config.get<string>('AI_API_BASE')?.replace(/\/+$/, ''),
-      apiKey: this.config.get<string>('AI_API_KEY') ?? '',
+      primary: provider('AI_API_BASE', 'AI_API_KEY'),
+      fallback: provider('AI_FALLBACK_API_BASE', 'AI_FALLBACK_API_KEY'),
       isMock:
         mock === '1' || mock === 'true' || process.env.NODE_ENV === 'test',
-      model:
-        requestedModel ||
-        this.config.get<string>('AI_DEFAULT_MODEL') ||
-        'gemma4',
+      alias,
     };
+  }
+
+  private providers(settings: GatewaySettings): ProviderSettings[] {
+    return [settings.primary, settings.fallback].filter(
+      (provider): provider is ProviderSettings => Boolean(provider),
+    );
+  }
+
+  private shouldFailover(error: unknown, signal?: AbortSignal): boolean {
+    if (signal?.aborted) return false;
+    if (error instanceof AiStreamError) {
+      const streamError = error as AiStreamError & {
+        emittedDelta?: boolean;
+        retryable?: boolean;
+      };
+      return Boolean(streamError.retryable) && !streamError.emittedDelta;
+    }
+    return this.isRetryableTransportError(error);
+  }
+
+  private isRetryableTransportError(error: unknown): boolean {
+    return (
+      (error instanceof AiHttpError &&
+        (error.status === 429 || error.status >= 500)) ||
+      error instanceof TypeError
+    );
   }
 
   private async chatRequest(
     systemPrompt: string,
     userPrompt: string,
-    settings: GatewaySettings,
+    settings: ProviderSettings,
     stream: boolean,
     signal?: AbortSignal,
   ): Promise<Response> {
-    if (!settings.apiBase) throw new Error('AI gateway is not configured');
     const res = await fetch(`${settings.apiBase}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -356,12 +497,11 @@ export class AiGatewayService {
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.7,
-        // Generation must not reason: with reasoning, a five-card job runs
-        // 26-56s against the 60s timeout (a measured 4s margin on an idle
-        // GPU); without it, ~3s and a tenth of the tokens. Works on the
-        // LiteLLM path and on OpenAI-compatible fallbacks; providers that
-        // ignore it are no worse off.
-        reasoning_effort: 'none',
+        // Keep reasoning minimal: with full reasoning, a five-card job can
+        // approach the 60s timeout and burns many times the tokens. gpt-oss
+        // models take 'low' and the rest 'none' (see gatewaySettings);
+        // OpenAI-compatible providers that ignore it are no worse off.
+        reasoning_effort: settings.reasoningEffort,
         // usage only arrives in a stream's final chunk when asked for
         ...(stream
           ? { stream: true, stream_options: { include_usage: true } }
@@ -371,7 +511,10 @@ export class AiGatewayService {
     });
 
     if (!res.ok) {
-      throw new Error(`AI gateway error (${res.status}): ${await res.text()}`);
+      throw new AiHttpError(
+        `AI gateway error (${res.status}): ${await res.text()}`,
+        res.status,
+      );
     }
     return res;
   }
@@ -381,27 +524,35 @@ export class AiGatewayService {
     userPrompt: string,
     settings: GatewaySettings,
   ): Promise<Completion> {
-    const res = await this.chatRequest(
-      systemPrompt,
-      userPrompt,
-      settings,
-      false,
-    );
-    const data = (await res.json()) as ChatCompletionResponse;
-    const usage = {
-      promptTokens: data.usage?.prompt_tokens ?? 0,
-      completionTokens: data.usage?.completion_tokens ?? 0,
-      totalTokens: data.usage?.total_tokens ?? 0,
-    };
-
-    const rawContent: string = data.choices?.[0]?.message?.content ?? '';
-    return {
-      rawContent,
-      usage,
-      // the gateway reports the deployment that answered; on a router
-      // fallback that is not the alias we asked for
-      model: data.model ?? settings.model,
-    };
+    let lastError: unknown;
+    let servedProvider = '';
+    for (const provider of this.providers(settings)) {
+      try {
+        const res = await this.chatRequest(
+          systemPrompt,
+          userPrompt,
+          provider,
+          false,
+        );
+        const data = (await res.json()) as ChatCompletionResponse;
+        const usage = {
+          promptTokens: data.usage?.prompt_tokens ?? 0,
+          completionTokens: data.usage?.completion_tokens ?? 0,
+          totalTokens: data.usage?.total_tokens ?? 0,
+        };
+        servedProvider = provider.apiBase;
+        return {
+          rawContent: data.choices?.[0]?.message?.content ?? '',
+          usage,
+          model: data.model ?? provider.model,
+          provider: servedProvider,
+        };
+      } catch (error) {
+        lastError = error;
+        if (!this.shouldFailover(error)) break;
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   }
 
   private parseCardsFromJson(
@@ -536,6 +687,7 @@ export class AiGatewayService {
         totalTokens: 45 + count * 15,
       },
       model: `${model}-mock`,
+      provider: 'mock',
     };
   }
 
@@ -555,6 +707,7 @@ export class AiGatewayService {
         totalTokens: 60,
       },
       model: `${model}-mock`,
+      provider: 'mock',
     };
   }
 }

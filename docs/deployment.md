@@ -2,6 +2,12 @@
 
 Status: current deployment architecture.
 
+> **Current Contabo deployment:** the GX10 is not part of this deployment. The
+> three GX10 scrape jobs and their alert rules are disabled in
+> `infra/monitoring`, and AI generation uses Groq with OpenRouter failover.
+> The GX10 topology remains target architecture only if the box is available
+> again.
+
 The subject sets one hard rule that shapes everything here: deployment must use
 containers and run with a single command (III.2, rejection-level). Evaluation
 happens on a school machine, not on our servers. So the compose file is the
@@ -21,7 +27,7 @@ users ── HTTPS ──> production VPS (public + tailnet)
                    │    ├─ prometheus ─────────────────────┘ tailnet data path
                    │    └─ grafana                              │
                    └─ node_exporter                                 ▼
-                                                   GX10 (home box, tailnet only)
+                                                   GX10 (target architecture only)
                                                    ├─ LiteLLM proxy :4000
                                                    ├─ inference server (Ollama)
                                                    ├─ node_exporter :9100
@@ -33,10 +39,9 @@ headscale.dustyway.org ──> tailnet coordination only (not the data path)
 ```
 
 - The VPS is reachable from the internet over HTTPS only.
-- The production VPS's api and Prometheus connect to the GX10 through the
-  self-hosted tailnet without traversing `ai.dustyway.org`. The headscale server
-  remains in the control plane; peer traffic uses the WireGuard data path when
-  Tailscale establishes a direct connection.
+- The production VPS does not connect to the GX10 in the current deployment.
+  If the box returns, the target topology uses the existing encrypted tailnet
+  without changing the public application surface.
 - The GX10 is an [ASUS Ascent GX10](https://www.asus.com/networking-iot-servers/desktop-ai-supercomputer/ultra-small-ai-supercomputers/asus-ascent-gx10/techspec/):
   NVIDIA GB10 (Blackwell) with 1 PFLOP tensor performance, 20-core Arm CPU,
   128 GB unified memory shared between CPU and GPU, 4 TB NVMe, running NVIDIA
@@ -58,15 +63,9 @@ The same `docker-compose.yml` runs in three places:
    with no tailnet at all, since "runs with a single command" is
    rejection-level.
 
-   For the live AI demo during evaluation, the plan is Tailscale on the eval
-   machine (userspace mode, no root needed; falls back to relaying over 443,
-   so campus firewalls are not a problem) with `AI_API_BASE` pointing at the
-   GX10. (The GPU dashboard is visible either way — Grafana is a public
-   URL.) Running a model on the eval machine itself is not an option, so
-   plan B for the box being unreachable on eval day is the hosted fallback
-   provider below; it costs cents for a demo and needs no code change.
-   Without any endpoint the app still runs and shows jobs as queued, which
-   is compliant but not much of a demo.
+   Hosted providers are used for the live AI demo, so evaluation needs no
+   tailnet access. Without any endpoint the app still runs and shows jobs as
+   queued.
 
 2. **The VPS**: the base compose plus `docker-compose.production.yml`, with
    host nginx/certbot serving `app.notanothercards.com`,
@@ -76,47 +75,98 @@ The same `docker-compose.yml` runs in three places:
    non-secret AI settings in `/opt/notanothercards/.env` are:
 
    ```dotenv
-   AI_API_BASE=http://100.64.0.1:4000/v1
-   AI_DEFAULT_MODEL=gemma4
+   AI_API_BASE=https://api.groq.com/openai/v1
+   AI_API_KEY=<Groq key>
+   AI_FALLBACK_API_BASE=https://openrouter.ai/api/v1
+   AI_FALLBACK_API_KEY=<OpenRouter key>
+   AI_DEFAULT_MODEL=balanced
    ```
 
-   `AI_API_KEY` remains the existing `production-worker` LiteLLM key. Keep the
-   base URL without a trailing slash.
+   Keep both base URLs without trailing slashes. The API fails over only on
+   connection errors, HTTP 5xx/429 responses, or a stream failure before the
+   first delta. It never fails over after a delta or for `AiParseError`.
 
-3. **A teammate's machine during AI work**: same compose, `AI_API_BASE`
-   pointing at the GX10 with a personal key (see "Access").
+3. **A teammate's machine during AI work**: same compose, using personal
+   provider keys kept outside the repository.
 
-## Fallback provider
+## Hosted AI providers
 
-The api can run against any OpenAI-compatible endpoint instead of the
-GX10. The working recipe uses NanoGPT, which serves the same model as the
-box's `qwen` alias:
+The provider aliases and concrete model IDs are documented in
+[`docs/adr/ai-provider-migration.md`](adr/ai-provider-migration.md). Groq is
+the primary provider and OpenRouter is the budget-capped fallback. The
+production demo budget is approximately $10.
 
+### Production environment
+
+`/opt/notanothercards/.env` holds the provider pairs:
+
+```dotenv
+AI_API_BASE=https://api.groq.com/openai/v1
+AI_API_KEY=<groq key>
+AI_FALLBACK_API_BASE=https://openrouter.ai/api/v1
+AI_FALLBACK_API_KEY=<openrouter key>
+AI_DEFAULT_MODEL=balanced
+# TEMPORARY: moderation bypass while generation moves to hosted providers.
+# Remove when fail-closed moderation is restored (see the ADR follow-up).
+MODERATION_ALLOW_ALL=1
 ```
-AI_API_BASE=https://nano-gpt.com/api/v1
-AI_API_KEY=<NanoGPT key>
-AI_DEFAULT_MODEL=Qwen/Qwen3.6-35B-A3B
+
+### Watching the provider (first 24 h after a provider change)
+
+`ai_usage.provider` records the API base that served each request, so a
+healthy rollout shows `groq.com` rows with OpenRouter appearing only
+during failover:
+
+```sql
+SELECT provider, model, count(*)
+FROM ai_usage
+WHERE created_at > now() - interval '24 hours'
+GROUP BY 1, 2 ORDER BY 3 DESC;
+
+SELECT status, count(*), max(created_at)
+FROM ai_generation_jobs
+WHERE created_at > now() - interval '24 hours'
+GROUP BY 1;
+
+SELECT created_at, error
+FROM ai_generation_jobs
+WHERE status = 'failed' AND created_at > now() - interval '24 hours'
+ORDER BY created_at DESC LIMIT 20;
 ```
 
-Three things make this configuration and not just a URL swap:
+Run them with
+`sudo -u deploy docker compose -f docker-compose.yml -f docker-compose.production.yml exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`
+from `/opt/notanothercards`.
 
-- The model id must change with the base URL. The GX10's LiteLLM aliases
-  (`qwen`) mean nothing to a hosted provider, and the code's fallback
-  default is such an alias, so `AI_DEFAULT_MODEL` always travels with
-  `AI_API_BASE` as a pair.
-- On NanoGPT, reasoning is selected by model id: `:thinking` suffixed ids
-  reason, bare ids do not. Use the bare id. A reasoning model inflates a
-  five-card job from roughly 250 tokens to roughly 2,000, and on a
-  per-token API that is billed, not just slow.
-- Card topics and source texts leave our infrastructure and reach a third
-  party. For a demo that is fine; for anything sensitive, NanoGPT lists
-  TEE variants of the same models, or use the box.
+### Rollback runbook (AI provider)
 
-Each response carries the request's exact cost (`x_nanogpt_pricing`), so a
-demo day can be priced from one job. A deployment that should rest on the
-fallback keeps these three variables in its `.env`; a one-off switch
-passes them on the `docker compose up` command line, which overrides the
-file.
+The GX10 gateway is no longer reachable, so rollback means moving traffic
+off the failing hosted provider rather than returning to self-hosting.
+Use the first step that applies:
+
+1. **Groq is down or rate-limited and OpenRouter is healthy.** Nothing has to
+   change: failover already happens per request. Confirm that OpenRouter
+   rows appear in `ai_usage` and that failed jobs are not increasing.
+2. **Groq misbehaves in a way failover does not catch** (bad output, parse
+   errors, latency close to the timeout). Make OpenRouter the primary: in
+   `/opt/notanothercards/.env`, swap `AI_API_BASE`/`AI_API_KEY` with the
+   `AI_FALLBACK_*` pair. Then recreate the api with
+   `sudo -u deploy docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --wait api`.
+   Or re-run `deploy.yml` (`workflow_dispatch`) so the deploy's
+   checks also run.
+3. **The model choice is the problem.** Point `AI_DEFAULT_MODEL` at another
+   alias (`fast` or `smart`) and recreate the api as in step 2.
+4. **Both providers fail or the budget is exhausted.** Set `AI_MOCK=1` so
+   generation keeps answering without spending anything, recreate the api,
+   and tell the team that generation is serving mock cards.
+5. **The application code is at fault.** Revert the PR on `main`; the merge
+   triggers `deploy.yml`. Review migrations first. `ai_usage.provider` is
+   additive, and older code ignores it.
+
+After any step, re-run the watch queries above. Record what happened in the
+team channel and in the ADR if the provider decision changes. Keep
+`MODERATION_ALLOW_ALL=1` in place until the moderation follow-up epic lands;
+a provider rollback does not change it.
 
 ## Deploys
 
@@ -168,8 +218,8 @@ file.
 
 `https://notanothercards.com` is served by the host Nginx site
 `infra/vps/notanothercards.com.conf`, which proxies to the landing container
-on loopback `127.0.0.1:5174`. DNS carries `A 169.58.127.208` and
-`AAAA 2a02:c207:3020:2790::1`; verify both address families where those
+on loopback `127.0.0.1:5174`. DNS carries `A 95.111.246.241` and
+`AAAA 2a02:c207:3021:0712::1`; verify both address families where those
 records are configured:
 
 ```bash
@@ -279,48 +329,10 @@ sudo -u deploy docker compose \
 
 ## The AI backend
 
-The GX10 runs an inference server with LiteLLM in front. LiteLLM gives us:
-
-- **One OpenAI-compatible URL** for everything. Clients never know or care
-  what serves the model. Swapping models, adding a second one, or pointing a
-  model name at a cloud provider is a config change in the repo, not a code
-  change.
-- **Keys with limits.** Each teammate gets a key with rate and token budgets,
-  the production worker gets its own with a parallel-request cap to protect
-  the single GPU. Note these limits protect the box; they are not what
-  satisfies the module's rate-limiting requirement (see "Module claims").
-- **Logs.** Every request is logged with key, model, and token counts, so
-  "what is the box actually used for" is a query.
-- **Metrics.** Prometheus scrapes LiteLLM directly at
-  `http://100.64.0.1:4000/metrics`. The endpoint is unauthenticated and its
-  series carry virtual-key aliases and spend, so nginx returns 404 for the
-  public `/metrics` endpoint and its full subtree. The node and GPU exporters
-  are scraped directly on ports 9100 and 9400.
-
-The models on offer are defined in `litellm-config.yaml` in the repo, so
-trying a new model is a PR.
-
-**No SLA.** The box lives in a flat. It is generally on, but power, ISP, or a
-reboot can take it away without notice. The architecture treats that as
-normal, not as an incident: production jobs wait, experiments resume when it
-is back.
-
-### Access for experimentation
-
-Tailscale node sharing shares the GX10 into each teammate's own free
-tailnet. Two levels of access:
-
-- **API access**: with their personal LiteLLM key, experiments run from their
-  laptop against the same interface production uses.
-- **Shell login**: team members can log into the GX10 via their Tailscale
-  access, with ordinary non-sudo Linux accounts (sshd is bound to the
-  tailscale interface), for experiments that need more than the API (own
-  scripts, model tinkering).
-
-The GPU and its memory are shared with production inference. No technical
-enforcement at team scale: the production model stays loaded, bigger
-experiments get announced in Slack first, and the GPU dashboard keeps
-usage visible to everyone.
+The API uses OpenAI-compatible hosted endpoints. Provider credentials are
+stored in the GitHub `production` environment and the project password
+manager; they are never committed to the repository. The GX10 is not a
+runtime dependency for this deployment.
 
 ## AI request flow
 
@@ -328,7 +340,7 @@ Card and deck content generation is asynchronous by design:
 
 1. A user action creates a generation job in a postgres-backed queue
    (pg-boss or a plain jobs table; postgres is already there, no Redis).
-2. A worker in the api pulls jobs, calls the GX10 through LiteLLM, stores
+2. A worker in the api pulls jobs, calls the configured provider, stores
    results, marks the job done or failed with retry.
 3. The UI shows job state; when the box is offline, jobs are visibly queued
    instead of failing.
@@ -337,7 +349,8 @@ This gives us retry handling, per-user generation limits, and graceful
 degradation as queue features rather than scattered error handling.
 
 One path stays synchronous: an interactive generation preview that streams
-tokens to the browser (api proxies the SSE stream from LiteLLM). The LLM
+tokens to the browser (api proxies the SSE stream from the configured
+provider). The LLM
 module explicitly requires handling streaming responses, and a queue alone
 never streams.
 
@@ -356,14 +369,10 @@ being down; on the VPS, that is the alert that works best.
   or drowning" at a glance.
 - postgres-exporter and node_exporter on the VPS (host metrics: disk,
   memory, CPU — the "disk filling" alert needs them).
-- The GX10 targets are scraped directly over the tailnet: LiteLLM at
-  `100.64.0.1:4000/metrics` (requests, latency, tokens per key), node_exporter
-  at `100.64.0.1:9100/metrics`, and the NVIDIA DCGM exporter at
-  `100.64.0.1:9400/metrics` (GPU utilization). All three use plain HTTP inside
-  the encrypted tailnet. When the box is offline these targets go dark and the
-  alert fires — which is the point.
-- Alerting rules that mean something: queue depth threshold, api down,
-  GX10 unreachable, disk filling. Alerts go to the team Slack via webhook.
+- The current deployment monitors the four VPS targets only. GX10 monitoring
+  remains in the target architecture and is disabled until the box returns.
+- Alerting rules cover queue depth, api health, VPS disk filling, and other
+  active services. Alerts go to the team Slack via webhook.
 - Grafana access is secured (built-in auth, admin password from env), which is
   an explicit module requirement. Served through nginx, so the team can
   check dashboards from anywhere without joining any tailnet.
@@ -386,8 +395,8 @@ Generation from user input runs through the job flow, streaming through the
 preview path, error handling through queue retries. Rate limiting is
 implemented in the api: a per-user daily generation quota and a pending-job
 cap in postgres, plus a limit on the streaming endpoint. That is our own code
-and demonstrable in the plain compose run; the LiteLLM key limits are only
-the infrastructure backstop.
+and demonstrable in the plain compose run; provider rate limits are only the
+infrastructure backstop.
 
 ### DevOps: Monitoring with Prometheus and Grafana (Major)
 

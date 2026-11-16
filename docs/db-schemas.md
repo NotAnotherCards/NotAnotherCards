@@ -657,6 +657,7 @@ TABLE "public"."ai_usage" RLS DISABLED
 "job_id" text NULL
 "model" text NOT NULL
 "prompt_tokens" integer NOT NULL DEFAULT 0
+"provider" text NOT NULL DEFAULT 'unknown'
 "total_tokens" integer NOT NULL DEFAULT 0
 "user_id" text NOT NULL
 INDEX "ai_usage_user_created_idx" USING btree ("user_id" ASC NULLS LAST, "created_at" ASC NULLS LAST)

@@ -34,7 +34,7 @@ export class AiLimitsService {
       this.config.get<string>('AI_MAX_DAILY_TOKENS_PER_USER') ?? 50000,
     );
     this.maxDailyRequests = Number(
-      this.config.get<string>('AI_MAX_DAILY_REQUESTS_PER_USER') ?? 25,
+      this.config.get<string>('AI_MAX_DAILY_REQUESTS_PER_USER') ?? 10,
     );
   }
 

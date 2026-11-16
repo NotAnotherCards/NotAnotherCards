@@ -63,18 +63,19 @@ docker run --rm \
   prom/prometheus:v3.14.0 \
   check config /etc/prometheus/prometheus.yml
 
-for target in 100.64.0.1:4000 100.64.0.1:9100 100.64.0.1:9400; do
-  grep -Fq "'$target'" "$SCRIPT_DIR/prometheus/prometheus.yml" || {
-    echo "ERROR: Prometheus is missing direct GX10 target $target" >&2
-    exit 1
-  }
-done
+# The current Contabo deployment runs without the GX10, so those scrape jobs
+# must stay commented out. This also catches an accidental re-enable.
+if grep -Eq "^[[:space:]]*- job_name: '(litellm-gx10|dcgm-gpu-gx10|node-gx10)'" \
+  "$SCRIPT_DIR/prometheus/prometheus.yml"; then
+  echo "ERROR: GX10 scrape jobs must stay disabled on this deployment" >&2
+  exit 1
+fi
 if grep -Eq 'ai\.dustyway\.org|scheme: https|/dcgm/metrics|/node/metrics' \
   "$SCRIPT_DIR/prometheus/prometheus.yml"; then
   echo "ERROR: Prometheus still contains the retired public GX10 scrape path" >&2
   exit 1
 fi
-echo "  [OK] GX10 targets use direct tailnet addresses"
+echo "  [OK] GX10 scrape jobs are disabled and the retired public path is absent"
 
 echo "==> 3. Validating Prometheus Alert Rules..."
 docker run --rm \
@@ -176,11 +177,12 @@ for uid in nac-ai-queue nac-api-system nac-gx10-gpu; do
 done
 
 RULE_COUNT="$(curl -sf http://127.0.0.1:9099/api/v1/rules | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);const n=(j.data.groups||[]).reduce((a,g)=>a+(g.rules||[]).length,0);console.log(n)})")"
-if [ "$RULE_COUNT" != "8" ]; then
-  echo "ERROR: expected 8 Prometheus rules loaded, got $RULE_COUNT" >&2
+EXPECTED_RULE_COUNT="$(grep -cE '^[[:space:]]*- alert:' "$SCRIPT_DIR/prometheus/rules/alerts.yml")"
+if [ "$RULE_COUNT" != "$EXPECTED_RULE_COUNT" ]; then
+  echo "ERROR: expected $EXPECTED_RULE_COUNT Prometheus rules loaded, got $RULE_COUNT" >&2
   exit 1
 fi
-echo "  [OK] Prometheus loaded 8 alert rules"
+echo "  [OK] Prometheus loaded $EXPECTED_RULE_COUNT alert rules"
 
 curl -sf http://127.0.0.1:9097/-/healthy | grep -q "OK" \
   || { echo "ERROR: Alertmanager not healthy" >&2; exit 1; }

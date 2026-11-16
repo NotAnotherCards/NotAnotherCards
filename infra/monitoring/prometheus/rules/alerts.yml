@@ -19,32 +19,34 @@ groups:
           summary: 'PostgreSQL Database exporter is unreachable'
           description: 'Postgres exporter target on the VPS is reporting down.'
 
-      - alert: LiteLlmGatewayDown
-        expr: up{job="litellm-gx10"} == 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: 'LiteLLM AI Gateway on GX10 is unreachable'
-          description: 'LiteLLM inference gateway on the GX10 tailnet address has been unreachable for 5 minutes.'
 
-      - alert: Gx10NodeExporterDown
-        expr: up{job="node-gx10"} == 0
-        for: 15m
-        labels:
-          severity: warning
-        annotations:
-          summary: 'GX10 Node Exporter is unreachable'
-          description: 'Host system metrics exporter on the GX10 has been down for 15 minutes.'
+      #  ----> DISABLED UNTIL FURTHER NOTICE <------
+      # - alert: LiteLlmGatewayDown
+      #   expr: up{job="litellm-gx10"} == 0
+      #   for: 5m
+      #   labels:
+      #     severity: critical
+      #   annotations:
+      #     summary: 'LiteLLM AI Gateway on GX10 is unreachable'
+      #     description: 'LiteLLM inference gateway on the GX10 tailnet address has been unreachable for 5 minutes.'
 
-      - alert: Gx10GpuExporterDown
-        expr: up{job="dcgm-gpu-gx10"} == 0
-        for: 15m
-        labels:
-          severity: warning
-        annotations:
-          summary: 'GX10 NVIDIA GPU Exporter is unreachable'
-          description: 'NVIDIA DCGM GPU exporter on the GX10 has been down for 15 minutes.'
+      # - alert: Gx10NodeExporterDown
+      #   expr: up{job="node-gx10"} == 0
+      #   for: 15m
+      #   labels:
+      #     severity: warning
+      #   annotations:
+      #     summary: 'GX10 Node Exporter is unreachable'
+      #     description: 'Host system metrics exporter on the GX10 has been down for 15 minutes.'
+
+      # - alert: Gx10GpuExporterDown
+      #   expr: up{job="dcgm-gpu-gx10"} == 0
+      #   for: 15m
+      #   labels:
+      #     severity: warning
+      #   annotations:
+      #     summary: 'GX10 NVIDIA GPU Exporter is unreachable'
+      #     description: 'NVIDIA DCGM GPU exporter on the GX10 has been down for 15 minutes.'
 
       - alert: AiQueueDepthHigh
         # The scrape-success guard keeps a stale pending value (kept on DB
@@ -65,6 +67,18 @@ groups:
         annotations:
           summary: 'AI queue depth metrics are stale'
           description: 'The API cannot refresh queue depth from the database; dashboards show the last known values.'
+
+      - alert: AiJobsFailing
+        # Replaces the retired GX10/LiteLLM availability alerts: with hosted
+        # providers, a dead key or exhausted budget shows up only as failed
+        # jobs, which leave the queue and never trip AiQueueDepthHigh.
+        expr: increase(ai_jobs_failed_total[15m]) >= 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'AI generation jobs are failing ({{ $value }} in the last 15m)'
+          description: 'Check the Groq/OpenRouter keys and budget, then the ai_usage provider query in docs/deployment.md ("Watching the provider").'
 
       - alert: DiskFilling
         expr: (node_filesystem_free_bytes{job="node-vps",mountpoint="/"} / node_filesystem_size_bytes{job="node-vps",mountpoint="/"}) < 0.15

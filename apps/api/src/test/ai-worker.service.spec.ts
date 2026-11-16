@@ -74,6 +74,7 @@ describe('AiWorkerService', () => {
         totalTokens: 25,
       },
       model: 'gemma4',
+      provider: 'gemma4',
     };
 
     mockGateway.generateCards.mockResolvedValue(mockInference);
@@ -236,6 +237,7 @@ describe('AiWorkerService', () => {
       'Malformed card JSON',
       { promptTokens: 15, completionTokens: 10, totalTokens: 25 },
       'qwen',
+      'qwen',
     );
 
     mockGateway.generateCards.mockRejectedValue(parseError);
@@ -293,6 +295,7 @@ describe('AiWorkerService', () => {
       },
       usage: { promptTokens: 10, completionTokens: 15, totalTokens: 25 },
       model: 'gemma4',
+      provider: 'gemma4',
     });
     const mockTxExecute = jest.fn().mockResolvedValue({});
     const mockDb = {

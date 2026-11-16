@@ -36,7 +36,7 @@ export class AiPlaygroundService {
     res: Response,
   ): Promise<void> {
     let model =
-      input.model ?? this.config.get<string>('AI_DEFAULT_MODEL') ?? 'gemma4';
+      input.model ?? this.config.get<string>('AI_DEFAULT_MODEL') ?? 'balanced';
     const disconnect = new AbortController();
     const signal = AbortSignal.any([
       disconnect.signal,

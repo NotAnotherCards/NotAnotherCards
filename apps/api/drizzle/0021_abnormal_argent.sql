@@ -1,0 +1,1 @@
+ALTER TABLE "ai_usage" ADD COLUMN "provider" text DEFAULT 'unknown' NOT NULL;

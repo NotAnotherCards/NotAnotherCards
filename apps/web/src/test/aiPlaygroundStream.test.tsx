@@ -61,7 +61,7 @@ beforeEach(() => {
       JSON.stringify({
         quota: {
           requestsUsed: 0,
-          maxRequests: 25,
+          maxRequests: 10,
           usedTokens: 0,
           maxTokens: 50000,
           activePendingJobs: 0,

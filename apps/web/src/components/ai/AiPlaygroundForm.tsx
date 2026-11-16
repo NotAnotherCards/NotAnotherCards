@@ -52,7 +52,7 @@ export function AiPlaygroundForm({
   const [selectedDeckId, setSelectedDeckId] = useState('');
 
   const [count, setCount] = useState(5);
-  const [model, setModel] = useState<AiModel>('gemma4');
+  const [model, setModel] = useState<AiModel>('balanced');
   const [error, setError] = useState<string | null>(null);
 
   const wordDecks = decks.filter((d) => d.note_type === 'word');

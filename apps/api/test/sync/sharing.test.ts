@@ -13,6 +13,7 @@ import {
 import {
   ENGLISH,
   GERMAN,
+  deckReportResponseSchema,
   moderationRefusalSchema,
   publishResponseSchema,
   sharedDeckListSchema,
@@ -530,7 +531,43 @@ describePostgres('deck sharing endpoints', () => {
     expect(await db.select().from(publishedDecks)).toHaveLength(1);
   });
 
+  // The suite runs with MODERATION_ALLOW_ALL=1, which records reports without
+  // enqueuing re-checks. Re-check tests switch the flag off for the services
+  // and stub the publish gate, so republishing still works without classifiers.
+  function withLiveModeration() {
+    vi.spyOn(app.get(ConfigService), 'get').mockImplementation((key) => {
+      if (key === 'MODERATION_ALLOW_ALL') return undefined;
+      return process.env[key as string];
+    });
+    vi.spyOn(app.get(ModerationService), 'check').mockResolvedValue({
+      ok: true,
+      flagged: [],
+      warnings: [],
+      results: [],
+    });
+  }
+
+  it('records a report without enqueuing a re-check while moderation is bypassed', async () => {
+    await seedDeck(userA, 'bypassed-report', { visibility: 'public' });
+
+    const response = await post(
+      userB,
+      '/api/shared/decks/bypassed-report/report',
+    )
+      .send({ reason: 'Reported during the moderation bypass.' })
+      .expect(201);
+
+    expect((response.body as { recheck: string }).recheck).toBe('skipped');
+    deckReportResponseSchema.parse(response.body);
+    expect(await db.select().from(deckReports)).toHaveLength(1);
+    expect(await db.select().from(aiGenerationJobs)).toEqual([]);
+    expect((await browse(userB)).map(({ id }) => id)).toContain(
+      'bypassed-report',
+    );
+  });
+
   it('records one report per user and queues one re-check without hiding the deck', async () => {
+    withLiveModeration();
     await seedDeck(userA, 'reported', { visibility: 'public' });
 
     const response = await post(userB, '/api/shared/decks/reported/report')
@@ -569,6 +606,7 @@ describePostgres('deck sharing endpoints', () => {
   });
 
   it('enforces the reporter daily cap before recording or queuing', async () => {
+    withLiveModeration();
     process.env.MODERATION_MAX_DAILY_REPORTS_PER_USER = '1';
     await seedDeck(userA, 'first-report', { visibility: 'public' });
     await seedDeck(userA, 'over-report-cap', { visibility: 'public' });
@@ -585,6 +623,7 @@ describePostgres('deck sharing endpoints', () => {
   });
 
   it('caches a clean thorough re-check of the same published snapshot', async () => {
+    withLiveModeration();
     await seedDeck(userA, 'clean-report', { visibility: 'public' });
     await post(userB, '/api/shared/decks/clean-report/report')
       .send({ reason: 'Please double-check this.' })
@@ -604,6 +643,7 @@ describePostgres('deck sharing endpoints', () => {
   });
 
   it('automatically takes down a snapshot either thorough classifier flags', async () => {
+    withLiveModeration();
     await seedDeck(userA, 'auto-blocked', { visibility: 'public' });
     const imported = await post(
       userC,
@@ -699,6 +739,7 @@ describePostgres('deck sharing endpoints', () => {
   });
 
   it('never applies a report check to a newer republished snapshot', async () => {
+    withLiveModeration();
     await seedDeck(userA, 'republished-before-check', {
       visibility: 'public',
     });
@@ -720,6 +761,7 @@ describePostgres('deck sharing endpoints', () => {
   });
 
   it('carries a newer-snapshot report forward when the active job is stale', async () => {
+    withLiveModeration();
     await seedDeck(userA, 'reported-twice-around-republish', {
       visibility: 'public',
     });

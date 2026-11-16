@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Statistics } from '@/components/dashboard/Statistics';
@@ -96,8 +96,11 @@ describe('Statistics dashboard', () => {
   });
 
   afterEach(async () => {
+    cleanup();
     vi.restoreAllMocks();
-    await i18n.changeLanguage('en');
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
   });
 
   it.each([

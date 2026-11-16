@@ -1,24 +1,16 @@
-import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { AI_MODELS } from './ai';
+import { AI_MODELS, MODEL_LABELS } from './ai';
 
-const NON_GENERATORS = [
-  'embeddings',
-  'moderation',
-  'moderation-thorough',
-  'fact-check',
-];
+describe('AI model aliases', () => {
+  it('defines user-facing aliases (not provider model IDs)', () => {
+    expect(AI_MODELS).toEqual(['fast', 'balanced', 'smart']);
+  });
 
-describe('litellm config', () => {
-  it('lists exactly the models in AI_MODELS', () => {
-    const yaml = readFileSync(
-      new URL('../../../infra/gx10/litellm-config.yaml', import.meta.url),
-      'utf8',
-    );
-    const aliases = [...yaml.matchAll(/^\s*-\s*model_name:\s*(\S+)/gm)].map(
-      (m) => m[1],
-    );
-    const generators = aliases.filter((a) => !NON_GENERATORS.includes(a));
-    expect(new Set(generators)).toEqual(new Set(AI_MODELS));
+  it('has a label for every alias', () => {
+    for (const model of AI_MODELS) {
+      expect(MODEL_LABELS[model]).toBeDefined();
+      expect(typeof MODEL_LABELS[model]).toBe('string');
+      expect(MODEL_LABELS[model].length).toBeGreaterThan(0);
+    }
   });
 });

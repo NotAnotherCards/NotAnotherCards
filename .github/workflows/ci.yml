@@ -99,6 +99,29 @@ jobs:
           FRONTEND_URL: http://localhost:5173
           GOOGLE_CLIENT_ID: dummy-google-client-id
           GOOGLE_CLIENT_SECRET: dummy-google-client-secret
+          # No CI test may reach a real AI provider.
+          AI_MOCK: '1'
+          AI_API_BASE: ''
+          AI_FALLBACK_API_BASE: ''
+
+      - name: Run AI Worker Mock E2E Test
+        # Explicit guard: the AI_MOCK=1 worker queue test against PostgreSQL.
+        # It skips silently without TEST_DATABASE_URL, so run it on its own
+        # and fail if it was skipped.
+        working-directory: apps/api
+        run: |
+          pnpm exec vitest run test/ai-generation.test.ts --reporter=verbose | tee ai-e2e.log
+          if grep -qE '\b[0-9]+ skipped\b' ai-e2e.log; then echo 'AI worker e2e was skipped'; exit 1; fi
+        env:
+          TEST_DATABASE_URL: postgresql://ci:ci@localhost:5432/postgres
+          BETTER_AUTH_SECRET: ci-only-secret
+          BETTER_AUTH_URL: http://localhost:3000
+          FRONTEND_URL: http://localhost:5173
+          GOOGLE_CLIENT_ID: dummy-google-client-id
+          GOOGLE_CLIENT_SECRET: dummy-google-client-secret
+          AI_MOCK: '1'
+          AI_API_BASE: ''
+          AI_FALLBACK_API_BASE: ''
 
       - name: Run API Database Migrations
         run: pnpm --filter api db:migrate

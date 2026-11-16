@@ -31,7 +31,7 @@ export class ModerationExplanationService {
     input: ModerationExplanationInput,
     res: Response,
   ): Promise<void> {
-    let model = this.config.get<string>('AI_DEFAULT_MODEL') ?? 'gemma4';
+    let model = this.config.get<string>('AI_DEFAULT_MODEL') ?? 'balanced';
     // Reserve before opening SSE so quota failures remain ordinary HTTP 429s.
     const usageId = await this.limits.reservePlaygroundUsage(userId, model);
     let usage: InferenceResult['usage'] = {

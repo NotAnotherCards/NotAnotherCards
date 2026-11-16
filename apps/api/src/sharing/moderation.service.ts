@@ -59,8 +59,9 @@ const FAST_CLASSIFIER: Classifier = {
   format: 'qwen3guard',
 };
 
-// This alias is backed by ShieldGemma in the checked-in LiteLLM config. Keep
-// the alias and parser contract in lockstep if round two selects a replacement.
+// The thorough alias expects ShieldGemma-format output. No hosted provider
+// serves it while MODERATION_ALLOW_ALL=1; keep the alias and parser contract
+// in lockstep when the moderation follow-up epic re-hosts the classifiers.
 const THOROUGH_CLASSIFIER: Classifier = {
   model: 'moderation-thorough',
   format: 'shieldgemma',

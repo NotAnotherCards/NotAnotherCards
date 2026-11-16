@@ -1,32 +1,19 @@
 import { z } from 'zod';
 import { CARD_SIDE_MAX_LENGTH } from './card.js';
 
-// Gateway aliases (infra/gx10/litellm-config.yaml). 'qwen' is the deprecated
-// name for 'qwen3.6', kept for clients that still send the legacy alias.
-export const AI_MODELS = [
-  'gemma4',
-  'qwen3.6',
-  'qwen',
-  'qwen-next-80b',
-  'qwen3.8',
-  'muse-glimmer',
-  'mistral-small',
-] as const;
+// User-facing AI model aliases. The gateway maps these to provider model IDs
+// (Groq primary, OpenRouter fallback) in its provider-profile config. The
+// alias contract is stable across provider changes.
+export const AI_MODELS = ['fast', 'balanced', 'smart'] as const;
 export type AiModel = (typeof AI_MODELS)[number];
 
 export const MODEL_LABELS: Record<AiModel, string> = {
-  gemma4: 'Gemma 4 (Default)',
-  'qwen3.6': 'Qwen 3.6',
-  qwen: 'Qwen (Deprecated)',
-  'qwen-next-80b': 'Qwen Next 80B (Smart)',
-  'qwen3.8': 'Qwen 3.8',
-  'muse-glimmer': 'Muse Glimmer',
-  'mistral-small': 'Mistral Small',
+  fast: 'Fast',
+  balanced: 'Balanced',
+  smart: 'Smart',
 };
 
-export const SELECTABLE_AI_MODELS = AI_MODELS.filter(
-  (m): m is Exclude<AiModel, 'qwen'> => m !== 'qwen',
-);
+export const SELECTABLE_AI_MODELS = AI_MODELS;
 
 export const quotaStatusSchema = z.object({
   usedTokens: z.number().int().nonnegative(),
