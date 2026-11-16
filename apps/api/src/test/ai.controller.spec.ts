@@ -175,7 +175,7 @@ describe('AiController', () => {
       usedTokens: 100,
       maxTokens: 50000,
       requestsUsed: 2,
-      maxRequests: 25,
+      maxRequests: 10,
       activePendingJobs: 0,
       maxPendingJobs: 2,
     };

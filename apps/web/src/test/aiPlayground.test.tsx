@@ -42,7 +42,7 @@ describe('AI Generation Playground Test Suite', () => {
     it('renders quota status indicator and topic field correctly', () => {
       const quota = {
         requestsUsed: 5,
-        maxRequests: 25,
+        maxRequests: 10,
         usedTokens: 500,
         maxTokens: 50000,
         activePendingJobs: 0,
@@ -58,7 +58,7 @@ describe('AI Generation Playground Test Suite', () => {
       );
 
       expect(screen.getByText('Quota Status')).toBeInTheDocument();
-      expect(screen.getByText('5/25 requests used')).toBeInTheDocument();
+      expect(screen.getByText('5/10 requests used')).toBeInTheDocument();
       expect(screen.getByLabelText(/Subject \/ Topic/i)).toBeInTheDocument();
     });
 
@@ -92,7 +92,7 @@ describe('AI Generation Playground Test Suite', () => {
         <AiPlaygroundForm
           quota={{
             requestsUsed: 0,
-            maxRequests: 25,
+            maxRequests: 10,
             usedTokens: 0,
             maxTokens: 50000,
             activePendingJobs: 0,
@@ -372,7 +372,7 @@ describe('AI Generation Playground Test Suite', () => {
       const mockQuota = {
         quota: {
           requestsUsed: 2,
-          maxRequests: 25,
+          maxRequests: 10,
           usedTokens: 100,
           maxTokens: 50000,
           activePendingJobs: 0,
@@ -413,7 +413,7 @@ describe('AI Generation Playground Test Suite', () => {
       await waitFor(() => {
         expect(screen.getByText('Previous Jobs History')).toBeInTheDocument();
         expect(screen.getByText('French Verbs')).toBeInTheDocument();
-        expect(screen.getByText('2/25 requests used')).toBeInTheDocument();
+        expect(screen.getByText('2/10 requests used')).toBeInTheDocument();
       });
     });
 

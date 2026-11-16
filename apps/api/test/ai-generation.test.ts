@@ -33,7 +33,7 @@ describePostgres('AI Generation Queue & Limits Integration', () => {
     configService = new ConfigService({
       AI_MAX_PENDING_JOBS_PER_USER: '2',
       AI_MAX_DAILY_TOKENS_PER_USER: '50000',
-      AI_MAX_DAILY_REQUESTS_PER_USER: '25',
+      AI_MAX_DAILY_REQUESTS_PER_USER: '10',
       AI_WORKER_ENABLED: 'false', // driven manually during test
       AI_MOCK: '1',
     });
@@ -309,7 +309,7 @@ describePostgres('AI Forced-Failure Integration', () => {
     configService = new ConfigService({
       AI_MAX_PENDING_JOBS_PER_USER: '2',
       AI_MAX_DAILY_TOKENS_PER_USER: '50000',
-      AI_MAX_DAILY_REQUESTS_PER_USER: '25',
+      AI_MAX_DAILY_REQUESTS_PER_USER: '10',
       AI_WORKER_ENABLED: 'false',
       AI_MOCK: '',
       AI_API_BASE: 'http://127.0.0.1:1/nonexistent',
