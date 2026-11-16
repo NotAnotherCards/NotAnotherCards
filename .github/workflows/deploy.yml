@@ -81,6 +81,15 @@ jobs:
               --env-file infra/monitoring/.env \
               up -d --wait
 
+            # Prometheus bind-mounts prometheus.yml and rules/; `up -d` does
+            # not restart it when only those files change, and git replaces
+            # files with new inodes the running mount never sees. Recreate it
+            # so every deploy loads the committed scrape config and rules.
+            docker compose \
+              -f infra/monitoring/docker-compose.yml \
+              --env-file infra/monitoring/.env \
+              up -d --wait --force-recreate --no-deps prometheus
+
             docker compose \
               -f infra/monitoring/docker-compose.yml \
               --env-file infra/monitoring/.env \
